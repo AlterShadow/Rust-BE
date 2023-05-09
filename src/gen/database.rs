@@ -20,8 +20,7 @@ impl From<SimpleDbClient> for DbClient {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAuthSignupReq {
-    pub public_id: i64,
-    pub username: String,
+    pub address: String,
     pub email: String,
     pub phone: String,
     pub password_hash: Vec<u8>,
@@ -43,7 +42,7 @@ pub struct FunAuthSignupResp {
 impl DbClient {
     #[allow(unused_variables)]
     pub async fn fun_auth_signup(&self, req: FunAuthSignupReq) -> Result<FunAuthSignupResp> {
-        let rows = self.client.query("SELECT * FROM api.fun_auth_signup(a_public_id => $1::bigint, a_username => $2::varchar, a_email => $3::varchar, a_phone => $4::varchar, a_password_hash => $5::bytea, a_password_salt => $6::bytea, a_age => $7::int, a_preferred_language => $8::varchar, a_agreed_tos => $9::boolean, a_agreed_privacy => $10::boolean, a_ip_address => $11::inet);", &[&req.public_id, &req.username, &req.email, &req.phone, &req.password_hash, &req.password_salt, &req.age, &req.preferred_language, &req.agreed_tos, &req.agreed_privacy, &req.ip_address]).await?;
+        let rows = self.client.query("SELECT * FROM api.fun_auth_signup(a_address => $1::varchar, a_email => $2::varchar, a_phone => $3::varchar, a_password_hash => $4::bytea, a_password_salt => $5::bytea, a_age => $6::int, a_preferred_language => $7::varchar, a_agreed_tos => $8::boolean, a_agreed_privacy => $9::boolean, a_ip_address => $10::inet);", &[&req.address, &req.email, &req.phone, &req.password_hash, &req.password_salt, &req.age, &req.preferred_language, &req.agreed_tos, &req.agreed_privacy, &req.ip_address]).await?;
         let mut resp = FunAuthSignupResp {
             rows: Vec::with_capacity(rows.len()),
         };
@@ -58,7 +57,7 @@ impl DbClient {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAuthAuthenticateReq {
-    pub username: String,
+    pub address: String,
     pub password_hash: Vec<u8>,
     pub service_code: i32,
     pub device_id: String,
@@ -80,7 +79,7 @@ impl DbClient {
         &self,
         req: FunAuthAuthenticateReq,
     ) -> Result<FunAuthAuthenticateResp> {
-        let rows = self.client.query("SELECT * FROM api.fun_auth_authenticate(a_username => $1::varchar, a_password_hash => $2::bytea, a_service_code => $3::int, a_device_id => $4::varchar, a_device_os => $5::varchar, a_ip_address => $6::inet);", &[&req.username, &req.password_hash, &req.service_code, &req.device_id, &req.device_os, &req.ip_address]).await?;
+        let rows = self.client.query("SELECT * FROM api.fun_auth_authenticate(a_address => $1::varchar, a_password_hash => $2::bytea, a_service_code => $3::int, a_device_id => $4::varchar, a_device_os => $5::varchar, a_ip_address => $6::inet);", &[&req.address, &req.password_hash, &req.service_code, &req.device_id, &req.device_os, &req.ip_address]).await?;
         let mut resp = FunAuthAuthenticateResp {
             rows: Vec::with_capacity(rows.len()),
         };
@@ -96,7 +95,7 @@ impl DbClient {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAuthGetPasswordSaltReq {
-    pub username: String,
+    pub address: String,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAuthGetPasswordSaltRespRow {
@@ -115,8 +114,8 @@ impl DbClient {
         let rows = self
             .client
             .query(
-                "SELECT * FROM api.fun_auth_get_password_salt(a_username => $1::varchar);",
-                &[&req.username],
+                "SELECT * FROM api.fun_auth_get_password_salt(a_address => $1::varchar);",
+                &[&req.address],
             )
             .await?;
         let mut resp = FunAuthGetPasswordSaltResp {
@@ -160,7 +159,7 @@ impl DbClient {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAuthAuthorizeReq {
-    pub username: String,
+    pub address: String,
     pub token: uuid::Uuid,
     pub service: EnumService,
     pub device_id: String,
@@ -182,7 +181,7 @@ impl DbClient {
         &self,
         req: FunAuthAuthorizeReq,
     ) -> Result<FunAuthAuthorizeResp> {
-        let rows = self.client.query("SELECT * FROM api.fun_auth_authorize(a_username => $1::varchar, a_token => $2::uuid, a_service => $3::enum_service, a_device_id => $4::varchar, a_device_os => $5::varchar, a_ip_address => $6::inet);", &[&req.username, &req.token, &req.service, &req.device_id, &req.device_os, &req.ip_address]).await?;
+        let rows = self.client.query("SELECT * FROM api.fun_auth_authorize(a_address => $1::varchar, a_token => $2::uuid, a_service => $3::enum_service, a_device_id => $4::varchar, a_device_os => $5::varchar, a_ip_address => $6::inet);", &[&req.address, &req.token, &req.service, &req.device_id, &req.device_os, &req.ip_address]).await?;
         let mut resp = FunAuthAuthorizeResp {
             rows: Vec::with_capacity(rows.len()),
         };
@@ -198,7 +197,7 @@ impl DbClient {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAuthChangePasswordReq {
-    pub username: String,
+    pub address: String,
     pub old_password_hash: Vec<u8>,
     pub new_password_hash: Vec<u8>,
     pub device_id: String,
@@ -217,7 +216,7 @@ impl DbClient {
         &self,
         req: FunAuthChangePasswordReq,
     ) -> Result<FunAuthChangePasswordResp> {
-        let rows = self.client.query("SELECT * FROM api.fun_auth_change_password(a_username => $1::varchar, a_old_password_hash => $2::bytea, a_new_password_hash => $3::bytea, a_device_id => $4::varchar, a_device_os => $5::varchar, a_ip_address => $6::inet);", &[&req.username, &req.old_password_hash, &req.new_password_hash, &req.device_id, &req.device_os, &req.ip_address]).await?;
+        let rows = self.client.query("SELECT * FROM api.fun_auth_change_password(a_address => $1::varchar, a_old_password_hash => $2::bytea, a_new_password_hash => $3::bytea, a_device_id => $4::varchar, a_device_os => $5::varchar, a_ip_address => $6::inet);", &[&req.address, &req.old_password_hash, &req.new_password_hash, &req.device_id, &req.device_os, &req.ip_address]).await?;
         let mut resp = FunAuthChangePasswordResp {
             rows: Vec::with_capacity(rows.len()),
         };
@@ -295,7 +294,7 @@ impl DbClient {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAuthBasicAuthenticateReq {
-    pub username: String,
+    pub address: String,
     pub device_id: String,
     pub device_os: String,
     pub ip_address: std::net::IpAddr,
@@ -314,7 +313,7 @@ impl DbClient {
         &self,
         req: FunAuthBasicAuthenticateReq,
     ) -> Result<FunAuthBasicAuthenticateResp> {
-        let rows = self.client.query("SELECT * FROM api.fun_auth_basic_authenticate(a_username => $1::varchar, a_device_id => $2::varchar, a_device_os => $3::varchar, a_ip_address => $4::inet);", &[&req.username, &req.device_id, &req.device_os, &req.ip_address]).await?;
+        let rows = self.client.query("SELECT * FROM api.fun_auth_basic_authenticate(a_address => $1::varchar, a_device_id => $2::varchar, a_device_os => $3::varchar, a_ip_address => $4::inet);", &[&req.address, &req.device_id, &req.device_os, &req.ip_address]).await?;
         let mut resp = FunAuthBasicAuthenticateResp {
             rows: Vec::with_capacity(rows.len()),
         };
@@ -432,7 +431,6 @@ pub struct FunAdminListUsersReq {
     pub offset: i32,
     pub limit: i32,
     pub user_id: Option<i64>,
-    pub user_public_id: Option<i64>,
     pub email: Option<String>,
     pub username: Option<String>,
     pub role: Option<EnumRole>,
@@ -440,7 +438,6 @@ pub struct FunAdminListUsersReq {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAdminListUsersRespRow {
     pub user_id: i64,
-    pub user_public_id: i64,
     pub email: String,
     pub username: String,
     pub role: EnumRole,
@@ -457,19 +454,18 @@ impl DbClient {
         &self,
         req: FunAdminListUsersReq,
     ) -> Result<FunAdminListUsersResp> {
-        let rows = self.client.query("SELECT * FROM api.fun_admin_list_users(a_offset => $1::int, a_limit => $2::int, a_user_id => $3::bigint, a_user_public_id => $4::bigint, a_email => $5::varchar, a_username => $6::varchar, a_role => $7::enum_role);", &[&req.offset, &req.limit, &req.user_id, &req.user_public_id, &req.email, &req.username, &req.role]).await?;
+        let rows = self.client.query("SELECT * FROM api.fun_admin_list_users(a_offset => $1::int, a_limit => $2::int, a_user_id => $3::bigint, a_email => $4::varchar, a_username => $5::varchar, a_role => $6::enum_role);", &[&req.offset, &req.limit, &req.user_id, &req.email, &req.username, &req.role]).await?;
         let mut resp = FunAdminListUsersResp {
             rows: Vec::with_capacity(rows.len()),
         };
         for row in rows {
             let r = FunAdminListUsersRespRow {
                 user_id: row.try_get(0)?,
-                user_public_id: row.try_get(1)?,
-                email: row.try_get(2)?,
-                username: row.try_get(3)?,
-                role: row.try_get(4)?,
-                updated_at: row.try_get(5)?,
-                created_at: row.try_get(6)?,
+                email: row.try_get(1)?,
+                username: row.try_get(2)?,
+                role: row.try_get(3)?,
+                updated_at: row.try_get(4)?,
+                created_at: row.try_get(5)?,
             };
             resp.rows.push(r);
         }
@@ -519,7 +515,7 @@ impl DbClient {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAdminAssignRoleReq {
     pub operator_user_id: i64,
-    pub user_public_id: i64,
+    pub user_id: i64,
     pub new_role: EnumRole,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -534,7 +530,7 @@ impl DbClient {
         &self,
         req: FunAdminAssignRoleReq,
     ) -> Result<FunAdminAssignRoleResp> {
-        let rows = self.client.query("SELECT * FROM api.fun_admin_assign_role(a_operator_user_id => $1::bigint, a_user_public_id => $2::bigint, a_new_role => $3::enum_role);", &[&req.operator_user_id, &req.user_public_id, &req.new_role]).await?;
+        let rows = self.client.query("SELECT * FROM api.fun_admin_assign_role(a_operator_user_id => $1::bigint, a_user_id => $2::bigint, a_new_role => $3::enum_role);", &[&req.operator_user_id, &req.user_id, &req.new_role]).await?;
         let mut resp = FunAdminAssignRoleResp {
             rows: Vec::with_capacity(rows.len()),
         };

@@ -9,11 +9,15 @@
           "code": 10020,
           "parameters": [
             {
-              "name": "username",
+              "name": "address",
               "ty": "String"
             },
             {
-              "name": "password",
+              "name": "signature_text",
+              "ty": "String"
+            },
+            {
+              "name": "signature",
               "ty": "String"
             },
             {
@@ -36,7 +40,7 @@
           ],
           "returns": [
             {
-              "name": "username",
+              "name": "address",
               "ty": "String"
             },
             {
@@ -61,7 +65,7 @@
           "code": 10010,
           "parameters": [
             {
-              "name": "username",
+              "name": "address",
               "ty": "String"
             },
             {
@@ -87,7 +91,7 @@
           ],
           "returns": [
             {
-              "name": "username",
+              "name": "address",
               "ty": "String"
             },
             {
@@ -104,7 +108,7 @@
           "code": 10030,
           "parameters": [
             {
-              "name": "username",
+              "name": "address",
               "ty": "String"
             },
             {

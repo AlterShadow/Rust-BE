@@ -5,8 +5,7 @@ pub fn get_auth_pg_func() -> Vec<ProceduralFunction> {
         ProceduralFunction::new(
             "fun_auth_signup",
             vec![
-                Field::new("public_id", Type::BigInt),
-                Field::new("username", Type::String),
+                Field::new("address", Type::String),
                 Field::new("email", Type::String),
                 Field::new("phone", Type::String),
                 Field::new("password_hash", Type::Bytea),
@@ -26,11 +25,11 @@ BEGIN
     RAISE SQLSTATE 'R000X'; -- ConsentMissing
   ELSEIF ((SELECT pkey_id
            FROM tbl.user
-           WHERE LOWER(username) = LOWER(a_username)) IS NOT NULL) THEN
+           WHERE LOWER(address) = LOWER(a_address)) IS NOT NULL) THEN
     RAISE SQLSTATE 'R000Z'; -- UsernameAlreadyRegistered
   END IF;
   INSERT INTO tbl.user (public_id,
-                       username,
+                       address,
                        email,
                        phone_number,
                        password_hash,
@@ -41,7 +40,7 @@ BEGIN
                        agreed_privacy,
                        last_ip)
   VALUES (a_public_id,
-          a_username,
+          a_address,
           a_email,
           a_phone,
           a_password_hash,
@@ -59,7 +58,7 @@ END
         ProceduralFunction::new(
             "fun_auth_authenticate",
             vec![
-                Field::new("username", Type::String),
+                Field::new("address", Type::String),
                 Field::new("password_hash", Type::Bytea),
                 Field::new("service_code", Type::Int),
                 Field::new("device_id", Type::String),
@@ -79,18 +78,18 @@ DECLARE
     _role           enum_role;
 BEGIN
     ASSERT (a_ip_address NOTNULL AND a_device_id NOTNULL AND a_device_os NOTNULL AND
-            a_username NOTNULL AND a_password_hash NOTNULL AND a_service_code NOTNULL);
+            a_address NOTNULL AND a_password_hash NOTNULL AND a_service_code NOTNULL);
 
     -- Looking up the user.
     SELECT pkey_id, u.public_id, is_blocked, (password_hash = a_password_hash), u.role
     INTO _user_id, _user_public_id, is_blocked_, is_password_ok_, _role
     FROM tbl.user u
-    WHERE username = a_username;
+    WHERE address = a_address;
 
     -- Log the login attempt.
-    INSERT INTO tbl.login_attempt(fkey_user, username, password_hash, ip_address,
+    INSERT INTO tbl.login_attempt(fkey_user, address, password_hash, ip_address,
                                   is_password_ok)
-    VALUES (_user_id, a_username, a_password_hash, a_ip_address, is_password_ok_);
+    VALUES (_user_id, a_address, a_password_hash, a_ip_address, is_password_ok_);
     -- COMMIT;
     -- Checking the block status and password, and updating the login info if ok.
     IF (_user_id ISNULL) THEN
@@ -124,19 +123,19 @@ END
         ),
         ProceduralFunction::new(
             "fun_auth_get_password_salt",
-            vec![Field::new("username", Type::String)],
+            vec![Field::new("address", Type::String)],
             vec![Field::new("salt", Type::Bytea)],
             r#"
 DECLARE
   user_id bigint;
 BEGIN
-  ASSERT (a_username NOTNULL);
+  ASSERT (a_address NOTNULL);
 
   -- Looking up the user.
   SELECT pkey_id, u.password_salt
   INTO user_id, salt
   FROM tbl.user u
-  WHERE username = a_username;
+  WHERE address = a_address;
 
   IF (user_id ISNULL) THEN
     RAISE SQLSTATE 'R0007'; -- UnknownUser
@@ -189,7 +188,7 @@ END
         ProceduralFunction::new(
             "fun_auth_authorize",
             vec![
-                Field::new("username", Type::String),
+                Field::new("address", Type::String),
                 Field::new("token", Type::UUID),
                 Field::new("service", Type::enum_ref("service")),
                 Field::new("device_id", Type::String),
@@ -208,7 +207,7 @@ DECLARE
     role_        enum_role;
 
 BEGIN
-    ASSERT (a_username NOTNULL AND a_token NOTNULL AND a_service NOTNULL AND
+    ASSERT (a_address NOTNULL AND a_token NOTNULL AND a_service NOTNULL AND
             a_device_id NOTNULL AND a_device_os NOTNULL);
 
     -- Looking up the user
@@ -217,12 +216,12 @@ BEGIN
             THEN SELECT pkey_id, u.role, (user_token = a_token)
                  INTO user_id_, role_, is_token_ok_
                  FROM tbl.user AS u
-                 WHERE username = a_username;
+                 WHERE address = a_address;
         WHEN 'admin'::enum_service
             THEN SELECT pkey_id, u.role, (admin_token = a_token)
                  INTO user_id_, role_, is_token_ok_
                  FROM tbl.user AS u
-                 WHERE username = a_username;
+                 WHERE address = a_address;
         ELSE RAISE SQLSTATE 'R0001'; -- InvalidArgument
         END CASE;
     GET DIAGNOSTICS rc_ := ROW_COUNT;
@@ -261,7 +260,7 @@ END
         ProceduralFunction::new(
             "fun_auth_change_password",
             vec![
-                Field::new("username", Type::String),
+                Field::new("address", Type::String),
                 Field::new("old_password_hash", Type::Bytea),
                 Field::new("new_password_hash", Type::Bytea),
                 Field::new("device_id", Type::String),
@@ -276,18 +275,18 @@ DECLARE
   user_id_        bigint;
 BEGIN
   ASSERT (a_ip_address NOTNULL AND a_device_id NOTNULL AND a_device_os NOTNULL AND
-          a_username NOTNULL AND a_old_password_hash NOTNULL AND
+          a_address NOTNULL AND a_old_password_hash NOTNULL AND
           a_new_password_hash NOTNULL);
   -- Looking up the user.
   SELECT pkey_id, is_blocked, (password_hash = a_old_password_hash)
   INTO user_id_, is_blocked_, is_password_ok_
   FROM tbl.user u
-  WHERE username = a_username;
+  WHERE address = a_address;
 
   -- Log the login attempt.
-  INSERT INTO tbl.login_attempt(fkey_user, username, password_hash, ip_address,
+  INSERT INTO tbl.login_attempt(fkey_user, address, password_hash, ip_address,
                                 device_id, device_os, is_password_ok)
-  VALUES (user_id_, a_username, a_old_password_hash, a_ip_address, a_device_id,
+  VALUES (user_id_, a_address, a_old_password_hash, a_ip_address, a_device_id,
           a_device_os, is_password_ok_);
   -- COMMIT;
   -- Checking the block status and password, and updating the login info if ok.
@@ -301,7 +300,7 @@ BEGIN
 
     UPDATE tbl.user
     SET password_hash = a_new_password_hash
-    WHERE username = a_username;
+    WHERE address = a_address;
   ELSE
       RAISE SQLSTATE 'R0007'; -- UnknownUser
   END IF;
@@ -349,7 +348,7 @@ END
         ProceduralFunction::new(
             "fun_auth_basic_authenticate",
             vec![
-                Field::new("username", Type::String),
+                Field::new("address", Type::String),
                 Field::new("device_id", Type::String),
                 Field::new("device_os", Type::String),
                 Field::new("ip_address", Type::Inet),
@@ -360,15 +359,15 @@ DECLARE
   is_blocked_ boolean;
   user_id_    bigint;
 BEGIN
-  ASSERT (a_username NOTNULL AND a_device_id NOTNULL AND a_device_os NOTNULL AND
+  ASSERT (a_address NOTNULL AND a_device_id NOTNULL AND a_device_os NOTNULL AND
           a_ip_address NOTNULL);
   SELECT pkey_id, is_blocked
   INTO user_id_, is_blocked_
   FROM tbl.user
-  WHERE username = LOWER(a_username);
-  INSERT INTO tbl.login_attempt(fkey_user, username, password_hash, ip_address,
+  WHERE address = LOWER(a_address);
+  INSERT INTO tbl.login_attempt(fkey_user, address, password_hash, ip_address,
                                 device_id, device_os)
-  VALUES (user_id_, a_username, '', a_ip_address, a_device_id, a_device_os);
+  VALUES (user_id_, a_address, '', a_ip_address, a_device_id, a_device_os);
   -- COMMIT;
   IF (user_id_ ISNULL) THEN
     RAISE SQLSTATE 'R0007'; -- UnknownUser

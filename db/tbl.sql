@@ -33,7 +33,7 @@ CREATE TABLE tbl.bad_request (
 CREATE TABLE tbl.login_attempt (
     pkey_id bigint  NOT NULL DEFAULT nextval( 'tbl.seq_login_attempt_id' ),
     fkey_user bigint  NULL,
-    username varchar(20)  NOT NULL,
+    address varchar(20)  NOT NULL,
     password_hash bytea  NOT NULL,
     ip_address inet  NOT NULL,
     device_id varchar(256)  NULL,
@@ -109,10 +109,7 @@ CREATE TABLE tbl.support_ticket (
 CREATE TABLE tbl."user" (
     pkey_id bigint  NOT NULL DEFAULT nextval( 'tbl.seq_user_id' ),
     role enum_role  NOT NULL DEFAULT 'user',
-    public_id bigint  NOT NULL,
-    username varchar(20)  NOT NULL,
-    password_hash bytea  NOT NULL,
-    password_salt bytea  NOT NULL,
+    address varchar(20)  NOT NULL,
     age smallint  NOT NULL,
     preferred_language varchar(5)  NOT NULL,
     family_name varchar(128)  NULL,
@@ -134,8 +131,7 @@ CREATE TABLE tbl."user" (
     user_token uuid  NULL,
     admin_token uuid  NULL,
     is_blocked boolean  NOT NULL DEFAULT false,
-    CONSTRAINT uidx_user_username UNIQUE (username) NOT DEFERRABLE  INITIALLY IMMEDIATE,
-    CONSTRAINT uidx_user_public_id UNIQUE (public_id) NOT DEFERRABLE  INITIALLY IMMEDIATE,
+    CONSTRAINT uidx_user_username UNIQUE (address) NOT DEFERRABLE  INITIALLY IMMEDIATE,
     CONSTRAINT user_pk PRIMARY KEY (pkey_id)
 );
 

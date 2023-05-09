@@ -8,14 +8,12 @@ pub fn get_user_pg_func() -> Vec<ProceduralFunction> {
                 Field::new("offset", Type::Int),
                 Field::new("limit", Type::Int),
                 Field::new("user_id", Type::optional(Type::BigInt)),
-                Field::new("user_public_id", Type::optional(Type::BigInt)),
                 Field::new("email", Type::optional(Type::String)),
                 Field::new("username", Type::optional(Type::String)),
                 Field::new("role", Type::optional(Type::enum_ref("role"))),
             ],
             vec![
                 Field::new("user_id", Type::BigInt),
-                Field::new("user_public_id", Type::BigInt),
                 Field::new("email", Type::String),
                 Field::new("username", Type::String),
                 Field::new("role", Type::enum_ref("role")),
@@ -26,7 +24,6 @@ pub fn get_user_pg_func() -> Vec<ProceduralFunction> {
 BEGIN
     RETURN QUERY SELECT
         u.pkey_id,
-        u.public_id,
         u.email,
         u.username,
         u.role,
@@ -34,7 +31,6 @@ BEGIN
         u.created_at::int
     FROM tbl.user AS u
     WHERE a_user_id IS NOT NULL OR u.pkey_id = a_user_id
-        AND a_user_public_id IS NOT NULL OR u.public_id = a_user_public_id
         AND a_email IS NOT NULL OR u.email = a_email
         AND a_username IS NOT NULL OR u.username = a_username
         AND a_role IS NOT NULL OR u.role = a_role
@@ -74,7 +70,7 @@ END
             "fun_admin_assign_role",
             vec![
                 Field::new("operator_user_id", Type::BigInt),
-                Field::new("user_public_id", Type::BigInt),
+                Field::new("user_id", Type::BigInt),
                 Field::new("new_role", Type::enum_ref("role")),
             ],
             vec![],
@@ -86,7 +82,7 @@ BEGIN
     IF _operator_role <> 'admin' THEN
         RAISE SQLSTATE 'R000S'; -- InvalidRole
     END IF;
-    UPDATE tbl.user SET role = a_new_role WHERE public_id = a_user_public_id;
+    UPDATE tbl.user SET role = a_new_role WHERE pkey_id = a_user_id;
 END
         "#,
         ),

@@ -1,6 +1,6 @@
 CREATE SCHEMA IF NOT EXISTS api;
 
-CREATE OR REPLACE FUNCTION api.fun_auth_signup(a_public_id bigint, a_username varchar, a_email varchar, a_phone varchar, a_password_hash bytea, a_password_salt bytea, a_age int, a_preferred_language varchar, a_agreed_tos boolean, a_agreed_privacy boolean, a_ip_address inet)
+CREATE OR REPLACE FUNCTION api.fun_auth_signup(a_address varchar, a_email varchar, a_phone varchar, a_password_hash bytea, a_password_salt bytea, a_age int, a_preferred_language varchar, a_agreed_tos boolean, a_agreed_privacy boolean, a_ip_address inet)
 RETURNS table (
     "user_id" bigint
 )
@@ -14,11 +14,11 @@ BEGIN
     RAISE SQLSTATE 'R000X'; -- ConsentMissing
   ELSEIF ((SELECT pkey_id
            FROM tbl.user
-           WHERE LOWER(username) = LOWER(a_username)) IS NOT NULL) THEN
+           WHERE LOWER(address) = LOWER(a_address)) IS NOT NULL) THEN
     RAISE SQLSTATE 'R000Z'; -- UsernameAlreadyRegistered
   END IF;
   INSERT INTO tbl.user (public_id,
-                       username,
+                       address,
                        email,
                        phone_number,
                        password_hash,
@@ -29,7 +29,7 @@ BEGIN
                        agreed_privacy,
                        last_ip)
   VALUES (a_public_id,
-          a_username,
+          a_address,
           a_email,
           a_phone,
           a_password_hash,
@@ -46,7 +46,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_auth_authenticate(a_username varchar, a_password_hash bytea, a_service_code int, a_device_id varchar, a_device_os varchar, a_ip_address inet)
+CREATE OR REPLACE FUNCTION api.fun_auth_authenticate(a_address varchar, a_password_hash bytea, a_service_code int, a_device_id varchar, a_device_os varchar, a_ip_address inet)
 RETURNS table (
     "user_id" bigint,
     "user_public_id" bigint
@@ -62,18 +62,18 @@ DECLARE
     _role           enum_role;
 BEGIN
     ASSERT (a_ip_address NOTNULL AND a_device_id NOTNULL AND a_device_os NOTNULL AND
-            a_username NOTNULL AND a_password_hash NOTNULL AND a_service_code NOTNULL);
+            a_address NOTNULL AND a_password_hash NOTNULL AND a_service_code NOTNULL);
 
     -- Looking up the user.
     SELECT pkey_id, u.public_id, is_blocked, (password_hash = a_password_hash), u.role
     INTO _user_id, _user_public_id, is_blocked_, is_password_ok_, _role
     FROM tbl.user u
-    WHERE username = a_username;
+    WHERE address = a_address;
 
     -- Log the login attempt.
-    INSERT INTO tbl.login_attempt(fkey_user, username, password_hash, ip_address,
+    INSERT INTO tbl.login_attempt(fkey_user, address, password_hash, ip_address,
                                   is_password_ok)
-    VALUES (_user_id, a_username, a_password_hash, a_ip_address, is_password_ok_);
+    VALUES (_user_id, a_address, a_password_hash, a_ip_address, is_password_ok_);
     -- COMMIT;
     -- Checking the block status and password, and updating the login info if ok.
     IF (_user_id ISNULL) THEN
@@ -107,7 +107,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_auth_get_password_salt(a_username varchar)
+CREATE OR REPLACE FUNCTION api.fun_auth_get_password_salt(a_address varchar)
 RETURNS table (
     "salt" bytea
 )
@@ -117,13 +117,13 @@ AS $$
 DECLARE
   user_id bigint;
 BEGIN
-  ASSERT (a_username NOTNULL);
+  ASSERT (a_address NOTNULL);
 
   -- Looking up the user.
   SELECT pkey_id, u.password_salt
   INTO user_id, salt
   FROM tbl.user u
-  WHERE username = a_username;
+  WHERE address = a_address;
 
   IF (user_id ISNULL) THEN
     RAISE SQLSTATE 'R0007'; -- UnknownUser
@@ -172,7 +172,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_auth_authorize(a_username varchar, a_token uuid, a_service enum_service, a_device_id varchar, a_device_os varchar, a_ip_address inet)
+CREATE OR REPLACE FUNCTION api.fun_auth_authorize(a_address varchar, a_token uuid, a_service enum_service, a_device_id varchar, a_device_os varchar, a_ip_address inet)
 RETURNS table (
     "user_id" bigint,
     "role" enum_role
@@ -187,7 +187,7 @@ DECLARE
     role_        enum_role;
 
 BEGIN
-    ASSERT (a_username NOTNULL AND a_token NOTNULL AND a_service NOTNULL AND
+    ASSERT (a_address NOTNULL AND a_token NOTNULL AND a_service NOTNULL AND
             a_device_id NOTNULL AND a_device_os NOTNULL);
 
     -- Looking up the user
@@ -196,12 +196,12 @@ BEGIN
             THEN SELECT pkey_id, u.role, (user_token = a_token)
                  INTO user_id_, role_, is_token_ok_
                  FROM tbl.user AS u
-                 WHERE username = a_username;
+                 WHERE address = a_address;
         WHEN 'admin'::enum_service
             THEN SELECT pkey_id, u.role, (admin_token = a_token)
                  INTO user_id_, role_, is_token_ok_
                  FROM tbl.user AS u
-                 WHERE username = a_username;
+                 WHERE address = a_address;
         ELSE RAISE SQLSTATE 'R0001'; -- InvalidArgument
         END CASE;
     GET DIAGNOSTICS rc_ := ROW_COUNT;
@@ -239,7 +239,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_auth_change_password(a_username varchar, a_old_password_hash bytea, a_new_password_hash bytea, a_device_id varchar, a_device_os varchar, a_ip_address inet)
+CREATE OR REPLACE FUNCTION api.fun_auth_change_password(a_address varchar, a_old_password_hash bytea, a_new_password_hash bytea, a_device_id varchar, a_device_os varchar, a_ip_address inet)
 RETURNS void
 LANGUAGE plpgsql
 AS $$
@@ -250,18 +250,18 @@ DECLARE
   user_id_        bigint;
 BEGIN
   ASSERT (a_ip_address NOTNULL AND a_device_id NOTNULL AND a_device_os NOTNULL AND
-          a_username NOTNULL AND a_old_password_hash NOTNULL AND
+          a_address NOTNULL AND a_old_password_hash NOTNULL AND
           a_new_password_hash NOTNULL);
   -- Looking up the user.
   SELECT pkey_id, is_blocked, (password_hash = a_old_password_hash)
   INTO user_id_, is_blocked_, is_password_ok_
   FROM tbl.user u
-  WHERE username = a_username;
+  WHERE address = a_address;
 
   -- Log the login attempt.
-  INSERT INTO tbl.login_attempt(fkey_user, username, password_hash, ip_address,
+  INSERT INTO tbl.login_attempt(fkey_user, address, password_hash, ip_address,
                                 device_id, device_os, is_password_ok)
-  VALUES (user_id_, a_username, a_old_password_hash, a_ip_address, a_device_id,
+  VALUES (user_id_, a_address, a_old_password_hash, a_ip_address, a_device_id,
           a_device_os, is_password_ok_);
   -- COMMIT;
   -- Checking the block status and password, and updating the login info if ok.
@@ -275,7 +275,7 @@ BEGIN
 
     UPDATE tbl.user
     SET password_hash = a_new_password_hash
-    WHERE username = a_username;
+    WHERE address = a_address;
   ELSE
       RAISE SQLSTATE 'R0007'; -- UnknownUser
   END IF;
@@ -322,7 +322,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_auth_basic_authenticate(a_username varchar, a_device_id varchar, a_device_os varchar, a_ip_address inet)
+CREATE OR REPLACE FUNCTION api.fun_auth_basic_authenticate(a_address varchar, a_device_id varchar, a_device_os varchar, a_ip_address inet)
 RETURNS table (
     "user_id" inet
 )
@@ -333,15 +333,15 @@ DECLARE
   is_blocked_ boolean;
   user_id_    bigint;
 BEGIN
-  ASSERT (a_username NOTNULL AND a_device_id NOTNULL AND a_device_os NOTNULL AND
+  ASSERT (a_address NOTNULL AND a_device_id NOTNULL AND a_device_os NOTNULL AND
           a_ip_address NOTNULL);
   SELECT pkey_id, is_blocked
   INTO user_id_, is_blocked_
   FROM tbl.user
-  WHERE username = LOWER(a_username);
-  INSERT INTO tbl.login_attempt(fkey_user, username, password_hash, ip_address,
+  WHERE address = LOWER(a_address);
+  INSERT INTO tbl.login_attempt(fkey_user, address, password_hash, ip_address,
                                 device_id, device_os)
-  VALUES (user_id_, a_username, '', a_ip_address, a_device_id, a_device_os);
+  VALUES (user_id_, a_address, '', a_ip_address, a_device_id, a_device_os);
   -- COMMIT;
   IF (user_id_ ISNULL) THEN
     RAISE SQLSTATE 'R0007'; -- UnknownUser
@@ -432,10 +432,9 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_admin_list_users(a_offset int, a_limit int, a_user_id bigint DEFAULT NULL, a_user_public_id bigint DEFAULT NULL, a_email varchar DEFAULT NULL, a_username varchar DEFAULT NULL, a_role enum_role DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_admin_list_users(a_offset int, a_limit int, a_user_id bigint DEFAULT NULL, a_email varchar DEFAULT NULL, a_username varchar DEFAULT NULL, a_role enum_role DEFAULT NULL)
 RETURNS table (
     "user_id" bigint,
-    "user_public_id" bigint,
     "email" varchar,
     "username" varchar,
     "role" enum_role,
@@ -448,7 +447,6 @@ AS $$
 BEGIN
     RETURN QUERY SELECT
         u.pkey_id,
-        u.public_id,
         u.email,
         u.username,
         u.role,
@@ -456,7 +454,6 @@ BEGIN
         u.created_at::int
     FROM tbl.user AS u
     WHERE a_user_id IS NOT NULL OR u.pkey_id = a_user_id
-        AND a_user_public_id IS NOT NULL OR u.public_id = a_user_public_id
         AND a_email IS NOT NULL OR u.email = a_email
         AND a_username IS NOT NULL OR u.username = a_username
         AND a_role IS NOT NULL OR u.role = a_role
@@ -493,7 +490,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_admin_assign_role(a_operator_user_id bigint, a_user_public_id bigint, a_new_role enum_role)
+CREATE OR REPLACE FUNCTION api.fun_admin_assign_role(a_operator_user_id bigint, a_user_id bigint, a_new_role enum_role)
 RETURNS void
 LANGUAGE plpgsql
 AS $$
@@ -505,7 +502,7 @@ BEGIN
     IF _operator_role <> 'admin' THEN
         RAISE SQLSTATE 'R000S'; -- InvalidRole
     END IF;
-    UPDATE tbl.user SET role = a_new_role WHERE public_id = a_user_public_id;
+    UPDATE tbl.user SET role = a_new_role WHERE pkey_id = a_user_id;
 END
         
 $$;
