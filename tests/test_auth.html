@@ -1,41 +1,72 @@
 <!DOCTYPE html>
 <html>
-  <head>
+<head>
     <title>MetaMask Sign Data Example</title>
-    <script src="https://cdn.jsdelivr.net/npm/web3@1.5.2/dist/web3.min.js"></script>
-  </head>
-  <body>
-    <h1>MetaMask Sign Data Example</h1>
-    <button onclick="signData()">Sign Data</button>
-    <p id="result"></p>
-    <script>
-      // Check if MetaMask is installed
-      async function checkMetaMask(){
-        if (typeof window.ethereum !== 'undefined') {
-          console.log('MetaMask is installed!')
-          const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
-          const walletAddress = accounts[0];
-          return walletAddress;
-        } else {
-          console.log('MetaMask is not installed!');
-          return null;
-        }
-      }
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.8.2/dist/web3.min.js"></script>
+</head>
+<body>
+<h1>MetaMask Sign Data Example</h1>
+<button onclick="signData()">Sign Data</button>
+<p id="address"></p>
+<p id="message"></p>
+<p id="signature"></p>
+<p id="recoveredAddress"></p>
+<script>
+    const web3 = new Web3(Web3.givenProvider || "ws://localhost:8545");
 
-      // Sign the data
-      async function signData() {
-        const walletAddress = await checkMetaMask();
-        if (walletAddress){
-          const currentDate = new Date().toISOString().slice(0, 10);
-          const message = walletAddress + '-' + currentDate;
-          ethereum.request({ method: 'personal_sign', params: [message, walletAddress] })
-          .then(signature => {
-            console.log('Signature: ', signature)
-            const result = document.getElementById('result')
-            result.innerHTML = 'Message: ' + message + '<br>Signature: ' + signature
-          })
+    // Check if MetaMask is installed
+    async function checkMetaMask() {
+        if (typeof window.ethereum !== 'undefined') {
+            console.log('MetaMask is installed!')
+            return true;
+        } else {
+            console.log('MetaMask is not installed!');
+            return false;
         }
-      }
-    </script>
-  </body>
+    }
+
+    async function getAddress() {
+        const accounts = await ethereum.request({method: 'eth_requestAccounts'});
+        const walletAddress = accounts[0];
+        return walletAddress;
+    }
+
+    function hexEncode(s) {
+        var hex, i;
+
+        var result = "";
+        for (i = 0; i < s.length; i++) {
+            hex = s.charCodeAt(i).toString(16);
+            result += ("000" + hex).slice(-4);
+        }
+
+        return result
+    }
+
+    // Sign the data
+    async function signData() {
+        const hasMM = await checkMetaMask();
+        if (hasMM) {
+            const walletAddress = await getAddress();
+            const address = document.getElementById('address');
+            address.innerText = 'Address: ' + walletAddress;
+
+            const nonce = Math.floor(Math.random() * 1000000000);
+            const message = "This request will not trigger any transaction or incur any cost or fees. \n " +
+                "It is only intended to authenticate you are the owner of wallet:\n"
+                + walletAddress + "nonce:\n" + nonce;
+            const signature = await ethereum.request({method: 'personal_sign', params: [message, walletAddress]});
+            console.log('Signature: ', signature);
+            // Display the message and signature in hex
+            const msg = document.getElementById('message');
+            msg.innerText = 'Message: ' + hexEncode(message);
+            const sig = document.getElementById('signature');
+            sig.innerText = 'Signature: ' + signature;
+            const recoveredAddress = document.getElementById('recoveredAddress');
+            recoveredAddress.innerText = 'Recovered Address: ' + await web3.eth.personal.ecRecover(message, signature);
+
+        }
+    }
+</script>
+</body>
 </html>
