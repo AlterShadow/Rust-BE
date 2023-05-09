@@ -1,7 +1,3 @@
-#![feature(associated_type_defaults)]
-#![feature(type_alias_impl_trait)]
-#![feature(impl_trait_in_assoc_type)]
-
 pub mod config;
 pub mod database;
 pub mod error_code;

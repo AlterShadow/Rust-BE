@@ -1,6 +1,7 @@
 use eyre::*;
+use futures::future::BoxFuture;
+use futures::FutureExt;
 use rustls_pemfile::{certs, pkcs8_private_keys};
-use std::future::Future;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::io::AsyncRead;
@@ -11,14 +12,9 @@ use tokio_rustls::{server::TlsStream, TlsAcceptor};
 pub trait ConnectionListener: Send + Sync + Unpin {
     type Channel1: AsyncRead + AsyncWrite + Send + Sync + Unpin + 'static;
     type Channel2: AsyncRead + AsyncWrite + Send + Sync + Unpin + 'static;
-    type Channel1Future<'a>: Future<Output = Result<(Self::Channel1, SocketAddr)>> + Send + 'a
-    where
-        Self: 'a;
-    type Channel2Future<'a>: Future<Output = Result<Self::Channel2>> + Send + 'a
-    where
-        Self: 'a;
-    fn accept(&self) -> Self::Channel1Future<'_>;
-    fn handshake(&self, channel: Self::Channel1) -> Self::Channel2Future<'_>;
+
+    fn accept(&self) -> BoxFuture<Result<(Self::Channel1, SocketAddr)>>;
+    fn handshake(&self, channel: Self::Channel1) -> BoxFuture<Result<Self::Channel2>>;
 }
 
 pub struct TcpListener {
@@ -33,16 +29,16 @@ impl TcpListener {
 impl ConnectionListener for TcpListener {
     type Channel1 = TcpStream;
     type Channel2 = TcpStream;
-    type Channel1Future<'a> = impl Future<Output = Result<(Self::Channel1, SocketAddr)>> + 'a;
-    type Channel2Future<'a> = impl Future<Output = Result<Self::Channel2>> + 'a;
-    fn accept(&self) -> Self::Channel1Future<'_> {
+
+    fn accept(&self) -> BoxFuture<Result<(Self::Channel1, SocketAddr)>> {
         async {
             let (stream, addr) = self.listener.accept().await?;
             Ok((stream, addr))
         }
+        .boxed()
     }
-    fn handshake(&self, channel: Self::Channel1) -> Self::Channel2Future<'_> {
-        async move { Ok(channel) }
+    fn handshake(&self, channel: Self::Channel1) -> BoxFuture<Result<Self::Channel2>> {
+        async move { Ok(channel) }.boxed()
     }
 }
 
@@ -83,17 +79,16 @@ impl<T: ConnectionListener> TlsListener<T> {
 impl<T: ConnectionListener + 'static> ConnectionListener for TlsListener<T> {
     type Channel1 = T::Channel1;
     type Channel2 = TlsStream<T::Channel2>;
-    type Channel1Future<'a> = impl Future<Output = Result<(Self::Channel1, SocketAddr)>> + 'a;
-    type Channel2Future<'a> = impl Future<Output = Result<Self::Channel2>> + 'a;
-    fn accept(&self) -> Self::Channel1Future<'_> {
+    fn accept(&self) -> BoxFuture<Result<(Self::Channel1, SocketAddr)>> {
         self.tcp.accept()
     }
-    fn handshake(&self, channel: Self::Channel1) -> Self::Channel2Future<'_> {
+    fn handshake(&self, channel: Self::Channel1) -> BoxFuture<Result<Self::Channel2>> {
         async {
             let channel = self.tcp.handshake(channel).await?;
             let tls_stream = self.acceptor.accept(channel).await?;
             Ok(tls_stream)
         }
+        .boxed()
     }
 }
 
