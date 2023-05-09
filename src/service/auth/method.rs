@@ -238,7 +238,7 @@ fn verify_message_address(
     }
     let message_hash = hash_eth_message(message);
     let recovery_id = signature[64] as i32 - 27;
-
+    info!("Recovery id: {}", recovery_id);
     let addr = recover(&message_hash, &signature[..64], recovery_id)?;
     info!(
         "Expected address: {:?}, Recovered address: {:?}",
@@ -254,11 +254,20 @@ mod tests {
 
     #[test]
     fn test_personal_sign_recover() -> Result<()> {
-        setup_logs(LogLevel::Trace)?;
+        let _ = setup_logs(LogLevel::Trace);
         let address = Address::from_str("0x63f9a92d8d61b48a9fff8d58080425a3012d05c8")?;
         let message = b"0x63f9a92d8d61b48a9fff8d58080425a3012d05c8igwyk4r1o7o";
         let signature = hex::decode("382a3e04daf88f322730f6a2972475fc5646ea8c4a7f3b5e83a90b10ba08a7364cd2f55348f2b6d210fbed7fc485abf19ecb2f3967e410d6349dd7dd1d4487751b")?;
         assert!(verify_message_address(message, &signature, address)?);
+        Ok(())
+    }
+    #[test]
+    fn test_personal_sign_recover_real_data() -> Result<()> {
+        let _ = setup_logs(LogLevel::Trace);
+        let address = Address::from_str("0x111013b7862ebc1b9726420aa0e8728de310ee63")?;
+        let message = hex::decode("005400680069007300200072006500710075006500730074002000770069006c006c0020006e006f00740020007400720069006700670065007200200061006e00790020007400720061006e00730061006300740069006f006e0020006f007200200069006e00630075007200200061006e007900200063006f007300740020006f007200200066006500650073002e0020000a0020004900740020006900730020006f006e006c007900200069006e00740065006e00640065006400200074006f002000610075007400680065006e00740069006300610074006500200079006f0075002000610072006500200074006800650020006f0077006e006500720020006f0066002000770061006c006c00650074003a000a003000780031003100310030003100330062003700380036003200650062006300310062003900370032003600340032003000610061003000650038003700320038006400650033003100300065006500360033006e006f006e00630065003a000a00310032003800370037003000380033")?;
+        let signature = hex::decode("aef85890188d4cdc88b329c6aeeae24ab917600c23e85e196717a22153ca352b1f81cd3378c4a53d44ec8fcfe320a505e93cb08fe0635bc0ed5bf0b771502d921c")?;
+        assert!(verify_message_address(&message, &signature, address)?);
         Ok(())
     }
 }
