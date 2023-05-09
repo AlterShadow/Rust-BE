@@ -1,6 +1,6 @@
 CREATE SCHEMA IF NOT EXISTS api;
 
-CREATE OR REPLACE FUNCTION api.fun_auth_signup(a_address varchar, a_email varchar, a_phone varchar, a_password_hash bytea, a_password_salt bytea, a_age int, a_preferred_language varchar, a_agreed_tos boolean, a_agreed_privacy boolean, a_ip_address inet)
+CREATE OR REPLACE FUNCTION api.fun_auth_signup(a_address varchar, a_email varchar, a_phone varchar, a_age int, a_preferred_language varchar, a_agreed_tos boolean, a_agreed_privacy boolean, a_ip_address inet)
 RETURNS table (
     "user_id" bigint
 )
@@ -17,23 +17,17 @@ BEGIN
            WHERE LOWER(address) = LOWER(a_address)) IS NOT NULL) THEN
     RAISE SQLSTATE 'R000Z'; -- UsernameAlreadyRegistered
   END IF;
-  INSERT INTO tbl.user (public_id,
-                       address,
+  INSERT INTO tbl.user (address,
                        email,
                        phone_number,
-                       password_hash,
-                       password_salt,
                        age,
                        preferred_language,
                        agreed_tos,
                        agreed_privacy,
                        last_ip)
-  VALUES (a_public_id,
-          a_address,
+  VALUES (a_address,
           a_email,
           a_phone,
-          a_password_hash,
-          a_password_salt,
           a_age,
           a_preferred_language,
           a_agreed_tos,
@@ -46,10 +40,9 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_auth_authenticate(a_address varchar, a_password_hash bytea, a_service_code int, a_device_id varchar, a_device_os varchar, a_ip_address inet)
+CREATE OR REPLACE FUNCTION api.fun_auth_authenticate(a_address varchar, a_service_code int, a_device_id varchar, a_device_os varchar, a_ip_address inet)
 RETURNS table (
-    "user_id" bigint,
-    "user_public_id" bigint
+    "user_id" bigint
 )
 LANGUAGE plpgsql
 AS $$
@@ -58,15 +51,14 @@ DECLARE
     is_blocked_     boolean;
     is_password_ok_ boolean;
     _user_id        bigint;
-    _user_public_id bigint;
     _role           enum_role;
 BEGIN
     ASSERT (a_ip_address NOTNULL AND a_device_id NOTNULL AND a_device_os NOTNULL AND
             a_address NOTNULL AND a_password_hash NOTNULL AND a_service_code NOTNULL);
 
     -- Looking up the user.
-    SELECT pkey_id, u.public_id, is_blocked, (password_hash = a_password_hash), u.role
-    INTO _user_id, _user_public_id, is_blocked_, is_password_ok_, _role
+    SELECT pkey_id, is_blocked, (password_hash = a_password_hash), u.role
+    INTO _user_id, is_blocked_, is_password_ok_, _role
     FROM tbl.user u
     WHERE address = a_address;
 
@@ -101,7 +93,7 @@ BEGIN
     IF a_service_code = api.ADMIN_SERVICE() THEN
         UPDATE tbl.user SET admin_device_id = a_device_id WHERE pkey_id = _user_id;
     END IF;
-    RETURN QUERY SELECT _user_id, _user_public_id;
+    RETURN QUERY SELECT _user_id;
 END
         
 $$;
@@ -406,7 +398,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_auth_reset_password(a_user_id bigint, a_new_password_hash bytea, a_new_password_salt bytea, a_reset_token uuid)
+CREATE OR REPLACE FUNCTION api.fun_auth_reset_password(a_user_id bigint, a_reset_token uuid)
 RETURNS void
 LANGUAGE plpgsql
 AS $$

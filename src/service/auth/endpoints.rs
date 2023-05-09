@@ -7,7 +7,8 @@ pub fn endpoint_auth_signup() -> EndpointSchema {
         10010,
         vec![
             Field::new("address", Type::String),
-            Field::new("password", Type::String),
+            Field::new("signature_text", Type::String),
+            Field::new("signature", Type::String),
             Field::new("email", Type::String),
             Field::new("phone", Type::String),
             Field::new("agreed_tos", Type::Boolean),
@@ -15,7 +16,7 @@ pub fn endpoint_auth_signup() -> EndpointSchema {
         ],
         vec![
             Field::new("address", Type::String),
-            Field::new("user_public_id", Type::BigInt),
+            Field::new("user_id", Type::BigInt),
         ],
     )
 }
@@ -33,7 +34,7 @@ pub fn endpoint_auth_login() -> EndpointSchema {
         ],
         vec![
             Field::new("address", Type::String),
-            Field::new("user_public_id", Type::BigInt),
+            Field::new("user_id", Type::BigInt),
             Field::new("user_token", Type::UUID),
             Field::new("admin_token", Type::UUID),
         ],

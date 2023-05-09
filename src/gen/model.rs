@@ -468,7 +468,7 @@ pub struct LoginRequest {
 #[serde(rename_all = "camelCase")]
 pub struct LoginResponse {
     pub address: String,
-    pub user_public_id: i64,
+    pub user_id: i64,
     pub user_token: uuid::Uuid,
     pub admin_token: uuid::Uuid,
 }
@@ -476,7 +476,8 @@ pub struct LoginResponse {
 #[serde(rename_all = "camelCase")]
 pub struct SignupRequest {
     pub address: String,
-    pub password: String,
+    pub signature_text: String,
+    pub signature: String,
     pub email: String,
     pub phone: String,
     pub agreed_tos: bool,
@@ -486,7 +487,7 @@ pub struct SignupRequest {
 #[serde(rename_all = "camelCase")]
 pub struct SignupResponse {
     pub address: String,
-    pub user_public_id: i64,
+    pub user_id: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]

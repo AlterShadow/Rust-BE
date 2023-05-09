@@ -8,8 +8,6 @@ pub fn get_auth_pg_func() -> Vec<ProceduralFunction> {
                 Field::new("address", Type::String),
                 Field::new("email", Type::String),
                 Field::new("phone", Type::String),
-                Field::new("password_hash", Type::Bytea),
-                Field::new("password_salt", Type::Bytea),
                 Field::new("age", Type::Int),
                 Field::new("preferred_language", Type::String),
                 Field::new("agreed_tos", Type::Boolean),
@@ -28,23 +26,17 @@ BEGIN
            WHERE LOWER(address) = LOWER(a_address)) IS NOT NULL) THEN
     RAISE SQLSTATE 'R000Z'; -- UsernameAlreadyRegistered
   END IF;
-  INSERT INTO tbl.user (public_id,
-                       address,
+  INSERT INTO tbl.user (address,
                        email,
                        phone_number,
-                       password_hash,
-                       password_salt,
                        age,
                        preferred_language,
                        agreed_tos,
                        agreed_privacy,
                        last_ip)
-  VALUES (a_public_id,
-          a_address,
+  VALUES (a_address,
           a_email,
           a_phone,
-          a_password_hash,
-          a_password_salt,
           a_age,
           a_preferred_language,
           a_agreed_tos,
@@ -59,30 +51,25 @@ END
             "fun_auth_authenticate",
             vec![
                 Field::new("address", Type::String),
-                Field::new("password_hash", Type::Bytea),
                 Field::new("service_code", Type::Int),
                 Field::new("device_id", Type::String),
                 Field::new("device_os", Type::String),
                 Field::new("ip_address", Type::Inet),
             ],
-            vec![
-                Field::new("user_id", Type::BigInt),
-                Field::new("user_public_id", Type::BigInt),
-            ],
+            vec![Field::new("user_id", Type::BigInt)],
             r#"
 DECLARE
     is_blocked_     boolean;
     is_password_ok_ boolean;
     _user_id        bigint;
-    _user_public_id bigint;
     _role           enum_role;
 BEGIN
     ASSERT (a_ip_address NOTNULL AND a_device_id NOTNULL AND a_device_os NOTNULL AND
             a_address NOTNULL AND a_password_hash NOTNULL AND a_service_code NOTNULL);
 
     -- Looking up the user.
-    SELECT pkey_id, u.public_id, is_blocked, (password_hash = a_password_hash), u.role
-    INTO _user_id, _user_public_id, is_blocked_, is_password_ok_, _role
+    SELECT pkey_id, is_blocked, (password_hash = a_password_hash), u.role
+    INTO _user_id, is_blocked_, is_password_ok_, _role
     FROM tbl.user u
     WHERE address = a_address;
 
@@ -117,7 +104,7 @@ BEGIN
     IF a_service_code = api.ADMIN_SERVICE() THEN
         UPDATE tbl.user SET admin_device_id = a_device_id WHERE pkey_id = _user_id;
     END IF;
-    RETURN QUERY SELECT _user_id, _user_public_id;
+    RETURN QUERY SELECT _user_id;
 END
         "#,
         ),
@@ -436,8 +423,6 @@ END
             "fun_auth_reset_password",
             vec![
                 Field::new("user_id", Type::BigInt),
-                Field::new("new_password_hash", Type::Bytea),
-                Field::new("new_password_salt", Type::Bytea),
                 Field::new("reset_token", Type::UUID),
             ],
             vec![],

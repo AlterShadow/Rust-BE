@@ -44,7 +44,7 @@
               "ty": "String"
             },
             {
-              "name": "user_public_id",
+              "name": "user_id",
               "ty": "BigInt"
             },
             {
@@ -69,7 +69,11 @@
               "ty": "String"
             },
             {
-              "name": "password",
+              "name": "signature_text",
+              "ty": "String"
+            },
+            {
+              "name": "signature",
               "ty": "String"
             },
             {
@@ -95,7 +99,7 @@
               "ty": "String"
             },
             {
-              "name": "user_public_id",
+              "name": "user_id",
               "ty": "BigInt"
             }
           ],

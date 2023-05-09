@@ -23,8 +23,6 @@ pub struct FunAuthSignupReq {
     pub address: String,
     pub email: String,
     pub phone: String,
-    pub password_hash: Vec<u8>,
-    pub password_salt: Vec<u8>,
     pub age: i32,
     pub preferred_language: String,
     pub agreed_tos: bool,
@@ -42,7 +40,7 @@ pub struct FunAuthSignupResp {
 impl DbClient {
     #[allow(unused_variables)]
     pub async fn fun_auth_signup(&self, req: FunAuthSignupReq) -> Result<FunAuthSignupResp> {
-        let rows = self.client.query("SELECT * FROM api.fun_auth_signup(a_address => $1::varchar, a_email => $2::varchar, a_phone => $3::varchar, a_password_hash => $4::bytea, a_password_salt => $5::bytea, a_age => $6::int, a_preferred_language => $7::varchar, a_agreed_tos => $8::boolean, a_agreed_privacy => $9::boolean, a_ip_address => $10::inet);", &[&req.address, &req.email, &req.phone, &req.password_hash, &req.password_salt, &req.age, &req.preferred_language, &req.agreed_tos, &req.agreed_privacy, &req.ip_address]).await?;
+        let rows = self.client.query("SELECT * FROM api.fun_auth_signup(a_address => $1::varchar, a_email => $2::varchar, a_phone => $3::varchar, a_age => $4::int, a_preferred_language => $5::varchar, a_agreed_tos => $6::boolean, a_agreed_privacy => $7::boolean, a_ip_address => $8::inet);", &[&req.address, &req.email, &req.phone, &req.age, &req.preferred_language, &req.agreed_tos, &req.agreed_privacy, &req.ip_address]).await?;
         let mut resp = FunAuthSignupResp {
             rows: Vec::with_capacity(rows.len()),
         };
@@ -58,7 +56,6 @@ impl DbClient {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAuthAuthenticateReq {
     pub address: String,
-    pub password_hash: Vec<u8>,
     pub service_code: i32,
     pub device_id: String,
     pub device_os: String,
@@ -67,7 +64,6 @@ pub struct FunAuthAuthenticateReq {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAuthAuthenticateRespRow {
     pub user_id: i64,
-    pub user_public_id: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAuthAuthenticateResp {
@@ -79,14 +75,13 @@ impl DbClient {
         &self,
         req: FunAuthAuthenticateReq,
     ) -> Result<FunAuthAuthenticateResp> {
-        let rows = self.client.query("SELECT * FROM api.fun_auth_authenticate(a_address => $1::varchar, a_password_hash => $2::bytea, a_service_code => $3::int, a_device_id => $4::varchar, a_device_os => $5::varchar, a_ip_address => $6::inet);", &[&req.address, &req.password_hash, &req.service_code, &req.device_id, &req.device_os, &req.ip_address]).await?;
+        let rows = self.client.query("SELECT * FROM api.fun_auth_authenticate(a_address => $1::varchar, a_service_code => $2::int, a_device_id => $3::varchar, a_device_os => $4::varchar, a_ip_address => $5::inet);", &[&req.address, &req.service_code, &req.device_id, &req.device_os, &req.ip_address]).await?;
         let mut resp = FunAuthAuthenticateResp {
             rows: Vec::with_capacity(rows.len()),
         };
         for row in rows {
             let r = FunAuthAuthenticateRespRow {
                 user_id: row.try_get(0)?,
-                user_public_id: row.try_get(1)?,
             };
             resp.rows.push(r);
         }
@@ -399,8 +394,6 @@ impl DbClient {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAuthResetPasswordReq {
     pub user_id: i64,
-    pub new_password_hash: Vec<u8>,
-    pub new_password_salt: Vec<u8>,
     pub reset_token: uuid::Uuid,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -415,7 +408,7 @@ impl DbClient {
         &self,
         req: FunAuthResetPasswordReq,
     ) -> Result<FunAuthResetPasswordResp> {
-        let rows = self.client.query("SELECT * FROM api.fun_auth_reset_password(a_user_id => $1::bigint, a_new_password_hash => $2::bytea, a_new_password_salt => $3::bytea, a_reset_token => $4::uuid);", &[&req.user_id, &req.new_password_hash, &req.new_password_salt, &req.reset_token]).await?;
+        let rows = self.client.query("SELECT * FROM api.fun_auth_reset_password(a_user_id => $1::bigint, a_reset_token => $2::uuid);", &[&req.user_id, &req.reset_token]).await?;
         let mut resp = FunAuthResetPasswordResp {
             rows: Vec::with_capacity(rows.len()),
         };

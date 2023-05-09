@@ -5,12 +5,11 @@ use lib::handler::RequestHandler;
 use lib::toolbox::*;
 use lib::ws::*;
 use serde_json::Value;
-use sha2::{Digest, Sha256};
+use std::str::FromStr;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
-use tracing::{debug, info};
 use uuid::Uuid;
-use web3::signing::{keccak256, recover, RecoveryError};
+use web3::signing::{hash_message, recover, RecoveryError};
 use web3::types::Address;
 
 pub struct SignupHandler;
@@ -29,14 +28,28 @@ impl RequestHandler for SignupHandler {
         let db: DbClient = toolbox.get_db();
         let db_auth: DbClient = toolbox.get_nth_db(1);
         toolbox.spawn_response(ctx, async move {
-            let public_id = std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_nanos() as i64;
-            let salt = Uuid::new_v4();
-            let password_hash = hash_password(&req.password, salt.as_bytes())?;
-            let address = &req.address;
+            let address = Address::from_str(&req.address).map_err(|x| {
+                CustomError::new(
+                    EnumErrorCode::UnknownUser,
+                    format!("Invalid address: {}", x),
+                )
+            })?;
+            ensure!(
+                req.signature.starts_with("0x"),
+                CustomError::new(
+                    EnumErrorCode::InvalidPassword,
+                    "Signature should start with 0x"
+                )
+            );
+            let signature = hex::decode(req.signature)?;
 
+            let verified =
+                verify_message_address(req.signature_text.as_bytes(), &signature, address)?;
+
+            ensure!(
+                verified,
+                CustomError::new(EnumErrorCode::InvalidPassword, "Signature is not valid")
+            );
             let agreed_tos = req.agreed_tos;
             let agreed_privacy = req.agreed_privacy;
 
@@ -53,13 +66,11 @@ impl RequestHandler for SignupHandler {
                 ));
             }
 
-            db_auth
+            let signup = db_auth
                 .fun_auth_signup(FunAuthSignupReq {
                     address: address.to_string(),
                     email: req.email.clone(),
                     phone: req.phone.clone(),
-                    password_hash,
-                    password_salt: salt.as_bytes().to_vec(),
                     age: 0,
                     preferred_language: "".to_string(),
                     agreed_tos,
@@ -72,8 +83,6 @@ impl RequestHandler for SignupHandler {
                     address: address.to_string(),
                     email: req.email,
                     phone: req.phone,
-                    password_hash: vec![],
-                    password_salt: salt.as_bytes().to_vec(),
                     age: 0,
                     preferred_language: "".to_string(),
                     agreed_tos,
@@ -84,7 +93,7 @@ impl RequestHandler for SignupHandler {
             }
             Ok(SignupResponse {
                 address: address.to_string(),
-                user_public_id: public_id,
+                user_id: signup.rows[0].user_id,
             })
         });
     }
@@ -105,10 +114,12 @@ impl RequestHandler for LoginHandler {
     ) {
         let db_auth: DbClient = toolbox.get_nth_db(1);
         toolbox.spawn_response(ctx, async move {
-            let address = req.address;
-            let to_sign_text = req.signature_text;
-            let to_sign_text_hash = keccak256(to_sign_text.as_bytes());
-            let service_code = req.service_code;
+            let address = Address::from_str(&req.address).map_err(|x| {
+                CustomError::new(
+                    EnumErrorCode::UnknownUser,
+                    format!("Invalid address: {}", x),
+                )
+            })?;
             ensure!(
                 req.signature.starts_with("0x"),
                 CustomError::new(
@@ -118,19 +129,18 @@ impl RequestHandler for LoginHandler {
             );
             let signature = hex::decode(req.signature)?;
 
-            let recovered = recover(&to_sign_text_hash, &signature, 27)?;
-            debug!(
-                "Login address: {}, to sign text {}, signature address: {}",
-                address, to_sign_text, recovered
-            );
+            let verified =
+                verify_message_address(req.signature_text.as_bytes(), &signature, address)?;
+
             ensure!(
-                format!("{:?}", recovered) == address,
+                verified,
                 CustomError::new(EnumErrorCode::InvalidPassword, "Signature is not valid")
             );
+            let service_code = req.service_code;
+
             let data = db_auth
                 .fun_auth_authenticate(FunAuthAuthenticateReq {
-                    address: address.clone(),
-                    password_hash: vec![],
+                    address: address.to_string(),
                     service_code: service_code as _,
                     device_id: req.device_id,
                     device_os: req.device_os,
@@ -152,19 +162,13 @@ impl RequestHandler for LoginHandler {
                 })
                 .await?;
             Ok(LoginResponse {
-                address: address.clone(),
-                user_public_id: row.user_public_id,
+                address: address.to_string(),
+                user_id: row.user_id,
                 user_token,
                 admin_token,
             })
         })
     }
-}
-pub fn hash_password(password: &str, salt: impl AsRef<[u8]>) -> Result<Vec<u8>> {
-    let mut hasher = Sha256::new();
-    hasher.update(password.as_bytes());
-    hasher.update(salt.as_ref());
-    Ok(hasher.finalize().to_vec())
 }
 
 pub struct AuthorizeHandler {
@@ -217,13 +221,7 @@ impl RequestHandler for AuthorizeHandler {
         })
     }
 }
-pub fn hash_eth_message(message: &[u8]) -> [u8; 32] {
-    let mut data = vec![];
-    data.extend(b"\x19Ethereum Signed Message:\n");
-    data.extend(format!("{}", message.len()).as_bytes());
-    data.extend(message);
-    keccak256(&data)
-}
+
 fn verify_message_address(
     message: &[u8],
     signature: &[u8],
@@ -236,14 +234,14 @@ fn verify_message_address(
         // only supports 27/28 recovery id for ethereum
         return Err(RecoveryError::InvalidSignature);
     }
-    let message_hash = hash_eth_message(message);
+    let message_hash = hash_message(message);
     let recovery_id = signature[64] as i32 - 27;
-    info!("Recovery id: {}", recovery_id);
-    let addr = recover(&message_hash, &signature[..64], recovery_id)?;
-    info!(
-        "Expected address: {:?}, Recovered address: {:?}",
-        expected_address, addr
-    );
+    // info!("Recovery id: {}", recovery_id);
+    let addr = recover(&message_hash.0, &signature[..64], recovery_id)?;
+    // info!(
+    //     "Expected address: {:?}, Recovered address: {:?}",
+    //     expected_address, addr
+    // );
     return Ok(addr == expected_address);
 }
 #[cfg(test)]
