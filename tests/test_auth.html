@@ -31,16 +31,13 @@
         return walletAddress;
     }
 
-    function hexEncode(s) {
-        var hex, i;
-
-        var result = "";
-        for (i = 0; i < s.length; i++) {
-            hex = s.charCodeAt(i).toString(16);
-            result += ("000" + hex).slice(-4);
-        }
-
-        return result
+    function stringToHex(str) {
+      let hex = [];
+      for (let i = 0; i < str.length; i++) {
+        let charCode = str.charCodeAt(i).toString(16);
+        hex.push(charCode.padStart(2, "0"));
+      }
+      return hex.join("");
     }
 
     // Sign the data
@@ -59,7 +56,7 @@
             console.log('Signature: ', signature);
             // Display the message and signature in hex
             const msg = document.getElementById('message');
-            msg.innerText = 'Message: ' + hexEncode(message);
+            msg.innerText = 'Message: ' + stringToHex(message);
             const sig = document.getElementById('signature');
             sig.innerText = 'Signature: ' + signature;
             const recoveredAddress = document.getElementById('recoveredAddress');
