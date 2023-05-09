@@ -1,3 +1,4 @@
+use chrono::Utc;
 use eyre::*;
 use gen::database::*;
 use gen::model::*;
@@ -8,7 +9,9 @@ use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
+use tracing::debug;
 use uuid::Uuid;
+use web3::signing::recover;
 
 pub struct SignupHandler;
 
@@ -32,7 +35,7 @@ impl RequestHandler for SignupHandler {
                 .as_nanos() as i64;
             let salt = Uuid::new_v4();
             let password_hash = hash_password(&req.password, salt.as_bytes())?;
-            let username = req.username.trim().to_ascii_lowercase();
+            let username = &req.username;
 
             let agreed_tos = req.agreed_tos;
             let agreed_privacy = req.agreed_privacy;
@@ -80,7 +83,6 @@ impl RequestHandler for SignupHandler {
                     ip_address: conn.address.ip(),
                 })
                 .await?;
-                
             }
             Ok(SignupResponse {
                 username: username.to_string(),
@@ -90,6 +92,9 @@ impl RequestHandler for SignupHandler {
     }
 }
 
+fn encode_to_sign_text(address: &str) -> String {
+    format!("{}-{}", address, Utc::now().date_naive())
+}
 pub struct LoginHandler;
 
 impl RequestHandler for LoginHandler {
@@ -105,33 +110,21 @@ impl RequestHandler for LoginHandler {
     ) {
         let db_auth: DbClient = toolbox.get_nth_db(1);
         toolbox.spawn_response(ctx, async move {
-            let username = req.username.trim().to_ascii_lowercase();
+            let address = req.username;
+            let to_sign_text = encode_to_sign_text(&address);
             let service_code = req.service_code;
-            let password = req.password;
-            let data = db_auth
-                .fun_auth_get_password_salt(FunAuthGetPasswordSaltReq {
-                    username: username.clone(),
-                })
-                .await?;
-            let salt = data
-                .rows
-                .into_iter()
-                .next()
-                .with_context(|| {
-                    CustomError::new(EnumErrorCode::UserNoValidSalt, "No salt found for user")
-                })?
-                .salt
-                .clone();
+            let password = &req.password;
+            // password should be signature of username and current date
+            let recovered = recover(to_sign_text.as_bytes(), password.as_bytes(), 27)?;
+            debug!(
+                "Login address: {}, to sign text {}, signature address: {}",
+                address, to_sign_text, recovered
+            );
 
-            let mut hasher = Sha256::new();
-
-            hasher.update(password.as_bytes());
-            hasher.update(salt.as_slice());
-            let password_hash = hasher.finalize().to_vec();
             let data = db_auth
                 .fun_auth_authenticate(FunAuthAuthenticateReq {
-                    username: username.clone(),
-                    password_hash,
+                    username: address.clone(),
+                    password_hash: password.clone().into_bytes(),
                     service_code: service_code as _,
                     device_id: req.device_id,
                     device_os: req.device_os,
@@ -153,7 +146,7 @@ impl RequestHandler for LoginHandler {
                 })
                 .await?;
             Ok(LoginResponse {
-                username: username.clone(),
+                username: address.clone(),
                 user_public_id: row.user_public_id,
                 user_token,
                 admin_token,

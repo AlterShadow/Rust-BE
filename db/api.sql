@@ -552,46 +552,6 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_list_buckets_by_user(a_user_id bigint)
-RETURNS table (
-    "bucket_id" bigint,
-    "bucket_name" varchar,
-    "description" varchar,
-    "organization_id" bigint,
-    "always_online" boolean
-)
-LANGUAGE plpgsql
-AS $$
-    
-BEGIN
-    RETURN QUERY SELECT a.pkey_id, a.name, a.description, a.fkey_organization, a.always_online
-                 FROM tbl.bucket AS a
-                          INNER JOIN tbl.organization_membership AS b ON a.fkey_organization = b.fkey_organization
-                 WHERE b.fkey_user = a_user_id;
-END
-        
-$$;
-        
-
-CREATE OR REPLACE FUNCTION api.fun_user_list_buckets_by_organization(a_organization_id bigint)
-RETURNS table (
-    "bucket_id" bigint,
-    "bucket_name" varchar,
-    "description" varchar,
-    "organization_id" bigint,
-    "always_online" boolean
-)
-LANGUAGE plpgsql
-AS $$
-    
-BEGIN
-    RETURN QUERY SELECT a.pkey_id, a.name, a.description, a.fkey_organization, a.always_online
-                 FROM tbl.bucket AS a WHERE a.fkey_organization = a_organization_id;
-END
-        
-$$;
-        
-
 CREATE OR REPLACE FUNCTION api.fun_user_get_organization_membership(a_user_id bigint, a_organization_id bigint)
 RETURNS table (
     "role" enum_role
