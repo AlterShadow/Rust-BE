@@ -17,7 +17,7 @@ Type=simple
 Restart=always
 RestartSec=1
 WorkingDirectory=/home/{user}/{app_name}
-ExecStart=/home/{user}/{app_name}/target/release/{service_name} --host={host} --port={port} --config=etc/config.json'
+ExecStart=/home/{user}/{app_name}/target/release/{service_name} --host={host} --port={port} --config=etc/config.json
 
 StandardError=append:/home/{user}/{app_name}/log/{app_name}_{service_name}.log
 StandardOutput=append:/home/{user}/{app_name}/log/{app_name}_{service_name}.log

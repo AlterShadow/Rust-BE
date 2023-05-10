@@ -455,7 +455,7 @@ pub fn main() -> Result<()> {
     gen_systemd_services(
         root,
         "mc2fi",
-        "mc2",
+        "mc2fi",
         HashMap::from([
             ("auth".to_owned(), "auth.mc2.fi".to_owned()),
             ("user".to_owned(), "user.mc2.fi".to_owned()),

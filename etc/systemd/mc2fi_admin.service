@@ -4,15 +4,15 @@ After=network.target
 StartLimitIntervalSec=0
 
 [Service]
-User=mc2
+User=mc2fi
 Type=simple
 Restart=always
 RestartSec=1
-WorkingDirectory=/home/mc2/mc2fi
-ExecStart=/home/mc2/mc2fi/target/release/admin --host=admin.mc2.fi --port=443 --config=etc/config.json'
+WorkingDirectory=/home/mc2fi/mc2fi
+ExecStart=/home/mc2fi/mc2fi/target/release/admin --host=admin.mc2.fi --port=443 --config=etc/config.json
 
-StandardError=append:/home/mc2/mc2fi/log/mc2fi_admin.log
-StandardOutput=append:/home/mc2/mc2fi/log/mc2fi_admin.log
+StandardError=append:/home/mc2fi/mc2fi/log/mc2fi_admin.log
+StandardOutput=append:/home/mc2fi/mc2fi/log/mc2fi_admin.log
 StandardInput=null
 AmbientCapabilities=CAP_NET_BIND_SERVICE
 

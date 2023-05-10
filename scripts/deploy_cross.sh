@@ -9,8 +9,9 @@ then
     exit $COMPILE
 fi
 set -e
+ssh mc2fi 'mkdir -p mc2fi/target/release/ mc2fi/log'
 (cd target/x86_64-unknown-linux-gnu/release/ && rsync -avizh auth user admin mc2fi:mc2fi/target/release/ )
-ssh root@mc2fi 'bash -s' < restart_services.sh
+ssh root@mc2fi 'bash -s' < scripts/restart_services.sh
 
-./upload_docs.sh
+scripts/upload_docs.sh
 
