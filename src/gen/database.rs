@@ -191,103 +191,6 @@ impl DbClient {
     }
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunAuthChangePasswordReq {
-    pub address: String,
-    pub old_password_hash: Vec<u8>,
-    pub new_password_hash: Vec<u8>,
-    pub device_id: String,
-    pub device_os: String,
-    pub ip_address: std::net::IpAddr,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunAuthChangePasswordRespRow {}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunAuthChangePasswordResp {
-    pub rows: Vec<FunAuthChangePasswordRespRow>,
-}
-impl DbClient {
-    #[allow(unused_variables)]
-    pub async fn fun_auth_change_password(
-        &self,
-        req: FunAuthChangePasswordReq,
-    ) -> Result<FunAuthChangePasswordResp> {
-        let rows = self.client.query("SELECT * FROM api.fun_auth_change_password(a_address => $1::varchar, a_old_password_hash => $2::bytea, a_new_password_hash => $3::bytea, a_device_id => $4::varchar, a_device_os => $5::varchar, a_ip_address => $6::inet);", &[&req.address, &req.old_password_hash, &req.new_password_hash, &req.device_id, &req.device_os, &req.ip_address]).await?;
-        let mut resp = FunAuthChangePasswordResp {
-            rows: Vec::with_capacity(rows.len()),
-        };
-        for row in rows {
-            let r = FunAuthChangePasswordRespRow {};
-            resp.rows.push(r);
-        }
-        Ok(resp)
-    }
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunGetRecoveryQuestionDataReq {}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunGetRecoveryQuestionDataRespRow {
-    pub question_id: i32,
-    pub content: String,
-    pub category: EnumRecoveryQuestionCategory,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunGetRecoveryQuestionDataResp {
-    pub rows: Vec<FunGetRecoveryQuestionDataRespRow>,
-}
-impl DbClient {
-    #[allow(unused_variables)]
-    pub async fn fun_get_recovery_question_data(
-        &self,
-        req: FunGetRecoveryQuestionDataReq,
-    ) -> Result<FunGetRecoveryQuestionDataResp> {
-        let rows = self
-            .client
-            .query("SELECT * FROM api.fun_get_recovery_question_data();", &[])
-            .await?;
-        let mut resp = FunGetRecoveryQuestionDataResp {
-            rows: Vec::with_capacity(rows.len()),
-        };
-        for row in rows {
-            let r = FunGetRecoveryQuestionDataRespRow {
-                question_id: row.try_get(0)?,
-                content: row.try_get(1)?,
-                category: row.try_get(2)?,
-            };
-            resp.rows.push(r);
-        }
-        Ok(resp)
-    }
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunAuthSetRecoveryQuestionsReq {
-    pub user_id: i64,
-    pub question_ids: Vec<i32>,
-    pub answers: Vec<i32>,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunAuthSetRecoveryQuestionsRespRow {}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunAuthSetRecoveryQuestionsResp {
-    pub rows: Vec<FunAuthSetRecoveryQuestionsRespRow>,
-}
-impl DbClient {
-    #[allow(unused_variables)]
-    pub async fn fun_auth_set_recovery_questions(
-        &self,
-        req: FunAuthSetRecoveryQuestionsReq,
-    ) -> Result<FunAuthSetRecoveryQuestionsResp> {
-        let rows = self.client.query("SELECT * FROM api.fun_auth_set_recovery_questions(a_user_id => $1::bigint, a_question_ids => $2::int[], a_answers => $3::int[]);", &[&req.user_id, &req.question_ids, &req.answers]).await?;
-        let mut resp = FunAuthSetRecoveryQuestionsResp {
-            rows: Vec::with_capacity(rows.len()),
-        };
-        for row in rows {
-            let r = FunAuthSetRecoveryQuestionsRespRow {};
-            resp.rows.push(r);
-        }
-        Ok(resp)
-    }
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAuthBasicAuthenticateReq {
     pub address: String,
     pub device_id: String,
@@ -386,34 +289,6 @@ impl DbClient {
         };
         for row in rows {
             let r = FunSubmitRecoveryAnswersRespRow {};
-            resp.rows.push(r);
-        }
-        Ok(resp)
-    }
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunAuthResetPasswordReq {
-    pub user_id: i64,
-    pub reset_token: uuid::Uuid,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunAuthResetPasswordRespRow {}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunAuthResetPasswordResp {
-    pub rows: Vec<FunAuthResetPasswordRespRow>,
-}
-impl DbClient {
-    #[allow(unused_variables)]
-    pub async fn fun_auth_reset_password(
-        &self,
-        req: FunAuthResetPasswordReq,
-    ) -> Result<FunAuthResetPasswordResp> {
-        let rows = self.client.query("SELECT * FROM api.fun_auth_reset_password(a_user_id => $1::bigint, a_reset_token => $2::uuid);", &[&req.user_id, &req.reset_token]).await?;
-        let mut resp = FunAuthResetPasswordResp {
-            rows: Vec::with_capacity(rows.len()),
-        };
-        for row in rows {
-            let r = FunAuthResetPasswordRespRow {};
             resp.rows.push(r);
         }
         Ok(resp)

@@ -32,11 +32,7 @@ pub async fn get_ws_user_client(req: &AuthorizeRequest) -> Result<UserClient> {
 }
 
 pub fn drop_and_recreate_database() -> Result<()> {
-    let working_dir = Path::new("scripts").canonicalize()?;
-    let script = working_dir.join("drop_and_recreate_database.sh");
-    Command::new("bash")
-        .arg(script)
-        .current_dir(working_dir)
-        .status()?;
+    let script = Path::new("scripts/drop_and_recreate_database.sh");
+    Command::new("bash").arg(script).status()?;
     Ok(())
 }

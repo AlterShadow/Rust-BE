@@ -49,23 +49,22 @@ AS $$
     
 DECLARE
     is_blocked_     boolean;
-    is_password_ok_ boolean;
     _user_id        bigint;
     _role           enum_role;
 BEGIN
     ASSERT (a_ip_address NOTNULL AND a_device_id NOTNULL AND a_device_os NOTNULL AND
-            a_address NOTNULL AND a_password_hash NOTNULL AND a_service_code NOTNULL);
+            a_address NOTNULL AND a_service_code NOTNULL);
 
     -- Looking up the user.
-    SELECT pkey_id, is_blocked, (password_hash = a_password_hash), u.role
-    INTO _user_id, is_blocked_, is_password_ok_, _role
+    SELECT pkey_id, is_blocked, u.role
+    INTO _user_id, is_blocked_, _role
     FROM tbl.user u
     WHERE address = a_address;
 
-    -- Log the login attempt.
-    INSERT INTO tbl.login_attempt(fkey_user, address, password_hash, ip_address,
-                                  is_password_ok)
-    VALUES (_user_id, a_address, a_password_hash, a_ip_address, is_password_ok_);
+    -- Log the login attempt. 
+    INSERT INTO tbl.login_attempt(fkey_user, address, ip_address, is_password_ok)
+    VALUES (_user_id, a_address, a_ip_address, TRUE);
+    -- TODO: is_password_ok should be passed from the backend.
     -- COMMIT;
     -- Checking the block status and password, and updating the login info if ok.
     IF (_user_id ISNULL) THEN
@@ -73,8 +72,6 @@ BEGIN
     END IF;
     IF (is_blocked_) THEN
         RAISE SQLSTATE 'R0008'; -- BlockedUser
-    ELSIF (NOT is_password_ok_) THEN
-        RAISE SQLSTATE 'R0009';
     ELSEIF (_role NOT IN ('admin', 'developer') AND
             a_service_code = (SELECT code FROM api.ADMIN_SERVICE())) OR
            (_role NOT IN ('user', 'admin', 'developer') AND
@@ -231,89 +228,6 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_auth_change_password(a_address varchar, a_old_password_hash bytea, a_new_password_hash bytea, a_device_id varchar, a_device_os varchar, a_ip_address inet)
-RETURNS void
-LANGUAGE plpgsql
-AS $$
-    
-DECLARE
-  is_blocked_     boolean;
-  is_password_ok_ boolean;
-  user_id_        bigint;
-BEGIN
-  ASSERT (a_ip_address NOTNULL AND a_device_id NOTNULL AND a_device_os NOTNULL AND
-          a_address NOTNULL AND a_old_password_hash NOTNULL AND
-          a_new_password_hash NOTNULL);
-  -- Looking up the user.
-  SELECT pkey_id, is_blocked, (password_hash = a_old_password_hash)
-  INTO user_id_, is_blocked_, is_password_ok_
-  FROM tbl.user u
-  WHERE address = a_address;
-
-  -- Log the login attempt.
-  INSERT INTO tbl.login_attempt(fkey_user, address, password_hash, ip_address,
-                                device_id, device_os, is_password_ok)
-  VALUES (user_id_, a_address, a_old_password_hash, a_ip_address, a_device_id,
-          a_device_os, is_password_ok_);
-  -- COMMIT;
-  -- Checking the block status and password, and updating the login info if ok.
-  IF (user_id_ NOTNULL) THEN
-    IF (is_blocked_) THEN
-      RAISE SQLSTATE 'R0008'; -- BlockedUser
-    ELSIF (NOT is_password_ok_) THEN
-      RAISE SQLSTATE 'R0009'; -- InvalidPassword
-    END IF;
-    ASSERT (a_old_password_hash <> a_new_password_hash);
-
-    UPDATE tbl.user
-    SET password_hash = a_new_password_hash
-    WHERE address = a_address;
-  ELSE
-      RAISE SQLSTATE 'R0007'; -- UnknownUser
-  END IF;
-END
-            
-$$;
-        
-
-CREATE OR REPLACE FUNCTION api.fun_get_recovery_question_data()
-RETURNS table (
-    "question_id" int,
-    "content" varchar,
-    "category" enum_recovery_question_category
-)
-LANGUAGE plpgsql
-AS $$
-    
-BEGIN
-  RETURN QUERY SELECT q.pkey_id,
-                      q.content,
-                      q.category
-               FROM tbl.recovery_question_data q;
-END
-            
-$$;
-        
-
-CREATE OR REPLACE FUNCTION api.fun_auth_set_recovery_questions(a_user_id bigint, a_question_ids int[], a_answers int[])
-RETURNS void
-LANGUAGE plpgsql
-AS $$
-    
-DECLARE
-  rc_ integer;
-BEGIN
-  ASSERT (a_user_id NOTNULL AND a_question_ids NOTNULL AND a_answers NOTNULL);
-  DELETE FROM tbl.recovery_question WHERE fkey_user = a_user_id;
-  INSERT INTO tbl.recovery_question(fkey_user, fkey_question, answer)
-  VALUES (a_user_id, UNNEST(a_question_ids), UNNEST(a_answers));
-  GET DIAGNOSTICS rc_ := ROW_COUNT;
-  ASSERT (rc_ > 0);
-END
-            
-$$;
-        
-
 CREATE OR REPLACE FUNCTION api.fun_auth_basic_authenticate(a_address varchar, a_device_id varchar, a_device_os varchar, a_ip_address inet)
 RETURNS table (
     "user_id" inet
@@ -329,11 +243,11 @@ BEGIN
           a_ip_address NOTNULL);
   SELECT pkey_id, is_blocked
   INTO user_id_, is_blocked_
-  FROM tbl.user
+  FROM tbl.userd
   WHERE address = LOWER(a_address);
-  INSERT INTO tbl.login_attempt(fkey_user, address, password_hash, ip_address,
+  INSERT INTO tbl.login_attempt(fkey_user, address, ip_address,
                                 device_id, device_os)
-  VALUES (user_id_, a_address, '', a_ip_address, a_device_id, a_device_os);
+  VALUES (user_id_, a_address,  a_ip_address, a_device_id, a_device_os);
   -- COMMIT;
   IF (user_id_ ISNULL) THEN
     RAISE SQLSTATE 'R0007'; -- UnknownUser
@@ -393,32 +307,6 @@ BEGIN
   SET password_reset_token = a_password_reset_token,
       reset_token_valid    = a_token_valid
   WHERE pkey_id = a_user_id;
-END
-            
-$$;
-        
-
-CREATE OR REPLACE FUNCTION api.fun_auth_reset_password(a_user_id bigint, a_reset_token uuid)
-RETURNS void
-LANGUAGE plpgsql
-AS $$
-    
-DECLARE
-  rc_ integer;
-BEGIN
-  ASSERT (a_user_id NOTNULL AND a_new_password_hash NOTNULL AND a_reset_token NOTNULL);
-  UPDATE tbl.user
-  SET password_hash        = a_new_password_hash,
-      password_salt        = a_new_password_salt,
-      password_reset_token = NULL,
-      reset_token_valid    = NULL
-  WHERE pkey_id = a_user_id
-    AND password_reset_token = a_reset_token
-    AND reset_token_valid > EXTRACT(EPOCH FROM NOW())::bigint;
-  GET DIAGNOSTICS rc_ := ROW_COUNT;
-  IF (rc_ <> 1) THEN
-    RAISE SQLSTATE 'R0012'; -- InvalidRecoveryToken
-  END IF;
 END
             
 $$;

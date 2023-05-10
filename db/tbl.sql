@@ -34,7 +34,6 @@ CREATE TABLE tbl.login_attempt (
     pkey_id bigint  NOT NULL DEFAULT nextval( 'tbl.seq_login_attempt_id' ),
     fkey_user bigint  NULL,
     address varchar(20)  NOT NULL,
-    password_hash bytea  NOT NULL,
     ip_address inet  NOT NULL,
     device_id varchar(256)  NULL,
     device_os varchar(64)  NULL,

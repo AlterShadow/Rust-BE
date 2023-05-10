@@ -34,17 +34,11 @@ impl RequestHandler for SignupHandler {
                     format!("Invalid address: {}", x),
                 )
             })?;
-            ensure!(
-                req.signature.starts_with("0x"),
-                CustomError::new(
-                    EnumErrorCode::InvalidPassword,
-                    "Signature should start with 0x"
-                )
-            );
-            let signature = hex::decode(req.signature)?;
 
-            let verified =
-                verify_message_address(req.signature_text.as_bytes(), &signature, address)?;
+            let signature_text = hex_decode(req.signature_text.as_bytes())?;
+            let signature = hex_decode(req.signature.as_bytes())?;
+
+            let verified = verify_message_address(&signature_text, &signature, address)?;
 
             ensure!(
                 verified,
@@ -92,13 +86,20 @@ impl RequestHandler for SignupHandler {
                 .await?;
             }
             Ok(SignupResponse {
-                address: address.to_string(),
+                address: format!("{:?}", address),
                 user_id: signup.rows[0].user_id,
             })
         });
     }
 }
 
+fn hex_decode(s: &[u8]) -> Result<Vec<u8>> {
+    if s.starts_with(b"0x") {
+        Ok(hex::decode(&s[2..])?)
+    } else {
+        Ok(hex::decode(s)?)
+    }
+}
 pub struct LoginHandler;
 
 impl RequestHandler for LoginHandler {
@@ -120,17 +121,12 @@ impl RequestHandler for LoginHandler {
                     format!("Invalid address: {}", x),
                 )
             })?;
-            ensure!(
-                req.signature.starts_with("0x"),
-                CustomError::new(
-                    EnumErrorCode::InvalidPassword,
-                    "Signature should start with 0x"
-                )
-            );
-            let signature = hex::decode(req.signature)?;
 
-            let verified =
-                verify_message_address(req.signature_text.as_bytes(), &signature, address)?;
+            let signature_text = hex_decode(req.signature_text.as_bytes())?;
+
+            let signature = hex_decode(req.signature.as_bytes())?;
+
+            let verified = verify_message_address(&signature_text, &signature, address)?;
 
             ensure!(
                 verified,
@@ -162,7 +158,7 @@ impl RequestHandler for LoginHandler {
                 })
                 .await?;
             Ok(LoginResponse {
-                address: address.to_string(),
+                address: format!("{:?}", address),
                 user_id: row.user_id,
                 user_token,
                 admin_token,

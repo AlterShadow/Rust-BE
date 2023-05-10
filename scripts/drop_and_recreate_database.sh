@@ -14,7 +14,7 @@ pg_exec2() {
     PGDATABASE=$DATABASE psql $@
 }
 # this is special, it will use mc2fi as user with -c option
-echo "DROP DATABASE mc2fi WITH (FORCE); CREATE DATABASE mc2fi;" | pg_exec
+echo "DROP DATABASE IF EXISTS mc2fi WITH (FORCE); CREATE DATABASE mc2fi;" | pg_exec
 
 pg_exec2 -f db/model.sql
 # run twice because of wrong dependencies
