@@ -84,14 +84,14 @@ impl Tx {
     }
 
     pub fn get_value(&self) -> Option<u128> {
-        match self.transaction.clone() {
+        match &self.transaction {
             Some(tx) => Some(tx.value.as_u128()),
             None => None,
         }
     }
 
     pub fn get_input_data(&self) -> Option<Vec<u8>> {
-        match self.transaction.clone() {
+        match &self.transaction {
             Some(tx) => Some(tx.input.0.to_vec()),
             None => None,
         }
@@ -102,14 +102,14 @@ impl Tx {
     }
 
 		pub fn get_to(&self) -> Option<H160> {
-				match self.transaction.clone() {
+				match &self.transaction {
 						Some(tx) => tx.to,
 						None => None,
 				}
 		}
 
 		pub fn get_from(&self) -> Option<H160> {
-				match self.transaction.clone() {
+				match &self.transaction {
 						Some(tx) => tx.from,
 						None => None,
 				}
