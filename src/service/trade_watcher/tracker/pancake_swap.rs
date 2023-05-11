@@ -3,6 +3,11 @@ use std::io::Cursor;
 use ethabi::{Contract, Token};
 use web3::types::{H160, H256, U256};
 
+<<<<<<< HEAD
+=======
+use super::trade::{Chain, Dex, DexVersion, Trade};
+
+>>>>>>> adb8e19 ([feat] print pancakeswap v3 swaps)
 use super::super::rpc_provider::connection::Conn;
 use super::calldata::{CallParameter, ContractCall};
 use super::trading_pair::{Chain, Dex, DexVersion, Swap};
@@ -53,7 +58,7 @@ impl PancakeSwap {
         }
     }
 
-    pub fn get_swap(&self, tx: Tx) -> Option<Swap> {
+    pub fn get_trade(&self, tx: Tx) -> Option<Trade> {
         match tx.get_status() {
             TxStatus::Successful => (),
             /* TODO: handle pending transaction */
@@ -85,10 +90,14 @@ impl PancakeSwap {
                         return self.swap_tokens_for_exact_tokens(&tx, &call)
                     }
                     /* V3 */
-                    PancakeSwapMethod::ExactInputSingle => return None,
-                    PancakeSwapMethod::ExactOutputSingle => return None,
-                    PancakeSwapMethod::ExactInput => return None,
-                    PancakeSwapMethod::ExactOutput => return None,
+                    PancakeSwapMethod::ExactInputSingle => {
+                        return self.exact_input_single(&tx, &call)
+                    }
+                    PancakeSwapMethod::ExactOutputSingle => {
+                        return self.exact_output_single(&tx, &call)
+                    }
+                    PancakeSwapMethod::ExactInput => return self.exact_input(&tx, &call),
+                    PancakeSwapMethod::ExactOutput => return self.exact_output(&tx, &call),
                 }
             }
         }
@@ -132,7 +141,379 @@ impl PancakeSwap {
         Some(actual_function_calls)
     }
 
-    fn swap_exact_tokens_for_tokens(&self, tx: &Tx, call: &ContractCall) -> Option<Swap> {
+    fn exact_input_single(&self, tx: &Tx, call: &ContractCall) -> Option<Trade> {
+        /*
+                function exactInputSingle(
+                        ExactInputSingleParams memory params
+                ) external payable override nonReentrant returns (uint256 amountOut)
+
+                                struct ExactInputSingleParams {
+                                        address tokenIn;
+                                        address tokenOut;
+                                        uint24 fee;
+                                        address recipient;
+                                        uint256 amountIn;
+                                        uint256 amountOutMinimum;
+                                        uint160 sqrtPriceLimitX96;
+                                }
+        */
+
+        let params = match call.get_param("params") {
+            Some(param) => match param.get_value() {
+                Token::Tuple(value) => value,
+                _ => return None,
+            },
+            None => return None,
+        };
+
+        let token_in = match params[0] {
+            Token::Address(param) => convert_h160_ethabi_to_web3(param),
+            _ => return None,
+        };
+
+        let token_out = match params[1] {
+            Token::Address(param) => convert_h160_ethabi_to_web3(param),
+            _ => return None,
+        };
+
+        let fee = match params[2] {
+            Token::Uint(param) => convert_u256_ethabi_to_web3(param),
+            _ => return None,
+        };
+
+        let recipient = match params[3] {
+            Token::Address(param) => convert_h160_ethabi_to_web3(param),
+            _ => return None,
+        };
+
+        let amount_in = match params[4] {
+            Token::Uint(param) => convert_u256_ethabi_to_web3(param),
+            _ => return None,
+        };
+
+        let amount_out_minimum = match params[5] {
+            Token::Uint(param) => convert_u256_ethabi_to_web3(param),
+            _ => return None,
+        };
+
+        let amount_out = match tx.amount_of_token_received(
+            token_out,
+            recipient,
+            self.transfer_event_signature,
+        ) {
+            Some(amount) => amount,
+            None => return None,
+        };
+
+        let caller = match tx.get_from() {
+            Some(caller) => caller,
+            None => return None,
+        };
+
+        let contract = match tx.get_to() {
+            Some(contract) => contract,
+            None => return None,
+        };
+
+        Some(Trade::new(
+            Chain::Ethereum,
+            contract,
+            Dex::PancakeSwap,
+            DexVersion::V3,
+            token_in,
+            token_out,
+            None,
+            caller,
+            recipient,
+            amount_in,
+            amount_out,
+        ))
+    }
+
+    fn exact_output_single(&self, tx: &Tx, call: &ContractCall) -> Option<Trade> {
+        /*
+                function exactOutputSingle(
+                        ExactOutputSingleParams calldata params
+                ) external payable override nonReentrant returns (uint256 amountIn)
+
+                                struct ExactOutputSingleParams {
+                                        address tokenIn;
+                                        address tokenOut;
+                                        uint24 fee;
+                                        address recipient;
+                                        uint256 amountOut;
+                                        uint256 amountInMaximum;
+                                        uint160 sqrtPriceLimitX96;
+                                }
+        */
+
+        let params = match call.get_param("params") {
+            Some(param) => match param.get_value() {
+                Token::Tuple(value) => value,
+                _ => return None,
+            },
+            None => return None,
+        };
+
+        let token_in = match params[0] {
+            Token::Address(param) => convert_h160_ethabi_to_web3(param),
+            _ => return None,
+        };
+
+        let token_out = match params[1] {
+            Token::Address(param) => convert_h160_ethabi_to_web3(param),
+            _ => return None,
+        };
+
+        let fee = match params[2] {
+            Token::Uint(param) => convert_u256_ethabi_to_web3(param),
+            _ => return None,
+        };
+
+        let recipient = match params[3] {
+            Token::Address(param) => convert_h160_ethabi_to_web3(param),
+            _ => return None,
+        };
+
+        let amount_out = match params[4] {
+            Token::Uint(param) => convert_u256_ethabi_to_web3(param),
+            _ => return None,
+        };
+
+        let amount_in_maximum = match params[5] {
+            Token::Uint(param) => convert_u256_ethabi_to_web3(param),
+            _ => return None,
+        };
+
+        let amount_in =
+            match tx.amount_of_token_sent(token_in, recipient, self.transfer_event_signature) {
+                Some(amount) => amount,
+                None => return None,
+            };
+
+        let caller = match tx.get_from() {
+            Some(caller) => caller,
+            None => return None,
+        };
+
+        let contract = match tx.get_to() {
+            Some(contract) => contract,
+            None => return None,
+        };
+
+        Some(Trade::new(
+            Chain::Ethereum,
+            contract,
+            Dex::PancakeSwap,
+            DexVersion::V3,
+            token_in,
+            token_out,
+            None,
+            caller,
+            recipient,
+            amount_in,
+            amount_out,
+        ))
+    }
+
+    fn exact_input(&self, tx: &Tx, call: &ContractCall) -> Option<Trade> {
+        /*
+                function exactInput(
+                        ExactInputParams memory params
+                ) external payable nonReentrant override returns (uint256 amountOut)
+
+                                struct ExactInputParams {
+                                        bytes path;
+                                        address recipient;
+                                        uint256 amountIn;
+                                        uint256 amountOutMinimum;
+                                }
+        */
+
+        let params = match call.get_param("params") {
+            Some(param) => match param.get_value() {
+                Token::Tuple(value) => value,
+                _ => return None,
+            },
+            None => return None,
+        };
+
+        let path = match &params[0] {
+            Token::Bytes(bytes) => bytes,
+            _ => return None,
+        };
+
+        if path.len() < 43 {
+            /* 20 bytes for address, 3 bytes for uint24, 20 bytes for address */
+            return None;
+        }
+
+        let token_in: H160 = H160::from_slice(&path[0..20]);
+        let fee_bytes: [u8; 3] = match path[20..23].try_into() {
+            Ok(bytes) => bytes,
+            Err(e) => {
+                println!(
+                    "Error parsing 'path' from PancakeSwap exactInput call: {}",
+                    e
+                );
+                return None;
+            }
+        };
+        let fee = U256::from(u32::from_be_bytes([
+            0,
+            fee_bytes[0],
+            fee_bytes[1],
+            fee_bytes[2],
+        ]));
+        let token_out: H160 = H160::from_slice(&path[23..43]);
+
+        let recipient = match &params[1] {
+            Token::Address(param) => convert_h160_ethabi_to_web3(*param),
+            _ => return None,
+        };
+
+        let amount_in = match &params[2] {
+            Token::Uint(param) => convert_u256_ethabi_to_web3(*param),
+            _ => return None,
+        };
+
+        let amount_out_minimum = match &params[3] {
+            Token::Uint(param) => convert_u256_ethabi_to_web3(*param),
+            _ => return None,
+        };
+
+        let amount_out = match tx.amount_of_token_received(
+            token_out,
+            recipient,
+            self.transfer_event_signature,
+        ) {
+            Some(amount) => amount,
+            None => return None,
+        };
+
+        let caller = match tx.get_from() {
+            Some(caller) => caller,
+            None => return None,
+        };
+
+        let contract = match tx.get_to() {
+            Some(contract) => contract,
+            None => return None,
+        };
+
+        Some(Trade::new(
+            Chain::Ethereum,
+            contract,
+            Dex::PancakeSwap,
+            DexVersion::V3,
+            token_in,
+            token_out,
+            None,
+            caller,
+            recipient,
+            amount_in,
+            amount_out,
+        ))
+    }
+
+    fn exact_output(&self, tx: &Tx, call: &ContractCall) -> Option<Trade> {
+        /*
+                function exactOutput(
+                        ExactOutputParams calldata params
+                ) external payable override nonReentrant returns (uint256 amountIn)
+
+                                struct ExactOutputParams {
+                                        bytes path;
+                                        address recipient;
+                                        uint256 amountOut;
+                                        uint256 amountInMaximum;
+                                }
+        */
+
+        let params = match call.get_param("params") {
+            Some(param) => match param.get_value() {
+                Token::Tuple(value) => value,
+                _ => return None,
+            },
+            None => return None,
+        };
+
+        let path = match &params[0] {
+            Token::Bytes(bytes) => bytes,
+            _ => return None,
+        };
+
+        if path.len() < 43 {
+            /* 20 bytes for address, 3 bytes for uint24, 20 bytes for address */
+            return None;
+        }
+
+        let token_out: H160 = H160::from_slice(&path[0..20]);
+        let fee_bytes: [u8; 3] = match path[20..23].try_into() {
+            Ok(bytes) => bytes,
+            Err(e) => {
+                println!(
+                    "Error parsing 'path' from PancakeSwap exactInput call: {}",
+                    e
+                );
+                return None;
+            }
+        };
+        let fee = U256::from(u32::from_be_bytes([
+            0,
+            fee_bytes[0],
+            fee_bytes[1],
+            fee_bytes[2],
+        ]));
+        let token_in: H160 = H160::from_slice(&path[23..43]);
+
+        let recipient = match &params[1] {
+            Token::Address(param) => convert_h160_ethabi_to_web3(*param),
+            _ => return None,
+        };
+
+        let amount_out = match &params[2] {
+            Token::Uint(param) => convert_u256_ethabi_to_web3(*param),
+            _ => return None,
+        };
+
+        let amount_in_maximum = match &params[3] {
+            Token::Uint(param) => convert_u256_ethabi_to_web3(*param),
+            _ => return None,
+        };
+
+        let amount_in =
+            match tx.amount_of_token_sent(token_in, recipient, self.transfer_event_signature) {
+                Some(amount) => amount,
+                None => return None,
+            };
+
+        let caller = match tx.get_from() {
+            Some(caller) => caller,
+            None => return None,
+        };
+
+        let contract = match tx.get_to() {
+            Some(contract) => contract,
+            None => return None,
+        };
+
+        Some(Trade::new(
+            Chain::Ethereum,
+            contract,
+            Dex::PancakeSwap,
+            DexVersion::V3,
+            token_in,
+            token_out,
+            None,
+            caller,
+            recipient,
+            amount_in,
+            amount_out,
+        ))
+    }
+
+    fn swap_exact_tokens_for_tokens(&self, tx: &Tx, call: &ContractCall) -> Option<Trade> {
         /*
             function swapExactTokensForTokens(
                                 uint256 amountIn,
@@ -192,21 +573,32 @@ impl PancakeSwap {
             None => return None,
         };
 
-        Some(Swap::new(
-            recipient,
+        let caller = match tx.get_from() {
+            Some(caller) => caller,
+            None => return None,
+        };
+
+        let contract = match tx.get_to() {
+            Some(contract) => contract,
+            None => return None,
+        };
+
+        Some(Trade::new(
             Chain::Ethereum,
-            tx.get_to().unwrap(),
+            contract,
             Dex::PancakeSwap,
             DexVersion::V2,
             token_in,
             token_out,
+            None,
+            caller,
+            recipient,
             amount_in,
             amount_out,
-            None,
         ))
     }
 
-    fn swap_tokens_for_exact_tokens(&self, tx: &Tx, call: &ContractCall) -> Option<Swap> {
+    fn swap_tokens_for_exact_tokens(&self, tx: &Tx, call: &ContractCall) -> Option<Trade> {
         /*
             function swapTokensForExactTokens(
                         uint256 amountOut,
@@ -264,17 +656,28 @@ impl PancakeSwap {
                 None => return None,
             };
 
-        Some(Swap::new(
-            recipient,
+        let caller = match tx.get_from() {
+            Some(caller) => caller,
+            None => return None,
+        };
+
+        let contract = match tx.get_to() {
+            Some(contract) => contract,
+            None => return None,
+        };
+
+        Some(Trade::new(
             Chain::Ethereum,
-            tx.get_to().unwrap(),
+            contract,
             Dex::PancakeSwap,
             DexVersion::V2,
             token_in,
             token_out,
+            None,
+            caller,
+            recipient,
             amount_in,
             amount_out,
-            None,
         ))
     }
 

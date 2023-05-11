@@ -61,8 +61,8 @@ async fn handle_eth_swap(State(state): State<AppState>, body: Bytes) -> Result<(
         let pancake_swap = state.pancake_swap.clone();
         tokio::spawn(async move {
             let tx = Tx::new(hash, eth.clone()).await;
-            let swap = pancake_swap.get_swap(tx);
-            println!("Swap: {:?}", swap);
+            let trade = pancake_swap.get_trade(tx);
+            println!("Trade: {:?}", trade);
         });
     }
 
