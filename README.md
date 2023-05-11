@@ -35,9 +35,9 @@ Example headers:
 `Upgrade: websocket`
 `Sec-WebSocket-Version: 13`
 `Accept: sec-websocket-accept`
-`Sec-WebSocket-Protocol: 0signup,1user_one,2placeholder_password,3user_one@gmail,4+00123456,5true,6true`
+`Sec-WebSocket-Protocol: 0signup,1address,2signature_message_hex_encoded,3signature_hex_encoded,4user_one@gmail,5+00123456,6true,7true`
 Here in the `Sec-Websocket-Protocol` header we have the signup method as the first variable, followed by the user's
-desired username, password, email, phone, and the last two booleans refer to if the user agreed to the Terms of Service
+desired address, signature message, signature, email, phone, and the last two booleans refer to if the user agreed to the Terms of Service
 and Terms of Privacy, respectively.
 
 The signup method validates that the username is unique, create the user with the default role 'user', and on success
@@ -50,12 +50,12 @@ Example headers:
 `Upgrade: websocket`
 `Sec-WebSocket-Version: 13`
 `Accept: sec-websocket-accept`
-`Sec-WebSocket-Protocol: 0login,1user_one,2placeholder_password,32,43849823798,5android`
+`Sec-WebSocket-Protocol: 0login,1address,2placeholder_password,32,43849823798,5android`
 Here in the `Sec-Websocket-Protocol` header we have the login method as the first variable, followed by the user's
-registered username, password, service_code (the service the user is logging into), device id, and device OS.
+registered address, signature message, signature, service_code (the service the user is logging into), device id, and device OS.
 
 The login method validates that the password hash matches the registered password for the user, and that the requested
-service matches the user's role, and on success returns the username, the user's public id, and 2 tokens generated for
+service matches the user's role, and on success returns the address, the user's id, and 2 tokens generated for
 the user, 1 'user' token and 1 'admin' token. These tokens are to match the requested service when calling Authorize (
 see below) but will only be valid if the user has the necessary role to use the service.
 
@@ -66,9 +66,9 @@ Example headers:
 `Upgrade: websocket`
 `Sec-WebSocket-Version: 13`
 `Accept: sec-websocket-accept`
-`Sec-WebSocket-Protocol: 0authorize,1user_one,2371a695c-b4c1-47b0-b779-638fdc47b4ac,32,43849823798,5android`
+`Sec-WebSocket-Protocol: 0authorize,1address,2371a695c-b4c1-47b0-b779-638fdc47b4ac,32,43849823798,5android`
 Here in the `Sec-Websocket-Protocol` header we have the authorize method as the first variable, followed by the user's
-registered username, user or admin token (will be validated according to the chosen service), service_code (the service
+registered address, user or admin token (will be validated according to the chosen service), service_code (the service
 the user is being authorized into, must match the token), device id, and device OS.
 
 The authorize middleware is used with every other route, it validates that the token, a valid token must have 3
