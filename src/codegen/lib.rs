@@ -382,26 +382,13 @@ ID: {}
     }
     Ok(())
 }
-pub fn gen_systemd_services(
-    root: &str,
-    app_name: &str,
-    user: &str,
-    host: HashMap<String, String>,
-) -> Result<()> {
+pub fn gen_systemd_services(root: &str, app_name: &str, user: &str) -> Result<()> {
     create_dir_all(format!("{}/etc/systemd", root))?;
     let services = services::get_services();
     for srv in services {
         let service_filename = format!("{}/etc/systemd/{}_{}.service", root, app_name, srv.name);
         let mut service_file = File::create(&service_filename)?;
-        let v = get_systemd_service(
-            app_name,
-            &srv.name,
-            user,
-            &host
-                .get(&srv.name)
-                .ok_or_else(|| eyre!("Could not find key {}", srv.name))?,
-            443,
-        );
+        let v = get_systemd_service(app_name, &srv.name, user);
         write!(&mut service_file, "{}", v)?;
     }
     Ok(())
@@ -452,16 +439,7 @@ pub fn main() -> Result<()> {
     gen_db_sql(root)?;
     gen_client_rs(&dir)?;
     gen_db_rs(&dir)?;
-    gen_systemd_services(
-        root,
-        "mc2fi",
-        "mc2fi",
-        HashMap::from([
-            ("auth".to_owned(), "auth.mc2.fi".to_owned()),
-            ("user".to_owned(), "user.mc2.fi".to_owned()),
-            ("admin".to_owned(), "admin.mc2.fi".to_owned()),
-        ]),
-    )?;
+    gen_systemd_services(root, "mc2fi", "mc2fi")?;
     gen_error_message_md(root)?;
     Ok(())
 }

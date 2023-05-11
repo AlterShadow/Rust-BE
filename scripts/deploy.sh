@@ -1,13 +1,11 @@
-#!/bin/bash
-set -e
-# Usage ./deploy.sh
-cargo build # prebuild to check for errors, debug to improve compile time
-HEAD=$(git stash create)
-if [ -z "$HEAD" ]; then
-  HEAD=HEAD
-fi
-git ls-tree -r "$HEAD" --name-only | rsync -avizh --files-from=- ./ cv:mc2fi/
-ssh cv 'cd mc2fi && cargo build --release'
-ssh root@cv 'bash -s' < restart_services.sh
+#!/bin/bash -xe
+CROSS_TARGET=x86_64-unknown-linux-gnu
+cargo zigbuild --target=$CROSS_TARGET --release
+ssh mc2fi 'mkdir -p mc2fi/target/release/ mc2fi/log'
+(cd target/x86_64-unknown-linux-gnu/release/ && rsync -avizh auth user admin mc2fi:mc2fi/target/release/ )
+scp etc/config.prod.json mc2fi:mc2fi/etc/config.json
+rsync -avizh etc/systemd/*.service root@mc2fi:/etc/systemd/system/
+ssh root@mc2fi 'bash -s' < scripts/restart_services.sh
 
-./upload_docs.sh
+scripts/upload_docs.sh
+

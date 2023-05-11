@@ -14,4 +14,4 @@ Cargo.lock
 *.srl
 *.key
 *.pem
-etc/config.json
+etc/config.*.json
