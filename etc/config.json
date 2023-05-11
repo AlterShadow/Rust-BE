@@ -22,5 +22,10 @@
     "host": "localhost",
     "log_level": "trace",
     "port": 8889
-  }
+  },
+	"trade_watcher": {
+		"host": "localhost",
+		"log_level": "trace",
+		"port": 9000
+	}
 }

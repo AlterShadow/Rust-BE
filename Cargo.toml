@@ -17,7 +17,11 @@ rayon = "1.5.3"
 tokio = { version = "1", features = ["full"] }
 crossbeam = "*"
 nonzero_ext = "*"
-reqwest = { version = "*", default-features = false, features = ["rustls-tls", "serde_json", "json"] }
+reqwest = { version = "*", default-features = false, features = [
+	"rustls-tls",
+	"serde_json",
+	"json",
+] }
 tokio-tungstenite = { version = "*", features = [] }
 itertools = "0.10.3"
 futures = "*"
@@ -38,14 +42,22 @@ base64 = "*"
 web3 = { version = "0.18", features = ["signing"] }
 secp256k1 = "0.21.3"
 rand = "0.8.5"
+ethabi = "18.0.0"
+axum = { version = "0.6.18", default-features = false, features = [
+	"http1",
+	"json",
+	"matched-path",
+	"original-uri",
+	"tokio",
+] }
 
 [dependencies.uuid]
 version = "1.1.2"
 features = [
-    "v4",                # Lets you generate random UUIDs
-    "fast-rng",          # Use a faster (but still sufficiently random) RNG
-    "macro-diagnostics", # Enable better diagnostics for compile-time UUIDs
-    "serde",             # Enable serde support
+	"v4",                # Lets you generate random UUIDs
+	"fast-rng",          # Use a faster (but still sufficiently random) RNG
+	"macro-diagnostics", # Enable better diagnostics for compile-time UUIDs
+	"serde",             # Enable serde support
 ]
 [features]
 default = []
@@ -65,3 +77,7 @@ path = "src/service/user/main.rs"
 [[bin]]
 name = "admin"
 path = "src/service/admin/main.rs"
+
+[[bin]]
+name = "trade-watcher"
+path = "src/service/trade_watcher/main.rs"
