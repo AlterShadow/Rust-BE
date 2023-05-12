@@ -6,40 +6,32 @@ use tokio::sync::{OwnedSemaphorePermit, Semaphore};
 use web3::types::{Transaction, TransactionId, TransactionReceipt, H256};
 use web3::{transports::WebSocket, Web3};
 
-// TODO: handle blockchain connection error
-
 #[derive(Clone, Debug)]
-pub struct Conn {
-    _inner: Arc<Web3<WebSocket>>,
-    _semaphore: Arc<Semaphore>,
+pub struct Connection {
+    inner: Arc<Web3<WebSocket>>,
+    semaphore: Arc<Semaphore>,
 }
 
-pub type ConnError = web3::Error;
+pub type ConnectionError = web3::Error;
 
-impl Conn {
-    pub async fn new(provider_url: &str, max_concurrent_requests: usize) -> Result<Self> {
-        let transport = web3::transports::WebSocket::new(provider_url).await?;
-        let web3 = web3::Web3::new(transport);
-
-        Ok(Self {
-            _inner: Arc::new(web3),
-            _semaphore: Arc::new(Semaphore::new(max_concurrent_requests)),
-        })
+impl Connection {
+    pub fn new(connection: Arc<Web3<WebSocket>>, max_concurrent_requests: usize) -> Self {
+        Self {
+            inner: connection,
+            semaphore: Arc::new(Semaphore::new(max_concurrent_requests)),
+        }
     }
 
-    pub async fn get_conn(&self) -> Result<ConnGuard> {
-        // used to call web3 directly while handling the limit of concurrent requests
-        let permit = self._semaphore.clone().acquire_owned().await?;
-        Ok(ConnGuard {
-            _inner: self._inner.clone(),
-            _permit: permit,
-        })
+    pub async fn get_permit(&self) -> Result<ConnectionPermitGuard> {
+        /* used to call web3 directly while handling the limit of concurrent requests */
+        let permit = self.semaphore.clone().acquire_owned().await?;
+        Ok(ConnectionPermitGuard::new(self.inner.clone(), permit))
     }
 
     pub async fn get_tx(&self, tx_hash: H256) -> Result<Option<Transaction>> {
-        let permit = self._semaphore.acquire().await?;
+        let permit = self.semaphore.acquire().await?;
         let tx_result = self
-            ._inner
+            .inner
             .eth()
             .transaction(TransactionId::Hash(tx_hash))
             .await?;
@@ -48,23 +40,34 @@ impl Conn {
     }
 
     pub async fn get_receipt(&self, tx_hash: H256) -> Result<Option<TransactionReceipt>> {
-        let permit = self._semaphore.acquire().await?;
-        let receipt_result = self._inner.eth().transaction_receipt(tx_hash).await?;
+        let permit = self.semaphore.acquire().await?;
+        let receipt_result = self.inner.eth().transaction_receipt(tx_hash).await?;
         drop(permit);
         Ok(receipt_result)
     }
+
+    pub async fn ping(&self) -> Result<()> {
+        let _ = self.inner.eth().block_number().await?;
+        Ok(())
+    }
 }
 
-pub struct ConnGuard {
-    _inner: Arc<Web3<WebSocket>>,
-    // permit will be dropped automatically when the guard goes out of scope
-    _permit: OwnedSemaphorePermit,
+pub struct ConnectionPermitGuard {
+    inner: Arc<Web3<WebSocket>>,
+    /* permit will be dropped automatically when the guard goes out of scope */
+    permit: OwnedSemaphorePermit,
 }
 
-impl Deref for ConnGuard {
+impl ConnectionPermitGuard {
+    pub fn new(inner: Arc<Web3<WebSocket>>, permit: OwnedSemaphorePermit) -> Self {
+        Self { inner, permit }
+    }
+}
+
+impl Deref for ConnectionPermitGuard {
     type Target = Web3<WebSocket>;
-
+    /* allows for calls to web3 directly */
     fn deref(&self) -> &Self::Target {
-        &self._inner
+        &self.inner
     }
 }

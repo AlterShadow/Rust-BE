@@ -14,12 +14,12 @@ use web3::types::H256;
 mod rpc_provider;
 mod tracker;
 
-use rpc_provider::connection::Conn;
+use rpc_provider::pool::ConnectionPool;
 use tracker::{pancake_swap::PancakeSwap, tx::Tx};
 
 #[derive(Clone, Debug)]
 struct AppState {
-    eth_conn: Conn,
+    eth_pool: Arc<ConnectionPool>,
     pancake_swap: PancakeSwap,
 }
 
@@ -38,7 +38,7 @@ async fn main() -> Result<()> {
     let app: Router<(), Body> = Router::new()
         .route("/eth-mainnet-swaps", post(handle_eth_swap))
         .with_state(AppState {
-            eth_conn: Conn::new(ETH_PROVIDER_URL, 100).await?,
+            eth_pool: ConnectionPool::new(ETH_PROVIDER_URL.to_string(), 100, 300, 10).await?,
             pancake_swap: PancakeSwap::new().await,
         });
 
@@ -57,7 +57,12 @@ async fn handle_eth_swap(State(state): State<AppState>, body: Bytes) -> Result<(
     })?;
 
     for hash in hashes {
-        let eth = state.eth_conn.clone();
+        let eth = match state.eth_pool.clone().get_conn().await {
+            Ok(eth) => eth,
+            Err(e) => {
+                return Err(StatusCode::INTERNAL_SERVER_ERROR);
+            }
+        };
         let pancake_swap = state.pancake_swap.clone();
         tokio::spawn(async move {
             let tx = Tx::new(hash, eth.clone()).await;

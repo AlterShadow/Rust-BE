@@ -1,6 +1,6 @@
 use web3::types::{Transaction, TransactionReceipt, H256, H160, U256};
 
-use super::super::rpc_provider::connection::Conn;
+use super::super::rpc_provider::pool::ConnectionGuard;
 
 #[derive(Clone, Debug)]
 pub enum TxStatus {
@@ -13,7 +13,7 @@ pub enum TxStatus {
 
 #[derive(Clone, Debug)]
 pub struct Tx {
-    conn: Conn,
+    conn: ConnectionGuard,
     hash: H256,
     transaction: Option<Transaction>,
     receipt: Option<TransactionReceipt>,
@@ -21,7 +21,7 @@ pub struct Tx {
 }
 
 impl Tx {
-    pub async fn new(hash: H256, conn: Conn) -> Self {
+    pub async fn new(hash: H256, conn: ConnectionGuard) -> Self {
         let mut new_tx = Self {
             conn,
             hash,
