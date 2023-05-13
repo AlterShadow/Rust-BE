@@ -601,5 +601,83 @@ BEGIN
 END
 "#,
         ),
+        ProceduralFunction::new(
+            "fun_user_create_strategy",
+            vec![
+                Field::new("user_id", Type::BigInt),
+                Field::new("name", Type::String),
+                Field::new("description", Type::String),
+            ],
+            vec![
+                Field::new("success", Type::Boolean),
+                Field::new("strategy_id", Type::BigInt),
+            ],
+            r#"
+DECLARE
+    a_strategy_id BIGINT;
+BEGIN
+    INSERT INTO tbl.strategy (fkey_user_id, name, description)
+    VALUES (a_user_id, a_name, a_description) RETURNING pkey_id INTO a_strategy_id;
+    RETURN TRUE, a_strategy_id;
+END
+"#,
+        ),
+        ProceduralFunction::new(
+            "fun_user_add_strategy_watch_wallet",
+            vec![
+                Field::new("user_id", Type::BigInt),
+                Field::new("strategy_id", Type::BigInt),
+                Field::new("wallet_address", Type::String),
+                Field::new("blockchain", Type::String),
+                Field::new("ratio", Type::Numeric), // TODO: insert ratio into database
+            ],
+            vec![
+                Field::new("success", Type::Boolean),
+                Field::new("watch_wallet_id", Type::BigInt),
+            ],
+            r#"
+DECLARE
+    a_watch_wallet_id BIGINT;
+BEGIN
+    INSERT INTO tbl.strategy_watch_wallet (fkey_strategy_id, wallet_address, blockchain)
+    VALUES (a_strategy_id, a_wallet_address, a_blockchain);
+    RETURN TRUE, a_watch_wallet_id;
+END
+"#,
+        ),
+        ProceduralFunction::new(
+            "fun_user_remove_strategy_watch_wallet",
+            vec![
+                Field::new("user_id", Type::BigInt),
+                Field::new("strategy_id", Type::BigInt),
+                Field::new("watch_wallet_id", Type::BigInt),
+            ],
+            vec![Field::new("success", Type::Boolean)],
+            r#"
+BEGIN
+    DELETE FROM tbl.strategy_watch_wallet WHERE fkey_strategy_id = a_strategy_id AND pkey_id = a_watch_wallet_id;
+    RETURN TRUE;
+END
+"#,
+        ),
+        ProceduralFunction::new(
+            "fun_user_list_strategy_watch_wallets",
+            vec![Field::new("strategy_id", Type::BigInt)],
+            vec![
+                Field::new("watch_wallet_id", Type::BigInt),
+                Field::new("wallet_address", Type::String),
+                Field::new("blockchain", Type::String),
+                Field::new("ratio", Type::Numeric), // TODO: insert ratio into database
+            ],
+            r#"
+BEGIN
+    RETURN QUERY SELECT a.pkey_id AS watch_wallet_id,
+                          a.wallet_address AS wallet_address,
+                          a.blockchain AS blockchain
+                 FROM tbl.strategy_watch_wallet AS a 
+                 WHERE a.fkey_strategy_id = a_strategy_id;
+END
+"#,
+        ),
     ]
 }

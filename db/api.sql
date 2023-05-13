@@ -864,6 +864,80 @@ END
 $$;
         
 
+CREATE OR REPLACE FUNCTION api.fun_user_create_strategy(a_user_id bigint, a_name varchar, a_description varchar)
+RETURNS table (
+    "success" boolean,
+    "strategy_id" bigint
+)
+LANGUAGE plpgsql
+AS $$
+    
+DECLARE
+    a_strategy_id BIGINT;
+BEGIN
+    INSERT INTO tbl.strategy (fkey_user_id, name, description)
+    VALUES (a_user_id, a_name, a_description) RETURNING pkey_id INTO a_strategy_id;
+    RETURN TRUE, a_strategy_id;
+END
+
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_add_strategy_watch_wallet(a_user_id bigint, a_strategy_id bigint, a_wallet_address varchar, a_blockchain varchar, a_ratio real)
+RETURNS table (
+    "success" boolean,
+    "watch_wallet_id" bigint
+)
+LANGUAGE plpgsql
+AS $$
+    
+DECLARE
+    a_watch_wallet_id BIGINT;
+BEGIN
+    INSERT INTO tbl.strategy_watch_wallet (fkey_strategy_id, wallet_address, blockchain)
+    VALUES (a_strategy_id, a_wallet_address, a_blockchain);
+    RETURN TRUE, a_watch_wallet_id;
+END
+
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_remove_strategy_watch_wallet(a_user_id bigint, a_strategy_id bigint, a_watch_wallet_id bigint)
+RETURNS table (
+    "success" boolean
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    DELETE FROM tbl.strategy_watch_wallet WHERE fkey_strategy_id = a_strategy_id AND pkey_id = a_watch_wallet_id;
+    RETURN TRUE;
+END
+
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_list_strategy_watch_wallets(a_strategy_id bigint)
+RETURNS table (
+    "watch_wallet_id" bigint,
+    "wallet_address" varchar,
+    "blockchain" varchar,
+    "ratio" real
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY SELECT a.pkey_id AS watch_wallet_id,
+                          a.wallet_address AS wallet_address,
+                          a.blockchain AS blockchain
+                 FROM tbl.strategy_watch_wallet AS a 
+                 WHERE a.fkey_strategy_id = a_strategy_id;
+END
+
+$$;
+        
+
 CREATE OR REPLACE FUNCTION api.AUTH_SERVICE()
 RETURNS table (
     "code" int

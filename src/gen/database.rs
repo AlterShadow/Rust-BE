@@ -1280,3 +1280,145 @@ impl DbClient {
         Ok(resp)
     }
 }
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserCreateStrategyReq {
+    pub user_id: i64,
+    pub name: String,
+    pub description: String,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserCreateStrategyRespRow {
+    pub success: bool,
+    pub strategy_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserCreateStrategyResp {
+    pub rows: Vec<FunUserCreateStrategyRespRow>,
+}
+impl DbClient {
+    #[allow(unused_variables)]
+    pub async fn fun_user_create_strategy(
+        &self,
+        req: FunUserCreateStrategyReq,
+    ) -> Result<FunUserCreateStrategyResp> {
+        let rows = self.client.query("SELECT * FROM api.fun_user_create_strategy(a_user_id => $1::bigint, a_name => $2::varchar, a_description => $3::varchar);", &[&req.user_id, &req.name, &req.description]).await?;
+        let mut resp = FunUserCreateStrategyResp {
+            rows: Vec::with_capacity(rows.len()),
+        };
+        for row in rows {
+            let r = FunUserCreateStrategyRespRow {
+                success: row.try_get(0)?,
+                strategy_id: row.try_get(1)?,
+            };
+            resp.rows.push(r);
+        }
+        Ok(resp)
+    }
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserAddStrategyWatchWalletReq {
+    pub user_id: i64,
+    pub strategy_id: i64,
+    pub wallet_address: String,
+    pub blockchain: String,
+    pub ratio: f32,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserAddStrategyWatchWalletRespRow {
+    pub success: bool,
+    pub watch_wallet_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserAddStrategyWatchWalletResp {
+    pub rows: Vec<FunUserAddStrategyWatchWalletRespRow>,
+}
+impl DbClient {
+    #[allow(unused_variables)]
+    pub async fn fun_user_add_strategy_watch_wallet(
+        &self,
+        req: FunUserAddStrategyWatchWalletReq,
+    ) -> Result<FunUserAddStrategyWatchWalletResp> {
+        let rows = self.client.query("SELECT * FROM api.fun_user_add_strategy_watch_wallet(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_wallet_address => $3::varchar, a_blockchain => $4::varchar, a_ratio => $5::real);", &[&req.user_id, &req.strategy_id, &req.wallet_address, &req.blockchain, &req.ratio]).await?;
+        let mut resp = FunUserAddStrategyWatchWalletResp {
+            rows: Vec::with_capacity(rows.len()),
+        };
+        for row in rows {
+            let r = FunUserAddStrategyWatchWalletRespRow {
+                success: row.try_get(0)?,
+                watch_wallet_id: row.try_get(1)?,
+            };
+            resp.rows.push(r);
+        }
+        Ok(resp)
+    }
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserRemoveStrategyWatchWalletReq {
+    pub user_id: i64,
+    pub strategy_id: i64,
+    pub watch_wallet_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserRemoveStrategyWatchWalletRespRow {
+    pub success: bool,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserRemoveStrategyWatchWalletResp {
+    pub rows: Vec<FunUserRemoveStrategyWatchWalletRespRow>,
+}
+impl DbClient {
+    #[allow(unused_variables)]
+    pub async fn fun_user_remove_strategy_watch_wallet(
+        &self,
+        req: FunUserRemoveStrategyWatchWalletReq,
+    ) -> Result<FunUserRemoveStrategyWatchWalletResp> {
+        let rows = self.client.query("SELECT * FROM api.fun_user_remove_strategy_watch_wallet(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_watch_wallet_id => $3::bigint);", &[&req.user_id, &req.strategy_id, &req.watch_wallet_id]).await?;
+        let mut resp = FunUserRemoveStrategyWatchWalletResp {
+            rows: Vec::with_capacity(rows.len()),
+        };
+        for row in rows {
+            let r = FunUserRemoveStrategyWatchWalletRespRow {
+                success: row.try_get(0)?,
+            };
+            resp.rows.push(r);
+        }
+        Ok(resp)
+    }
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserListStrategyWatchWalletsReq {
+    pub strategy_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserListStrategyWatchWalletsRespRow {
+    pub watch_wallet_id: i64,
+    pub wallet_address: String,
+    pub blockchain: String,
+    pub ratio: f32,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserListStrategyWatchWalletsResp {
+    pub rows: Vec<FunUserListStrategyWatchWalletsRespRow>,
+}
+impl DbClient {
+    #[allow(unused_variables)]
+    pub async fn fun_user_list_strategy_watch_wallets(
+        &self,
+        req: FunUserListStrategyWatchWalletsReq,
+    ) -> Result<FunUserListStrategyWatchWalletsResp> {
+        let rows = self.client.query("SELECT * FROM api.fun_user_list_strategy_watch_wallets(a_strategy_id => $1::bigint);", &[&req.strategy_id]).await?;
+        let mut resp = FunUserListStrategyWatchWalletsResp {
+            rows: Vec::with_capacity(rows.len()),
+        };
+        for row in rows {
+            let r = FunUserListStrategyWatchWalletsRespRow {
+                watch_wallet_id: row.try_get(0)?,
+                wallet_address: row.try_get(1)?,
+                blockchain: row.try_get(2)?,
+                ratio: row.try_get(3)?,
+            };
+            resp.rows.push(r);
+        }
+        Ok(resp)
+    }
+}
