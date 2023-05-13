@@ -1,5 +1,5 @@
 use serde::*;
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, Ord, PartialOrd, Eq, PartialEq)]
 pub struct Field {
     pub name: String,
     pub ty: Type,
@@ -14,7 +14,7 @@ impl Field {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, Ord, PartialOrd, Eq, PartialEq)]
 pub struct EnumVariant {
     pub name: String,
     pub value: i64,
@@ -40,7 +40,7 @@ impl EnumVariant {
         }
     }
 }
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Hash, PartialEq, PartialOrd, Eq, Ord)]
 pub enum Type {
     Second,
     MilliSecond,
@@ -76,7 +76,7 @@ impl Type {
             fields,
         }
     }
-    pub fn data_table(name: impl Into<String>, fields: Vec<Field>) -> Self {
+    pub fn datatable(name: impl Into<String>, fields: Vec<Field>) -> Self {
         Self::DataTable {
             name: name.into(),
             fields,

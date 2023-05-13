@@ -135,6 +135,18 @@ CREATE TABLE tbl."user" (
 );
 
 
+-- Table: user_wallet
+-- user_wallet register authorized address to wallet
+CREATE TABLE tbl."user_wallet" (
+    pkey_id bigint  NOT NULL DEFAULT nextval( 'tbl.seq_user_id' ),
+    fkey_user_id bigint NOT NULL,
+    address varchar(20)  NOT NULL,
+    CONSTRAINT uidx_user_username UNIQUE (address) NOT DEFERRABLE  INITIALLY IMMEDIATE,
+    CONSTRAINT fkey_user FOREIGN KEY (fkey_user_id) REFERENCES tbl."user" (pkey_id) NOT DEFERRABLE  INITIALLY IMMEDIATE,
+    CONSTRAINT user_pk PRIMARY KEY (pkey_id)
+);
+
+
 -- Reference: authorization_attempt_user (table: authorization_attempt)
 ALTER TABLE tbl.authorization_attempt ADD CONSTRAINT authorization_attempt_user
     FOREIGN KEY (fkey_user)

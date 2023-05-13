@@ -11,7 +11,7 @@ use itertools::Itertools;
 use model::service::Service;
 use model::types::*;
 use serde::*;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::env;
 use std::fs::{create_dir_all, File};
 use std::io::Write;
@@ -135,25 +135,29 @@ impl Into<ErrorCode> for EnumErrorCode {{
     "#
     )?;
 
+    let mut types = HashSet::new();
     for s in services::get_services() {
         for e in s.endpoints {
             let req = Type::object(format!("{}Request", e.name), e.parameters);
             let resp = Type::object(format!("{}Response", e.name), e.returns);
-            let ss = vec![
-                collect_rust_recursive_types(req),
-                collect_rust_recursive_types(resp),
-            ]
-            .concat();
-            for s in ss {
-                write!(
-                    &mut f,
-                    r#"#[derive(Serialize, Deserialize, Debug, Clone)]
+            types.extend(
+                vec![
+                    collect_rust_recursive_types(req),
+                    collect_rust_recursive_types(resp),
+                ]
+                .concat()
+                .into_iter(),
+            );
+        }
+    }
+    for s in types {
+        write!(
+            &mut f,
+            r#"#[derive(Serialize, Deserialize, Debug, Clone)]
                     #[serde(rename_all = "camelCase")]
                     {}"#,
-                    s.to_rust_decl()
-                )?;
-            }
-        }
+            s.to_rust_decl()
+        )?;
     }
     f.flush()?;
     drop(f);

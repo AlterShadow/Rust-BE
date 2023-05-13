@@ -28,6 +28,10 @@ impl EndpointSchema {
             json_schema: Default::default(),
         }
     }
+    pub fn with_description(mut self, desc: impl Into<String>) -> Self {
+        self.description = desc.into();
+        self
+    }
     pub fn with_stream_response(mut self, stream_response: Vec<Field>) -> Self {
         self.stream_response = stream_response;
         self

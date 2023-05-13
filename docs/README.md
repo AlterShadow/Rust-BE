@@ -13,8 +13,33 @@ ID: 2
 ## Endpoints
 |Method Code|Method Name|Parameters|Response|Description|
 |-----------|-----------|----------|--------|-----------|
-|20040|TransferOrganizationOwner|organization_id, transfer_organization_owner_key, new_owner_user_id|||
-|20042|ListOrganizationMembership||memberships||
+|20040|UserFollowStrategy|strategy_id|success|User follows a strategy|
+|20050|UserListFollowedStrategies||strategies|User lists followed strategies|
+|20060|UserUnfollowStrategy|strategy_id|success||
+|20051|UserListStrategies||strategies|User lists followed strategies|
+|20061|UserGetStrategy|strategy_id|strategy_id, strategy_name, strategy_description, creator_user_id, social_media, historical_return, inception_time, total_amount, token_allocation, reputation, risk_score, aum, net_value, followers, backers, watching_wallets, aum_history|User gets a strategy|
+|20070|UserGetStrategyStatistics|strategy_id|strategy_id, net_value, follow_history, back_history|User gets a strategy statistics|
+|20080|UserBackStrategy|strategy_id, quantity, blockchain, dex, transaction_hash|success||
+|20090|UserListBackedStrategy||strategies||
+|20100|UserListBackStrategyHistory||back_history||
+|20110|UserExitStrategy|strategy_id, quantity|success, transaction_hash||
+|20120|UserListExitStrategyHistory|strategy_id|exit_history||
+|20130|UserFollowExpert|expert_id|success|User follows an expert|
+|20140|UserListFollowedExpert||experts|User lists followed experts|
+|20150|UserUnfollowExpert|expert_id|success|User unfollows an expert|
+|20160|UserListExperts||experts|User lists experts|
+|20170|UserGetExpertProfile|expert_id|expert_id, name, follower_count, description, social_media, risk_score, reputation_score, aum, strategies|User gets an expert profile|
+|20180|UserGetUserProfile|user_id|user_id, name, follower_count, description, social_media, followed_experts, followed_strategies, backed_strategies|User gets an user profile|
+|20190|UserRegisterWallet|blockchain, wallet_address, message_to_sign, message_signature|success|User registers a wallet|
+|20200|UserListWallets||wallets|User lists wallets|
+|20210|UserDeregisterWallet|wallet_id|success|User deregisters a wallet|
+|20220|UserApplyBecomeExpert||success|User applies to become an expert|
+|20230|AdminApproveUserBecomeExpert|user_id|success|Admin approves a user to become an expert|
+|20240|AdminListPendingUserBecomeExpert||users|Admin approves a user to become an expert|
+|20250|UserMakeStrategy|name, description, social_media, risk_score, reputation_score, aum, wallet_id|success|User makes a strategy|
+|20260|UserUpdateStrategy|strategy_id, name, description, social_media, risk_score, reputation_score, aum|success|User updates a strategy|
+|20270|UserAddStrategyWatchingWallet|strategy_id, blockchain, wallet_address|success||
+|20280|UserRemoveStrategyWatchingWallet|strategy_id, blockchain, wallet_address|success||
 
 # admin Server
 ID: 3

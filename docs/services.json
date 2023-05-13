@@ -154,66 +154,1365 @@
       "id": 2,
       "endpoints": [
         {
-          "name": "TransferOrganizationOwner",
+          "name": "UserFollowStrategy",
           "code": 20040,
           "parameters": [
             {
-              "name": "organization_id",
-              "ty": "BigInt"
-            },
-            {
-              "name": "transfer_organization_owner_key",
-              "ty": "String"
-            },
-            {
-              "name": "new_owner_user_id",
+              "name": "strategy_id",
               "ty": "BigInt"
             }
           ],
-          "returns": [],
+          "returns": [
+            {
+              "name": "success",
+              "ty": "Boolean"
+            }
+          ],
+          "stream_response": [],
+          "description": "User follows a strategy",
+          "json_schema": null
+        },
+        {
+          "name": "UserListFollowedStrategies",
+          "code": 20050,
+          "parameters": [],
+          "returns": [
+            {
+              "name": "strategies",
+              "ty": {
+                "DataTable": {
+                  "name": "ListStrategiesRow",
+                  "fields": [
+                    {
+                      "name": "strategy_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "strategy_name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "strategy_description",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "net_value",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "followers",
+                      "ty": "Int"
+                    },
+                    {
+                      "name": "backers",
+                      "ty": "Int"
+                    },
+                    {
+                      "name": "risk_score",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "aum",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "blockchain",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "wallet_address",
+                      "ty": "String"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "stream_response": [],
+          "description": "User lists followed strategies",
+          "json_schema": null
+        },
+        {
+          "name": "UserUnfollowStrategy",
+          "code": 20060,
+          "parameters": [
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            }
+          ],
+          "returns": [
+            {
+              "name": "success",
+              "ty": "Boolean"
+            }
+          ],
           "stream_response": [],
           "description": "",
           "json_schema": null
         },
         {
-          "name": "ListOrganizationMembership",
-          "code": 20042,
+          "name": "UserListStrategies",
+          "code": 20051,
           "parameters": [],
           "returns": [
             {
-              "name": "memberships",
+              "name": "strategies",
               "ty": {
                 "DataTable": {
-                  "name": "ListOrganizationMembershipRow",
+                  "name": "ListStrategiesRow",
                   "fields": [
                     {
-                      "name": "organization_id",
+                      "name": "strategy_id",
                       "ty": "BigInt"
                     },
                     {
-                      "name": "organization_name",
+                      "name": "strategy_name",
                       "ty": "String"
                     },
                     {
-                      "name": "user_id",
+                      "name": "strategy_description",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "net_value",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "followers",
+                      "ty": "Int"
+                    },
+                    {
+                      "name": "backers",
+                      "ty": "Int"
+                    },
+                    {
+                      "name": "risk_score",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "aum",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "blockchain",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "wallet_address",
+                      "ty": "String"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "stream_response": [],
+          "description": "User lists followed strategies",
+          "json_schema": null
+        },
+        {
+          "name": "UserGetStrategy",
+          "code": 20061,
+          "parameters": [
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            }
+          ],
+          "returns": [
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "strategy_name",
+              "ty": "String"
+            },
+            {
+              "name": "strategy_description",
+              "ty": "String"
+            },
+            {
+              "name": "creator_user_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "social_media",
+              "ty": "String"
+            },
+            {
+              "name": "historical_return",
+              "ty": "Numeric"
+            },
+            {
+              "name": "inception_time",
+              "ty": "BigInt"
+            },
+            {
+              "name": "total_amount",
+              "ty": "Numeric"
+            },
+            {
+              "name": "token_allocation",
+              "ty": "BigInt"
+            },
+            {
+              "name": "reputation",
+              "ty": "Int"
+            },
+            {
+              "name": "risk_score",
+              "ty": "Numeric"
+            },
+            {
+              "name": "aum",
+              "ty": "Numeric"
+            },
+            {
+              "name": "net_value",
+              "ty": "Numeric"
+            },
+            {
+              "name": "followers",
+              "ty": "Int"
+            },
+            {
+              "name": "backers",
+              "ty": "Int"
+            },
+            {
+              "name": "watching_wallets",
+              "ty": {
+                "DataTable": {
+                  "name": "WatchingWalletRow",
+                  "fields": [
+                    {
+                      "name": "watching_wallet_id",
                       "ty": "BigInt"
                     },
                     {
-                      "name": "role",
-                      "ty": {
-                        "Enum": {
-                          "name": "role",
-                          "variants": []
-                        }
-                      }
+                      "name": "wallet_address",
+                      "ty": "String"
                     },
                     {
-                      "name": "accepted",
+                      "name": "blockchain",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "dex",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "ratio_distribution",
+                      "ty": "Numeric"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "aum_history",
+              "ty": {
+                "DataTable": {
+                  "name": "AumHistoryRow",
+                  "fields": [
+                    {
+                      "name": "aum_history_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "base_token",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "quote_token",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "blockchain",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "dex",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "action",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "wallet_address",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "price",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "current_price",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "quantity",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "yield_7d",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "yield_30d",
+                      "ty": "Numeric"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "stream_response": [],
+          "description": "User gets a strategy",
+          "json_schema": null
+        },
+        {
+          "name": "UserGetStrategyStatistics",
+          "code": 20070,
+          "parameters": [
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            }
+          ],
+          "returns": [
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "net_value",
+              "ty": {
+                "DataTable": {
+                  "name": "NetValuePoint",
+                  "fields": [
+                    {
+                      "name": "time",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "net_value",
+                      "ty": "Numeric"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "follow_history",
+              "ty": {
+                "DataTable": {
+                  "name": "FollowHistoryPoint",
+                  "fields": [
+                    {
+                      "name": "time",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "follower_count",
+                      "ty": "Numeric"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "back_history",
+              "ty": {
+                "DataTable": {
+                  "name": "BackHistoryPoint",
+                  "fields": [
+                    {
+                      "name": "time",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "backer_count",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "backer_quantity_usd",
+                      "ty": "Numeric"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "stream_response": [],
+          "description": "User gets a strategy statistics",
+          "json_schema": null
+        },
+        {
+          "name": "UserBackStrategy",
+          "code": 20080,
+          "parameters": [
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "quantity",
+              "ty": "Numeric"
+            },
+            {
+              "name": "blockchain",
+              "ty": "String"
+            },
+            {
+              "name": "dex",
+              "ty": "String"
+            },
+            {
+              "name": "transaction_hash",
+              "ty": "String"
+            }
+          ],
+          "returns": [
+            {
+              "name": "success",
+              "ty": "Boolean"
+            }
+          ],
+          "stream_response": [],
+          "description": "",
+          "json_schema": null
+        },
+        {
+          "name": "UserListBackedStrategy",
+          "code": 20090,
+          "parameters": [],
+          "returns": [
+            {
+              "name": "strategies",
+              "ty": {
+                "DataTable": {
+                  "name": "ListStrategiesRow",
+                  "fields": [
+                    {
+                      "name": "strategy_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "strategy_name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "strategy_description",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "net_value",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "followers",
+                      "ty": "Int"
+                    },
+                    {
+                      "name": "backers",
+                      "ty": "Int"
+                    },
+                    {
+                      "name": "risk_score",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "aum",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "blockchain",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "wallet_address",
+                      "ty": "String"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "stream_response": [],
+          "description": "",
+          "json_schema": null
+        },
+        {
+          "name": "UserListBackStrategyHistory",
+          "code": 20100,
+          "parameters": [],
+          "returns": [
+            {
+              "name": "back_history",
+              "ty": {
+                "DataTable": {
+                  "name": "BackStrategyHistoryRow",
+                  "fields": [
+                    {
+                      "name": "back_history_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "strategy_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "quantity",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "blockchain",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "dex",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "transaction_hash",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "time",
+                      "ty": "BigInt"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "stream_response": [],
+          "description": "",
+          "json_schema": null
+        },
+        {
+          "name": "UserExitStrategy",
+          "code": 20110,
+          "parameters": [
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "quantity",
+              "ty": "Numeric"
+            }
+          ],
+          "returns": [
+            {
+              "name": "success",
+              "ty": "Boolean"
+            },
+            {
+              "name": "transaction_hash",
+              "ty": "String"
+            }
+          ],
+          "stream_response": [],
+          "description": "",
+          "json_schema": null
+        },
+        {
+          "name": "UserListExitStrategyHistory",
+          "code": 20120,
+          "parameters": [
+            {
+              "name": "strategy_id",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "name": "exit_history",
+              "ty": {
+                "DataTable": {
+                  "name": "ExitStrategyHistoryRow",
+                  "fields": [
+                    {
+                      "name": "exit_history_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "strategy_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "exit_quantity",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "purchase_wallet_address",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "blockchain",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "dex",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "back_time",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "exit_time",
+                      "ty": "BigInt"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "stream_response": [],
+          "description": "",
+          "json_schema": null
+        },
+        {
+          "name": "UserFollowExpert",
+          "code": 20130,
+          "parameters": [
+            {
+              "name": "expert_id",
+              "ty": "BigInt"
+            }
+          ],
+          "returns": [
+            {
+              "name": "success",
+              "ty": "Boolean"
+            }
+          ],
+          "stream_response": [],
+          "description": "User follows an expert",
+          "json_schema": null
+        },
+        {
+          "name": "UserListFollowedExpert",
+          "code": 20140,
+          "parameters": [],
+          "returns": [
+            {
+              "name": "experts",
+              "ty": {
+                "DataTable": {
+                  "name": "ListExpertRow",
+                  "fields": [
+                    {
+                      "name": "expert_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "follower_count",
+                      "ty": "Int"
+                    },
+                    {
+                      "name": "description",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "social_media",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "risk_score",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "reputation_score",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "aum",
+                      "ty": "Numeric"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "stream_response": [],
+          "description": "User lists followed experts",
+          "json_schema": null
+        },
+        {
+          "name": "UserUnfollowExpert",
+          "code": 20150,
+          "parameters": [
+            {
+              "name": "expert_id",
+              "ty": "BigInt"
+            }
+          ],
+          "returns": [
+            {
+              "name": "success",
+              "ty": "Boolean"
+            }
+          ],
+          "stream_response": [],
+          "description": "User unfollows an expert",
+          "json_schema": null
+        },
+        {
+          "name": "UserListExperts",
+          "code": 20160,
+          "parameters": [],
+          "returns": [
+            {
+              "name": "experts",
+              "ty": {
+                "DataTable": {
+                  "name": "ListExpertRow",
+                  "fields": [
+                    {
+                      "name": "expert_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "follower_count",
+                      "ty": "Int"
+                    },
+                    {
+                      "name": "description",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "social_media",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "risk_score",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "reputation_score",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "aum",
+                      "ty": "Numeric"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "stream_response": [],
+          "description": "User lists experts",
+          "json_schema": null
+        },
+        {
+          "name": "UserGetExpertProfile",
+          "code": 20170,
+          "parameters": [
+            {
+              "name": "expert_id",
+              "ty": "BigInt"
+            }
+          ],
+          "returns": [
+            {
+              "name": "expert_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "name",
+              "ty": "String"
+            },
+            {
+              "name": "follower_count",
+              "ty": "Int"
+            },
+            {
+              "name": "description",
+              "ty": "String"
+            },
+            {
+              "name": "social_media",
+              "ty": "String"
+            },
+            {
+              "name": "risk_score",
+              "ty": "Numeric"
+            },
+            {
+              "name": "reputation_score",
+              "ty": "Numeric"
+            },
+            {
+              "name": "aum",
+              "ty": "Numeric"
+            },
+            {
+              "name": "strategies",
+              "ty": {
+                "DataTable": {
+                  "name": "ListStrategiesRow",
+                  "fields": [
+                    {
+                      "name": "strategy_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "strategy_name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "strategy_description",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "net_value",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "followers",
+                      "ty": "Int"
+                    },
+                    {
+                      "name": "backers",
+                      "ty": "Int"
+                    },
+                    {
+                      "name": "risk_score",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "aum",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "blockchain",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "wallet_address",
+                      "ty": "String"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "stream_response": [],
+          "description": "User gets an expert profile",
+          "json_schema": null
+        },
+        {
+          "name": "UserGetUserProfile",
+          "code": 20180,
+          "parameters": [
+            {
+              "name": "user_id",
+              "ty": "BigInt"
+            }
+          ],
+          "returns": [
+            {
+              "name": "user_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "name",
+              "ty": "String"
+            },
+            {
+              "name": "follower_count",
+              "ty": "Int"
+            },
+            {
+              "name": "description",
+              "ty": "String"
+            },
+            {
+              "name": "social_media",
+              "ty": "String"
+            },
+            {
+              "name": "followed_experts",
+              "ty": {
+                "DataTable": {
+                  "name": "ListExpertRow",
+                  "fields": [
+                    {
+                      "name": "expert_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "follower_count",
+                      "ty": "Int"
+                    },
+                    {
+                      "name": "description",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "social_media",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "risk_score",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "reputation_score",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "aum",
+                      "ty": "Numeric"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "followed_strategies",
+              "ty": {
+                "DataTable": {
+                  "name": "ListStrategiesRow",
+                  "fields": [
+                    {
+                      "name": "strategy_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "strategy_name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "strategy_description",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "net_value",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "followers",
+                      "ty": "Int"
+                    },
+                    {
+                      "name": "backers",
+                      "ty": "Int"
+                    },
+                    {
+                      "name": "risk_score",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "aum",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "blockchain",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "wallet_address",
+                      "ty": "String"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "backed_strategies",
+              "ty": {
+                "DataTable": {
+                  "name": "ListStrategiesRow",
+                  "fields": [
+                    {
+                      "name": "strategy_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "strategy_name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "strategy_description",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "net_value",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "followers",
+                      "ty": "Int"
+                    },
+                    {
+                      "name": "backers",
+                      "ty": "Int"
+                    },
+                    {
+                      "name": "risk_score",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "aum",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "blockchain",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "wallet_address",
+                      "ty": "String"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "stream_response": [],
+          "description": "User gets an user profile",
+          "json_schema": null
+        },
+        {
+          "name": "UserRegisterWallet",
+          "code": 20190,
+          "parameters": [
+            {
+              "name": "blockchain",
+              "ty": "String"
+            },
+            {
+              "name": "wallet_address",
+              "ty": "String"
+            },
+            {
+              "name": "message_to_sign",
+              "ty": "String"
+            },
+            {
+              "name": "message_signature",
+              "ty": "String"
+            }
+          ],
+          "returns": [
+            {
+              "name": "success",
+              "ty": "Boolean"
+            }
+          ],
+          "stream_response": [],
+          "description": "User registers a wallet",
+          "json_schema": null
+        },
+        {
+          "name": "UserListWallets",
+          "code": 20200,
+          "parameters": [],
+          "returns": [
+            {
+              "name": "wallets",
+              "ty": {
+                "DataTable": {
+                  "name": "ListWalletRow",
+                  "fields": [
+                    {
+                      "name": "wallet_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "blockchain",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "wallet_address",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "is_default",
                       "ty": "Boolean"
                     }
                   ]
                 }
               }
+            }
+          ],
+          "stream_response": [],
+          "description": "User lists wallets",
+          "json_schema": null
+        },
+        {
+          "name": "UserDeregisterWallet",
+          "code": 20210,
+          "parameters": [
+            {
+              "name": "wallet_id",
+              "ty": "BigInt"
+            }
+          ],
+          "returns": [
+            {
+              "name": "success",
+              "ty": "Boolean"
+            }
+          ],
+          "stream_response": [],
+          "description": "User deregisters a wallet",
+          "json_schema": null
+        },
+        {
+          "name": "UserApplyBecomeExpert",
+          "code": 20220,
+          "parameters": [],
+          "returns": [
+            {
+              "name": "success",
+              "ty": "Boolean"
+            }
+          ],
+          "stream_response": [],
+          "description": "User applies to become an expert",
+          "json_schema": null
+        },
+        {
+          "name": "AdminApproveUserBecomeExpert",
+          "code": 20230,
+          "parameters": [
+            {
+              "name": "user_id",
+              "ty": "BigInt"
+            }
+          ],
+          "returns": [
+            {
+              "name": "success",
+              "ty": "Boolean"
+            }
+          ],
+          "stream_response": [],
+          "description": "Admin approves a user to become an expert",
+          "json_schema": null
+        },
+        {
+          "name": "AdminListPendingUserBecomeExpert",
+          "code": 20240,
+          "parameters": [],
+          "returns": [
+            {
+              "name": "users",
+              "ty": {
+                "DataTable": {
+                  "name": "ListPendingUserBecomeExpertRow",
+                  "fields": [
+                    {
+                      "name": "user_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "follower_count",
+                      "ty": "Int"
+                    },
+                    {
+                      "name": "description",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "social_media",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "risk_score",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "reputation_score",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "aum",
+                      "ty": "Numeric"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "stream_response": [],
+          "description": "Admin approves a user to become an expert",
+          "json_schema": null
+        },
+        {
+          "name": "UserMakeStrategy",
+          "code": 20250,
+          "parameters": [
+            {
+              "name": "name",
+              "ty": "String"
+            },
+            {
+              "name": "description",
+              "ty": "String"
+            },
+            {
+              "name": "social_media",
+              "ty": "String"
+            },
+            {
+              "name": "risk_score",
+              "ty": "Numeric"
+            },
+            {
+              "name": "reputation_score",
+              "ty": "Numeric"
+            },
+            {
+              "name": "aum",
+              "ty": "Numeric"
+            },
+            {
+              "name": "wallet_id",
+              "ty": "BigInt"
+            }
+          ],
+          "returns": [
+            {
+              "name": "success",
+              "ty": "Boolean"
+            }
+          ],
+          "stream_response": [],
+          "description": "User makes a strategy",
+          "json_schema": null
+        },
+        {
+          "name": "UserUpdateStrategy",
+          "code": 20260,
+          "parameters": [
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "name",
+              "ty": {
+                "Optional": "String"
+              }
+            },
+            {
+              "name": "description",
+              "ty": {
+                "Optional": "String"
+              }
+            },
+            {
+              "name": "social_media",
+              "ty": {
+                "Optional": "String"
+              }
+            },
+            {
+              "name": "risk_score",
+              "ty": {
+                "Optional": "Numeric"
+              }
+            },
+            {
+              "name": "reputation_score",
+              "ty": {
+                "Optional": "Numeric"
+              }
+            },
+            {
+              "name": "aum",
+              "ty": {
+                "Optional": "Numeric"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "name": "success",
+              "ty": "Boolean"
+            }
+          ],
+          "stream_response": [],
+          "description": "User updates a strategy",
+          "json_schema": null
+        },
+        {
+          "name": "UserAddStrategyWatchingWallet",
+          "code": 20270,
+          "parameters": [
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "blockchain",
+              "ty": "String"
+            },
+            {
+              "name": "wallet_address",
+              "ty": "String"
+            }
+          ],
+          "returns": [
+            {
+              "name": "success",
+              "ty": "Boolean"
+            }
+          ],
+          "stream_response": [],
+          "description": "",
+          "json_schema": null
+        },
+        {
+          "name": "UserRemoveStrategyWatchingWallet",
+          "code": 20280,
+          "parameters": [
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "blockchain",
+              "ty": "String"
+            },
+            {
+              "name": "wallet_address",
+              "ty": "String"
+            }
+          ],
+          "returns": [
+            {
+              "name": "success",
+              "ty": "Boolean"
             }
           ],
           "stream_response": [],
