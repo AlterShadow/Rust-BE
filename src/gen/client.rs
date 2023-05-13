@@ -222,18 +222,18 @@ impl UserClient {
     }
 }
 impl UserClient {
-    pub async fn admin_list_pending_user_become_expert(
+    pub async fn admin_list_pending_expert_applications(
         &mut self,
-        req: &AdminListPendingUserBecomeExpertRequest,
-    ) -> Result<AdminListPendingUserBecomeExpertResponse> {
+        req: &AdminListPendingExpertApplicationsRequest,
+    ) -> Result<AdminListPendingExpertApplicationsResponse> {
         self.client.request(20240, req).await
     }
 }
 impl UserClient {
-    pub async fn user_make_strategy(
+    pub async fn user_create_strategy(
         &mut self,
-        req: &UserMakeStrategyRequest,
-    ) -> Result<UserMakeStrategyResponse> {
+        req: &UserCreateStrategyRequest,
+    ) -> Result<UserCreateStrategyResponse> {
         self.client.request(20250, req).await
     }
 }

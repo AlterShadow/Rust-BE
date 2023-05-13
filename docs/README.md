@@ -35,8 +35,8 @@ ID: 2
 |20210|UserDeregisterWallet|wallet_id|success|User deregisters a wallet|
 |20220|UserApplyBecomeExpert||success|User applies to become an expert|
 |20230|AdminApproveUserBecomeExpert|user_id|success|Admin approves a user to become an expert|
-|20240|AdminListPendingUserBecomeExpert||users|Admin approves a user to become an expert|
-|20250|UserMakeStrategy|name, description, social_media, risk_score, reputation_score, aum, wallet_id|success|User makes a strategy|
+|20240|AdminListPendingExpertApplications||users|Admin approves a user to become an expert|
+|20250|UserCreateStrategy|name, description, social_media, risk_score, reputation_score, aum, wallet_id|success|User makes a strategy|
 |20260|UserUpdateStrategy|strategy_id, name, description, social_media, risk_score, reputation_score, aum|success|User updates a strategy|
 |20270|UserAddStrategyWatchingWallet|strategy_id, blockchain, wallet_address|success||
 |20280|UserRemoveStrategyWatchingWallet|strategy_id, blockchain, wallet_address|success||

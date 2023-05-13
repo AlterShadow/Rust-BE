@@ -1,5 +1,5 @@
 -- Created by Vertabelo (http://vertabelo.com)
--- Last modification date: 2023-05-13 08:33:06.693
+-- Last modification date: 2023-05-13 08:57:09.661
 
 CREATE SCHEMA IF NOT EXISTS tbl;;
 
@@ -178,11 +178,12 @@ CREATE TABLE tbl.user_exit_strategy_history
 -- Table: user_follow_expert
 CREATE TABLE tbl.user_follow_expert
 (
-    pkey_id                bigint NOT NULL DEFAULT nextval('tbl.seq_user_follow_expert_id'),
-    fkey_user_id           bigint NOT NULL,
-    fkey_expert_profile_id bigint NOT NULL,
-    created_at             bigint NOT NULL,
-    updated_at             bigint NOT NULL,
+    pkey_id                bigint  NOT NULL DEFAULT nextval('tbl.seq_user_follow_expert_id'),
+    fkey_user_id           bigint  NOT NULL,
+    fkey_expert_profile_id bigint  NOT NULL,
+    unfollowed             boolean NOT NULL DEFAULT FALSE,
+    created_at             bigint  NOT NULL,
+    updated_at             bigint  NOT NULL,
     CONSTRAINT user_follow_expert_pk PRIMARY KEY (pkey_id)
 );
 
@@ -192,7 +193,7 @@ CREATE TABLE tbl.user_follow_strategy
     pkey_id          bigint  NOT NULL DEFAULT nextval('tbl.seq_user_follow_strategy'),
     fkey_user_id     bigint  NOT NULL,
     fkey_strategy_id bigint  NOT NULL,
-    unfollowed       boolean NOT NULL,
+    unfollowed       boolean NOT NULL DEFAULT FALSE,
     created_at       bigint  NOT NULL,
     updated_at       bigint  NOT NULL,
     CONSTRAINT user_follow_strategy_pk PRIMARY KEY (pkey_id)

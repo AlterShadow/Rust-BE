@@ -241,11 +241,11 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_admin_list_users(a_offset int, a_limit int, a_user_id bigint DEFAULT NULL, a_email varchar DEFAULT NULL, a_username varchar DEFAULT NULL, a_role enum_role DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_admin_list_users(a_offset int, a_limit int, a_user_id bigint DEFAULT NULL, a_email varchar DEFAULT NULL, a_address varchar DEFAULT NULL, a_role enum_role DEFAULT NULL)
 RETURNS table (
     "user_id" bigint,
     "email" varchar,
-    "username" varchar,
+    "address" varchar,
     "role" enum_role,
     "updated_at" oid,
     "created_at" oid
@@ -257,14 +257,14 @@ BEGIN
     RETURN QUERY SELECT
         u.pkey_id,
         u.email,
-        u.username,
+        u.address,
         u.role,
         u.updated_at::int,
         u.created_at::int
     FROM tbl.user AS u
     WHERE a_user_id IS NOT NULL OR u.pkey_id = a_user_id
         AND a_email IS NOT NULL OR u.email = a_email
-        AND a_username IS NOT NULL OR u.username = a_username
+        AND a_address IS NOT NULL OR u.address = a_address
         AND a_role IS NOT NULL OR u.role = a_role
     ORDER BY user_id
     OFFSET a_offset
@@ -292,79 +292,573 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_create_organization(a_user_id bigint, a_name varchar, a_country varchar, a_tax_id varchar, a_address varchar, a_note varchar, a_approved boolean)
+CREATE OR REPLACE FUNCTION api.fun_user_follow_strategy(a_user_id bigint, a_strategy_id bigint)
 RETURNS table (
-    "organization_id" bigint
+    "success" boolean
 )
 LANGUAGE plpgsql
 AS $$
     
-DECLARE
-    organization_id BIGINT;
+
 BEGIN
-    INSERT INTO tbl.organization (name, country, tax_id, address, note, approved)
-    VALUES (a_name, a_country, a_tax_id, a_address, a_note, a_approved)
-    RETURNING pkey_id INTO organization_id;
-    
-    INSERT INTO tbl.organization_membership (fkey_user, fkey_organization, role, accepted, created_at)
-        VALUES (a_user_id, organization_id, 'owner', true, EXTRACT(EPOCH FROM NOW())::bigint);
-    
-    
-    RETURN QUERY SELECT organization_id;
+    IF EXISTS(SELECT 1
+              FROM tbl.user_follow_strategy
+              WHERE fkey_user_id = a_user_id
+                AND fkey_strategy_id = a_strategy_id
+                AND unfollowed = FALSE) THEN
+        RETURN QUERY SELECT TRUE AS "select";
+    END IF;
+
+    INSERT INTO tbl.user_follow_strategy (fkey_user_id, fkey_strategy_id, created_at, updated_at)
+    VALUES (a_user_id, a_strategy_id, extract(epoch from now())::bigint, extract(epoch from now())::bigint);
+
+    RETURN QUERY SELECT TRUE AS "select";
 
 END
             
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_lookup_user_by_email_or_username(a_email varchar, a_username varchar)
+CREATE OR REPLACE FUNCTION api.fun_user_unfollow_strategy(a_user_id bigint, a_strategy_id bigint)
 RETURNS table (
-    "user_id" bigint
+    "success" boolean
 )
 LANGUAGE plpgsql
 AS $$
     
+
 BEGIN
-    RETURN QUERY SELECT pkey_id
-    FROM tbl.user
-    WHERE email = a_email OR username = a_username;
+    UPDATE tbl.user_follow_strategy 
+      SET unfollowed = TRUE,
+          updated_at = extract(epoch from now())::bigint
+      WHERE fkey_user_id = a_user_id
+      AND fkey_strategy_id = a_strategy_id
+      AND unfollowed = FALSE;
+      
+    RETURN QUERY SELECT TRUE AS "select";
+
 END
             
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_get_organization_membership(a_user_id bigint, a_organization_id bigint)
+CREATE OR REPLACE FUNCTION api.fun_user_list_followed_strategies(a_user_id bigint)
 RETURNS table (
-    "role" enum_role
+    "strategy_id" bigint,
+    "strategy_name" varchar,
+    "strategy_description" varchar,
+    "net_value" real,
+    "followers" int,
+    "backers" int,
+    "risk_score" real,
+    "aum" real
 )
 LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY SELECT a.role
-               FROM tbl.organization_membership AS a
-               WHERE fkey_organization = a_organization_id
-                 AND fkey_user = a_user_id;
+    RETURN QUERY SELECT a.pkey_id AS strategy_id,
+                          a.name AS strategy_name,
+                          a.description AS strategy_description,
+                          NULL AS net_value,
+                          (SELECT COUNT(*) FROM tbl.user_follow_strategy WHERE fkey_strategy_id = a.pkey_id AND unfollowed = FALSE) AS followers,
+                          (SELECT COUNT(DISTINCT user_back_strategy_history.fkey_user_id) FROM tbl.user_back_strategy_history WHERE fkey_strategy_id = a.pkey_id) AS followers,
+                          a.risk_score as risk_score,
+                          a.aum as aum
+                 FROM tbl.strategy AS a 
+                     JOIN tbl.user_follow_strategy ON fkey_strategy_id = a.pkey_id WHERE fkey_user_id = a_user_id AND unfollowed = FALSE
+                    ;
 END
-        
+            
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_list_organizations(a_user_id bigint)
+CREATE OR REPLACE FUNCTION api.fun_user_list_strategies()
 RETURNS table (
-    "organization_id" bigint,
+    "strategy_id" bigint,
+    "strategy_name" varchar,
+    "strategy_description" varchar,
+    "net_value" real,
+    "followers" int,
+    "backers" int,
+    "risk_score" real,
+    "aum" real
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY SELECT a.pkey_id AS strategy_id,
+                          a.name AS strategy_name,
+                          a.description AS strategy_description,
+                          NULL AS net_value,
+                          (SELECT COUNT(*) FROM tbl.user_follow_strategy WHERE fkey_strategy_id = a.pkey_id AND unfollowed = FALSE) AS followers,
+                          (SELECT COUNT(DISTINCT user_back_strategy_history.fkey_user_id) FROM tbl.user_back_strategy_history WHERE fkey_strategy_id = a.pkey_id) AS followers,
+                          a.risk_score as risk_score,
+                          a.aum as aum
+                 FROM tbl.strategy AS a;
+END
+            
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_get_strategy(a_strategy_id bigint)
+RETURNS table (
+    "strategy_id" bigint,
+    "strategy_name" varchar,
+    "strategy_description" varchar,
+    "net_value" real,
+    "followers" int,
+    "backers" int,
+    "risk_score" real,
+    "aum" real
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY SELECT a.pkey_id AS strategy_id,
+                          a.name AS strategy_name,
+                          a.description AS strategy_description,
+                          NULL AS net_value,
+                          (SELECT COUNT(*) FROM tbl.user_follow_strategy WHERE fkey_strategy_id = a.pkey_id AND unfollowed = FALSE) AS followers,
+                          (SELECT COUNT(DISTINCT user_back_strategy_history.fkey_user_id) FROM tbl.user_back_strategy_history WHERE fkey_strategy_id = a.pkey_id) AS followers,
+                          a.risk_score as risk_score,
+                          a.aum as aum
+                 FROM tbl.strategy AS a
+                 WHERE a.pkey_id = a_strategy_id;
+END
+            
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_get_strategy_statistics_net_value(a_strategy_id bigint)
+RETURNS table (
+    "time" bigint,
+    "net_value" real
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    -- TODO
+END
+            
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_get_strategy_statistics_follow_history(a_strategy_id bigint)
+RETURNS table (
+    "time" bigint,
+    "follower_count" real
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    -- TODO
+END
+            
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_get_strategy_statistics_back_history(a_strategy_id bigint)
+RETURNS table (
+    "time" bigint,
+    "backer_count" real,
+    "backer_quantity_usd" real
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    -- TODO
+END
+            
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_back_strategy(a_user_id bigint, a_strategy_id bigint, a_quantity real, a_blockchain varchar, a_dex varchar, a_transaction_hash varchar)
+RETURNS table (
+    "success" boolean
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    INSERT INTO tbl.user_back_strategy_history (fkey_user_id, fkey_strategy_id, quantity, blockchain, dex, transaction_hash)
+    VALUES (a_user_id, a_strategy_id, a_quantity, a_blockchain, a_dex, a_transaction_hash);
+    RETURN TRUE;
+END
+            
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_list_backed_strategies(a_user_id bigint)
+RETURNS table (
+    "strategy_id" bigint,
+    "strategy_name" varchar,
+    "strategy_description" varchar,
+    "net_value" real,
+    "followers" int,
+    "backers" int,
+    "risk_score" real,
+    "aum" real
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY SELECT a.pkey_id AS strategy_id,
+                          a.name AS strategy_name,
+                          a.description AS strategy_description,
+                          NULL AS net_value,
+                          (SELECT COUNT(*) FROM tbl.user_follow_strategy WHERE fkey_strategy_id = a.pkey_id AND unfollowed = FALSE) AS followers,
+                          (SELECT COUNT(DISTINCT user_back_strategy_history.fkey_user_id) FROM tbl.user_back_strategy_history WHERE fkey_strategy_id = a.pkey_id) AS followers,
+                          a.risk_score as risk_score,
+                          a.aum as aum
+                 FROM tbl.strategy AS a 
+                     JOIN tbl.user_follow_strategy ON fkey_strategy_id = a.pkey_id WHERE fkey_user_id = a_user_id AND unfollowed = FALSE
+                    ;
+END
+
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_list_back_strategy_history(a_user_id bigint)
+RETURNS table (
+    "back_history_id" bigint,
+    "strategy_id" bigint,
+    "quantity" real,
+    "blockchain" varchar,
+    "dex" varchar,
+    "transaction_hash" varchar,
+    "time" bigint
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY SELECT a.pkey_id AS back_history_id,
+                          a.fkey_strategy_id AS strategy_id,
+                          a.quantity AS quantity,
+                          a.blockchain AS blockchain,
+                          a.dex AS dex,
+                          a.transaction_hash AS transaction_hash,
+                          a.time AS time
+                 FROM tbl.user_back_strategy_history AS a
+                 WHERE a.fkey_user_id = a_user_id;
+END
+
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_user_exit_strategy(a_user_id bigint, a_strategy_id bigint, a_quantity real)
+RETURNS table (
+    "success" boolean
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    INSERT INTO tbl.user_exit_strategy_history (fkey_user_id, fkey_strategy_id, quantity)
+    VALUES (a_user_id, a_strategy_id, a_quantity);
+    RETURN TRUE;
+END
+
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_list_exit_strategy_history(a_user_id bigint, a_strategy_id bigint DEFAULT NULL)
+RETURNS table (
+    "exit_history_id" bigint,
+    "strategy_id" bigint,
+    "exit_quantity" real,
+    "purchase_wallet_address" varchar,
+    "blockchain" varchar,
+    "dex" varchar,
+    "back_time" bigint,
+    "exit_time" bigint
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY SELECT a.pkey_id AS exit_history_id,
+                          a.fkey_strategy_id AS strategy_id,
+                          a.quantity AS exit_quantity,
+                          a.purchase_wallet_address AS purchase_wallet_address,
+                          a.blockchain AS blockchain,
+                          a.dex AS dex,
+                          a.back_time AS back_time,
+                          a.time AS exit_time
+                 FROM tbl.user_exit_strategy_history AS a
+                 WHERE a.fkey_user_id = a_user_id AND (a.fkey_strategy_id = a_strategy_id OR a_strategy_id IS NULL);
+END
+
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_follow_expert(a_user_id bigint, a_expert_id bigint)
+RETURNS table (
+    "success" boolean
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    INSERT INTO tbl.user_follow_expert (fkey_user_id, fkey_expert_id)
+    VALUES (a_user_id, a_expert_id);
+    RETURN TRUE;
+END
+
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_unfollow_expert(a_user_id bigint, a_expert_id bigint)
+RETURNS table (
+    "success" boolean
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    UPDATE tbl.user_follow_expert
+    SET unfollowed = TRUE
+    WHERE fkey_user_id = a_user_id AND fkey_expert_id = a_expert_id;
+    RETURN TRUE;
+END
+
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_list_followed_experts(a_user_id bigint)
+RETURNS table (
+    "expert_id" bigint,
     "name" varchar,
-    "role" enum_role,
-    "accepted" boolean
+    "follower_count" int,
+    "description" varchar,
+    "social_media" varchar,
+    "risk_score" real,
+    "reputation_score" real,
+    "aum" real
 )
 LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY SELECT a.pkey_id, a.name, b.role, b.accepted
-                 FROM tbl.organization AS a
-                          INNER JOIN tbl.organization_membership AS b ON a.pkey_id = b.fkey_organization
-                 WHERE b.fkey_user = a_user_id;
+    RETURN QUERY SELECT a.pkey_id AS expert_id,
+                          a.name AS name,
+                          (SELECT COUNT(*) FROM tbl.user_follow_expert WHERE fkey_expert_id = a.pkey_id AND unfollowed = FALSE) AS follower_count,
+                          a.description AS description,
+                          a.social_media AS social_media,
+                          a.risk_score AS risk_score,
+                          a.reputation_score AS reputation_score,
+                          a.aum AS aum
+                 FROM tbl.expert AS a 
+                     JOIN tbl.user_follow_expert ON fkey_expert_id = a.pkey_id WHERE fkey_user_id = a_user_id AND unfollowed = FALSE
+                    ;
+END
+
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_list_experts()
+RETURNS table (
+    "expert_id" bigint,
+    "name" varchar,
+    "follower_count" int,
+    "description" varchar,
+    "social_media" varchar,
+    "risk_score" real,
+    "reputation_score" real,
+    "aum" real
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY SELECT a.pkey_id AS expert_id,
+                          a.name AS name,
+                          (SELECT COUNT(*) FROM tbl.user_follow_expert WHERE fkey_expert_id = a.pkey_id AND unfollowed = FALSE) AS follower_count,
+                          a.description AS description,
+                          a.social_media AS social_media,
+                          a.risk_score AS risk_score,
+                          a.reputation_score AS reputation_score,
+                          a.aum AS aum
+                 FROM tbl.expert AS a 
+                    ;
+END
+
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_get_expert_profile(a_expert_id bigint)
+RETURNS table (
+    "expert_id" bigint,
+    "name" varchar,
+    "follower_count" int,
+    "description" varchar,
+    "social_media" varchar,
+    "risk_score" real,
+    "reputation_score" real,
+    "aum" real
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY SELECT a.pkey_id AS expert_id,
+                          a.name AS name,
+                          (SELECT COUNT(*) FROM tbl.user_follow_expert WHERE fkey_expert_id = a.pkey_id AND unfollowed = FALSE) AS follower_count,
+                          a.description AS description,
+                          a.social_media AS social_media,
+                          a.risk_score AS risk_score,
+                          a.reputation_score AS reputation_score,
+                          a.aum AS aum
+                 FROM tbl.expert AS a 
+                 WHERE a.pkey_id = a_expert_id;
+END
+
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_get_user_profile(a_user_id bigint)
+RETURNS table (
+    "user_id" bigint,
+    "name" varchar,
+    "follower_count" int,
+    "description" varchar,
+    "social_media" varchar,
+    "risk_score" real,
+    "reputation_score" real,
+    "aum" real
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY SELECT a.pkey_id AS expert_id,
+                          a.name AS name,
+                          (SELECT COUNT(*) FROM tbl.user_follow_expert WHERE fkey_expert_id = a.pkey_id AND unfollowed = FALSE) AS follower_count,
+                          a.description AS description,
+                          a.social_media AS social_media,
+                          a.risk_score AS risk_score,
+                          a.reputation_score AS reputation_score,
+                          a.aum AS aum
+                 FROM tbl.user AS a 
+                 WHERE a.pkey_id = a_user_id;
+END
+
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_register_wallet(a_user_id bigint, a_blockchain varchar, a_wallet_address varchar)
+RETURNS table (
+    "success" boolean
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    INSERT INTO tbl.user_wallet (fkey_user_id, blockchain, wallet_address)
+    VALUES (a_user_id, a_blockchain, a_wallet_address);
+    RETURN TRUE;
+END
+
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_deregister_wallet(a_user_id bigint, a_blockchain varchar, a_wallet_address varchar)
+RETURNS table (
+    "success" boolean
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    DELETE FROM tbl.user_wallet WHERE fkey_user_id = a_user_id AND blockchain = a_blockchain AND wallet_address = a_wallet_address;
+    RETURN TRUE;
+END
+
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_list_wallets(a_user_id bigint)
+RETURNS table (
+    "wallet_id" bigint,
+    "blockchain" varchar,
+    "wallet_address" varchar,
+    "is_default" boolean
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY SELECT a.pkey_id AS wallet_id,
+                          a.blockchain AS blockchain,
+                          a.wallet_address AS wallet_address,
+                          a.is_default AS is_default
+                 FROM tbl.user_wallet AS a 
+                 WHERE a.fkey_user_id = a_user_id;
+END
+
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_apply_become_expert(a_user_id bigint)
+RETURNS table (
+    "success" boolean
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    UPDATE tbl.user SET pending_expert = TRUE WHERE pkey_id = a_user_id;
+END
+
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_admin_apply_become_expert(a_admin_user_id bigint, a_user_id bigint)
+RETURNS table (
+    "success" boolean
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+-- TODO: check permission and update tbl.user.role to expert
+END
+
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_admin_list_pending_user_expert_applications()
+RETURNS table (
+    "user_id" bigint,
+    "name" varchar,
+    "follower_count" int,
+    "description" varchar,
+    "social_media" varchar,
+    "risk_score" real,
+    "reputation_score" real,
+    "aum" real
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY SELECT a.pkey_id AS expert_id,
+                          a.name AS name,
+                          (SELECT COUNT(*) FROM tbl.user_follow_expert WHERE fkey_expert_id = a.pkey_id AND unfollowed = FALSE) AS follower_count,
+                          a.description AS description,
+                          a.social_media AS social_media,
+                          a.risk_score AS risk_score,
+                          a.reputation_score AS reputation_score,
+                          a.aum AS aum
+                 FROM tbl.expert AS a 
+                 WHERE a.pending_expert = TRUE;
 END
 
 $$;

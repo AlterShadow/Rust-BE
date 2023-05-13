@@ -391,15 +391,15 @@ pub fn endpoint_admin_approve_user_become_expert() -> EndpointSchema {
     )
     .with_description("Admin approves a user to become an expert")
 }
-pub fn endpoint_admin_list_pending_user_become_expert() -> EndpointSchema {
+pub fn endpoint_admin_list_pending_expert_applications() -> EndpointSchema {
     EndpointSchema::new(
-        "AdminListPendingUserBecomeExpert",
+        "AdminListPendingExpertApplications",
         20240,
         vec![],
         vec![Field::new(
             "users",
             Type::datatable(
-                "ListPendingUserBecomeExpertRow",
+                "ListPendingExpertApplicationsRow",
                 vec![
                     Field::new("user_id", Type::BigInt),
                     Field::new("name", Type::String),
@@ -415,9 +415,9 @@ pub fn endpoint_admin_list_pending_user_become_expert() -> EndpointSchema {
     )
     .with_description("Admin approves a user to become an expert")
 }
-pub fn endpoint_user_make_strategy() -> EndpointSchema {
+pub fn endpoint_user_create_strategy() -> EndpointSchema {
     EndpointSchema::new(
-        "UserMakeStrategy",
+        "UserCreateStrategy",
         20250,
         vec![
             Field::new("name", Type::String),
@@ -498,8 +498,8 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
         endpoint_user_deregister_wallet(),
         endpoint_user_apply_become_expert(),
         endpoint_admin_approve_user_become_expert(),
-        endpoint_admin_list_pending_user_become_expert(),
-        endpoint_user_make_strategy(),
+        endpoint_admin_list_pending_expert_applications(),
+        endpoint_user_create_strategy(),
         endpoint_user_update_strategy(),
         endpoint_user_add_strategy_watching_wallet(),
         endpoint_user_remove_strategy_watching_wallet(),

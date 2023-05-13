@@ -1316,7 +1316,7 @@
           "json_schema": null
         },
         {
-          "name": "AdminListPendingUserBecomeExpert",
+          "name": "AdminListPendingExpertApplications",
           "code": 20240,
           "parameters": [],
           "returns": [
@@ -1324,7 +1324,7 @@
               "name": "users",
               "ty": {
                 "DataTable": {
-                  "name": "ListPendingUserBecomeExpertRow",
+                  "name": "ListPendingExpertApplicationsRow",
                   "fields": [
                     {
                       "name": "user_id",
@@ -1368,7 +1368,7 @@
           "json_schema": null
         },
         {
-          "name": "UserMakeStrategy",
+          "name": "UserCreateStrategy",
           "code": 20250,
           "parameters": [
             {
