@@ -85,29 +85,16 @@ pub fn get_return_row_type(this: &ProceduralFunction) -> Type {
         this.returns.clone(),
     )
 }
-pub fn get_return_type(this: &ProceduralFunction) -> Type {
-    Type::object(
-        format!("{}Resp", this.name.to_case(Case::Pascal)),
-        vec![Field::new(
-            "rows",
-            Type::Vec(Box::new(get_return_row_type(this))),
-        )],
-    )
-}
 
 pub fn to_rust_type_decl(this: &ProceduralFunction) -> String {
-    [
-        get_parameter_type(this),
-        get_return_row_type(this),
-        get_return_type(this),
-    ]
-    .map(|x| {
-        format!(
-            "#[derive(Serialize, Deserialize, Debug, Clone)]\n{}",
-            x.to_rust_decl()
-        )
-    })
-    .join("\n")
+    [get_parameter_type(this), get_return_row_type(this)]
+        .map(|x| {
+            format!(
+                "#[derive(Serialize, Deserialize, Debug, Clone)]\n{}",
+                x.to_rust_decl()
+            )
+        })
+        .join("\n")
 }
 pub fn to_rust_decl(this: &ProceduralFunction) -> String {
     let mut arguments = this
@@ -128,16 +115,14 @@ pub fn to_rust_decl(this: &ProceduralFunction) -> String {
         .map(|(i, x)| format!("{}: row.try_get({})?", x.name, i))
         .join(",\n");
     format!(
-        "pub async fn {name_raw}(&self, req: {name}Req) -> Result<{name}Resp> {{
+        "pub async fn {name_raw}(&self, req: {name}Req) -> Result<DbResponse<{name}RespRow>> {{
           let rows = self.client.query(\"{sql}\", &[{pg_params}]).await?;
-          let mut resp = {name}Resp {{
-              rows: Vec::with_capacity(rows.len())
-          }};
+          let mut resp = DbResponse::with_capacity(rows.len());
           for row in rows {{
             let r = {name}RespRow {{
               {row_getter}
             }};
-            resp.rows.push(r);
+            resp.push(r);
           }}
           Ok(resp)
         }}",

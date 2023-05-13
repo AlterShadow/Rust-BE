@@ -21,8 +21,8 @@ async fn main() -> Result<()> {
     server.add_database(connect_to_database(config.app_db).await?);
     server.add_database(connect_to_database(config.auth_db).await?);
     let mut auth_controller = EndpointAuthController::new();
-    auth_controller.add_auth_endpoint(endpoint_auth_login(), LoginHandler);
-    auth_controller.add_auth_endpoint(endpoint_auth_signup(), SignupHandler);
+    auth_controller.add_auth_endpoint(endpoint_auth_login(), MethodAuthLogin);
+    auth_controller.add_auth_endpoint(endpoint_auth_signup(), MethodAuthSignup);
     server.add_auth_controller(auth_controller);
     server.listen().await?;
     Ok(())

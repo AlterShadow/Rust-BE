@@ -1,16 +1,11 @@
-use ::tap::*;
 use eyre::*;
 use gen::database::*;
 use gen::model::*;
-use std::sync::Arc;
-
-use lib::toolbox::*;
-
 use lib::handler::RequestHandler;
+use lib::toolbox::*;
 use lib::ws::*;
-use mc2_fi::method::LoginHandler;
-use serde_json::Value;
 use std::sync::atomic::Ordering;
+use std::sync::Arc;
 
 pub fn ensure_user_role(conn: &Connection, role: EnumRole) -> Result<()> {
     let user_role = conn.role.load(Ordering::Relaxed);
@@ -44,9 +39,12 @@ impl RequestHandler for MethodUserFollowStrategy {
                     strategy_id: req.strategy_id,
                 })
                 .await?;
-            ensure!(ret.rows.len() == 1, "failed to follow strategy");
+
             Ok(UserFollowStrategyResponse {
-                success: ret.rows[0].success,
+                success: ret
+                    .into_result()
+                    .context("failed to follow strategy")?
+                    .success,
             })
         })
     }
@@ -75,7 +73,7 @@ impl RequestHandler for MethodUserListFollowedStrategies {
                 .await?;
             Ok(UserListFollowedStrategiesResponse {
                 strategies: ret
-                    .rows
+                    .into_rows()
                     .into_iter()
                     .map(|x| ListStrategiesRow {
                         strategy_id: x.strategy_id,
@@ -115,7 +113,7 @@ impl RequestHandler for MethodUserListStrategies {
                 .await?;
             Ok(UserListStrategiesResponse {
                 strategies: ret
-                    .rows
+                    .into_rows()
                     .into_iter()
                     .map(|x| ListStrategiesRow {
                         strategy_id: x.strategy_id,
@@ -153,8 +151,7 @@ impl RequestHandler for MethodUserGetStrategy {
                     strategy_id: req.strategy_id,
                 })
                 .await?;
-            ensure!(ret.rows.len() == 1, "failed to get strategy");
-            let ret = ret.rows.into_iter().next().unwrap();
+            let ret = ret.into_result().context("failed to get strategy")?;
             let watching_wallets = db
                 .fun_user_list_strategy_watch_wallets(FunUserListStrategyWatchWalletsReq {
                     strategy_id: req.strategy_id,
@@ -175,7 +172,7 @@ impl RequestHandler for MethodUserGetStrategy {
                 followers: ret.followers,
                 backers: ret.backers,
                 watching_wallets: watching_wallets
-                    .rows
+                    .into_rows()
                     .into_iter()
                     .map(|x| WatchingWalletRow {
                         watching_wallet_id: x.watch_wallet_id,
@@ -233,7 +230,7 @@ impl RequestHandler for MethodUserGetStrategyStatistics {
             Ok(UserGetStrategyStatisticsResponse {
                 strategy_id: req.strategy_id,
                 net_value: net_value
-                    .rows
+                    .into_rows()
                     .into_iter()
                     .map(|x| NetValuePoint {
                         time: x.time,
@@ -241,7 +238,7 @@ impl RequestHandler for MethodUserGetStrategyStatistics {
                     })
                     .collect(),
                 follow_history: follow_hist
-                    .rows
+                    .into_rows()
                     .into_iter()
                     .map(|x| FollowHistoryPoint {
                         time: x.time,
@@ -249,7 +246,7 @@ impl RequestHandler for MethodUserGetStrategyStatistics {
                     })
                     .collect(),
                 back_history: back_hist
-                    .rows
+                    .into_rows()
                     .into_iter()
                     .map(|x| BackHistoryPoint {
                         time: x.time,

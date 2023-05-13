@@ -1,7 +1,5 @@
 mod method;
 
-
-
 use eyre::*;
 
 use gen::model::EnumService;
@@ -11,7 +9,7 @@ use lib::log::setup_logs;
 
 use lib::ws::{EndpointAuthController, WebsocketServer};
 use mc2_fi::endpoints::endpoint_auth_authorize;
-use mc2_fi::method::AuthorizeHandler;
+use mc2_fi::method::MethodAuthAuthorize;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Debug, Display, Formatter};
 
@@ -44,7 +42,7 @@ async fn main() -> Result<()> {
     let mut auth_controller = EndpointAuthController::new();
     auth_controller.add_auth_endpoint(
         endpoint_auth_authorize(),
-        AuthorizeHandler {
+        MethodAuthAuthorize {
             accept_service: EnumService::User,
         },
     );

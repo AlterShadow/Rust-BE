@@ -1,13 +1,13 @@
 use deadpool_postgres::Runtime;
 use deadpool_postgres::*;
 use eyre::*;
+use serde::{Deserialize, Serialize};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::Hash;
 use std::hash::Hasher;
 use tokio_postgres::types::ToSql;
 use tokio_postgres::{NoTls, Row, ToStatement};
 use tracing::*;
-
 pub type DatabaseConfig = deadpool_postgres::Config;
 #[derive(Clone)]
 pub struct SimpleDbClient {
@@ -30,6 +30,35 @@ impl SimpleDbClient {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct DbResponse<T> {
+    rows: Vec<T>,
+}
+impl<T> DbResponse<T> {
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self {
+            rows: Vec::with_capacity(capacity),
+        }
+    }
+    pub fn rows(&self) -> &Vec<T> {
+        &self.rows
+    }
+    pub fn into_rows(self) -> Vec<T> {
+        self.rows
+    }
+    pub fn len(&self) -> usize {
+        self.rows.len()
+    }
+    pub fn is_empty(&self) -> bool {
+        self.rows.is_empty()
+    }
+    pub fn into_result(self) -> Option<T> {
+        self.rows.into_iter().next()
+    }
+    pub fn push(&mut self, row: T) {
+        self.rows.push(row);
+    }
+}
 pub async fn connect_to_database(config: DatabaseConfig) -> Result<SimpleDbClient> {
     info!(
         "Connecting to database {}:{} {}",

@@ -12,9 +12,9 @@ use uuid::Uuid;
 use web3::signing::{hash_message, recover, RecoveryError};
 use web3::types::Address;
 
-pub struct SignupHandler;
+pub struct MethodAuthSignup;
 
-impl RequestHandler for SignupHandler {
+impl RequestHandler for MethodAuthSignup {
     type Request = SignupRequest;
     type Response = SignupResponse;
 
@@ -88,7 +88,7 @@ impl RequestHandler for SignupHandler {
             }
             Ok(SignupResponse {
                 address: address_string,
-                user_id: signup.rows[0].user_id,
+                user_id: signup.into_result().context("Signup")?.user_id,
             })
         });
     }
@@ -101,9 +101,9 @@ fn hex_decode(s: &[u8]) -> Result<Vec<u8>> {
         Ok(hex::decode(s)?)
     }
 }
-pub struct LoginHandler;
+pub struct MethodAuthLogin;
 
-impl RequestHandler for LoginHandler {
+impl RequestHandler for MethodAuthLogin {
     type Request = LoginRequest;
     type Response = LoginResponse;
 
@@ -144,10 +144,9 @@ impl RequestHandler for LoginHandler {
                     ip_address: conn.address.ip(),
                 })
                 .await?;
-            let row =
-                data.rows.into_iter().next().with_context(|| {
-                    CustomError::new(EnumErrorCode::UserNoAuthToken, Value::Null)
-                })?;
+            let row = data
+                .into_result()
+                .with_context(|| CustomError::new(EnumErrorCode::UserNoAuthToken, Value::Null))?;
             let user_token = Uuid::new_v4();
             let admin_token = Uuid::new_v4();
             db_auth
@@ -168,10 +167,10 @@ impl RequestHandler for LoginHandler {
     }
 }
 
-pub struct AuthorizeHandler {
+pub struct MethodAuthAuthorize {
     pub accept_service: EnumService,
 }
-impl RequestHandler for AuthorizeHandler {
+impl RequestHandler for MethodAuthAuthorize {
     type Request = AuthorizeRequest;
     type Response = AuthorizeResponse;
 
@@ -207,7 +206,7 @@ impl RequestHandler for AuthorizeHandler {
                 })
                 .await?;
 
-            let auth_data = auth_data.rows.into_iter().next().with_context(|| {
+            let auth_data = auth_data.into_result().with_context(|| {
                 CustomError::new(EnumErrorCode::UserInvalidAuthToken, Value::Null)
             })?;
 
