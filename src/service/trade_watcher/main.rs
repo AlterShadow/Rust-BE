@@ -1,9 +1,6 @@
 use eyre::*;
 use lib::config::{load_config, Config};
-use lib::log::setup_logs;
-use serde_json::Value;
 use std::net::ToSocketAddrs;
-use std::sync::{Arc, Mutex};
 
 use axum::{
     body::{Body, Bytes},
@@ -12,9 +9,7 @@ use axum::{
     routing::post,
     Router,
 };
-
-use tokio::sync::Semaphore;
-use web3::{transports::WebSocket, types::H256, Web3};
+use web3::types::H256;
 
 mod rpc_provider;
 mod tracker;

@@ -3,10 +3,9 @@ use std::io::Cursor;
 use ethabi::{Contract, Token};
 use web3::types::{H160, H256, U256};
 
-use super::trading_pair::{Chain, Dex, DexVersion, Swap, TradingPair};
-
 use super::super::rpc_provider::connection::Conn;
 use super::calldata::{CallParameter, ContractCall};
+use super::trading_pair::{Chain, Dex, DexVersion, Swap};
 use super::tx::{Tx, TxStatus};
 
 const SMART_ROUTER_PATH: &str = "abi/pancake_swap/smart_router_v3.json";
