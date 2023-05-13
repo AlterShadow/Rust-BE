@@ -80,8 +80,8 @@ BEGIN
     END IF;
     UPDATE tbl.user -- ping
     SET last_ip      = a_ip_address,
-        last_login   = EXTRACT(EPOCH FROM (NOW()))::bigint,
-        logins_count = logins_count + 1
+        last_login_at   = EXTRACT(EPOCH FROM (NOW()))::bigint,
+        login_count = login_count + 1
     WHERE pkey_id = _user_id;
 
     IF a_service_code = api.USER_SERVICE() THEN

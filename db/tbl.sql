@@ -1,322 +1,460 @@
 -- Created by Vertabelo (http://vertabelo.com)
+-- Last modification date: 2023-05-13 07:43:53.877
 
-create schema tbl;;
+CREATE SCHEMA IF NOT EXISTS tbl;;
 
 -- tables
+-- Table: aum_history
+CREATE TABLE tbl.aum_history
+(
+    pkey_id          bigint           NOT NULL DEFAULT nextval('tbl.seq_aum_history_id'),
+    fkey_strategy_id bigint           NOT NULL,
+    base_token       varchar(20)      NOT NULL,
+    quote_token      varchar(20)      NOT NULL,
+    blockchain       varchar(20)      NOT NULL,
+    dex              varchar(20)      NOT NULL,
+    wallet_address   varchar(20)      NOT NULL,
+    action           varchar(8)       NOT NULL,
+    price            double precision NOT NULL,
+    quantity         double precision NOT NULL,
+    current_price    double precision NULL,
+    yield_7d         double precision NULL,
+    yield_30d        double precision NULL,
+    CONSTRAINT aum_history_pk PRIMARY KEY (pkey_id)
+);
 
 -- Table: authorization_attempt
-CREATE TABLE tbl.authorization_attempt (
-    pkey_id bigint  NOT NULL DEFAULT nextval( 'tbl.seq_authorization_attempt_id' ),
-    fkey_user bigint  NOT NULL,
-    ip_address inet  NOT NULL,
-    is_token_ok boolean  NOT NULL,
-    moment oid  NOT NULL DEFAULT EXTRACT(EPOCH FROM (NOW()))::bigint,
+CREATE TABLE tbl.authorization_attempt
+(
+    pkey_id     bigint  NOT NULL DEFAULT nextval('tbl.seq_authorization_attempt_id'),
+    fkey_user   bigint  NOT NULL DEFAULT null,
+    ip_address  inet    NOT NULL DEFAULT null,
+    is_token_ok boolean NOT NULL DEFAULT null,
+    moment      bigint  NOT NULL,
     CONSTRAINT "tbl.authorization_attempt_pk" PRIMARY KEY (pkey_id)
 );
 
 -- Table: bad_request
-CREATE TABLE tbl.bad_request (
-    pkey_id bigint  NOT NULL DEFAULT nextval( 'tbl.seq_bad_request_id' ),
-    fkey_user bigint  NULL,
-    ip_address inet  NOT NULL,
-    method_code integer  NULL,
-    error_code integer  NOT NULL,
-    device_id varchar(256)  NULL,
-    device_os varchar(64)  NULL,
-    raw varchar(16384)  NULL,
-    moment oid  NOT NULL DEFAULT EXTRACT(EPOCH FROM (NOW()))::bigint,
+CREATE TABLE tbl.bad_request
+(
+    pkey_id     bigint         NOT NULL DEFAULT nextval('tbl.seq_bad_request_id'),
+    fkey_user   bigint         NULL     DEFAULT null,
+    ip_address  inet           NOT NULL DEFAULT null,
+    method_code integer        NULL     DEFAULT null,
+    error_code  integer        NOT NULL DEFAULT null,
+    device_id   varchar(256)   NULL     DEFAULT null,
+    device_os   varchar(64)    NULL     DEFAULT null,
+    raw         varchar(16384) NULL     DEFAULT null,
+    moment      bigint         NOT NULL,
     CONSTRAINT "tbl.bad_request_pk" PRIMARY KEY (pkey_id)
 );
 
+-- Table: expert_profile
+CREATE TABLE tbl.expert_profile
+(
+    pkey_id          bigint           NOT NULL DEFAULT nextval('tbl.seq_expert_profile_id'),
+    fkey_user_id     bigint           NOT NULL,
+    name             varchar          NOT NULL,
+    description      varchar          NOT NULL,
+    social_media     varchar          NULL,
+    consistent_score double precision NULL,
+    followers        int              NULL,
+    backers          int              NULL,
+    risk_score       double precision NULL,
+    reputation_score double precision NULL,
+    aum              double precision NULL,
+    CONSTRAINT expert_profile_pk PRIMARY KEY (pkey_id)
+);
 
 -- Table: login_attempt
-CREATE TABLE tbl.login_attempt (
-    pkey_id bigint  NOT NULL DEFAULT nextval( 'tbl.seq_login_attempt_id' ),
-    fkey_user bigint  NULL,
-    address varchar(20)  NOT NULL,
-    ip_address inet  NOT NULL,
-    device_id varchar(256)  NULL,
-    device_os varchar(64)  NULL,
-    is_password_ok boolean  NULL,
-    moment oid  NOT NULL DEFAULT EXTRACT(EPOCH FROM (NOW()))::bigint,
+CREATE TABLE tbl.login_attempt
+(
+    pkey_id        bigint       NOT NULL DEFAULT nextval('tbl.seq_login_attempt_id'),
+    fkey_user      bigint       NOT NULL ,
+    address        varchar(20)  NOT NULL,
+    ip_address     inet         NOT NULL,
+    device_id      varchar(256) NULL     DEFAULT null,
+    device_os      varchar(64)  NULL     DEFAULT null,
+    is_password_ok boolean      NULL     DEFAULT null,
+    moment         bigint       NOT NULL,
     CONSTRAINT "tbl.login_attempt_pk" PRIMARY KEY (pkey_id)
 );
 
--- Table: organization
-CREATE TABLE tbl.organization (
-    pkey_id bigint  NOT NULL DEFAULT nextval( 'tbl.seq_organization_id' ),
-    name varchar  NOT NULL,
-    country varchar  NOT NULL,
-    tax_id varchar  NOT NULL,
-    address varchar  NOT NULL,
-    note varchar  NOT NULL,
-    approved boolean NOT NULL,
-    CONSTRAINT organization_pk PRIMARY KEY (pkey_id)
-);
--- Table: organization_membership
-CREATE TABLE tbl.organization_membership (
-    pkey_id bigint  NOT NULL DEFAULT nextval( 'tbl.seq_organization_membership_id' ),
-    fkey_user bigint  NOT NULL,
-    fkey_organization bigint  NOT NULL,
-    role enum_role  NOT NULL,
-    created_at oid  NOT NULL,
-    accepted boolean  NOT NULL,
-    CONSTRAINT organization_membership_pk PRIMARY KEY (pkey_id)
-);
-
--- Table: password_reset_attempt
-CREATE TABLE tbl.password_reset_attempt (
-    pkey_id bigint  NOT NULL DEFAULT nextval( 'tbl.seq_password_reset_attempt_id' ),
-    fkey_user bigint  NOT NULL,
-    initiated_at oid  NOT NULL DEFAULT EXTRACT(EPOCH FROM (NOW()))::bigint,
-    valid_until oid  NOT NULL DEFAULT EXTRACT(EPOCH FROM (NOW()))::bigint + 86400,
-    code varchar(256)  NOT NULL,
-    CONSTRAINT password_reset_attempt_pk PRIMARY KEY (pkey_id)
+-- Table: strategy
+CREATE TABLE tbl.strategy
+(
+    pkey_id           bigint           NOT NULL DEFAULT nextval('tbl.seq_strategy_id'),
+    name              varchar          NOT NULL,
+    fkey_user_id      bigint           NULL,
+    blockchain        varchar(20)      NOT NULL,
+    description       varchar          NOT NULL,
+    social_media      varchar          NULL,
+    historical_return double precision NULL,
+    inception_time    bigint           NULL,
+    total_amount      bigint           NULL,
+    token_allocation  bigint           NULL,
+    reputation        int              NULL,
+    risk_score        double precision NULL,
+    AUM               double precision NULL,
+    tokens            int              NULL,
+    apy               double precision NULL,
+    swap_fee          double precision NULL,
+    CONSTRAINT strategy_pk PRIMARY KEY (pkey_id)
 );
 
--- Table: recovery_question
-CREATE TABLE tbl.recovery_question (
-    pkey_id bigint  NOT NULL DEFAULT nextval( 'tbl.seq_recovery_question_id' ),
-    fkey_user bigint  NOT NULL,
-    fkey_question smallint  NOT NULL,
-    answer varchar(256)  NOT NULL,
-    CONSTRAINT recovery_question_pk PRIMARY KEY (pkey_id)
+-- Table: strategy_watching_wallet
+CREATE TABLE tbl.strategy_watching_wallet
+(
+    pkey_id            bigint           NOT NULL DEFAULT nextval('tbl.seq_strategy_watching_wallet_id'),
+    fkey_user_id       bigint           NULL,
+    fkey_strategy_id   bigint           NOT NULL,
+    blockchain         varchar(20)      NOT NULL,
+    address            varchar(20)      NOT NULL,
+    dex                varchar(20)      NOT NULL,
+    ratio_distribution double precision NOT NULL,
+    created_at         bigint           NOT NULL,
+    updated_at         bigint           NOT NULL,
+    CONSTRAINT strategy_watching_wallet_pk PRIMARY KEY (pkey_id)
 );
-
--- Table: recovery_question_data
-CREATE TABLE tbl.recovery_question_data (
-    pkey_id smallint  NOT NULL,
-    content varchar(256)  NOT NULL,
-    category enum_recovery_question_category  NOT NULL,
-    CONSTRAINT recovery_question_data_pk PRIMARY KEY (pkey_id)
-);
-
--- Table: support_ticket
-CREATE TABLE tbl.support_ticket (
-    pkey_id bigint  NOT NULL DEFAULT nextval( 'tbl.seq_support_ticket_id' ),
-    fkey_user bigint  NOT NULL,
-    fkey_handler_user bigint  NULL,
-    content varchar  NOT NULL,
-    response varchar  NOT NULL,
-    created_at oid  NOT NULL,
-    updated_at oid  NOT NULL,
-    CONSTRAINT support_ticket_pk PRIMARY KEY (pkey_id)
-);
-
 
 -- Table: user
-CREATE TABLE tbl."user" (
-    pkey_id bigint  NOT NULL DEFAULT nextval( 'tbl.seq_user_id' ),
-    role enum_role  NOT NULL DEFAULT 'user',
-    address varchar(20)  NOT NULL,
-    age smallint  NOT NULL,
-    preferred_language varchar(5)  NOT NULL,
-    family_name varchar(128)  NULL,
-    given_name varchar(128)  NULL,
-    agreed_tos boolean  NOT NULL,
-    agreed_privacy boolean  NOT NULL,
-    created_at oid  NOT NULL DEFAULT EXTRACT(EPOCH FROM (NOW()))::bigint,
-    updated_at oid  NOT NULL DEFAULT EXTRACT(EPOCH FROM (NOW()))::bigint,
-    email varchar(320)  NULL,
-    phone_number varchar(15)  NULL,
-    last_ip inet  NOT NULL,
-    last_login oid  NULL,
-    last_password_reset oid  NULL,
-    logins_count integer  NOT NULL DEFAULT 0,
-    user_device_id varchar  NULL,
-    admin_device_id varchar  NULL,
-    password_reset_token uuid  NULL,
-    reset_token_valid uuid  NULL,
-    user_token uuid  NULL,
-    admin_token uuid  NULL,
-    is_blocked boolean  NOT NULL DEFAULT false,
-    CONSTRAINT uidx_user_username UNIQUE (address) NOT DEFERRABLE  INITIALLY IMMEDIATE,
+CREATE TABLE tbl."user"
+(
+    pkey_id            bigint       NOT NULL DEFAULT nextval('tbl.seq_user_id'),
+    role               enum_role    NOT NULL,
+    address            varchar(20)  NOT NULL,
+    age                int          NOT NULL,
+    preferred_language varchar(5)   NOT NULL,
+    family_name        varchar(32)  NOT NULL,
+    given_name         varchar(32)  NOT NULL,
+    agreed_tos         boolean      NOT NULL,
+    agreed_privacy     boolean      NOT NULL,
+    created_at         bigint       NOT NULL,
+    updated_at         bigint       NOT NULL,
+    email              varchar(320) NULL,
+    phone_number       varchar(15)  NULL,
+    last_ip            inet         NULL,
+    last_login_at      bigint       NULL,
+    login_count        int          NOT NULL DEFAULT 0,
+    user_device_id     varchar      NULL,
+    admin_device_id    varchar      NULL,
+    user_token         uuid         NULL,
+    admin_token        uuid         NULL,
+    is_blocked         boolean      NOT NULL DEFAULT FALSE,
+    pending_expert     boolean      NOT NULL DEFAULT FALSE,
     CONSTRAINT user_pk PRIMARY KEY (pkey_id)
 );
 
+-- Table: user_back_strategy_history
+CREATE TABLE tbl.user_back_strategy_history
+(
+    pkey_id          bigint           NOT NULL DEFAULT nextval('tbl.seq_user_back_strategy_history_id'),
+    fkey_user_id     bigint           NOT NULL,
+    fkey_strategy_id bigint           NOT NULL,
+    purchase_wallet  varchar(20)      NOT NULL,
+    blockchain       varchar(20)      NOT NULL,
+    dex              varchar(20)      NOT NULL,
+    back_value       double precision NOT NULL,
+    back_time        bigint           NOT NULL,
+    CONSTRAINT user_back_strategy_history_pk PRIMARY KEY (pkey_id)
+);
+
+-- Table: user_exit_strategy_history
+CREATE TABLE tbl.user_exit_strategy_history
+(
+    pkey_id          bigint           NOT NULL DEFAULT nextval('tbl.seq_user_exit_strategy_history_id'),
+    fkey_user_id     bigint           NOT NULL,
+    fkey_strategy_id bigint           NOT NULL,
+    purchase_wallet  varchar(20)      NOT NULL,
+    blockchain       varchar(20)      NOT NULL,
+    dex              varchar(20)      NOT NULL,
+    transaction_hash varchar(20)      NOT NULL,
+    exit_quantity    double precision NOT NULL,
+    back_time        bigint           NOT NULL,
+    exit_time        bigint           NOT NULL,
+    CONSTRAINT user_exit_strategy_history_pk PRIMARY KEY (pkey_id)
+);
+
+-- Table: user_follow_expert
+CREATE TABLE tbl.user_follow_expert
+(
+    pkey_id                bigint NOT NULL DEFAULT nextval(' tbl.seq_user_follow_expert_id '),
+    fkey_user_id           bigint NOT NULL,
+    fkey_expert_profile_id bigint NOT NULL,
+    created_at             bigint NOT NULL,
+    updated_at             bigint NOT NULL,
+    CONSTRAINT user_follow_expert_pk PRIMARY KEY (pkey_id)
+);
+
+-- Table: user_follow_strategy
+CREATE TABLE tbl.user_follow_strategy
+(
+    pkey_id          bigint  NOT NULL DEFAULT nextval(' tbl.seq_user_follow_strategy '),
+    fkey_user_id     bigint  NOT NULL,
+    fkey_strategy_id bigint  NOT NULL,
+    unfollowed       boolean NOT NULL,
+    created_at       bigint  NOT NULL,
+    updated_at       bigint  NOT NULL,
+    CONSTRAINT user_follow_strategy_pk PRIMARY KEY (pkey_id)
+);
 
 -- Table: user_wallet
--- user_wallet register authorized address to wallet
-CREATE TABLE tbl."user_wallet" (
-    pkey_id bigint  NOT NULL DEFAULT nextval( 'tbl.seq_user_id' ),
-    fkey_user_id bigint NOT NULL,
-    address varchar(20)  NOT NULL,
-    CONSTRAINT uidx_user_username UNIQUE (address) NOT DEFERRABLE  INITIALLY IMMEDIATE,
-    CONSTRAINT fkey_user FOREIGN KEY (fkey_user_id) REFERENCES tbl."user" (pkey_id) NOT DEFERRABLE  INITIALLY IMMEDIATE,
+CREATE TABLE tbl.user_wallet
+(
+    pkey_id      bigint      NOT NULL DEFAULT nextval(' tbl.seq_user_wallet_id '),
+    fkey_user_id bigint      NOT NULL DEFAULT null,
+    address      varchar(20) NOT NULL DEFAULT null,
+    CONSTRAINT uidx_user_username UNIQUE (address) NOT DEFERRABLE INITIALLY IMMEDIATE,
     CONSTRAINT user_pk PRIMARY KEY (pkey_id)
 );
 
+-- foreign keys
+-- Reference: aum_list_strategy (table: aum_history)
+ALTER TABLE tbl.aum_history
+    ADD CONSTRAINT aum_list_strategy
+        FOREIGN KEY (fkey_strategy_id)
+            REFERENCES tbl.strategy (pkey_id)
+            NOT DEFERRABLE
+                INITIALLY IMMEDIATE
+;
 
 -- Reference: authorization_attempt_user (table: authorization_attempt)
-ALTER TABLE tbl.authorization_attempt ADD CONSTRAINT authorization_attempt_user
-    FOREIGN KEY (fkey_user)
-    REFERENCES tbl."user" (pkey_id)  
-    NOT DEFERRABLE 
-    INITIALLY IMMEDIATE
+ALTER TABLE tbl.authorization_attempt
+    ADD CONSTRAINT authorization_attempt_user
+        FOREIGN KEY (fkey_user)
+            REFERENCES tbl."user" (pkey_id)
+            NOT DEFERRABLE
+                INITIALLY IMMEDIATE
 ;
 
 -- Reference: bad_request_user (table: bad_request)
-ALTER TABLE tbl.bad_request ADD CONSTRAINT bad_request_user
-    FOREIGN KEY (fkey_user)
-    REFERENCES tbl."user" (pkey_id)  
-    NOT DEFERRABLE 
-    INITIALLY IMMEDIATE
+ALTER TABLE tbl.bad_request
+    ADD CONSTRAINT bad_request_user
+        FOREIGN KEY (fkey_user)
+            REFERENCES tbl."user" (pkey_id)
+            NOT DEFERRABLE
+                INITIALLY IMMEDIATE
 ;
 
+-- Reference: expert_profile_user_follow_expert (table: user_follow_expert)
+ALTER TABLE tbl.user_follow_expert
+    ADD CONSTRAINT expert_profile_user_follow_expert
+        FOREIGN KEY (fkey_expert_profile_id)
+            REFERENCES tbl.expert_profile (pkey_id)
+            NOT DEFERRABLE
+                INITIALLY IMMEDIATE
+;
 
+-- Reference: fkey_user (table: user_wallet)
+ALTER TABLE tbl.user_wallet
+    ADD CONSTRAINT fkey_user
+        FOREIGN KEY (fkey_user_id)
+            REFERENCES tbl."user" (pkey_id)
+            NOT DEFERRABLE
+                INITIALLY IMMEDIATE
+;
 
 -- Reference: login_attempt_user (table: login_attempt)
-ALTER TABLE tbl.login_attempt ADD CONSTRAINT login_attempt_user
-    FOREIGN KEY (fkey_user)
-    REFERENCES tbl."user" (pkey_id)  
-    NOT DEFERRABLE 
-    INITIALLY IMMEDIATE
+ALTER TABLE tbl.login_attempt
+    ADD CONSTRAINT login_attempt_user
+        FOREIGN KEY (fkey_user)
+            REFERENCES tbl."user" (pkey_id)
+            NOT DEFERRABLE
+                INITIALLY IMMEDIATE
 ;
 
-
--- Reference: organization_organization_membership (table: organization_membership)
-ALTER TABLE tbl.organization_membership ADD CONSTRAINT organization_organization_membership
-    FOREIGN KEY (fkey_organization)
-    REFERENCES tbl.organization (pkey_id)  
-    NOT DEFERRABLE 
-    INITIALLY IMMEDIATE
+-- Reference: strategy_strategy_watching_wallet (table: strategy_watching_wallet)
+ALTER TABLE tbl.strategy_watching_wallet
+    ADD CONSTRAINT strategy_strategy_watching_wallet
+        FOREIGN KEY (fkey_strategy_id)
+            REFERENCES tbl.strategy (pkey_id)
+            NOT DEFERRABLE
+                INITIALLY IMMEDIATE
 ;
 
--- Reference: password_reset_attempt_user (table: password_reset_attempt)
-ALTER TABLE tbl.password_reset_attempt ADD CONSTRAINT password_reset_attempt_user
-    FOREIGN KEY (fkey_user)
-    REFERENCES tbl."user" (pkey_id)  
-    NOT DEFERRABLE 
-    INITIALLY IMMEDIATE
+-- Reference: user_back_strategy_history_strategy (table: user_back_strategy_history)
+ALTER TABLE tbl.user_back_strategy_history
+    ADD CONSTRAINT user_back_strategy_history_strategy
+        FOREIGN KEY (fkey_strategy_id)
+            REFERENCES tbl.strategy (pkey_id)
+            NOT DEFERRABLE
+                INITIALLY IMMEDIATE
 ;
 
--- Reference: recovery_question_recovery_question_data (table: recovery_question)
-ALTER TABLE tbl.recovery_question ADD CONSTRAINT recovery_question_recovery_question_data
-    FOREIGN KEY (fkey_question)
-    REFERENCES tbl.recovery_question_data (pkey_id)  
-    NOT DEFERRABLE 
-    INITIALLY IMMEDIATE
+-- Reference: user_back_strategy_history_user (table: user_back_strategy_history)
+ALTER TABLE tbl.user_back_strategy_history
+    ADD CONSTRAINT user_back_strategy_history_user
+        FOREIGN KEY (fkey_user_id)
+            REFERENCES tbl."user" (pkey_id)
+            NOT DEFERRABLE
+                INITIALLY IMMEDIATE
 ;
 
--- Reference: recovery_question_user (table: recovery_question)
-ALTER TABLE tbl.recovery_question ADD CONSTRAINT recovery_question_user
-    FOREIGN KEY (fkey_user)
-    REFERENCES tbl."user" (pkey_id)  
-    NOT DEFERRABLE 
-    INITIALLY IMMEDIATE
+-- Reference: user_exit_strategy_history_strategy (table: user_exit_strategy_history)
+ALTER TABLE tbl.user_exit_strategy_history
+    ADD CONSTRAINT user_exit_strategy_history_strategy
+        FOREIGN KEY (fkey_strategy_id)
+            REFERENCES tbl.strategy (pkey_id)
+            NOT DEFERRABLE
+                INITIALLY IMMEDIATE
 ;
 
--- Reference: support_ticket_user (table: support_ticket)
-ALTER TABLE tbl.support_ticket ADD CONSTRAINT support_ticket_user
-    FOREIGN KEY (fkey_handler_user)
-    REFERENCES tbl."user" (pkey_id)  
-    NOT DEFERRABLE 
-    INITIALLY IMMEDIATE
+-- Reference: user_exit_strategy_history_user (table: user_exit_strategy_history)
+ALTER TABLE tbl.user_exit_strategy_history
+    ADD CONSTRAINT user_exit_strategy_history_user
+        FOREIGN KEY (fkey_user_id)
+            REFERENCES tbl."user" (pkey_id)
+            NOT DEFERRABLE
+                INITIALLY IMMEDIATE
 ;
 
-
--- Reference: user_organization_membership (table: organization_membership)
-ALTER TABLE tbl.organization_membership ADD CONSTRAINT user_organization_membership
-    FOREIGN KEY (fkey_user)
-    REFERENCES tbl."user" (pkey_id)  
-    NOT DEFERRABLE 
-    INITIALLY IMMEDIATE
+-- Reference: user_follow_expert_user (table: user_follow_expert)
+ALTER TABLE tbl.user_follow_expert
+    ADD CONSTRAINT user_follow_expert_user
+        FOREIGN KEY (fkey_user_id)
+            REFERENCES tbl."user" (pkey_id)
+            NOT DEFERRABLE
+                INITIALLY IMMEDIATE
 ;
 
--- Reference: user_support_ticket (table: support_ticket)
-ALTER TABLE tbl.support_ticket ADD CONSTRAINT user_support_ticket
-    FOREIGN KEY (fkey_user)
-    REFERENCES tbl."user" (pkey_id)  
-    NOT DEFERRABLE 
-    INITIALLY IMMEDIATE
+-- Reference: user_follow_strategy_strategy (table: user_follow_strategy)
+ALTER TABLE tbl.user_follow_strategy
+    ADD CONSTRAINT user_follow_strategy_strategy
+        FOREIGN KEY (fkey_strategy_id)
+            REFERENCES tbl.strategy (pkey_id)
+            NOT DEFERRABLE
+                INITIALLY IMMEDIATE
 ;
 
+-- Reference: user_follow_strategy_user (table: user_follow_strategy)
+ALTER TABLE tbl.user_follow_strategy
+    ADD CONSTRAINT user_follow_strategy_user
+        FOREIGN KEY (fkey_user_id)
+            REFERENCES tbl."user" (pkey_id)
+            NOT DEFERRABLE
+                INITIALLY IMMEDIATE
+;
+
+-- Reference: user_profile_user (table: expert_profile)
+ALTER TABLE tbl.expert_profile
+    ADD CONSTRAINT user_profile_user
+        FOREIGN KEY (fkey_user_id)
+            REFERENCES tbl."user" (pkey_id)
+            NOT DEFERRABLE
+                INITIALLY IMMEDIATE
+;
+
+-- Reference: user_strategy (table: strategy)
+ALTER TABLE tbl.strategy
+    ADD CONSTRAINT user_strategy
+        FOREIGN KEY (fkey_user_id)
+            REFERENCES tbl."user" (pkey_id)
+            NOT DEFERRABLE
+                INITIALLY IMMEDIATE
+;
+
+-- sequences
+-- Sequence: seq_aum_history_id
+CREATE SEQUENCE tbl.seq_aum_history_id
+    NO MINVALUE
+    NO MAXVALUE
+    NO CYCLE
+;
 
 -- Sequence: seq_authorization_attempt_id
 CREATE SEQUENCE tbl.seq_authorization_attempt_id
-      NO MINVALUE
-      NO MAXVALUE
-      NO CYCLE
-      AS bigint
+    NO MINVALUE
+    NO MAXVALUE
+    NO CYCLE
+    AS bigint
 ;
 
 -- Sequence: seq_bad_request_id
 CREATE SEQUENCE tbl.seq_bad_request_id
-      NO MINVALUE
-      NO MAXVALUE
-      NO CYCLE
-      AS bigint
+    NO MINVALUE
+    NO MAXVALUE
+    NO CYCLE
+    AS bigint
 ;
 
--- Sequence: seq_listing_id
-CREATE SEQUENCE tbl.seq_listing_id
-      NO MINVALUE
-      NO MAXVALUE
-      NO CYCLE
-      AS bigint
+-- Sequence: seq_expert_profile_id
+CREATE SEQUENCE tbl.seq_expert_profile_id
+    NO MINVALUE
+    NO MAXVALUE
+    NO CYCLE
 ;
 
 -- Sequence: seq_login_attempt_id
 CREATE SEQUENCE tbl.seq_login_attempt_id
-      NO MINVALUE
-      NO MAXVALUE
-      NO CYCLE
-      AS bigint
+    NO MINVALUE
+    NO MAXVALUE
+    NO CYCLE
+    AS bigint
 ;
 
--- Sequence: seq_organization_id
-CREATE SEQUENCE tbl.seq_organization_id
-      NO MINVALUE
-      NO MAXVALUE
-      NO CYCLE
+-- Sequence: seq_strategy_id
+CREATE SEQUENCE tbl.seq_strategy_id
+    NO MINVALUE
+    NO MAXVALUE
+    NO CYCLE
 ;
 
--- Sequence: seq_organization_membership_id
-CREATE SEQUENCE tbl.seq_organization_membership_id
-      NO MINVALUE
-      NO MAXVALUE
-      NO CYCLE
+-- Sequence: seq_strategy_watching_wallet_id
+CREATE SEQUENCE tbl.seq_strategy_watching_wallet_id
+    NO MINVALUE
+    NO MAXVALUE
+    NO CYCLE
 ;
 
--- Sequence: seq_password_reset_attempt_id
-CREATE SEQUENCE tbl.seq_password_reset_attempt_id
-      NO MINVALUE
-      NO MAXVALUE
-      NO CYCLE
-      AS bigint
+-- Sequence: seq_user_back_strategy_history_id
+CREATE SEQUENCE tbl.seq_user_back_strategy_history_id
+    NO MINVALUE
+    NO MAXVALUE
+    NO CYCLE
 ;
 
--- Sequence: seq_recovery_question_id
-CREATE SEQUENCE tbl.seq_recovery_question_id
-      NO MINVALUE
-      NO MAXVALUE
-      NO CYCLE
-      AS bigint
+-- Sequence: seq_user_exit_strategy_history_id
+CREATE SEQUENCE tbl.seq_user_exit_strategy_history_id
+    NO MINVALUE
+    NO MAXVALUE
+    NO CYCLE
 ;
 
--- Sequence: seq_support_ticket_id
-CREATE SEQUENCE tbl.seq_support_ticket_id
-      NO MINVALUE
-      NO MAXVALUE
-      NO CYCLE
+-- Sequence: seq_user_follow_expert_id
+CREATE SEQUENCE tbl.seq_user_follow_expert_id
+    NO MINVALUE
+    NO MAXVALUE
+    NO CYCLE
 ;
 
+-- Sequence: seq_user_follow_strategy
+CREATE SEQUENCE tbl.seq_user_follow_strategy
+    NO MINVALUE
+    NO MAXVALUE
+    NO CYCLE
+;
 
 -- Sequence: seq_user_id
 CREATE SEQUENCE tbl.seq_user_id
-      NO MINVALUE
-      NO MAXVALUE
-      NO CYCLE
-      AS bigint
+    NO MINVALUE
+    NO MAXVALUE
+    NO CYCLE
+    AS bigint
 ;
 
+-- Sequence: seq_user_wallet_id
+CREATE SEQUENCE tbl.seq_user_wallet_id
+    NO MINVALUE
+    NO MAXVALUE
+    NO CYCLE
+;
 
 -- Sequence: seq_ver_id
 CREATE SEQUENCE tbl.seq_ver_id
-      NO MINVALUE
-      NO MAXVALUE
-      NO CYCLE
-      AS bigint
+    NO MINVALUE
+    NO MAXVALUE
+    NO CYCLE
+    AS bigint
 ;
 
 -- End of file.
