@@ -8,12 +8,13 @@ use tools::*;
 use tracing::*;
 
 async fn signup(username: impl Into<String>) -> Result<()> {
-    let username = username.into();
+    assert_eq!(username, "user1");
     let mut client = get_ws_auth_client(&encode_header(
         SignupRequest {
-            username: username.clone(),
-            password: "AHJQ6X1H68SK8D9P6WW0".to_string(),
-            email: format!("{}@mc2.fi", username),
+            address: "0x111013b7862ebc1b9726420aa0e8728de310ee63".to_string(),
+            signature_text: "5468697320726571756573742077696c6c206e6f74207472696767657220616e79207472616e73616374696f6e206f7220696e63757220616e7920636f7374206f7220666565732e200a204974206973206f6e6c7920696e74656e64656420746f2061757468656e74696361746520796f752061726520746865206f776e6572206f662077616c6c65743a0a3078313131303133623738363265626331623937323634323061613065383732386465333130656536336e6f6e63653a0a383632353033343139".to_string(),
+            signature: "72f8e93e5e2ba1b3df2f179bddac22b691ca86b39f6f7619a9eedd90b16bed165c0e03dcac13e5e2a1a1ea79ab9cf40a6ba572165a7f58525466a42a9699f0ea1c".to_string(),
+            email: "qjk2001@gmail.com".to_string(),
             phone: "+00123456".to_string(),
             agreed_tos: true,
             agreed_privacy: true,
@@ -21,34 +22,15 @@ async fn signup(username: impl Into<String>) -> Result<()> {
         endpoint_auth_signup(),
     )?)
     .await?;
-    let user1: SignupResponse = client.recv_resp().await?;
-    info!("{:?}", user1);
+    let res: SignupResponse = client.recv_resp().await?;
+    info!("{:?}", res);
     Ok(())
 }
 async fn login(username: impl Into<String>) -> Result<LoginResponse> {
-    let login = auth_login(&LoginRequest {
-        username: username.into(),
-        password: "AHJQ6X1H68SK8D9P6WW0".to_string(),
-        service_code: EnumService::User as _,
-        device_id: "24787297130491616".to_string(),
-        device_os: "android".to_string(),
-    })
-    .await?;
-
-    Ok(login)
+    todo!()
 }
 async fn connect_user(username: impl Into<String>) -> Result<UserClient> {
-    let username = username.into();
-    let login = login(username).await?;
-    let client = get_ws_user_client(&AuthorizeRequest {
-        username: login.username,
-        token: login.user_token,
-        service_code: EnumService::User as _,
-        device_id: "24787297130491616".to_string(),
-        device_os: "android".to_string(),
-    })
-    .await?;
-    Ok(client)
+    todo!()
 }
 #[tokio::test]
 async fn test_invite_user_to_organization() -> Result<()> {

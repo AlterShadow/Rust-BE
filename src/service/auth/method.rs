@@ -34,6 +34,7 @@ impl RequestHandler for SignupHandler {
                     format!("Invalid address: {}", x),
                 )
             })?;
+            let address_string = format!("{:?}", address);
 
             let signature_text = hex_decode(req.signature_text.as_bytes())?;
             let signature = hex_decode(req.signature.as_bytes())?;
@@ -62,7 +63,7 @@ impl RequestHandler for SignupHandler {
 
             let signup = db_auth
                 .fun_auth_signup(FunAuthSignupReq {
-                    address: address.to_string(),
+                    address: address_string.clone(),
                     email: req.email.clone(),
                     phone: req.phone.clone(),
                     age: 0,
@@ -74,7 +75,7 @@ impl RequestHandler for SignupHandler {
                 .await?;
             if db_auth.client.conn_hash() != db.client.conn_hash() {
                 db.fun_auth_signup(FunAuthSignupReq {
-                    address: address.to_string(),
+                    address: address_string.clone(),
                     email: req.email,
                     phone: req.phone,
                     age: 0,
@@ -86,7 +87,7 @@ impl RequestHandler for SignupHandler {
                 .await?;
             }
             Ok(SignupResponse {
-                address: format!("{:?}", address),
+                address: address_string,
                 user_id: signup.rows[0].user_id,
             })
         });
@@ -136,7 +137,7 @@ impl RequestHandler for LoginHandler {
 
             let data = db_auth
                 .fun_auth_authenticate(FunAuthAuthenticateReq {
-                    address: address.to_string(),
+                    address: format!("{:?}", address),
                     service_code: service_code as _,
                     device_id: req.device_id,
                     device_os: req.device_os,
@@ -197,7 +198,7 @@ impl RequestHandler for AuthorizeHandler {
             }
             let auth_data = db_auth
                 .fun_auth_authorize(FunAuthAuthorizeReq {
-                    address: req.address.to_string(),
+                    address: format!("{:?}", req.address),
                     token: req.token,
                     service: srv,
                     device_id: req.device_id,

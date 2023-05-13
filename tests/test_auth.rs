@@ -39,6 +39,10 @@ fn encode_signature(sig: &Signature) -> String {
 }
 #[tokio::test]
 async fn test_signup() -> Result<()> {
+    test_signup_inner().await
+}
+
+async fn test_signup_inner() -> Result<()> {
     let _ = setup_logs(LogLevel::Trace);
     drop_and_recreate_database()?;
 
@@ -59,11 +63,9 @@ async fn test_signup() -> Result<()> {
     println!("{:?}", res);
     Ok(())
 }
-
 #[tokio::test]
 async fn test_login() -> Result<()> {
-    let _ = setup_logs(LogLevel::Trace);
-
+    test_signup_inner().await?;
     let mut client = get_ws_auth_client(&encode_header(
         LoginRequest {
             address: "0x111013b7862ebc1b9726420aa0e8728de310ee63".to_string(),

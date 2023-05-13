@@ -7,35 +7,43 @@ RETURNS table (
 LANGUAGE plpgsql
 AS $$
     
+
 DECLARE
-  id_ bigint;
+    id_ bigint;
 BEGIN
-  IF (a_agreed_tos = FALSE OR a_agreed_privacy = FALSE) THEN
-    RAISE SQLSTATE 'R000X'; -- ConsentMissing
-  ELSEIF ((SELECT pkey_id
-           FROM tbl.user
-           WHERE LOWER(address) = LOWER(a_address)) IS NOT NULL) THEN
-    RAISE SQLSTATE 'R000Z'; -- UsernameAlreadyRegistered
-  END IF;
-  INSERT INTO tbl.user (address,
-                       email,
-                       phone_number,
-                       age,
-                       preferred_language,
-                       agreed_tos,
-                       agreed_privacy,
-                       last_ip)
-  VALUES (a_address,
-          a_email,
-          a_phone,
-          a_age,
-          a_preferred_language,
-          a_agreed_tos,
-          a_agreed_privacy,
-          a_ip_address)
-  RETURNING pkey_id INTO STRICT id_;
-  RETURN QUERY SELECT id_;
+    IF (a_agreed_tos = FALSE OR a_agreed_privacy = FALSE) THEN
+        RAISE SQLSTATE 'R000X'; -- ConsentMissing
+    ELSEIF ((SELECT pkey_id
+             FROM tbl.user
+             WHERE LOWER(address) = LOWER(a_address)) IS NOT NULL) THEN
+        RAISE SQLSTATE 'R000Z'; -- UsernameAlreadyRegistered
+    END IF;
+    INSERT INTO tbl.user (address,
+                          email,
+                          phone_number,
+                          role,
+                          age,
+                          preferred_language,
+                          agreed_tos,
+                          agreed_privacy,
+                          last_ip,
+                          updated_at,
+                          created_at)
+    VALUES (a_address,
+            a_email,
+            a_phone,
+            'user'::enum_role,
+            a_age,
+            a_preferred_language,
+            a_agreed_tos,
+            a_agreed_privacy,
+            a_ip_address,
+            extract(Epoch FROM (NOW()))::bigint,
+            extract(Epoch FROM (NOW()))::bigint)
+    RETURNING pkey_id INTO STRICT id_;
+    RETURN QUERY SELECT id_;
 END
+
         
 $$;
         
@@ -62,8 +70,8 @@ BEGIN
     WHERE address = a_address;
 
     -- Log the login attempt. 
-    INSERT INTO tbl.login_attempt(fkey_user, address, ip_address, is_password_ok)
-    VALUES (_user_id, a_address, a_ip_address, TRUE);
+    INSERT INTO tbl.login_attempt(fkey_user, address, ip_address, is_password_ok, moment)
+    VALUES (_user_id, a_address, a_ip_address, TRUE, extract(Epoch FROM (NOW()))::bigint);
     -- TODO: is_password_ok should be passed from the backend.
     -- COMMIT;
     -- Checking the block status and password, and updating the login info if ok.
@@ -93,33 +101,6 @@ BEGIN
     RETURN QUERY SELECT _user_id;
 END
         
-$$;
-        
-
-CREATE OR REPLACE FUNCTION api.fun_auth_get_password_salt(a_address varchar)
-RETURNS table (
-    "salt" bytea
-)
-LANGUAGE plpgsql
-AS $$
-    
-DECLARE
-  user_id bigint;
-BEGIN
-  ASSERT (a_address NOTNULL);
-
-  -- Looking up the user.
-  SELECT pkey_id, u.password_salt
-  INTO user_id, salt
-  FROM tbl.user u
-  WHERE address = a_address;
-
-  IF (user_id ISNULL) THEN
-    RAISE SQLSTATE 'R0007'; -- UnknownUser
-  END IF;
-  RETURN QUERY SELECT salt;
-END
-            
 $$;
         
 
@@ -239,74 +220,22 @@ DECLARE
   is_blocked_ boolean;
   user_id_    bigint;
 BEGIN
-  ASSERT (a_address NOTNULL AND a_device_id NOTNULL AND a_device_os NOTNULL AND
-          a_ip_address NOTNULL);
-  SELECT pkey_id, is_blocked
-  INTO user_id_, is_blocked_
-  FROM tbl.userd
-  WHERE address = LOWER(a_address);
-  INSERT INTO tbl.login_attempt(fkey_user, address, ip_address,
-                                device_id, device_os)
-  VALUES (user_id_, a_address,  a_ip_address, a_device_id, a_device_os);
-  -- COMMIT;
-  IF (user_id_ ISNULL) THEN
-    RAISE SQLSTATE 'R0007'; -- UnknownUser
-  ELSEIF (is_blocked_) THEN
-    RAISE SQLSTATE 'R0008'; -- BlockedUser
-  END IF;
-  RETURN QUERY SELECT user_id_;
-END
-            
-$$;
-        
-
-CREATE OR REPLACE FUNCTION api.fun_auth_get_recovery_questions(a_user_id bigint)
-RETURNS table (
-    "question_id" int,
-    "question" varchar
-)
-LANGUAGE plpgsql
-AS $$
-    
-BEGIN
-  ASSERT (a_user_id NOTNULL);
-  RETURN QUERY SELECT qd.pkey_id,
-                      qd.content
-               FROM tbl.recovery_question_data qd
-                      JOIN tbl.recovery_question q ON qd.pkey_id = q.fkey_question
-               WHERE q.fkey_user = a_user_id;
-END
-            
-$$;
-        
-
-CREATE OR REPLACE FUNCTION api.fun_submit_recovery_answers(a_user_id bigint, a_question_ids int[], a_answers varchar[], a_password_reset_token uuid, a_token_valid int)
-RETURNS void
-LANGUAGE plpgsql
-AS $$
-    
-DECLARE
-  correct_answers_ varchar[];
-BEGIN
-  IF (SELECT COUNT(pkey_id) FROM tbl.recovery_question WHERE fkey_user = a_user_id) !=
-     CARDINALITY(a_question_ids) THEN
-    RAISE SQLSTATE 'R0011'; -- MustSubmitAllRecoveryQuestions
-  END IF;
-  SELECT ARRAY_AGG(result.answer)
-  INTO correct_answers_
-  FROM (SELECT q.answer AS answer
-        FROM tbl.recovery_question q
-               JOIN UNNEST(a_question_ids) WITH ORDINALITY t(fkey_question, ord)
-                    USING (fkey_question)
-        WHERE fkey_user = a_user_id
-        ORDER BY t.ord) result;
-  IF a_answers != correct_answers_ THEN
-    RAISE SQLSTATE 'R000T'; -- WrongRecoveryAnswers
-  END IF;
-  UPDATE tbl.user
-  SET password_reset_token = a_password_reset_token,
-      reset_token_valid    = a_token_valid
-  WHERE pkey_id = a_user_id;
+    ASSERT (a_address NOTNULL AND a_device_id NOTNULL AND a_device_os NOTNULL AND
+            a_ip_address NOTNULL);
+    SELECT pkey_id, is_blocked
+    INTO user_id_, is_blocked_
+    FROM tbl.user
+    WHERE address = LOWER(a_address);
+    INSERT INTO tbl.login_attempt(fkey_user, address, ip_address,
+                                  device_id, device_os, moment)
+    VALUES (user_id_, a_address, a_ip_address, a_device_id, a_device_os, extract(epoch from now())::bigint);
+    -- COMMIT;
+    IF (user_id_ ISNULL) THEN
+        RAISE SQLSTATE 'R0007'; -- UnknownUser
+    ELSEIF (is_blocked_) THEN
+        RAISE SQLSTATE 'R0008'; -- BlockedUser
+    END IF;
+    RETURN QUERY SELECT user_id_;
 END
             
 $$;
@@ -342,31 +271,6 @@ BEGIN
     LIMIT a_limit;
 END
         
-$$;
-        
-
-CREATE OR REPLACE FUNCTION api.fun_admin_list_organizations(a_offset bigint, a_limit bigint)
-RETURNS table (
-    "organization_id" bigint,
-    "name" varchar,
-    "description" varchar,
-    "approved" boolean,
-    "member_count" bigint
-)
-LANGUAGE plpgsql
-AS $$
-    
-
-BEGIN
-    RETURN QUERY SELECT a.pkey_id,
-                        a.name,
-                        a.note,
-                        a.approved,
-                        (SELECT COUNT(*) FROM tbl.organization_membership WHERE fkey_organization = a.pkey_id)
-                 FROM tbl.organization AS a
-                 OFFSET a_offset LIMIT a_limit;
-END
-
 $$;
         
 
@@ -463,161 +367,6 @@ BEGIN
                  WHERE b.fkey_user = a_user_id;
 END
 
-$$;
-        
-
-CREATE OR REPLACE FUNCTION api.fun_user_invite_user_to_organization(a_organization_id bigint, a_target_user_id bigint)
-RETURNS void
-LANGUAGE plpgsql
-AS $$
-    
-BEGIN
-    INSERT INTO tbl.organization_membership (fkey_user, fkey_organization, role, accepted, created_at)
-    VALUES (a_target_user_id, a_organization_id, 'user', FALSE, EXTRACT(EPOCH FROM NOW())::bigint);    
-END
-
-$$;
-        
-
-CREATE OR REPLACE FUNCTION api.fun_user_accept_organization_invitation(a_user_id bigint, a_organization_id bigint)
-RETURNS table (
-    "membership_id" bigint
-)
-LANGUAGE plpgsql
-AS $$
-    
-BEGIN
-    RETURN QUERY UPDATE tbl.organization_membership
-    SET accepted = TRUE
-    WHERE fkey_user = a_user_id AND fkey_organization = a_organization_id
-    RETURNING pkey_id;
-END
-
-$$;
-        
-
-CREATE OR REPLACE FUNCTION api.fun_user_list_organization_invitations_by_organization(a_organization_id bigint)
-RETURNS table (
-    "membership_id" bigint,
-    "organization_id" bigint,
-    "organization_name" varchar,
-    "user_id" bigint,
-    "username" varchar,
-    "email" varchar,
-    "created_at" oid,
-    "accepted" boolean
-)
-LANGUAGE plpgsql
-AS $$
-    
-BEGIN
-    RETURN QUERY SELECT a.pkey_id, c.pkey_id, c.name, b.pkey_id, b.username, b.email,
-           a.created_at, a.accepted -- a.updated_at, a.accepted_at
-    FROM tbl.organization_membership AS a
-    INNER JOIN tbl.user AS b ON b.pkey_id = a.fkey_user
-    INNER JOIN tbl.organization AS c ON c.pkey_id = a.fkey_organization
-         WHERE a.fkey_organization = a_organization_id AND a.accepted = FALSE;
-END
-
-$$;
-        
-
-CREATE OR REPLACE FUNCTION api.fun_user_list_organization_invitations_by_user(a_user_id bigint)
-RETURNS table (
-    "membership_id" bigint,
-    "organization_id" bigint,
-    "organization_name" varchar,
-    "user_id" bigint,
-    "username" varchar,
-    "email" varchar,
-    "created_at" oid,
-    "accepted" boolean
-)
-LANGUAGE plpgsql
-AS $$
-    
-BEGIN
-    RETURN QUERY SELECT a.pkey_id, c.pkey_id, c.name, b.pkey_id, b.username, b.email,
-           a.created_at, a.accepted -- a.updated_at, a.accepted_at
-    FROM tbl.organization_membership AS a
-    INNER JOIN tbl.user AS b ON b.pkey_id = a.fkey_user
-    INNER JOIN tbl.organization AS c ON c.pkey_id = a.fkey_organization
-         WHERE a.fkey_user = a_user_id AND a.accepted = FALSE;
-END
-
-$$;
-        
-
-CREATE OR REPLACE FUNCTION api.fun_user_set_user_role_in_organization(a_user_id bigint, a_organization_id bigint, a_new_role enum_role)
-RETURNS void
-LANGUAGE plpgsql
-AS $$
-    
-BEGIN
-    UPDATE tbl.organization_membership
-    SET role = a_new_role
-    WHERE fkey_user = a_user_id AND fkey_organization = a_organization_id;
-END
-            
-$$;
-        
-
-CREATE OR REPLACE FUNCTION api.fun_user_delete_user_from_organization(a_user_id bigint, a_organization_id bigint)
-RETURNS void
-LANGUAGE plpgsql
-AS $$
-    
-BEGIN
-    DELETE FROM tbl.organization_membership
-    WHERE fkey_user = a_user_id AND fkey_organization = a_organization_id;
-END
-            
-$$;
-        
-
-CREATE OR REPLACE FUNCTION api.fun_admin_get_organization(a_organization_id bigint)
-RETURNS table (
-    "organization_id" bigint,
-    "name" varchar,
-    "description" varchar,
-    "approved" boolean
-)
-LANGUAGE plpgsql
-AS $$
-    
-BEGIN
-    RETURN QUERY SELECT a.pkey_id, a.name, a.note, a.approved
-        FROM tbl.organization AS a
-        WHERE pkey_id = a_organization_id;
-  
-END
-        
-$$;
-        
-
-CREATE OR REPLACE FUNCTION api.fun_admin_approve_organization(a_organization_id bigint)
-RETURNS void
-LANGUAGE plpgsql
-AS $$
-    
-BEGIN
-    UPDATE tbl.organization SET approved = TRUE
-        WHERE pkey_id = a_organization_id;
-END
-        
-$$;
-        
-
-CREATE OR REPLACE FUNCTION api.fun_admin_disapprove_organization(a_organization_id bigint)
-RETURNS void
-LANGUAGE plpgsql
-AS $$
-    
-BEGIN
-    UPDATE tbl.organization SET approved = FALSE
-        WHERE pkey_id = a_organization_id;
-END
-        
 $$;
         
 

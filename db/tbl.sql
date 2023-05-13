@@ -1,5 +1,5 @@
 -- Created by Vertabelo (http://vertabelo.com)
--- Last modification date: 2023-05-13 07:43:53.877
+-- Last modification date: 2023-05-13 08:33:06.693
 
 CREATE SCHEMA IF NOT EXISTS tbl;;
 
@@ -13,7 +13,8 @@ CREATE TABLE tbl.aum_history
     quote_token      varchar(20)      NOT NULL,
     blockchain       varchar(20)      NOT NULL,
     dex              varchar(20)      NOT NULL,
-    wallet_address   varchar(20)      NOT NULL,
+    wallet_address   varchar(64)      NOT NULL,
+    transaction_hash varchar(64)      NOT NULL,
     action           varchar(8)       NOT NULL,
     price            double precision NOT NULL,
     quantity         double precision NOT NULL,
@@ -38,13 +39,13 @@ CREATE TABLE tbl.authorization_attempt
 CREATE TABLE tbl.bad_request
 (
     pkey_id     bigint         NOT NULL DEFAULT nextval('tbl.seq_bad_request_id'),
-    fkey_user   bigint         NULL     DEFAULT null,
-    ip_address  inet           NOT NULL DEFAULT null,
-    method_code integer        NULL     DEFAULT null,
-    error_code  integer        NOT NULL DEFAULT null,
-    device_id   varchar(256)   NULL     DEFAULT null,
+    fkey_user   bigint         NOT NULL,
+    ip_address  inet           NOT NULL,
+    method_code integer        NULL,
+    error_code  integer        NOT NULL,
+    device_id   varchar(256)   NULL,
     device_os   varchar(64)    NULL     DEFAULT null,
-    raw         varchar(16384) NULL     DEFAULT null,
+    raw         varchar(16384) NULL,
     moment      bigint         NOT NULL,
     CONSTRAINT "tbl.bad_request_pk" PRIMARY KEY (pkey_id)
 );
@@ -70,11 +71,11 @@ CREATE TABLE tbl.expert_profile
 CREATE TABLE tbl.login_attempt
 (
     pkey_id        bigint       NOT NULL DEFAULT nextval('tbl.seq_login_attempt_id'),
-    fkey_user      bigint       NOT NULL ,
-    address        varchar(20)  NOT NULL,
+    fkey_user      bigint       NOT NULL,
+    address        varchar(64)  NOT NULL,
     ip_address     inet         NOT NULL,
-    device_id      varchar(256) NULL     DEFAULT null,
-    device_os      varchar(64)  NULL     DEFAULT null,
+    device_id      varchar(256) NULL,
+    device_os      varchar(64)  NULL,
     is_password_ok boolean      NULL     DEFAULT null,
     moment         bigint       NOT NULL,
     CONSTRAINT "tbl.login_attempt_pk" PRIMARY KEY (pkey_id)
@@ -86,7 +87,6 @@ CREATE TABLE tbl.strategy
     pkey_id           bigint           NOT NULL DEFAULT nextval('tbl.seq_strategy_id'),
     name              varchar          NOT NULL,
     fkey_user_id      bigint           NULL,
-    blockchain        varchar(20)      NOT NULL,
     description       varchar          NOT NULL,
     social_media      varchar          NULL,
     historical_return double precision NULL,
@@ -109,7 +109,7 @@ CREATE TABLE tbl.strategy_watching_wallet
     fkey_user_id       bigint           NULL,
     fkey_strategy_id   bigint           NOT NULL,
     blockchain         varchar(20)      NOT NULL,
-    address            varchar(20)      NOT NULL,
+    address            varchar(64)      NOT NULL,
     dex                varchar(20)      NOT NULL,
     ratio_distribution double precision NOT NULL,
     created_at         bigint           NOT NULL,
@@ -122,11 +122,11 @@ CREATE TABLE tbl."user"
 (
     pkey_id            bigint       NOT NULL DEFAULT nextval('tbl.seq_user_id'),
     role               enum_role    NOT NULL,
-    address            varchar(20)  NOT NULL,
-    age                int          NOT NULL,
+    address            varchar(64)  NOT NULL,
+    age                int          NULL,
     preferred_language varchar(5)   NOT NULL,
-    family_name        varchar(32)  NOT NULL,
-    given_name         varchar(32)  NOT NULL,
+    family_name        varchar(32)  NULL,
+    given_name         varchar(32)  NULL,
     agreed_tos         boolean      NOT NULL,
     agreed_privacy     boolean      NOT NULL,
     created_at         bigint       NOT NULL,
@@ -165,10 +165,10 @@ CREATE TABLE tbl.user_exit_strategy_history
     pkey_id          bigint           NOT NULL DEFAULT nextval('tbl.seq_user_exit_strategy_history_id'),
     fkey_user_id     bigint           NOT NULL,
     fkey_strategy_id bigint           NOT NULL,
-    purchase_wallet  varchar(20)      NOT NULL,
+    purchase_wallet  varchar(64)      NOT NULL,
     blockchain       varchar(20)      NOT NULL,
     dex              varchar(20)      NOT NULL,
-    transaction_hash varchar(20)      NOT NULL,
+    transaction_hash varchar(64)      NOT NULL,
     exit_quantity    double precision NOT NULL,
     back_time        bigint           NOT NULL,
     exit_time        bigint           NOT NULL,
@@ -178,7 +178,7 @@ CREATE TABLE tbl.user_exit_strategy_history
 -- Table: user_follow_expert
 CREATE TABLE tbl.user_follow_expert
 (
-    pkey_id                bigint NOT NULL DEFAULT nextval(' tbl.seq_user_follow_expert_id '),
+    pkey_id                bigint NOT NULL DEFAULT nextval('tbl.seq_user_follow_expert_id'),
     fkey_user_id           bigint NOT NULL,
     fkey_expert_profile_id bigint NOT NULL,
     created_at             bigint NOT NULL,
@@ -189,7 +189,7 @@ CREATE TABLE tbl.user_follow_expert
 -- Table: user_follow_strategy
 CREATE TABLE tbl.user_follow_strategy
 (
-    pkey_id          bigint  NOT NULL DEFAULT nextval(' tbl.seq_user_follow_strategy '),
+    pkey_id          bigint  NOT NULL DEFAULT nextval('tbl.seq_user_follow_strategy'),
     fkey_user_id     bigint  NOT NULL,
     fkey_strategy_id bigint  NOT NULL,
     unfollowed       boolean NOT NULL,
@@ -201,9 +201,9 @@ CREATE TABLE tbl.user_follow_strategy
 -- Table: user_wallet
 CREATE TABLE tbl.user_wallet
 (
-    pkey_id      bigint      NOT NULL DEFAULT nextval(' tbl.seq_user_wallet_id '),
+    pkey_id      bigint      NOT NULL DEFAULT nextval('tbl.seq_user_wallet_id'),
     fkey_user_id bigint      NOT NULL DEFAULT null,
-    address      varchar(20) NOT NULL DEFAULT null,
+    address      varchar(64) NOT NULL DEFAULT null,
     CONSTRAINT uidx_user_username UNIQUE (address) NOT DEFERRABLE INITIALLY IMMEDIATE,
     CONSTRAINT user_pk PRIMARY KEY (pkey_id)
 );
