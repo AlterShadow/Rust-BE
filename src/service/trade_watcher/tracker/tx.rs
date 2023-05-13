@@ -115,6 +115,13 @@ impl Tx {
 				}
 		}
 
+		pub fn get_id(&self) -> Option<H256> {
+				match &self.transaction {
+						Some(tx) => Some(tx.hash),
+						None => None,
+				}
+		}
+
 		pub fn amount_of_token_received(&self, token_contract: H160, recipient: H160, transfer_event_signature: H256) -> Option<U256> {
 			if let Some(receipt) = self.get_receipt() {
 					for log in receipt.logs {
@@ -124,9 +131,6 @@ impl Tx {
 							&& log.topics[0] == transfer_event_signature
 							/* address of the contract that fired the event */
 							&& log.address == token_contract {
-									/* 2nd topic according to ERC20 is the "from" address */
-									/* topics have 32 bytes, so we must fetch the last 20 bytes for an address */
-									let from = H160::from_slice(&log.topics[1].as_bytes()[12..]);
 									/* 3rd topic according to ERC20 is the "to" address */
 									/* topics have 32 bytes, so we must fetch the last 20 bytes for an address */
 									let to = H160::from_slice(&log.topics[2].as_bytes()[12..]);
@@ -156,9 +160,6 @@ impl Tx {
 									/* 2nd topic according to ERC20 is the "from" address */
 									/* topics have 32 bytes, so we must fetch the last 20 bytes for an address */
 									let from = H160::from_slice(&log.topics[1].as_bytes()[12..]);
-									/* 3rd topic according to ERC20 is the "to" address */
-									/* topics have 32 bytes, so we must fetch the last 20 bytes for an address */
-									let to = H160::from_slice(&log.topics[2].as_bytes()[12..]);
 	
 									if from == sender {
 											/* transfer value is not indexed according to ERC20, and is stored in log data */

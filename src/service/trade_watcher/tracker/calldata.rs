@@ -1,13 +1,14 @@
 use std::collections::HashMap;
 
-use ethabi::{Contract, Function, Param, ParamType, StateMutability, Token};
+use eyre::*;
+
+use ethabi::{Contract, Param, ParamType, StateMutability, Token};
 
 #[derive(Clone, Debug)]
 pub struct ContractCall {
     name: String,
     params: HashMap<String, CallParameter>,
     state_mutability: StateMutability,
-    _inner: Function,
 }
 
 impl ContractCall {
@@ -15,25 +16,22 @@ impl ContractCall {
         name: String,
         params: HashMap<String, CallParameter>,
         state_mutability: StateMutability,
-        inner: Function,
     ) -> Self {
         Self {
             name,
             params,
             state_mutability: state_mutability,
-            _inner: inner,
         }
     }
 
-    pub fn from_inputs(contract: &Contract, input_data: &Vec<u8>) -> Option<ContractCall> {
+    pub fn from_inputs(contract: &Contract, input_data: &Vec<u8>) -> Result<ContractCall> {
         let function = match contract
             .functions()
             .find(|function| function.short_signature() == input_data[..4])
         {
             Some(function) => function,
             None => {
-                println!("COULD NOT FIND FUNCTION");
-                return None;
+                return Err(eyre!("could not find function"));
             }
         };
 
@@ -42,8 +40,7 @@ impl ContractCall {
         let parameter_values = match function.decode_input(&input_data[4..]) {
             Ok(values) => values,
             Err(e) => {
-                println!("COULD NOT DECODE INPUT: {:?}", e);
-                return None;
+                return Err(eyre!("could not decode input: {:?}", e));
             }
         };
 
@@ -59,11 +56,10 @@ impl ContractCall {
             );
         }
 
-        Some(Self::new(
+        Ok(Self::new(
             function.name.clone(),
             parameters,
             function.state_mutability.clone(),
-            function.clone(),
         ))
     }
 
@@ -89,7 +85,6 @@ pub struct CallParameter {
     name: String,
     value: Token,
     param_type: ParamType,
-    _inner: Param,
 }
 
 impl CallParameter {
@@ -98,7 +93,6 @@ impl CallParameter {
             name,
             value,
             param_type: param_type,
-            _inner: inner,
         }
     }
 

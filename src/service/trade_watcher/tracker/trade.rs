@@ -1,19 +1,22 @@
+use super::calldata::ContractCall;
 use web3::types::{H160, U256};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Hash, Eq, PartialEq)]
 pub enum Chain {
-    Ethereum,
-    Bsc,
+    EthereumMainnet,
+    EthereumGoerli,
+    BscMainnet,
+    BscTestnet,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Hash, Eq, PartialEq)]
 pub enum Dex {
     UniSwap,
     PancakeSwap,
     SushiSwap,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Hash, Eq, PartialEq)]
 pub enum DexVersion {
     V1,
     V2,
@@ -21,91 +24,36 @@ pub enum DexVersion {
 }
 
 #[derive(Clone, Debug)]
-pub struct Trade {
-    chain: Chain,
-    contract: H160,
-    dex: Dex,
-    dex_version: DexVersion,
-    token_in: H160,
-    token_out: H160,
-    fee: Option<U256>,
-    /* caller should be the same as recipient if swap was done by user */
-    caller: H160,
-    recipient: H160,
-    amount_in: U256,
-    amount_out: U256,
+pub enum Path {
+    /* every path for every token_in token_out pair in every dex in every chain must be recorded in the database */
+    /* so that we can trigger our own trades in the futures */
+    /* note that reciprocals are different pairs with different paths */
+    /* i.e. the path for token_in x and token_out y is different from token_in y and token_out x */
+    PancakeV2(Vec<H160>),
+    PancakeV3SingleHop(PancakeV3SingleHopPath),
+    PancakeV3MultiHop(Vec<u8>),
 }
 
-impl Trade {
-    pub fn new(
-        chain: Chain,
-        contract: H160,
-        dex: Dex,
-        dex_version: DexVersion,
-        token_in: H160,
-        token_out: H160,
-        fee: Option<U256>,
-        caller: H160,
-        recipient: H160,
-        amount_in: U256,
-        amount_out: U256,
-    ) -> Self {
-        Self {
-            chain,
-            contract,
-            dex,
-            dex_version,
-            token_in,
-            token_out,
-            fee,
-            caller,
-            recipient,
-            amount_in,
-            amount_out,
-        }
-    }
+#[derive(Clone, Debug)]
+pub struct PancakeV3SingleHopPath {
+    pub token_in: H160,
+    pub token_out: H160,
+    pub fee: U256,
+}
 
-    pub fn get_chain(&self) -> Chain {
-        self.chain.clone()
-    }
-
-    pub fn get_contract(&self) -> H160 {
-        self.contract.clone()
-    }
-
-    pub fn get_dex(&self) -> Dex {
-        self.dex.clone()
-    }
-
-    pub fn get_dex_version(&self) -> DexVersion {
-        self.dex_version.clone()
-    }
-
-    pub fn get_token_in(&self) -> H160 {
-        self.token_in.clone()
-    }
-
-    pub fn get_token_out(&self) -> H160 {
-        self.token_out.clone()
-    }
-
-    pub fn get_fee(&self) -> Option<U256> {
-        self.fee.clone()
-    }
-
-    pub fn get_caller(&self) -> H160 {
-        self.caller.clone()
-    }
-
-    pub fn get_recipient(&self) -> H160 {
-        self.recipient.clone()
-    }
-
-    pub fn get_amount_in(&self) -> U256 {
-        self.amount_in.clone()
-    }
-
-    pub fn get_amount_out(&self) -> U256 {
-        self.amount_out.clone()
-    }
+#[derive(Clone, Debug)]
+pub struct Trade {
+    pub chain: Chain,
+    pub contract: H160,
+    pub dex: Dex,
+    pub token_in: H160,
+    pub token_out: H160,
+    pub caller: H160,
+    pub amount_in: U256,
+    pub amount_out: U256,
+    /* some trades go through multiple swap calls because of pool availability */
+    /* this means that for some pairs, we must keep track of all swap calls made in order and their paths */
+    pub swap_calls: Vec<ContractCall>,
+    pub paths: Vec<Path>,
+    pub dex_versions: Vec<DexVersion>,
 }

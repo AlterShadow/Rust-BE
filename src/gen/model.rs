@@ -456,70 +456,8 @@ impl Into<ErrorCode> for EnumErrorCode {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserListBackStrategyHistoryRequest {}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserGetStrategyStatisticsResponse {
-    pub strategy_id: i64,
-    pub net_value: Vec<NetValuePoint>,
-    pub follow_history: Vec<FollowHistoryPoint>,
-    pub back_history: Vec<BackHistoryPoint>,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserUnfollowStrategyRequest {
-    pub strategy_id: i64,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct SignupResponse {
-    pub address: String,
-    pub user_id: i64,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserFollowExpertRequest {
+pub struct ListExpertRow {
     pub expert_id: i64,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct AdminApproveUserBecomeExpertResponse {
-    pub success: bool,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserListFollowedStrategiesResponse {
-    pub strategies: Vec<ListStrategiesRow>,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct LoginRequest {
-    pub address: String,
-    pub signature_text: String,
-    pub signature: String,
-    pub service_code: EnumService,
-    pub device_id: String,
-    pub device_os: String,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserGetUserProfileResponse {
-    pub user_id: i64,
-    pub name: String,
-    pub follower_count: i32,
-    pub description: String,
-    pub social_media: String,
-    pub followed_experts: Vec<ListExpertRow>,
-    pub followed_strategies: Vec<ListStrategiesRow>,
-    pub backed_strategies: Vec<ListStrategiesRow>,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserListExpertsRequest {}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct ListPendingExpertApplicationsRow {
-    pub user_id: i64,
     pub name: String,
     pub follower_count: i32,
     pub description: String,
@@ -527,6 +465,39 @@ pub struct ListPendingExpertApplicationsRow {
     pub risk_score: f32,
     pub reputation_score: f32,
     pub aum: f32,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserFollowStrategyRequest {
+    pub strategy_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserDeregisterWalletResponse {
+    pub success: bool,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserApplyBecomeExpertResponse {
+    pub success: bool,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserGetStrategyStatisticsRequest {
+    pub strategy_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListStrategiesRequest {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserGetUserProfileRequest {
+    pub user_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserCreateStrategyResponse {
+    pub success: bool,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -542,66 +513,11 @@ pub struct ListStrategiesRow {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct AdminApproveUserBecomeExpertRequest {
-    pub user_id: i64,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserRemoveStrategyWatchingWalletRequest {
+pub struct UserGetStrategyStatisticsResponse {
     pub strategy_id: i64,
-    pub blockchain: String,
-    pub wallet_address: String,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserGetUserProfileRequest {
-    pub user_id: i64,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserUnfollowExpertRequest {
-    pub expert_id: i64,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserListStrategiesResponse {
-    pub strategies: Vec<ListStrategiesRow>,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct FollowHistoryPoint {
-    pub time: i64,
-    pub follower_count: f32,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserListFollowedExpertRequest {}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserListExitStrategyHistoryRequest {
-    pub strategy_id: Option<i64>,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct NetValuePoint {
-    pub time: i64,
-    pub net_value: f32,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserUpdateStrategyRequest {
-    pub strategy_id: i64,
-    pub name: Option<String>,
-    pub description: Option<String>,
-    pub social_media: Option<String>,
-    pub risk_score: Option<f32>,
-    pub reputation_score: Option<f32>,
-    pub aum: Option<f32>,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserDeregisterWalletResponse {
-    pub success: bool,
+    pub net_value: Vec<NetValuePoint>,
+    pub follow_history: Vec<FollowHistoryPoint>,
+    pub back_history: Vec<BackHistoryPoint>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -611,181 +527,13 @@ pub struct UserExitStrategyResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct BackStrategyHistoryRow {
-    pub back_history_id: i64,
-    pub strategy_id: i64,
-    pub quantity: f32,
-    pub blockchain: String,
-    pub dex: String,
-    pub transaction_hash: String,
-    pub time: i64,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserFollowExpertResponse {
-    pub success: bool,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct AdminListPendingExpertApplicationsResponse {
-    pub users: Vec<ListPendingExpertApplicationsRow>,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserListBackedStrategyRequest {}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserApplyBecomeExpertRequest {}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserGetExpertProfileResponse {
-    pub expert_id: i64,
-    pub name: String,
-    pub follower_count: i32,
-    pub description: String,
-    pub social_media: String,
-    pub risk_score: f32,
-    pub reputation_score: f32,
-    pub aum: f32,
-    pub strategies: Vec<ListStrategiesRow>,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct AdminListPendingExpertApplicationsRequest {}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct ExitStrategyHistoryRow {
-    pub exit_history_id: i64,
-    pub strategy_id: i64,
-    pub exit_quantity: f32,
-    pub purchase_wallet_address: String,
-    pub blockchain: String,
-    pub dex: String,
-    pub back_time: i64,
-    pub exit_time: i64,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserListExitStrategyHistoryResponse {
-    pub exit_history: Vec<ExitStrategyHistoryRow>,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserDeregisterWalletRequest {
-    pub wallet_id: i64,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserAddStrategyWatchingWalletResponse {
-    pub success: bool,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserGetStrategyStatisticsRequest {
-    pub strategy_id: i64,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct WatchingWalletRow {
-    pub watching_wallet_id: i64,
-    pub wallet_address: String,
-    pub blockchain: String,
-    pub dex: String,
-    pub ratio_distribution: f32,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserUnfollowExpertResponse {
-    pub success: bool,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct LoginResponse {
-    pub address: String,
-    pub user_id: i64,
-    pub user_token: uuid::Uuid,
-    pub admin_token: uuid::Uuid,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct AuthorizeRequest {
-    pub address: String,
-    pub token: uuid::Uuid,
-    pub service_code: EnumService,
-    pub device_id: String,
-    pub device_os: String,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserUnfollowStrategyResponse {
-    pub success: bool,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct AuthorizeResponse {
-    pub success: bool,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserFollowStrategyResponse {
-    pub success: bool,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserListStrategiesRequest {}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserListFollowedExpertResponse {
-    pub experts: Vec<ListExpertRow>,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct BackHistoryPoint {
-    pub time: i64,
-    pub backer_count: f32,
-    pub backer_quantity_usd: f32,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserFollowStrategyRequest {
-    pub strategy_id: i64,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserCreateStrategyRequest {
-    pub name: String,
-    pub description: String,
-    pub social_media: String,
-    pub risk_score: f32,
-    pub reputation_score: f32,
-    pub aum: f32,
-    pub wallet_id: i64,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserRegisterWalletRequest {
-    pub blockchain: String,
-    pub wallet_address: String,
-    pub message_to_sign: String,
-    pub message_signature: String,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
 pub struct UserListWalletsResponse {
     pub wallets: Vec<ListWalletRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserRemoveStrategyWatchingWalletResponse {
-    pub success: bool,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserListWalletsRequest {}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserApplyBecomeExpertResponse {
-    pub success: bool,
+pub struct UserListBackedStrategyResponse {
+    pub strategies: Vec<ListStrategiesRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -800,11 +548,107 @@ pub struct SignupRequest {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct LoginRequest {
+    pub address: String,
+    pub signature_text: String,
+    pub signature: String,
+    pub service_code: EnumService,
+    pub device_id: String,
+    pub device_os: String,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminApproveUserBecomeExpertRequest {
+    pub user_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListWalletsRequest {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserRegisterWalletResponse {
+    pub success: bool,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListStrategiesResponse {
+    pub strategies: Vec<ListStrategiesRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct WatchingWalletRow {
+    pub watching_wallet_id: i64,
+    pub wallet_address: String,
+    pub blockchain: String,
+    pub dex: String,
+    pub ratio_distribution: f32,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListFollowedExpertRequest {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserGetExpertProfileRequest {
+    pub expert_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct ListWalletRow {
     pub wallet_id: i64,
     pub blockchain: String,
     pub wallet_address: String,
     pub is_default: bool,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListFollowedExpertResponse {
+    pub experts: Vec<ListExpertRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserUnfollowExpertRequest {
+    pub expert_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserFollowExpertRequest {
+    pub expert_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListExitStrategyHistoryResponse {
+    pub exit_history: Vec<ExitStrategyHistoryRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserAddStrategyWatchingWalletRequest {
+    pub strategy_id: i64,
+    pub blockchain: String,
+    pub wallet_address: String,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserFollowExpertResponse {
+    pub success: bool,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListBackStrategyHistoryRequest {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminListPendingExpertApplicationsResponse {
+    pub users: Vec<ListPendingExpertApplicationsRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserAddStrategyWatchingWalletResponse {
+    pub success: bool,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct FollowHistoryPoint {
+    pub time: i64,
+    pub follower_count: f32,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -817,46 +661,8 @@ pub struct UserBackStrategyRequest {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserListBackedStrategyResponse {
-    pub strategies: Vec<ListStrategiesRow>,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct ListExpertRow {
-    pub expert_id: i64,
-    pub name: String,
-    pub follower_count: i32,
-    pub description: String,
-    pub social_media: String,
-    pub risk_score: f32,
-    pub reputation_score: f32,
-    pub aum: f32,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct AumHistoryRow {
-    pub aum_history_id: i64,
-    pub base_token: String,
-    pub quote_token: String,
-    pub blockchain: String,
-    pub dex: String,
-    pub action: String,
-    pub wallet_address: String,
-    pub price: f32,
-    pub current_price: f32,
-    pub quantity: f32,
-    pub yield_7d: f32,
-    pub yield_30d: f32,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserCreateStrategyResponse {
+pub struct UserUnfollowStrategyResponse {
     pub success: bool,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserListBackStrategyHistoryResponse {
-    pub back_history: Vec<BackStrategyHistoryRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -865,23 +671,70 @@ pub struct UserListExpertsResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserListFollowedStrategiesRequest {}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserGetExpertProfileRequest {
-    pub expert_id: i64,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserAddStrategyWatchingWalletRequest {
-    pub strategy_id: i64,
-    pub blockchain: String,
-    pub wallet_address: String,
+pub struct BackHistoryPoint {
+    pub time: i64,
+    pub backer_count: f32,
+    pub backer_quantity_usd: f32,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserGetStrategyRequest {
     pub strategy_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserUnfollowExpertResponse {
+    pub success: bool,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserUpdateStrategyRequest {
+    pub strategy_id: i64,
+    pub name: Option<String>,
+    pub description: Option<String>,
+    pub social_media: Option<String>,
+    pub risk_score: Option<f32>,
+    pub reputation_score: Option<f32>,
+    pub aum: Option<f32>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListFollowedStrategiesRequest {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListFollowedStrategiesResponse {
+    pub strategies: Vec<ListStrategiesRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserFollowStrategyResponse {
+    pub success: bool,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct BackStrategyHistoryRow {
+    pub back_history_id: i64,
+    pub strategy_id: i64,
+    pub quantity: f32,
+    pub blockchain: String,
+    pub dex: String,
+    pub transaction_hash: String,
+    pub time: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AuthorizeRequest {
+    pub address: String,
+    pub token: uuid::Uuid,
+    pub service_code: EnumService,
+    pub device_id: String,
+    pub device_os: String,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct NetValuePoint {
+    pub time: i64,
+    pub net_value: f32,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -906,8 +759,129 @@ pub struct UserGetStrategyResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserRegisterWalletResponse {
+pub struct AumHistoryRow {
+    pub aum_history_id: i64,
+    pub base_token: String,
+    pub quote_token: String,
+    pub blockchain: String,
+    pub dex: String,
+    pub action: String,
+    pub wallet_address: String,
+    pub price: f32,
+    pub current_price: f32,
+    pub quantity: f32,
+    pub yield_7d: f32,
+    pub yield_30d: f32,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListExpertsRequest {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserRegisterWalletRequest {
+    pub blockchain: String,
+    pub wallet_address: String,
+    pub message_to_sign: String,
+    pub message_signature: String,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ListPendingExpertApplicationsRow {
+    pub user_id: i64,
+    pub name: String,
+    pub follower_count: i32,
+    pub description: String,
+    pub social_media: String,
+    pub risk_score: f32,
+    pub reputation_score: f32,
+    pub aum: f32,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserCreateStrategyRequest {
+    pub name: String,
+    pub description: String,
+    pub social_media: String,
+    pub risk_score: f32,
+    pub reputation_score: f32,
+    pub aum: f32,
+    pub wallet_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserRemoveStrategyWatchingWalletRequest {
+    pub strategy_id: i64,
+    pub blockchain: String,
+    pub wallet_address: String,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserRemoveStrategyWatchingWalletResponse {
     pub success: bool,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct LoginResponse {
+    pub address: String,
+    pub user_id: i64,
+    pub user_token: uuid::Uuid,
+    pub admin_token: uuid::Uuid,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminApproveUserBecomeExpertResponse {
+    pub success: bool,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminListPendingExpertApplicationsRequest {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ExitStrategyHistoryRow {
+    pub exit_history_id: i64,
+    pub strategy_id: i64,
+    pub exit_quantity: f32,
+    pub purchase_wallet_address: String,
+    pub blockchain: String,
+    pub dex: String,
+    pub back_time: i64,
+    pub exit_time: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct SignupResponse {
+    pub address: String,
+    pub user_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserUnfollowStrategyRequest {
+    pub strategy_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserApplyBecomeExpertRequest {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserUpdateStrategyResponse {
+    pub success: bool,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserGetUserProfileResponse {
+    pub user_id: i64,
+    pub name: String,
+    pub follower_count: i32,
+    pub description: String,
+    pub social_media: String,
+    pub followed_experts: Vec<ListExpertRow>,
+    pub followed_strategies: Vec<ListStrategiesRow>,
+    pub backed_strategies: Vec<ListStrategiesRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserDeregisterWalletRequest {
+    pub wallet_id: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -917,8 +891,34 @@ pub struct UserExitStrategyRequest {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserUpdateStrategyResponse {
+pub struct UserListExitStrategyHistoryRequest {
+    pub strategy_id: Option<i64>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserGetExpertProfileResponse {
+    pub expert_id: i64,
+    pub name: String,
+    pub follower_count: i32,
+    pub description: String,
+    pub social_media: String,
+    pub risk_score: f32,
+    pub reputation_score: f32,
+    pub aum: f32,
+    pub strategies: Vec<ListStrategiesRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListBackedStrategyRequest {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AuthorizeResponse {
     pub success: bool,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListBackStrategyHistoryResponse {
+    pub back_history: Vec<BackStrategyHistoryRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
