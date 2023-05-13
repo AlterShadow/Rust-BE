@@ -214,14 +214,6 @@
                     {
                       "name": "aum",
                       "ty": "Numeric"
-                    },
-                    {
-                      "name": "blockchain",
-                      "ty": "String"
-                    },
-                    {
-                      "name": "wallet_address",
-                      "ty": "String"
                     }
                   ]
                 }
@@ -293,14 +285,6 @@
                     {
                       "name": "aum",
                       "ty": "Numeric"
-                    },
-                    {
-                      "name": "blockchain",
-                      "ty": "String"
-                    },
-                    {
-                      "name": "wallet_address",
-                      "ty": "String"
                     }
                   ]
                 }
@@ -628,14 +612,6 @@
                     {
                       "name": "aum",
                       "ty": "Numeric"
-                    },
-                    {
-                      "name": "blockchain",
-                      "ty": "String"
-                    },
-                    {
-                      "name": "wallet_address",
-                      "ty": "String"
                     }
                   ]
                 }
@@ -1001,14 +977,6 @@
                     {
                       "name": "aum",
                       "ty": "Numeric"
-                    },
-                    {
-                      "name": "blockchain",
-                      "ty": "String"
-                    },
-                    {
-                      "name": "wallet_address",
-                      "ty": "String"
                     }
                   ]
                 }
@@ -1128,14 +1096,6 @@
                     {
                       "name": "aum",
                       "ty": "Numeric"
-                    },
-                    {
-                      "name": "blockchain",
-                      "ty": "String"
-                    },
-                    {
-                      "name": "wallet_address",
-                      "ty": "String"
                     }
                   ]
                 }
@@ -1178,14 +1138,6 @@
                     {
                       "name": "aum",
                       "ty": "Numeric"
-                    },
-                    {
-                      "name": "blockchain",
-                      "ty": "String"
-                    },
-                    {
-                      "name": "wallet_address",
-                      "ty": "String"
                     }
                   ]
                 }
