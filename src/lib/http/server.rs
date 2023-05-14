@@ -34,7 +34,6 @@ pub struct HttpServer<App> {
 
 impl<App: Sync + Send + 'static> HttpServer<App> {
     pub fn new(config: AppConfig<App>) -> Self {
-
         Self {
             handlers: Default::default(),
             toolbox: Toolbox::new(),
@@ -103,7 +102,7 @@ impl<App: Sync + Send + 'static> HttpServer<App> {
         let s = hyper::server::Server::builder(ImmediateAcceptor {
             listener: Some(stream),
         })
-            .serve(service);
+        .serve(service);
 
         if let Err(e) = s.await {
             warn!("Error serving connection: {:?}", e);
@@ -150,11 +149,10 @@ impl<App: Sync + Send + 'static> HttpServer<App> {
         };
         let (tx, rx) = kanal::unbounded_async();
         let mut toolbox = self.toolbox.clone();
-        toolbox.send_msg =
-            Arc::new(move |_conn, resp| {
-                futures::executor::block_on(tx.send(resp)).unwrap();
-                true
-            });
+        toolbox.send_msg = Arc::new(move |_conn, resp| {
+            futures::executor::block_on(tx.send(resp)).unwrap();
+            true
+        });
         endpoint
             .handler
             .handle(&toolbox, context, Arc::clone(&conn), req);
@@ -190,10 +188,10 @@ impl<App: Sync + Send + 'static> HttpServer<App> {
                 self.config.pub_certs.clone().unwrap(),
                 self.config.priv_cert.clone().unwrap(),
             )
-                .await?;
+            .await?;
             self.listen_impl(Arc::new(listener), addr).await
         } else {
-            bail!("pub_cert and priv_cert should be both set or unset")
+            bail!("pub_certs and priv_cert should be both set or unset")
         }
     }
 
@@ -218,14 +216,14 @@ impl<App: Sync + Send + 'static> HttpServer<App> {
                         this.handle_connection(addr, stream).await;
                         Ok(())
                     }
-                        .await;
+                    .await;
                     if let Err(err) = ret {
                         error!("Error while handshaking stream: {:?}", err);
                     }
                 });
                 Ok::<_, Error>(())
             }
-                .await;
+            .await;
             if let Err(err) = ret {
                 error!("Error while accepting stream: {:?}", err);
             }

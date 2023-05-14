@@ -15,3 +15,4 @@ Cargo.lock
 *.key
 *.pem
 etc/config.*.json
+etc/certs
