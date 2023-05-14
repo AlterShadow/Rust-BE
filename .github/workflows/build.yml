@@ -7,7 +7,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
+  build-packages:
     runs-on: ubuntu-latest
     env:
       CARGO_TERM_COLOR: always
