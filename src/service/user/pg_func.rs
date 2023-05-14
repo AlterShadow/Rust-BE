@@ -126,7 +126,7 @@ BEGIN
     RETURN QUERY SELECT a.pkey_id AS strategy_id,
                           a.name AS strategy_name,
                           a.description AS strategy_description,
-                          NULL AS net_value,
+                          0.0 AS net_value,
                           (SELECT COUNT(*) FROM tbl.user_follow_strategy WHERE fkey_strategy_id = a.pkey_id AND unfollowed = FALSE) AS followers,
                           (SELECT COUNT(DISTINCT user_back_strategy_history.fkey_user_id) FROM tbl.user_back_strategy_history WHERE fkey_strategy_id = a.pkey_id) AS followers,
                           a.risk_score as risk_score,
@@ -152,6 +152,7 @@ END
             ],
             r#"
 BEGIN
+
     RETURN QUERY SELECT a.pkey_id AS strategy_id,
                           a.name AS strategy_name,
                           a.description AS strategy_description,
@@ -160,7 +161,8 @@ BEGIN
                           (SELECT COUNT(DISTINCT user_back_strategy_history.fkey_user_id) FROM tbl.user_back_strategy_history WHERE fkey_strategy_id = a.pkey_id) AS followers,
                           a.risk_score as risk_score,
                           a.aum as aum
-                 FROM tbl.strategy AS a;
+                 FROM tbl.strategy AS a 
+                    ;
 END
             "#,
         ),
@@ -240,6 +242,7 @@ END
                 Field::new("user_id", Type::BigInt),
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("quantity", Type::Numeric),
+                Field::new("purchase_wallet", Type::String),
                 Field::new("blockchain", Type::String),
                 Field::new("dex", Type::String),
                 Field::new("transaction_hash", Type::String),
@@ -247,8 +250,10 @@ END
             vec![Field::new("success", Type::Boolean)],
             r#"
 BEGIN
-    INSERT INTO tbl.user_back_strategy_history (fkey_user_id, fkey_strategy_id, quantity, blockchain, dex, transaction_hash)
-    VALUES (a_user_id, a_strategy_id, a_quantity, a_blockchain, a_dex, a_transaction_hash);
+    INSERT INTO tbl.user_back_strategy_history (fkey_user_id, fkey_strategy_id, quantity, purchase_wallet, blockchain, dex,
+                                                transaction_hash, back_time)
+    VALUES (a_user_id, a_strategy_id, a_quantity, a_purchase_wallet, a_blockchain, a_dex, a_transaction_hash,
+            extract(epoch from now())::bigint);
     RETURN TRUE;
 END
             "#,
@@ -268,17 +273,23 @@ END
             ],
             r#"
 BEGIN
-    RETURN QUERY SELECT a.pkey_id AS strategy_id,
-                          a.name AS strategy_name,
-                          a.description AS strategy_description,
-                          NULL AS net_value,
-                          (SELECT COUNT(*) FROM tbl.user_follow_strategy WHERE fkey_strategy_id = a.pkey_id AND unfollowed = FALSE) AS followers,
-                          (SELECT COUNT(DISTINCT user_back_strategy_history.fkey_user_id) FROM tbl.user_back_strategy_history WHERE fkey_strategy_id = a.pkey_id) AS followers,
-                          a.risk_score as risk_score,
-                          a.aum as aum
-                 FROM tbl.strategy AS a 
-                     JOIN tbl.user_follow_strategy ON fkey_strategy_id = a.pkey_id WHERE fkey_user_id = a_user_id AND unfollowed = FALSE
-                    ;
+    RETURN QUERY SELECT a.pkey_id                            AS strategy_id,
+                        a.name                               AS strategy_name,
+                        a.description                        AS strategy_description,
+                        NULL                                 AS net_value,
+                        (SELECT COUNT(*)
+                         FROM tbl.user_follow_strategy
+                         WHERE fkey_strategy_id = a.pkey_id
+                           AND unfollowed = FALSE)           AS followers,
+                        (SELECT COUNT(DISTINCT user_back_strategy_history.fkey_user_id)
+                         FROM tbl.user_back_strategy_history
+                         WHERE fkey_strategy_id = a.pkey_id) AS followers,
+                        a.risk_score                         as risk_score,
+                        a.aum                                as aum
+                 FROM tbl.strategy AS a
+                          JOIN tbl.user_follow_strategy AS b ON b.fkey_strategy_id = a.pkey_id
+                     AND b.fkey_user_id = a_user_id
+                 WHERE unfollowed = FALSE;
 END
 "#,
         ),
@@ -296,31 +307,39 @@ END
             ],
             r#"
 BEGIN
-    RETURN QUERY SELECT a.pkey_id AS back_history_id,
-                          a.fkey_strategy_id AS strategy_id,
-                          a.quantity AS quantity,
-                          a.blockchain AS blockchain,
-                          a.dex AS dex,
-                          a.transaction_hash AS transaction_hash,
-                          a.time AS time
+    RETURN QUERY SELECT a.pkey_id          AS back_history_id,
+                        a.fkey_strategy_id AS strategy_id,
+                        a.quantity         AS quantity,
+                        a.blockchain       AS blockchain,
+                        a.dex              AS dex,
+                        a.transaction_hash AS transaction_hash,
+                        a.time             AS time
                  FROM tbl.user_back_strategy_history AS a
                  WHERE a.fkey_user_id = a_user_id;
 END
 "#,
         ),
         ProceduralFunction::new(
-            "fun_user_user_exit_strategy",
+            "fun_user_exit_strategy",
             vec![
                 Field::new("user_id", Type::BigInt),
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("quantity", Type::Numeric),
+                Field::new("blockchain", Type::String),
+                Field::new("dex", Type::String),
+                Field::new("back_time", Type::BigInt),
+                Field::new("transaction_hash", Type::BigInt),
+                Field::new("purchase_wallet", Type::String),
             ],
             vec![Field::new("success", Type::Boolean)],
             r#"
 BEGIN
-    INSERT INTO tbl.user_exit_strategy_history (fkey_user_id, fkey_strategy_id, quantity)
-    VALUES (a_user_id, a_strategy_id, a_quantity);
-    RETURN TRUE;
+    INSERT INTO tbl.user_exit_strategy_history (fkey_user_id, fkey_strategy_id, exit_quantity, dex, back_time,
+                                                exit_time, purchase_wallet, blockchain, transaction_hash)
+    VALUES (a_user_id, a_strategy_id, a_quantity, a_dex, a_back_time, extract(epoch from now()), a_purchase_wallet,
+            a_blockchain,
+            a_transaction_hash);
+    RETURN QUERY SELECT TRUE;
 END
 "#,
         ),
@@ -342,10 +361,11 @@ END
             ],
             r#"
 BEGIN
+
     RETURN QUERY SELECT a.pkey_id AS exit_history_id,
                           a.fkey_strategy_id AS strategy_id,
-                          a.quantity AS exit_quantity,
-                          a.purchase_wallet_address AS purchase_wallet_address,
+                          a.exit_quantity AS exit_quantity,
+                          a.purchase_wallet AS purchase_wallet_address,
                           a.blockchain AS blockchain,
                           a.dex AS dex,
                           a.back_time AS back_time,
@@ -401,17 +421,20 @@ END
             ],
             r#"
 BEGIN
-    RETURN QUERY SELECT a.pkey_id AS expert_id,
-                          a.name AS name,
-                          (SELECT COUNT(*) FROM tbl.user_follow_expert WHERE fkey_expert_id = a.pkey_id AND unfollowed = FALSE) AS follower_count,
-                          a.description AS description,
-                          a.social_media AS social_media,
-                          a.risk_score AS risk_score,
-                          a.reputation_score AS reputation_score,
-                          a.aum AS aum
-                 FROM tbl.expert AS a 
-                     JOIN tbl.user_follow_expert ON fkey_expert_id = a.pkey_id WHERE fkey_user_id = a_user_id AND unfollowed = FALSE
-                    ;
+    RETURN QUERY SELECT a.pkey_id                                                 AS expert_id,
+                        a.name                                                    AS name,
+                        (SELECT COUNT(*)
+                         FROM tbl.user_follow_expert
+                         WHERE fkey_expert_id = a.pkey_id AND unfollowed = FALSE) AS follower_count,
+                        a.description                                             AS description,
+                        a.social_media                                            AS social_media,
+                        a.risk_score                                              AS risk_score,
+                        a.reputation_score                                        AS reputation_score,
+                        a.aum                                                     AS aum
+                 FROM tbl.expert_profile AS a
+                          JOIN tbl.user_follow_expert AS b ON b.fkey_expert_id = a.pkey_id
+                 WHERE b.fkey_user_id = a_user_id
+                   AND unfollowed = FALSE;
 END
 "#,
         ),
@@ -438,8 +461,7 @@ BEGIN
                           a.risk_score AS risk_score,
                           a.reputation_score AS reputation_score,
                           a.aum AS aum
-                 FROM tbl.expert AS a 
-                    ;
+                 FROM tbl.expert_profile AS a;
 END
 "#,
         ),
@@ -466,7 +488,7 @@ BEGIN
                           a.risk_score AS risk_score,
                           a.reputation_score AS reputation_score,
                           a.aum AS aum
-                 FROM tbl.expert AS a 
+                 FROM tbl.expert_profile AS a 
                  WHERE a.pkey_id = a_expert_id;
 END
 "#,
@@ -486,15 +508,18 @@ END
             ],
             r#"
 BEGIN
-    RETURN QUERY SELECT a.pkey_id AS expert_id,
-                          a.name AS name,
-                          (SELECT COUNT(*) FROM tbl.user_follow_expert WHERE fkey_expert_id = a.pkey_id AND unfollowed = FALSE) AS follower_count,
-                          a.description AS description,
-                          a.social_media AS social_media,
-                          a.risk_score AS risk_score,
-                          a.reputation_score AS reputation_score,
-                          a.aum AS aum
-                 FROM tbl.user AS a 
+    RETURN QUERY SELECT a.pkey_id                  AS expert_id,
+                        a.name                     AS name,
+                        (SELECT COUNT(*)
+                         FROM tbl.user_follow_expert
+                         WHERE fkey_expert_id = a.pkey_id
+                           AND unfollowed = FALSE) AS follower_count,
+                        ''                         AS description,
+                        ''                         AS social_media,
+                        0.0                        AS risk_score,
+                        0.0                        AS reputation_score,
+                        0.0                        AS aum
+                 FROM tbl.user AS a
                  WHERE a.pkey_id = a_user_id;
 END
 "#,
@@ -509,7 +534,7 @@ END
             vec![Field::new("success", Type::Boolean)],
             r#"
 BEGIN
-    INSERT INTO tbl.user_wallet (fkey_user_id, blockchain, wallet_address)
+    INSERT INTO tbl.user_wallet (fkey_user_id, blockchain, address)
     VALUES (a_user_id, a_blockchain, a_wallet_address);
     RETURN TRUE;
 END
@@ -525,7 +550,11 @@ END
             vec![Field::new("success", Type::Boolean)],
             r#"
 BEGIN
-    DELETE FROM tbl.user_wallet WHERE fkey_user_id = a_user_id AND blockchain = a_blockchain AND wallet_address = a_wallet_address;
+    DELETE
+    FROM tbl.user_wallet
+    WHERE fkey_user_id = a_user_id
+      AND blockchain = a_blockchain
+      AND address = a_wallet_address;
     RETURN TRUE;
 END
 "#,
@@ -541,11 +570,12 @@ END
             ],
             r#"
 BEGIN
-    RETURN QUERY SELECT a.pkey_id AS wallet_id,
-                          a.blockchain AS blockchain,
-                          a.wallet_address AS wallet_address,
-                          a.is_default AS is_default
-                 FROM tbl.user_wallet AS a 
+    RETURN QUERY SELECT a.pkey_id             AS wallet_id,
+                        a.blockchain          AS blockchain,
+                        a.address             AS wallet_address,
+                        a.address = b.address AS is_default
+                 FROM tbl.user_wallet AS a
+                          JOIN tbl."user" AS b ON b.pkey_id = a.fkey_user_id
                  WHERE a.fkey_user_id = a_user_id;
 END
 "#,
@@ -588,15 +618,18 @@ END
             ],
             r#"
 BEGIN
-    RETURN QUERY SELECT a.pkey_id AS expert_id,
-                          a.name AS name,
-                          (SELECT COUNT(*) FROM tbl.user_follow_expert WHERE fkey_expert_id = a.pkey_id AND unfollowed = FALSE) AS follower_count,
-                          a.description AS description,
-                          a.social_media AS social_media,
-                          a.risk_score AS risk_score,
-                          a.reputation_score AS reputation_score,
-                          a.aum AS aum
-                 FROM tbl.expert AS a 
+    RETURN QUERY SELECT a.pkey_id                  AS expert_id,
+                        a.name                     AS name,
+                        (SELECT COUNT(*)
+                         FROM tbl.user_follow_expert
+                         WHERE fkey_expert_id = a.pkey_id
+                           AND unfollowed = FALSE) AS follower_count,
+                        ''                         AS description,
+                        ''                         AS social_media,
+                        0.0                        AS risk_score,
+                        0.0                        AS reputation_score,
+                        0.0                        AS aum
+                 FROM tbl."user" AS a
                  WHERE a.pending_expert = TRUE;
 END
 "#,
@@ -618,7 +651,7 @@ DECLARE
 BEGIN
     INSERT INTO tbl.strategy (fkey_user_id, name, description)
     VALUES (a_user_id, a_name, a_description) RETURNING pkey_id INTO a_strategy_id;
-    RETURN TRUE, a_strategy_id;
+    RETURN QUERY SELECT TRUE, a_strategy_id;
 END
 "#,
         ),
@@ -630,6 +663,7 @@ END
                 Field::new("wallet_address", Type::String),
                 Field::new("blockchain", Type::String),
                 Field::new("ratio", Type::Numeric), // TODO: insert ratio into database
+                Field::new("dex", Type::String),
             ],
             vec![
                 Field::new("success", Type::Boolean),
@@ -639,9 +673,12 @@ END
 DECLARE
     a_watch_wallet_id BIGINT;
 BEGIN
-    INSERT INTO tbl.strategy_watch_wallet (fkey_strategy_id, wallet_address, blockchain)
-    VALUES (a_strategy_id, a_wallet_address, a_blockchain);
-    RETURN TRUE, a_watch_wallet_id;
+    INSERT INTO tbl.strategy_watching_wallet (fkey_user_id, fkey_strategy_id, address, blockchain, ratio_distribution,
+                                              dex, created_at, updated_at)
+    VALUES (a_user_id, a_strategy_id, a_wallet_address, a_blockchain, a_ratio, a_dex, extract(epoch FROM NOW()),
+            extract(epoch from NOW()))
+    RETURNING pkey_id INTO a_watch_wallet_id;
+    RETURN QUERY SELECT TRUE, a_watch_wallet_id;
 END
 "#,
         ),
@@ -655,8 +692,11 @@ END
             vec![Field::new("success", Type::Boolean)],
             r#"
 BEGIN
-    DELETE FROM tbl.strategy_watch_wallet WHERE fkey_strategy_id = a_strategy_id AND pkey_id = a_watch_wallet_id;
-    RETURN TRUE;
+    DELETE FROM tbl.strategy_watching_wallet
+    WHERE fkey_user_id = a_user_id
+      AND fkey_strategy_id = a_strategy_id
+      AND pkey_id = a_watch_wallet_id;
+    RETURN QUERY SELECT TRUE;
 END
 "#,
         ),
@@ -671,10 +711,11 @@ END
             ],
             r#"
 BEGIN
-    RETURN QUERY SELECT a.pkey_id AS watch_wallet_id,
-                          a.wallet_address AS wallet_address,
-                          a.blockchain AS blockchain
-                 FROM tbl.strategy_watch_wallet AS a 
+    RETURN QUERY SELECT a.pkey_id            AS watch_wallet_id,
+                        a.address            AS wallet_address,
+                        a.blockchain         AS blockchain,
+                        a.ratio_distribution AS ratio
+                 FROM tbl.strategy_watching_wallet AS a
                  WHERE a.fkey_strategy_id = a_strategy_id;
 END
 "#,

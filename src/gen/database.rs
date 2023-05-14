@@ -496,6 +496,7 @@ pub struct FunUserBackStrategyReq {
     pub user_id: i64,
     pub strategy_id: i64,
     pub quantity: f32,
+    pub purchase_wallet: String,
     pub blockchain: String,
     pub dex: String,
     pub transaction_hash: String,
@@ -510,7 +511,7 @@ impl DbClient {
         &self,
         req: FunUserBackStrategyReq,
     ) -> Result<DbResponse<FunUserBackStrategyRespRow>> {
-        let rows = self.client.query("SELECT * FROM api.fun_user_back_strategy(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_quantity => $3::real, a_blockchain => $4::varchar, a_dex => $5::varchar, a_transaction_hash => $6::varchar);", &[&req.user_id, &req.strategy_id, &req.quantity, &req.blockchain, &req.dex, &req.transaction_hash]).await?;
+        let rows = self.client.query("SELECT * FROM api.fun_user_back_strategy(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_quantity => $3::real, a_purchase_wallet => $4::varchar, a_blockchain => $5::varchar, a_dex => $6::varchar, a_transaction_hash => $7::varchar);", &[&req.user_id, &req.strategy_id, &req.quantity, &req.purchase_wallet, &req.blockchain, &req.dex, &req.transaction_hash]).await?;
         let mut resp = DbResponse::with_capacity(rows.len());
         for row in rows {
             let r = FunUserBackStrategyRespRow {
@@ -610,25 +611,30 @@ impl DbClient {
     }
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunUserUserExitStrategyReq {
+pub struct FunUserExitStrategyReq {
     pub user_id: i64,
     pub strategy_id: i64,
     pub quantity: f32,
+    pub blockchain: String,
+    pub dex: String,
+    pub back_time: i64,
+    pub transaction_hash: i64,
+    pub purchase_wallet: String,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunUserUserExitStrategyRespRow {
+pub struct FunUserExitStrategyRespRow {
     pub success: bool,
 }
 impl DbClient {
     #[allow(unused_variables)]
-    pub async fn fun_user_user_exit_strategy(
+    pub async fn fun_user_exit_strategy(
         &self,
-        req: FunUserUserExitStrategyReq,
-    ) -> Result<DbResponse<FunUserUserExitStrategyRespRow>> {
-        let rows = self.client.query("SELECT * FROM api.fun_user_user_exit_strategy(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_quantity => $3::real);", &[&req.user_id, &req.strategy_id, &req.quantity]).await?;
+        req: FunUserExitStrategyReq,
+    ) -> Result<DbResponse<FunUserExitStrategyRespRow>> {
+        let rows = self.client.query("SELECT * FROM api.fun_user_exit_strategy(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_quantity => $3::real, a_blockchain => $4::varchar, a_dex => $5::varchar, a_back_time => $6::bigint, a_transaction_hash => $7::bigint, a_purchase_wallet => $8::varchar);", &[&req.user_id, &req.strategy_id, &req.quantity, &req.blockchain, &req.dex, &req.back_time, &req.transaction_hash, &req.purchase_wallet]).await?;
         let mut resp = DbResponse::with_capacity(rows.len());
         for row in rows {
-            let r = FunUserUserExitStrategyRespRow {
+            let r = FunUserExitStrategyRespRow {
                 success: row.try_get(0)?,
             };
             resp.push(r);
@@ -1130,6 +1136,7 @@ pub struct FunUserAddStrategyWatchWalletReq {
     pub wallet_address: String,
     pub blockchain: String,
     pub ratio: f32,
+    pub dex: String,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserAddStrategyWatchWalletRespRow {
@@ -1142,7 +1149,7 @@ impl DbClient {
         &self,
         req: FunUserAddStrategyWatchWalletReq,
     ) -> Result<DbResponse<FunUserAddStrategyWatchWalletRespRow>> {
-        let rows = self.client.query("SELECT * FROM api.fun_user_add_strategy_watch_wallet(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_wallet_address => $3::varchar, a_blockchain => $4::varchar, a_ratio => $5::real);", &[&req.user_id, &req.strategy_id, &req.wallet_address, &req.blockchain, &req.ratio]).await?;
+        let rows = self.client.query("SELECT * FROM api.fun_user_add_strategy_watch_wallet(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_wallet_address => $3::varchar, a_blockchain => $4::varchar, a_ratio => $5::real, a_dex => $6::varchar);", &[&req.user_id, &req.strategy_id, &req.wallet_address, &req.blockchain, &req.ratio, &req.dex]).await?;
         let mut resp = DbResponse::with_capacity(rows.len());
         for row in rows {
             let r = FunUserAddStrategyWatchWalletRespRow {
