@@ -38,7 +38,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: Binary
-          path:
-            - target/release/auth
-            - target/release/user
+          path: |
+            target/release/auth
+            target/release/user
 
