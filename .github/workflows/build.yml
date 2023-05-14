@@ -1,0 +1,44 @@
+name: Build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      CARGO_TERM_COLOR: always
+    steps:
+      - uses: actions/checkout@v2
+      #      - uses: actions-rs/toolchain@v1
+      #        with:
+      #          toolchain: nightly-2022-02-09
+      #          components: rustfmt
+      #          override: true
+      - name: Install build dependencies
+        run: sudo apt update -qq && sudo apt install -y -qq libudev-dev
+
+      - name: Cache rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ". -> target"
+
+      - name: Run auth server
+        run: |
+          cargo build --release --bin auth
+
+      - name: Run auth server
+        run: |
+          cargo build --release --bin user
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: Binary
+          path:
+            - target/release/auth
+            - target/release/user
+
