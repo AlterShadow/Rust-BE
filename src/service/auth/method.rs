@@ -184,6 +184,12 @@ impl RequestHandler for MethodAuthAuthorize {
         let db_auth: DbClient = toolbox.get_nth_db(1);
         let accept_srv = self.accept_service;
         toolbox.spawn_response(ctx, async move {
+            let address = Address::from_str(&req.address).map_err(|x| {
+                CustomError::new(
+                    EnumErrorCode::UnknownUser,
+                    format!("Invalid address: {}", x),
+                )
+            })?;
             let srv = req.service_code;
 
             if srv != accept_srv {
@@ -197,7 +203,7 @@ impl RequestHandler for MethodAuthAuthorize {
             }
             let auth_data = db_auth
                 .fun_auth_authorize(FunAuthAuthorizeReq {
-                    address: format!("{:?}", req.address),
+                    address: format!("{:?}", address),
                     token: req.token,
                     service: srv,
                     device_id: req.device_id,

@@ -7,6 +7,8 @@ use lib::config::{load_config, Config};
 use lib::database::connect_to_database;
 use lib::log::setup_logs;
 
+use crate::endpoints::endpoint_user_register_wallet;
+use crate::method::{MethodUserListStrategies, MethodUserRegisterWallet};
 use lib::ws::{EndpointAuthController, WebsocketServer};
 use mc2_fi::endpoints::endpoint_auth_authorize;
 use mc2_fi::method::MethodAuthAuthorize;
@@ -47,7 +49,7 @@ async fn main() -> Result<()> {
         },
     );
     server.add_auth_controller(auth_controller);
-
+    server.add_handler(endpoint_user_register_wallet(), MethodUserRegisterWallet);
     server.listen().await?;
     Ok(())
 }

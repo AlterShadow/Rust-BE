@@ -1,5 +1,5 @@
 -- Created by Vertabelo (http://vertabelo.com)
--- Last modification date: 2023-05-14 05:52:37.737
+-- Last modification date: 2023-05-14 12:14:34.572
 
 CREATE SCHEMA IF NOT EXISTS tbl;;
 
@@ -26,9 +26,9 @@ CREATE TABLE tbl.aum_history (
 -- Table: authorization_attempt
 CREATE TABLE tbl.authorization_attempt (
     pkey_id bigint  NOT NULL DEFAULT nextval( 'tbl.seq_authorization_attempt_id' ),
-    fkey_user bigint  NOT NULL DEFAULT null,
-    ip_address inet  NOT NULL DEFAULT null,
-    is_token_ok boolean  NOT NULL DEFAULT null,
+    fkey_user bigint  NOT NULL,
+    ip_address inet  NOT NULL,
+    is_token_ok boolean  NOT NULL,
     moment bigint  NOT NULL,
     CONSTRAINT "tbl.authorization_attempt_pk" PRIMARY KEY (pkey_id)
 );
@@ -192,138 +192,138 @@ CREATE TABLE tbl.user_follow_strategy (
 CREATE TABLE tbl.user_wallet (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_user_wallet_id'),
     fkey_user_id bigint  NOT NULL,
-    blockchain int  NOT NULL,
+    blockchain varchar(20)  NOT NULL,
     address varchar(64)  NOT NULL,
     CONSTRAINT uidx_user_username UNIQUE (address) NOT DEFERRABLE  INITIALLY IMMEDIATE,
-    CONSTRAINT user_pk PRIMARY KEY (pkey_id)
+    CONSTRAINT user_wallet_pk PRIMARY KEY (pkey_id)
 );
 
 -- foreign keys
 -- Reference: aum_list_strategy (table: aum_history)
 ALTER TABLE tbl.aum_history ADD CONSTRAINT aum_list_strategy
     FOREIGN KEY (fkey_strategy_id)
-    REFERENCES tbl.strategy (pkey_id)  
-    NOT DEFERRABLE 
+    REFERENCES tbl.strategy (pkey_id)
+    NOT DEFERRABLE
     INITIALLY IMMEDIATE
 ;
 
 -- Reference: authorization_attempt_user (table: authorization_attempt)
 ALTER TABLE tbl.authorization_attempt ADD CONSTRAINT authorization_attempt_user
     FOREIGN KEY (fkey_user)
-    REFERENCES tbl."user" (pkey_id)  
-    NOT DEFERRABLE 
+    REFERENCES tbl."user" (pkey_id)
+    NOT DEFERRABLE
     INITIALLY IMMEDIATE
 ;
 
 -- Reference: bad_request_user (table: bad_request)
 ALTER TABLE tbl.bad_request ADD CONSTRAINT bad_request_user
     FOREIGN KEY (fkey_user)
-    REFERENCES tbl."user" (pkey_id)  
-    NOT DEFERRABLE 
+    REFERENCES tbl."user" (pkey_id)
+    NOT DEFERRABLE
     INITIALLY IMMEDIATE
 ;
 
 -- Reference: expert_profile_user_follow_expert (table: user_follow_expert)
 ALTER TABLE tbl.user_follow_expert ADD CONSTRAINT expert_profile_user_follow_expert
     FOREIGN KEY (fkey_expert_id)
-    REFERENCES tbl.expert_profile (pkey_id)  
-    NOT DEFERRABLE 
+    REFERENCES tbl.expert_profile (pkey_id)
+    NOT DEFERRABLE
     INITIALLY IMMEDIATE
 ;
 
 -- Reference: fkey_user (table: user_wallet)
 ALTER TABLE tbl.user_wallet ADD CONSTRAINT fkey_user
     FOREIGN KEY (fkey_user_id)
-    REFERENCES tbl."user" (pkey_id)  
-    NOT DEFERRABLE 
+    REFERENCES tbl."user" (pkey_id)
+    NOT DEFERRABLE
     INITIALLY IMMEDIATE
 ;
 
 -- Reference: login_attempt_user (table: login_attempt)
 ALTER TABLE tbl.login_attempt ADD CONSTRAINT login_attempt_user
     FOREIGN KEY (fkey_user)
-    REFERENCES tbl."user" (pkey_id)  
-    NOT DEFERRABLE 
+    REFERENCES tbl."user" (pkey_id)
+    NOT DEFERRABLE
     INITIALLY IMMEDIATE
 ;
 
 -- Reference: strategy_strategy_watching_wallet (table: strategy_watching_wallet)
 ALTER TABLE tbl.strategy_watching_wallet ADD CONSTRAINT strategy_strategy_watching_wallet
     FOREIGN KEY (fkey_strategy_id)
-    REFERENCES tbl.strategy (pkey_id)  
-    NOT DEFERRABLE 
+    REFERENCES tbl.strategy (pkey_id)
+    NOT DEFERRABLE
     INITIALLY IMMEDIATE
 ;
 
 -- Reference: user_back_strategy_history_strategy (table: user_back_strategy_history)
 ALTER TABLE tbl.user_back_strategy_history ADD CONSTRAINT user_back_strategy_history_strategy
     FOREIGN KEY (fkey_strategy_id)
-    REFERENCES tbl.strategy (pkey_id)  
-    NOT DEFERRABLE 
+    REFERENCES tbl.strategy (pkey_id)
+    NOT DEFERRABLE
     INITIALLY IMMEDIATE
 ;
 
 -- Reference: user_back_strategy_history_user (table: user_back_strategy_history)
 ALTER TABLE tbl.user_back_strategy_history ADD CONSTRAINT user_back_strategy_history_user
     FOREIGN KEY (fkey_user_id)
-    REFERENCES tbl."user" (pkey_id)  
-    NOT DEFERRABLE 
+    REFERENCES tbl."user" (pkey_id)
+    NOT DEFERRABLE
     INITIALLY IMMEDIATE
 ;
 
 -- Reference: user_exit_strategy_history_strategy (table: user_exit_strategy_history)
 ALTER TABLE tbl.user_exit_strategy_history ADD CONSTRAINT user_exit_strategy_history_strategy
     FOREIGN KEY (fkey_strategy_id)
-    REFERENCES tbl.strategy (pkey_id)  
-    NOT DEFERRABLE 
+    REFERENCES tbl.strategy (pkey_id)
+    NOT DEFERRABLE
     INITIALLY IMMEDIATE
 ;
 
 -- Reference: user_exit_strategy_history_user (table: user_exit_strategy_history)
 ALTER TABLE tbl.user_exit_strategy_history ADD CONSTRAINT user_exit_strategy_history_user
     FOREIGN KEY (fkey_user_id)
-    REFERENCES tbl."user" (pkey_id)  
-    NOT DEFERRABLE 
+    REFERENCES tbl."user" (pkey_id)
+    NOT DEFERRABLE
     INITIALLY IMMEDIATE
 ;
 
 -- Reference: user_follow_expert_user (table: user_follow_expert)
 ALTER TABLE tbl.user_follow_expert ADD CONSTRAINT user_follow_expert_user
     FOREIGN KEY (fkey_user_id)
-    REFERENCES tbl."user" (pkey_id)  
-    NOT DEFERRABLE 
+    REFERENCES tbl."user" (pkey_id)
+    NOT DEFERRABLE
     INITIALLY IMMEDIATE
 ;
 
 -- Reference: user_follow_strategy_strategy (table: user_follow_strategy)
 ALTER TABLE tbl.user_follow_strategy ADD CONSTRAINT user_follow_strategy_strategy
     FOREIGN KEY (fkey_strategy_id)
-    REFERENCES tbl.strategy (pkey_id)  
-    NOT DEFERRABLE 
+    REFERENCES tbl.strategy (pkey_id)
+    NOT DEFERRABLE
     INITIALLY IMMEDIATE
 ;
 
 -- Reference: user_follow_strategy_user (table: user_follow_strategy)
 ALTER TABLE tbl.user_follow_strategy ADD CONSTRAINT user_follow_strategy_user
     FOREIGN KEY (fkey_user_id)
-    REFERENCES tbl."user" (pkey_id)  
-    NOT DEFERRABLE 
+    REFERENCES tbl."user" (pkey_id)
+    NOT DEFERRABLE
     INITIALLY IMMEDIATE
 ;
 
 -- Reference: user_profile_user (table: expert_profile)
 ALTER TABLE tbl.expert_profile ADD CONSTRAINT user_profile_user
     FOREIGN KEY (fkey_user_id)
-    REFERENCES tbl."user" (pkey_id)  
-    NOT DEFERRABLE 
+    REFERENCES tbl."user" (pkey_id)
+    NOT DEFERRABLE
     INITIALLY IMMEDIATE
 ;
 
 -- Reference: user_strategy (table: strategy)
 ALTER TABLE tbl.strategy ADD CONSTRAINT user_strategy
     FOREIGN KEY (fkey_user_id)
-    REFERENCES tbl."user" (pkey_id)  
-    NOT DEFERRABLE 
+    REFERENCES tbl."user" (pkey_id)
+    NOT DEFERRABLE
     INITIALLY IMMEDIATE
 ;
 

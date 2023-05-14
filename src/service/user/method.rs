@@ -16,6 +16,39 @@ pub fn ensure_user_role(conn: &Connection, role: EnumRole) -> Result<()> {
     );
     Ok(())
 }
+pub struct MethodUserRegisterWallet;
+impl RequestHandler for MethodUserRegisterWallet {
+    type Request = UserRegisterWalletRequest;
+    type Response = UserRegisterWalletResponse;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        conn: Arc<Connection>,
+        req: Self::Request,
+    ) {
+        let db: DbClient = toolbox.get_db();
+        toolbox.spawn_response(ctx, async move {
+            ensure_user_role(&conn, EnumRole::User)?;
+
+            let ret = db
+                .fun_user_register_wallet(FunUserRegisterWalletReq {
+                    user_id: conn.get_user_id(),
+                    blockchain: req.blockchain,
+                    wallet_address: req.wallet_address,
+                })
+                .await?;
+
+            Ok(UserRegisterWalletResponse {
+                success: ret
+                    .into_result()
+                    .context("failed to register wallet")?
+                    .success,
+            })
+        })
+    }
+}
 pub struct MethodUserFollowStrategy;
 
 impl RequestHandler for MethodUserFollowStrategy {

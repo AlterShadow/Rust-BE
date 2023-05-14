@@ -368,8 +368,8 @@ pub fn check_name(cat: &str, be_name: &str, should_name: &str) -> Result<()> {
 
 pub fn check_handler<T: RequestHandler + 'static>(schema: &EndpointSchema) -> Result<()> {
     let handler_name = std::any::type_name::<T>();
-    let should_handler_name = format!("{}Handler", schema.name);
-    check_name("Handler", handler_name, &should_handler_name)?;
+    let should_handler_name = format!("Method{}", schema.name);
+    check_name("Method", handler_name, &should_handler_name)?;
     let request_name = std::any::type_name::<T::Request>();
     let should_req_name = format!("{}Request", schema.name);
     check_name("Request", request_name, &should_req_name)?;

@@ -295,7 +295,7 @@ impl From<WsClient> for {srv_name}Client {{
                 &mut rs,
                 "
 impl {srv_name}Client {{
-    pub async fn {end_name}(&mut self, req: &{end_name2}Request) -> Result<{end_name2}Response> {{
+    pub async fn {end_name}(&mut self, req: {end_name2}Request) -> Result<{end_name2}Response> {{
         self.client.request({code}, req).await
     }}
 }}",
