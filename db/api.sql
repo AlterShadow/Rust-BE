@@ -492,7 +492,7 @@ BEGIN
                                                 transaction_hash, back_time)
     VALUES (a_user_id, a_strategy_id, a_quantity, a_purchase_wallet, a_blockchain, a_dex, a_transaction_hash,
             extract(epoch from now())::bigint);
-    RETURN TRUE;
+    RETURN QUERY SELECT TRUE;
 END
             
 $$;
@@ -623,7 +623,7 @@ AS $$
 BEGIN
     INSERT INTO tbl.user_follow_expert (fkey_user_id, fkey_expert_id)
     VALUES (a_user_id, a_expert_id);
-    RETURN TRUE;
+    RETURN QUERY SELECT TRUE;
 END
 
 $$;
@@ -640,7 +640,7 @@ BEGIN
     UPDATE tbl.user_follow_expert
     SET unfollowed = TRUE
     WHERE fkey_user_id = a_user_id AND fkey_expert_id = a_expert_id;
-    RETURN TRUE;
+    RETURN QUERY SELECT TRUE;
 END
 
 $$;
@@ -782,7 +782,7 @@ AS $$
 BEGIN
     INSERT INTO tbl.user_wallet (fkey_user_id, blockchain, address)
     VALUES (a_user_id, a_blockchain, a_wallet_address);
-    RETURN TRUE;
+    RETURN QUERY SELECT TRUE;
 END
 
 $$;
@@ -801,7 +801,7 @@ BEGIN
     WHERE fkey_user_id = a_user_id
       AND blockchain = a_blockchain
       AND address = a_wallet_address;
-    RETURN TRUE;
+    RETURN QUERY SELECT TRUE;
 END
 
 $$;

@@ -33,6 +33,9 @@ pub async fn get_ws_user_client(req: &AuthorizeRequest) -> Result<UserClient> {
 
 pub fn drop_and_recreate_database() -> Result<()> {
     let script = Path::new("scripts/drop_and_recreate_database.sh");
-    Command::new("bash").arg(script).status()?;
+    Command::new("bash")
+        .arg(script)
+        .arg("etc/config.json")
+        .status()?;
     Ok(())
 }
