@@ -696,6 +696,7 @@ BEGIN
         description = COALESCE(a_description, description)
     WHERE pkey_id = a_strategy_id
       AND fkey_user_id = a_user_id;
+    RETURN QUERY SELECT TRUE;
 END
 "#,
         ),

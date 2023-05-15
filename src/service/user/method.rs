@@ -936,7 +936,8 @@ impl RequestHandler for MethodUserCreateStrategy {
     ) {
         let db: DbClient = toolbox.get_db();
         toolbox.spawn_response(ctx, async move {
-            ensure_user_role(&conn, EnumRole::Admin)?;
+            // TODO: check if user is expert
+            ensure_user_role(&conn, EnumRole::User)?;
 
             let ret = db
                 .execute(FunUserCreateStrategyReq {
@@ -969,7 +970,9 @@ impl RequestHandler for MethodUserUpdateStrategy {
     ) {
         let db: DbClient = toolbox.get_db();
         toolbox.spawn_response(ctx, async move {
-            ensure_user_role(&conn, EnumRole::Admin)?;
+            // TODO: check if user is expert
+
+            ensure_user_role(&conn, EnumRole::User)?;
 
             let ret = db
                 .execute(FunUserUpdateStrategyReq {
@@ -1003,7 +1006,9 @@ impl RequestHandler for MethodUserAddStrategyWatchingWallet {
     ) {
         let db: DbClient = toolbox.get_db();
         toolbox.spawn_response(ctx, async move {
-            ensure_user_role(&conn, EnumRole::Admin)?;
+            // TODO: check if user is expert
+
+            ensure_user_role(&conn, EnumRole::User)?;
 
             let ret = db
                 .execute(FunUserAddStrategyWatchWalletReq {
@@ -1041,7 +1046,9 @@ impl RequestHandler for MethodUserRemoveStrategyWatchingWallet {
         let db: DbClient = toolbox.get_db();
 
         toolbox.spawn_response(ctx, async move {
-            ensure_user_role(&conn, EnumRole::Admin)?;
+            // TODO: check if user is expert
+
+            ensure_user_role(&conn, EnumRole::User)?;
 
             let ret = db
                 .execute(FunUserRemoveStrategyWatchWalletReq {

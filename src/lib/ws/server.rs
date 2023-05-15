@@ -110,7 +110,7 @@ impl<App: Sync + Send + 'static> WebsocketServer<App> {
                 .await;
             let raw_ctx = RequestContext {
                 connection_id: conn.connection_id,
-                user_id: 0,
+                user_id: conn.get_user_id(),
                 seq: 0,
                 method: 0,
                 log_id: conn.log_id.clone(),
@@ -141,7 +141,7 @@ impl<App: Sync + Send + 'static> WebsocketServer<App> {
         mut reader: SplitStream<WebSocketStream<S>>,
     ) {
         let addr = conn.address;
-        let context = RequestContext {
+        let mut context = RequestContext {
             connection_id: conn.connection_id,
             user_id: conn.get_user_id(),
             seq: 0,
@@ -190,11 +190,10 @@ impl<App: Sync + Send + 'static> WebsocketServer<App> {
                             continue;
                         }
                     };
-                    let context = RequestContext {
-                        seq: req.seq,
-                        method: req.method,
-                        ..context
-                    };
+                    context.seq = req.seq;
+                    context.method = req.method;
+                    context.user_id = conn.get_user_id();
+
                     let handler = self.handlers.get(&req.method);
                     let handler = match handler {
                         Some(handler) => handler,
@@ -210,9 +209,12 @@ impl<App: Sync + Send + 'static> WebsocketServer<App> {
                             continue;
                         }
                     };
-                    handler
-                        .handler
-                        .handle(&self.toolbox, context, Arc::clone(&conn), req.params);
+                    handler.handler.handle(
+                        &self.toolbox,
+                        context.clone(),
+                        Arc::clone(&conn),
+                        req.params,
+                    );
                 }
                 Err(WsError::Protocol(ProtocolError::ResetWithoutClosingHandshake)) => {
                     debug!(?addr, "Receive side terminated");

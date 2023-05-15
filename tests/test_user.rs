@@ -2,6 +2,7 @@ pub mod tools;
 use eyre::*;
 use gen::client::UserClient;
 use gen::model::*;
+use lib::log::{setup_logs, LogLevel};
 use lib::utils::encode_header;
 use lib::ws::WsClient;
 use mc2_fi::endpoints::{endpoint_auth_login, endpoint_auth_signup};
@@ -61,6 +62,8 @@ async fn connect_user(username: impl Into<String>) -> Result<UserClient> {
 
 #[tokio::test]
 async fn test_register_wallet() -> Result<()> {
+    setup_logs(LogLevel::Info)?;
+
     drop_and_recreate_database()?;
     signup("user1").await?;
 
@@ -75,5 +78,51 @@ async fn test_register_wallet() -> Result<()> {
         })
         .await?;
     info!("Register wallet {:?}", resp);
+    client.user_deregister_wallet(UserDeregisterWalletRequest {
+        wallet_id: resp.wallet_id,
+    });
+    Ok(())
+}
+#[tokio::test]
+async fn test_create_update_strategy() -> Result<()> {
+    setup_logs(LogLevel::Info)?;
+    drop_and_recreate_database()?;
+    signup("user1").await?;
+
+    let mut client = connect_user("user1").await?;
+
+    let resp = client
+        .user_create_strategy(UserCreateStrategyRequest {
+            name: "test_strategy".to_string(),
+            description: "this is a test strategy".to_string(),
+        })
+        .await?;
+    info!("Register wallet {:?}", resp);
+    client
+        .user_update_strategy(UserUpdateStrategyRequest {
+            strategy_id: resp.strategy_id,
+            name: None,
+            description: None,
+            social_media: None,
+            risk_score: None,
+            reputation_score: None,
+            aum: None,
+        })
+        .await?;
+    let wallet = client
+        .user_add_strategy_watching_wallet(UserAddStrategyWatchingWalletRequest {
+            strategy_id: resp.strategy_id,
+            blockchain: "ethereum".to_string(),
+            wallet_address: "0x000000000001".to_string(),
+            ratio: 1.0,
+        })
+        .await?;
+    info!("Add wallet {:?}", wallet);
+    let remove_wallet = client
+        .user_remove_strategy_watching_wallet(UserRemoveStrategyWatchingWalletRequest {
+            wallet_id: wallet.wallet_id,
+        })
+        .await?;
+    info!("Remove wallet {:?}", remove_wallet);
     Ok(())
 }
