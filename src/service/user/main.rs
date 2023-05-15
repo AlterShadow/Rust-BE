@@ -2,13 +2,12 @@ mod method;
 
 use eyre::*;
 
+use crate::endpoints::*;
+use crate::method::*;
 use gen::model::EnumService;
 use lib::config::{load_config, Config};
 use lib::database::connect_to_database;
 use lib::log::setup_logs;
-
-use crate::endpoints::endpoint_user_register_wallet;
-use crate::method::{MethodUserListStrategies, MethodUserRegisterWallet};
 use lib::ws::{EndpointAuthController, WebsocketServer};
 use mc2_fi::endpoints::endpoint_auth_authorize;
 use mc2_fi::method::MethodAuthAuthorize;

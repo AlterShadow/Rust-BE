@@ -16,16 +16,16 @@ ID: 2
 |20040|UserFollowStrategy|strategy_id|success|User follows a strategy|
 |20050|UserListFollowedStrategies||strategies|User lists followed strategies|
 |20060|UserUnfollowStrategy|strategy_id|success||
-|20051|UserListStrategies||strategies|User lists followed strategies|
-|20061|UserGetStrategy|strategy_id|strategy_id, strategy_name, strategy_description, creator_user_id, social_media, historical_return, inception_time, total_amount, token_allocation, reputation, risk_score, aum, net_value, followers, backers, watching_wallets, aum_history|User gets a strategy|
+|20061|UserListStrategies||strategies|User lists followed strategies|
+|20062|UserGetStrategy|strategy_id|strategy_id, strategy_name, strategy_description, creator_user_id, social_media, historical_return, inception_time, total_amount, token_allocation, reputation, risk_score, aum, net_value, followers, backers, watching_wallets, aum_history|User gets a strategy|
 |20070|UserGetStrategyStatistics|strategy_id|strategy_id, net_value, follow_history, back_history|User gets a strategy statistics|
 |20080|UserBackStrategy|strategy_id, quantity, blockchain, dex, transaction_hash|success||
-|20090|UserListBackedStrategy||strategies||
+|20090|UserListBackedStrategies||strategies||
 |20100|UserListBackStrategyHistory||back_history||
 |20110|UserExitStrategy|strategy_id, quantity|success, transaction_hash||
 |20120|UserListExitStrategyHistory|strategy_id|exit_history||
 |20130|UserFollowExpert|expert_id|success|User follows an expert|
-|20140|UserListFollowedExpert||experts|User lists followed experts|
+|20140|UserListFollowedExperts||experts|User lists followed experts|
 |20150|UserUnfollowExpert|expert_id|success|User unfollows an expert|
 |20160|UserListExperts||experts|User lists experts|
 |20170|UserGetExpertProfile|expert_id|expert_id, name, follower_count, description, social_media, risk_score, reputation_score, aum, strategies|User gets an expert profile|
@@ -35,6 +35,7 @@ ID: 2
 |20210|UserDeregisterWallet|wallet_id|success|User deregisters a wallet|
 |20220|UserApplyBecomeExpert||success|User applies to become an expert|
 |20230|AdminApproveUserBecomeExpert|user_id|success|Admin approves a user to become an expert|
+|20231|AdminRejectUserBecomeExpert|user_id|success|Admin approves a user to become an expert|
 |20240|AdminListPendingExpertApplications||users|Admin approves a user to become an expert|
 |20250|UserCreateStrategy|name, description, social_media, risk_score, reputation_score, aum, wallet_id|success|User makes a strategy|
 |20260|UserUpdateStrategy|strategy_id, name, description, social_media, risk_score, reputation_score, aum|success|User updates a strategy|

@@ -46,7 +46,7 @@ pub fn endpoint_user_unfollow_strategy() -> EndpointSchema {
 pub fn endpoint_user_list_strategies() -> EndpointSchema {
     EndpointSchema::new(
         "UserListStrategies",
-        20051,
+        20061,
         vec![],
         vec![Field::new("strategies", list_strategies_datatable())],
     )
@@ -56,7 +56,7 @@ pub fn endpoint_user_list_strategies() -> EndpointSchema {
 pub fn endpoint_user_get_strategy() -> EndpointSchema {
     EndpointSchema::new(
         "UserGetStrategy",
-        20061,
+        20062,
         vec![Field::new("strategy_id", Type::BigInt)],
         vec![
             Field::new("strategy_id", Type::BigInt),
@@ -168,9 +168,9 @@ pub fn endpoint_user_back_strategy() -> EndpointSchema {
     )
 }
 
-pub fn endpoint_user_list_backed_strategy() -> EndpointSchema {
+pub fn endpoint_user_list_backed_strategies() -> EndpointSchema {
     EndpointSchema::new(
-        "UserListBackedStrategy",
+        "UserListBackedStrategies",
         20090,
         vec![],
         vec![Field::new("strategies", list_strategies_datatable())],
@@ -247,9 +247,9 @@ pub fn endpoint_user_follow_expert() -> EndpointSchema {
     )
     .with_description("User follows an expert")
 }
-fn list_expert_datatable() -> Type {
+fn list_experts_datatable() -> Type {
     Type::datatable(
-        "ListExpertRow",
+        "ListExpertsRow",
         vec![
             Field::new("expert_id", Type::BigInt),
             Field::new("name", Type::String),
@@ -262,12 +262,12 @@ fn list_expert_datatable() -> Type {
         ],
     )
 }
-pub fn endpoint_user_list_followed_expert() -> EndpointSchema {
+pub fn endpoint_user_list_followed_experts() -> EndpointSchema {
     EndpointSchema::new(
-        "UserListFollowedExpert",
+        "UserListFollowedExperts",
         20140,
         vec![],
-        vec![Field::new("experts", list_expert_datatable())],
+        vec![Field::new("experts", list_experts_datatable())],
     )
     .with_description("User lists followed experts")
 }
@@ -285,7 +285,7 @@ pub fn endpoint_user_list_experts() -> EndpointSchema {
         "UserListExperts",
         20160,
         vec![],
-        vec![Field::new("experts", list_expert_datatable())],
+        vec![Field::new("experts", list_experts_datatable())],
     )
     .with_description("User lists experts")
 }
@@ -321,7 +321,7 @@ pub fn endpoint_user_get_user_profile() -> EndpointSchema {
             Field::new("follower_count", Type::Int),
             Field::new("description", Type::String),
             Field::new("social_media", Type::String),
-            Field::new("followed_experts", list_expert_datatable()),
+            Field::new("followed_experts", list_experts_datatable()),
             Field::new("followed_strategies", list_strategies_datatable()),
             Field::new("backed_strategies", list_strategies_datatable()),
         ],
@@ -350,7 +350,7 @@ pub fn endpoint_user_list_wallets() -> EndpointSchema {
         vec![Field::new(
             "wallets",
             Type::datatable(
-                "ListWalletRow",
+                "ListWalletsRow",
                 vec![
                     Field::new("wallet_id", Type::BigInt),
                     Field::new("blockchain", Type::String),
@@ -384,6 +384,15 @@ pub fn endpoint_admin_approve_user_become_expert() -> EndpointSchema {
     EndpointSchema::new(
         "AdminApproveUserBecomeExpert",
         20230,
+        vec![Field::new("user_id", Type::BigInt)],
+        vec![Field::new("success", Type::Boolean)],
+    )
+    .with_description("Admin approves a user to become an expert")
+}
+pub fn endpoint_admin_reject_user_become_expert() -> EndpointSchema {
+    EndpointSchema::new(
+        "AdminRejectUserBecomeExpert",
+        20231,
         vec![Field::new("user_id", Type::BigInt)],
         vec![Field::new("success", Type::Boolean)],
     )
@@ -481,12 +490,12 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
         endpoint_user_get_strategy(),
         endpoint_user_get_strategy_statistics(),
         endpoint_user_back_strategy(),
-        endpoint_user_list_backed_strategy(),
+        endpoint_user_list_backed_strategies(),
         endpoint_user_list_back_strategy_history(),
         endpoint_user_exit_strategy(),
         endpoint_user_list_exit_strategy_history(),
         endpoint_user_follow_expert(),
-        endpoint_user_list_followed_expert(),
+        endpoint_user_list_followed_experts(),
         endpoint_user_unfollow_expert(),
         endpoint_user_list_experts(),
         endpoint_user_get_expert_profile(),
@@ -496,6 +505,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
         endpoint_user_deregister_wallet(),
         endpoint_user_apply_become_expert(),
         endpoint_admin_approve_user_become_expert(),
+        endpoint_admin_reject_user_become_expert(),
         endpoint_admin_list_pending_expert_applications(),
         endpoint_user_create_strategy(),
         endpoint_user_update_strategy(),

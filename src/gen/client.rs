@@ -74,7 +74,7 @@ impl UserClient {
         &mut self,
         req: UserListStrategiesRequest,
     ) -> Result<UserListStrategiesResponse> {
-        self.client.request(20051, req).await
+        self.client.request(20061, req).await
     }
 }
 impl UserClient {
@@ -82,7 +82,7 @@ impl UserClient {
         &mut self,
         req: UserGetStrategyRequest,
     ) -> Result<UserGetStrategyResponse> {
-        self.client.request(20061, req).await
+        self.client.request(20062, req).await
     }
 }
 impl UserClient {
@@ -102,10 +102,10 @@ impl UserClient {
     }
 }
 impl UserClient {
-    pub async fn user_list_backed_strategy(
+    pub async fn user_list_backed_strategies(
         &mut self,
-        req: UserListBackedStrategyRequest,
-    ) -> Result<UserListBackedStrategyResponse> {
+        req: UserListBackedStrategiesRequest,
+    ) -> Result<UserListBackedStrategiesResponse> {
         self.client.request(20090, req).await
     }
 }
@@ -142,10 +142,10 @@ impl UserClient {
     }
 }
 impl UserClient {
-    pub async fn user_list_followed_expert(
+    pub async fn user_list_followed_experts(
         &mut self,
-        req: UserListFollowedExpertRequest,
-    ) -> Result<UserListFollowedExpertResponse> {
+        req: UserListFollowedExpertsRequest,
+    ) -> Result<UserListFollowedExpertsResponse> {
         self.client.request(20140, req).await
     }
 }
@@ -219,6 +219,14 @@ impl UserClient {
         req: AdminApproveUserBecomeExpertRequest,
     ) -> Result<AdminApproveUserBecomeExpertResponse> {
         self.client.request(20230, req).await
+    }
+}
+impl UserClient {
+    pub async fn admin_reject_user_become_expert(
+        &mut self,
+        req: AdminRejectUserBecomeExpertRequest,
+    ) -> Result<AdminRejectUserBecomeExpertResponse> {
+        self.client.request(20231, req).await
     }
 }
 impl UserClient {

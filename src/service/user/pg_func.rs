@@ -295,11 +295,15 @@ END
         ),
         ProceduralFunction::new(
             "fun_user_list_back_strategy_history",
-            vec![Field::new("user_id", Type::BigInt)],
+            vec![
+                Field::new("user_id", Type::BigInt),
+                Field::new("strategy_id", Type::optional(Type::BigInt)),
+            ],
             vec![
                 Field::new("back_history_id", Type::BigInt),
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("quantity", Type::Numeric),
+                Field::new("wallet_address", Type::String),
                 Field::new("blockchain", Type::String),
                 Field::new("dex", Type::String),
                 Field::new("transaction_hash", Type::String),
@@ -310,12 +314,14 @@ BEGIN
     RETURN QUERY SELECT a.pkey_id          AS back_history_id,
                         a.fkey_strategy_id AS strategy_id,
                         a.quantity         AS quantity,
+                        a.purchase_wallet  AS wallet_address,
                         a.blockchain       AS blockchain,
                         a.dex              AS dex,
                         a.transaction_hash AS transaction_hash,
                         a.time             AS time
                  FROM tbl.user_back_strategy_history AS a
-                 WHERE a.fkey_user_id = a_user_id;
+                 WHERE a.fkey_user_id = a_user_id
+                  AND (a_strategy_id NOTNULL OR a_strategy_id = a.fkey_strategy_id);
 END
 "#,
         ),
@@ -328,7 +334,7 @@ END
                 Field::new("blockchain", Type::String),
                 Field::new("dex", Type::String),
                 Field::new("back_time", Type::BigInt),
-                Field::new("transaction_hash", Type::BigInt),
+                Field::new("transaction_hash", Type::String),
                 Field::new("purchase_wallet", Type::String),
             ],
             vec![Field::new("success", Type::Boolean)],
@@ -544,8 +550,7 @@ END
             "fun_user_deregister_wallet",
             vec![
                 Field::new("user_id", Type::BigInt),
-                Field::new("blockchain", Type::String),
-                Field::new("wallet_address", Type::String),
+                Field::new("wallet_id", Type::BigInt),
             ],
             vec![Field::new("success", Type::Boolean)],
             r#"
@@ -553,8 +558,7 @@ BEGIN
     DELETE
     FROM tbl.user_wallet
     WHERE fkey_user_id = a_user_id
-      AND blockchain = a_blockchain
-      AND address = a_wallet_address;
+      AND pkey_id = a_wallet_id;
     RETURN QUERY SELECT TRUE;
 END
 "#,
@@ -591,7 +595,7 @@ END
 "#,
         ),
         ProceduralFunction::new(
-            "fun_admin_apply_become_expert",
+            "fun_admin_approve_user_become_admin",
             vec![
                 Field::new("admin_user_id", Type::BigInt),
                 Field::new("user_id", Type::BigInt),
@@ -600,6 +604,20 @@ END
             r#"
 BEGIN
 -- TODO: check permission and update tbl.user.role to expert
+END
+"#,
+        ),
+        ProceduralFunction::new(
+            "fun_admin_reject_user_become_admin",
+            vec![
+                Field::new("admin_user_id", Type::BigInt),
+                Field::new("user_id", Type::BigInt),
+            ],
+            vec![Field::new("success", Type::Boolean)],
+            r#"
+BEGIN
+    UPDATE tbl.user SET pending_expert = FALSE WHERE pkey_id = a_user_id;
+    RETURN QUERY SELECT TRUE;
 END
 "#,
         ),

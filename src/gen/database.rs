@@ -570,12 +570,14 @@ impl DbClient {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserListBackStrategyHistoryReq {
     pub user_id: i64,
+    pub strategy_id: Option<i64>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserListBackStrategyHistoryRespRow {
     pub back_history_id: i64,
     pub strategy_id: i64,
     pub quantity: f32,
+    pub wallet_address: String,
     pub blockchain: String,
     pub dex: String,
     pub transaction_hash: String,
@@ -587,23 +589,18 @@ impl DbClient {
         &self,
         req: FunUserListBackStrategyHistoryReq,
     ) -> Result<DbResponse<FunUserListBackStrategyHistoryRespRow>> {
-        let rows = self
-            .client
-            .query(
-                "SELECT * FROM api.fun_user_list_back_strategy_history(a_user_id => $1::bigint);",
-                &[&req.user_id],
-            )
-            .await?;
+        let rows = self.client.query("SELECT * FROM api.fun_user_list_back_strategy_history(a_user_id => $1::bigint, a_strategy_id => $2::bigint);", &[&req.user_id, &req.strategy_id]).await?;
         let mut resp = DbResponse::with_capacity(rows.len());
         for row in rows {
             let r = FunUserListBackStrategyHistoryRespRow {
                 back_history_id: row.try_get(0)?,
                 strategy_id: row.try_get(1)?,
                 quantity: row.try_get(2)?,
-                blockchain: row.try_get(3)?,
-                dex: row.try_get(4)?,
-                transaction_hash: row.try_get(5)?,
-                time: row.try_get(6)?,
+                wallet_address: row.try_get(3)?,
+                blockchain: row.try_get(4)?,
+                dex: row.try_get(5)?,
+                transaction_hash: row.try_get(6)?,
+                time: row.try_get(7)?,
             };
             resp.push(r);
         }
@@ -618,7 +615,7 @@ pub struct FunUserExitStrategyReq {
     pub blockchain: String,
     pub dex: String,
     pub back_time: i64,
-    pub transaction_hash: i64,
+    pub transaction_hash: String,
     pub purchase_wallet: String,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -631,7 +628,7 @@ impl DbClient {
         &self,
         req: FunUserExitStrategyReq,
     ) -> Result<DbResponse<FunUserExitStrategyRespRow>> {
-        let rows = self.client.query("SELECT * FROM api.fun_user_exit_strategy(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_quantity => $3::real, a_blockchain => $4::varchar, a_dex => $5::varchar, a_back_time => $6::bigint, a_transaction_hash => $7::bigint, a_purchase_wallet => $8::varchar);", &[&req.user_id, &req.strategy_id, &req.quantity, &req.blockchain, &req.dex, &req.back_time, &req.transaction_hash, &req.purchase_wallet]).await?;
+        let rows = self.client.query("SELECT * FROM api.fun_user_exit_strategy(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_quantity => $3::real, a_blockchain => $4::varchar, a_dex => $5::varchar, a_back_time => $6::bigint, a_transaction_hash => $7::varchar, a_purchase_wallet => $8::varchar);", &[&req.user_id, &req.strategy_id, &req.quantity, &req.blockchain, &req.dex, &req.back_time, &req.transaction_hash, &req.purchase_wallet]).await?;
         let mut resp = DbResponse::with_capacity(rows.len());
         for row in rows {
             let r = FunUserExitStrategyRespRow {
@@ -939,8 +936,7 @@ impl DbClient {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserDeregisterWalletReq {
     pub user_id: i64,
-    pub blockchain: String,
-    pub wallet_address: String,
+    pub wallet_id: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserDeregisterWalletRespRow {
@@ -952,7 +948,7 @@ impl DbClient {
         &self,
         req: FunUserDeregisterWalletReq,
     ) -> Result<DbResponse<FunUserDeregisterWalletRespRow>> {
-        let rows = self.client.query("SELECT * FROM api.fun_user_deregister_wallet(a_user_id => $1::bigint, a_blockchain => $2::varchar, a_wallet_address => $3::varchar);", &[&req.user_id, &req.blockchain, &req.wallet_address]).await?;
+        let rows = self.client.query("SELECT * FROM api.fun_user_deregister_wallet(a_user_id => $1::bigint, a_wallet_id => $2::bigint);", &[&req.user_id, &req.wallet_id]).await?;
         let mut resp = DbResponse::with_capacity(rows.len());
         for row in rows {
             let r = FunUserDeregisterWalletRespRow {
@@ -1032,24 +1028,50 @@ impl DbClient {
     }
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunAdminApplyBecomeExpertReq {
+pub struct FunAdminApproveUserBecomeAdminReq {
     pub admin_user_id: i64,
     pub user_id: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunAdminApplyBecomeExpertRespRow {
+pub struct FunAdminApproveUserBecomeAdminRespRow {
     pub success: bool,
 }
 impl DbClient {
     #[allow(unused_variables)]
-    pub async fn fun_admin_apply_become_expert(
+    pub async fn fun_admin_approve_user_become_admin(
         &self,
-        req: FunAdminApplyBecomeExpertReq,
-    ) -> Result<DbResponse<FunAdminApplyBecomeExpertRespRow>> {
-        let rows = self.client.query("SELECT * FROM api.fun_admin_apply_become_expert(a_admin_user_id => $1::bigint, a_user_id => $2::bigint);", &[&req.admin_user_id, &req.user_id]).await?;
+        req: FunAdminApproveUserBecomeAdminReq,
+    ) -> Result<DbResponse<FunAdminApproveUserBecomeAdminRespRow>> {
+        let rows = self.client.query("SELECT * FROM api.fun_admin_approve_user_become_admin(a_admin_user_id => $1::bigint, a_user_id => $2::bigint);", &[&req.admin_user_id, &req.user_id]).await?;
         let mut resp = DbResponse::with_capacity(rows.len());
         for row in rows {
-            let r = FunAdminApplyBecomeExpertRespRow {
+            let r = FunAdminApproveUserBecomeAdminRespRow {
+                success: row.try_get(0)?,
+            };
+            resp.push(r);
+        }
+        Ok(resp)
+    }
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAdminRejectUserBecomeAdminReq {
+    pub admin_user_id: i64,
+    pub user_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAdminRejectUserBecomeAdminRespRow {
+    pub success: bool,
+}
+impl DbClient {
+    #[allow(unused_variables)]
+    pub async fn fun_admin_reject_user_become_admin(
+        &self,
+        req: FunAdminRejectUserBecomeAdminReq,
+    ) -> Result<DbResponse<FunAdminRejectUserBecomeAdminRespRow>> {
+        let rows = self.client.query("SELECT * FROM api.fun_admin_reject_user_become_admin(a_admin_user_id => $1::bigint, a_user_id => $2::bigint);", &[&req.admin_user_id, &req.user_id]).await?;
+        let mut resp = DbResponse::with_capacity(rows.len());
+        for row in rows {
+            let r = FunAdminRejectUserBecomeAdminRespRow {
                 success: row.try_get(0)?,
             };
             resp.push(r);

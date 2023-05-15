@@ -245,7 +245,7 @@
         },
         {
           "name": "UserListStrategies",
-          "code": 20051,
+          "code": 20061,
           "parameters": [],
           "returns": [
             {
@@ -297,7 +297,7 @@
         },
         {
           "name": "UserGetStrategy",
-          "code": 20061,
+          "code": 20062,
           "parameters": [
             {
               "name": "strategy_id",
@@ -571,7 +571,7 @@
           "json_schema": null
         },
         {
-          "name": "UserListBackedStrategy",
+          "name": "UserListBackedStrategies",
           "code": 20090,
           "parameters": [],
           "returns": [
@@ -776,7 +776,7 @@
           "json_schema": null
         },
         {
-          "name": "UserListFollowedExpert",
+          "name": "UserListFollowedExperts",
           "code": 20140,
           "parameters": [],
           "returns": [
@@ -784,7 +784,7 @@
               "name": "experts",
               "ty": {
                 "DataTable": {
-                  "name": "ListExpertRow",
+                  "name": "ListExpertsRow",
                   "fields": [
                     {
                       "name": "expert_id",
@@ -855,7 +855,7 @@
               "name": "experts",
               "ty": {
                 "DataTable": {
-                  "name": "ListExpertRow",
+                  "name": "ListExpertsRow",
                   "fields": [
                     {
                       "name": "expert_id",
@@ -1021,7 +1021,7 @@
               "name": "followed_experts",
               "ty": {
                 "DataTable": {
-                  "name": "ListExpertRow",
+                  "name": "ListExpertsRow",
                   "fields": [
                     {
                       "name": "expert_id",
@@ -1188,7 +1188,7 @@
               "name": "wallets",
               "ty": {
                 "DataTable": {
-                  "name": "ListWalletRow",
+                  "name": "ListWalletsRow",
                   "fields": [
                     {
                       "name": "wallet_id",
@@ -1251,6 +1251,25 @@
         {
           "name": "AdminApproveUserBecomeExpert",
           "code": 20230,
+          "parameters": [
+            {
+              "name": "user_id",
+              "ty": "BigInt"
+            }
+          ],
+          "returns": [
+            {
+              "name": "success",
+              "ty": "Boolean"
+            }
+          ],
+          "stream_response": [],
+          "description": "Admin approves a user to become an expert",
+          "json_schema": null
+        },
+        {
+          "name": "AdminRejectUserBecomeExpert",
+          "code": 20231,
           "parameters": [
             {
               "name": "user_id",
