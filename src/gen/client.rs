@@ -269,6 +269,14 @@ impl UserClient {
         self.client.request(20280, req).await
     }
 }
+impl UserClient {
+    pub async fn user_list_strategy_watching_wallets(
+        &mut self,
+        req: UserListStrategyWatchingWalletsRequest,
+    ) -> Result<UserListStrategyWatchingWalletsResponse> {
+        self.client.request(20290, req).await
+    }
+}
 pub struct AdminClient {
     pub client: WsClient,
 }

@@ -1173,6 +1173,10 @@
             {
               "name": "success",
               "ty": "Boolean"
+            },
+            {
+              "name": "wallet_id",
+              "ty": "BigInt"
             }
           ],
           "stream_response": [],
@@ -1349,32 +1353,16 @@
             {
               "name": "description",
               "ty": "String"
-            },
-            {
-              "name": "social_media",
-              "ty": "String"
-            },
-            {
-              "name": "risk_score",
-              "ty": "Numeric"
-            },
-            {
-              "name": "reputation_score",
-              "ty": "Numeric"
-            },
-            {
-              "name": "aum",
-              "ty": "Numeric"
-            },
-            {
-              "name": "wallet_id",
-              "ty": "BigInt"
             }
           ],
           "returns": [
             {
               "name": "success",
               "ty": "Boolean"
+            },
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
             }
           ],
           "stream_response": [],
@@ -1451,6 +1439,33 @@
             {
               "name": "wallet_address",
               "ty": "String"
+            },
+            {
+              "name": "ratio",
+              "ty": "Numeric"
+            }
+          ],
+          "returns": [
+            {
+              "name": "success",
+              "ty": "Boolean"
+            },
+            {
+              "name": "wallet_id",
+              "ty": "BigInt"
+            }
+          ],
+          "stream_response": [],
+          "description": "",
+          "json_schema": null
+        },
+        {
+          "name": "UserRemoveStrategyWatchingWallet",
+          "code": 20280,
+          "parameters": [
+            {
+              "name": "wallet_id",
+              "ty": "BigInt"
             }
           ],
           "returns": [
@@ -1464,26 +1479,40 @@
           "json_schema": null
         },
         {
-          "name": "UserRemoveStrategyWatchingWallet",
-          "code": 20280,
+          "name": "UserListStrategyWatchingWallets",
+          "code": 20290,
           "parameters": [
             {
               "name": "strategy_id",
               "ty": "BigInt"
-            },
-            {
-              "name": "blockchain",
-              "ty": "String"
-            },
-            {
-              "name": "wallet_address",
-              "ty": "String"
             }
           ],
           "returns": [
             {
-              "name": "success",
-              "ty": "Boolean"
+              "name": "wallets",
+              "ty": {
+                "DataTable": {
+                  "name": "ListStrategyWatchingWalletsRow",
+                  "fields": [
+                    {
+                      "name": "wallet_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "blockchain",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "wallet_address",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "ratio",
+                      "ty": "Numeric"
+                    }
+                  ]
+                }
+              }
             }
           ],
           "stream_response": [],

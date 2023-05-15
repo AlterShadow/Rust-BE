@@ -537,12 +537,18 @@ END
                 Field::new("blockchain", Type::String),
                 Field::new("wallet_address", Type::String),
             ],
-            vec![Field::new("success", Type::Boolean)],
+            vec![
+                Field::new("success", Type::Boolean),
+                Field::new("wallet_id", Type::BigInt),
+            ],
             r#"
+DECLARE
+    a_wallet_id bigint;
 BEGIN
     INSERT INTO tbl.user_wallet (fkey_user_id, blockchain, address)
-    VALUES (a_user_id, a_blockchain, a_wallet_address);
-    RETURN QUERY SELECT TRUE;
+    VALUES (a_user_id, a_blockchain, a_wallet_address)
+    RETURNING pkey_id INTO a_wallet_id;
+    RETURN QUERY SELECT TRUE, a_wallet_id;
 END
 "#,
         ),
@@ -674,6 +680,26 @@ END
 "#,
         ),
         ProceduralFunction::new(
+            "fun_user_update_strategy",
+            vec![
+                Field::new("user_id", Type::BigInt),
+                Field::new("strategy_id", Type::BigInt),
+                Field::new("name", Type::optional(Type::String)),
+                Field::new("description", Type::optional(Type::String)),
+            ],
+            vec![Field::new("success", Type::Boolean)],
+            r#"
+            
+BEGIN
+    UPDATE tbl.strategy
+    SET name = COALESCE(a_name, name),
+        description = COALESCE(a_description, description)
+    WHERE pkey_id = a_strategy_id
+      AND fkey_user_id = a_user_id;
+END
+"#,
+        ),
+        ProceduralFunction::new(
             "fun_user_add_strategy_watch_wallet",
             vec![
                 Field::new("user_id", Type::BigInt),
@@ -704,7 +730,6 @@ END
             "fun_user_remove_strategy_watch_wallet",
             vec![
                 Field::new("user_id", Type::BigInt),
-                Field::new("strategy_id", Type::BigInt),
                 Field::new("watch_wallet_id", Type::BigInt),
             ],
             vec![Field::new("success", Type::Boolean)],
@@ -712,7 +737,6 @@ END
 BEGIN
     DELETE FROM tbl.strategy_watching_wallet
     WHERE fkey_user_id = a_user_id
-      AND fkey_strategy_id = a_strategy_id
       AND pkey_id = a_watch_wallet_id;
     RETURN QUERY SELECT TRUE;
 END

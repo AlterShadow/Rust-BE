@@ -30,17 +30,18 @@ ID: 2
 |20160|UserListExperts||experts|User lists experts|
 |20170|UserGetExpertProfile|expert_id|expert_id, name, follower_count, description, social_media, risk_score, reputation_score, aum, strategies|User gets an expert profile|
 |20180|UserGetUserProfile|user_id|user_id, name, follower_count, description, social_media, followed_experts, followed_strategies, backed_strategies|User gets an user profile|
-|20190|UserRegisterWallet|blockchain, wallet_address, message_to_sign, message_signature|success|User registers a wallet|
+|20190|UserRegisterWallet|blockchain, wallet_address, message_to_sign, message_signature|success, wallet_id|User registers a wallet|
 |20200|UserListWallets||wallets|User lists wallets|
 |20210|UserDeregisterWallet|wallet_id|success|User deregisters a wallet|
 |20220|UserApplyBecomeExpert||success|User applies to become an expert|
 |20230|AdminApproveUserBecomeExpert|user_id|success|Admin approves a user to become an expert|
 |20231|AdminRejectUserBecomeExpert|user_id|success|Admin approves a user to become an expert|
 |20240|AdminListPendingExpertApplications||users|Admin approves a user to become an expert|
-|20250|UserCreateStrategy|name, description, social_media, risk_score, reputation_score, aum, wallet_id|success|User makes a strategy|
+|20250|UserCreateStrategy|name, description|success, strategy_id|User makes a strategy|
 |20260|UserUpdateStrategy|strategy_id, name, description, social_media, risk_score, reputation_score, aum|success|User updates a strategy|
-|20270|UserAddStrategyWatchingWallet|strategy_id, blockchain, wallet_address|success||
-|20280|UserRemoveStrategyWatchingWallet|strategy_id, blockchain, wallet_address|success||
+|20270|UserAddStrategyWatchingWallet|strategy_id, blockchain, wallet_address, ratio|success, wallet_id||
+|20280|UserRemoveStrategyWatchingWallet|wallet_id|success||
+|20290|UserListStrategyWatchingWallets|strategy_id|wallets||
 
 # admin Server
 ID: 3

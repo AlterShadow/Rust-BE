@@ -936,6 +936,7 @@ pub struct FunUserRegisterWalletReq {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserRegisterWalletRespRow {
     pub success: bool,
+    pub wallet_id: i64,
 }
 
 impl DatabaseRequest for FunUserRegisterWalletReq {
@@ -953,6 +954,7 @@ impl DatabaseRequest for FunUserRegisterWalletReq {
     fn parse_row(&self, row: Row) -> Result<FunUserRegisterWalletRespRow> {
         let r = FunUserRegisterWalletRespRow {
             success: row.try_get(0)?,
+            wallet_id: row.try_get(1)?,
         };
         Ok(r)
     }
@@ -1172,6 +1174,39 @@ impl DatabaseRequest for FunUserCreateStrategyReq {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserUpdateStrategyReq {
+    pub user_id: i64,
+    pub strategy_id: i64,
+    pub name: Option<String>,
+    pub description: Option<String>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserUpdateStrategyRespRow {
+    pub success: bool,
+}
+
+impl DatabaseRequest for FunUserUpdateStrategyReq {
+    type ResponseRow = FunUserUpdateStrategyRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_update_strategy(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_name => $3::varchar, a_description => $4::varchar);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.strategy_id as &(dyn ToSql + Sync),
+            &self.name as &(dyn ToSql + Sync),
+            &self.description as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserUpdateStrategyRespRow> {
+        let r = FunUserUpdateStrategyRespRow {
+            success: row.try_get(0)?,
+        };
+        Ok(r)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserAddStrategyWatchWalletReq {
     pub user_id: i64,
     pub strategy_id: i64,
@@ -1213,7 +1248,6 @@ impl DatabaseRequest for FunUserAddStrategyWatchWalletReq {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserRemoveStrategyWatchWalletReq {
     pub user_id: i64,
-    pub strategy_id: i64,
     pub watch_wallet_id: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1224,12 +1258,11 @@ pub struct FunUserRemoveStrategyWatchWalletRespRow {
 impl DatabaseRequest for FunUserRemoveStrategyWatchWalletReq {
     type ResponseRow = FunUserRemoveStrategyWatchWalletRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_remove_strategy_watch_wallet(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_watch_wallet_id => $3::bigint);"
+        "SELECT * FROM api.fun_user_remove_strategy_watch_wallet(a_user_id => $1::bigint, a_watch_wallet_id => $2::bigint);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
             &self.user_id as &(dyn ToSql + Sync),
-            &self.strategy_id as &(dyn ToSql + Sync),
             &self.watch_wallet_id as &(dyn ToSql + Sync),
         ]
     }

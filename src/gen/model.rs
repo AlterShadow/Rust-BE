@@ -586,6 +586,14 @@ pub struct ListStrategiesRow {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct ListStrategyWatchingWalletsRow {
+    pub wallet_id: i64,
+    pub blockchain: String,
+    pub wallet_address: String,
+    pub ratio: f32,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct ListWalletsRow {
     pub wallet_id: i64,
     pub blockchain: String,
@@ -639,11 +647,13 @@ pub struct UserAddStrategyWatchingWalletRequest {
     pub strategy_id: i64,
     pub blockchain: String,
     pub wallet_address: String,
+    pub ratio: f32,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserAddStrategyWatchingWalletResponse {
     pub success: bool,
+    pub wallet_id: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -672,16 +682,12 @@ pub struct UserBackStrategyResponse {
 pub struct UserCreateStrategyRequest {
     pub name: String,
     pub description: String,
-    pub social_media: String,
-    pub risk_score: f32,
-    pub reputation_score: f32,
-    pub aum: f32,
-    pub wallet_id: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserCreateStrategyResponse {
     pub success: bool,
+    pub strategy_id: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -859,6 +865,16 @@ pub struct UserListStrategiesResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct UserListStrategyWatchingWalletsRequest {
+    pub strategy_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListStrategyWatchingWalletsResponse {
+    pub wallets: Vec<ListStrategyWatchingWalletsRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct UserListWalletsRequest {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -877,13 +893,12 @@ pub struct UserRegisterWalletRequest {
 #[serde(rename_all = "camelCase")]
 pub struct UserRegisterWalletResponse {
     pub success: bool,
+    pub wallet_id: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserRemoveStrategyWatchingWalletRequest {
-    pub strategy_id: i64,
-    pub blockchain: String,
-    pub wallet_address: String,
+    pub wallet_id: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]

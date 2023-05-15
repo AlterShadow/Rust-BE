@@ -338,7 +338,10 @@ pub fn endpoint_user_register_wallet() -> EndpointSchema {
             Field::new("message_to_sign", Type::String),
             Field::new("message_signature", Type::String),
         ],
-        vec![Field::new("success", Type::Boolean)],
+        vec![
+            Field::new("success", Type::Boolean),
+            Field::new("wallet_id", Type::BigInt),
+        ],
     )
     .with_description("User registers a wallet")
 }
@@ -429,13 +432,11 @@ pub fn endpoint_user_create_strategy() -> EndpointSchema {
         vec![
             Field::new("name", Type::String),
             Field::new("description", Type::String),
-            Field::new("social_media", Type::String),
-            Field::new("risk_score", Type::Numeric),
-            Field::new("reputation_score", Type::Numeric),
-            Field::new("aum", Type::Numeric),
-            Field::new("wallet_id", Type::BigInt),
         ],
-        vec![Field::new("success", Type::Boolean)],
+        vec![
+            Field::new("success", Type::Boolean),
+            Field::new("strategy_id", Type::BigInt),
+        ],
     )
     .with_description("User makes a strategy")
 }
@@ -465,20 +466,39 @@ pub fn endpoint_user_add_strategy_watching_wallet() -> EndpointSchema {
             Field::new("strategy_id", Type::BigInt),
             Field::new("blockchain", Type::String),
             Field::new("wallet_address", Type::String),
+            Field::new("ratio", Type::Numeric),
         ],
-        vec![Field::new("success", Type::Boolean)],
+        vec![
+            Field::new("success", Type::Boolean),
+            Field::new("wallet_id", Type::BigInt),
+        ],
     )
 }
 pub fn endpoint_user_remove_strategy_watching_wallet() -> EndpointSchema {
     EndpointSchema::new(
         "UserRemoveStrategyWatchingWallet",
         20280,
-        vec![
-            Field::new("strategy_id", Type::BigInt),
-            Field::new("blockchain", Type::String),
-            Field::new("wallet_address", Type::String),
-        ],
+        vec![Field::new("wallet_id", Type::BigInt)],
         vec![Field::new("success", Type::Boolean)],
+    )
+}
+pub fn endpoint_user_list_strategy_watching_wallets() -> EndpointSchema {
+    EndpointSchema::new(
+        "UserListStrategyWatchingWallets",
+        20290,
+        vec![Field::new("strategy_id", Type::BigInt)],
+        vec![Field::new(
+            "wallets",
+            Type::datatable(
+                "ListStrategyWatchingWalletsRow",
+                vec![
+                    Field::new("wallet_id", Type::BigInt),
+                    Field::new("blockchain", Type::String),
+                    Field::new("wallet_address", Type::String),
+                    Field::new("ratio", Type::Numeric),
+                ],
+            ),
+        )],
     )
 }
 pub fn get_user_endpoints() -> Vec<EndpointSchema> {
@@ -511,5 +531,6 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
         endpoint_user_update_strategy(),
         endpoint_user_add_strategy_watching_wallet(),
         endpoint_user_remove_strategy_watching_wallet(),
+        endpoint_user_list_strategy_watching_wallets(),
     ]
 }
