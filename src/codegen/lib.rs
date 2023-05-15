@@ -11,7 +11,7 @@ use itertools::Itertools;
 use model::service::Service;
 use model::types::*;
 use serde::*;
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap};
 use std::env;
 use std::fs::{create_dir_all, File};
 use std::io::Write;
@@ -135,7 +135,7 @@ impl Into<ErrorCode> for EnumErrorCode {{
     "#
     )?;
 
-    let mut types = HashSet::new();
+    let mut types = BTreeSet::new();
     for s in services::get_services() {
         for e in s.endpoints {
             let req = Type::object(format!("{}Request", e.name), e.parameters);
