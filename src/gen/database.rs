@@ -3,21 +3,6 @@ use eyre::*;
 use lib::database::*;
 use serde::*;
 
-#[derive(Clone)]
-pub struct DbClient {
-    pub client: SimpleDbClient,
-}
-impl DbClient {
-    pub fn new(client: SimpleDbClient) -> Self {
-        Self { client }
-    }
-}
-impl From<SimpleDbClient> for DbClient {
-    fn from(client: SimpleDbClient) -> Self {
-        Self::new(client)
-    }
-}
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAuthSignupReq {
     pub address: String,
@@ -33,23 +18,32 @@ pub struct FunAuthSignupReq {
 pub struct FunAuthSignupRespRow {
     pub user_id: i64,
 }
-impl DbClient {
-    #[allow(unused_variables)]
-    pub async fn fun_auth_signup(
-        &self,
-        req: FunAuthSignupReq,
-    ) -> Result<DbResponse<FunAuthSignupRespRow>> {
-        let rows = self.client.query("SELECT * FROM api.fun_auth_signup(a_address => $1::varchar, a_email => $2::varchar, a_phone => $3::varchar, a_age => $4::int, a_preferred_language => $5::varchar, a_agreed_tos => $6::boolean, a_agreed_privacy => $7::boolean, a_ip_address => $8::inet);", &[&req.address, &req.email, &req.phone, &req.age, &req.preferred_language, &req.agreed_tos, &req.agreed_privacy, &req.ip_address]).await?;
-        let mut resp = DbResponse::with_capacity(rows.len());
-        for row in rows {
-            let r = FunAuthSignupRespRow {
-                user_id: row.try_get(0)?,
-            };
-            resp.push(r);
-        }
-        Ok(resp)
+
+impl DatabaseRequest for FunAuthSignupReq {
+    type ResponseRow = FunAuthSignupRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_auth_signup(a_address => $1::varchar, a_email => $2::varchar, a_phone => $3::varchar, a_age => $4::int, a_preferred_language => $5::varchar, a_agreed_tos => $6::boolean, a_agreed_privacy => $7::boolean, a_ip_address => $8::inet);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.address as &(dyn ToSql + Sync),
+            &self.email as &(dyn ToSql + Sync),
+            &self.phone as &(dyn ToSql + Sync),
+            &self.age as &(dyn ToSql + Sync),
+            &self.preferred_language as &(dyn ToSql + Sync),
+            &self.agreed_tos as &(dyn ToSql + Sync),
+            &self.agreed_privacy as &(dyn ToSql + Sync),
+            &self.ip_address as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunAuthSignupRespRow> {
+        let r = FunAuthSignupRespRow {
+            user_id: row.try_get(0)?,
+        };
+        Ok(r)
     }
 }
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAuthAuthenticateReq {
     pub address: String,
@@ -62,23 +56,29 @@ pub struct FunAuthAuthenticateReq {
 pub struct FunAuthAuthenticateRespRow {
     pub user_id: i64,
 }
-impl DbClient {
-    #[allow(unused_variables)]
-    pub async fn fun_auth_authenticate(
-        &self,
-        req: FunAuthAuthenticateReq,
-    ) -> Result<DbResponse<FunAuthAuthenticateRespRow>> {
-        let rows = self.client.query("SELECT * FROM api.fun_auth_authenticate(a_address => $1::varchar, a_service_code => $2::int, a_device_id => $3::varchar, a_device_os => $4::varchar, a_ip_address => $5::inet);", &[&req.address, &req.service_code, &req.device_id, &req.device_os, &req.ip_address]).await?;
-        let mut resp = DbResponse::with_capacity(rows.len());
-        for row in rows {
-            let r = FunAuthAuthenticateRespRow {
-                user_id: row.try_get(0)?,
-            };
-            resp.push(r);
-        }
-        Ok(resp)
+
+impl DatabaseRequest for FunAuthAuthenticateReq {
+    type ResponseRow = FunAuthAuthenticateRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_auth_authenticate(a_address => $1::varchar, a_service_code => $2::int, a_device_id => $3::varchar, a_device_os => $4::varchar, a_ip_address => $5::inet);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.address as &(dyn ToSql + Sync),
+            &self.service_code as &(dyn ToSql + Sync),
+            &self.device_id as &(dyn ToSql + Sync),
+            &self.device_os as &(dyn ToSql + Sync),
+            &self.ip_address as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunAuthAuthenticateRespRow> {
+        let r = FunAuthAuthenticateRespRow {
+            user_id: row.try_get(0)?,
+        };
+        Ok(r)
     }
 }
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAuthSetTokenReq {
     pub user_id: i64,
@@ -88,21 +88,26 @@ pub struct FunAuthSetTokenReq {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAuthSetTokenRespRow {}
-impl DbClient {
-    #[allow(unused_variables)]
-    pub async fn fun_auth_set_token(
-        &self,
-        req: FunAuthSetTokenReq,
-    ) -> Result<DbResponse<FunAuthSetTokenRespRow>> {
-        let rows = self.client.query("SELECT * FROM api.fun_auth_set_token(a_user_id => $1::bigint, a_user_token => $2::uuid, a_admin_token => $3::uuid, a_service_code => $4::int);", &[&req.user_id, &req.user_token, &req.admin_token, &req.service_code]).await?;
-        let mut resp = DbResponse::with_capacity(rows.len());
-        for row in rows {
-            let r = FunAuthSetTokenRespRow {};
-            resp.push(r);
-        }
-        Ok(resp)
+
+impl DatabaseRequest for FunAuthSetTokenReq {
+    type ResponseRow = FunAuthSetTokenRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_auth_set_token(a_user_id => $1::bigint, a_user_token => $2::uuid, a_admin_token => $3::uuid, a_service_code => $4::int);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.user_token as &(dyn ToSql + Sync),
+            &self.admin_token as &(dyn ToSql + Sync),
+            &self.service_code as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunAuthSetTokenRespRow> {
+        let r = FunAuthSetTokenRespRow {};
+        Ok(r)
     }
 }
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAuthAuthorizeReq {
     pub address: String,
@@ -117,24 +122,31 @@ pub struct FunAuthAuthorizeRespRow {
     pub user_id: i64,
     pub role: EnumRole,
 }
-impl DbClient {
-    #[allow(unused_variables)]
-    pub async fn fun_auth_authorize(
-        &self,
-        req: FunAuthAuthorizeReq,
-    ) -> Result<DbResponse<FunAuthAuthorizeRespRow>> {
-        let rows = self.client.query("SELECT * FROM api.fun_auth_authorize(a_address => $1::varchar, a_token => $2::uuid, a_service => $3::enum_service, a_device_id => $4::varchar, a_device_os => $5::varchar, a_ip_address => $6::inet);", &[&req.address, &req.token, &req.service, &req.device_id, &req.device_os, &req.ip_address]).await?;
-        let mut resp = DbResponse::with_capacity(rows.len());
-        for row in rows {
-            let r = FunAuthAuthorizeRespRow {
-                user_id: row.try_get(0)?,
-                role: row.try_get(1)?,
-            };
-            resp.push(r);
-        }
-        Ok(resp)
+
+impl DatabaseRequest for FunAuthAuthorizeReq {
+    type ResponseRow = FunAuthAuthorizeRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_auth_authorize(a_address => $1::varchar, a_token => $2::uuid, a_service => $3::enum_service, a_device_id => $4::varchar, a_device_os => $5::varchar, a_ip_address => $6::inet);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.address as &(dyn ToSql + Sync),
+            &self.token as &(dyn ToSql + Sync),
+            &self.service as &(dyn ToSql + Sync),
+            &self.device_id as &(dyn ToSql + Sync),
+            &self.device_os as &(dyn ToSql + Sync),
+            &self.ip_address as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunAuthAuthorizeRespRow> {
+        let r = FunAuthAuthorizeRespRow {
+            user_id: row.try_get(0)?,
+            role: row.try_get(1)?,
+        };
+        Ok(r)
     }
 }
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAuthBasicAuthenticateReq {
     pub address: String,
@@ -146,23 +158,28 @@ pub struct FunAuthBasicAuthenticateReq {
 pub struct FunAuthBasicAuthenticateRespRow {
     pub user_id: std::net::IpAddr,
 }
-impl DbClient {
-    #[allow(unused_variables)]
-    pub async fn fun_auth_basic_authenticate(
-        &self,
-        req: FunAuthBasicAuthenticateReq,
-    ) -> Result<DbResponse<FunAuthBasicAuthenticateRespRow>> {
-        let rows = self.client.query("SELECT * FROM api.fun_auth_basic_authenticate(a_address => $1::varchar, a_device_id => $2::varchar, a_device_os => $3::varchar, a_ip_address => $4::inet);", &[&req.address, &req.device_id, &req.device_os, &req.ip_address]).await?;
-        let mut resp = DbResponse::with_capacity(rows.len());
-        for row in rows {
-            let r = FunAuthBasicAuthenticateRespRow {
-                user_id: row.try_get(0)?,
-            };
-            resp.push(r);
-        }
-        Ok(resp)
+
+impl DatabaseRequest for FunAuthBasicAuthenticateReq {
+    type ResponseRow = FunAuthBasicAuthenticateRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_auth_basic_authenticate(a_address => $1::varchar, a_device_id => $2::varchar, a_device_os => $3::varchar, a_ip_address => $4::inet);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.address as &(dyn ToSql + Sync),
+            &self.device_id as &(dyn ToSql + Sync),
+            &self.device_os as &(dyn ToSql + Sync),
+            &self.ip_address as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunAuthBasicAuthenticateRespRow> {
+        let r = FunAuthBasicAuthenticateRespRow {
+            user_id: row.try_get(0)?,
+        };
+        Ok(r)
     }
 }
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAdminListUsersReq {
     pub offset: i32,
@@ -181,28 +198,35 @@ pub struct FunAdminListUsersRespRow {
     pub updated_at: u32,
     pub created_at: u32,
 }
-impl DbClient {
-    #[allow(unused_variables)]
-    pub async fn fun_admin_list_users(
-        &self,
-        req: FunAdminListUsersReq,
-    ) -> Result<DbResponse<FunAdminListUsersRespRow>> {
-        let rows = self.client.query("SELECT * FROM api.fun_admin_list_users(a_offset => $1::int, a_limit => $2::int, a_user_id => $3::bigint, a_email => $4::varchar, a_address => $5::varchar, a_role => $6::enum_role);", &[&req.offset, &req.limit, &req.user_id, &req.email, &req.address, &req.role]).await?;
-        let mut resp = DbResponse::with_capacity(rows.len());
-        for row in rows {
-            let r = FunAdminListUsersRespRow {
-                user_id: row.try_get(0)?,
-                email: row.try_get(1)?,
-                address: row.try_get(2)?,
-                role: row.try_get(3)?,
-                updated_at: row.try_get(4)?,
-                created_at: row.try_get(5)?,
-            };
-            resp.push(r);
-        }
-        Ok(resp)
+
+impl DatabaseRequest for FunAdminListUsersReq {
+    type ResponseRow = FunAdminListUsersRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_admin_list_users(a_offset => $1::int, a_limit => $2::int, a_user_id => $3::bigint, a_email => $4::varchar, a_address => $5::varchar, a_role => $6::enum_role);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.offset as &(dyn ToSql + Sync),
+            &self.limit as &(dyn ToSql + Sync),
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.email as &(dyn ToSql + Sync),
+            &self.address as &(dyn ToSql + Sync),
+            &self.role as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunAdminListUsersRespRow> {
+        let r = FunAdminListUsersRespRow {
+            user_id: row.try_get(0)?,
+            email: row.try_get(1)?,
+            address: row.try_get(2)?,
+            role: row.try_get(3)?,
+            updated_at: row.try_get(4)?,
+            created_at: row.try_get(5)?,
+        };
+        Ok(r)
     }
 }
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAdminAssignRoleReq {
     pub operator_user_id: i64,
@@ -211,21 +235,25 @@ pub struct FunAdminAssignRoleReq {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAdminAssignRoleRespRow {}
-impl DbClient {
-    #[allow(unused_variables)]
-    pub async fn fun_admin_assign_role(
-        &self,
-        req: FunAdminAssignRoleReq,
-    ) -> Result<DbResponse<FunAdminAssignRoleRespRow>> {
-        let rows = self.client.query("SELECT * FROM api.fun_admin_assign_role(a_operator_user_id => $1::bigint, a_user_id => $2::bigint, a_new_role => $3::enum_role);", &[&req.operator_user_id, &req.user_id, &req.new_role]).await?;
-        let mut resp = DbResponse::with_capacity(rows.len());
-        for row in rows {
-            let r = FunAdminAssignRoleRespRow {};
-            resp.push(r);
-        }
-        Ok(resp)
+
+impl DatabaseRequest for FunAdminAssignRoleReq {
+    type ResponseRow = FunAdminAssignRoleRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_admin_assign_role(a_operator_user_id => $1::bigint, a_user_id => $2::bigint, a_new_role => $3::enum_role);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.operator_user_id as &(dyn ToSql + Sync),
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.new_role as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunAdminAssignRoleRespRow> {
+        let r = FunAdminAssignRoleRespRow {};
+        Ok(r)
     }
 }
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserFollowStrategyReq {
     pub user_id: i64,
@@ -235,23 +263,26 @@ pub struct FunUserFollowStrategyReq {
 pub struct FunUserFollowStrategyRespRow {
     pub success: bool,
 }
-impl DbClient {
-    #[allow(unused_variables)]
-    pub async fn fun_user_follow_strategy(
-        &self,
-        req: FunUserFollowStrategyReq,
-    ) -> Result<DbResponse<FunUserFollowStrategyRespRow>> {
-        let rows = self.client.query("SELECT * FROM api.fun_user_follow_strategy(a_user_id => $1::bigint, a_strategy_id => $2::bigint);", &[&req.user_id, &req.strategy_id]).await?;
-        let mut resp = DbResponse::with_capacity(rows.len());
-        for row in rows {
-            let r = FunUserFollowStrategyRespRow {
-                success: row.try_get(0)?,
-            };
-            resp.push(r);
-        }
-        Ok(resp)
+
+impl DatabaseRequest for FunUserFollowStrategyReq {
+    type ResponseRow = FunUserFollowStrategyRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_follow_strategy(a_user_id => $1::bigint, a_strategy_id => $2::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.strategy_id as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserFollowStrategyRespRow> {
+        let r = FunUserFollowStrategyRespRow {
+            success: row.try_get(0)?,
+        };
+        Ok(r)
     }
 }
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserUnfollowStrategyReq {
     pub user_id: i64,
@@ -261,23 +292,26 @@ pub struct FunUserUnfollowStrategyReq {
 pub struct FunUserUnfollowStrategyRespRow {
     pub success: bool,
 }
-impl DbClient {
-    #[allow(unused_variables)]
-    pub async fn fun_user_unfollow_strategy(
-        &self,
-        req: FunUserUnfollowStrategyReq,
-    ) -> Result<DbResponse<FunUserUnfollowStrategyRespRow>> {
-        let rows = self.client.query("SELECT * FROM api.fun_user_unfollow_strategy(a_user_id => $1::bigint, a_strategy_id => $2::bigint);", &[&req.user_id, &req.strategy_id]).await?;
-        let mut resp = DbResponse::with_capacity(rows.len());
-        for row in rows {
-            let r = FunUserUnfollowStrategyRespRow {
-                success: row.try_get(0)?,
-            };
-            resp.push(r);
-        }
-        Ok(resp)
+
+impl DatabaseRequest for FunUserUnfollowStrategyReq {
+    type ResponseRow = FunUserUnfollowStrategyRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_unfollow_strategy(a_user_id => $1::bigint, a_strategy_id => $2::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.strategy_id as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserUnfollowStrategyRespRow> {
+        let r = FunUserUnfollowStrategyRespRow {
+            success: row.try_get(0)?,
+        };
+        Ok(r)
     }
 }
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserListFollowedStrategiesReq {
     pub user_id: i64,
@@ -293,36 +327,30 @@ pub struct FunUserListFollowedStrategiesRespRow {
     pub risk_score: f32,
     pub aum: f32,
 }
-impl DbClient {
-    #[allow(unused_variables)]
-    pub async fn fun_user_list_followed_strategies(
-        &self,
-        req: FunUserListFollowedStrategiesReq,
-    ) -> Result<DbResponse<FunUserListFollowedStrategiesRespRow>> {
-        let rows = self
-            .client
-            .query(
-                "SELECT * FROM api.fun_user_list_followed_strategies(a_user_id => $1::bigint);",
-                &[&req.user_id],
-            )
-            .await?;
-        let mut resp = DbResponse::with_capacity(rows.len());
-        for row in rows {
-            let r = FunUserListFollowedStrategiesRespRow {
-                strategy_id: row.try_get(0)?,
-                strategy_name: row.try_get(1)?,
-                strategy_description: row.try_get(2)?,
-                net_value: row.try_get(3)?,
-                followers: row.try_get(4)?,
-                backers: row.try_get(5)?,
-                risk_score: row.try_get(6)?,
-                aum: row.try_get(7)?,
-            };
-            resp.push(r);
-        }
-        Ok(resp)
+
+impl DatabaseRequest for FunUserListFollowedStrategiesReq {
+    type ResponseRow = FunUserListFollowedStrategiesRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_list_followed_strategies(a_user_id => $1::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![&self.user_id as &(dyn ToSql + Sync)]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserListFollowedStrategiesRespRow> {
+        let r = FunUserListFollowedStrategiesRespRow {
+            strategy_id: row.try_get(0)?,
+            strategy_name: row.try_get(1)?,
+            strategy_description: row.try_get(2)?,
+            net_value: row.try_get(3)?,
+            followers: row.try_get(4)?,
+            backers: row.try_get(5)?,
+            risk_score: row.try_get(6)?,
+            aum: row.try_get(7)?,
+        };
+        Ok(r)
     }
 }
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserListStrategiesReq {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -336,33 +364,30 @@ pub struct FunUserListStrategiesRespRow {
     pub risk_score: f32,
     pub aum: f32,
 }
-impl DbClient {
-    #[allow(unused_variables)]
-    pub async fn fun_user_list_strategies(
-        &self,
-        req: FunUserListStrategiesReq,
-    ) -> Result<DbResponse<FunUserListStrategiesRespRow>> {
-        let rows = self
-            .client
-            .query("SELECT * FROM api.fun_user_list_strategies();", &[])
-            .await?;
-        let mut resp = DbResponse::with_capacity(rows.len());
-        for row in rows {
-            let r = FunUserListStrategiesRespRow {
-                strategy_id: row.try_get(0)?,
-                strategy_name: row.try_get(1)?,
-                strategy_description: row.try_get(2)?,
-                net_value: row.try_get(3)?,
-                followers: row.try_get(4)?,
-                backers: row.try_get(5)?,
-                risk_score: row.try_get(6)?,
-                aum: row.try_get(7)?,
-            };
-            resp.push(r);
-        }
-        Ok(resp)
+
+impl DatabaseRequest for FunUserListStrategiesReq {
+    type ResponseRow = FunUserListStrategiesRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_list_strategies();"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserListStrategiesRespRow> {
+        let r = FunUserListStrategiesRespRow {
+            strategy_id: row.try_get(0)?,
+            strategy_name: row.try_get(1)?,
+            strategy_description: row.try_get(2)?,
+            net_value: row.try_get(3)?,
+            followers: row.try_get(4)?,
+            backers: row.try_get(5)?,
+            risk_score: row.try_get(6)?,
+            aum: row.try_get(7)?,
+        };
+        Ok(r)
     }
 }
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserGetStrategyReq {
     pub strategy_id: i64,
@@ -378,36 +403,30 @@ pub struct FunUserGetStrategyRespRow {
     pub risk_score: f32,
     pub aum: f32,
 }
-impl DbClient {
-    #[allow(unused_variables)]
-    pub async fn fun_user_get_strategy(
-        &self,
-        req: FunUserGetStrategyReq,
-    ) -> Result<DbResponse<FunUserGetStrategyRespRow>> {
-        let rows = self
-            .client
-            .query(
-                "SELECT * FROM api.fun_user_get_strategy(a_strategy_id => $1::bigint);",
-                &[&req.strategy_id],
-            )
-            .await?;
-        let mut resp = DbResponse::with_capacity(rows.len());
-        for row in rows {
-            let r = FunUserGetStrategyRespRow {
-                strategy_id: row.try_get(0)?,
-                strategy_name: row.try_get(1)?,
-                strategy_description: row.try_get(2)?,
-                net_value: row.try_get(3)?,
-                followers: row.try_get(4)?,
-                backers: row.try_get(5)?,
-                risk_score: row.try_get(6)?,
-                aum: row.try_get(7)?,
-            };
-            resp.push(r);
-        }
-        Ok(resp)
+
+impl DatabaseRequest for FunUserGetStrategyReq {
+    type ResponseRow = FunUserGetStrategyRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_get_strategy(a_strategy_id => $1::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![&self.strategy_id as &(dyn ToSql + Sync)]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserGetStrategyRespRow> {
+        let r = FunUserGetStrategyRespRow {
+            strategy_id: row.try_get(0)?,
+            strategy_name: row.try_get(1)?,
+            strategy_description: row.try_get(2)?,
+            net_value: row.try_get(3)?,
+            followers: row.try_get(4)?,
+            backers: row.try_get(5)?,
+            risk_score: row.try_get(6)?,
+            aum: row.try_get(7)?,
+        };
+        Ok(r)
     }
 }
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserGetStrategyStatisticsNetValueReq {
     pub strategy_id: i64,
@@ -417,24 +436,24 @@ pub struct FunUserGetStrategyStatisticsNetValueRespRow {
     pub time: i64,
     pub net_value: f32,
 }
-impl DbClient {
-    #[allow(unused_variables)]
-    pub async fn fun_user_get_strategy_statistics_net_value(
-        &self,
-        req: FunUserGetStrategyStatisticsNetValueReq,
-    ) -> Result<DbResponse<FunUserGetStrategyStatisticsNetValueRespRow>> {
-        let rows = self.client.query("SELECT * FROM api.fun_user_get_strategy_statistics_net_value(a_strategy_id => $1::bigint);", &[&req.strategy_id]).await?;
-        let mut resp = DbResponse::with_capacity(rows.len());
-        for row in rows {
-            let r = FunUserGetStrategyStatisticsNetValueRespRow {
-                time: row.try_get(0)?,
-                net_value: row.try_get(1)?,
-            };
-            resp.push(r);
-        }
-        Ok(resp)
+
+impl DatabaseRequest for FunUserGetStrategyStatisticsNetValueReq {
+    type ResponseRow = FunUserGetStrategyStatisticsNetValueRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_get_strategy_statistics_net_value(a_strategy_id => $1::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![&self.strategy_id as &(dyn ToSql + Sync)]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserGetStrategyStatisticsNetValueRespRow> {
+        let r = FunUserGetStrategyStatisticsNetValueRespRow {
+            time: row.try_get(0)?,
+            net_value: row.try_get(1)?,
+        };
+        Ok(r)
     }
 }
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserGetStrategyStatisticsFollowHistoryReq {
     pub strategy_id: i64,
@@ -444,24 +463,24 @@ pub struct FunUserGetStrategyStatisticsFollowHistoryRespRow {
     pub time: i64,
     pub follower_count: f32,
 }
-impl DbClient {
-    #[allow(unused_variables)]
-    pub async fn fun_user_get_strategy_statistics_follow_history(
-        &self,
-        req: FunUserGetStrategyStatisticsFollowHistoryReq,
-    ) -> Result<DbResponse<FunUserGetStrategyStatisticsFollowHistoryRespRow>> {
-        let rows = self.client.query("SELECT * FROM api.fun_user_get_strategy_statistics_follow_history(a_strategy_id => $1::bigint);", &[&req.strategy_id]).await?;
-        let mut resp = DbResponse::with_capacity(rows.len());
-        for row in rows {
-            let r = FunUserGetStrategyStatisticsFollowHistoryRespRow {
-                time: row.try_get(0)?,
-                follower_count: row.try_get(1)?,
-            };
-            resp.push(r);
-        }
-        Ok(resp)
+
+impl DatabaseRequest for FunUserGetStrategyStatisticsFollowHistoryReq {
+    type ResponseRow = FunUserGetStrategyStatisticsFollowHistoryRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_get_strategy_statistics_follow_history(a_strategy_id => $1::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![&self.strategy_id as &(dyn ToSql + Sync)]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserGetStrategyStatisticsFollowHistoryRespRow> {
+        let r = FunUserGetStrategyStatisticsFollowHistoryRespRow {
+            time: row.try_get(0)?,
+            follower_count: row.try_get(1)?,
+        };
+        Ok(r)
     }
 }
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserGetStrategyStatisticsBackHistoryReq {
     pub strategy_id: i64,
@@ -472,25 +491,25 @@ pub struct FunUserGetStrategyStatisticsBackHistoryRespRow {
     pub backer_count: f32,
     pub backer_quantity_usd: f32,
 }
-impl DbClient {
-    #[allow(unused_variables)]
-    pub async fn fun_user_get_strategy_statistics_back_history(
-        &self,
-        req: FunUserGetStrategyStatisticsBackHistoryReq,
-    ) -> Result<DbResponse<FunUserGetStrategyStatisticsBackHistoryRespRow>> {
-        let rows = self.client.query("SELECT * FROM api.fun_user_get_strategy_statistics_back_history(a_strategy_id => $1::bigint);", &[&req.strategy_id]).await?;
-        let mut resp = DbResponse::with_capacity(rows.len());
-        for row in rows {
-            let r = FunUserGetStrategyStatisticsBackHistoryRespRow {
-                time: row.try_get(0)?,
-                backer_count: row.try_get(1)?,
-                backer_quantity_usd: row.try_get(2)?,
-            };
-            resp.push(r);
-        }
-        Ok(resp)
+
+impl DatabaseRequest for FunUserGetStrategyStatisticsBackHistoryReq {
+    type ResponseRow = FunUserGetStrategyStatisticsBackHistoryRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_get_strategy_statistics_back_history(a_strategy_id => $1::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![&self.strategy_id as &(dyn ToSql + Sync)]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserGetStrategyStatisticsBackHistoryRespRow> {
+        let r = FunUserGetStrategyStatisticsBackHistoryRespRow {
+            time: row.try_get(0)?,
+            backer_count: row.try_get(1)?,
+            backer_quantity_usd: row.try_get(2)?,
+        };
+        Ok(r)
     }
 }
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserBackStrategyReq {
     pub user_id: i64,
@@ -505,23 +524,31 @@ pub struct FunUserBackStrategyReq {
 pub struct FunUserBackStrategyRespRow {
     pub success: bool,
 }
-impl DbClient {
-    #[allow(unused_variables)]
-    pub async fn fun_user_back_strategy(
-        &self,
-        req: FunUserBackStrategyReq,
-    ) -> Result<DbResponse<FunUserBackStrategyRespRow>> {
-        let rows = self.client.query("SELECT * FROM api.fun_user_back_strategy(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_quantity => $3::real, a_purchase_wallet => $4::varchar, a_blockchain => $5::varchar, a_dex => $6::varchar, a_transaction_hash => $7::varchar);", &[&req.user_id, &req.strategy_id, &req.quantity, &req.purchase_wallet, &req.blockchain, &req.dex, &req.transaction_hash]).await?;
-        let mut resp = DbResponse::with_capacity(rows.len());
-        for row in rows {
-            let r = FunUserBackStrategyRespRow {
-                success: row.try_get(0)?,
-            };
-            resp.push(r);
-        }
-        Ok(resp)
+
+impl DatabaseRequest for FunUserBackStrategyReq {
+    type ResponseRow = FunUserBackStrategyRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_back_strategy(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_quantity => $3::real, a_purchase_wallet => $4::varchar, a_blockchain => $5::varchar, a_dex => $6::varchar, a_transaction_hash => $7::varchar);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.strategy_id as &(dyn ToSql + Sync),
+            &self.quantity as &(dyn ToSql + Sync),
+            &self.purchase_wallet as &(dyn ToSql + Sync),
+            &self.blockchain as &(dyn ToSql + Sync),
+            &self.dex as &(dyn ToSql + Sync),
+            &self.transaction_hash as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserBackStrategyRespRow> {
+        let r = FunUserBackStrategyRespRow {
+            success: row.try_get(0)?,
+        };
+        Ok(r)
     }
 }
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserListBackedStrategiesReq {
     pub user_id: i64,
@@ -537,36 +564,30 @@ pub struct FunUserListBackedStrategiesRespRow {
     pub risk_score: f32,
     pub aum: f32,
 }
-impl DbClient {
-    #[allow(unused_variables)]
-    pub async fn fun_user_list_backed_strategies(
-        &self,
-        req: FunUserListBackedStrategiesReq,
-    ) -> Result<DbResponse<FunUserListBackedStrategiesRespRow>> {
-        let rows = self
-            .client
-            .query(
-                "SELECT * FROM api.fun_user_list_backed_strategies(a_user_id => $1::bigint);",
-                &[&req.user_id],
-            )
-            .await?;
-        let mut resp = DbResponse::with_capacity(rows.len());
-        for row in rows {
-            let r = FunUserListBackedStrategiesRespRow {
-                strategy_id: row.try_get(0)?,
-                strategy_name: row.try_get(1)?,
-                strategy_description: row.try_get(2)?,
-                net_value: row.try_get(3)?,
-                followers: row.try_get(4)?,
-                backers: row.try_get(5)?,
-                risk_score: row.try_get(6)?,
-                aum: row.try_get(7)?,
-            };
-            resp.push(r);
-        }
-        Ok(resp)
+
+impl DatabaseRequest for FunUserListBackedStrategiesReq {
+    type ResponseRow = FunUserListBackedStrategiesRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_list_backed_strategies(a_user_id => $1::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![&self.user_id as &(dyn ToSql + Sync)]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserListBackedStrategiesRespRow> {
+        let r = FunUserListBackedStrategiesRespRow {
+            strategy_id: row.try_get(0)?,
+            strategy_name: row.try_get(1)?,
+            strategy_description: row.try_get(2)?,
+            net_value: row.try_get(3)?,
+            followers: row.try_get(4)?,
+            backers: row.try_get(5)?,
+            risk_score: row.try_get(6)?,
+            aum: row.try_get(7)?,
+        };
+        Ok(r)
     }
 }
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserListBackStrategyHistoryReq {
     pub user_id: i64,
@@ -583,30 +604,33 @@ pub struct FunUserListBackStrategyHistoryRespRow {
     pub transaction_hash: String,
     pub time: i64,
 }
-impl DbClient {
-    #[allow(unused_variables)]
-    pub async fn fun_user_list_back_strategy_history(
-        &self,
-        req: FunUserListBackStrategyHistoryReq,
-    ) -> Result<DbResponse<FunUserListBackStrategyHistoryRespRow>> {
-        let rows = self.client.query("SELECT * FROM api.fun_user_list_back_strategy_history(a_user_id => $1::bigint, a_strategy_id => $2::bigint);", &[&req.user_id, &req.strategy_id]).await?;
-        let mut resp = DbResponse::with_capacity(rows.len());
-        for row in rows {
-            let r = FunUserListBackStrategyHistoryRespRow {
-                back_history_id: row.try_get(0)?,
-                strategy_id: row.try_get(1)?,
-                quantity: row.try_get(2)?,
-                wallet_address: row.try_get(3)?,
-                blockchain: row.try_get(4)?,
-                dex: row.try_get(5)?,
-                transaction_hash: row.try_get(6)?,
-                time: row.try_get(7)?,
-            };
-            resp.push(r);
-        }
-        Ok(resp)
+
+impl DatabaseRequest for FunUserListBackStrategyHistoryReq {
+    type ResponseRow = FunUserListBackStrategyHistoryRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_list_back_strategy_history(a_user_id => $1::bigint, a_strategy_id => $2::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.strategy_id as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserListBackStrategyHistoryRespRow> {
+        let r = FunUserListBackStrategyHistoryRespRow {
+            back_history_id: row.try_get(0)?,
+            strategy_id: row.try_get(1)?,
+            quantity: row.try_get(2)?,
+            wallet_address: row.try_get(3)?,
+            blockchain: row.try_get(4)?,
+            dex: row.try_get(5)?,
+            transaction_hash: row.try_get(6)?,
+            time: row.try_get(7)?,
+        };
+        Ok(r)
     }
 }
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserExitStrategyReq {
     pub user_id: i64,
@@ -622,23 +646,32 @@ pub struct FunUserExitStrategyReq {
 pub struct FunUserExitStrategyRespRow {
     pub success: bool,
 }
-impl DbClient {
-    #[allow(unused_variables)]
-    pub async fn fun_user_exit_strategy(
-        &self,
-        req: FunUserExitStrategyReq,
-    ) -> Result<DbResponse<FunUserExitStrategyRespRow>> {
-        let rows = self.client.query("SELECT * FROM api.fun_user_exit_strategy(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_quantity => $3::real, a_blockchain => $4::varchar, a_dex => $5::varchar, a_back_time => $6::bigint, a_transaction_hash => $7::varchar, a_purchase_wallet => $8::varchar);", &[&req.user_id, &req.strategy_id, &req.quantity, &req.blockchain, &req.dex, &req.back_time, &req.transaction_hash, &req.purchase_wallet]).await?;
-        let mut resp = DbResponse::with_capacity(rows.len());
-        for row in rows {
-            let r = FunUserExitStrategyRespRow {
-                success: row.try_get(0)?,
-            };
-            resp.push(r);
-        }
-        Ok(resp)
+
+impl DatabaseRequest for FunUserExitStrategyReq {
+    type ResponseRow = FunUserExitStrategyRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_exit_strategy(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_quantity => $3::real, a_blockchain => $4::varchar, a_dex => $5::varchar, a_back_time => $6::bigint, a_transaction_hash => $7::varchar, a_purchase_wallet => $8::varchar);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.strategy_id as &(dyn ToSql + Sync),
+            &self.quantity as &(dyn ToSql + Sync),
+            &self.blockchain as &(dyn ToSql + Sync),
+            &self.dex as &(dyn ToSql + Sync),
+            &self.back_time as &(dyn ToSql + Sync),
+            &self.transaction_hash as &(dyn ToSql + Sync),
+            &self.purchase_wallet as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserExitStrategyRespRow> {
+        let r = FunUserExitStrategyRespRow {
+            success: row.try_get(0)?,
+        };
+        Ok(r)
     }
 }
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserListExitStrategyHistoryReq {
     pub user_id: i64,
@@ -655,30 +688,33 @@ pub struct FunUserListExitStrategyHistoryRespRow {
     pub back_time: i64,
     pub exit_time: i64,
 }
-impl DbClient {
-    #[allow(unused_variables)]
-    pub async fn fun_user_list_exit_strategy_history(
-        &self,
-        req: FunUserListExitStrategyHistoryReq,
-    ) -> Result<DbResponse<FunUserListExitStrategyHistoryRespRow>> {
-        let rows = self.client.query("SELECT * FROM api.fun_user_list_exit_strategy_history(a_user_id => $1::bigint, a_strategy_id => $2::bigint);", &[&req.user_id, &req.strategy_id]).await?;
-        let mut resp = DbResponse::with_capacity(rows.len());
-        for row in rows {
-            let r = FunUserListExitStrategyHistoryRespRow {
-                exit_history_id: row.try_get(0)?,
-                strategy_id: row.try_get(1)?,
-                exit_quantity: row.try_get(2)?,
-                purchase_wallet_address: row.try_get(3)?,
-                blockchain: row.try_get(4)?,
-                dex: row.try_get(5)?,
-                back_time: row.try_get(6)?,
-                exit_time: row.try_get(7)?,
-            };
-            resp.push(r);
-        }
-        Ok(resp)
+
+impl DatabaseRequest for FunUserListExitStrategyHistoryReq {
+    type ResponseRow = FunUserListExitStrategyHistoryRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_list_exit_strategy_history(a_user_id => $1::bigint, a_strategy_id => $2::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.strategy_id as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserListExitStrategyHistoryRespRow> {
+        let r = FunUserListExitStrategyHistoryRespRow {
+            exit_history_id: row.try_get(0)?,
+            strategy_id: row.try_get(1)?,
+            exit_quantity: row.try_get(2)?,
+            purchase_wallet_address: row.try_get(3)?,
+            blockchain: row.try_get(4)?,
+            dex: row.try_get(5)?,
+            back_time: row.try_get(6)?,
+            exit_time: row.try_get(7)?,
+        };
+        Ok(r)
     }
 }
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserFollowExpertReq {
     pub user_id: i64,
@@ -688,23 +724,26 @@ pub struct FunUserFollowExpertReq {
 pub struct FunUserFollowExpertRespRow {
     pub success: bool,
 }
-impl DbClient {
-    #[allow(unused_variables)]
-    pub async fn fun_user_follow_expert(
-        &self,
-        req: FunUserFollowExpertReq,
-    ) -> Result<DbResponse<FunUserFollowExpertRespRow>> {
-        let rows = self.client.query("SELECT * FROM api.fun_user_follow_expert(a_user_id => $1::bigint, a_expert_id => $2::bigint);", &[&req.user_id, &req.expert_id]).await?;
-        let mut resp = DbResponse::with_capacity(rows.len());
-        for row in rows {
-            let r = FunUserFollowExpertRespRow {
-                success: row.try_get(0)?,
-            };
-            resp.push(r);
-        }
-        Ok(resp)
+
+impl DatabaseRequest for FunUserFollowExpertReq {
+    type ResponseRow = FunUserFollowExpertRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_follow_expert(a_user_id => $1::bigint, a_expert_id => $2::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.expert_id as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserFollowExpertRespRow> {
+        let r = FunUserFollowExpertRespRow {
+            success: row.try_get(0)?,
+        };
+        Ok(r)
     }
 }
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserUnfollowExpertReq {
     pub user_id: i64,
@@ -714,23 +753,26 @@ pub struct FunUserUnfollowExpertReq {
 pub struct FunUserUnfollowExpertRespRow {
     pub success: bool,
 }
-impl DbClient {
-    #[allow(unused_variables)]
-    pub async fn fun_user_unfollow_expert(
-        &self,
-        req: FunUserUnfollowExpertReq,
-    ) -> Result<DbResponse<FunUserUnfollowExpertRespRow>> {
-        let rows = self.client.query("SELECT * FROM api.fun_user_unfollow_expert(a_user_id => $1::bigint, a_expert_id => $2::bigint);", &[&req.user_id, &req.expert_id]).await?;
-        let mut resp = DbResponse::with_capacity(rows.len());
-        for row in rows {
-            let r = FunUserUnfollowExpertRespRow {
-                success: row.try_get(0)?,
-            };
-            resp.push(r);
-        }
-        Ok(resp)
+
+impl DatabaseRequest for FunUserUnfollowExpertReq {
+    type ResponseRow = FunUserUnfollowExpertRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_unfollow_expert(a_user_id => $1::bigint, a_expert_id => $2::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.expert_id as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserUnfollowExpertRespRow> {
+        let r = FunUserUnfollowExpertRespRow {
+            success: row.try_get(0)?,
+        };
+        Ok(r)
     }
 }
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserListFollowedExpertsReq {
     pub user_id: i64,
@@ -746,36 +788,30 @@ pub struct FunUserListFollowedExpertsRespRow {
     pub reputation_score: f32,
     pub aum: f32,
 }
-impl DbClient {
-    #[allow(unused_variables)]
-    pub async fn fun_user_list_followed_experts(
-        &self,
-        req: FunUserListFollowedExpertsReq,
-    ) -> Result<DbResponse<FunUserListFollowedExpertsRespRow>> {
-        let rows = self
-            .client
-            .query(
-                "SELECT * FROM api.fun_user_list_followed_experts(a_user_id => $1::bigint);",
-                &[&req.user_id],
-            )
-            .await?;
-        let mut resp = DbResponse::with_capacity(rows.len());
-        for row in rows {
-            let r = FunUserListFollowedExpertsRespRow {
-                expert_id: row.try_get(0)?,
-                name: row.try_get(1)?,
-                follower_count: row.try_get(2)?,
-                description: row.try_get(3)?,
-                social_media: row.try_get(4)?,
-                risk_score: row.try_get(5)?,
-                reputation_score: row.try_get(6)?,
-                aum: row.try_get(7)?,
-            };
-            resp.push(r);
-        }
-        Ok(resp)
+
+impl DatabaseRequest for FunUserListFollowedExpertsReq {
+    type ResponseRow = FunUserListFollowedExpertsRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_list_followed_experts(a_user_id => $1::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![&self.user_id as &(dyn ToSql + Sync)]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserListFollowedExpertsRespRow> {
+        let r = FunUserListFollowedExpertsRespRow {
+            expert_id: row.try_get(0)?,
+            name: row.try_get(1)?,
+            follower_count: row.try_get(2)?,
+            description: row.try_get(3)?,
+            social_media: row.try_get(4)?,
+            risk_score: row.try_get(5)?,
+            reputation_score: row.try_get(6)?,
+            aum: row.try_get(7)?,
+        };
+        Ok(r)
     }
 }
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserListExpertsReq {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -789,33 +825,30 @@ pub struct FunUserListExpertsRespRow {
     pub reputation_score: f32,
     pub aum: f32,
 }
-impl DbClient {
-    #[allow(unused_variables)]
-    pub async fn fun_user_list_experts(
-        &self,
-        req: FunUserListExpertsReq,
-    ) -> Result<DbResponse<FunUserListExpertsRespRow>> {
-        let rows = self
-            .client
-            .query("SELECT * FROM api.fun_user_list_experts();", &[])
-            .await?;
-        let mut resp = DbResponse::with_capacity(rows.len());
-        for row in rows {
-            let r = FunUserListExpertsRespRow {
-                expert_id: row.try_get(0)?,
-                name: row.try_get(1)?,
-                follower_count: row.try_get(2)?,
-                description: row.try_get(3)?,
-                social_media: row.try_get(4)?,
-                risk_score: row.try_get(5)?,
-                reputation_score: row.try_get(6)?,
-                aum: row.try_get(7)?,
-            };
-            resp.push(r);
-        }
-        Ok(resp)
+
+impl DatabaseRequest for FunUserListExpertsReq {
+    type ResponseRow = FunUserListExpertsRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_list_experts();"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserListExpertsRespRow> {
+        let r = FunUserListExpertsRespRow {
+            expert_id: row.try_get(0)?,
+            name: row.try_get(1)?,
+            follower_count: row.try_get(2)?,
+            description: row.try_get(3)?,
+            social_media: row.try_get(4)?,
+            risk_score: row.try_get(5)?,
+            reputation_score: row.try_get(6)?,
+            aum: row.try_get(7)?,
+        };
+        Ok(r)
     }
 }
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserGetExpertProfileReq {
     pub expert_id: i64,
@@ -831,36 +864,30 @@ pub struct FunUserGetExpertProfileRespRow {
     pub reputation_score: f32,
     pub aum: f32,
 }
-impl DbClient {
-    #[allow(unused_variables)]
-    pub async fn fun_user_get_expert_profile(
-        &self,
-        req: FunUserGetExpertProfileReq,
-    ) -> Result<DbResponse<FunUserGetExpertProfileRespRow>> {
-        let rows = self
-            .client
-            .query(
-                "SELECT * FROM api.fun_user_get_expert_profile(a_expert_id => $1::bigint);",
-                &[&req.expert_id],
-            )
-            .await?;
-        let mut resp = DbResponse::with_capacity(rows.len());
-        for row in rows {
-            let r = FunUserGetExpertProfileRespRow {
-                expert_id: row.try_get(0)?,
-                name: row.try_get(1)?,
-                follower_count: row.try_get(2)?,
-                description: row.try_get(3)?,
-                social_media: row.try_get(4)?,
-                risk_score: row.try_get(5)?,
-                reputation_score: row.try_get(6)?,
-                aum: row.try_get(7)?,
-            };
-            resp.push(r);
-        }
-        Ok(resp)
+
+impl DatabaseRequest for FunUserGetExpertProfileReq {
+    type ResponseRow = FunUserGetExpertProfileRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_get_expert_profile(a_expert_id => $1::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![&self.expert_id as &(dyn ToSql + Sync)]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserGetExpertProfileRespRow> {
+        let r = FunUserGetExpertProfileRespRow {
+            expert_id: row.try_get(0)?,
+            name: row.try_get(1)?,
+            follower_count: row.try_get(2)?,
+            description: row.try_get(3)?,
+            social_media: row.try_get(4)?,
+            risk_score: row.try_get(5)?,
+            reputation_score: row.try_get(6)?,
+            aum: row.try_get(7)?,
+        };
+        Ok(r)
     }
 }
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserGetUserProfileReq {
     pub user_id: i64,
@@ -876,36 +903,30 @@ pub struct FunUserGetUserProfileRespRow {
     pub reputation_score: f32,
     pub aum: f32,
 }
-impl DbClient {
-    #[allow(unused_variables)]
-    pub async fn fun_user_get_user_profile(
-        &self,
-        req: FunUserGetUserProfileReq,
-    ) -> Result<DbResponse<FunUserGetUserProfileRespRow>> {
-        let rows = self
-            .client
-            .query(
-                "SELECT * FROM api.fun_user_get_user_profile(a_user_id => $1::bigint);",
-                &[&req.user_id],
-            )
-            .await?;
-        let mut resp = DbResponse::with_capacity(rows.len());
-        for row in rows {
-            let r = FunUserGetUserProfileRespRow {
-                user_id: row.try_get(0)?,
-                name: row.try_get(1)?,
-                follower_count: row.try_get(2)?,
-                description: row.try_get(3)?,
-                social_media: row.try_get(4)?,
-                risk_score: row.try_get(5)?,
-                reputation_score: row.try_get(6)?,
-                aum: row.try_get(7)?,
-            };
-            resp.push(r);
-        }
-        Ok(resp)
+
+impl DatabaseRequest for FunUserGetUserProfileReq {
+    type ResponseRow = FunUserGetUserProfileRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_get_user_profile(a_user_id => $1::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![&self.user_id as &(dyn ToSql + Sync)]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserGetUserProfileRespRow> {
+        let r = FunUserGetUserProfileRespRow {
+            user_id: row.try_get(0)?,
+            name: row.try_get(1)?,
+            follower_count: row.try_get(2)?,
+            description: row.try_get(3)?,
+            social_media: row.try_get(4)?,
+            risk_score: row.try_get(5)?,
+            reputation_score: row.try_get(6)?,
+            aum: row.try_get(7)?,
+        };
+        Ok(r)
     }
 }
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserRegisterWalletReq {
     pub user_id: i64,
@@ -916,23 +937,27 @@ pub struct FunUserRegisterWalletReq {
 pub struct FunUserRegisterWalletRespRow {
     pub success: bool,
 }
-impl DbClient {
-    #[allow(unused_variables)]
-    pub async fn fun_user_register_wallet(
-        &self,
-        req: FunUserRegisterWalletReq,
-    ) -> Result<DbResponse<FunUserRegisterWalletRespRow>> {
-        let rows = self.client.query("SELECT * FROM api.fun_user_register_wallet(a_user_id => $1::bigint, a_blockchain => $2::varchar, a_wallet_address => $3::varchar);", &[&req.user_id, &req.blockchain, &req.wallet_address]).await?;
-        let mut resp = DbResponse::with_capacity(rows.len());
-        for row in rows {
-            let r = FunUserRegisterWalletRespRow {
-                success: row.try_get(0)?,
-            };
-            resp.push(r);
-        }
-        Ok(resp)
+
+impl DatabaseRequest for FunUserRegisterWalletReq {
+    type ResponseRow = FunUserRegisterWalletRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_register_wallet(a_user_id => $1::bigint, a_blockchain => $2::varchar, a_wallet_address => $3::varchar);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.blockchain as &(dyn ToSql + Sync),
+            &self.wallet_address as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserRegisterWalletRespRow> {
+        let r = FunUserRegisterWalletRespRow {
+            success: row.try_get(0)?,
+        };
+        Ok(r)
     }
 }
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserDeregisterWalletReq {
     pub user_id: i64,
@@ -942,23 +967,26 @@ pub struct FunUserDeregisterWalletReq {
 pub struct FunUserDeregisterWalletRespRow {
     pub success: bool,
 }
-impl DbClient {
-    #[allow(unused_variables)]
-    pub async fn fun_user_deregister_wallet(
-        &self,
-        req: FunUserDeregisterWalletReq,
-    ) -> Result<DbResponse<FunUserDeregisterWalletRespRow>> {
-        let rows = self.client.query("SELECT * FROM api.fun_user_deregister_wallet(a_user_id => $1::bigint, a_wallet_id => $2::bigint);", &[&req.user_id, &req.wallet_id]).await?;
-        let mut resp = DbResponse::with_capacity(rows.len());
-        for row in rows {
-            let r = FunUserDeregisterWalletRespRow {
-                success: row.try_get(0)?,
-            };
-            resp.push(r);
-        }
-        Ok(resp)
+
+impl DatabaseRequest for FunUserDeregisterWalletReq {
+    type ResponseRow = FunUserDeregisterWalletRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_deregister_wallet(a_user_id => $1::bigint, a_wallet_id => $2::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.wallet_id as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserDeregisterWalletRespRow> {
+        let r = FunUserDeregisterWalletRespRow {
+            success: row.try_get(0)?,
+        };
+        Ok(r)
     }
 }
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserListWalletsReq {
     pub user_id: i64,
@@ -970,32 +998,26 @@ pub struct FunUserListWalletsRespRow {
     pub wallet_address: String,
     pub is_default: bool,
 }
-impl DbClient {
-    #[allow(unused_variables)]
-    pub async fn fun_user_list_wallets(
-        &self,
-        req: FunUserListWalletsReq,
-    ) -> Result<DbResponse<FunUserListWalletsRespRow>> {
-        let rows = self
-            .client
-            .query(
-                "SELECT * FROM api.fun_user_list_wallets(a_user_id => $1::bigint);",
-                &[&req.user_id],
-            )
-            .await?;
-        let mut resp = DbResponse::with_capacity(rows.len());
-        for row in rows {
-            let r = FunUserListWalletsRespRow {
-                wallet_id: row.try_get(0)?,
-                blockchain: row.try_get(1)?,
-                wallet_address: row.try_get(2)?,
-                is_default: row.try_get(3)?,
-            };
-            resp.push(r);
-        }
-        Ok(resp)
+
+impl DatabaseRequest for FunUserListWalletsReq {
+    type ResponseRow = FunUserListWalletsRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_list_wallets(a_user_id => $1::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![&self.user_id as &(dyn ToSql + Sync)]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserListWalletsRespRow> {
+        let r = FunUserListWalletsRespRow {
+            wallet_id: row.try_get(0)?,
+            blockchain: row.try_get(1)?,
+            wallet_address: row.try_get(2)?,
+            is_default: row.try_get(3)?,
+        };
+        Ok(r)
     }
 }
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserApplyBecomeExpertReq {
     pub user_id: i64,
@@ -1004,29 +1026,23 @@ pub struct FunUserApplyBecomeExpertReq {
 pub struct FunUserApplyBecomeExpertRespRow {
     pub success: bool,
 }
-impl DbClient {
-    #[allow(unused_variables)]
-    pub async fn fun_user_apply_become_expert(
-        &self,
-        req: FunUserApplyBecomeExpertReq,
-    ) -> Result<DbResponse<FunUserApplyBecomeExpertRespRow>> {
-        let rows = self
-            .client
-            .query(
-                "SELECT * FROM api.fun_user_apply_become_expert(a_user_id => $1::bigint);",
-                &[&req.user_id],
-            )
-            .await?;
-        let mut resp = DbResponse::with_capacity(rows.len());
-        for row in rows {
-            let r = FunUserApplyBecomeExpertRespRow {
-                success: row.try_get(0)?,
-            };
-            resp.push(r);
-        }
-        Ok(resp)
+
+impl DatabaseRequest for FunUserApplyBecomeExpertReq {
+    type ResponseRow = FunUserApplyBecomeExpertRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_apply_become_expert(a_user_id => $1::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![&self.user_id as &(dyn ToSql + Sync)]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserApplyBecomeExpertRespRow> {
+        let r = FunUserApplyBecomeExpertRespRow {
+            success: row.try_get(0)?,
+        };
+        Ok(r)
     }
 }
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAdminApproveUserBecomeAdminReq {
     pub admin_user_id: i64,
@@ -1036,23 +1052,26 @@ pub struct FunAdminApproveUserBecomeAdminReq {
 pub struct FunAdminApproveUserBecomeAdminRespRow {
     pub success: bool,
 }
-impl DbClient {
-    #[allow(unused_variables)]
-    pub async fn fun_admin_approve_user_become_admin(
-        &self,
-        req: FunAdminApproveUserBecomeAdminReq,
-    ) -> Result<DbResponse<FunAdminApproveUserBecomeAdminRespRow>> {
-        let rows = self.client.query("SELECT * FROM api.fun_admin_approve_user_become_admin(a_admin_user_id => $1::bigint, a_user_id => $2::bigint);", &[&req.admin_user_id, &req.user_id]).await?;
-        let mut resp = DbResponse::with_capacity(rows.len());
-        for row in rows {
-            let r = FunAdminApproveUserBecomeAdminRespRow {
-                success: row.try_get(0)?,
-            };
-            resp.push(r);
-        }
-        Ok(resp)
+
+impl DatabaseRequest for FunAdminApproveUserBecomeAdminReq {
+    type ResponseRow = FunAdminApproveUserBecomeAdminRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_admin_approve_user_become_admin(a_admin_user_id => $1::bigint, a_user_id => $2::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.admin_user_id as &(dyn ToSql + Sync),
+            &self.user_id as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunAdminApproveUserBecomeAdminRespRow> {
+        let r = FunAdminApproveUserBecomeAdminRespRow {
+            success: row.try_get(0)?,
+        };
+        Ok(r)
     }
 }
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAdminRejectUserBecomeAdminReq {
     pub admin_user_id: i64,
@@ -1062,23 +1081,26 @@ pub struct FunAdminRejectUserBecomeAdminReq {
 pub struct FunAdminRejectUserBecomeAdminRespRow {
     pub success: bool,
 }
-impl DbClient {
-    #[allow(unused_variables)]
-    pub async fn fun_admin_reject_user_become_admin(
-        &self,
-        req: FunAdminRejectUserBecomeAdminReq,
-    ) -> Result<DbResponse<FunAdminRejectUserBecomeAdminRespRow>> {
-        let rows = self.client.query("SELECT * FROM api.fun_admin_reject_user_become_admin(a_admin_user_id => $1::bigint, a_user_id => $2::bigint);", &[&req.admin_user_id, &req.user_id]).await?;
-        let mut resp = DbResponse::with_capacity(rows.len());
-        for row in rows {
-            let r = FunAdminRejectUserBecomeAdminRespRow {
-                success: row.try_get(0)?,
-            };
-            resp.push(r);
-        }
-        Ok(resp)
+
+impl DatabaseRequest for FunAdminRejectUserBecomeAdminReq {
+    type ResponseRow = FunAdminRejectUserBecomeAdminRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_admin_reject_user_become_admin(a_admin_user_id => $1::bigint, a_user_id => $2::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.admin_user_id as &(dyn ToSql + Sync),
+            &self.user_id as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunAdminRejectUserBecomeAdminRespRow> {
+        let r = FunAdminRejectUserBecomeAdminRespRow {
+            success: row.try_get(0)?,
+        };
+        Ok(r)
     }
 }
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAdminListPendingUserExpertApplicationsReq {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1092,36 +1114,30 @@ pub struct FunAdminListPendingUserExpertApplicationsRespRow {
     pub reputation_score: f32,
     pub aum: f32,
 }
-impl DbClient {
-    #[allow(unused_variables)]
-    pub async fn fun_admin_list_pending_user_expert_applications(
-        &self,
-        req: FunAdminListPendingUserExpertApplicationsReq,
-    ) -> Result<DbResponse<FunAdminListPendingUserExpertApplicationsRespRow>> {
-        let rows = self
-            .client
-            .query(
-                "SELECT * FROM api.fun_admin_list_pending_user_expert_applications();",
-                &[],
-            )
-            .await?;
-        let mut resp = DbResponse::with_capacity(rows.len());
-        for row in rows {
-            let r = FunAdminListPendingUserExpertApplicationsRespRow {
-                user_id: row.try_get(0)?,
-                name: row.try_get(1)?,
-                follower_count: row.try_get(2)?,
-                description: row.try_get(3)?,
-                social_media: row.try_get(4)?,
-                risk_score: row.try_get(5)?,
-                reputation_score: row.try_get(6)?,
-                aum: row.try_get(7)?,
-            };
-            resp.push(r);
-        }
-        Ok(resp)
+
+impl DatabaseRequest for FunAdminListPendingUserExpertApplicationsReq {
+    type ResponseRow = FunAdminListPendingUserExpertApplicationsRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_admin_list_pending_user_expert_applications();"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunAdminListPendingUserExpertApplicationsRespRow> {
+        let r = FunAdminListPendingUserExpertApplicationsRespRow {
+            user_id: row.try_get(0)?,
+            name: row.try_get(1)?,
+            follower_count: row.try_get(2)?,
+            description: row.try_get(3)?,
+            social_media: row.try_get(4)?,
+            risk_score: row.try_get(5)?,
+            reputation_score: row.try_get(6)?,
+            aum: row.try_get(7)?,
+        };
+        Ok(r)
     }
 }
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserCreateStrategyReq {
     pub user_id: i64,
@@ -1133,24 +1149,28 @@ pub struct FunUserCreateStrategyRespRow {
     pub success: bool,
     pub strategy_id: i64,
 }
-impl DbClient {
-    #[allow(unused_variables)]
-    pub async fn fun_user_create_strategy(
-        &self,
-        req: FunUserCreateStrategyReq,
-    ) -> Result<DbResponse<FunUserCreateStrategyRespRow>> {
-        let rows = self.client.query("SELECT * FROM api.fun_user_create_strategy(a_user_id => $1::bigint, a_name => $2::varchar, a_description => $3::varchar);", &[&req.user_id, &req.name, &req.description]).await?;
-        let mut resp = DbResponse::with_capacity(rows.len());
-        for row in rows {
-            let r = FunUserCreateStrategyRespRow {
-                success: row.try_get(0)?,
-                strategy_id: row.try_get(1)?,
-            };
-            resp.push(r);
-        }
-        Ok(resp)
+
+impl DatabaseRequest for FunUserCreateStrategyReq {
+    type ResponseRow = FunUserCreateStrategyRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_create_strategy(a_user_id => $1::bigint, a_name => $2::varchar, a_description => $3::varchar);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.name as &(dyn ToSql + Sync),
+            &self.description as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserCreateStrategyRespRow> {
+        let r = FunUserCreateStrategyRespRow {
+            success: row.try_get(0)?,
+            strategy_id: row.try_get(1)?,
+        };
+        Ok(r)
     }
 }
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserAddStrategyWatchWalletReq {
     pub user_id: i64,
@@ -1165,24 +1185,31 @@ pub struct FunUserAddStrategyWatchWalletRespRow {
     pub success: bool,
     pub watch_wallet_id: i64,
 }
-impl DbClient {
-    #[allow(unused_variables)]
-    pub async fn fun_user_add_strategy_watch_wallet(
-        &self,
-        req: FunUserAddStrategyWatchWalletReq,
-    ) -> Result<DbResponse<FunUserAddStrategyWatchWalletRespRow>> {
-        let rows = self.client.query("SELECT * FROM api.fun_user_add_strategy_watch_wallet(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_wallet_address => $3::varchar, a_blockchain => $4::varchar, a_ratio => $5::real, a_dex => $6::varchar);", &[&req.user_id, &req.strategy_id, &req.wallet_address, &req.blockchain, &req.ratio, &req.dex]).await?;
-        let mut resp = DbResponse::with_capacity(rows.len());
-        for row in rows {
-            let r = FunUserAddStrategyWatchWalletRespRow {
-                success: row.try_get(0)?,
-                watch_wallet_id: row.try_get(1)?,
-            };
-            resp.push(r);
-        }
-        Ok(resp)
+
+impl DatabaseRequest for FunUserAddStrategyWatchWalletReq {
+    type ResponseRow = FunUserAddStrategyWatchWalletRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_add_strategy_watch_wallet(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_wallet_address => $3::varchar, a_blockchain => $4::varchar, a_ratio => $5::real, a_dex => $6::varchar);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.strategy_id as &(dyn ToSql + Sync),
+            &self.wallet_address as &(dyn ToSql + Sync),
+            &self.blockchain as &(dyn ToSql + Sync),
+            &self.ratio as &(dyn ToSql + Sync),
+            &self.dex as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserAddStrategyWatchWalletRespRow> {
+        let r = FunUserAddStrategyWatchWalletRespRow {
+            success: row.try_get(0)?,
+            watch_wallet_id: row.try_get(1)?,
+        };
+        Ok(r)
     }
 }
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserRemoveStrategyWatchWalletReq {
     pub user_id: i64,
@@ -1193,23 +1220,27 @@ pub struct FunUserRemoveStrategyWatchWalletReq {
 pub struct FunUserRemoveStrategyWatchWalletRespRow {
     pub success: bool,
 }
-impl DbClient {
-    #[allow(unused_variables)]
-    pub async fn fun_user_remove_strategy_watch_wallet(
-        &self,
-        req: FunUserRemoveStrategyWatchWalletReq,
-    ) -> Result<DbResponse<FunUserRemoveStrategyWatchWalletRespRow>> {
-        let rows = self.client.query("SELECT * FROM api.fun_user_remove_strategy_watch_wallet(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_watch_wallet_id => $3::bigint);", &[&req.user_id, &req.strategy_id, &req.watch_wallet_id]).await?;
-        let mut resp = DbResponse::with_capacity(rows.len());
-        for row in rows {
-            let r = FunUserRemoveStrategyWatchWalletRespRow {
-                success: row.try_get(0)?,
-            };
-            resp.push(r);
-        }
-        Ok(resp)
+
+impl DatabaseRequest for FunUserRemoveStrategyWatchWalletReq {
+    type ResponseRow = FunUserRemoveStrategyWatchWalletRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_remove_strategy_watch_wallet(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_watch_wallet_id => $3::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.strategy_id as &(dyn ToSql + Sync),
+            &self.watch_wallet_id as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserRemoveStrategyWatchWalletRespRow> {
+        let r = FunUserRemoveStrategyWatchWalletRespRow {
+            success: row.try_get(0)?,
+        };
+        Ok(r)
     }
 }
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserListStrategyWatchWalletsReq {
     pub strategy_id: i64,
@@ -1221,23 +1252,22 @@ pub struct FunUserListStrategyWatchWalletsRespRow {
     pub blockchain: String,
     pub ratio: f32,
 }
-impl DbClient {
-    #[allow(unused_variables)]
-    pub async fn fun_user_list_strategy_watch_wallets(
-        &self,
-        req: FunUserListStrategyWatchWalletsReq,
-    ) -> Result<DbResponse<FunUserListStrategyWatchWalletsRespRow>> {
-        let rows = self.client.query("SELECT * FROM api.fun_user_list_strategy_watch_wallets(a_strategy_id => $1::bigint);", &[&req.strategy_id]).await?;
-        let mut resp = DbResponse::with_capacity(rows.len());
-        for row in rows {
-            let r = FunUserListStrategyWatchWalletsRespRow {
-                watch_wallet_id: row.try_get(0)?,
-                wallet_address: row.try_get(1)?,
-                blockchain: row.try_get(2)?,
-                ratio: row.try_get(3)?,
-            };
-            resp.push(r);
-        }
-        Ok(resp)
+
+impl DatabaseRequest for FunUserListStrategyWatchWalletsReq {
+    type ResponseRow = FunUserListStrategyWatchWalletsRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_list_strategy_watch_wallets(a_strategy_id => $1::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![&self.strategy_id as &(dyn ToSql + Sync)]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserListStrategyWatchWalletsRespRow> {
+        let r = FunUserListStrategyWatchWalletsRespRow {
+            watch_wallet_id: row.try_get(0)?,
+            wallet_address: row.try_get(1)?,
+            blockchain: row.try_get(2)?,
+            ratio: row.try_get(3)?,
+        };
+        Ok(r)
     }
 }

@@ -16,7 +16,7 @@ use tokio::io::{AsyncRead, AsyncWrite};
 use tracing::*;
 
 use crate::config::AppConfig;
-use crate::database::SimpleDbClient;
+use crate::database::DbClient;
 use crate::handler::*;
 use crate::listener::{ConnectionListener, TcpListener, TlsListener};
 use crate::toolbox::{RequestContext, Toolbox};
@@ -40,7 +40,7 @@ impl<App: Sync + Send + 'static> HttpServer<App> {
             config,
         }
     }
-    pub fn add_database(&mut self, db: SimpleDbClient) {
+    pub fn add_database(&mut self, db: DbClient) {
         self.toolbox.add_db(db);
     }
 

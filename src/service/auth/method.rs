@@ -1,6 +1,7 @@
 use eyre::*;
 use gen::database::*;
 use gen::model::*;
+use lib::database::DbClient;
 use lib::handler::RequestHandler;
 use lib::toolbox::*;
 use lib::ws::*;
@@ -11,6 +12,7 @@ use std::sync::Arc;
 use uuid::Uuid;
 use web3::signing::{hash_message, recover, RecoveryError};
 use web3::types::Address;
+use web3::Transport;
 
 pub struct MethodAuthSignup;
 
@@ -62,7 +64,7 @@ impl RequestHandler for MethodAuthSignup {
             }
 
             let signup = db_auth
-                .fun_auth_signup(FunAuthSignupReq {
+                .execute(FunAuthSignupReq {
                     address: address_string.clone(),
                     email: req.email.clone(),
                     phone: req.phone.clone(),
@@ -73,8 +75,8 @@ impl RequestHandler for MethodAuthSignup {
                     ip_address: conn.address.ip(),
                 })
                 .await?;
-            if db_auth.client.conn_hash() != db.client.conn_hash() {
-                db.fun_auth_signup(FunAuthSignupReq {
+            if db_auth.conn_hash() != db.conn_hash() {
+                db.execute(FunAuthSignupReq {
                     address: address_string.clone(),
                     email: req.email,
                     phone: req.phone,
@@ -136,7 +138,7 @@ impl RequestHandler for MethodAuthLogin {
             let service_code = req.service_code;
 
             let data = db_auth
-                .fun_auth_authenticate(FunAuthAuthenticateReq {
+                .execute(FunAuthAuthenticateReq {
                     address: format!("{:?}", address),
                     service_code: service_code as _,
                     device_id: req.device_id,
@@ -150,7 +152,7 @@ impl RequestHandler for MethodAuthLogin {
             let user_token = Uuid::new_v4();
             let admin_token = Uuid::new_v4();
             db_auth
-                .fun_auth_set_token(FunAuthSetTokenReq {
+                .execute(FunAuthSetTokenReq {
                     user_id: row.user_id,
                     user_token,
                     admin_token,
@@ -202,7 +204,7 @@ impl RequestHandler for MethodAuthAuthorize {
                 ));
             }
             let auth_data = db_auth
-                .fun_auth_authorize(FunAuthAuthorizeReq {
+                .execute(FunAuthAuthorizeReq {
                     address: format!("{:?}", address),
                     token: req.token,
                     service: srv,

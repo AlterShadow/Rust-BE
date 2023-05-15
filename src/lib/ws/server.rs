@@ -17,7 +17,7 @@ use tokio_tungstenite::WebSocketStream;
 use tracing::*;
 
 use crate::config::AppConfig;
-use crate::database::SimpleDbClient;
+use crate::database::DbClient;
 use crate::error_code::ErrorCode;
 use crate::handler::*;
 use crate::listener::{ConnectionListener, TcpListener, TlsListener};
@@ -55,7 +55,7 @@ impl<App: Sync + Send + 'static> WebsocketServer<App> {
     pub fn add_auth_controller(&mut self, controller: impl AuthController + 'static) {
         self.auth_controller = Arc::new(controller);
     }
-    pub fn add_database(&mut self, db: SimpleDbClient) {
+    pub fn add_database(&mut self, db: DbClient) {
         self.toolbox.add_db(db);
     }
 

@@ -2,6 +2,7 @@ use eyre::*;
 use gen::database::*;
 use gen::model::*;
 use itertools::Itertools;
+use lib::database::DbClient;
 use lib::handler::RequestHandler;
 use lib::toolbox::*;
 use lib::ws::*;
@@ -35,7 +36,7 @@ impl RequestHandler for MethodUserFollowStrategy {
             ensure_user_role(&conn, EnumRole::User)?;
 
             let ret = db
-                .fun_user_follow_strategy(FunUserFollowStrategyReq {
+                .execute(FunUserFollowStrategyReq {
                     user_id: conn.get_user_id(),
                     strategy_id: req.strategy_id,
                 })
@@ -68,7 +69,7 @@ impl RequestHandler for MethodUserListFollowedStrategies {
             ensure_user_role(&conn, EnumRole::User)?;
 
             let ret = db
-                .fun_user_list_followed_strategies(FunUserListFollowedStrategiesReq {
+                .execute(FunUserListFollowedStrategiesReq {
                     user_id: conn.get_user_id(),
                 })
                 .await?;
@@ -109,9 +110,7 @@ impl RequestHandler for MethodUserListStrategies {
         toolbox.spawn_response(ctx, async move {
             ensure_user_role(&conn, EnumRole::User)?;
 
-            let ret = db
-                .fun_user_list_strategies(FunUserListStrategiesReq {})
-                .await?;
+            let ret = db.execute(FunUserListStrategiesReq {}).await?;
             Ok(UserListStrategiesResponse {
                 strategies: ret
                     .into_rows()
@@ -148,13 +147,13 @@ impl RequestHandler for MethodUserGetStrategy {
             ensure_user_role(&conn, EnumRole::User)?;
 
             let ret = db
-                .fun_user_get_strategy(FunUserGetStrategyReq {
+                .execute(FunUserGetStrategyReq {
                     strategy_id: req.strategy_id,
                 })
                 .await?;
             let ret = ret.into_result().context("failed to get strategy")?;
             let watching_wallets = db
-                .fun_user_list_strategy_watch_wallets(FunUserListStrategyWatchWalletsReq {
+                .execute(FunUserListStrategyWatchWalletsReq {
                     strategy_id: req.strategy_id,
                 })
                 .await?;
@@ -207,25 +206,19 @@ impl RequestHandler for MethodUserGetStrategyStatistics {
         toolbox.spawn_response(ctx, async move {
             ensure_user_role(&conn, EnumRole::User)?;
             let net_value = db
-                .fun_user_get_strategy_statistics_net_value(
-                    FunUserGetStrategyStatisticsNetValueReq {
-                        strategy_id: req.strategy_id,
-                    },
-                )
+                .execute(FunUserGetStrategyStatisticsNetValueReq {
+                    strategy_id: req.strategy_id,
+                })
                 .await?;
             let follow_hist = db
-                .fun_user_get_strategy_statistics_follow_history(
-                    FunUserGetStrategyStatisticsFollowHistoryReq {
-                        strategy_id: req.strategy_id,
-                    },
-                )
+                .execute(FunUserGetStrategyStatisticsFollowHistoryReq {
+                    strategy_id: req.strategy_id,
+                })
                 .await?;
             let back_hist = db
-                .fun_user_get_strategy_statistics_back_history(
-                    FunUserGetStrategyStatisticsBackHistoryReq {
-                        strategy_id: req.strategy_id,
-                    },
-                )
+                .execute(FunUserGetStrategyStatisticsBackHistoryReq {
+                    strategy_id: req.strategy_id,
+                })
                 .await?;
 
             Ok(UserGetStrategyStatisticsResponse {
@@ -277,7 +270,7 @@ impl RequestHandler for MethodUserBackStrategy {
         toolbox.spawn_response(ctx, async move {
             ensure_user_role(&conn, EnumRole::User)?;
             let user = db
-                .fun_user_list_wallets(FunUserListWalletsReq {
+                .execute(FunUserListWalletsReq {
                     user_id: conn.get_user_id(),
                 })
                 .await?
@@ -289,7 +282,7 @@ impl RequestHandler for MethodUserBackStrategy {
             // TODO: get transaction here
             let transaction_hash = "0x000000000000";
             let ret = db
-                .fun_user_back_strategy(FunUserBackStrategyReq {
+                .execute(FunUserBackStrategyReq {
                     user_id: conn.get_user_id(),
                     strategy_id: req.strategy_id,
                     quantity: req.quantity,
@@ -324,7 +317,7 @@ impl RequestHandler for MethodUserListBackedStrategies {
         toolbox.spawn_response(ctx, async move {
             ensure_user_role(&conn, EnumRole::User)?;
             let ret = db
-                .fun_user_list_backed_strategies(FunUserListBackedStrategiesReq {
+                .execute(FunUserListBackedStrategiesReq {
                     user_id: conn.get_user_id(),
                 })
                 .await?;
@@ -365,7 +358,7 @@ impl RequestHandler for MethodUserUnfollowStrategy {
         toolbox.spawn_response(ctx, async move {
             ensure_user_role(&conn, EnumRole::User)?;
             let ret = db
-                .fun_user_unfollow_strategy(FunUserUnfollowStrategyReq {
+                .execute(FunUserUnfollowStrategyReq {
                     user_id: conn.get_user_id(),
                     strategy_id: req.strategy_id,
                 })
@@ -397,14 +390,14 @@ impl RequestHandler for MethodUserExitStrategy {
             ensure_user_role(&conn, EnumRole::User)?;
             // TODO: actually exit tokens to the user
             let strategy = db
-                .fun_user_get_strategy(FunUserGetStrategyReq {
+                .execute(FunUserGetStrategyReq {
                     strategy_id: req.strategy_id,
                 })
                 .await?
                 .into_result()
                 .context("no strategy")?;
             let back_hist = db
-                .fun_user_list_back_strategy_history(FunUserListBackStrategyHistoryReq {
+                .execute(FunUserListBackStrategyHistoryReq {
                     user_id: conn.get_user_id(),
                     strategy_id: Some(req.strategy_id),
                 })
@@ -416,7 +409,7 @@ impl RequestHandler for MethodUserExitStrategy {
                 .context("no back history")?;
             // TODO: sort this out
             let ret = db
-                .fun_user_exit_strategy(FunUserExitStrategyReq {
+                .execute(FunUserExitStrategyReq {
                     user_id: conn.get_user_id(),
                     strategy_id: req.strategy_id,
                     quantity: req.quantity,
@@ -454,7 +447,7 @@ impl RequestHandler for MethodUserListExitStrategyHistory {
         toolbox.spawn_response(ctx, async move {
             ensure_user_role(&conn, EnumRole::User)?;
             let ret = db
-                .fun_user_list_exit_strategy_history(FunUserListExitStrategyHistoryReq {
+                .execute(FunUserListExitStrategyHistoryReq {
                     user_id: conn.get_user_id(),
                     strategy_id: None,
                 })
@@ -495,7 +488,7 @@ impl RequestHandler for MethodUserFollowExpert {
         toolbox.spawn_response(ctx, async move {
             ensure_user_role(&conn, EnumRole::User)?;
             let ret = db
-                .fun_user_follow_expert(FunUserFollowExpertReq {
+                .execute(FunUserFollowExpertReq {
                     user_id: conn.get_user_id(),
                     expert_id: req.expert_id,
                 })
@@ -525,7 +518,7 @@ impl RequestHandler for MethodUserListFollowedExperts {
         toolbox.spawn_response(ctx, async move {
             ensure_user_role(&conn, EnumRole::User)?;
             let ret = db
-                .fun_user_list_followed_experts(FunUserListFollowedExpertsReq {
+                .execute(FunUserListFollowedExpertsReq {
                     user_id: conn.get_user_id(),
                 })
                 .await?;
@@ -565,7 +558,7 @@ impl RequestHandler for UserUnfollowExpert {
         toolbox.spawn_response(ctx, async move {
             ensure_user_role(&conn, EnumRole::User)?;
             let ret = db
-                .fun_user_unfollow_expert(FunUserUnfollowExpertReq {
+                .execute(FunUserUnfollowExpertReq {
                     user_id: conn.get_user_id(),
                     expert_id: req.expert_id,
                 })
@@ -594,7 +587,7 @@ impl RequestHandler for MethodUserListExperts {
         let db: DbClient = toolbox.get_db();
         toolbox.spawn_response(ctx, async move {
             ensure_user_role(&conn, EnumRole::User)?;
-            let ret = db.fun_user_list_experts(FunUserListExpertsReq {}).await?;
+            let ret = db.execute(FunUserListExpertsReq {}).await?;
             Ok(UserListExpertsResponse {
                 experts: ret
                     .into_rows()
@@ -630,7 +623,7 @@ impl RequestHandler for MethodUserGetExpertProfile {
         toolbox.spawn_response(ctx, async move {
             ensure_user_role(&conn, EnumRole::User)?;
             let ret = db
-                .fun_user_get_expert_profile(FunUserGetExpertProfileReq {
+                .execute(FunUserGetExpertProfileReq {
                     expert_id: req.expert_id,
                 })
                 .await?
@@ -667,7 +660,7 @@ impl RequestHandler for MethodUserGetUserProfile {
         toolbox.spawn_response(ctx, async move {
             ensure_user_role(&conn, EnumRole::User)?;
             let ret = db
-                .fun_user_get_user_profile(FunUserGetUserProfileReq {
+                .execute(FunUserGetUserProfileReq {
                     user_id: conn.get_user_id(),
                 })
                 .await?
@@ -704,7 +697,7 @@ impl RequestHandler for MethodUserRegisterWallet {
             ensure_user_role(&conn, EnumRole::User)?;
 
             let ret = db
-                .fun_user_register_wallet(FunUserRegisterWalletReq {
+                .execute(FunUserRegisterWalletReq {
                     user_id: conn.get_user_id(),
                     blockchain: req.blockchain,
                     wallet_address: req.wallet_address,
@@ -738,7 +731,7 @@ impl RequestHandler for MethodUserListWallets {
             ensure_user_role(&conn, EnumRole::User)?;
 
             let ret = db
-                .fun_user_list_wallets(FunUserListWalletsReq {
+                .execute(FunUserListWalletsReq {
                     user_id: conn.get_user_id(),
                 })
                 .await?;
@@ -775,7 +768,7 @@ impl RequestHandler for MethodUserDeregisterWallet {
             ensure_user_role(&conn, EnumRole::User)?;
 
             let ret = db
-                .fun_user_deregister_wallet(FunUserDeregisterWalletReq {
+                .execute(FunUserDeregisterWalletReq {
                     user_id: conn.get_user_id(),
                     wallet_id: req.wallet_id,
                 })
@@ -807,7 +800,7 @@ impl RequestHandler for MethodUserApplyBecomeExpert {
             ensure_user_role(&conn, EnumRole::User)?;
 
             let ret = db
-                .fun_user_apply_become_expert(FunUserApplyBecomeExpertReq {
+                .execute(FunUserApplyBecomeExpertReq {
                     user_id: conn.get_user_id(),
                     // TODO: add fields from request
                     // name: req.name,
@@ -842,7 +835,7 @@ impl RequestHandler for MethodAdminApproveUserBecomeExpert {
             ensure_user_role(&conn, EnumRole::Admin)?;
 
             let ret = db
-                .fun_admin_approve_user_become_admin(FunAdminApproveUserBecomeAdminReq {
+                .execute(FunAdminApproveUserBecomeAdminReq {
                     admin_user_id: conn.get_user_id(),
                     user_id: req.user_id,
                 })
@@ -874,7 +867,7 @@ impl RequestHandler for MethodAdminRejectUserBecomeExpert {
             ensure_user_role(&conn, EnumRole::Admin)?;
 
             let ret = db
-                .fun_admin_reject_user_become_admin(FunAdminRejectUserBecomeAdminReq {
+                .execute(FunAdminRejectUserBecomeAdminReq {
                     admin_user_id: conn.get_user_id(),
                     user_id: req.user_id,
                 })
@@ -906,9 +899,7 @@ impl RequestHandler for MethodAdminListPendingExpertApplications {
             ensure_user_role(&conn, EnumRole::Admin)?;
 
             let ret = db
-                .fun_admin_list_pending_user_expert_applications(
-                    FunAdminListPendingUserExpertApplicationsReq {},
-                )
+                .execute(FunAdminListPendingUserExpertApplicationsReq {})
                 .await?;
 
             Ok(AdminListPendingExpertApplicationsResponse {

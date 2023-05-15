@@ -1,20 +1,27 @@
 use deadpool_postgres::Runtime;
 use deadpool_postgres::*;
 use eyre::*;
+use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::Hash;
 use std::hash::Hasher;
-use tokio_postgres::types::ToSql;
-use tokio_postgres::{NoTls, Row, ToStatement};
+pub use tokio_postgres::types::ToSql;
+pub use tokio_postgres::{NoTls, Row, ToStatement};
 use tracing::*;
 pub type DatabaseConfig = deadpool_postgres::Config;
+pub trait DatabaseRequest {
+    type ResponseRow: Send + Sync + Clone + Serialize + DeserializeOwned;
+    fn statement(&self) -> &str;
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)>;
+    fn parse_row(&self, row: Row) -> Result<Self::ResponseRow>;
+}
 #[derive(Clone)]
-pub struct SimpleDbClient {
+pub struct DbClient {
     pool: Pool,
     conn_hash: u64,
 }
-impl SimpleDbClient {
+impl DbClient {
     pub async fn query<T>(
         &self,
         statement: &T,
@@ -24,6 +31,14 @@ impl SimpleDbClient {
         T: ?Sized + Sync + Send + ToStatement,
     {
         Ok(self.pool.get().await?.query(statement, params).await?)
+    }
+    pub async fn execute<T: DatabaseRequest>(&self, req: T) -> Result<DbResponse<T::ResponseRow>> {
+        let rows = self.query(req.statement(), &req.params()).await?;
+        let mut response = DbResponse::with_capacity(rows.len());
+        for row in rows {
+            response.push(req.parse_row(row)?);
+        }
+        Ok(response)
     }
     pub fn conn_hash(&self) -> u64 {
         self.conn_hash
@@ -59,7 +74,7 @@ impl<T> DbResponse<T> {
         self.rows.push(row);
     }
 }
-pub async fn connect_to_database(config: DatabaseConfig) -> Result<SimpleDbClient> {
+pub async fn connect_to_database(config: DatabaseConfig) -> Result<DbClient> {
     info!(
         "Connecting to database {}:{} {}",
         config.host.as_deref().unwrap_or(""),
@@ -72,5 +87,5 @@ pub async fn connect_to_database(config: DatabaseConfig) -> Result<SimpleDbClien
     config.dbname.hash(&mut hasher);
     let conn_hash = hasher.finish();
     let pool = config.create_pool(Some(Runtime::Tokio1), NoTls)?;
-    Ok(SimpleDbClient { pool, conn_hash })
+    Ok(DbClient { pool, conn_hash })
 }

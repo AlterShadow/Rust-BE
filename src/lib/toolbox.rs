@@ -1,4 +1,4 @@
-use crate::database::SimpleDbClient;
+use crate::database::DbClient;
 use crate::error_code::ErrorCode;
 use crate::log::LogLevel;
 use crate::ws::*;
@@ -70,7 +70,7 @@ pub struct RequestContext {
 
 #[derive(Clone)]
 pub struct Toolbox {
-    db: Vec<SimpleDbClient>,
+    db: Vec<DbClient>,
     pub send_msg: Arc<dyn Fn(ConnectionId, WsResponse) -> bool + Send + Sync>,
 }
 
@@ -78,11 +78,16 @@ impl Toolbox {
     pub fn new() -> Self {
         Self {
             db: vec![],
-            send_msg: Arc::new(|_conn_id, _msg| { false }),
+            send_msg: Arc::new(|_conn_id, _msg| false),
         }
     }
 
-    pub fn set_ws_states(&mut self, states: Arc<DashMap<ConnectionId, Arc<WsStreamState>>>, trigger: mpsc::Sender<ConnectionId>, oneshot: bool) {
+    pub fn set_ws_states(
+        &mut self,
+        states: Arc<DashMap<ConnectionId, Arc<WsStreamState>>>,
+        trigger: mpsc::Sender<ConnectionId>,
+        oneshot: bool,
+    ) {
         self.send_msg = Arc::new(move |conn_id, msg| {
             let state = if let Some(state) = states.get(&conn_id) {
                 state
@@ -94,13 +99,13 @@ impl Toolbox {
         });
     }
 
-    pub fn add_db(&mut self, db: SimpleDbClient) {
+    pub fn add_db(&mut self, db: DbClient) {
         self.db.push(db);
     }
-    pub fn get_db<T: From<SimpleDbClient>>(&self) -> T {
+    pub fn get_db<T: From<DbClient>>(&self) -> T {
         self.get_nth_db(0)
     }
-    pub fn get_nth_db<T: From<SimpleDbClient>>(&self, index: usize) -> T {
+    pub fn get_nth_db<T: From<DbClient>>(&self, index: usize) -> T {
         T::from(self.db.get(index).expect("Db not Initialized").clone())
     }
 
@@ -152,10 +157,10 @@ impl Toolbox {
     pub fn spawn_ws_response<Resp: Send + Serialize>(
         &self,
         ctx: RequestContext,
-        f: impl Future<Output=Result<Resp>> + Send + 'static,
+        f: impl Future<Output = Result<Resp>> + Send + 'static,
     ) {
         #[allow(unused_variables)]
-            let RequestContext {
+        let RequestContext {
             connection_id,
             user_id,
             seq,
@@ -211,7 +216,7 @@ impl Toolbox {
     pub fn spawn_response<Resp: Send + Serialize>(
         &self,
         ctx: RequestContext,
-        f: impl Future<Output=Result<Resp>> + Send + 'static,
+        f: impl Future<Output = Result<Resp>> + Send + 'static,
     ) {
         self.spawn_ws_response(ctx, f);
     }

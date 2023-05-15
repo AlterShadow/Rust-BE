@@ -1,8 +1,8 @@
 pub mod rust;
 pub mod service;
 pub mod sql;
-
-use crate::rust::{to_rust_decl, to_rust_type_decl, ToRust};
+use crate::rust::ToRust;
+use crate::rust::{pg_func_to_rust_trait_impl, pg_func_to_rust_type_decl};
 use crate::service::get_systemd_service;
 use crate::sql::ToSql;
 use convert_case::{Case, Casing};
@@ -216,22 +216,6 @@ use lib::database::*;
 use crate::model::*;
 use serde::*;
 
-#[derive(Clone)]
-pub struct DbClient {
-    pub client: SimpleDbClient
-}
-impl DbClient {
-    pub fn new(client: SimpleDbClient) -> Self {
-        Self {
-            client
-        }
-    }
-}
-impl From<SimpleDbClient> for DbClient {
-    fn from(client: SimpleDbClient) -> Self {
-        Self::new(client)
-    }
-}
     "#
     )?;
     for func in funcs {
@@ -239,12 +223,10 @@ impl From<SimpleDbClient> for DbClient {
             &mut db,
             "
 {}
-impl DbClient {{ 
-    #[allow(unused_variables)]
-    {}
-}}",
-            to_rust_type_decl(&func),
-            to_rust_decl(&func)
+{}
+",
+            pg_func_to_rust_type_decl(&func),
+            pg_func_to_rust_trait_impl(&func)
         )?;
     }
     db.flush()?;

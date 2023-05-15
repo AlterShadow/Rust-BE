@@ -86,7 +86,7 @@ pub fn get_return_row_type(this: &ProceduralFunction) -> Type {
     )
 }
 
-pub fn to_rust_type_decl(this: &ProceduralFunction) -> String {
+pub fn pg_func_to_rust_type_decl(this: &ProceduralFunction) -> String {
     [get_parameter_type(this), get_return_row_type(this)]
         .map(|x| {
             format!(
@@ -96,7 +96,7 @@ pub fn to_rust_type_decl(this: &ProceduralFunction) -> String {
         })
         .join("\n")
 }
-pub fn to_rust_decl(this: &ProceduralFunction) -> String {
+pub fn pg_func_to_rust_trait_impl(this: &ProceduralFunction) -> String {
     let mut arguments = this
         .parameters
         .iter()
@@ -106,7 +106,7 @@ pub fn to_rust_decl(this: &ProceduralFunction) -> String {
     let pg_params = this
         .parameters
         .iter()
-        .map(|x| format!("&req.{}", x.name))
+        .map(|x| format!("&self.{} as &(dyn ToSql + Sync)", x.name))
         .join(", ");
     let row_getter = this
         .returns
@@ -115,18 +115,23 @@ pub fn to_rust_decl(this: &ProceduralFunction) -> String {
         .map(|(i, x)| format!("{}: row.try_get({})?", x.name, i))
         .join(",\n");
     format!(
-        "pub async fn {name_raw}(&self, req: {name}Req) -> Result<DbResponse<{name}RespRow>> {{
-          let rows = self.client.query(\"{sql}\", &[{pg_params}]).await?;
-          let mut resp = DbResponse::with_capacity(rows.len());
-          for row in rows {{
+        "
+        impl DatabaseRequest for {name}Req {{
+          type ResponseRow = {name}RespRow;
+          fn statement(&self) -> &str {{
+            \"{sql}\"
+          }}
+          fn params(&self) -> Vec<&(dyn ToSql + Sync)> {{
+            vec![{pg_params}]
+          }}
+          fn parse_row(&self, row: Row) -> Result<{name}RespRow> {{
             let r = {name}RespRow {{
               {row_getter}
             }};
-            resp.push(r);
+            Ok(r)
           }}
-          Ok(resp)
-        }}",
-        name_raw = this.name,
+        }}
+",
         name = this.name.to_case(Case::Pascal),
         sql = sql,
         pg_params = pg_params,
