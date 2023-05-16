@@ -116,6 +116,7 @@ pub fn pg_func_to_rust_trait_impl(this: &ProceduralFunction) -> String {
         .join(",\n");
     format!(
         "
+        #[allow(unused_variables)]
         impl DatabaseRequest for {name}Req {{
           type ResponseRow = {name}RespRow;
           fn statement(&self) -> &str {{

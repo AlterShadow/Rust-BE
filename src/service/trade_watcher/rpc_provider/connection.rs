@@ -1,8 +1,7 @@
+use eyre::*;
 use std::ops::Deref;
 use std::sync::Arc;
-
-use eyre::*;
-use tokio::sync::{OwnedSemaphorePermit, Semaphore};
+use tokio::sync::{OwnedSemaphorePermit, Semaphore, SemaphorePermit};
 use web3::types::{Transaction, TransactionId, TransactionReceipt, H256};
 use web3::{transports::WebSocket, Web3};
 
@@ -11,8 +10,6 @@ pub struct Connection {
     inner: Arc<Web3<WebSocket>>,
     semaphore: Arc<Semaphore>,
 }
-
-pub type ConnectionError = web3::Error;
 
 impl Connection {
     pub fn new(connection: Arc<Web3<WebSocket>>, max_concurrent_requests: usize) -> Self {
@@ -61,6 +58,9 @@ pub struct ConnectionPermitGuard {
 impl ConnectionPermitGuard {
     pub fn new(inner: Arc<Web3<WebSocket>>, permit: OwnedSemaphorePermit) -> Self {
         Self { inner, permit }
+    }
+    pub async fn is_permitted(&self) -> Option<SemaphorePermit> {
+        self.permit.semaphore().acquire().await.ok()
     }
 }
 

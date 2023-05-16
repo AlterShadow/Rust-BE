@@ -9,7 +9,7 @@ use crate::tracker::trade::Path;
 use crate::tracker::ethabi_to_web3::{convert_h160_ethabi_to_web3, convert_u256_ethabi_to_web3};
 
 #[derive(Debug)]
-struct MultiHopPath {
+pub struct MultiHopPath {
     first_token: H160,
     fee: U256,
     second_token: H160,
@@ -50,6 +50,9 @@ impl MultiHopPath {
             first_token = second_token;
         }
         Ok(full_path)
+    }
+    pub fn get_fee(&self) -> U256 {
+        self.fee
     }
 }
 

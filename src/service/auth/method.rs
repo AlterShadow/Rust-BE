@@ -12,7 +12,6 @@ use std::sync::Arc;
 use uuid::Uuid;
 use web3::signing::{hash_message, recover, RecoveryError};
 use web3::types::Address;
-use web3::Transport;
 
 pub struct MethodAuthSignup;
 

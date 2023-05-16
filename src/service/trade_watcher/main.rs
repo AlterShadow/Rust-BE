@@ -17,8 +17,8 @@ use axum::{
 };
 use web3::types::{H160, H256};
 
-mod rpc_provider;
-mod tracker;
+pub mod rpc_provider;
+pub mod tracker;
 
 use rpc_provider::pool::ConnectionPool;
 use tracker::{

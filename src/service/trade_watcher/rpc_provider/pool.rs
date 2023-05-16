@@ -1,13 +1,11 @@
+use super::connection::Connection;
+use eyre::*;
 use std::collections::HashMap;
 use std::ops::Deref;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
-
-use eyre::*;
-
-use super::connection::Connection;
-use tokio::sync::{Mutex, RwLock};
+use tokio::sync::Mutex;
 use tokio::time::sleep;
 
 #[derive(Clone, Debug)]
@@ -26,7 +24,9 @@ impl ConnectionPool {
         max_concurrent_requests: usize,
         max_retries: u32,
     ) -> Result<Arc<Self>> {
-        let transport = web3::transports::WebSocket::new(&provider_url).await?;
+        let transport = web3::transports::WebSocket::new(&provider_url)
+            .await
+            .context(provider_url.clone())?;
         let web3 = web3::Web3::new(transport);
         let conn = Connection::new(Arc::new(web3), max_concurrent_requests);
 
@@ -56,7 +56,6 @@ impl ConnectionPool {
     }
 
     pub async fn get_conn(self: Arc<Self>) -> Result<ConnectionGuard> {
-        let mut backoff = self.backoff.load(Ordering::Relaxed);
         let mut retries = 0;
 
         while retries < self.max_retries {
@@ -70,7 +69,7 @@ impl ConnectionPool {
                         } else {
                             if conn.ping().await.is_ok() {
                                 /* if there is a good connection, decrease backoff period */
-                                backoff = self.backoff.fetch_sub(1, Ordering::Relaxed);
+                                self.backoff.fetch_sub(1, Ordering::Relaxed);
                                 conns_in_use.insert(i, true);
                                 return Ok(ConnectionGuard::new(
                                     conn.clone(),
@@ -79,7 +78,7 @@ impl ConnectionPool {
                                 ));
                             } else {
                                 /* if there is a bad connection, increase backoff period */
-                                backoff = self.backoff.fetch_add(1, Ordering::Relaxed);
+                                self.backoff.fetch_add(1, Ordering::Relaxed);
                                 let new_conn = self.new_conn().await?;
                                 connections[i] = Some(new_conn.clone());
                                 conns_in_use.insert(i, true);
@@ -97,7 +96,10 @@ impl ConnectionPool {
             }
 
             /* backoff */
-            sleep(Duration::from_secs(2_u64.pow(backoff as u32))).await;
+            sleep(Duration::from_secs(
+                2_u64.pow(self.backoff.load(Ordering::Relaxed) as u32),
+            ))
+            .await;
             retries += 1;
         }
 

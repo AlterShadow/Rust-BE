@@ -85,6 +85,7 @@ pub struct CallParameter {
     name: String,
     value: Token,
     param_type: ParamType,
+    inner: Param,
 }
 
 impl CallParameter {
@@ -92,7 +93,8 @@ impl CallParameter {
         Self {
             name,
             value,
-            param_type: param_type,
+            param_type,
+            inner,
         }
     }
 
@@ -106,5 +108,8 @@ impl CallParameter {
 
     pub fn get_param_type(&self) -> ParamType {
         self.param_type.clone()
+    }
+    pub fn get_inner(&self) -> Param {
+        self.inner.clone()
     }
 }
