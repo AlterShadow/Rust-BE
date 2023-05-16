@@ -72,5 +72,5 @@ name = "admin"
 path = "src/service/admin/main.rs"
 
 [[bin]]
-name = "trade-watcher"
-path = "src/service/trade_watcher/main.rs"
+name = "watcher"
+path = "src/service/watcher/main.rs"

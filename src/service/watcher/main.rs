@@ -52,7 +52,7 @@ pub struct Config {
 }
 #[tokio::main]
 async fn main() -> Result<()> {
-    let config: Config = load_config("trade_watcher".to_owned())?;
+    let config: Config = load_config("watcher".to_owned())?;
     setup_logs(config.log_level)?;
 
     let mut dexes: HashMap<Chain, Vec<(Dex, H160)>> = HashMap::new();
@@ -88,18 +88,18 @@ async fn main() -> Result<()> {
     );
 
     let pancake_smart_router = ethabi::Contract::load(Cursor::new(
-        std::fs::read(PANCAKE_SMART_ROUTER_PATH).expect("failed to read contract ABI"),
+        std::fs::read(PANCAKE_SMART_ROUTER_PATH).context("failed to read contract ABI")?,
     ))
-    .expect("failed to parse contract ABI");
+    .context("failed to parse contract ABI")?;
     let erc20 = ethabi::Contract::load(Cursor::new(
-        std::fs::read(ERC20_PATH).expect("failed to read contract ABI"),
+        std::fs::read(ERC20_PATH).context("failed to read contract ABI")?,
     ))
-    .expect("failed to parse contract ABI");
+    .context("failed to parse contract ABI")?;
 
     let transfer_event_signature = convert_h256_ethabi_to_web3(
         erc20
             .event("Transfer")
-            .expect("Failed to get Transfer event signature")
+            .context("Failed to get Transfer event signature")?
             .signature(),
     );
     let eth_pool = ConnectionPool::new(config.eth_provider_url.to_string(), 10).await?;
@@ -115,12 +115,10 @@ async fn main() -> Result<()> {
         .await?
         .next()
         .context("failed to resolve address")?;
-
+    info!("Watcher listening on {}", addr);
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
-        .await
-        .unwrap();
-
+        .await?;
     Ok(())
 }
 
