@@ -5,6 +5,7 @@ use axum::{
     routing::post,
     Router,
 };
+use axum_server::tls_rustls::RustlsConfig;
 use eyre::*;
 use lib::config::load_config;
 use lib::database::DatabaseConfig;
@@ -49,6 +50,10 @@ pub struct Config {
     pub host: String,
     #[serde(default)]
     pub port: u16,
+    #[serde(default)]
+    pub pub_cert: Option<String>,
+    #[serde(default)]
+    pub priv_cert: Option<String>,
 }
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -116,9 +121,18 @@ async fn main() -> Result<()> {
         .next()
         .context("failed to resolve address")?;
     info!("Watcher listening on {}", addr);
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
-        .await?;
+    if let (Some(pub_cert), Some(priv_key)) = (config.pub_cert, config.priv_cert) {
+        // configure certificate and private key used by https
+        let config = RustlsConfig::from_pem_file(pub_cert, priv_key).await?;
+        axum_server::bind_rustls(addr, config)
+            .serve(app.into_make_service())
+            .await?;
+    } else {
+        axum::Server::bind(&addr)
+            .serve(app.into_make_service())
+            .await?;
+    }
+
     Ok(())
 }
 
