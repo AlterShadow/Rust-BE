@@ -6,7 +6,7 @@ use axum::{
     Router,
 };
 use eyre::*;
-use lib::config::{load_config, WsServerConfig};
+use lib::config::load_config;
 use lib::database::DatabaseConfig;
 use lib::log::{setup_logs, LogLevel};
 use serde::{Deserialize, Serialize};
@@ -14,6 +14,7 @@ use std::collections::HashMap;
 use std::io::Cursor;
 use std::str::FromStr;
 use std::sync::Arc;
+use tracing::{error, info};
 use tracker::trade::{Chain, Dex};
 use web3::types::{H160, H256};
 
@@ -55,6 +56,7 @@ async fn main() -> Result<()> {
     setup_logs(config.log_level)?;
 
     let mut dexes: HashMap<Chain, Vec<(Dex, H160)>> = HashMap::new();
+
     /* load relevant addresses on startup */
     dexes.insert(
         Chain::EthereumMainnet,
@@ -100,7 +102,7 @@ async fn main() -> Result<()> {
             .expect("Failed to get Transfer event signature")
             .signature(),
     );
-    let eth_pool = ConnectionPool::new(config.eth_provider_url.to_string(), 100, 300, 10).await?;
+    let eth_pool = ConnectionPool::new(config.eth_provider_url.to_string(), 10).await?;
     let app: Router<(), Body> = Router::new()
         .route("/eth-mainnet-swaps", post(handle_eth_swap))
         .with_state(AppState {
@@ -124,33 +126,28 @@ async fn main() -> Result<()> {
 
 async fn handle_eth_swap(State(state): State<AppState>, body: Bytes) -> Result<(), StatusCode> {
     let hashes = parse_quickalert_payload(body).map_err(|e| {
-        println!("failed to parse QuickAlerts payload: {:?}", e);
+        error!("failed to parse QuickAlerts payload: {:?}", e);
         StatusCode::BAD_REQUEST
     })?;
 
-    let eth = match state.eth_pool.clone().get_conn().await {
-        Ok(eth) => eth,
-        Err(e) => {
-            println!("error fetching connection guard: {}", e);
-            return Err(StatusCode::INTERNAL_SERVER_ERROR);
-        }
-    };
-
     for hash in hashes {
-        let eth = eth.clone();
+        let conn = state.eth_pool.get_conn().await.map_err(|err| {
+            error!("error fetching connection guard: {}", err);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
         let state = state.clone();
         tokio::spawn(async move {
-            let tx = Tx::new(hash, eth.clone()).await;
+            let tx = Tx::new(hash, &conn).await;
 
             match tx.get_status() {
                 TxStatus::Successful => (),
                 TxStatus::Pending => {
-                    println!("transaction is pending");
+                    error!("transaction is pending");
                     /* TODO: handle pending transaction */
                     return Err(StatusCode::UNPROCESSABLE_ENTITY);
                 }
-                _ => {
-                    println!("transaction failed");
+                err => {
+                    error!("transaction failed: {:?}", err);
                     return Err(StatusCode::UNPROCESSABLE_ENTITY);
                 }
             }
@@ -158,7 +155,7 @@ async fn handle_eth_swap(State(state): State<AppState>, body: Bytes) -> Result<(
             let contract_address = match tx.get_to() {
                 Some(address) => address,
                 None => {
-                    println!("transaction has no contract address");
+                    error!("transaction has no contract address");
                     return Err(StatusCode::UNPROCESSABLE_ENTITY);
                 }
             };
@@ -172,13 +169,17 @@ async fn handle_eth_swap(State(state): State<AppState>, body: Bytes) -> Result<(
                         Dex::PancakeSwap => {
                             state.pancake_swap.get_trade(&tx, Chain::EthereumMainnet)
                         }
-                        Dex::UniSwap => return Ok(()),
-                        Dex::SushiSwap => return Ok(()),
+                        Dex::UniSwap => {
+                            error!("does not support dex type: UniSwap");
+                            continue;
+                        }
+                        Dex::SushiSwap => {
+                            error!("does not support dex type: SushiSwap");
+                            continue;
+                        }
                     };
-                    println!();
-                    println!("tx: {:?}", tx.get_id().unwrap());
-                    println!("trade: {:?}", trade);
-                    println!();
+                    info!("tx: {:?}", tx.get_id().unwrap());
+                    info!("trade: {:?}", trade);
                 }
             }
             Ok(())

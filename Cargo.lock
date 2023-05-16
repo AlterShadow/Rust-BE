@@ -1561,6 +1561,7 @@ dependencies = [
 name = "mc2_fi"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "axum",
  "bytes",
  "chrono",
