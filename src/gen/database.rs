@@ -19,6 +19,7 @@ pub struct FunAuthSignupRespRow {
     pub user_id: i64,
 }
 
+#[allow(unused_variables)]
 impl DatabaseRequest for FunAuthSignupReq {
     type ResponseRow = FunAuthSignupRespRow;
     fn statement(&self) -> &str {
@@ -57,6 +58,7 @@ pub struct FunAuthAuthenticateRespRow {
     pub user_id: i64,
 }
 
+#[allow(unused_variables)]
 impl DatabaseRequest for FunAuthAuthenticateReq {
     type ResponseRow = FunAuthAuthenticateRespRow;
     fn statement(&self) -> &str {
@@ -89,6 +91,7 @@ pub struct FunAuthSetTokenReq {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAuthSetTokenRespRow {}
 
+#[allow(unused_variables)]
 impl DatabaseRequest for FunAuthSetTokenReq {
     type ResponseRow = FunAuthSetTokenRespRow;
     fn statement(&self) -> &str {
@@ -123,6 +126,7 @@ pub struct FunAuthAuthorizeRespRow {
     pub role: EnumRole,
 }
 
+#[allow(unused_variables)]
 impl DatabaseRequest for FunAuthAuthorizeReq {
     type ResponseRow = FunAuthAuthorizeRespRow;
     fn statement(&self) -> &str {
@@ -159,6 +163,7 @@ pub struct FunAuthBasicAuthenticateRespRow {
     pub user_id: std::net::IpAddr,
 }
 
+#[allow(unused_variables)]
 impl DatabaseRequest for FunAuthBasicAuthenticateReq {
     type ResponseRow = FunAuthBasicAuthenticateRespRow;
     fn statement(&self) -> &str {
@@ -199,6 +204,7 @@ pub struct FunAdminListUsersRespRow {
     pub created_at: u32,
 }
 
+#[allow(unused_variables)]
 impl DatabaseRequest for FunAdminListUsersReq {
     type ResponseRow = FunAdminListUsersRespRow;
     fn statement(&self) -> &str {
@@ -236,6 +242,7 @@ pub struct FunAdminAssignRoleReq {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAdminAssignRoleRespRow {}
 
+#[allow(unused_variables)]
 impl DatabaseRequest for FunAdminAssignRoleReq {
     type ResponseRow = FunAdminAssignRoleRespRow;
     fn statement(&self) -> &str {
@@ -264,6 +271,7 @@ pub struct FunUserFollowStrategyRespRow {
     pub success: bool,
 }
 
+#[allow(unused_variables)]
 impl DatabaseRequest for FunUserFollowStrategyReq {
     type ResponseRow = FunUserFollowStrategyRespRow;
     fn statement(&self) -> &str {
@@ -293,6 +301,7 @@ pub struct FunUserUnfollowStrategyRespRow {
     pub success: bool,
 }
 
+#[allow(unused_variables)]
 impl DatabaseRequest for FunUserUnfollowStrategyReq {
     type ResponseRow = FunUserUnfollowStrategyRespRow;
     fn statement(&self) -> &str {
@@ -328,6 +337,7 @@ pub struct FunUserListFollowedStrategiesRespRow {
     pub aum: f32,
 }
 
+#[allow(unused_variables)]
 impl DatabaseRequest for FunUserListFollowedStrategiesReq {
     type ResponseRow = FunUserListFollowedStrategiesRespRow;
     fn statement(&self) -> &str {
@@ -365,6 +375,7 @@ pub struct FunUserListStrategiesRespRow {
     pub aum: f32,
 }
 
+#[allow(unused_variables)]
 impl DatabaseRequest for FunUserListStrategiesReq {
     type ResponseRow = FunUserListStrategiesRespRow;
     fn statement(&self) -> &str {
@@ -404,6 +415,7 @@ pub struct FunUserGetStrategyRespRow {
     pub aum: f32,
 }
 
+#[allow(unused_variables)]
 impl DatabaseRequest for FunUserGetStrategyReq {
     type ResponseRow = FunUserGetStrategyRespRow;
     fn statement(&self) -> &str {
@@ -437,6 +449,7 @@ pub struct FunUserGetStrategyStatisticsNetValueRespRow {
     pub net_value: f32,
 }
 
+#[allow(unused_variables)]
 impl DatabaseRequest for FunUserGetStrategyStatisticsNetValueReq {
     type ResponseRow = FunUserGetStrategyStatisticsNetValueRespRow;
     fn statement(&self) -> &str {
@@ -464,6 +477,7 @@ pub struct FunUserGetStrategyStatisticsFollowHistoryRespRow {
     pub follower_count: f32,
 }
 
+#[allow(unused_variables)]
 impl DatabaseRequest for FunUserGetStrategyStatisticsFollowHistoryReq {
     type ResponseRow = FunUserGetStrategyStatisticsFollowHistoryRespRow;
     fn statement(&self) -> &str {
@@ -492,6 +506,7 @@ pub struct FunUserGetStrategyStatisticsBackHistoryRespRow {
     pub backer_quantity_usd: f32,
 }
 
+#[allow(unused_variables)]
 impl DatabaseRequest for FunUserGetStrategyStatisticsBackHistoryReq {
     type ResponseRow = FunUserGetStrategyStatisticsBackHistoryRespRow;
     fn statement(&self) -> &str {
@@ -525,6 +540,7 @@ pub struct FunUserBackStrategyRespRow {
     pub success: bool,
 }
 
+#[allow(unused_variables)]
 impl DatabaseRequest for FunUserBackStrategyReq {
     type ResponseRow = FunUserBackStrategyRespRow;
     fn statement(&self) -> &str {
@@ -565,6 +581,7 @@ pub struct FunUserListBackedStrategiesRespRow {
     pub aum: f32,
 }
 
+#[allow(unused_variables)]
 impl DatabaseRequest for FunUserListBackedStrategiesReq {
     type ResponseRow = FunUserListBackedStrategiesRespRow;
     fn statement(&self) -> &str {
@@ -605,6 +622,7 @@ pub struct FunUserListBackStrategyHistoryRespRow {
     pub time: i64,
 }
 
+#[allow(unused_variables)]
 impl DatabaseRequest for FunUserListBackStrategyHistoryReq {
     type ResponseRow = FunUserListBackStrategyHistoryRespRow;
     fn statement(&self) -> &str {
@@ -647,6 +665,7 @@ pub struct FunUserExitStrategyRespRow {
     pub success: bool,
 }
 
+#[allow(unused_variables)]
 impl DatabaseRequest for FunUserExitStrategyReq {
     type ResponseRow = FunUserExitStrategyRespRow;
     fn statement(&self) -> &str {
@@ -689,6 +708,7 @@ pub struct FunUserListExitStrategyHistoryRespRow {
     pub exit_time: i64,
 }
 
+#[allow(unused_variables)]
 impl DatabaseRequest for FunUserListExitStrategyHistoryReq {
     type ResponseRow = FunUserListExitStrategyHistoryRespRow;
     fn statement(&self) -> &str {
@@ -725,6 +745,7 @@ pub struct FunUserFollowExpertRespRow {
     pub success: bool,
 }
 
+#[allow(unused_variables)]
 impl DatabaseRequest for FunUserFollowExpertReq {
     type ResponseRow = FunUserFollowExpertRespRow;
     fn statement(&self) -> &str {
@@ -754,6 +775,7 @@ pub struct FunUserUnfollowExpertRespRow {
     pub success: bool,
 }
 
+#[allow(unused_variables)]
 impl DatabaseRequest for FunUserUnfollowExpertReq {
     type ResponseRow = FunUserUnfollowExpertRespRow;
     fn statement(&self) -> &str {
@@ -789,6 +811,7 @@ pub struct FunUserListFollowedExpertsRespRow {
     pub aum: f32,
 }
 
+#[allow(unused_variables)]
 impl DatabaseRequest for FunUserListFollowedExpertsReq {
     type ResponseRow = FunUserListFollowedExpertsRespRow;
     fn statement(&self) -> &str {
@@ -826,6 +849,7 @@ pub struct FunUserListExpertsRespRow {
     pub aum: f32,
 }
 
+#[allow(unused_variables)]
 impl DatabaseRequest for FunUserListExpertsReq {
     type ResponseRow = FunUserListExpertsRespRow;
     fn statement(&self) -> &str {
@@ -865,6 +889,7 @@ pub struct FunUserGetExpertProfileRespRow {
     pub aum: f32,
 }
 
+#[allow(unused_variables)]
 impl DatabaseRequest for FunUserGetExpertProfileReq {
     type ResponseRow = FunUserGetExpertProfileRespRow;
     fn statement(&self) -> &str {
@@ -904,6 +929,7 @@ pub struct FunUserGetUserProfileRespRow {
     pub aum: f32,
 }
 
+#[allow(unused_variables)]
 impl DatabaseRequest for FunUserGetUserProfileReq {
     type ResponseRow = FunUserGetUserProfileRespRow;
     fn statement(&self) -> &str {
@@ -939,6 +965,7 @@ pub struct FunUserRegisterWalletRespRow {
     pub wallet_id: i64,
 }
 
+#[allow(unused_variables)]
 impl DatabaseRequest for FunUserRegisterWalletReq {
     type ResponseRow = FunUserRegisterWalletRespRow;
     fn statement(&self) -> &str {
@@ -970,6 +997,7 @@ pub struct FunUserDeregisterWalletRespRow {
     pub success: bool,
 }
 
+#[allow(unused_variables)]
 impl DatabaseRequest for FunUserDeregisterWalletReq {
     type ResponseRow = FunUserDeregisterWalletRespRow;
     fn statement(&self) -> &str {
@@ -1001,6 +1029,7 @@ pub struct FunUserListWalletsRespRow {
     pub is_default: bool,
 }
 
+#[allow(unused_variables)]
 impl DatabaseRequest for FunUserListWalletsReq {
     type ResponseRow = FunUserListWalletsRespRow;
     fn statement(&self) -> &str {
@@ -1029,6 +1058,7 @@ pub struct FunUserApplyBecomeExpertRespRow {
     pub success: bool,
 }
 
+#[allow(unused_variables)]
 impl DatabaseRequest for FunUserApplyBecomeExpertReq {
     type ResponseRow = FunUserApplyBecomeExpertRespRow;
     fn statement(&self) -> &str {
@@ -1055,6 +1085,7 @@ pub struct FunAdminApproveUserBecomeAdminRespRow {
     pub success: bool,
 }
 
+#[allow(unused_variables)]
 impl DatabaseRequest for FunAdminApproveUserBecomeAdminReq {
     type ResponseRow = FunAdminApproveUserBecomeAdminRespRow;
     fn statement(&self) -> &str {
@@ -1084,6 +1115,7 @@ pub struct FunAdminRejectUserBecomeAdminRespRow {
     pub success: bool,
 }
 
+#[allow(unused_variables)]
 impl DatabaseRequest for FunAdminRejectUserBecomeAdminReq {
     type ResponseRow = FunAdminRejectUserBecomeAdminRespRow;
     fn statement(&self) -> &str {
@@ -1117,6 +1149,7 @@ pub struct FunAdminListPendingUserExpertApplicationsRespRow {
     pub aum: f32,
 }
 
+#[allow(unused_variables)]
 impl DatabaseRequest for FunAdminListPendingUserExpertApplicationsReq {
     type ResponseRow = FunAdminListPendingUserExpertApplicationsRespRow;
     fn statement(&self) -> &str {
@@ -1152,6 +1185,7 @@ pub struct FunUserCreateStrategyRespRow {
     pub strategy_id: i64,
 }
 
+#[allow(unused_variables)]
 impl DatabaseRequest for FunUserCreateStrategyReq {
     type ResponseRow = FunUserCreateStrategyRespRow;
     fn statement(&self) -> &str {
@@ -1185,6 +1219,7 @@ pub struct FunUserUpdateStrategyRespRow {
     pub success: bool,
 }
 
+#[allow(unused_variables)]
 impl DatabaseRequest for FunUserUpdateStrategyReq {
     type ResponseRow = FunUserUpdateStrategyRespRow;
     fn statement(&self) -> &str {
@@ -1221,6 +1256,7 @@ pub struct FunUserAddStrategyWatchWalletRespRow {
     pub watch_wallet_id: i64,
 }
 
+#[allow(unused_variables)]
 impl DatabaseRequest for FunUserAddStrategyWatchWalletReq {
     type ResponseRow = FunUserAddStrategyWatchWalletRespRow;
     fn statement(&self) -> &str {
@@ -1255,6 +1291,7 @@ pub struct FunUserRemoveStrategyWatchWalletRespRow {
     pub success: bool,
 }
 
+#[allow(unused_variables)]
 impl DatabaseRequest for FunUserRemoveStrategyWatchWalletReq {
     type ResponseRow = FunUserRemoveStrategyWatchWalletRespRow;
     fn statement(&self) -> &str {
@@ -1286,6 +1323,7 @@ pub struct FunUserListStrategyWatchWalletsRespRow {
     pub ratio: f32,
 }
 
+#[allow(unused_variables)]
 impl DatabaseRequest for FunUserListStrategyWatchWalletsReq {
     type ResponseRow = FunUserListStrategyWatchWalletsRespRow;
     fn statement(&self) -> &str {

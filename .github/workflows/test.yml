@@ -58,4 +58,4 @@ jobs:
           cargo run --bin user &
 
       - name: Run tests
-        run: cargo test --features=no-github-ci-tests
+        run: cargo test --features=no-github-ci-tests -- --test-threads=1

@@ -62,7 +62,7 @@ async fn connect_user(username: impl Into<String>) -> Result<UserClient> {
 
 #[tokio::test]
 async fn test_register_wallet() -> Result<()> {
-    setup_logs(LogLevel::Info)?;
+    let _ = setup_logs(LogLevel::Info);
 
     drop_and_recreate_database()?;
     signup("user1").await?;
@@ -85,7 +85,7 @@ async fn test_register_wallet() -> Result<()> {
 }
 #[tokio::test]
 async fn test_create_update_strategy() -> Result<()> {
-    setup_logs(LogLevel::Info)?;
+    let _ = setup_logs(LogLevel::Info);
     drop_and_recreate_database()?;
     signup("user1").await?;
 
