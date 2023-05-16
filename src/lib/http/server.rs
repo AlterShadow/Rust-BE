@@ -15,7 +15,7 @@ use std::task::Poll;
 use tokio::io::{AsyncRead, AsyncWrite};
 use tracing::*;
 
-use crate::config::AppConfig;
+use crate::config::WsServerConfig;
 use crate::database::DbClient;
 use crate::handler::*;
 use crate::listener::{ConnectionListener, TcpListener, TlsListener};
@@ -26,14 +26,14 @@ use crate::ws::WsResponse;
 use crate::ws::{check_handler, WsEndpoint};
 use model::endpoint::EndpointSchema;
 
-pub struct HttpServer<App> {
+pub struct HttpServer {
     pub handlers: HashMap<String, WsEndpoint>,
     pub toolbox: Toolbox,
-    pub config: AppConfig<App>,
+    pub config: WsServerConfig,
 }
 
-impl<App: Sync + Send + 'static> HttpServer<App> {
-    pub fn new(config: AppConfig<App>) -> Self {
+impl HttpServer {
+    pub fn new(config: WsServerConfig) -> Self {
         Self {
             handlers: Default::default(),
             toolbox: Toolbox::new(),

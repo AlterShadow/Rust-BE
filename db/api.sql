@@ -1041,3 +1041,13 @@ AS $$
     BEGIN RETURN QUERY SELECT 3; END
 $$;
         
+
+CREATE OR REPLACE FUNCTION api.WATCHER_SERVICE()
+RETURNS table (
+    "code" int
+)
+LANGUAGE plpgsql
+AS $$
+    BEGIN RETURN QUERY SELECT 4; END
+$$;
+        

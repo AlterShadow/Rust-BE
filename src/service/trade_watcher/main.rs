@@ -1,13 +1,3 @@
-use eyre::*;
-use lib::config::{load_config, Config};
-use lib::log::setup_logs;
-use std::collections::HashMap;
-use std::io::Cursor;
-use std::net::ToSocketAddrs;
-use std::str::FromStr;
-use std::sync::Arc;
-use tracker::trade::{Chain, Dex};
-
 use axum::{
     body::{Body, Bytes},
     extract::State,
@@ -15,6 +5,16 @@ use axum::{
     routing::post,
     Router,
 };
+use eyre::*;
+use lib::config::{load_config, WsServerConfig};
+use lib::database::DatabaseConfig;
+use lib::log::{setup_logs, LogLevel};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::io::Cursor;
+use std::str::FromStr;
+use std::sync::Arc;
+use tracker::trade::{Chain, Dex};
 use web3::types::{H160, H256};
 
 pub mod rpc_provider;
@@ -34,14 +34,25 @@ struct AppState {
     pancake_swap: PancakeSwap,
 }
 
-const ETH_PROVIDER_URL: &str = "";
 const PANCAKE_SMART_ROUTER_PATH: &str = "abi/pancake_swap/smart_router_v3.json";
 const ERC20_PATH: &str = "abi/generic/erc20.json";
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Config {
+    pub app_db: DatabaseConfig,
+    #[serde(default)]
+    pub log_level: LogLevel,
+    pub eth_provider_url: String,
+
+    #[serde(default)]
+    pub host: String,
+    #[serde(default)]
+    pub port: u16,
+}
 #[tokio::main]
 async fn main() -> Result<()> {
-    let config: Config<()> = load_config("trade_watcher".to_owned())?;
-    setup_logs(config.app.log_level)?;
+    let config: Config = load_config("trade_watcher".to_owned())?;
+    setup_logs(config.log_level)?;
 
     let mut dexes: HashMap<Chain, Vec<(Dex, H160)>> = HashMap::new();
     /* load relevant addresses on startup */
@@ -74,11 +85,6 @@ async fn main() -> Result<()> {
         )],
     );
 
-    let addr = (config.app.host.as_ref(), config.app.port)
-        .to_socket_addrs()?
-        .next()
-        .context("failed to resolve address")?;
-
     let pancake_smart_router = ethabi::Contract::load(Cursor::new(
         std::fs::read(PANCAKE_SMART_ROUTER_PATH).expect("failed to read contract ABI"),
     ))
@@ -94,14 +100,19 @@ async fn main() -> Result<()> {
             .expect("Failed to get Transfer event signature")
             .signature(),
     );
-
+    let eth_pool = ConnectionPool::new(config.eth_provider_url.to_string(), 100, 300, 10).await?;
     let app: Router<(), Body> = Router::new()
         .route("/eth-mainnet-swaps", post(handle_eth_swap))
         .with_state(AppState {
             dex_addresses: Arc::new(dexes),
-            eth_pool: ConnectionPool::new(ETH_PROVIDER_URL.to_string(), 100, 300, 10).await?,
+            eth_pool,
             pancake_swap: PancakeSwap::new(pancake_smart_router, transfer_event_signature),
         });
+
+    let addr = tokio::net::lookup_host((config.host.as_ref(), config.port))
+        .await?
+        .next()
+        .context("failed to resolve address")?;
 
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
@@ -164,10 +175,10 @@ async fn handle_eth_swap(State(state): State<AppState>, body: Bytes) -> Result<(
                         Dex::UniSwap => return Ok(()),
                         Dex::SushiSwap => return Ok(()),
                     };
-                    println!("");
+                    println!();
                     println!("tx: {:?}", tx.get_id().unwrap());
                     println!("trade: {:?}", trade);
-                    println!("");
+                    println!();
                 }
             }
             Ok(())

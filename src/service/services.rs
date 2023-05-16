@@ -23,6 +23,7 @@ pub fn get_services() -> Vec<Service> {
         Service::new("auth", 1, auth_endpoints::get_auth_endpoints()),
         Service::new("user", 2, user_endpoints::get_user_endpoints()),
         Service::new("admin", 3, admin_endpoints::get_admin_endpoints()),
+        Service::new("watcher", 4, vec![]),
     ]
 }
 

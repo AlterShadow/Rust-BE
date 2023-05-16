@@ -3,18 +3,26 @@ mod method;
 use crate::endpoints::*;
 use crate::method::*;
 use eyre::*;
-use lib::config::{load_config, Config};
-use lib::database::connect_to_database;
-use lib::log::setup_logs;
+use lib::config::{load_config, WsServerConfig};
+use lib::database::{connect_to_database, DatabaseConfig};
+use lib::log::{setup_logs, LogLevel};
 use lib::ws::{EndpointAuthController, WebsocketServer};
-use serde_json::Value;
+use serde::*;
 
 pub mod endpoints;
-
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Config {
+    pub app_db: DatabaseConfig,
+    pub auth_db: DatabaseConfig,
+    #[serde(default)]
+    pub log_level: LogLevel,
+    #[serde(flatten)]
+    pub app: WsServerConfig,
+}
 #[tokio::main]
 async fn main() -> Result<()> {
-    let mut config: Config<Value> = load_config("auth".to_owned())?;
-    setup_logs(config.app.log_level)?;
+    let mut config: Config = load_config("auth".to_owned())?;
+    setup_logs(config.log_level)?;
     config.app.header_only = true;
 
     let mut server = WebsocketServer::new(config.app);

@@ -1,4 +1,5 @@
 use super::connection::Connection;
+use crate::rpc_provider::EitherTransport;
 use eyre::*;
 use std::collections::HashMap;
 use std::ops::Deref;
@@ -7,16 +8,29 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::Mutex;
 use tokio::time::sleep;
+use web3::transports::{Http, WebSocket};
 
 #[derive(Clone, Debug)]
 pub struct ConnectionPool {
+    // TODO: replace with deal_pool
     pool_and_availability: Arc<Mutex<(Vec<Option<Connection>>, HashMap<usize, bool>)>>,
     provider_url: String,
     max_concurrent_requests: usize,
     max_retries: u32,
     backoff: Arc<AtomicU32>,
 }
-
+async fn new_transport(url: &str) -> Result<EitherTransport> {
+    let transport = match url {
+        x if x.starts_with("http") => {
+            EitherTransport::Right(Http::new(&url).context(url.to_owned())?)
+        }
+        x if x.starts_with("ws") => {
+            EitherTransport::Left(WebSocket::new(&url).await.context(url.to_owned())?)
+        }
+        _ => bail!("Invalid provider url: {}", url),
+    };
+    Ok(transport)
+}
 impl ConnectionPool {
     pub async fn new(
         provider_url: String,
@@ -24,9 +38,7 @@ impl ConnectionPool {
         max_concurrent_requests: usize,
         max_retries: u32,
     ) -> Result<Arc<Self>> {
-        let transport = web3::transports::WebSocket::new(&provider_url)
-            .await
-            .context(provider_url.clone())?;
+        let transport = new_transport(&provider_url).await?;
         let web3 = web3::Web3::new(transport);
         let conn = Connection::new(Arc::new(web3), max_concurrent_requests);
 
@@ -47,7 +59,7 @@ impl ConnectionPool {
     }
 
     async fn new_conn(&self) -> Result<Connection> {
-        let transport = web3::transports::WebSocket::new(&self.provider_url).await?;
+        let transport = new_transport(&self.provider_url).await?;
         let web3 = web3::Web3::new(transport);
         Ok(Connection::new(
             Arc::new(web3),

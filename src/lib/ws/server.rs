@@ -16,7 +16,7 @@ use tokio_tungstenite::tungstenite::Message;
 use tokio_tungstenite::WebSocketStream;
 use tracing::*;
 
-use crate::config::AppConfig;
+use crate::config::WsServerConfig;
 use crate::database::DbClient;
 use crate::error_code::ErrorCode;
 use crate::handler::*;
@@ -34,16 +34,16 @@ use crate::ws::{request_error_to_resp, WsStreamState};
 use crate::ws::{AuthController, ConnectionId};
 use model::endpoint::EndpointSchema;
 
-pub struct WebsocketServer<App> {
+pub struct WebsocketServer {
     pub auth_controller: Arc<dyn AuthController>,
     pub handlers: HashMap<u32, WsEndpoint>,
     pub message_receiver: Option<mpsc::Receiver<ConnectionId>>,
     pub toolbox: Toolbox,
-    pub config: AppConfig<App>,
+    pub config: WsServerConfig,
 }
 
-impl<App: Sync + Send + 'static> WebsocketServer<App> {
-    pub fn new(config: AppConfig<App>) -> Self {
+impl WebsocketServer {
+    pub fn new(config: WsServerConfig) -> Self {
         Self {
             auth_controller: Arc::new(SimpleAuthContoller),
             handlers: Default::default(),

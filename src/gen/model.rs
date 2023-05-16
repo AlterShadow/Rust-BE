@@ -18,44 +18,11 @@ pub enum EnumRole {
     #[postgres(name = "admin")]
     Admin = 2,
     ///
-    #[postgres(name = "owner")]
-    Owner = 3,
+    #[postgres(name = "expert")]
+    Expert = 3,
     ///
     #[postgres(name = "developer")]
     Developer = 4,
-}
-#[derive(
-    Debug, Clone, Copy, ToSql, FromSql, Serialize, Deserialize, FromPrimitive, PartialEq, EnumString,
-)]
-#[postgres(name = "enum_recovery_question_category")]
-pub enum EnumRecoveryQuestionCategory {
-    ///
-    #[postgres(name = "childhood")]
-    Childhood = 0,
-    ///
-    #[postgres(name = "education")]
-    Education = 1,
-    ///
-    #[postgres(name = "family")]
-    Family = 2,
-    ///
-    #[postgres(name = "favorite")]
-    Favorite = 3,
-    ///
-    #[postgres(name = "first")]
-    First = 4,
-    ///
-    #[postgres(name = "personal")]
-    Personal = 5,
-    ///
-    #[postgres(name = "pet")]
-    Pet = 6,
-    ///
-    #[postgres(name = "work")]
-    Work = 7,
-    ///
-    #[postgres(name = "historical")]
-    Historical = 8,
 }
 #[derive(
     Debug, Clone, Copy, ToSql, FromSql, Serialize, Deserialize, FromPrimitive, PartialEq, EnumString,
@@ -71,6 +38,9 @@ pub enum EnumService {
     ///
     #[postgres(name = "admin")]
     Admin = 3,
+    ///
+    #[postgres(name = "watcher")]
+    Watcher = 4,
 }
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]

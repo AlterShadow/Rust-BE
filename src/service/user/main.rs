@@ -5,9 +5,9 @@ use eyre::*;
 use crate::endpoints::*;
 use crate::method::*;
 use gen::model::EnumService;
-use lib::config::{load_config, Config};
-use lib::database::connect_to_database;
-use lib::log::setup_logs;
+use lib::config::{load_config, WsServerConfig};
+use lib::database::{connect_to_database, DatabaseConfig};
+use lib::log::{setup_logs, LogLevel};
 use lib::ws::{EndpointAuthController, WebsocketServer};
 use mc2_fi::endpoints::endpoint_auth_authorize;
 use mc2_fi::method::MethodAuthAuthorize;
@@ -30,11 +30,19 @@ impl Display for ActivityType {
         f.write_fmt(format_args!("{:?}", self))
     }
 }
-
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Config {
+    pub app_db: DatabaseConfig,
+    pub auth_db: DatabaseConfig,
+    #[serde(default)]
+    pub log_level: LogLevel,
+    #[serde(flatten)]
+    pub app: WsServerConfig,
+}
 #[tokio::main]
 async fn main() -> Result<()> {
-    let config: Config<()> = load_config("user".to_owned())?;
-    setup_logs(config.app.log_level)?;
+    let config: Config = load_config("user".to_owned())?;
+    setup_logs(config.log_level)?;
 
     let mut server = WebsocketServer::new(config.app.clone());
     server.add_database(connect_to_database(config.app_db).await?);

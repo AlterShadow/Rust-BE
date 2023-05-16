@@ -1566,6 +1566,7 @@ dependencies = [
  "chrono",
  "crossbeam",
  "dashmap 5.4.0",
+ "deadpool",
  "deadpool-postgres",
  "ethabi 18.0.0",
  "eyre",

@@ -1,18 +1,20 @@
+use crate::rpc_provider::EitherTransport;
 use eyre::*;
 use std::ops::Deref;
 use std::sync::Arc;
 use tokio::sync::{OwnedSemaphorePermit, Semaphore, SemaphorePermit};
+
 use web3::types::{Transaction, TransactionId, TransactionReceipt, H256};
-use web3::{transports::WebSocket, Web3};
+use web3::Web3;
 
 #[derive(Clone, Debug)]
 pub struct Connection {
-    inner: Arc<Web3<WebSocket>>,
+    inner: Arc<Web3<EitherTransport>>,
     semaphore: Arc<Semaphore>,
 }
 
 impl Connection {
-    pub fn new(connection: Arc<Web3<WebSocket>>, max_concurrent_requests: usize) -> Self {
+    pub fn new(connection: Arc<Web3<EitherTransport>>, max_concurrent_requests: usize) -> Self {
         Self {
             inner: connection,
             semaphore: Arc::new(Semaphore::new(max_concurrent_requests)),
@@ -50,13 +52,13 @@ impl Connection {
 }
 
 pub struct ConnectionPermitGuard {
-    inner: Arc<Web3<WebSocket>>,
+    inner: Arc<Web3<EitherTransport>>,
     /* permit will be dropped automatically when the guard goes out of scope */
     permit: OwnedSemaphorePermit,
 }
 
 impl ConnectionPermitGuard {
-    pub fn new(inner: Arc<Web3<WebSocket>>, permit: OwnedSemaphorePermit) -> Self {
+    pub fn new(inner: Arc<Web3<EitherTransport>>, permit: OwnedSemaphorePermit) -> Self {
         Self { inner, permit }
     }
     pub async fn is_permitted(&self) -> Option<SemaphorePermit> {
@@ -65,7 +67,7 @@ impl ConnectionPermitGuard {
 }
 
 impl Deref for ConnectionPermitGuard {
-    type Target = Web3<WebSocket>;
+    type Target = Web3<EitherTransport>;
     /* allows for calls to web3 directly */
     fn deref(&self) -> &Self::Target {
         &self.inner
