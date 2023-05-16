@@ -66,7 +66,7 @@ CREATE TABLE tbl.expert_profile (
 -- Table: login_attempt
 CREATE TABLE tbl.login_attempt (
     pkey_id bigint  NOT NULL DEFAULT nextval( 'tbl.seq_login_attempt_id' ),
-    fkey_user bigint  NOT NULL,
+    fkey_user bigint NULL,
     address varchar(64)  NOT NULL,
     ip_address inet  NOT NULL,
     device_id varchar(256)  NULL,
@@ -75,6 +75,7 @@ CREATE TABLE tbl.login_attempt (
     moment bigint  NOT NULL,
     CONSTRAINT "tbl.login_attempt_pk" PRIMARY KEY (pkey_id)
 );
+
 
 -- Table: strategy
 CREATE TABLE tbl.strategy (

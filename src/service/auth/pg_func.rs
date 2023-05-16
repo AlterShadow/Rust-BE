@@ -24,7 +24,7 @@ BEGIN
         RAISE SQLSTATE 'R000X'; -- ConsentMissing
     ELSEIF ((SELECT pkey_id
              FROM tbl.user
-             WHERE LOWER(address) = LOWER(a_address)) IS NOT NULL) THEN
+             WHERE address = a_address) IS NOT NULL) THEN
         RAISE SQLSTATE 'R000Z'; -- UsernameAlreadyRegistered
     END IF;
     INSERT INTO tbl.user (address,
@@ -245,7 +245,7 @@ BEGIN
     SELECT pkey_id, is_blocked
     INTO user_id_, is_blocked_
     FROM tbl.user
-    WHERE address = LOWER(a_address);
+    WHERE address = a_address;
     INSERT INTO tbl.login_attempt(fkey_user, address, ip_address,
                                   device_id, device_os, moment)
     VALUES (user_id_, a_address, a_ip_address, a_device_id, a_device_os, extract(epoch from now())::bigint);
