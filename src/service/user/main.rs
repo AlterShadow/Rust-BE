@@ -12,24 +12,10 @@ use lib::ws::{EndpointAuthController, WebsocketServer};
 use mc2_fi::endpoints::endpoint_auth_authorize;
 use mc2_fi::method::MethodAuthAuthorize;
 use serde::{Deserialize, Serialize};
-use std::fmt::{Debug, Display, Formatter};
+use std::fmt::Debug;
 
 pub mod endpoints;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq, Hash)]
-pub enum ActivityType {
-    TransferProposed,
-    TransferApproved,
-    TransferStarted,
-    TransferCompleted,
-    Mint,
-    Approve,
-}
-impl Display for ActivityType {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.write_fmt(format_args!("{:?}", self))
-    }
-}
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     pub app_db: DatabaseConfig,
