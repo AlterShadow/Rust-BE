@@ -1,5 +1,6 @@
 pub mod config;
 pub mod database;
+pub mod datatable;
 pub mod error_code;
 pub mod handler;
 pub mod http;
