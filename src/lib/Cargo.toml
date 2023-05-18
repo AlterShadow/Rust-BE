@@ -47,6 +47,7 @@ hyper = { version = "0.14.23", features = ["full"] }
 openssl = { version = "*", features = ["vendored"] }
 bytes = "*"
 kanal = { version = "0.1.0-pre7", features = ["async"] }
+csv = "1.2.1"
 
 [lib]
 name = "lib"

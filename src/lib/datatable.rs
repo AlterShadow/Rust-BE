@@ -1,12 +1,20 @@
 use eyre::*;
 use serde::*;
+use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
+use std::io::Read;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::warn;
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, PartialOrd)]
+pub enum Type {
+    Int,
+    String,
+    Float,
+}
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, PartialOrd)]
 pub enum Value {
     Int(i64),
     String(String),
@@ -14,6 +22,16 @@ pub enum Value {
 }
 // assuming non-nan floats
 impl Eq for Value {}
+impl Ord for Value {
+    fn cmp(&self, other: &Self) -> Ordering {
+        match (self, other) {
+            (Value::Int(x), Value::Int(y)) => x.cmp(y),
+            (Value::String(x), Value::String(y)) => x.cmp(y),
+            (Value::Float(x), Value::Float(y)) => x.partial_cmp(y).unwrap(),
+            _ => panic!("Cannot compare {:?} and {:?}", self, other),
+        }
+    }
+}
 impl Hash for Value {
     fn hash<H: Hasher>(&self, state: &mut H) {
         match self {
@@ -160,6 +178,13 @@ impl Column {
         ColumnIterator {
             column: self,
             index: 0,
+        }
+    }
+    pub fn get_type(&self) -> Type {
+        match self {
+            Column::Int(_) => Type::Int,
+            Column::String(_) => Type::String,
+            Column::Float(_) => Type::Float,
         }
     }
 }
@@ -327,6 +352,52 @@ impl DataTable {
     pub fn update_value_by_index(&mut self, index: &Value, column: &str, value: Value) {
         let row = self.index_values.get(index).expect("Index not found");
         self.update_value(*row, column, value);
+    }
+    pub fn load_csv(&mut self, file: impl Read) -> Result<()> {
+        let mut rdr = csv::Reader::from_reader(file);
+        let headers = rdr.headers()?;
+        for i in 0..headers.len() {
+            debug_assert!(self.columns[i] == headers[i]);
+        }
+        for result in rdr.records() {
+            // The iterator yields Result<StringRecord, Error>, so we check the
+            // error here.
+            let record = result?;
+            for (i, val) in record.iter().enumerate() {
+                let col = &mut self.column_values[i];
+                match col {
+                    Column::Int(x) => {
+                        let val = val.parse::<i64>().context("Parse error")?;
+                        x.push(val);
+                    }
+                    Column::String(x) => {
+                        x.push(val.to_string());
+                    }
+                    Column::Float(x) => {
+                        let val = val.parse::<f64>().context("Parse error")?;
+                        x.push(val);
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+    pub fn sort_by_column(&mut self, column: &str) {
+        debug_assert!(self.index.is_none());
+        let column = self.get_column(column).expect("Column not found");
+        let mut indices: Vec<usize> = (0..column.len()).collect();
+        indices.sort_by_key(|a| column.get::<Value>(*a));
+        for col in &mut self.column_values {
+            // indices.iter().map(|i| col.get(i).unwrap()).collect();
+            let new_columns = match col {
+                Column::Int(x) => Column::Int(indices.iter().map(|i| x[*i]).collect()),
+                Column::String(x) => {
+                    Column::String(indices.iter().map(|i| x[*i].clone()).collect())
+                }
+                Column::Float(x) => Column::Float(indices.iter().map(|i| x[*i]).collect()),
+            };
+            *col = new_columns;
+        }
     }
 }
 pub type SyncDataTable = Arc<RwLock<DataTable>>;
