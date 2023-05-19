@@ -604,6 +604,8 @@ pub struct SignupRequest {
     pub phone: String,
     pub agreed_tos: bool,
     pub agreed_privacy: bool,
+    #[serde(default)]
+    pub username: Option<String>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -794,6 +796,7 @@ pub struct UserListBackedStrategiesResponse {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserListExitStrategyHistoryRequest {
+    #[serde(default)]
     pub strategy_id: Option<i64>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -899,11 +902,17 @@ pub struct UserUnfollowStrategyResponse {
 #[serde(rename_all = "camelCase")]
 pub struct UserUpdateStrategyRequest {
     pub strategy_id: i64,
+    #[serde(default)]
     pub name: Option<String>,
+    #[serde(default)]
     pub description: Option<String>,
+    #[serde(default)]
     pub social_media: Option<String>,
+    #[serde(default)]
     pub risk_score: Option<f32>,
+    #[serde(default)]
     pub reputation_score: Option<f32>,
+    #[serde(default)]
     pub aum: Option<f32>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]

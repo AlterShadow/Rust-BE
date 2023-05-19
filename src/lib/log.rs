@@ -66,6 +66,7 @@ pub fn setup_logs(log_level: LogLevel) -> Result<()> {
 
     let subscriber = fmt()
         .with_thread_names(true)
+        .with_line_number(true)
         .with_env_filter(filter)
         .finish();
 

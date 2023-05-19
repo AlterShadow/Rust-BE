@@ -8,11 +8,12 @@ pub fn get_auth_pg_func() -> Vec<ProceduralFunction> {
                 Field::new("address", Type::String),
                 Field::new("email", Type::String),
                 Field::new("phone", Type::String),
-                Field::new("age", Type::Int),
                 Field::new("preferred_language", Type::String),
                 Field::new("agreed_tos", Type::Boolean),
                 Field::new("agreed_privacy", Type::Boolean),
                 Field::new("ip_address", Type::Inet),
+                Field::new("username", Type::optional(Type::String)),
+                Field::new("age", Type::optional(Type::Int)),
             ],
             vec![Field::new("user_id", Type::BigInt)],
             r#"
@@ -28,6 +29,7 @@ BEGIN
         RAISE SQLSTATE 'R000Z'; -- UsernameAlreadyRegistered
     END IF;
     INSERT INTO tbl.user (address,
+                          username,
                           email,
                           phone_number,
                           role,
@@ -39,6 +41,7 @@ BEGIN
                           updated_at,
                           created_at)
     VALUES (a_address,
+            a_username,
             a_email,
             a_phone,
             'user'::enum_role,

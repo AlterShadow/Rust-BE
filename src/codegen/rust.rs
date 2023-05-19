@@ -39,9 +39,18 @@ impl ToRust for Type {
     fn to_rust_decl(&self) -> String {
         match self {
             Type::Object { name, fields } => {
-                let mut fields = fields
-                    .iter()
-                    .map(|x| format!("pub {}: {}", x.name, x.ty.to_rust_ref()));
+                let mut fields = fields.iter().map(|x| {
+                    let opt = match &x.ty {
+                        Type::Optional(_) => true,
+                        _ => false,
+                    };
+                    format!(
+                        "{} pub {}: {}",
+                        if opt { "#[serde(default)]" } else { "" },
+                        x.name,
+                        x.ty.to_rust_ref()
+                    )
+                });
                 format!("pub struct {} {{{}}}", name, fields.join(","))
             }
             Type::Enum {

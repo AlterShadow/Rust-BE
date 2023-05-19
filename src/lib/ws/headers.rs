@@ -108,6 +108,35 @@ impl EndpointAuthController {
         );
     }
 }
+fn parse_ty(ty: &Type, value: &str) -> Result<serde_json::Value> {
+    Ok(match &ty {
+        Type::String => {
+            let decoded = urlencoding::decode(value)?;
+            serde_json::Value::String(decoded.to_string())
+        }
+        Type::Int => serde_json::Value::Number(
+            value
+                .parse::<i64>()
+                .with_context(|| format!("Failed to parse integer: {}", value))?
+                .into(),
+        ),
+        Type::Boolean => serde_json::Value::Bool(
+            value
+                .parse::<bool>()
+                .with_context(|| format!("Failed to parse boolean: {}", value))?
+                .into(),
+        ),
+        Type::Enum { name, .. } if name == "service" => match value {
+            "2" => serde_json::Value::String("User".to_string()),
+            "3" => serde_json::Value::String("Admin".to_string()),
+            x => serde_json::Value::String(x.to_string()),
+        },
+        Type::Enum { .. } => serde_json::Value::String(value.to_string()),
+        Type::UUID => serde_json::Value::String(value.to_string()),
+        Type::Optional(ty) => parse_ty(ty, value)?,
+        _ => todo!("Implement other types"),
+    })
+}
 
 impl AuthController for EndpointAuthController {
     fn auth(
@@ -119,6 +148,7 @@ impl AuthController for EndpointAuthController {
         let toolbox = toolbox.clone();
 
         async move {
+            debug!("Handing auth request: {:?}", header);
             let splits = header
                 .split(",")
                 .map(|x| x.trim())
@@ -136,43 +166,16 @@ impl AuthController for EndpointAuthController {
                 let index = index + 1;
                 match splits.get(&index.to_string().as_str()) {
                     Some(value) => {
-                        params.insert(
-                            param.name.to_case(Case::Camel),
-                            match &param.ty {
-                                Type::String => {
-                                    let decoded = urlencoding::decode(value)?;
-                                    serde_json::Value::String(decoded.to_string())
-                                }
-                                Type::Int => serde_json::Value::Number(
-                                    value
-                                        .parse::<i64>()
-                                        .with_context(|| {
-                                            format!("Failed to parse integer: {}", value)
-                                        })?
-                                        .into(),
-                                ),
-                                Type::Boolean => serde_json::Value::Bool(
-                                    value
-                                        .parse::<bool>()
-                                        .with_context(|| {
-                                            format!("Failed to parse boolean: {}", value)
-                                        })?
-                                        .into(),
-                                ),
-                                Type::Enum { name, .. } if name == "service" => match *value {
-                                    "2" => serde_json::Value::String("User".to_string()),
-                                    "3" => serde_json::Value::String("Admin".to_string()),
-                                    x => serde_json::Value::String(x.to_string()),
-                                },
-                                Type::Enum { .. } => serde_json::Value::String(value.to_string()),
-                                Type::UUID => serde_json::Value::String(value.to_string()),
-                                _ => todo!("Implement other types"),
-                            },
-                        );
+                        params.insert(param.name.to_case(Case::Camel), parse_ty(&param.ty, value)?);
                     }
-                    None => {
+                    None if match &param.ty {
+                        Type::Optional(_) => false,
+                        _ => true,
+                    } =>
+                    {
                         bail!("Could not find param {} {}", param.name, index);
                     }
+                    _ => {}
                 }
             }
 

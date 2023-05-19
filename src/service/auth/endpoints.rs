@@ -13,6 +13,7 @@ pub fn endpoint_auth_signup() -> EndpointSchema {
             Field::new("phone", Type::String),
             Field::new("agreed_tos", Type::Boolean),
             Field::new("agreed_privacy", Type::Boolean),
+            Field::new("username", Type::optional(Type::String)),
         ],
         vec![
             Field::new("address", Type::String),

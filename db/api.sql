@@ -1,6 +1,6 @@
 CREATE SCHEMA IF NOT EXISTS api;
 
-CREATE OR REPLACE FUNCTION api.fun_auth_signup(a_address varchar, a_email varchar, a_phone varchar, a_age int, a_preferred_language varchar, a_agreed_tos boolean, a_agreed_privacy boolean, a_ip_address inet)
+CREATE OR REPLACE FUNCTION api.fun_auth_signup(a_address varchar, a_email varchar, a_phone varchar, a_preferred_language varchar, a_agreed_tos boolean, a_agreed_privacy boolean, a_ip_address inet, a_username varchar DEFAULT NULL, a_age int DEFAULT NULL)
 RETURNS table (
     "user_id" bigint
 )
@@ -19,6 +19,7 @@ BEGIN
         RAISE SQLSTATE 'R000Z'; -- UsernameAlreadyRegistered
     END IF;
     INSERT INTO tbl.user (address,
+                          username,
                           email,
                           phone_number,
                           role,
@@ -30,6 +31,7 @@ BEGIN
                           updated_at,
                           created_at)
     VALUES (a_address,
+            a_username,
             a_email,
             a_phone,
             'user'::enum_role,

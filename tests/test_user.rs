@@ -20,6 +20,7 @@ async fn signup(username: impl Into<String>) -> Result<()> {
             phone: "+00123456".to_string(),
             agreed_tos: true,
             agreed_privacy: true,
+            username: None,
         },
         endpoint_auth_signup(),
     )?)

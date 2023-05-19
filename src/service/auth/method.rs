@@ -67,11 +67,12 @@ impl RequestHandler for MethodAuthSignup {
                     address: address_string.clone(),
                     email: req.email.clone(),
                     phone: req.phone.clone(),
-                    age: 0,
-                    preferred_language: "".to_string(),
+                    preferred_language: "en".to_string(),
                     agreed_tos,
                     agreed_privacy,
                     ip_address: conn.address.ip(),
+                    username: req.username.clone(),
+                    age: None,
                 })
                 .await?;
             if db_auth.conn_hash() != db.conn_hash() {
@@ -79,11 +80,12 @@ impl RequestHandler for MethodAuthSignup {
                     address: address_string.clone(),
                     email: req.email,
                     phone: req.phone,
-                    age: 0,
-                    preferred_language: "".to_string(),
+                    preferred_language: "en".to_string(),
                     agreed_tos,
                     agreed_privacy,
                     ip_address: conn.address.ip(),
+                    username: req.username,
+                    age: None,
                 })
                 .await?;
             }

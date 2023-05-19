@@ -91,6 +91,12 @@
             {
               "name": "agreed_privacy",
               "ty": "Boolean"
+            },
+            {
+              "name": "username",
+              "ty": {
+                "Optional": "String"
+              }
             }
           ],
           "returns": [

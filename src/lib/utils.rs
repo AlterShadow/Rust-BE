@@ -26,16 +26,15 @@ pub fn encode_header<T: Serialize>(v: T, schema: EndpointSchema) -> Result<Strin
 
     for (i, f) in schema.parameters.iter().enumerate() {
         let key = f.name.to_case(Case::Camel);
+        let value = v.get(&key).with_context(|| format!("key: {}", key))?;
+        if value.is_null() {
+            continue;
+        }
         write!(
             s,
             ", {}{}",
             i + 1,
-            urlencoding::encode(
-                &v.get(&key)
-                    .with_context(|| format!("key: {}", key))?
-                    .to_string()
-                    .replace("\"", "")
-            )
+            urlencoding::encode(&value.to_string().replace("\"", ""))
         )?;
     }
     Ok(s)

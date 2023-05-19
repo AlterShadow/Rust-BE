@@ -5,7 +5,7 @@ ID: 1
 |Method Code|Method Name|Parameters|Response|Description|
 |-----------|-----------|----------|--------|-----------|
 |10020|Login|address, signature_text, signature, service_code, device_id, device_os|address, user_id, user_token, admin_token||
-|10010|Signup|address, signature_text, signature, email, phone, agreed_tos, agreed_privacy|address, user_id||
+|10010|Signup|address, signature_text, signature, email, phone, agreed_tos, agreed_privacy, username|address, user_id||
 |10030|Authorize|address, token, service_code, device_id, device_os|success||
 
 # user Server

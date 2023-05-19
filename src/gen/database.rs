@@ -8,11 +8,14 @@ pub struct FunAuthSignupReq {
     pub address: String,
     pub email: String,
     pub phone: String,
-    pub age: i32,
     pub preferred_language: String,
     pub agreed_tos: bool,
     pub agreed_privacy: bool,
     pub ip_address: std::net::IpAddr,
+    #[serde(default)]
+    pub username: Option<String>,
+    #[serde(default)]
+    pub age: Option<i32>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAuthSignupRespRow {
@@ -23,18 +26,19 @@ pub struct FunAuthSignupRespRow {
 impl DatabaseRequest for FunAuthSignupReq {
     type ResponseRow = FunAuthSignupRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_auth_signup(a_address => $1::varchar, a_email => $2::varchar, a_phone => $3::varchar, a_age => $4::int, a_preferred_language => $5::varchar, a_agreed_tos => $6::boolean, a_agreed_privacy => $7::boolean, a_ip_address => $8::inet);"
+        "SELECT * FROM api.fun_auth_signup(a_address => $1::varchar, a_email => $2::varchar, a_phone => $3::varchar, a_preferred_language => $4::varchar, a_agreed_tos => $5::boolean, a_agreed_privacy => $6::boolean, a_ip_address => $7::inet, a_username => $8::varchar, a_age => $9::int);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
             &self.address as &(dyn ToSql + Sync),
             &self.email as &(dyn ToSql + Sync),
             &self.phone as &(dyn ToSql + Sync),
-            &self.age as &(dyn ToSql + Sync),
             &self.preferred_language as &(dyn ToSql + Sync),
             &self.agreed_tos as &(dyn ToSql + Sync),
             &self.agreed_privacy as &(dyn ToSql + Sync),
             &self.ip_address as &(dyn ToSql + Sync),
+            &self.username as &(dyn ToSql + Sync),
+            &self.age as &(dyn ToSql + Sync),
         ]
     }
     fn parse_row(&self, row: Row) -> Result<FunAuthSignupRespRow> {
@@ -189,9 +193,13 @@ impl DatabaseRequest for FunAuthBasicAuthenticateReq {
 pub struct FunAdminListUsersReq {
     pub offset: i32,
     pub limit: i32,
+    #[serde(default)]
     pub user_id: Option<i64>,
+    #[serde(default)]
     pub email: Option<String>,
+    #[serde(default)]
     pub address: Option<String>,
+    #[serde(default)]
     pub role: Option<EnumRole>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -608,6 +616,7 @@ impl DatabaseRequest for FunUserListBackedStrategiesReq {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserListBackStrategyHistoryReq {
     pub user_id: i64,
+    #[serde(default)]
     pub strategy_id: Option<i64>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -694,6 +703,7 @@ impl DatabaseRequest for FunUserExitStrategyReq {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserListExitStrategyHistoryReq {
     pub user_id: i64,
+    #[serde(default)]
     pub strategy_id: Option<i64>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1211,7 +1221,9 @@ impl DatabaseRequest for FunUserCreateStrategyReq {
 pub struct FunUserUpdateStrategyReq {
     pub user_id: i64,
     pub strategy_id: i64,
+    #[serde(default)]
     pub name: Option<String>,
+    #[serde(default)]
     pub description: Option<String>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
