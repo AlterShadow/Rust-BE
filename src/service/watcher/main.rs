@@ -7,8 +7,9 @@ use axum::{
 };
 use axum_server::tls_rustls::RustlsConfig;
 use eyre::*;
+use gen::database::FunWatcherSaveRawTransactionReq;
 use lib::config::load_config;
-use lib::database::DatabaseConfig;
+use lib::database::{connect_to_database, DatabaseConfig, DbClient};
 use lib::log::{setup_logs, LogLevel};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -29,11 +30,12 @@ use tracker::{
     tx::{Tx, TxStatus},
 };
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 struct AppState {
     dex_addresses: Arc<HashMap<Chain, Vec<(Dex, H160)>>>,
     eth_pool: Arc<ConnectionPool>,
     pancake_swap: PancakeSwap,
+    db: DbClient,
 }
 
 const PANCAKE_SMART_ROUTER_PATH: &str = "abi/pancake_swap/smart_router_v3.json";
@@ -59,7 +61,7 @@ pub struct Config {
 async fn main() -> Result<()> {
     let config: Config = load_config("watcher".to_owned())?;
     setup_logs(config.log_level)?;
-
+    let db = connect_to_database(config.app_db).await?;
     let mut dexes: HashMap<Chain, Vec<(Dex, H160)>> = HashMap::new();
 
     /* load relevant addresses on startup */
@@ -114,6 +116,7 @@ async fn main() -> Result<()> {
             dex_addresses: Arc::new(dexes),
             eth_pool,
             pancake_swap: PancakeSwap::new(pancake_smart_router, transfer_event_signature),
+            db,
         });
 
     let addr = tokio::net::lookup_host((config.host.as_ref(), config.port))
@@ -148,53 +151,71 @@ async fn handle_eth_swap(State(state): State<AppState>, body: Bytes) -> Result<(
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
         let state = state.clone();
+        let db = state.db.clone();
         tokio::spawn(async move {
-            let tx = Tx::new(hash, &conn).await;
+            let err = async {
+                let mut tx = Tx::new(hash);
+                tx.update(&conn).await?;
+                if let Err(err) = {
+                    if let Some(content) = tx.get_transaction() {
+                        db.execute(FunWatcherSaveRawTransactionReq {
+                            transaction_hash: format!("{:?}", hash),
+                            chain: "ethereum".to_string(),
+                            dex: None,
+                            raw_transaction: serde_json::to_string(content)
+                                .context("transaction")?,
+                        })
+                        .await?;
+                    }
+                    Ok::<_, Error>(())
+                } {
+                    error!("failed to save raw transaction: {}", err);
+                }
+                match tx.get_status() {
+                    TxStatus::Successful => (),
+                    TxStatus::Pending => {
+                        /* TODO: handle pending transaction */
+                        bail!("transaction is pending: {:?}", hash);
+                    }
+                    err => {
+                        bail!("transaction failed: {:?}", err);
+                    }
+                }
 
-            match tx.get_status() {
-                TxStatus::Successful => (),
-                TxStatus::Pending => {
-                    error!("transaction is pending");
-                    /* TODO: handle pending transaction */
-                    return Err(StatusCode::UNPROCESSABLE_ENTITY);
+                let contract_address = match tx.get_to() {
+                    Some(address) => address,
+                    None => {
+                        bail!("transaction has no contract address: {:?}", hash);
+                    }
+                };
+
+                let eth_mainnet_dexes = state.dex_addresses.get(&Chain::EthereumMainnet).unwrap();
+
+                for (dex, address) in eth_mainnet_dexes {
+                    if *address == contract_address {
+                        let trade = match dex {
+                            Dex::PancakeSwap => {
+                                state.pancake_swap.get_trade(&tx, Chain::EthereumMainnet)
+                            }
+                            Dex::UniSwap => {
+                                error!("does not support dex type: UniSwap");
+                                continue;
+                            }
+                            Dex::SushiSwap => {
+                                error!("does not support dex type: SushiSwap");
+                                continue;
+                            }
+                        };
+                        info!("tx: {:?}", tx.get_id().unwrap());
+                        info!("trade: {:?}", trade);
+                    }
                 }
-                err => {
-                    error!("transaction failed: {:?}", err);
-                    return Err(StatusCode::UNPROCESSABLE_ENTITY);
-                }
+                Ok(())
             }
-
-            let contract_address = match tx.get_to() {
-                Some(address) => address,
-                None => {
-                    error!("transaction has no contract address");
-                    return Err(StatusCode::UNPROCESSABLE_ENTITY);
-                }
-            };
-
-            let eth_mainnet_dexes = state.dex_addresses.get(&Chain::EthereumMainnet).unwrap();
-
-            for dex in eth_mainnet_dexes {
-                let (dex, address) = dex;
-                if *address == contract_address {
-                    let trade = match dex {
-                        Dex::PancakeSwap => {
-                            state.pancake_swap.get_trade(&tx, Chain::EthereumMainnet)
-                        }
-                        Dex::UniSwap => {
-                            error!("does not support dex type: UniSwap");
-                            continue;
-                        }
-                        Dex::SushiSwap => {
-                            error!("does not support dex type: SushiSwap");
-                            continue;
-                        }
-                    };
-                    info!("tx: {:?}", tx.get_id().unwrap());
-                    info!("trade: {:?}", trade);
-                }
+            .await;
+            if let Err(err) = err {
+                error!("error processing tx: {:?}", err);
             }
-            Ok(())
         });
     }
 

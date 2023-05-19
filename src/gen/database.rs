@@ -1354,3 +1354,82 @@ impl DatabaseRequest for FunUserListStrategyWatchWalletsReq {
         Ok(r)
     }
 }
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunWatcherSaveRawTransactionReq {
+    pub transaction_hash: String,
+    pub chain: String,
+    #[serde(default)]
+    pub dex: Option<String>,
+    pub raw_transaction: String,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunWatcherSaveRawTransactionRespRow {
+    pub transaction_cache_id: i64,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunWatcherSaveRawTransactionReq {
+    type ResponseRow = FunWatcherSaveRawTransactionRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_watcher_save_raw_transaction(a_transaction_hash => $1::varchar, a_chain => $2::varchar, a_dex => $3::varchar, a_raw_transaction => $4::varchar);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.transaction_hash as &(dyn ToSql + Sync),
+            &self.chain as &(dyn ToSql + Sync),
+            &self.dex as &(dyn ToSql + Sync),
+            &self.raw_transaction as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunWatcherSaveRawTransactionRespRow> {
+        let r = FunWatcherSaveRawTransactionRespRow {
+            transaction_cache_id: row.try_get(0)?,
+        };
+        Ok(r)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunWatcherGetRawTransactionReq {
+    pub transaction_hash: String,
+    pub chain: String,
+    #[serde(default)]
+    pub dex: Option<String>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunWatcherGetRawTransactionRespRow {
+    pub transaction_cache_id: i64,
+    pub transaction_hash: String,
+    pub chain: String,
+    #[serde(default)]
+    pub dex: Option<String>,
+    pub raw_transaction: String,
+    pub created_at: i64,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunWatcherGetRawTransactionReq {
+    type ResponseRow = FunWatcherGetRawTransactionRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_watcher_get_raw_transaction(a_transaction_hash => $1::varchar, a_chain => $2::varchar, a_dex => $3::varchar);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.transaction_hash as &(dyn ToSql + Sync),
+            &self.chain as &(dyn ToSql + Sync),
+            &self.dex as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunWatcherGetRawTransactionRespRow> {
+        let r = FunWatcherGetRawTransactionRespRow {
+            transaction_cache_id: row.try_get(0)?,
+            transaction_hash: row.try_get(1)?,
+            chain: row.try_get(2)?,
+            dex: row.try_get(3)?,
+            raw_transaction: row.try_get(4)?,
+            created_at: row.try_get(5)?,
+        };
+        Ok(r)
+    }
+}

@@ -1,13 +1,13 @@
 use crate::rpc_provider::connection::Connection;
+use eyre::*;
 use web3::types::{Transaction, TransactionReceipt, H160, H256, U256};
-
 #[derive(Clone, Debug)]
 pub enum TxStatus {
+    Unknown,
     Successful,
     Pending,
     Reverted,
     NotFound,
-    Unknown,
 }
 
 #[derive(Clone, Debug)]
@@ -19,30 +19,26 @@ pub struct Tx {
 }
 
 impl Tx {
-    pub async fn new(hash: H256, conn: &Connection) -> Self {
-        let mut new_tx = Self {
+    pub fn new(hash: H256) -> Self {
+        Self {
             hash,
             transaction: None,
             receipt: None,
             status: TxStatus::Unknown,
-        };
-        new_tx.update(conn).await;
-        new_tx
+        }
     }
 
-    pub async fn update(&mut self, conn: &Connection) {
+    pub async fn update(&mut self, conn: &Connection) -> Result<()> {
         // TODO: handle blockchain connection error
-        let tx = match conn.get_tx(self.hash).await {
-            Ok(maybe_tx) => match maybe_tx {
-                Some(tx) => tx,
-                None => {
-                    self.status = TxStatus::NotFound;
-                    return;
-                }
-            },
-            Err(e) => {
-                println!("Error getting transaction: {:?}", e);
-                return;
+        let maybe_tx = conn
+            .get_tx(self.hash)
+            .await
+            .context("getting transaction")?;
+        let tx = match maybe_tx {
+            Some(tx) => tx,
+            None => {
+                self.status = TxStatus::NotFound;
+                return Ok(());
             }
         };
 
@@ -50,20 +46,17 @@ impl Tx {
 
         if tx.block_number.is_none() {
             self.status = TxStatus::Pending;
-            return;
+            return Ok(());
         }
-
-        let receipt = match conn.get_receipt(self.hash).await {
-            Ok(maybe_receipt) => match maybe_receipt {
-                Some(receipt) => receipt,
-                None => {
-                    self.status = TxStatus::NotFound;
-                    return;
-                }
-            },
-            Err(e) => {
-                println!("Error getting transaction receipt: {:?}", e);
-                return;
+        let maybe_receipt = conn
+            .get_receipt(self.hash)
+            .await
+            .context("getting receipt")?;
+        let receipt = match maybe_receipt {
+            Some(receipt) => receipt,
+            None => {
+                self.status = TxStatus::NotFound;
+                return Ok(());
             }
         };
 
@@ -74,8 +67,11 @@ impl Tx {
         } else {
             self.status = TxStatus::Reverted;
         }
+        Ok(())
     }
-
+    pub fn get_transaction(&self) -> Option<&Transaction> {
+        self.transaction.as_ref()
+    }
     pub fn get_status(&self) -> TxStatus {
         self.status.clone()
     }

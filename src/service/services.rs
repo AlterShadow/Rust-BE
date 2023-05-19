@@ -17,6 +17,8 @@ mod admin_endpoints;
 
 #[path = "admin/pg_func.rs"]
 mod admin_pg_func;
+#[path = "watcher/pg_func.rs"]
+mod watcher_pg_func;
 
 pub fn get_services() -> Vec<Service> {
     vec![
@@ -32,6 +34,7 @@ pub fn get_proc_functions() -> Vec<ProceduralFunction> {
         auth_pg_func::get_auth_pg_func(),
         user_pg_func::get_user_pg_func(),
         admin_pg_func::get_admin_pg_func(),
+        watcher_pg_func::get_watcher_pg_func(),
     ]
     .concat()
 }

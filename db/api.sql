@@ -1014,6 +1014,58 @@ END
 $$;
         
 
+CREATE OR REPLACE FUNCTION api.fun_watcher_save_raw_transaction(a_transaction_hash varchar, a_chain varchar, a_dex varchar DEFAULT NULL, a_raw_transaction varchar)
+RETURNS table (
+    "transaction_cache_id" bigint
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY INSERT INTO tbl.transaction_cache(transaction_hash,
+                                                   chain,
+                                                   dex,
+                                                   raw_transaction,
+                                                   created_at)
+                 VALUES (a_transaction_hash,
+                         a_chain,
+                         a_dex,
+                         a_raw_transaction,
+                         extract(Epoch FROM (NOW()))::bigint)
+                 RETURNING pkey_id;
+END
+        
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_watcher_get_raw_transaction(a_transaction_hash varchar, a_chain varchar, a_dex varchar DEFAULT NULL)
+RETURNS table (
+    "transaction_cache_id" bigint,
+    "transaction_hash" varchar,
+    "chain" varchar,
+    "dex" varchar,
+    "raw_transaction" varchar,
+    "created_at" bigint
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY SELECT pkey_id,
+                      transaction_hash,
+                      chain,
+                      dex,
+                      raw_transaction,
+                      created_at
+                 FROM tbl.transaction_cache
+                 WHERE transaction_hash = a_transaction_hash
+                   AND chain = a_chain
+                   AND (a_dex ISNULL OR dex = a_dex);
+END
+        
+$$;
+        
+
 CREATE OR REPLACE FUNCTION api.AUTH_SERVICE()
 RETURNS table (
     "code" int
