@@ -178,13 +178,12 @@ impl Tx {
         None
     }
 }
+
 pub async fn parse_ethereum_transaction(
     hash: H256,
     db: &DbClient,
     conn: &Connection,
-    dex_addresses: &DexAddresses,
-    pancake_swap: &PancakeSwap,
-) -> Result<()> {
+) -> Result<(Tx, H160)> {
     let mut tx = Tx::new(hash);
     tx.update(&conn).await?;
     if let Err(err) = {
@@ -219,19 +218,26 @@ pub async fn parse_ethereum_transaction(
         }
     };
 
-    let eth_mainnet_dexes = dex_addresses.get(&Chain::EthereumMainnet).unwrap();
+    Ok((tx, contract_address))
+}
 
+pub async fn parse_dex_trade(
+    chain: Chain,
+    tx: &Tx,
+    called_contract: &H160,
+    dex_addresses: &DexAddresses,
+    pancake_swap: &PancakeSwap,
+) -> Result<()> {
+    let eth_mainnet_dexes = dex_addresses.get(&chain).unwrap();
     for (dex, address) in eth_mainnet_dexes {
-        if *address == contract_address {
+        if *address == *called_contract {
             let trade = match dex {
-                Dex::PancakeSwap => pancake_swap.parse_trade(&tx, Chain::EthereumMainnet),
+                Dex::PancakeSwap => pancake_swap.parse_trade(tx, chain.clone()),
                 Dex::UniSwap => {
-                    error!("does not support dex type: UniSwap");
-                    continue;
+                    bail!("does not support dex: UniSwap");
                 }
                 Dex::SushiSwap => {
-                    error!("does not support dex type: SushiSwap");
-                    continue;
+                    bail!("does not support dex: SushiSwap");
                 }
             };
             info!("tx: {:?}", tx.get_id().unwrap());
