@@ -45,14 +45,14 @@ async fn new_transport(url: &str) -> Result<EitherTransport> {
 }
 
 impl ConnectionPool {
-    pub async fn new(provider_url: String, max_concurrent_requests: usize) -> Result<Arc<Self>> {
+    pub async fn new(provider_url: String, max_concurrent_requests: usize) -> Result<Self> {
         let pool = deadpool::managed::Pool::builder(ConnectionManager {
             provider_url,
             max_concurrent_requests,
         })
         .build()
         .unwrap();
-        Ok(Arc::new(Self { pool }))
+        Ok(Self { pool })
     }
 
     pub async fn get_conn(&self) -> Result<ConnectionGuard> {

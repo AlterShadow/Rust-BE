@@ -1,6 +1,14 @@
 use crate::rpc_provider::connection::Connection;
+use crate::tracker::pancake_swap::PancakeSwap;
+use crate::tracker::trade::Dex;
+use crate::tracker::Chain;
+use crate::tracker::DexAddresses;
 use eyre::*;
+use gen::database::FunWatcherSaveRawTransactionReq;
+use lib::database::DbClient;
+use tracing::{error, info};
 use web3::types::{Transaction, TransactionReceipt, H160, H256, U256};
+
 #[derive(Clone, Debug)]
 pub enum TxStatus {
     Unknown,
@@ -169,4 +177,66 @@ impl Tx {
 
         None
     }
+}
+pub async fn parse_ethereum_transaction(
+    hash: H256,
+    db: &DbClient,
+    conn: &Connection,
+    dex_addresses: &DexAddresses,
+    pancake_swap: &PancakeSwap,
+) -> Result<()> {
+    let mut tx = Tx::new(hash);
+    tx.update(&conn).await?;
+    if let Err(err) = {
+        if let Some(content) = tx.get_transaction() {
+            db.execute(FunWatcherSaveRawTransactionReq {
+                transaction_hash: format!("{:?}", hash),
+                chain: "ethereum".to_string(),
+                dex: None,
+                raw_transaction: serde_json::to_string(content).context("transaction")?,
+            })
+            .await?;
+        }
+        Ok::<_, Error>(())
+    } {
+        error!("failed to save raw transaction: {}", err);
+    }
+    match tx.get_status() {
+        TxStatus::Successful => (),
+        TxStatus::Pending => {
+            /* TODO: handle pending transaction */
+            bail!("transaction is pending: {:?}", hash);
+        }
+        err => {
+            bail!("transaction failed: {:?}", err);
+        }
+    }
+
+    let contract_address = match tx.get_to() {
+        Some(address) => address,
+        None => {
+            bail!("transaction has no contract address: {:?}", hash);
+        }
+    };
+
+    let eth_mainnet_dexes = dex_addresses.get(&Chain::EthereumMainnet).unwrap();
+
+    for (dex, address) in eth_mainnet_dexes {
+        if *address == contract_address {
+            let trade = match dex {
+                Dex::PancakeSwap => pancake_swap.parse_trade(&tx, Chain::EthereumMainnet),
+                Dex::UniSwap => {
+                    error!("does not support dex type: UniSwap");
+                    continue;
+                }
+                Dex::SushiSwap => {
+                    error!("does not support dex type: SushiSwap");
+                    continue;
+                }
+            };
+            info!("tx: {:?}", tx.get_id().unwrap());
+            info!("trade: {:?}", trade);
+        }
+    }
+    Ok(())
 }

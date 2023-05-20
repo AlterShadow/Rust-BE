@@ -47,7 +47,7 @@ impl PancakeSwap {
         }
     }
 
-    pub fn get_trade(&self, tx: &Tx, chain: Chain) -> Result<Trade> {
+    pub fn parse_trade(&self, tx: &Tx, chain: Chain) -> Result<Trade> {
         /* if tx is successful, all of the following should be Some */
         let value = match tx.get_value() {
             Some(value) => value,
