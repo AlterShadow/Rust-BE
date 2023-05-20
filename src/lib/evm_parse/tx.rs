@@ -1,12 +1,5 @@
 use crate::rpc_provider::connection::Connection;
-use crate::tracker::pancake_swap::PancakeSwap;
-use crate::tracker::trade::Dex;
-use crate::tracker::Chain;
-use crate::tracker::DexAddresses;
 use eyre::*;
-use gen::database::FunWatcherSaveRawTransactionReq;
-use lib::database::DbClient;
-use tracing::{error, info};
 use web3::types::{Transaction, TransactionReceipt, H160, H256, U256};
 
 #[derive(Clone, Debug)]
@@ -179,27 +172,10 @@ impl Tx {
     }
 }
 
-pub async fn parse_ethereum_transaction(
-    hash: H256,
-    db: &DbClient,
-    conn: &Connection,
-) -> Result<(Tx, H160)> {
+pub async fn parse_ethereum_transaction(hash: H256, conn: &Connection) -> Result<(Tx, H160)> {
     let mut tx = Tx::new(hash);
     tx.update(&conn).await?;
-    if let Err(err) = {
-        if let Some(content) = tx.get_transaction() {
-            db.execute(FunWatcherSaveRawTransactionReq {
-                transaction_hash: format!("{:?}", hash),
-                chain: "ethereum".to_string(),
-                dex: None,
-                raw_transaction: serde_json::to_string(content).context("transaction")?,
-            })
-            .await?;
-        }
-        Ok::<_, Error>(())
-    } {
-        error!("failed to save raw transaction: {}", err);
-    }
+
     match tx.get_status() {
         TxStatus::Successful => (),
         TxStatus::Pending => {
@@ -219,30 +195,4 @@ pub async fn parse_ethereum_transaction(
     };
 
     Ok((tx, contract_address))
-}
-
-pub async fn parse_dex_trade(
-    chain: Chain,
-    tx: &Tx,
-    called_contract: &H160,
-    dex_addresses: &DexAddresses,
-    pancake_swap: &PancakeSwap,
-) -> Result<()> {
-    let eth_mainnet_dexes = dex_addresses.get(&chain).unwrap();
-    for (dex, address) in eth_mainnet_dexes {
-        if *address == *called_contract {
-            let trade = match dex {
-                Dex::PancakeSwap => pancake_swap.parse_trade(tx, chain.clone()),
-                Dex::UniSwap => {
-                    bail!("does not support dex: UniSwap");
-                }
-                Dex::SushiSwap => {
-                    bail!("does not support dex: SushiSwap");
-                }
-            };
-            info!("tx: {:?}", tx.get_id().unwrap());
-            info!("trade: {:?}", trade);
-        }
-    }
-    Ok(())
 }

@@ -1,13 +1,6 @@
-use super::calldata::ContractCall;
+use lib::evm_parse::calldata::ContractCall;
+use lib::evm_parse::Chain;
 use web3::types::{H160, U256};
-
-#[derive(Clone, Debug, Hash, Eq, PartialEq)]
-pub enum Chain {
-    EthereumMainnet,
-    EthereumGoerli,
-    BscMainnet,
-    BscTestnet,
-}
 
 #[derive(Clone, Debug, Hash, Eq, PartialEq)]
 pub enum Dex {

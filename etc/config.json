@@ -1,32 +1,38 @@
 {
-  "app_db": {
-    "host": "localhost",
-    "port": 5432,
-    "user": "postgres",
-    "password": "123456",
-    "dbname": "mc2fi"
-  },
-  "auth_db": {
-    "host": "localhost",
-    "port": 5432,
-    "user": "postgres",
-    "password": "123456",
-    "dbname": "mc2fi"
-  },
-  "auth": {
-    "host": "localhost",
-    "log_level": "trace",
-    "port": 8888
-  },
-  "user": {
-    "host": "localhost",
-    "log_level": "trace",
-    "port": 8889
-  },
-  "watcher": {
-    "host": "localhost",
-    "log_level": "trace",
-    "port": 9000,
-    "eth_provider_url": "https://ethereum.publicnode.com"
-  }
+	"app_db": {
+		"host": "localhost",
+		"port": 5432,
+		"user": "postgres",
+		"password": "123456",
+		"dbname": "mc2fi"
+	},
+	"auth_db": {
+		"host": "localhost",
+		"port": 5432,
+		"user": "postgres",
+		"password": "123456",
+		"dbname": "mc2fi"
+	},
+	"auth": {
+		"host": "localhost",
+		"log_level": "trace",
+		"port": 8888
+	},
+	"user": {
+		"host": "localhost",
+		"log_level": "trace",
+		"port": 8889
+	},
+	"escrow-watcher": {
+		"host": "localhost",
+		"log_level": "trace",
+		"port": 9000,
+		"eth_provider_url": "https://ethereum.publicnode.com"
+	},
+	"trade-watcher": {
+		"host": "localhost",
+		"log_level": "trace",
+		"port": 9001,
+		"eth_provider_url": "https://ethereum.publicnode.com"
+	}
 }

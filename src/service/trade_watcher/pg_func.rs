@@ -1,6 +1,6 @@
 use model::types::*;
 
-pub fn get_watcher_pg_func() -> Vec<ProceduralFunction> {
+pub fn get_trade_watcher_pg_func() -> Vec<ProceduralFunction> {
     vec![
         ProceduralFunction::new(
             "fun_watcher_save_raw_transaction",

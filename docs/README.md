@@ -49,8 +49,14 @@ ID: 3
 |Method Code|Method Name|Parameters|Response|Description|
 |-----------|-----------|----------|--------|-----------|
 
-# watcher Server
+# escrow_watcher Server
 ID: 4
+## Endpoints
+|Method Code|Method Name|Parameters|Response|Description|
+|-----------|-----------|----------|--------|-----------|
+
+# trade_watcher Server
+ID: 5
 ## Endpoints
 |Method Code|Method Name|Parameters|Response|Description|
 |-----------|-----------|----------|--------|-----------|

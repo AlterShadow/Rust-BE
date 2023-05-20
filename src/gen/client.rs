@@ -291,15 +291,29 @@ impl From<WsClient> for AdminClient {
     }
 }
 
-pub struct WatcherClient {
+pub struct EscrowWatcherClient {
     pub client: WsClient,
 }
-impl WatcherClient {
+impl EscrowWatcherClient {
     pub fn new(client: WsClient) -> Self {
         Self { client }
     }
 }
-impl From<WsClient> for WatcherClient {
+impl From<WsClient> for EscrowWatcherClient {
+    fn from(client: WsClient) -> Self {
+        Self::new(client)
+    }
+}
+
+pub struct TradeWatcherClient {
+    pub client: WsClient,
+}
+impl TradeWatcherClient {
+    pub fn new(client: WsClient) -> Self {
+        Self { client }
+    }
+}
+impl From<WsClient> for TradeWatcherClient {
     fn from(client: WsClient) -> Self {
         Self::new(client)
     }
