@@ -145,7 +145,7 @@ CREATE TABLE tbl."user" (
     admin_token uuid  NULL,
     is_blocked boolean  NOT NULL DEFAULT FALSE,
     pending_expert boolean  NOT NULL DEFAULT FALSE,
-    username int  NOT NULL,
+    username varchar(32)  NOT NULL,
     CONSTRAINT user_pk PRIMARY KEY (pkey_id)
 );
 
