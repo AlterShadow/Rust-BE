@@ -11,7 +11,6 @@ use lib::config::load_config;
 use lib::database::{connect_to_database, DatabaseConfig, DbClient};
 use lib::log::{setup_logs, LogLevel};
 use serde::{Deserialize, Serialize};
-use std::io::Cursor;
 use std::sync::Arc;
 use tracing::{error, info};
 use web3::types::H256;
@@ -19,10 +18,11 @@ use web3::types::H256;
 pub mod rpc_provider;
 pub mod tracker;
 
+use crate::tracker::pancake_swap::pancake::build_pancake_swap;
 use crate::tracker::tx::parse_ethereum_transaction;
 use crate::tracker::DexAddresses;
 use rpc_provider::pool::ConnectionPool;
-use tracker::{ethabi_to_web3::convert_h256_ethabi_to_web3, pancake_swap::PancakeSwap};
+use tracker::pancake_swap::PancakeSwap;
 
 struct AppState {
     dex_addresses: DexAddresses,
@@ -30,9 +30,6 @@ struct AppState {
     pancake_swap: PancakeSwap,
     db: DbClient,
 }
-
-const PANCAKE_SMART_ROUTER_PATH: &str = "abi/pancake_swap/smart_router_v3.json";
-const ERC20_PATH: &str = "abi/generic/erc20.json";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
@@ -56,28 +53,13 @@ async fn main() -> Result<()> {
     setup_logs(config.log_level)?;
     let db = connect_to_database(config.app_db).await?;
 
-    let pancake_smart_router = ethabi::Contract::load(Cursor::new(
-        std::fs::read(PANCAKE_SMART_ROUTER_PATH).context("failed to read contract ABI")?,
-    ))
-    .context("failed to parse contract ABI")?;
-    let erc20 = ethabi::Contract::load(Cursor::new(
-        std::fs::read(ERC20_PATH).context("failed to read contract ABI")?,
-    ))
-    .context("failed to parse contract ABI")?;
-
-    let transfer_event_signature = convert_h256_ethabi_to_web3(
-        erc20
-            .event("Transfer")
-            .context("Failed to get Transfer event signature")?
-            .signature(),
-    );
     let eth_pool = ConnectionPool::new(config.eth_provider_url.to_string(), 10).await?;
     let app: Router<(), Body> = Router::new()
         .route("/eth-mainnet-swaps", post(handle_eth_swap))
         .with_state(Arc::new(AppState {
             dex_addresses: DexAddresses::new(),
             eth_pool,
-            pancake_swap: PancakeSwap::new(pancake_smart_router, transfer_event_signature),
+            pancake_swap: build_pancake_swap()?,
             db,
         }));
 

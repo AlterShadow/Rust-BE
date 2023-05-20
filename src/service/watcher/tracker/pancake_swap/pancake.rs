@@ -1,20 +1,16 @@
-use std::str::FromStr;
-
-use ethabi::{Contract, Token};
-use web3::types::{H160, H256, U256};
-
-use eyre::*;
-
-use crate::tracker::trade::{Chain, Dex, DexVersion, Path, Trade};
-
-use crate::tracker::calldata::ContractCall;
-use crate::tracker::tx::Tx;
-
 use super::v2::{swap_exact_tokens_for_tokens, swap_tokens_for_exact_tokens};
 use super::v3::{
     multi_hop::{exact_input, exact_output},
     single_hop::{exact_input_single, exact_output_single},
 };
+use crate::tracker::calldata::ContractCall;
+use crate::tracker::ethabi_to_web3::convert_h256_ethabi_to_web3;
+use crate::tracker::trade::{Chain, Dex, DexVersion, Path, Trade};
+use crate::tracker::tx::Tx;
+use ethabi::{Contract, Token};
+use eyre::*;
+use std::str::FromStr;
+use web3::types::{H160, H256, U256};
 
 pub struct Swap {
     pub recipient: H160,
@@ -40,8 +36,8 @@ impl PancakeSwap {
 
     pub fn new(smart_router: Contract, transfer_event_signature: H256) -> Self {
         Self {
-            smart_router: smart_router,
-            transfer_event_signature: transfer_event_signature,
+            smart_router,
+            transfer_event_signature,
             paid_in_native_flag: H160::from_str("0x0000000000000000000000000000000000000002")
                 .unwrap(),
         }
@@ -248,4 +244,49 @@ enum PancakeSwapMethod {
     ExactInput,
     ExactOutputSingle,
     ExactOutput,
+}
+
+const PANCAKE_SMART_ROUTER_PATH: &str = "abi/pancake_swap/smart_router_v3.json";
+const ERC20_PATH: &str = "abi/generic/erc20.json";
+
+pub fn build_pancake_swap() -> Result<PancakeSwap> {
+    let pancake_smart_router = Contract::load(
+        std::fs::File::open(PANCAKE_SMART_ROUTER_PATH).context("failed to read contract ABI")?,
+    )
+    .context("failed to parse contract ABI")?;
+    let erc20 =
+        Contract::load(std::fs::File::open(ERC20_PATH).context("failed to read contract ABI")?)
+            .context("failed to parse contract ABI")?;
+    let transfer_event_signature = convert_h256_ethabi_to_web3(
+        erc20
+            .event("Transfer")
+            .context("Failed to get Transfer event signature")?
+            .signature(),
+    );
+    let pancake = PancakeSwap::new(pancake_smart_router, transfer_event_signature);
+    Ok(pancake)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::rpc_provider::pool::ConnectionPool;
+    use lib::log::{setup_logs, LogLevel};
+    use tracing::info;
+
+    #[tokio::test]
+    async fn test_pancakeswap() -> Result<()> {
+        let _ = setup_logs(LogLevel::Info);
+
+        let pancake = build_pancake_swap()?;
+        let mut tx =
+            Tx::new("0x750d90bf90ad0fe7d035fbbab41334f6bb10bf7e71246d430cb23ed35d1df7c2".parse()?);
+        let conn_pool =
+            ConnectionPool::new("https://ethereum.publicnode.com".to_string(), 10).await?;
+        let conn = conn_pool.get_conn().await?;
+        tx.update(&conn).await?;
+        let trade = pancake.parse_trade(&tx, Chain::EthereumMainnet)?;
+        info!("trade: {:?}", trade);
+        Ok(())
+    }
 }
