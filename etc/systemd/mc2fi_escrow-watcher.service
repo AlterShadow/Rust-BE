@@ -1,0 +1,21 @@
+[Unit]
+Description=mc2fi escrow-watcher
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+User=mc2fi
+Type=simple
+Restart=always
+RestartSec=1
+WorkingDirectory=/home/mc2fi/mc2fi
+ExecStart=/home/mc2fi/mc2fi/target/release/escrow-watcher --config=etc/config.json
+
+StandardError=append:/home/mc2fi/mc2fi/log/mc2fi_escrow-watcher.log
+StandardOutput=append:/home/mc2fi/mc2fi/log/mc2fi_escrow-watcher.log
+StandardInput=null
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+
+[Install]
+WantedBy=default.target
+
