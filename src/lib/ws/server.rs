@@ -121,6 +121,7 @@ impl WebsocketServer {
                     ErrorCode::new(100400), // BadRequest
                     err.to_string(),
                 );
+                return Err(err);
             }
             if !self.config.header_only {
                 debug!(?addr, "Starting ws recv_msg loop");
@@ -130,7 +131,7 @@ impl WebsocketServer {
         }
         .await;
         if let Err(err) = result {
-            error!(?addr, "Error while processing {:?}", err)
+            error!(?addr, "Error while processing auth {:?}", err)
         }
     }
 

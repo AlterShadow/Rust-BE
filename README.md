@@ -21,7 +21,10 @@ cargo run --bin auth
 ```shell
 cargo run --bin user
 ```
-
+## How to test
+```shell
+cargo test -- --test-threads=1
+```
 ## Authentication process
 
 All critical authentication information is in the `Sec-Websocket-Protocol` header.
@@ -50,7 +53,7 @@ Example headers:
 `Upgrade: websocket`
 `Sec-WebSocket-Version: 13`
 `Accept: sec-websocket-accept`
-`Sec-WebSocket-Protocol: 0login,1address,2placeholder_password,32,43849823798,5android`
+`Sec-WebSocket-Protocol: 0login,1address,2placeholder_password,3User,43849823798,5android`
 Here in the `Sec-Websocket-Protocol` header we have the login method as the first variable, followed by the user's
 registered address, signature message, signature, service_code (the service the user is logging into), device id, and device OS.
 
@@ -193,3 +196,4 @@ The platform will be developed for testnet and will include the following featur
 - [x] Getting auth up (login with Metamask)
 - [ ] As much data models as we can get (I'll get vertabelo setup)
 - [ ] The user/backer endpoint docs up and more accurate and better planned out
+

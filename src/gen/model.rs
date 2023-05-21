@@ -730,7 +730,7 @@ pub struct LoginRequest {
     pub address: String,
     pub signature_text: String,
     pub signature: String,
-    pub service_code: EnumService,
+    pub service: EnumService,
     pub device_id: String,
     pub device_os: String,
 }

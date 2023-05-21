@@ -21,7 +21,7 @@
               "ty": "String"
             },
             {
-              "name": "service_code",
+              "name": "service",
               "ty": {
                 "EnumRef": "service"
               }

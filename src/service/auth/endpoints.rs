@@ -29,7 +29,7 @@ pub fn endpoint_auth_login() -> EndpointSchema {
             Field::new("address", Type::String),
             Field::new("signature_text", Type::String),
             Field::new("signature", Type::String),
-            Field::new("service_code", Type::enum_ref("service")),
+            Field::new("service", Type::enum_ref("service")),
             Field::new("device_id", Type::String),
             Field::new("device_os", Type::String),
         ],

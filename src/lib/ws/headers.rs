@@ -126,11 +126,6 @@ fn parse_ty(ty: &Type, value: &str) -> Result<serde_json::Value> {
                 .with_context(|| format!("Failed to parse boolean: {}", value))?
                 .into(),
         ),
-        Type::Enum { name, .. } if name == "service" => match value {
-            "2" => serde_json::Value::String("User".to_string()),
-            "3" => serde_json::Value::String("Admin".to_string()),
-            x => serde_json::Value::String(x.to_string()),
-        },
         Type::Enum { .. } => serde_json::Value::String(value.to_string()),
         Type::EnumRef(_) => serde_json::Value::String(value.to_string()),
         Type::UUID => serde_json::Value::String(value.to_string()),

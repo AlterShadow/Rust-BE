@@ -9,6 +9,7 @@ use serde_json::Value;
 use std::str::FromStr;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
+use tracing::info;
 use uuid::Uuid;
 use web3::signing::{hash_message, recover, RecoveryError};
 use web3::types::Address;
@@ -26,6 +27,7 @@ impl RequestHandler for MethodAuthSignup {
         conn: Arc<Connection>,
         req: Self::Request,
     ) {
+        info!("Signup request: {:?}", req);
         let db: DbClient = toolbox.get_db();
         let db_auth: DbClient = toolbox.get_nth_db(1);
         toolbox.spawn_response(ctx, async move {
@@ -117,6 +119,7 @@ impl RequestHandler for MethodAuthLogin {
         conn: Arc<Connection>,
         req: Self::Request,
     ) {
+        info!("Login request: {:?}", req);
         let db_auth: DbClient = toolbox.get_nth_db(1);
         toolbox.spawn_response(ctx, async move {
             let address = Address::from_str(&req.address).map_err(|x| {
@@ -136,7 +139,7 @@ impl RequestHandler for MethodAuthLogin {
                 verified,
                 CustomError::new(EnumErrorCode::InvalidPassword, "Signature is not valid")
             );
-            let service_code = req.service_code;
+            let service_code = req.service;
 
             let data = db_auth
                 .execute(FunAuthAuthenticateReq {
@@ -184,6 +187,7 @@ impl RequestHandler for MethodAuthAuthorize {
         conn: Arc<Connection>,
         req: Self::Request,
     ) {
+        info!("Authorize request: {:?}", req);
         let db_auth: DbClient = toolbox.get_nth_db(1);
         let accept_srv = self.accept_service;
         toolbox.spawn_response(ctx, async move {

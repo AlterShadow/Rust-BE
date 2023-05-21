@@ -36,13 +36,10 @@ fn encode_signature(sig: &Signature) -> String {
     sig_bytes.push(sig.v as u8);
     hex::encode(sig_bytes)
 }
-static MUTEX: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
 #[tokio::test]
 async fn test_signup() -> Result<()> {
-    let lock = MUTEX.lock().unwrap();
     test_signup_inner().await?;
-    drop(lock);
     Ok(())
 }
 
@@ -59,7 +56,7 @@ async fn test_signup_inner() -> Result<()> {
             phone: "+00123456".to_string(),
             agreed_tos: true,
             agreed_privacy: true,
-            username: None,
+            username: Some("test_username".to_string()),
         },
         endpoint_auth_signup(),
     )?)
@@ -70,8 +67,6 @@ async fn test_signup_inner() -> Result<()> {
 }
 #[tokio::test]
 async fn test_login() -> Result<()> {
-    let lock = MUTEX.lock().unwrap();
-
     test_signup_inner().await?;
     let mut client = get_ws_auth_client(&encode_header(
         LoginRequest {
@@ -87,6 +82,6 @@ async fn test_login() -> Result<()> {
     .await?;
     let res: LoginResponse = client.recv_resp().await?;
     println!("{:?}", res);
-    drop(lock);
+
     Ok(())
 }
