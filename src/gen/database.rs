@@ -1359,9 +1359,9 @@ impl DatabaseRequest for FunUserListStrategyWatchWalletsReq {
 pub struct FunWatcherSaveRawTransactionReq {
     pub transaction_hash: String,
     pub chain: String,
+    pub raw_transaction: String,
     #[serde(default)]
     pub dex: Option<String>,
-    pub raw_transaction: String,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunWatcherSaveRawTransactionRespRow {
@@ -1372,14 +1372,14 @@ pub struct FunWatcherSaveRawTransactionRespRow {
 impl DatabaseRequest for FunWatcherSaveRawTransactionReq {
     type ResponseRow = FunWatcherSaveRawTransactionRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_watcher_save_raw_transaction(a_transaction_hash => $1::varchar, a_chain => $2::varchar, a_dex => $3::varchar, a_raw_transaction => $4::varchar);"
+        "SELECT * FROM api.fun_watcher_save_raw_transaction(a_transaction_hash => $1::varchar, a_chain => $2::varchar, a_raw_transaction => $3::varchar, a_dex => $4::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
             &self.transaction_hash as &(dyn ToSql + Sync),
             &self.chain as &(dyn ToSql + Sync),
-            &self.dex as &(dyn ToSql + Sync),
             &self.raw_transaction as &(dyn ToSql + Sync),
+            &self.dex as &(dyn ToSql + Sync),
         ]
     }
     fn parse_row(&self, row: Row) -> Result<FunWatcherSaveRawTransactionRespRow> {

@@ -7,8 +7,8 @@ pub fn get_trade_watcher_pg_func() -> Vec<ProceduralFunction> {
             vec![
                 Field::new("transaction_hash", Type::String),
                 Field::new("chain", Type::String),
-                Field::new("dex", Type::optional(Type::String)),
                 Field::new("raw_transaction", Type::String),
+                Field::new("dex", Type::optional(Type::String)),
             ],
             vec![Field::new("transaction_cache_id", Type::BigInt)],
             r#"
