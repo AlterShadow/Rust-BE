@@ -1433,3 +1433,116 @@ impl DatabaseRequest for FunWatcherGetRawTransactionReq {
         Ok(r)
     }
 }
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunWatcherSaveWalletActivityHistoryReq {
+    pub address: String,
+    pub transaction_hash: String,
+    pub chain: String,
+    pub dex: String,
+    pub contract_address: String,
+    pub token_in_address: String,
+    pub token_out_address: String,
+    pub caller_address: String,
+    pub amount_in: String,
+    pub amount_out: String,
+    pub swap_calls: serde_json::Value,
+    pub paths: serde_json::Value,
+    pub object_versions: serde_json::Value,
+    #[serde(default)]
+    pub created_at: Option<i64>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunWatcherSaveWalletActivityHistoryRespRow {
+    pub wallet_activity_history_id: i64,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunWatcherSaveWalletActivityHistoryReq {
+    type ResponseRow = FunWatcherSaveWalletActivityHistoryRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_watcher_save_wallet_activity_history(a_address => $1::varchar, a_transaction_hash => $2::varchar, a_chain => $3::varchar, a_dex => $4::varchar, a_contract_address => $5::varchar, a_token_in_address => $6::varchar, a_token_out_address => $7::varchar, a_caller_address => $8::varchar, a_amount_in => $9::varchar, a_amount_out => $10::varchar, a_swap_calls => $11::jsonb, a_paths => $12::jsonb, a_object_versions => $13::jsonb, a_created_at => $14::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.address as &(dyn ToSql + Sync),
+            &self.transaction_hash as &(dyn ToSql + Sync),
+            &self.chain as &(dyn ToSql + Sync),
+            &self.dex as &(dyn ToSql + Sync),
+            &self.contract_address as &(dyn ToSql + Sync),
+            &self.token_in_address as &(dyn ToSql + Sync),
+            &self.token_out_address as &(dyn ToSql + Sync),
+            &self.caller_address as &(dyn ToSql + Sync),
+            &self.amount_in as &(dyn ToSql + Sync),
+            &self.amount_out as &(dyn ToSql + Sync),
+            &self.swap_calls as &(dyn ToSql + Sync),
+            &self.paths as &(dyn ToSql + Sync),
+            &self.object_versions as &(dyn ToSql + Sync),
+            &self.created_at as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunWatcherSaveWalletActivityHistoryRespRow> {
+        let r = FunWatcherSaveWalletActivityHistoryRespRow {
+            wallet_activity_history_id: row.try_get(0)?,
+        };
+        Ok(r)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunWatcherListWalletActivityHistoryReq {
+    pub address: String,
+    pub chain: String,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunWatcherListWalletActivityHistoryRespRow {
+    pub wallet_activity_history_id: i64,
+    pub address: String,
+    pub transaction_hash: String,
+    pub chain: String,
+    pub dex: String,
+    pub contract_address: String,
+    pub token_in_address: String,
+    pub token_out_address: String,
+    pub caller_address: String,
+    pub amount_in: String,
+    pub amount_out: String,
+    pub swap_calls: serde_json::Value,
+    pub paths: serde_json::Value,
+    pub object_versions: serde_json::Value,
+    pub created_at: i64,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunWatcherListWalletActivityHistoryReq {
+    type ResponseRow = FunWatcherListWalletActivityHistoryRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_watcher_list_wallet_activity_history(a_address => $1::varchar, a_chain => $2::varchar);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.address as &(dyn ToSql + Sync),
+            &self.chain as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunWatcherListWalletActivityHistoryRespRow> {
+        let r = FunWatcherListWalletActivityHistoryRespRow {
+            wallet_activity_history_id: row.try_get(0)?,
+            address: row.try_get(1)?,
+            transaction_hash: row.try_get(2)?,
+            chain: row.try_get(3)?,
+            dex: row.try_get(4)?,
+            contract_address: row.try_get(5)?,
+            token_in_address: row.try_get(6)?,
+            token_out_address: row.try_get(7)?,
+            caller_address: row.try_get(8)?,
+            amount_in: row.try_get(9)?,
+            amount_out: row.try_get(10)?,
+            swap_calls: row.try_get(11)?,
+            paths: row.try_get(12)?,
+            object_versions: row.try_get(13)?,
+            created_at: row.try_get(14)?,
+        };
+        Ok(r)
+    }
+}

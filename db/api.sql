@@ -1066,6 +1066,97 @@ END
 $$;
         
 
+CREATE OR REPLACE FUNCTION api.fun_watcher_save_wallet_activity_history(a_address varchar, a_transaction_hash varchar, a_chain varchar, a_dex varchar, a_contract_address varchar, a_token_in_address varchar, a_token_out_address varchar, a_caller_address varchar, a_amount_in varchar, a_amount_out varchar, a_swap_calls jsonb, a_paths jsonb, a_object_versions jsonb, a_created_at bigint DEFAULT NULL)
+RETURNS table (
+    "wallet_activity_history_id" bigint
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY INSERT INTO tbl.wallet_activity_history(
+        address,
+        transaction_hash,
+        chain,
+        dex,
+        contract_address,
+        token_in_address,
+        token_out_address,
+        caller_address,
+        amount_in,
+        amount_out,
+        swap_calls,
+        paths,
+        object_versions,
+        created_at
+    )
+    VALUES (
+        a_address,
+        a_transaction_hash,
+        a_chain,
+        a_dex,
+        a_contract_address,
+        a_token_in_address,
+        a_token_out_address,
+        a_caller_address,
+        a_amount_in,
+        a_amount_out,
+        a_swap_calls,
+        a_paths,
+        a_object_versions,
+        COALESCE(a_created_at, extract(Epoch FROM (NOW()))::bigint)
+    )
+    RETURNING pkey_id;
+END
+        
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_watcher_list_wallet_activity_history(a_address varchar, a_chain varchar)
+RETURNS table (
+    "wallet_activity_history_id" bigint,
+    "address" varchar,
+    "transaction_hash" varchar,
+    "chain" varchar,
+    "dex" varchar,
+    "contract_address" varchar,
+    "token_in_address" varchar,
+    "token_out_address" varchar,
+    "caller_address" varchar,
+    "amount_in" varchar,
+    "amount_out" varchar,
+    "swap_calls" jsonb,
+    "paths" jsonb,
+    "object_versions" jsonb,
+    "created_at" bigint
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY SELECT pkey_id,
+                      address,
+                      transaction_hash,
+                      chain,
+                      dex,
+                      contract_address,
+                      token_in_address,
+                      token_out_address,
+                      caller_address,
+                      amount_in,
+                      amount_out,
+                      swap_calls,
+                      paths,
+                      object_versions,
+                      created_at
+                 FROM tbl.wallet_activity_history
+                 WHERE address = a_address
+                   AND chain = a_chain;
+END
+        
+$$;
+        
+
 CREATE OR REPLACE FUNCTION api.AUTH_SERVICE()
 RETURNS table (
     "code" int

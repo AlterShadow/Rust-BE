@@ -1,5 +1,5 @@
 -- Created by Vertabelo (http://vertabelo.com)
--- Last modification date: 2023-05-19 16:27:56.826
+-- Last modification date: 2023-05-21 02:46:20.598
 
 CREATE SCHEMA IF NOT EXISTS tbl;;
 
@@ -45,6 +45,17 @@ CREATE TABLE tbl.bad_request (
     raw varchar(16384)  NULL,
     moment bigint  NOT NULL,
     CONSTRAINT "tbl.bad_request_pk" PRIMARY KEY (pkey_id)
+);
+
+-- Table: chain_address_lookup_cache
+CREATE TABLE tbl.chain_address_lookup_cache (
+    pkey bigint  NOT NULL DEFAULT nextval('tbl.seq_chain_address_lookup_cache_id'),
+    address bigint  NOT NULL,
+    chain varchar(20)  NOT NULL,
+    name varchar(20)  NOT NULL,
+    created_at bigint  NOT NULL,
+    CONSTRAINT chain_address_lookup_cache_ak_1 UNIQUE (address, chain) NOT DEFERRABLE  INITIALLY IMMEDIATE,
+    CONSTRAINT chain_address_lookup_cache_pk PRIMARY KEY (pkey)
 );
 
 -- Table: expert_profile
@@ -117,6 +128,7 @@ CREATE TABLE tbl.transaction_cache (
     chain varchar(20)  NOT NULL,
     dex varchar(20)  NULL,
     raw_content varchar(8192)  NOT NULL,
+    created_at bigint  NOT NULL,
     CONSTRAINT transaction_cache_ak_1 UNIQUE (transaction_hash) NOT DEFERRABLE  INITIALLY IMMEDIATE,
     CONSTRAINT transaction_cache_pk PRIMARY KEY (pkey_id)
 );
@@ -208,6 +220,27 @@ CREATE TABLE tbl.user_wallet (
     address varchar(64)  NOT NULL,
     CONSTRAINT uidx_user_username UNIQUE (address) NOT DEFERRABLE  INITIALLY IMMEDIATE,
     CONSTRAINT user_wallet_pk PRIMARY KEY (pkey_id)
+);
+
+-- Table: wallet_activity_history
+CREATE TABLE tbl.wallet_activity_history (
+    pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_wallet_activity_history_id'),
+    address varchar(64)  NOT NULL,
+    transaction_hash varchar(64)  NOT NULL,
+    chain varchar(20)  NOT NULL,
+    dex varchar(20)  NOT NULL,
+    contract_address varchar(64)  NOT NULL,
+    token_in_address varchar(64)  NOT NULL,
+    token_out_address varchar(64)  NOT NULL,
+    caller_address varchar(64)  NOT NULL,
+    amount_in varchar(64)  NOT NULL,
+    amount_out varchar(64)  NOT NULL,
+    swap_calls jsonb  NOT NULL,
+    paths jsonb  NOT NULL,
+    dex_versions jsonb  NOT NULL,
+    created_at bigint  NOT NULL,
+    CONSTRAINT wallet_activity_history_ak_1 UNIQUE (transaction_hash) NOT DEFERRABLE  INITIALLY IMMEDIATE,
+    CONSTRAINT wallet_activity_history_pk PRIMARY KEY (pkey_id)
 );
 
 -- foreign keys
@@ -363,6 +396,13 @@ CREATE SEQUENCE tbl.seq_bad_request_id
       AS bigint
 ;
 
+-- Sequence: seq_chain_address_lookup_cache_id
+CREATE SEQUENCE tbl.seq_chain_address_lookup_cache_id
+      NO MINVALUE
+      NO MAXVALUE
+      NO CYCLE
+;
+
 -- Sequence: seq_expert_profile_id
 CREATE SEQUENCE tbl.seq_expert_profile_id
       NO MINVALUE
@@ -448,6 +488,13 @@ CREATE SEQUENCE tbl.seq_ver_id
       NO MAXVALUE
       NO CYCLE
       AS bigint
+;
+
+-- Sequence: seq_wallet_activity_history_id
+CREATE SEQUENCE tbl.seq_wallet_activity_history_id
+      NO MINVALUE
+      NO MAXVALUE
+      NO CYCLE
 ;
 
 -- End of file.
