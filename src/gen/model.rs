@@ -1,7 +1,7 @@
 use lib::error_code::ErrorCode;
 use num_derive::FromPrimitive;
 use serde::*;
-use strum_macros::EnumString;
+use strum_macros::{Display, EnumString};
 use tokio_postgres::types::*;
 #[derive(
     Debug,
@@ -17,6 +17,7 @@ use tokio_postgres::types::*;
     PartialOrd,
     Ord,
     EnumString,
+    Display,
     Hash,
 )]
 #[postgres(name = "enum_role")]
@@ -51,6 +52,7 @@ pub enum EnumRole {
     PartialOrd,
     Ord,
     EnumString,
+    Display,
     Hash,
 )]
 #[postgres(name = "enum_block_chain")]
@@ -82,6 +84,7 @@ pub enum EnumBlockChain {
     PartialOrd,
     Ord,
     EnumString,
+    Display,
     Hash,
 )]
 #[postgres(name = "enum_dex")]
@@ -110,6 +113,7 @@ pub enum EnumDex {
     PartialOrd,
     Ord,
     EnumString,
+    Display,
     Hash,
 )]
 #[postgres(name = "enum_dex_version")]
@@ -138,6 +142,7 @@ pub enum EnumDexVersion {
     PartialOrd,
     Ord,
     EnumString,
+    Display,
     Hash,
 )]
 #[postgres(name = "enum_service")]
@@ -358,6 +363,7 @@ pub struct ErrorInternalError {}
     PartialOrd,
     Ord,
     EnumString,
+    Display,
     Hash,
 )]
 #[postgres(name = "enum_ErrorCode")]

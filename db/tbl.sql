@@ -10,7 +10,7 @@ CREATE TABLE tbl.aum_history (
     fkey_strategy_id bigint  NOT NULL,
     base_token varchar(20)  NOT NULL,
     quote_token varchar(20)  NOT NULL,
-    EnumBlockChain varchar(20)  NOT NULL,
+    blockchain varchar(20)  NOT NULL,
     dex varchar(20)  NOT NULL,
     wallet_address varchar(64)  NOT NULL,
     transaction_hash varchar(64)  NOT NULL,
@@ -112,7 +112,7 @@ CREATE TABLE tbl.strategy_watching_wallet (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_strategy_watching_wallet_id'),
     fkey_user_id bigint  NULL,
     fkey_strategy_id bigint  NOT NULL,
-    EnumBlockChain varchar(20)  NOT NULL,
+    blockchain varchar(20)  NOT NULL,
     address varchar(64)  NOT NULL,
     dex varchar(20)  NOT NULL,
     ratio_distribution double precision  NOT NULL,
@@ -157,7 +157,7 @@ CREATE TABLE tbl."user" (
     admin_token uuid  NULL,
     is_blocked boolean  NOT NULL DEFAULT FALSE,
     pending_expert boolean  NOT NULL DEFAULT FALSE,
-    username varchar(32)  NOT NULL,
+    username varchar(32)  NULL,
     CONSTRAINT user_pk PRIMARY KEY (pkey_id)
 );
 
@@ -167,7 +167,7 @@ CREATE TABLE tbl.user_back_strategy_history (
     fkey_user_id bigint  NOT NULL,
     fkey_strategy_id bigint  NOT NULL,
     purchase_wallet varchar(20)  NOT NULL,
-    EnumBlockChain varchar(20)  NOT NULL,
+    blockchain varchar(20)  NOT NULL,
     dex varchar(20)  NOT NULL,
     transaction_hash varchar(64)  NOT NULL,
     quantity double precision  NOT NULL,
@@ -181,7 +181,7 @@ CREATE TABLE tbl.user_exit_strategy_history (
     fkey_user_id bigint  NOT NULL,
     fkey_strategy_id bigint  NOT NULL,
     purchase_wallet varchar(64)  NOT NULL,
-    EnumBlockChain varchar(20)  NOT NULL,
+    blockchain varchar(20)  NOT NULL,
     dex varchar(20)  NOT NULL,
     transaction_hash varchar(64)  NOT NULL,
     exit_quantity double precision  NOT NULL,
@@ -216,7 +216,7 @@ CREATE TABLE tbl.user_follow_strategy (
 CREATE TABLE tbl.user_wallet (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_user_wallet_id'),
     fkey_user_id bigint  NOT NULL,
-    EnumBlockChain varchar(20)  NOT NULL,
+    blockchain varchar(20)  NOT NULL,
     address varchar(64)  NOT NULL,
     CONSTRAINT uidx_user_username UNIQUE (address) NOT DEFERRABLE  INITIALLY IMMEDIATE,
     CONSTRAINT user_wallet_pk PRIMARY KEY (pkey_id)

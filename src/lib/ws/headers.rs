@@ -132,9 +132,10 @@ fn parse_ty(ty: &Type, value: &str) -> Result<serde_json::Value> {
             x => serde_json::Value::String(x.to_string()),
         },
         Type::Enum { .. } => serde_json::Value::String(value.to_string()),
+        Type::EnumRef(_) => serde_json::Value::String(value.to_string()),
         Type::UUID => serde_json::Value::String(value.to_string()),
         Type::Optional(ty) => parse_ty(ty, value)?,
-        _ => todo!("Implement other types"),
+        ty => bail!("Not implemented {:?}", ty),
     })
 }
 
