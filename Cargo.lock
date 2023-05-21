@@ -2144,6 +2144,8 @@ dependencies = [
  "fallible-iterator",
  "postgres-derive",
  "postgres-protocol",
+ "serde",
+ "serde_json",
  "uuid",
 ]
 

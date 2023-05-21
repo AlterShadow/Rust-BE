@@ -1,15 +1,13 @@
-use crate::tracker::trade::Dex;
-use lib::evm_parse::Chain;
+use gen::model::{EnumBlockChain, EnumDex};
 use std::collections::HashMap;
 use std::str::FromStr;
 use web3::types::H160;
 
 pub mod pancake_swap;
 pub mod parse;
-pub mod trade;
 
 pub struct DexAddresses {
-    inner: HashMap<Chain, Vec<(Dex, H160)>>,
+    inner: HashMap<EnumBlockChain, Vec<(EnumDex, H160)>>,
 }
 impl Default for DexAddresses {
     fn default() -> Self {
@@ -18,30 +16,30 @@ impl Default for DexAddresses {
         };
 
         this.inner.insert(
-            Chain::EthereumMainnet,
+            EnumBlockChain::EthereumMainnet,
             vec![(
-                Dex::PancakeSwap,
+                EnumDex::PancakeSwap,
                 H160::from_str("0x13f4EA83D0bd40E75C8222255bc855a974568Dd4").unwrap(),
             )],
         );
         this.inner.insert(
-            Chain::BscMainnet,
+            EnumBlockChain::BscMainnet,
             vec![(
-                Dex::PancakeSwap,
+                EnumDex::PancakeSwap,
                 H160::from_str("0x13f4EA83D0bd40E75C8222255bc855a974568Dd4").unwrap(),
             )],
         );
         this.inner.insert(
-            Chain::EthereumGoerli,
+            EnumBlockChain::EthereumGoerli,
             vec![(
-                Dex::PancakeSwap,
+                EnumDex::PancakeSwap,
                 H160::from_str("0x9a489505a00cE272eAa5e07Dba6491314CaE3796").unwrap(),
             )],
         );
         this.inner.insert(
-            Chain::BscTestnet,
+            EnumBlockChain::BscTestnet,
             vec![(
-                Dex::PancakeSwap,
+                EnumDex::PancakeSwap,
                 H160::from_str("0x9a489505a00cE272eAa5e07Dba6491314CaE3796").unwrap(),
             )],
         );
@@ -53,7 +51,7 @@ impl DexAddresses {
     pub fn new() -> DexAddresses {
         Default::default()
     }
-    pub fn get(&self, chain: &Chain) -> Option<&Vec<(Dex, H160)>> {
+    pub fn get(&self, chain: &EnumBlockChain) -> Option<&Vec<(EnumDex, H160)>> {
         self.inner.get(chain)
     }
 }

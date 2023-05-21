@@ -1,8 +1,13 @@
-use crate::sql::ToSql;
-use crate::SYMBOL;
+use crate::sql::{ToSql, PARAM_PREFIX};
+use crate::{docs, enums, services};
 use convert_case::{Case, Casing};
+use eyre::bail;
 use itertools::Itertools;
 use model::types::*;
+use std::collections::{BTreeSet, HashMap};
+use std::fs::File;
+use std::io::Write;
+use std::process::Command;
 
 pub trait ToRust {
     fn to_rust_ref(&self) -> String;
@@ -18,7 +23,9 @@ impl ToRust for Type {
             Type::Int => "i32".to_owned(),
             Type::BigInt => "i64".to_owned(),
             Type::Numeric => "f32".to_owned(),
-            Type::Object { name, .. } => name.clone(),
+            Type::Struct { name, .. } => name.clone(),
+            Type::StructRef(name) => name.clone(),
+            Type::Object => "serde_json::Value".to_owned(),
             Type::DataTable { name, .. } => format!("Vec<{}>", name),
             Type::Vec(ele) => {
                 format!("Vec<{}>", ele.to_rust_ref())
@@ -33,12 +40,13 @@ impl ToRust for Type {
             Type::UUID => "uuid::Uuid".to_owned(),
             Type::Inet => "std::net::IpAddr".to_owned(),
             Type::Enum { name, .. } => format!("Enum{}", name.to_case(Case::Pascal),),
+            Type::EnumRef(name) => format!("Enum{}", name.to_case(Case::Pascal),),
         }
     }
 
     fn to_rust_decl(&self) -> String {
         match self {
-            Type::Object { name, fields } => {
+            Type::Struct { name, fields } => {
                 let mut fields = fields.iter().map(|x| {
                     let opt = match &x.ty {
                         Type::Optional(_) => true,
@@ -71,7 +79,7 @@ impl ToRust for Type {
                     )
                 });
                 format!(
-                    r#"#[derive(Debug, Clone, Copy, ToSql, FromSql, Serialize, Deserialize, FromPrimitive, PartialEq, EnumString)] #[postgres(name = "enum_{}")]pub enum Enum{} {{{}}}"#,
+                    r#"#[derive(Debug, Clone, Copy, ToSql, FromSql, Serialize, Deserialize, FromPrimitive, PartialEq, Eq, PartialOrd, Ord, EnumString, Hash)] #[postgres(name = "enum_{}")]pub enum Enum{} {{{}}}"#,
                     name,
                     name.to_case(Case::Pascal),
                     fields.join(",")
@@ -83,13 +91,13 @@ impl ToRust for Type {
 }
 
 pub fn get_parameter_type(this: &ProceduralFunction) -> Type {
-    Type::object(
+    Type::struct_(
         format!("{}Req", this.name.to_case(Case::Pascal)),
         this.parameters.clone(),
     )
 }
 pub fn get_return_row_type(this: &ProceduralFunction) -> Type {
-    Type::object(
+    Type::struct_(
         format!("{}RespRow", this.name.to_case(Case::Pascal)),
         this.returns.clone(),
     )
@@ -106,11 +114,15 @@ pub fn pg_func_to_rust_type_decl(this: &ProceduralFunction) -> String {
         .join("\n")
 }
 pub fn pg_func_to_rust_trait_impl(this: &ProceduralFunction) -> String {
-    let mut arguments = this
-        .parameters
-        .iter()
-        .enumerate()
-        .map(|(i, x)| format!("{}{} => ${}::{}", SYMBOL, x.name, i + 1, x.ty.to_sql()));
+    let mut arguments = this.parameters.iter().enumerate().map(|(i, x)| {
+        format!(
+            "{}{} => ${}::{}",
+            PARAM_PREFIX,
+            x.name,
+            i + 1,
+            x.ty.to_sql()
+        )
+    });
     let sql = format!("SELECT * FROM api.{}({});", this.name, arguments.join(", "));
     let pg_params = this
         .parameters
@@ -147,4 +159,239 @@ pub fn pg_func_to_rust_trait_impl(this: &ProceduralFunction) -> String {
         pg_params = pg_params,
         row_getter = row_getter
     )
+}
+
+pub fn gen_client_rs(dir: &str) -> eyre::Result<()> {
+    let services = services::get_services();
+
+    let rs_filename = format!("{}/client.rs", dir);
+    let mut rs = File::create(&rs_filename)?;
+    write!(
+        &mut rs,
+        "{}",
+        r#"
+use eyre::*;
+use lib::ws::WsClient;
+use crate::model::*;
+    "#
+    )?;
+    for s in services {
+        write!(
+            &mut rs,
+            r#"
+pub struct {srv_name}Client {{
+    pub client: WsClient
+}}
+impl {srv_name}Client {{
+    pub fn new(client: WsClient) -> Self {{
+        Self {{
+            client
+        }}
+    }}
+}}
+impl From<WsClient> for {srv_name}Client {{
+    fn from(client: WsClient) -> Self {{
+        Self::new(client)
+    }}
+}}
+    "#,
+            srv_name = s.name.to_case(Case::Pascal)
+        )?;
+
+        for endpoint in s.endpoints {
+            write!(
+                &mut rs,
+                "
+impl {srv_name}Client {{
+    pub async fn {end_name}(&mut self, req: {end_name2}Request) -> Result<{end_name2}Response> {{
+        self.client.request({code}, req).await
+    }}
+}}",
+                srv_name = s.name.to_case(Case::Pascal),
+                end_name = endpoint.name.to_case(Case::Snake),
+                end_name2 = endpoint.name.to_case(Case::Pascal),
+                code = endpoint.code
+            )?;
+        }
+    }
+    rs.flush()?;
+    drop(rs);
+    rustfmt(&rs_filename)?;
+    Ok(())
+}
+
+pub fn gen_db_rs(dir: &str) -> eyre::Result<()> {
+    let funcs = services::get_proc_functions();
+
+    let db_filename = format!("{}/database.rs", dir);
+    let mut db = File::create(&db_filename)?;
+
+    write!(
+        &mut db,
+        "{}",
+        r#"
+use eyre::*;
+use lib::database::*;
+use crate::model::*;
+use serde::*;
+
+    "#
+    )?;
+    for func in funcs {
+        write!(
+            &mut db,
+            "
+{}
+{}
+",
+            pg_func_to_rust_type_decl(&func),
+            pg_func_to_rust_trait_impl(&func)
+        )?;
+    }
+    db.flush()?;
+    drop(db);
+    rustfmt(&db_filename)?;
+    Ok(())
+}
+
+pub fn collect_rust_recursive_types(t: Type) -> Vec<Type> {
+    match t {
+        Type::Struct { ref fields, .. } => {
+            let mut v = vec![t.clone()];
+            for x in fields {
+                v.extend(collect_rust_recursive_types(x.ty.clone()));
+            }
+            v
+        }
+        Type::DataTable { name, fields } => {
+            collect_rust_recursive_types(Type::struct_(name, fields))
+        }
+        Type::Vec(x) => collect_rust_recursive_types(*x),
+        _ => vec![],
+    }
+}
+
+pub fn gen_model_rs(root: &str, dir: &str) -> eyre::Result<()> {
+    let db_filename = format!("{}/model.rs", dir);
+    let mut f = File::create(&db_filename)?;
+
+    write!(
+        &mut f,
+        "{}",
+        r#"
+use tokio_postgres::types::*;
+use serde::*;
+use num_derive::FromPrimitive;
+use strum_macros::EnumString;
+use lib::error_code::ErrorCode;
+    "#
+    )?;
+
+    for e in enums::get_enums() {
+        writeln!(&mut f, "{}", e.to_rust_decl())?;
+    }
+
+    let errors = docs::get_error_messages(root)?;
+    let rule = regex::Regex::new(r"\{[\w]+}")?;
+
+    for e in &errors.codes {
+        let name = format!("Error{}", e.symbol.to_case(Case::Pascal));
+        let s = Type::struct_(
+            name,
+            rule.find_iter(&e.message)
+                .map(|m| m.as_str())
+                .map(|s| s.trim_matches('{').trim_matches('}'))
+                .map(|s| Field::new(s.to_string(), Type::String))
+                .collect(),
+        );
+        writeln!(
+            &mut f,
+            r#"#[derive(Serialize, Deserialize, Debug)]
+               #[serde(rename_all = "camelCase")]
+               {}"#,
+            s.to_rust_decl()
+        )?;
+    }
+    let enum_ = Type::enum_(
+        "ErrorCode",
+        errors
+            .codes
+            .into_iter()
+            .map(|x| {
+                EnumVariant::new_with_comment(
+                    x.symbol.to_case(Case::Pascal),
+                    x.code,
+                    format!("{} {}", x.source, x.message),
+                )
+            })
+            .collect(),
+    );
+    writeln!(&mut f, "{}", enum_.to_rust_decl())?;
+    writeln!(
+        &mut f,
+        r#"
+impl Into<ErrorCode> for EnumErrorCode {{
+    fn into(self) -> ErrorCode {{
+        ErrorCode::new(self as _)
+    }}
+}}
+    "#
+    )?;
+
+    let mut types = BTreeSet::new();
+    for s in services::get_services() {
+        for e in s.endpoints {
+            let req = Type::struct_(format!("{}Request", e.name), e.parameters);
+            let resp = Type::struct_(format!("{}Response", e.name), e.returns);
+            types.extend(
+                vec![
+                    collect_rust_recursive_types(req),
+                    collect_rust_recursive_types(resp),
+                ]
+                .concat()
+                .into_iter(),
+            );
+        }
+    }
+    for s in types {
+        write!(
+            &mut f,
+            r#"#[derive(Serialize, Deserialize, Debug, Clone)]
+                    #[serde(rename_all = "camelCase")]
+                    {}"#,
+            s.to_rust_decl()
+        )?;
+    }
+    f.flush()?;
+    drop(f);
+    rustfmt(&db_filename)?;
+
+    Ok(())
+}
+
+pub fn rustfmt(f: &str) -> eyre::Result<()> {
+    let exit = Command::new("rustfmt")
+        .arg("--edition")
+        .arg("2021")
+        .arg(f)
+        .spawn()?
+        .wait()?;
+    if !exit.success() {
+        bail!("failed to rustfmt {:?}", exit);
+    }
+    Ok(())
+}
+
+pub fn check_endpoint_codes() -> eyre::Result<()> {
+    let mut codes = HashMap::new();
+    for s in services::get_services() {
+        for e in s.endpoints {
+            let code = e.code;
+            if codes.contains_key(&code) {
+                bail!("duplicate service code: {} {} {}", s.name, e.name, e.code);
+            }
+            codes.insert(code, e.code);
+        }
+    }
+    Ok(())
 }

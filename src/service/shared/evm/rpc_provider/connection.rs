@@ -1,19 +1,19 @@
-use crate::rpc_provider::EitherTransport;
 use eyre::*;
 use std::ops::Deref;
 use std::sync::Arc;
 use tokio::sync::{OwnedSemaphorePermit, Semaphore, SemaphorePermit};
 
+use crate::evm::rpc_provider::EitherTransport;
 use web3::types::{Transaction, TransactionId, TransactionReceipt, H256};
 use web3::Web3;
 
 #[derive(Clone, Debug)]
-pub struct Connection {
+pub struct EthereumRpcConnection {
     inner: Arc<Web3<EitherTransport>>,
     semaphore: Arc<Semaphore>,
 }
 
-impl Connection {
+impl EthereumRpcConnection {
     pub fn new(connection: Arc<Web3<EitherTransport>>, max_concurrent_requests: usize) -> Self {
         Self {
             inner: connection,

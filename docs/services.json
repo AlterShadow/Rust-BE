@@ -23,10 +23,7 @@
             {
               "name": "service_code",
               "ty": {
-                "Enum": {
-                  "name": "service",
-                  "variants": []
-                }
+                "EnumRef": "service"
               }
             },
             {
@@ -128,10 +125,7 @@
             {
               "name": "service_code",
               "ty": {
-                "Enum": {
-                  "name": "service",
-                  "variants": []
-                }
+                "EnumRef": "service"
               }
             },
             {
@@ -1571,6 +1565,77 @@
           {
             "name": "developer",
             "value": 4,
+            "comment": ""
+          }
+        ]
+      }
+    },
+    {
+      "Enum": {
+        "name": "block_chain",
+        "variants": [
+          {
+            "name": "EthereumMainnet",
+            "value": 0,
+            "comment": ""
+          },
+          {
+            "name": "EthereumGoerli",
+            "value": 1,
+            "comment": ""
+          },
+          {
+            "name": "BscMainnet",
+            "value": 2,
+            "comment": ""
+          },
+          {
+            "name": "BscTestnet",
+            "value": 3,
+            "comment": ""
+          }
+        ]
+      }
+    },
+    {
+      "Enum": {
+        "name": "dex",
+        "variants": [
+          {
+            "name": "UniSwap",
+            "value": 0,
+            "comment": ""
+          },
+          {
+            "name": "PancakeSwap",
+            "value": 1,
+            "comment": ""
+          },
+          {
+            "name": "SushiSwap",
+            "value": 2,
+            "comment": ""
+          }
+        ]
+      }
+    },
+    {
+      "Enum": {
+        "name": "dex_version",
+        "variants": [
+          {
+            "name": "V1",
+            "value": 0,
+            "comment": ""
+          },
+          {
+            "name": "V2",
+            "value": 1,
+            "comment": ""
+          },
+          {
+            "name": "V3",
+            "value": 2,
             "comment": ""
           }
         ]

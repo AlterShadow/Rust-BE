@@ -1,11 +1,12 @@
 use ethabi::Token;
 use eyre::*;
 
-use lib::evm_parse::calldata::ContractCall;
-use lib::evm_parse::ethabi_to_web3::{convert_h160_ethabi_to_web3, convert_u256_ethabi_to_web3};
+use crate::evm::{
+    convert_h160_ethabi_to_web3, convert_u256_ethabi_to_web3, ContractCall, DexPath,
+    PancakeV3SingleHopPath,
+};
 
 use crate::tracker::pancake_swap::pancake::Swap;
-use crate::tracker::trade::{PancakeV3SingleHopPath, Path};
 
 pub fn exact_input_single(call: &ContractCall) -> Result<Swap> {
     /*
@@ -79,17 +80,17 @@ pub fn exact_input_single(call: &ContractCall) -> Result<Swap> {
     };
 
     Ok(Swap {
-        recipient: recipient,
-        token_in: token_in,
-        token_out: token_out,
+        recipient,
+        token_in,
+        token_out,
         amount_in: Some(amount_in),
         amount_out: None,
         amount_out_minimum: Some(amount_out_minimum),
         amount_in_maximum: None,
-        path: Path::PancakeV3SingleHop(PancakeV3SingleHopPath {
-            token_in: token_in,
-            token_out: token_out,
-            fee: fee,
+        path: DexPath::PancakeV3SingleHop(PancakeV3SingleHopPath {
+            token_in,
+            token_out,
+            fee,
         }),
     })
 }
@@ -166,17 +167,17 @@ pub fn exact_output_single(call: &ContractCall) -> Result<Swap> {
     };
 
     Ok(Swap {
-        recipient: recipient,
-        token_in: token_in,
-        token_out: token_out,
+        recipient,
+        token_in,
+        token_out,
         amount_in: None,
         amount_out: Some(amount_out),
         amount_out_minimum: None,
         amount_in_maximum: Some(amount_in_maximum),
-        path: Path::PancakeV3SingleHop(PancakeV3SingleHopPath {
-            token_in: token_in,
-            token_out: token_out,
-            fee: fee,
+        path: DexPath::PancakeV3SingleHop(PancakeV3SingleHopPath {
+            token_in,
+            token_out,
+            fee,
         }),
     })
 }

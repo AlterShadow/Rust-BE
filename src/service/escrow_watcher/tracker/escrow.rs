@@ -3,13 +3,13 @@ use std::str::FromStr;
 
 use ethabi::{Contract, Token};
 use eyre::*;
+use gen::model::EnumBlockChain;
 use tracing::info;
 use web3::types::{H160, U256};
 
-use lib::evm_parse::calldata::ContractCall;
-use lib::evm_parse::ethabi_to_web3::{convert_h160_ethabi_to_web3, convert_u256_ethabi_to_web3};
-use lib::evm_parse::tx::Tx;
-use lib::evm_parse::Chain;
+use crate::evm::{
+    convert_h160_ethabi_to_web3, convert_u256_ethabi_to_web3, ContractCall, Transaction,
+};
 
 #[derive(Clone, Debug, Hash, Eq, PartialEq)]
 pub enum StableCoin {
@@ -19,7 +19,7 @@ pub enum StableCoin {
 }
 
 pub struct StableCoinAddresses {
-    inner: HashMap<Chain, Vec<(StableCoin, H160)>>,
+    inner: HashMap<EnumBlockChain, Vec<(StableCoin, H160)>>,
 }
 
 impl Default for StableCoinAddresses {
@@ -29,7 +29,7 @@ impl Default for StableCoinAddresses {
         };
 
         this.inner.insert(
-            Chain::EthereumMainnet,
+            EnumBlockChain::EthereumMainnet,
             vec![
                 (
                     StableCoin::Usdc,
@@ -46,7 +46,7 @@ impl Default for StableCoinAddresses {
             ],
         );
         this.inner.insert(
-            Chain::BscMainnet,
+            EnumBlockChain::BscMainnet,
             vec![
                 (
                     StableCoin::Usdc,
@@ -63,14 +63,14 @@ impl Default for StableCoinAddresses {
             ],
         );
         this.inner.insert(
-            Chain::EthereumGoerli,
+            EnumBlockChain::EthereumGoerli,
             vec![(
                 StableCoin::Usdc,
                 H160::from_str("0x07865c6E87B9F70255377e024ace6630C1Eaa37F").unwrap(),
             )],
         );
         this.inner.insert(
-            Chain::BscTestnet,
+            EnumBlockChain::BscTestnet,
             vec![(
                 StableCoin::Busd,
                 H160::from_str("0xaB1a4d4f1D656d2450692D237fdD6C7f9146e814").unwrap(),
@@ -85,7 +85,7 @@ impl StableCoinAddresses {
     pub fn new() -> Self {
         Default::default()
     }
-    pub fn get(&self, chain: &Chain) -> Option<&Vec<(StableCoin, H160)>> {
+    pub fn get(&self, chain: &EnumBlockChain) -> Option<&Vec<(StableCoin, H160)>> {
         self.inner.get(chain)
     }
 }
@@ -112,8 +112,8 @@ pub enum Erc20Method {
 }
 
 pub async fn parse_escrow(
-    chain: Chain,
-    tx: &Tx,
+    chain: EnumBlockChain,
+    tx: &Transaction,
     called_contract: &H160,
     stablecoin_addresses: &StableCoinAddresses,
     erc_20: &Erc20,

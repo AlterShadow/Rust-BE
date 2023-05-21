@@ -4,7 +4,20 @@ use serde::*;
 use strum_macros::EnumString;
 use tokio_postgres::types::*;
 #[derive(
-    Debug, Clone, Copy, ToSql, FromSql, Serialize, Deserialize, FromPrimitive, PartialEq, EnumString,
+    Debug,
+    Clone,
+    Copy,
+    ToSql,
+    FromSql,
+    Serialize,
+    Deserialize,
+    FromPrimitive,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    EnumString,
+    Hash,
 )]
 #[postgres(name = "enum_role")]
 pub enum EnumRole {
@@ -25,7 +38,107 @@ pub enum EnumRole {
     Developer = 4,
 }
 #[derive(
-    Debug, Clone, Copy, ToSql, FromSql, Serialize, Deserialize, FromPrimitive, PartialEq, EnumString,
+    Debug,
+    Clone,
+    Copy,
+    ToSql,
+    FromSql,
+    Serialize,
+    Deserialize,
+    FromPrimitive,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    EnumString,
+    Hash,
+)]
+#[postgres(name = "enum_block_chain")]
+pub enum EnumBlockChain {
+    ///
+    #[postgres(name = "EthereumMainnet")]
+    EthereumMainnet = 0,
+    ///
+    #[postgres(name = "EthereumGoerli")]
+    EthereumGoerli = 1,
+    ///
+    #[postgres(name = "BscMainnet")]
+    BscMainnet = 2,
+    ///
+    #[postgres(name = "BscTestnet")]
+    BscTestnet = 3,
+}
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    ToSql,
+    FromSql,
+    Serialize,
+    Deserialize,
+    FromPrimitive,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    EnumString,
+    Hash,
+)]
+#[postgres(name = "enum_dex")]
+pub enum EnumDex {
+    ///
+    #[postgres(name = "UniSwap")]
+    UniSwap = 0,
+    ///
+    #[postgres(name = "PancakeSwap")]
+    PancakeSwap = 1,
+    ///
+    #[postgres(name = "SushiSwap")]
+    SushiSwap = 2,
+}
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    ToSql,
+    FromSql,
+    Serialize,
+    Deserialize,
+    FromPrimitive,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    EnumString,
+    Hash,
+)]
+#[postgres(name = "enum_dex_version")]
+pub enum EnumDexVersion {
+    ///
+    #[postgres(name = "V1")]
+    V1 = 0,
+    ///
+    #[postgres(name = "V2")]
+    V2 = 1,
+    ///
+    #[postgres(name = "V3")]
+    V3 = 2,
+}
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    ToSql,
+    FromSql,
+    Serialize,
+    Deserialize,
+    FromPrimitive,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    EnumString,
+    Hash,
 )]
 #[postgres(name = "enum_service")]
 pub enum EnumService {
@@ -232,7 +345,20 @@ pub struct ErrorAuthError {}
 #[serde(rename_all = "camelCase")]
 pub struct ErrorInternalError {}
 #[derive(
-    Debug, Clone, Copy, ToSql, FromSql, Serialize, Deserialize, FromPrimitive, PartialEq, EnumString,
+    Debug,
+    Clone,
+    Copy,
+    ToSql,
+    FromSql,
+    Serialize,
+    Deserialize,
+    FromPrimitive,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    EnumString,
+    Hash,
 )]
 #[postgres(name = "enum_ErrorCode")]
 pub enum EnumErrorCode {

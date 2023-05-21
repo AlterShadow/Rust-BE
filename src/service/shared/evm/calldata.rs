@@ -1,10 +1,12 @@
 use std::collections::HashMap;
+use std::mem::transmute;
 
 use eyre::*;
 
 use ethabi::{Contract, Param, ParamType, StateMutability, Token};
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ContractCall {
     name: String,
     params: HashMap<String, CallParameter>,
@@ -24,7 +26,7 @@ impl ContractCall {
         }
     }
 
-    pub fn from_inputs(contract: &Contract, input_data: &Vec<u8>) -> Result<ContractCall> {
+    pub fn from_inputs(contract: &Contract, input_data: &[u8]) -> Result<ContractCall> {
         let function = match contract
             .functions()
             .find(|function| function.short_signature() == input_data[..4])
@@ -50,8 +52,8 @@ impl ContractCall {
                 CallParameter::new(
                     parameter.name.clone(),
                     value,
-                    parameter.kind.clone(),
-                    parameter.clone(),
+                    SerializableParamType::from_ethabi(parameter.kind.clone()),
+                    SerializableParam::from_ethabi(parameter.clone()),
                 ),
             );
         }
@@ -59,7 +61,7 @@ impl ContractCall {
         Ok(Self::new(
             function.name.clone(),
             parameters,
-            function.state_mutability.clone(),
+            function.state_mutability,
         ))
     }
 
@@ -79,17 +81,66 @@ impl ContractCall {
         self.state_mutability.clone()
     }
 }
+/// Function and event param types.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum SerializableParamType {
+    /// Address.
+    Address,
+    /// Bytes.
+    Bytes,
+    /// Signed integer.
+    Int(usize),
+    /// Unsigned integer.
+    Uint(usize),
+    /// Boolean.
+    Bool,
+    /// String.
+    String,
+    /// Array of unknown size.
+    Array(Box<SerializableParamType>),
+    /// Vector of bytes with fixed size.
+    FixedBytes(usize),
+    /// Array with fixed size.
+    FixedArray(Box<SerializableParamType>, usize),
+    /// Tuple containing different types
+    Tuple(Vec<SerializableParamType>),
+}
+impl SerializableParamType {
+    pub fn from_ethabi(param_type: ParamType) -> Self {
+        unsafe { transmute(param_type) }
+    }
+}
+/// Function param.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct SerializableParam {
+    /// Param name.
+    pub name: String,
+    /// Param type.
+    pub kind: SerializableParamType,
+    /// Additional Internal type.
+    pub internal_type: Option<String>,
+}
+impl SerializableParam {
+    pub fn from_ethabi(param: Param) -> Self {
+        unsafe { transmute(param) }
+    }
+}
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CallParameter {
     name: String,
     value: Token,
-    param_type: ParamType,
-    inner: Param,
+    param_type: SerializableParamType,
+    inner: SerializableParam,
 }
 
 impl CallParameter {
-    pub fn new(name: String, value: Token, param_type: ParamType, inner: Param) -> Self {
+    pub fn new(
+        name: String,
+        value: Token,
+        param_type: SerializableParamType,
+        inner: SerializableParam,
+    ) -> Self {
         Self {
             name,
             value,
@@ -106,10 +157,10 @@ impl CallParameter {
         self.value.clone()
     }
 
-    pub fn get_param_type(&self) -> ParamType {
+    pub fn get_param_type(&self) -> SerializableParamType {
         self.param_type.clone()
     }
-    pub fn get_inner(&self) -> Param {
+    pub fn get_inner(&self) -> SerializableParam {
         self.inner.clone()
     }
 }

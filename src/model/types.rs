@@ -53,10 +53,12 @@ pub enum Type {
     Bytea,
     UUID,
     Inet,
-    Object {
+    Struct {
         name: String,
         fields: Vec<Field>,
     },
+    StructRef(String),
+    Object,
     DataTable {
         name: String,
         fields: Vec<Field>,
@@ -68,13 +70,17 @@ pub enum Type {
         name: String,
         variants: Vec<EnumVariant>,
     },
+    EnumRef(String),
 }
 impl Type {
-    pub fn object(name: impl Into<String>, fields: Vec<Field>) -> Self {
-        Self::Object {
+    pub fn struct_(name: impl Into<String>, fields: Vec<Field>) -> Self {
+        Self::Struct {
             name: name.into(),
             fields,
         }
+    }
+    pub fn struct_ref(name: impl Into<String>) -> Self {
+        Self::StructRef(name.into())
     }
     pub fn datatable(name: impl Into<String>, fields: Vec<Field>) -> Self {
         Self::DataTable {
@@ -89,10 +95,7 @@ impl Type {
         Self::Optional(Box::new(ty))
     }
     pub fn enum_ref(name: impl Into<String>) -> Self {
-        Self::Enum {
-            name: name.into(),
-            variants: vec![],
-        }
+        Self::EnumRef(name.into())
     }
     pub fn enum_(name: impl Into<String>, fields: Vec<EnumVariant>) -> Self {
         Self::Enum {

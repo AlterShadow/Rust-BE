@@ -1,25 +1,25 @@
-use super::connection::Connection;
-use crate::rpc_provider::EitherTransport;
+use super::connection::EthereumRpcConnection;
 use deadpool::managed::{Manager, Object, RecycleResult};
 use eyre::*;
-use std::ops::Deref;
 use std::sync::Arc;
 
+use crate::evm::rpc_provider::EitherTransport;
 use web3::transports::{Http, WebSocket};
+
 #[derive(Clone, Debug)]
-pub struct ConnectionManager {
+pub struct EthereumRpcConnectionManager {
     provider_url: String,
     max_concurrent_requests: usize,
 }
 #[async_trait::async_trait]
-impl Manager for ConnectionManager {
-    type Type = Connection;
+impl Manager for EthereumRpcConnectionManager {
+    type Type = EthereumRpcConnection;
     type Error = Error;
 
     async fn create(&self) -> Result<Self::Type, Self::Error> {
         let transport = new_transport(&self.provider_url).await?;
         let web3 = web3::Web3::new(transport);
-        let conn = Connection::new(Arc::new(web3), self.max_concurrent_requests);
+        let conn = EthereumRpcConnection::new(Arc::new(web3), self.max_concurrent_requests);
         Ok(conn)
     }
 
@@ -28,8 +28,8 @@ impl Manager for ConnectionManager {
     }
 }
 #[derive(Clone, Debug)]
-pub struct ConnectionPool {
-    pool: deadpool::managed::Pool<ConnectionManager>,
+pub struct EthereumRpcConnectionPool {
+    pool: deadpool::managed::Pool<EthereumRpcConnectionManager>,
 }
 async fn new_transport(url: &str) -> Result<EitherTransport> {
     let transport = match url {
@@ -44,9 +44,9 @@ async fn new_transport(url: &str) -> Result<EitherTransport> {
     Ok(transport)
 }
 
-impl ConnectionPool {
+impl EthereumRpcConnectionPool {
     pub async fn new(provider_url: String, max_concurrent_requests: usize) -> Result<Self> {
-        let pool = deadpool::managed::Pool::builder(ConnectionManager {
+        let pool = deadpool::managed::Pool::builder(EthereumRpcConnectionManager {
             provider_url,
             max_concurrent_requests,
         })
@@ -55,32 +55,14 @@ impl ConnectionPool {
         Ok(Self { pool })
     }
 
-    pub async fn get_conn(&self) -> Result<ConnectionGuard> {
+    pub async fn get_conn(&self) -> Result<EthereumRpcConnectionGuard> {
         let conn = match self.pool.get().await {
             Ok(conn) => conn,
             Err(e) => {
                 bail!("Failed to get connection from pool: {:?}", e);
             }
         };
-        Ok(ConnectionGuard::new(conn))
+        Ok(conn)
     }
 }
-
-#[derive(Debug)]
-pub struct ConnectionGuard {
-    inner: Object<ConnectionManager>,
-}
-
-impl ConnectionGuard {
-    pub fn new(conn: Object<ConnectionManager>) -> Self {
-        Self { inner: conn }
-    }
-}
-
-impl Deref for ConnectionGuard {
-    type Target = Connection;
-    /* allows for calls to the Connection directly */
-    fn deref(&self) -> &Self::Target {
-        &self.inner.as_ref()
-    }
-}
+pub type EthereumRpcConnectionGuard = Object<EthereumRpcConnectionManager>;

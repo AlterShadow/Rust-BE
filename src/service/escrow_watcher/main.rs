@@ -7,26 +7,24 @@ use axum::{
 };
 use axum_server::tls_rustls::RustlsConfig;
 use eyre::*;
+use gen::model::EnumBlockChain;
 use lib::config::load_config;
 use lib::database::{connect_to_database, DatabaseConfig, DbClient};
 use lib::log::{setup_logs, LogLevel};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tracing::{error, info};
-use web3::types::H256;
 
-use lib::rpc_provider;
+#[path = "../shared/evm/mod.rs"]
+pub mod evm;
 pub mod tracker;
-
 use crate::tracker::escrow::{build_erc_20, parse_escrow, Erc20, StableCoinAddresses};
-use lib::evm_parse::tx::parse_ethereum_transaction;
-use lib::evm_parse::Chain;
 
-use rpc_provider::pool::ConnectionPool;
+use crate::evm::{parse_ethereum_transaction, parse_quickalert_payload, EthereumRpcConnectionPool};
 
 struct AppState {
     stablecoin_addresses: StableCoinAddresses,
-    eth_pool: ConnectionPool,
+    eth_pool: EthereumRpcConnectionPool,
     erc_20: Erc20,
     db: DbClient,
 }
@@ -54,7 +52,7 @@ async fn main() -> Result<()> {
     setup_logs(config.log_level)?;
     let db = connect_to_database(config.app_db).await?;
 
-    let eth_pool = ConnectionPool::new(config.eth_provider_url.to_string(), 10).await?;
+    let eth_pool = EthereumRpcConnectionPool::new(config.eth_provider_url.to_string(), 10).await?;
     let app: Router<(), Body> = Router::new()
         .route("/eth-mainnet-escrows", post(handle_eth_escrows))
         .with_state(Arc::new(AppState {
@@ -100,7 +98,7 @@ async fn handle_eth_escrows(state: State<Arc<AppState>>, body: Bytes) -> Result<
             match parse_ethereum_transaction(hash, &conn).await {
                 Ok((tx, called_contract)) => {
                     if let Err(e) = parse_escrow(
-                        Chain::EthereumMainnet,
+                        EnumBlockChain::EthereumMainnet,
                         &tx,
                         &called_contract,
                         &state.stablecoin_addresses,
@@ -119,13 +117,4 @@ async fn handle_eth_escrows(state: State<Arc<AppState>>, body: Bytes) -> Result<
     }
 
     Ok(())
-}
-
-fn parse_quickalert_payload(payload: Bytes) -> Result<Vec<H256>> {
-    let result: Result<Vec<H256>, _> = serde_json::from_slice(&payload);
-
-    match result {
-        Ok(hashes) => Ok(hashes),
-        Err(e) => Err(e.into()),
-    }
 }

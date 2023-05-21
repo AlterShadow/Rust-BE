@@ -4,13 +4,11 @@ use super::v3::{
     single_hop::{exact_input_single, exact_output_single},
 };
 
-use crate::tracker::trade::{Dex, DexVersion, Path, Trade};
 use ethabi::{Contract, Token};
 use eyre::*;
-use lib::evm_parse::calldata::ContractCall;
-use lib::evm_parse::ethabi_to_web3::convert_h256_ethabi_to_web3;
-use lib::evm_parse::tx::Tx;
-use lib::evm_parse::Chain;
+
+use crate::evm::{convert_h256_ethabi_to_web3, ContractCall, DexPath, Trade, Transaction};
+use gen::model::{EnumBlockChain, EnumDex, EnumDexVersion};
 use std::str::FromStr;
 use web3::types::{H160, H256, U256};
 
@@ -22,7 +20,7 @@ pub struct Swap {
     pub amount_out: Option<U256>,
     pub amount_out_minimum: Option<U256>,
     pub amount_in_maximum: Option<U256>,
-    pub path: Path,
+    pub path: DexPath,
 }
 
 #[derive(Clone, Debug)]
@@ -45,7 +43,7 @@ impl PancakeSwap {
         }
     }
 
-    pub fn parse_trade(&self, tx: &Tx, chain: Chain) -> Result<Trade> {
+    pub fn parse_trade(&self, tx: &Transaction, chain: EnumBlockChain) -> Result<Trade> {
         /* if tx is successful, all of the following should be Some */
         let value = match tx.get_value() {
             Some(value) => value,
@@ -71,27 +69,35 @@ impl PancakeSwap {
         /* all swaps go through the "multicall" smart router function */
         let function_calls = self.get_multicall_funcs_and_params(&tx)?;
 
-        let mut swap_infos: Vec<(Swap, DexVersion, ContractCall)> = Vec::new();
+        let mut swap_infos: Vec<(Swap, EnumDexVersion, ContractCall)> = Vec::new();
         for call in function_calls {
             let method_name = call.get_name();
             if let Some(method) = self.get_method_by_name(&method_name) {
                 swap_infos.push(match method {
                     /* V2 */
-                    PancakeSwapMethod::SwapExactTokensForTokens => {
-                        (swap_exact_tokens_for_tokens(&call)?, DexVersion::V2, call)
-                    }
-                    PancakeSwapMethod::SwapTokensForExactTokens => {
-                        (swap_tokens_for_exact_tokens(&call)?, DexVersion::V2, call)
-                    }
+                    PancakeSwapMethod::SwapExactTokensForTokens => (
+                        swap_exact_tokens_for_tokens(&call)?,
+                        EnumDexVersion::V2,
+                        call,
+                    ),
+                    PancakeSwapMethod::SwapTokensForExactTokens => (
+                        swap_tokens_for_exact_tokens(&call)?,
+                        EnumDexVersion::V2,
+                        call,
+                    ),
                     /* V3 */
                     PancakeSwapMethod::ExactInputSingle => {
-                        (exact_input_single(&call)?, DexVersion::V3, call)
+                        (exact_input_single(&call)?, EnumDexVersion::V3, call)
                     }
                     PancakeSwapMethod::ExactOutputSingle => {
-                        (exact_output_single(&call)?, DexVersion::V3, call)
+                        (exact_output_single(&call)?, EnumDexVersion::V3, call)
                     }
-                    PancakeSwapMethod::ExactInput => (exact_input(&call)?, DexVersion::V3, call),
-                    PancakeSwapMethod::ExactOutput => (exact_output(&call)?, DexVersion::V3, call),
+                    PancakeSwapMethod::ExactInput => {
+                        (exact_input(&call)?, EnumDexVersion::V3, call)
+                    }
+                    PancakeSwapMethod::ExactOutput => {
+                        (exact_output(&call)?, EnumDexVersion::V3, call)
+                    }
                 });
             }
         }
@@ -100,8 +106,8 @@ impl PancakeSwap {
             return Err(eyre!("no suitable method found"));
         }
 
-        let mut paths: Vec<Path> = Vec::new();
-        let mut versions: Vec<DexVersion> = Vec::new();
+        let mut paths: Vec<DexPath> = Vec::new();
+        let mut versions: Vec<EnumDexVersion> = Vec::new();
         let mut calls: Vec<ContractCall> = Vec::new();
         for (swap, version, call) in &mut swap_infos {
             paths.push(swap.path.clone());
@@ -170,21 +176,21 @@ impl PancakeSwap {
         }
 
         Ok(Trade {
-            chain: chain,
-            contract: contract,
-            dex: Dex::PancakeSwap,
+            chain,
+            contract,
+            dex: EnumDex::PancakeSwap,
             token_in: swap_infos[0].0.token_in,
             token_out: swap_infos[swap_infos.len() - 1].0.token_out,
-            caller: caller,
+            caller,
             amount_in: swap_infos[0].0.amount_in.unwrap(),
             amount_out: swap_infos[swap_infos.len() - 1].0.amount_out.unwrap(),
             swap_calls: calls,
-            paths: paths,
+            paths,
             dex_versions: versions,
         })
     }
 
-    fn get_multicall_funcs_and_params(&self, tx: &Tx) -> Result<Vec<ContractCall>> {
+    fn get_multicall_funcs_and_params(&self, tx: &Transaction) -> Result<Vec<ContractCall>> {
         /*
                         function multicall(
                                 bytes[] calldata data
@@ -272,6 +278,8 @@ pub fn build_pancake_swap() -> Result<PancakeSwap> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::evm::tx::Transaction;
+    use gen::model::EnumBlockChain;
     use lib::log::{setup_logs, LogLevel};
     use lib::rpc_provider::pool::ConnectionPool;
     use tracing::info;
@@ -281,13 +289,14 @@ mod tests {
         let _ = setup_logs(LogLevel::Info);
 
         let pancake = build_pancake_swap()?;
-        let mut tx =
-            Tx::new("0x750d90bf90ad0fe7d035fbbab41334f6bb10bf7e71246d430cb23ed35d1df7c2".parse()?);
+        let mut tx = Transaction::new(
+            "0x750d90bf90ad0fe7d035fbbab41334f6bb10bf7e71246d430cb23ed35d1df7c2".parse()?,
+        );
         let conn_pool =
             ConnectionPool::new("https://ethereum.publicnode.com".to_string(), 10).await?;
         let conn = conn_pool.get_conn().await?;
         tx.update(&conn).await?;
-        let trade = pancake.parse_trade(&tx, Chain::EthereumMainnet)?;
+        let trade = pancake.parse_trade(&tx, EnumBlockChain::EthereumMainnet)?;
         info!("trade: {:?}", trade);
         Ok(())
     }

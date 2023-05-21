@@ -1,6 +1,6 @@
-use crate::rpc_provider::connection::Connection;
+use crate::evm::rpc_provider::EthereumRpcConnection;
 use eyre::*;
-use web3::types::{Transaction, TransactionReceipt, H160, H256, U256};
+use web3::types::{Transaction as Web3Transaction, TransactionReceipt, H160, H256, U256};
 
 #[derive(Clone, Debug)]
 pub enum TxStatus {
@@ -12,14 +12,14 @@ pub enum TxStatus {
 }
 
 #[derive(Clone, Debug)]
-pub struct Tx {
+pub struct Transaction {
     hash: H256,
-    transaction: Option<Transaction>,
+    transaction: Option<Web3Transaction>,
     receipt: Option<TransactionReceipt>,
     status: TxStatus,
 }
 
-impl Tx {
+impl Transaction {
     pub fn new(hash: H256) -> Self {
         Self {
             hash,
@@ -29,8 +29,8 @@ impl Tx {
         }
     }
 
-    pub async fn update(&mut self, conn: &Connection) -> Result<()> {
-        // TODO: handle blockchain connection error
+    pub async fn update(&mut self, conn: &EthereumRpcConnection) -> Result<()> {
+        // TODO: handle EnumBlockChain connection error
         let maybe_tx = conn
             .get_tx(self.hash)
             .await
@@ -70,7 +70,7 @@ impl Tx {
         }
         Ok(())
     }
-    pub fn get_transaction(&self) -> Option<&Transaction> {
+    pub fn get_transaction(&self) -> Option<&Web3Transaction> {
         self.transaction.as_ref()
     }
     pub fn get_status(&self) -> TxStatus {
@@ -172,8 +172,11 @@ impl Tx {
     }
 }
 
-pub async fn parse_ethereum_transaction(hash: H256, conn: &Connection) -> Result<(Tx, H160)> {
-    let mut tx = Tx::new(hash);
+pub async fn parse_ethereum_transaction(
+    hash: H256,
+    conn: &EthereumRpcConnection,
+) -> Result<(Transaction, H160)> {
+    let mut tx = Transaction::new(hash);
     tx.update(&conn).await?;
 
     match tx.get_status() {

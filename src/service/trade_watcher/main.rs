@@ -15,20 +15,22 @@ use std::sync::Arc;
 use tracing::{error, info};
 use web3::types::H256;
 
+#[path = "../shared/evm/mod.rs"]
+pub mod evm;
 pub mod tracker;
 
+use crate::evm::EthereumRpcConnectionPool;
+use crate::evm::{parse_ethereum_transaction, Transaction};
 use crate::tracker::pancake_swap::pancake::build_pancake_swap;
 use crate::tracker::pancake_swap::PancakeSwap;
 use crate::tracker::parse::parse_dex_trade;
 use crate::tracker::DexAddresses;
 use gen::database::FunWatcherSaveRawTransactionReq;
-use lib::evm_parse::tx::{parse_ethereum_transaction, Tx};
-use lib::evm_parse::Chain;
-use lib::rpc_provider::pool::ConnectionPool;
+use gen::model::EnumBlockChain;
 
 struct AppState {
     dex_addresses: DexAddresses,
-    eth_pool: ConnectionPool,
+    eth_pool: EthereumRpcConnectionPool,
     pancake_swap: PancakeSwap,
     db: DbClient,
 }
@@ -56,7 +58,7 @@ async fn main() -> Result<()> {
     setup_logs(config.log_level)?;
     let db = connect_to_database(config.app_db).await?;
 
-    let eth_pool = ConnectionPool::new(config.eth_provider_url.to_string(), 10).await?;
+    let eth_pool = EthereumRpcConnectionPool::new(config.eth_provider_url.to_string(), 10).await?;
     let app: Router<(), Body> = Router::new()
         .route("/eth-mainnet-swaps", post(handle_eth_swap))
         .with_state(Arc::new(AppState {
@@ -87,7 +89,7 @@ async fn main() -> Result<()> {
 }
 
 async fn handle_eth_swap(state: State<Arc<AppState>>, body: Bytes) -> Result<(), StatusCode> {
-    let hashes = parse_quickalert_payload(body).map_err(|e| {
+    let hashes = evm::parse_quickalert_payload(body).map_err(|e| {
         error!("failed to parse QuickAlerts payload: {:?}", e);
         StatusCode::BAD_REQUEST
     })?;
@@ -108,7 +110,7 @@ async fn handle_eth_swap(state: State<Arc<AppState>>, body: Bytes) -> Result<(),
                         }
                     };
                     if let Err(e) = parse_dex_trade(
-                        Chain::EthereumMainnet,
+                        EnumBlockChain::EthereumMainnet,
                         &tx,
                         &called_contract,
                         &state.dex_addresses,
@@ -129,16 +131,7 @@ async fn handle_eth_swap(state: State<Arc<AppState>>, body: Bytes) -> Result<(),
     Ok(())
 }
 
-fn parse_quickalert_payload(payload: Bytes) -> Result<Vec<H256>> {
-    let result: Result<Vec<H256>, _> = serde_json::from_slice(&payload);
-
-    match result {
-        Ok(hashes) => Ok(hashes),
-        Err(e) => Err(e.into()),
-    }
-}
-
-async fn cache_ethereum_transaction(hash: &H256, tx: &Tx, db: &DbClient) -> Result<()> {
+async fn cache_ethereum_transaction(hash: &H256, tx: &Transaction, db: &DbClient) -> Result<()> {
     if let Err(err) = {
         if let Some(content) = tx.get_transaction() {
             db.execute(FunWatcherSaveRawTransactionReq {

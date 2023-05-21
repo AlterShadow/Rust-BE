@@ -1,6 +1,8 @@
 use web3::transports::{Either, Http, WebSocket};
 
-pub mod connection;
-pub mod pool;
+mod connection;
+mod pool;
 
 pub type EitherTransport = Either<WebSocket, Http>;
+pub use connection::*;
+pub use pool::*;

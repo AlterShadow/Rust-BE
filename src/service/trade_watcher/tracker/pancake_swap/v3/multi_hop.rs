@@ -1,12 +1,8 @@
+use crate::evm::{convert_h160_ethabi_to_web3, convert_u256_ethabi_to_web3, ContractCall, DexPath};
+use crate::tracker::pancake_swap::pancake::Swap;
 use ethabi::Token;
 use eyre::*;
 use web3::types::{H160, U256};
-
-use lib::evm_parse::calldata::ContractCall;
-use lib::evm_parse::ethabi_to_web3::{convert_h160_ethabi_to_web3, convert_u256_ethabi_to_web3};
-
-use crate::tracker::pancake_swap::pancake::Swap;
-use crate::tracker::trade::Path;
 
 #[derive(Debug)]
 pub struct MultiHopPath {
@@ -120,7 +116,7 @@ pub fn exact_input(call: &ContractCall) -> Result<Swap> {
         amount_out: None,
         amount_out_minimum: Some(amount_out_minimum),
         amount_in_maximum: None,
-        path: Path::PancakeV3MultiHop(path.to_vec()),
+        path: DexPath::PancakeV3MultiHop(path.to_vec()),
     })
 }
 
@@ -188,6 +184,6 @@ pub fn exact_output(call: &ContractCall) -> Result<Swap> {
         amount_out: Some(amount_out),
         amount_out_minimum: None,
         amount_in_maximum: Some(amount_in_maximum),
-        path: Path::PancakeV3MultiHop(path.to_vec()),
+        path: DexPath::PancakeV3MultiHop(path.to_vec()),
     })
 }
