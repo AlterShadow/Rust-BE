@@ -4,7 +4,6 @@ use gen::client::UserClient;
 use gen::model::*;
 use lib::log::{setup_logs, LogLevel};
 use lib::utils::encode_header;
-use lib::ws::WsClient;
 use mc2_fi::endpoints::{endpoint_auth_login, endpoint_auth_signup};
 use tools::*;
 use tracing::*;
@@ -72,16 +71,18 @@ async fn test_register_wallet() -> Result<()> {
 
     let resp = client
         .user_register_wallet(UserRegisterWalletRequest {
-            EnumBlockChain: "ethereum".to_string(),
+            blockchain: "ethereum".to_string(),
             wallet_address: "0x111013b7862ebc1b9726420aa0e8728de310ee63".to_string(),
             message_to_sign: "5468697320726571756573742077696c6c206e6f74207472696767657220616e79207472616e73616374696f6e206f7220696e63757220616e7920636f7374206f7220666565732e200a204974206973206f6e6c7920696e74656e64656420746f2061757468656e74696361746520796f752061726520746865206f776e6572206f662077616c6c65743a0a3078313131303133623738363265626331623937323634323061613065383732386465333130656536336e6f6e63653a0a383632353033343139".to_string(),
             message_signature: "72f8e93e5e2ba1b3df2f179bddac22b691ca86b39f6f7619a9eedd90b16bed165c0e03dcac13e5e2a1a1ea79ab9cf40a6ba572165a7f58525466a42a9699f0ea1c".to_string(),
         })
         .await?;
     info!("Register wallet {:?}", resp);
-    client.user_deregister_wallet(UserDeregisterWalletRequest {
-        wallet_id: resp.wallet_id,
-    });
+    client
+        .user_deregister_wallet(UserDeregisterWalletRequest {
+            wallet_id: resp.wallet_id,
+        })
+        .await?;
     Ok(())
 }
 #[tokio::test]
@@ -113,7 +114,7 @@ async fn test_create_update_strategy() -> Result<()> {
     let wallet = client
         .user_add_strategy_watching_wallet(UserAddStrategyWatchingWalletRequest {
             strategy_id: resp.strategy_id,
-            EnumBlockChain: "ethereum".to_string(),
+            blockchain: "ethereum".to_string(),
             wallet_address: "0x000000000001".to_string(),
             ratio: 1.0,
         })

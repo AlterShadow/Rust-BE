@@ -39,9 +39,9 @@ impl MultiHopPath {
             ]));
             let second_token: H160 = H160::from_slice(&path[start + 3..start + 23]);
             full_path.push(MultiHopPath {
-                first_token: first_token.clone(),
+                first_token,
                 fee,
-                second_token: second_token.clone(),
+                second_token,
             });
             first_token = second_token;
         }
@@ -109,7 +109,7 @@ pub fn exact_input(call: &ContractCall) -> Result<Swap> {
     };
 
     Ok(Swap {
-        recipient: recipient,
+        recipient,
         token_in: full_path[0].first_token,
         token_out: full_path[full_path.len() - 1].second_token,
         amount_in: Some(amount_in),
@@ -177,7 +177,7 @@ pub fn exact_output(call: &ContractCall) -> Result<Swap> {
     };
 
     Ok(Swap {
-        recipient: recipient,
+        recipient,
         token_in: full_path[full_path.len() - 1].second_token,
         token_out: full_path[0].first_token,
         amount_in: None,

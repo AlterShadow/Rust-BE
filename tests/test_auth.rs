@@ -8,17 +8,16 @@ use mc2_fi::endpoints::endpoint_auth_login;
 use rand::{rngs::OsRng, Rng};
 use secp256k1::SecretKey;
 use tools::*;
-use web3::signing::{hash_message, Key, SecretKeyRef, Signature};
+use web3::signing::Signature;
 
 fn generate_temp_private_key() -> SecretKey {
     let mut rng = OsRng;
-    let private_key = loop {
+    loop {
         let bytes: [u8; 32] = rng.gen();
         if let Ok(key) = SecretKey::from_slice(&bytes) {
             break key;
         }
-    };
-    private_key
+    }
 }
 #[path = "../src/service/auth/endpoints.rs"]
 pub mod auth_endpoints;

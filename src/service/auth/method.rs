@@ -247,7 +247,7 @@ fn verify_message_address(
     //     "Expected address: {:?}, Recovered address: {:?}",
     //     expected_address, addr
     // );
-    return Ok(addr == expected_address);
+    Ok(addr == expected_address)
 }
 #[cfg(test)]
 mod tests {

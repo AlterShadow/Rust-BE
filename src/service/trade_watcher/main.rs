@@ -13,19 +13,17 @@ use lib::log::{setup_logs, LogLevel};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tracing::{error, info};
-use web3::types::H256;
 
 #[path = "../shared/evm/mod.rs"]
 pub mod evm;
 pub mod tracker;
 
+use crate::evm::parse_ethereum_transaction;
 use crate::evm::EthereumRpcConnectionPool;
-use crate::evm::{parse_ethereum_transaction, Transaction};
 use crate::tracker::pancake_swap::pancake::build_pancake_swap;
 use crate::tracker::pancake_swap::PancakeSwap;
 use crate::tracker::parse::parse_dex_trade;
 use crate::tracker::DexAddresses;
-use gen::database::FunWatcherSaveRawTransactionReq;
 use gen::model::EnumBlockChain;
 
 struct AppState {

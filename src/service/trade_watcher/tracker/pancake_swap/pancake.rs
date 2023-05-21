@@ -67,7 +67,7 @@ impl PancakeSwap {
         };
 
         /* all swaps go through the "multicall" smart router function */
-        let function_calls = self.get_multicall_funcs_and_params(&tx)?;
+        let function_calls = self.get_multicall_funcs_and_params(tx)?;
 
         let mut swap_infos: Vec<(Swap, EnumDexVersion, ContractCall)> = Vec::new();
         for call in function_calls {
@@ -102,7 +102,7 @@ impl PancakeSwap {
             }
         }
 
-        if swap_infos.len() == 0 {
+        if swap_infos.is_empty() {
             return Err(eyre!("no suitable method found"));
         }
 
@@ -111,7 +111,7 @@ impl PancakeSwap {
         let mut calls: Vec<ContractCall> = Vec::new();
         for (swap, version, call) in &mut swap_infos {
             paths.push(swap.path.clone());
-            versions.push(version.clone());
+            versions.push(*version);
             calls.push(call.clone());
             if swap.amount_out.is_none() {
                 /* amount out missing */
@@ -278,10 +278,10 @@ pub fn build_pancake_swap() -> Result<PancakeSwap> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::evm::tx::Transaction;
+
+    use crate::evm::EthereumRpcConnectionPool;
     use gen::model::EnumBlockChain;
     use lib::log::{setup_logs, LogLevel};
-    use lib::rpc_provider::pool::ConnectionPool;
     use tracing::info;
 
     #[tokio::test]
@@ -293,7 +293,8 @@ mod tests {
             "0x750d90bf90ad0fe7d035fbbab41334f6bb10bf7e71246d430cb23ed35d1df7c2".parse()?,
         );
         let conn_pool =
-            ConnectionPool::new("https://ethereum.publicnode.com".to_string(), 10).await?;
+            EthereumRpcConnectionPool::new("https://ethereum.publicnode.com".to_string(), 10)
+                .await?;
         let conn = conn_pool.get_conn().await?;
         tx.update(&conn).await?;
         let trade = pancake.parse_trade(&tx, EnumBlockChain::EthereumMainnet)?;

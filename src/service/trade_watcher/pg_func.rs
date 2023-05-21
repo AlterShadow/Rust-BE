@@ -72,7 +72,7 @@ END
                 Field::new("amount_out", Type::String),
                 Field::new("swap_calls", Type::Object),
                 Field::new("paths", Type::Object),
-                Field::new("object_versions", Type::Object),
+                Field::new("dex_versions", Type::Object),
                 Field::new("created_at", Type::optional(Type::BigInt)),
             ],
             vec![Field::new("wallet_activity_history_id", Type::BigInt)],
@@ -91,7 +91,7 @@ BEGIN
         amount_out,
         swap_calls,
         paths,
-        object_versions,
+        dex_versions,
         created_at
     )
     VALUES (
@@ -107,7 +107,7 @@ BEGIN
         a_amount_out,
         a_swap_calls,
         a_paths,
-        a_object_versions,
+        a_dex_versions,
         COALESCE(a_created_at, extract(Epoch FROM (NOW()))::bigint)
     )
     RETURNING pkey_id;

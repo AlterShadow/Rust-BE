@@ -1066,7 +1066,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_watcher_save_wallet_activity_history(a_address varchar, a_transaction_hash varchar, a_chain varchar, a_dex varchar, a_contract_address varchar, a_token_in_address varchar, a_token_out_address varchar, a_caller_address varchar, a_amount_in varchar, a_amount_out varchar, a_swap_calls jsonb, a_paths jsonb, a_object_versions jsonb, a_created_at bigint DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_watcher_save_wallet_activity_history(a_address varchar, a_transaction_hash varchar, a_chain varchar, a_dex varchar, a_contract_address varchar, a_token_in_address varchar, a_token_out_address varchar, a_caller_address varchar, a_amount_in varchar, a_amount_out varchar, a_swap_calls jsonb, a_paths jsonb, a_dex_versions jsonb, a_created_at bigint DEFAULT NULL)
 RETURNS table (
     "wallet_activity_history_id" bigint
 )
@@ -1087,7 +1087,7 @@ BEGIN
         amount_out,
         swap_calls,
         paths,
-        object_versions,
+        dex_versions,
         created_at
     )
     VALUES (
@@ -1103,7 +1103,7 @@ BEGIN
         a_amount_out,
         a_swap_calls,
         a_paths,
-        a_object_versions,
+        a_dex_versions,
         COALESCE(a_created_at, extract(Epoch FROM (NOW()))::bigint)
     )
     RETURNING pkey_id;

@@ -183,7 +183,7 @@ pub async fn parse_escrow(
                         None => return Err(eyre!("no coin")),
                     },
                     amount: value,
-                    recipient: recipient,
+                    recipient,
                     owner: sender,
                 }
             }
@@ -229,8 +229,8 @@ pub async fn parse_escrow(
                         None => return Err(eyre!("no coin")),
                     },
                     amount: value,
-                    recipient: recipient,
-                    owner: owner,
+                    recipient,
+                    owner,
                 }
             }
         }

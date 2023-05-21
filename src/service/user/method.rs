@@ -62,7 +62,7 @@ impl RequestHandler for MethodUserListFollowedStrategies {
         toolbox: &Toolbox,
         ctx: RequestContext,
         conn: Arc<Connection>,
-        req: Self::Request,
+        _req: Self::Request,
     ) {
         let db: DbClient = toolbox.get_db();
         toolbox.spawn_response(ctx, async move {
@@ -104,7 +104,7 @@ impl RequestHandler for MethodUserListStrategies {
         toolbox: &Toolbox,
         ctx: RequestContext,
         conn: Arc<Connection>,
-        req: Self::Request,
+        _req: Self::Request,
     ) {
         let db: DbClient = toolbox.get_db();
         toolbox.spawn_response(ctx, async move {
@@ -276,8 +276,7 @@ impl RequestHandler for MethodUserBackStrategy {
                 .await?
                 .into_rows()
                 .into_iter()
-                .filter(|x| x.is_default)
-                .next()
+                .find(|x| x.is_default)
                 .context("no default wallet")?;
             // TODO: get transaction here
             let transaction_hash = "0x000000000000";
@@ -389,7 +388,7 @@ impl RequestHandler for MethodUserExitStrategy {
         toolbox.spawn_response(ctx, async move {
             ensure_user_role(&conn, EnumRole::User)?;
             // TODO: actually exit tokens to the user
-            let strategy = db
+            let _strategy = db
                 .execute(FunUserGetStrategyReq {
                     strategy_id: req.strategy_id,
                 })
@@ -404,7 +403,7 @@ impl RequestHandler for MethodUserExitStrategy {
                 .await?
                 .into_rows()
                 .into_iter()
-                .sorted_by_key(|x| -(x.time as i64))
+                .sorted_by_key(|x| -x.time)
                 .next()
                 .context("no back history")?;
             // TODO: sort this out
@@ -793,7 +792,7 @@ impl RequestHandler for MethodUserApplyBecomeExpert {
         toolbox: &Toolbox,
         ctx: RequestContext,
         conn: Arc<Connection>,
-        req: Self::Request,
+        _req: Self::Request,
     ) {
         let db: DbClient = toolbox.get_db();
         toolbox.spawn_response(ctx, async move {

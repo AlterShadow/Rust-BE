@@ -1448,7 +1448,7 @@ pub struct FunWatcherSaveWalletActivityHistoryReq {
     pub amount_out: String,
     pub swap_calls: serde_json::Value,
     pub paths: serde_json::Value,
-    pub object_versions: serde_json::Value,
+    pub dex_versions: serde_json::Value,
     #[serde(default)]
     pub created_at: Option<i64>,
 }
@@ -1461,7 +1461,7 @@ pub struct FunWatcherSaveWalletActivityHistoryRespRow {
 impl DatabaseRequest for FunWatcherSaveWalletActivityHistoryReq {
     type ResponseRow = FunWatcherSaveWalletActivityHistoryRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_watcher_save_wallet_activity_history(a_address => $1::varchar, a_transaction_hash => $2::varchar, a_chain => $3::varchar, a_dex => $4::varchar, a_contract_address => $5::varchar, a_token_in_address => $6::varchar, a_token_out_address => $7::varchar, a_caller_address => $8::varchar, a_amount_in => $9::varchar, a_amount_out => $10::varchar, a_swap_calls => $11::jsonb, a_paths => $12::jsonb, a_object_versions => $13::jsonb, a_created_at => $14::bigint);"
+        "SELECT * FROM api.fun_watcher_save_wallet_activity_history(a_address => $1::varchar, a_transaction_hash => $2::varchar, a_chain => $3::varchar, a_dex => $4::varchar, a_contract_address => $5::varchar, a_token_in_address => $6::varchar, a_token_out_address => $7::varchar, a_caller_address => $8::varchar, a_amount_in => $9::varchar, a_amount_out => $10::varchar, a_swap_calls => $11::jsonb, a_paths => $12::jsonb, a_dex_versions => $13::jsonb, a_created_at => $14::bigint);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -1477,7 +1477,7 @@ impl DatabaseRequest for FunWatcherSaveWalletActivityHistoryReq {
             &self.amount_out as &(dyn ToSql + Sync),
             &self.swap_calls as &(dyn ToSql + Sync),
             &self.paths as &(dyn ToSql + Sync),
-            &self.object_versions as &(dyn ToSql + Sync),
+            &self.dex_versions as &(dyn ToSql + Sync),
             &self.created_at as &(dyn ToSql + Sync),
         ]
     }

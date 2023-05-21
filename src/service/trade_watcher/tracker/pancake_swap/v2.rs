@@ -57,9 +57,9 @@ pub fn swap_exact_tokens_for_tokens(call: &ContractCall) -> Result<Swap> {
         }
     };
 
-    let token_in = path[0].clone();
+    let token_in = path[0];
 
-    let token_out = path[path.len() - 1].clone();
+    let token_out = path[path.len() - 1];
 
     let recipient = match call.get_param("to") {
         Some(param) => match param.get_value() {
@@ -137,9 +137,9 @@ pub fn swap_tokens_for_exact_tokens(call: &ContractCall) -> Result<Swap> {
         }
     };
 
-    let token_in = path[0].clone();
+    let token_in = path[0];
 
-    let token_out = path[1].clone();
+    let token_out = path[1];
 
     let recipient = match call.get_param("to") {
         Some(param) => match param.get_value() {
@@ -154,9 +154,9 @@ pub fn swap_tokens_for_exact_tokens(call: &ContractCall) -> Result<Swap> {
     };
 
     Ok(Swap {
-        recipient: recipient,
-        token_in: token_in,
-        token_out: token_out,
+        recipient,
+        token_in,
+        token_out,
         amount_in: None,
         amount_out: Some(amount_out),
         amount_out_minimum: None,

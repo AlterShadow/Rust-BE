@@ -12,7 +12,7 @@ pub async fn get_ws_auth_client(header: &str) -> Result<WsClient> {
     let connect_addr = "ws://localhost:8888";
     info!("Connecting to {} with header {}", connect_addr, header);
     let ws_stream = WsClient::new(connect_addr, header).await?;
-    Ok(ws_stream.into())
+    Ok(ws_stream)
 }
 pub async fn auth_login(req: &LoginRequest) -> Result<LoginResponse> {
     let header = encode_header(req, endpoint_auth_login())?;
