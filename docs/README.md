@@ -42,6 +42,7 @@ ID: 2
 |20270|UserAddStrategyWatchingWallet|strategy_id, blockchain, wallet_address, ratio|success, wallet_id||
 |20280|UserRemoveStrategyWatchingWallet|wallet_id|success||
 |20290|UserListStrategyWatchingWallets|strategy_id|wallets||
+|20300|UserListWalletActivityHistory|wallet_address, blockchain|wallet_activities||
 
 # admin Server
 ID: 3

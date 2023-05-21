@@ -1064,3 +1064,53 @@ impl RequestHandler for MethodUserRemoveStrategyWatchingWallet {
         })
     }
 }
+
+pub struct EndpointUserListWalletActivityHistory;
+
+impl RequestHandler for EndpointUserListWalletActivityHistory {
+    type Request = UserListWalletActivityHistoryRequest;
+    type Response = UserListWalletActivityHistoryResponse;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        _conn: Arc<Connection>,
+        req: Self::Request,
+    ) {
+        let db: DbClient = toolbox.get_db();
+
+        toolbox.spawn_response(ctx, async move {
+            let ret = db
+                .execute(FunWatcherListWalletActivityHistoryReq {
+                    address: req.wallet_address,
+                    blockchain: req.blockchain,
+                })
+                .await?;
+
+            Ok(UserListWalletActivityHistoryResponse {
+                wallet_activities: ret
+                    .into_rows()
+                    .into_iter()
+                    .map(|x| ListWalletActivityHistoryRow {
+                        record_id: x.wallet_activity_history_id,
+                        wallet_address: x.address,
+                        blockchain: x.blockchain,
+                        contract_address: x.contract_address,
+                        token_in_address: x.token_in_address,
+                        token_out_address: x.token_out_address,
+                        caller_address: x.caller_address,
+                        amount_in: x.amount_in,
+                        amount_out: x.amount_out,
+                        swap_calls: x.swap_calls,
+                        paths: x.paths,
+                        dex_versions: x.dex_versions,
+                        dex: x.dex,
+                        transaction_hash: x.transaction_hash,
+                        created_at: x.created_at,
+                    })
+                    .collect(),
+            })
+        })
+    }
+}

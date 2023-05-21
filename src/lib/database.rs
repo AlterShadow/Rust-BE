@@ -61,6 +61,9 @@ impl<T> DbResponse<T> {
     pub fn into_rows(self) -> Vec<T> {
         self.rows
     }
+    pub fn into_iter(self) -> impl Iterator<Item = T> {
+        self.rows.into_iter()
+    }
     pub fn len(&self) -> usize {
         self.rows.len()
     }

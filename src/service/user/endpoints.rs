@@ -501,6 +501,39 @@ pub fn endpoint_user_list_strategy_watching_wallets() -> EndpointSchema {
         )],
     )
 }
+pub fn endpoint_user_list_wallet_activity_history() -> EndpointSchema {
+    EndpointSchema::new(
+        "UserListWalletActivityHistory",
+        20300,
+        vec![
+            Field::new("wallet_address", Type::String),
+            Field::new("blockchain", Type::String),
+        ],
+        vec![Field::new(
+            "wallet_activities",
+            Type::datatable(
+                "ListWalletActivityHistoryRow",
+                vec![
+                    Field::new("record_id", Type::BigInt),
+                    Field::new("wallet_address", Type::String),
+                    Field::new("transaction_hash", Type::String),
+                    Field::new("dex", Type::String),
+                    Field::new("blockchain", Type::String),
+                    Field::new("contract_address", Type::String),
+                    Field::new("token_in_address", Type::String),
+                    Field::new("token_out_address", Type::String),
+                    Field::new("caller_address", Type::String),
+                    Field::new("amount_in", Type::String),
+                    Field::new("amount_out", Type::String),
+                    Field::new("swap_calls", Type::Object),
+                    Field::new("paths", Type::Object),
+                    Field::new("dex_versions", Type::Object),
+                    Field::new("created_at", Type::BigInt),
+                ],
+            ),
+        )],
+    )
+}
 pub fn get_user_endpoints() -> Vec<EndpointSchema> {
     vec![
         endpoint_user_follow_strategy(),
@@ -532,5 +565,6 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
         endpoint_user_add_strategy_watching_wallet(),
         endpoint_user_remove_strategy_watching_wallet(),
         endpoint_user_list_strategy_watching_wallets(),
+        endpoint_user_list_wallet_activity_history(),
     ]
 }

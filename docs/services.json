@@ -1518,6 +1518,95 @@
           "stream_response": [],
           "description": "",
           "json_schema": null
+        },
+        {
+          "name": "UserListWalletActivityHistory",
+          "code": 20300,
+          "parameters": [
+            {
+              "name": "wallet_address",
+              "ty": "String"
+            },
+            {
+              "name": "blockchain",
+              "ty": "String"
+            }
+          ],
+          "returns": [
+            {
+              "name": "wallet_activities",
+              "ty": {
+                "DataTable": {
+                  "name": "ListWalletActivityHistoryRow",
+                  "fields": [
+                    {
+                      "name": "record_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "wallet_address",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "transaction_hash",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "dex",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "blockchain",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "contract_address",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "token_in_address",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "token_out_address",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "caller_address",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "amount_in",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "amount_out",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "swap_calls",
+                      "ty": "Object"
+                    },
+                    {
+                      "name": "paths",
+                      "ty": "Object"
+                    },
+                    {
+                      "name": "dex_versions",
+                      "ty": "Object"
+                    },
+                    {
+                      "name": "created_at",
+                      "ty": "BigInt"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "stream_response": [],
+          "description": "",
+          "json_schema": null
         }
       ]
     },

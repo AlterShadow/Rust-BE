@@ -1492,14 +1492,14 @@ impl DatabaseRequest for FunWatcherSaveWalletActivityHistoryReq {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunWatcherListWalletActivityHistoryReq {
     pub address: String,
-    pub chain: String,
+    pub blockchain: String,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunWatcherListWalletActivityHistoryRespRow {
     pub wallet_activity_history_id: i64,
     pub address: String,
     pub transaction_hash: String,
-    pub chain: String,
+    pub blockchain: String,
     pub dex: String,
     pub contract_address: String,
     pub token_in_address: String,
@@ -1509,7 +1509,7 @@ pub struct FunWatcherListWalletActivityHistoryRespRow {
     pub amount_out: String,
     pub swap_calls: serde_json::Value,
     pub paths: serde_json::Value,
-    pub object_versions: serde_json::Value,
+    pub dex_versions: serde_json::Value,
     pub created_at: i64,
 }
 
@@ -1517,12 +1517,12 @@ pub struct FunWatcherListWalletActivityHistoryRespRow {
 impl DatabaseRequest for FunWatcherListWalletActivityHistoryReq {
     type ResponseRow = FunWatcherListWalletActivityHistoryRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_watcher_list_wallet_activity_history(a_address => $1::varchar, a_chain => $2::varchar);"
+        "SELECT * FROM api.fun_watcher_list_wallet_activity_history(a_address => $1::varchar, a_blockchain => $2::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
             &self.address as &(dyn ToSql + Sync),
-            &self.chain as &(dyn ToSql + Sync),
+            &self.blockchain as &(dyn ToSql + Sync),
         ]
     }
     fn parse_row(&self, row: Row) -> Result<FunWatcherListWalletActivityHistoryRespRow> {
@@ -1530,7 +1530,7 @@ impl DatabaseRequest for FunWatcherListWalletActivityHistoryReq {
             wallet_activity_history_id: row.try_get(0)?,
             address: row.try_get(1)?,
             transaction_hash: row.try_get(2)?,
-            chain: row.try_get(3)?,
+            blockchain: row.try_get(3)?,
             dex: row.try_get(4)?,
             contract_address: row.try_get(5)?,
             token_in_address: row.try_get(6)?,
@@ -1540,7 +1540,7 @@ impl DatabaseRequest for FunWatcherListWalletActivityHistoryReq {
             amount_out: row.try_get(10)?,
             swap_calls: row.try_get(11)?,
             paths: row.try_get(12)?,
-            object_versions: row.try_get(13)?,
+            dex_versions: row.try_get(13)?,
             created_at: row.try_get(14)?,
         };
         Ok(r)

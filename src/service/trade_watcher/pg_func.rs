@@ -118,13 +118,13 @@ END
             "fun_watcher_list_wallet_activity_history",
             vec![
                 Field::new("address", Type::String),
-                Field::new("chain", Type::String),
+                Field::new("blockchain", Type::String),
             ],
             vec![
                 Field::new("wallet_activity_history_id", Type::BigInt),
                 Field::new("address", Type::String),
                 Field::new("transaction_hash", Type::String),
-                Field::new("chain", Type::String),
+                Field::new("blockchain", Type::String),
                 Field::new("dex", Type::String),
                 Field::new("contract_address", Type::String),
                 Field::new("token_in_address", Type::String),
@@ -134,7 +134,7 @@ END
                 Field::new("amount_out", Type::String),
                 Field::new("swap_calls", Type::Object),
                 Field::new("paths", Type::Object),
-                Field::new("object_versions", Type::Object),
+                Field::new("dex_versions", Type::Object),
                 Field::new("created_at", Type::BigInt),
             ],
             r#"
@@ -142,7 +142,7 @@ BEGIN
     RETURN QUERY SELECT pkey_id,
                       address,
                       transaction_hash,
-                      chain,
+                      blockchain,
                       dex,
                       contract_address,
                       token_in_address,
@@ -152,11 +152,11 @@ BEGIN
                       amount_out,
                       swap_calls,
                       paths,
-                      object_versions,
+                      dex_versions,
                       created_at
                  FROM tbl.wallet_activity_history
                  WHERE address = a_address
-                   AND chain = a_chain;
+                   AND blockchain = a_blockchain;
 END
         "#,
         ),

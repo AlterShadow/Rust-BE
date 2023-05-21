@@ -1112,12 +1112,12 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_watcher_list_wallet_activity_history(a_address varchar, a_chain varchar)
+CREATE OR REPLACE FUNCTION api.fun_watcher_list_wallet_activity_history(a_address varchar, a_blockchain varchar)
 RETURNS table (
     "wallet_activity_history_id" bigint,
     "address" varchar,
     "transaction_hash" varchar,
-    "chain" varchar,
+    "blockchain" varchar,
     "dex" varchar,
     "contract_address" varchar,
     "token_in_address" varchar,
@@ -1127,7 +1127,7 @@ RETURNS table (
     "amount_out" varchar,
     "swap_calls" jsonb,
     "paths" jsonb,
-    "object_versions" jsonb,
+    "dex_versions" jsonb,
     "created_at" bigint
 )
 LANGUAGE plpgsql
@@ -1137,7 +1137,7 @@ BEGIN
     RETURN QUERY SELECT pkey_id,
                       address,
                       transaction_hash,
-                      chain,
+                      blockchain,
                       dex,
                       contract_address,
                       token_in_address,
@@ -1147,11 +1147,11 @@ BEGIN
                       amount_out,
                       swap_calls,
                       paths,
-                      object_versions,
+                      dex_versions,
                       created_at
                  FROM tbl.wallet_activity_history
                  WHERE address = a_address
-                   AND chain = a_chain;
+                   AND blockchain = a_blockchain;
 END
         
 $$;

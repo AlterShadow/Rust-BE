@@ -699,6 +699,25 @@ pub struct ListStrategyWatchingWalletsRow {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct ListWalletActivityHistoryRow {
+    pub record_id: i64,
+    pub wallet_address: String,
+    pub transaction_hash: String,
+    pub dex: String,
+    pub blockchain: String,
+    pub contract_address: String,
+    pub token_in_address: String,
+    pub token_out_address: String,
+    pub caller_address: String,
+    pub amount_in: String,
+    pub amount_out: String,
+    pub swap_calls: serde_json::Value,
+    pub paths: serde_json::Value,
+    pub dex_versions: serde_json::Value,
+    pub created_at: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct ListWalletsRow {
     pub wallet_id: i64,
     pub blockchain: String,
@@ -980,6 +999,17 @@ pub struct UserListStrategyWatchingWalletsRequest {
 #[serde(rename_all = "camelCase")]
 pub struct UserListStrategyWatchingWalletsResponse {
     pub wallets: Vec<ListStrategyWatchingWalletsRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListWalletActivityHistoryRequest {
+    pub wallet_address: String,
+    pub blockchain: String,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListWalletActivityHistoryResponse {
+    pub wallet_activities: Vec<ListWalletActivityHistoryRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]

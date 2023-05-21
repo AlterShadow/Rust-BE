@@ -277,6 +277,14 @@ impl UserClient {
         self.client.request(20290, req).await
     }
 }
+impl UserClient {
+    pub async fn user_list_wallet_activity_history(
+        &mut self,
+        req: UserListWalletActivityHistoryRequest,
+    ) -> Result<UserListWalletActivityHistoryResponse> {
+        self.client.request(20300, req).await
+    }
+}
 pub struct AdminClient {
     pub client: WsClient,
 }
