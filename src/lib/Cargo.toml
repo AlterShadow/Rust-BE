@@ -33,7 +33,6 @@ tracing-log = "*"
 log-panics = { version = "*", features = ["with-backtrace"] }
 pin-utils = "*"
 serde_json = "*"
-ijson = "*"
 peroxide = "*"
 chrono = "*"
 static_assertions = "*"
@@ -53,9 +52,7 @@ bytes = "*"
 kanal = { version = "0.1.0-pre7", features = ["async"] }
 csv = "1.2.1"
 web3 = { version = "0.18", features = ["signing"] }
-deadpool = { version = "0.9.5", features = ["managed", "rt_tokio_1"] }
-async-trait = "*"
-ethabi = "18.0.0"
+
 
 [lib]
 name = "lib"

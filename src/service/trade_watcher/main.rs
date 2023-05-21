@@ -103,11 +103,8 @@ async fn handle_eth_swap(state: State<Arc<AppState>>, body: Bytes) -> Result<(),
         tokio::spawn(async move {
             match parse_ethereum_transaction(hash, &conn).await {
                 Ok((tx, called_contract)) => {
-                    match cache_ethereum_transaction(&hash, &tx, &state.db).await {
-                        Ok(_) => {}
-                        Err(e) => {
-                            error!("error caching transaction: {:?}", e);
-                        }
+                    if let Err(e) = evm::cache_ethereum_transaction(&hash, &tx, &state.db).await {
+                        error!("error caching transaction: {:?}", e);
                     };
                     if let Err(e) = parse_dex_trade(
                         EnumBlockChain::EthereumMainnet,
@@ -126,25 +123,6 @@ async fn handle_eth_swap(state: State<Arc<AppState>>, body: Bytes) -> Result<(),
                 }
             };
         });
-    }
-
-    Ok(())
-}
-
-async fn cache_ethereum_transaction(hash: &H256, tx: &Transaction, db: &DbClient) -> Result<()> {
-    if let Err(err) = {
-        if let Some(content) = tx.get_transaction() {
-            db.execute(FunWatcherSaveRawTransactionReq {
-                transaction_hash: format!("{:?}", hash),
-                chain: "ethereum".to_string(),
-                dex: None,
-                raw_transaction: serde_json::to_string(content).context("transaction")?,
-            })
-            .await?;
-        }
-        Ok::<_, Error>(())
-    } {
-        return Err(eyre!("failed to save raw transaction: {}", err));
     }
 
     Ok(())

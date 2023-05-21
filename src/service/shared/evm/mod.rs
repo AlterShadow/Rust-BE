@@ -9,6 +9,9 @@ mod rpc_provider;
 mod tx;
 pub use calldata::*;
 pub use ethabi_to_web3::*;
+use eyre::{eyre, Report as Error, WrapErr};
+use gen::database::FunWatcherSaveRawTransactionReq;
+use lib::database::DbClient;
 pub use rpc_provider::*;
 pub use tx::*;
 
@@ -54,4 +57,27 @@ pub fn parse_quickalert_payload(payload: Bytes) -> eyre::Result<Vec<H256>> {
         Ok(hashes) => Ok(hashes),
         Err(e) => Err(e.into()),
     }
+}
+
+pub async fn cache_ethereum_transaction(
+    hash: &H256,
+    tx: &Transaction,
+    db: &DbClient,
+) -> eyre::Result<()> {
+    if let Err(err) = {
+        if let Some(content) = tx.get_transaction() {
+            db.execute(FunWatcherSaveRawTransactionReq {
+                transaction_hash: format!("{:?}", hash),
+                chain: "ethereum".to_string(),
+                dex: None,
+                raw_transaction: serde_json::to_string(content).context("transaction")?,
+            })
+            .await?;
+        }
+        Ok::<_, Error>(())
+    } {
+        return Err(eyre!("failed to save raw transaction: {}", err));
+    }
+
+    Ok(())
 }
