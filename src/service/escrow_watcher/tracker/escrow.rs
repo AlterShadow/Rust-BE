@@ -286,4 +286,50 @@ mod tests {
         info!("trade: {:?}", trade);
         Ok(())
     }
+    #[tokio::test]
+    pub async fn test_usdc_transfer() -> Result<()> {
+        let _ = setup_logs(LogLevel::Trace);
+
+        let mut tx = Transaction::new(
+            "0x1f716239290641ad0121814df498e5e04c3759bf6d22c9c89a6aa5175a3ce4c6".parse()?,
+        );
+        let conn_pool =
+            EthereumRpcConnectionPool::new("https://ethereum.publicnode.com".to_string(), 10)
+                .await?;
+        let conn = conn_pool.get_conn().await?;
+        tx.update(&conn).await?;
+        let erc20 = build_erc_20()?;
+        let trade = parse_escrow(
+            EnumBlockChain::EthereumMainnet,
+            &tx,
+            &"0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48".parse()?,
+            &StableCoinAddresses::new(),
+            &erc20,
+        )?;
+        info!("trade: {:?}", trade);
+        Ok(())
+    }
+    #[tokio::test]
+    pub async fn test_busd_transfer() -> Result<()> {
+        let _ = setup_logs(LogLevel::Trace);
+
+        let mut tx = Transaction::new(
+            "0x27e801a5735e5b530535165a18754c074c673263470fc1fad32cca5eb1bc9fea".parse()?,
+        );
+        let conn_pool =
+            EthereumRpcConnectionPool::new("https://ethereum.publicnode.com".to_string(), 10)
+                .await?;
+        let conn = conn_pool.get_conn().await?;
+        tx.update(&conn).await?;
+        let erc20 = build_erc_20()?;
+        let trade = parse_escrow(
+            EnumBlockChain::EthereumMainnet,
+            &tx,
+            &"0x4Fabb145d64652a948d72533023f6E7A623C7C53".parse()?,
+            &StableCoinAddresses::new(),
+            &erc20,
+        )?;
+        info!("trade: {:?}", trade);
+        Ok(())
+    }
 }
