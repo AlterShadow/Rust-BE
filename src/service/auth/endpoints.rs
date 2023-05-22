@@ -48,7 +48,7 @@ pub fn endpoint_auth_authorize() -> EndpointSchema {
         vec![
             Field::new("address", Type::String),
             Field::new("token", Type::UUID),
-            Field::new("service_code", Type::enum_ref("service")),
+            Field::new("service", Type::enum_ref("service")),
             Field::new("device_id", Type::String),
             Field::new("device_os", Type::String),
         ],

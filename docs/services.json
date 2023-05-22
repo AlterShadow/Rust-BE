@@ -123,7 +123,7 @@
               "ty": "UUID"
             },
             {
-              "name": "service_code",
+              "name": "service",
               "ty": {
                 "EnumRef": "service"
               }

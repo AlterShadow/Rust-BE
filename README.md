@@ -55,7 +55,7 @@ Example headers:
 `Accept: sec-websocket-accept`
 `Sec-WebSocket-Protocol: 0login,1address,2placeholder_password,3User,43849823798,5android`
 Here in the `Sec-Websocket-Protocol` header we have the login method as the first variable, followed by the user's
-registered address, signature message, signature, service_code (the service the user is logging into), device id, and device OS.
+registered address, signature message, signature, service (the service the user is logging into), device id, and device OS.
 
 The login method validates that the password hash matches the registered password for the user, and that the requested
 service matches the user's role, and on success returns the address, the user's id, and 2 tokens generated for
@@ -71,7 +71,7 @@ Example headers:
 `Accept: sec-websocket-accept`
 `Sec-WebSocket-Protocol: 0authorize,1address,2371a695c-b4c1-47b0-b779-638fdc47b4ac,32,43849823798,5android`
 Here in the `Sec-Websocket-Protocol` header we have the authorize method as the first variable, followed by the user's
-registered address, user or admin token (will be validated according to the chosen service), service_code (the service
+registered address, user or admin token (will be validated according to the chosen service), service (the service
 the user is being authorized into, must match the token), device id, and device OS.
 
 The authorize middleware is used with every other route, it validates that the token, a valid token must have 3

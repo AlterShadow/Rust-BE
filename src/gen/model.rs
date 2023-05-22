@@ -608,7 +608,7 @@ pub struct AumHistoryRow {
 pub struct AuthorizeRequest {
     pub address: String,
     pub token: uuid::Uuid,
-    pub service_code: EnumService,
+    pub service: EnumService,
     pub device_id: String,
     pub device_os: String,
 }
