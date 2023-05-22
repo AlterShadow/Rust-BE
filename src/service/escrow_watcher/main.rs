@@ -106,9 +106,7 @@ async fn handle_eth_escrows(state: State<Arc<AppState>>, body: Bytes) -> Result<
                         &called_contract,
                         &state.stablecoin_addresses,
                         &state.erc_20,
-                    )
-                    .await
-                    {
+                    ) {
                         error!("error parsing escrow trade: {:?}", e);
                     };
                 }

@@ -11,7 +11,7 @@ use crate::evm::{
     convert_h160_ethabi_to_web3, convert_u256_ethabi_to_web3, ContractCall, Transaction,
 };
 
-#[derive(Clone, Debug, Hash, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Hash, Eq, PartialEq)]
 pub enum StableCoin {
     Usdc,
     Usdt,
@@ -111,26 +111,18 @@ pub enum Erc20Method {
     TransferFrom,
 }
 
-pub async fn parse_escrow(
+pub fn parse_escrow(
     chain: EnumBlockChain,
     tx: &Transaction,
     called_contract: &H160,
     stablecoin_addresses: &StableCoinAddresses,
     erc_20: &Erc20,
-) -> Result<()> {
+) -> Result<Escrow> {
     let eth_mainnet_stablecoins = stablecoin_addresses.get(&chain).unwrap();
     let mut coin: Option<StableCoin> = None;
     for (stablecoin, address) in eth_mainnet_stablecoins {
         if *address == *called_contract {
-            coin = Some(match stablecoin {
-                StableCoin::Usdc => StableCoin::Usdc,
-                StableCoin::Usdt => {
-                    bail!("does not support stable coin: USDT");
-                }
-                StableCoin::Busd => {
-                    bail!("does not support stable coin: BUSD");
-                }
-            });
+            coin = Some(*stablecoin);
             break;
         }
     }
@@ -240,7 +232,7 @@ pub async fn parse_escrow(
 
     info!("tx: {:?}", tx.get_id().unwrap());
     info!("escrow: {:?}", escrow);
-    Ok(())
+    Ok(escrow)
 }
 
 const ERC20_PATH: &str = "abi/generic/erc20.json";
@@ -260,4 +252,38 @@ pub fn build_erc_20() -> Result<Erc20> {
         Contract::load(std::fs::File::open(ERC20_PATH).context("failed to read contract ABI")?)
             .context("failed to parse contract ABI")?;
     Ok(Erc20::new(erc20))
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::evm::{EthereumRpcConnectionPool, Transaction};
+    use crate::tracker::escrow::{build_erc_20, parse_escrow, StableCoinAddresses};
+    use eyre::*;
+    use gen::model::EnumBlockChain;
+    use lib::log::{setup_logs, LogLevel};
+    use tracing::info;
+
+    #[tokio::test]
+    pub async fn test_usdt_transfer() -> Result<()> {
+        let _ = setup_logs(LogLevel::Trace);
+
+        let mut tx = Transaction::new(
+            "0x977939d69a0826a6ef1e94ccfe76a2c2d87bac1d3fce53669b5c637435fd23c1".parse()?,
+        );
+        let conn_pool =
+            EthereumRpcConnectionPool::new("https://ethereum.publicnode.com".to_string(), 10)
+                .await?;
+        let conn = conn_pool.get_conn().await?;
+        tx.update(&conn).await?;
+        let erc20 = build_erc_20()?;
+        let trade = parse_escrow(
+            EnumBlockChain::EthereumMainnet,
+            &tx,
+            &"0xdAC17F958D2ee523a2206206994597C13D831ec7".parse()?,
+            &StableCoinAddresses::new(),
+            &erc20,
+        )?;
+        info!("trade: {:?}", trade);
+        Ok(())
+    }
 }
