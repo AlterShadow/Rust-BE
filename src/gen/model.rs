@@ -629,7 +629,7 @@ pub struct BackHistoryPoint {
 pub struct BackStrategyHistoryRow {
     pub back_history_id: i64,
     pub strategy_id: i64,
-    pub quantity: f32,
+    pub quantity: String,
     pub blockchain: String,
     pub dex: String,
     pub transaction_hash: String,
@@ -640,7 +640,7 @@ pub struct BackStrategyHistoryRow {
 pub struct ExitStrategyHistoryRow {
     pub exit_history_id: i64,
     pub strategy_id: i64,
-    pub exit_quantity: f32,
+    pub exit_quantity: String,
     pub purchase_wallet_address: String,
     pub blockchain: String,
     pub dex: String,
@@ -791,20 +791,6 @@ pub struct UserApplyBecomeExpertResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserBackStrategyRequest {
-    pub strategy_id: i64,
-    pub quantity: f32,
-    pub blockchain: String,
-    pub dex: String,
-    pub transaction_hash: String,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserBackStrategyResponse {
-    pub success: bool,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
 pub struct UserCreateStrategyRequest {
     pub name: String,
     pub description: String,
@@ -824,18 +810,6 @@ pub struct UserDeregisterWalletRequest {
 #[serde(rename_all = "camelCase")]
 pub struct UserDeregisterWalletResponse {
     pub success: bool,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserExitStrategyRequest {
-    pub strategy_id: i64,
-    pub quantity: f32,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserExitStrategyResponse {
-    pub success: bool,
-    pub transaction_hash: String,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1026,6 +1000,7 @@ pub struct UserRegisterWalletRequest {
     pub wallet_address: String,
     pub message_to_sign: String,
     pub message_signature: String,
+    pub strategy_id: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]

@@ -20,6 +20,7 @@ pub struct Transaction {
 }
 
 impl Transaction {
+    // TODO: merge update to new?
     pub fn new(hash: H256) -> Self {
         Self {
             hash,
@@ -69,6 +70,9 @@ impl Transaction {
             self.status = TxStatus::Reverted;
         }
         Ok(())
+    }
+    pub fn get_hash(&self) -> H256 {
+        self.hash
     }
     pub fn get_transaction(&self) -> Option<&Web3Transaction> {
         self.transaction.as_ref()

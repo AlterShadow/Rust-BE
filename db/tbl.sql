@@ -1,5 +1,5 @@
 -- Created by Vertabelo (http://vertabelo.com)
--- Last modification date: 2023-05-21 02:46:20.598
+-- Last modification date: 2023-05-22 14:42:34.686
 
 CREATE SCHEMA IF NOT EXISTS tbl;;
 
@@ -47,15 +47,15 @@ CREATE TABLE tbl.bad_request (
     CONSTRAINT "tbl.bad_request_pk" PRIMARY KEY (pkey_id)
 );
 
--- Table: chain_address_lookup_cache
-CREATE TABLE tbl.chain_address_lookup_cache (
-    pkey bigint  NOT NULL DEFAULT nextval('tbl.seq_chain_address_lookup_cache_id'),
+-- Table: blockchain_address_lookup_cache
+CREATE TABLE tbl.blockchain_address_lookup_cache (
+    pkey bigint  NOT NULL DEFAULT nextval('tbl.seq_blockchain_address_lookup_cache_id'),
     address bigint  NOT NULL,
-    chain varchar(20)  NOT NULL,
+    blockchain varchar(20)  NOT NULL,
     name varchar(20)  NOT NULL,
     created_at bigint  NOT NULL,
-    CONSTRAINT chain_address_lookup_cache_ak_1 UNIQUE (address, chain) NOT DEFERRABLE  INITIALLY IMMEDIATE,
-    CONSTRAINT chain_address_lookup_cache_pk PRIMARY KEY (pkey)
+    CONSTRAINT chain_address_lookup_cache_ak_1 UNIQUE (address, blockchain) NOT DEFERRABLE  INITIALLY IMMEDIATE,
+    CONSTRAINT blockchain_address_lookup_cache_pk PRIMARY KEY (pkey)
 );
 
 -- Table: expert_profile
@@ -125,7 +125,7 @@ CREATE TABLE tbl.strategy_watching_wallet (
 CREATE TABLE tbl.transaction_cache (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_transaction_cache_id'),
     transaction_hash varchar(64)  NOT NULL,
-    chain varchar(20)  NOT NULL,
+    blockchain varchar(20)  NOT NULL,
     dex varchar(20)  NULL,
     raw_content varchar(8192)  NOT NULL,
     created_at bigint  NOT NULL,
@@ -166,11 +166,10 @@ CREATE TABLE tbl.user_back_strategy_history (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_user_back_strategy_history_id'),
     fkey_user_id bigint  NOT NULL,
     fkey_strategy_id bigint  NOT NULL,
-    purchase_wallet varchar(20)  NOT NULL,
+    purchase_wallet varchar(64)  NOT NULL,
     blockchain varchar(20)  NOT NULL,
-    dex varchar(20)  NOT NULL,
     transaction_hash varchar(64)  NOT NULL,
-    quantity double precision  NOT NULL,
+    quantity varchar(64)  NOT NULL,
     back_time bigint  NOT NULL,
     CONSTRAINT user_back_strategy_history_pk PRIMARY KEY (pkey_id)
 );
@@ -184,7 +183,7 @@ CREATE TABLE tbl.user_exit_strategy_history (
     blockchain varchar(20)  NOT NULL,
     dex varchar(20)  NOT NULL,
     transaction_hash varchar(64)  NOT NULL,
-    exit_quantity double precision  NOT NULL,
+    exit_quantity varchar(64)  NOT NULL,
     back_time bigint  NOT NULL,
     exit_time bigint  NOT NULL,
     CONSTRAINT user_exit_strategy_history_pk PRIMARY KEY (pkey_id)
@@ -218,6 +217,7 @@ CREATE TABLE tbl.user_wallet (
     fkey_user_id bigint  NOT NULL,
     blockchain varchar(20)  NOT NULL,
     address varchar(64)  NOT NULL,
+    fkey_strategy_id bigint  NOT NULL,
     CONSTRAINT uidx_user_username UNIQUE (address) NOT DEFERRABLE  INITIALLY IMMEDIATE,
     CONSTRAINT user_wallet_pk PRIMARY KEY (pkey_id)
 );
@@ -227,7 +227,7 @@ CREATE TABLE tbl.wallet_activity_history (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_wallet_activity_history_id'),
     address varchar(64)  NOT NULL,
     transaction_hash varchar(64)  NOT NULL,
-    chain varchar(20)  NOT NULL,
+    blockchain varchar(20)  NOT NULL,
     dex varchar(20)  NOT NULL,
     contract_address varchar(64)  NOT NULL,
     token_in_address varchar(64)  NOT NULL,
@@ -372,6 +372,14 @@ ALTER TABLE tbl.strategy ADD CONSTRAINT user_strategy
     INITIALLY IMMEDIATE
 ;
 
+-- Reference: user_wallet_strategy (table: user_wallet)
+ALTER TABLE tbl.user_wallet ADD CONSTRAINT user_wallet_strategy
+    FOREIGN KEY (fkey_strategy_id)
+    REFERENCES tbl.strategy (pkey_id)  
+    NOT DEFERRABLE 
+    INITIALLY IMMEDIATE
+;
+
 -- sequences
 -- Sequence: seq_aum_history_id
 CREATE SEQUENCE tbl.seq_aum_history_id
@@ -396,8 +404,8 @@ CREATE SEQUENCE tbl.seq_bad_request_id
       AS bigint
 ;
 
--- Sequence: seq_chain_address_lookup_cache_id
-CREATE SEQUENCE tbl.seq_chain_address_lookup_cache_id
+-- Sequence: seq_blockchain_address_lookup_cache_id
+CREATE SEQUENCE tbl.seq_blockchain_address_lookup_cache_id
       NO MINVALUE
       NO MAXVALUE
       NO CYCLE

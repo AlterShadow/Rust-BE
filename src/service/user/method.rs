@@ -1,7 +1,6 @@
 use eyre::*;
 use gen::database::*;
 use gen::model::*;
-use itertools::Itertools;
 use lib::database::DbClient;
 use lib::handler::RequestHandler;
 use lib::toolbox::*;
@@ -253,53 +252,6 @@ impl RequestHandler for MethodUserGetStrategyStatistics {
     }
 }
 
-pub struct MethodUserBackStrategy;
-impl RequestHandler for MethodUserBackStrategy {
-    type Request = UserBackStrategyRequest;
-    type Response = UserBackStrategyResponse;
-
-    fn handle(
-        &self,
-        toolbox: &Toolbox,
-        ctx: RequestContext,
-        conn: Arc<Connection>,
-        req: Self::Request,
-    ) {
-        let db: DbClient = toolbox.get_db();
-
-        toolbox.spawn_response(ctx, async move {
-            ensure_user_role(&conn, EnumRole::User)?;
-            let user = db
-                .execute(FunUserListWalletsReq {
-                    user_id: ctx.user_id,
-                })
-                .await?
-                .into_rows()
-                .into_iter()
-                .find(|x| x.is_default)
-                .context("no default wallet")?;
-            // TODO: get transaction here
-            let transaction_hash = "0x000000000000";
-            let ret = db
-                .execute(FunUserBackStrategyReq {
-                    user_id: ctx.user_id,
-                    strategy_id: req.strategy_id,
-                    quantity: req.quantity,
-                    purchase_wallet: user.wallet_address,
-                    blockchain: user.blockchain,
-                    dex: "".to_string(),
-                    transaction_hash: transaction_hash.to_string(),
-                })
-                .await?;
-            Ok(UserBackStrategyResponse {
-                success: ret
-                    .into_result()
-                    .context("failed to back strategy")?
-                    .success,
-            })
-        })
-    }
-}
 pub struct MethodUserListBackedStrategies;
 impl RequestHandler for MethodUserListBackedStrategies {
     type Request = UserListBackedStrategiesRequest;
@@ -367,64 +319,6 @@ impl RequestHandler for MethodUserUnfollowStrategy {
                     .into_result()
                     .context("failed to unfollow strategy")?
                     .success,
-            })
-        })
-    }
-}
-pub struct MethodUserExitStrategy;
-impl RequestHandler for MethodUserExitStrategy {
-    type Request = UserExitStrategyRequest;
-    type Response = UserExitStrategyResponse;
-
-    fn handle(
-        &self,
-        toolbox: &Toolbox,
-        ctx: RequestContext,
-        conn: Arc<Connection>,
-        req: Self::Request,
-    ) {
-        let db: DbClient = toolbox.get_db();
-
-        toolbox.spawn_response(ctx, async move {
-            ensure_user_role(&conn, EnumRole::User)?;
-            // TODO: actually exit tokens to the user
-            let _strategy = db
-                .execute(FunUserGetStrategyReq {
-                    strategy_id: req.strategy_id,
-                })
-                .await?
-                .into_result()
-                .context("no strategy")?;
-            let back_hist = db
-                .execute(FunUserListBackStrategyHistoryReq {
-                    user_id: ctx.user_id,
-                    strategy_id: Some(req.strategy_id),
-                })
-                .await?
-                .into_rows()
-                .into_iter()
-                .sorted_by_key(|x| -x.time)
-                .next()
-                .context("no back history")?;
-            // TODO: sort this out
-            let ret = db
-                .execute(FunUserExitStrategyReq {
-                    user_id: ctx.user_id,
-                    strategy_id: req.strategy_id,
-                    quantity: req.quantity,
-                    blockchain: back_hist.blockchain,
-                    dex: back_hist.dex,
-                    back_time: back_hist.time,
-                    transaction_hash: "0x000000000000".to_string(),
-                    purchase_wallet: back_hist.wallet_address,
-                })
-                .await?;
-            Ok(UserExitStrategyResponse {
-                success: ret
-                    .into_result()
-                    .context("failed to exit strategy")?
-                    .success,
-                transaction_hash: "0x000000000000".to_string(),
             })
         })
     }
@@ -700,6 +594,7 @@ impl RequestHandler for MethodUserRegisterWallet {
                     user_id: ctx.user_id,
                     blockchain: req.blockchain,
                     wallet_address: req.wallet_address,
+                    strategy_id: 0,
                 })
                 .await?
                 .into_result()

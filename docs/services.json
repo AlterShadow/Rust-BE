@@ -536,41 +536,6 @@
           "json_schema": null
         },
         {
-          "name": "UserBackStrategy",
-          "code": 20080,
-          "parameters": [
-            {
-              "name": "strategy_id",
-              "ty": "BigInt"
-            },
-            {
-              "name": "quantity",
-              "ty": "Numeric"
-            },
-            {
-              "name": "blockchain",
-              "ty": "String"
-            },
-            {
-              "name": "dex",
-              "ty": "String"
-            },
-            {
-              "name": "transaction_hash",
-              "ty": "String"
-            }
-          ],
-          "returns": [
-            {
-              "name": "success",
-              "ty": "Boolean"
-            }
-          ],
-          "stream_response": [],
-          "description": "",
-          "json_schema": null
-        },
-        {
           "name": "UserListBackedStrategies",
           "code": 20090,
           "parameters": [],
@@ -643,7 +608,7 @@
                     },
                     {
                       "name": "quantity",
-                      "ty": "Numeric"
+                      "ty": "String"
                     },
                     {
                       "name": "blockchain",
@@ -664,33 +629,6 @@
                   ]
                 }
               }
-            }
-          ],
-          "stream_response": [],
-          "description": "",
-          "json_schema": null
-        },
-        {
-          "name": "UserExitStrategy",
-          "code": 20110,
-          "parameters": [
-            {
-              "name": "strategy_id",
-              "ty": "BigInt"
-            },
-            {
-              "name": "quantity",
-              "ty": "Numeric"
-            }
-          ],
-          "returns": [
-            {
-              "name": "success",
-              "ty": "Boolean"
-            },
-            {
-              "name": "transaction_hash",
-              "ty": "String"
             }
           ],
           "stream_response": [],
@@ -725,7 +663,7 @@
                     },
                     {
                       "name": "exit_quantity",
-                      "ty": "Numeric"
+                      "ty": "String"
                     },
                     {
                       "name": "purchase_wallet_address",
@@ -1167,6 +1105,10 @@
             {
               "name": "message_signature",
               "ty": "String"
+            },
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
             }
           ],
           "returns": [

@@ -96,14 +96,13 @@ async fn handle_eth_escrows(state: State<Arc<AppState>>, body: Bytes) -> Result<
         let state = state.clone();
         tokio::spawn(async move {
             match parse_ethereum_transaction(hash, &conn).await {
-                Ok((tx, called_contract)) => {
+                Ok((tx, _called_contract)) => {
                     if let Err(e) = evm::cache_ethereum_transaction(&hash, &tx, &state.db).await {
                         error!("error caching transaction: {:?}", e);
                     };
                     if let Err(e) = parse_escrow(
                         EnumBlockChain::EthereumMainnet,
                         &tx,
-                        &called_contract,
                         &state.stablecoin_addresses,
                         &state.erc_20,
                     ) {

@@ -197,6 +197,39 @@ END
             "#,
         ),
         ProceduralFunction::new(
+            "fun_user_get_strategy_from_wallet",
+            // TODO search options
+            vec![
+                Field::new("wallet_address", Type::String),
+                Field::new("blockchain", Type::String),
+            ],
+            vec![
+                Field::new("strategy_id", Type::BigInt),
+                Field::new("strategy_name", Type::String),
+                Field::new("strategy_description", Type::String),
+                Field::new("net_value", Type::Numeric),
+                Field::new("followers", Type::Int),
+                Field::new("backers", Type::Int),
+                Field::new("risk_score", Type::Numeric),
+                Field::new("aum", Type::Numeric),
+                // TODO more fields
+            ],
+            r#"
+BEGIN
+    RETURN QUERY SELECT a.pkey_id AS strategy_id,
+                          a.name AS strategy_name,
+                          a.description AS strategy_description,
+                          NULL AS net_value,
+                          (SELECT COUNT(*) FROM tbl.user_follow_strategy WHERE fkey_strategy_id = a.pkey_id AND unfollowed = FALSE) AS followers,
+                          (SELECT COUNT(DISTINCT user_back_strategy_history.fkey_user_id) FROM tbl.user_back_strategy_history WHERE fkey_strategy_id = a.pkey_id) AS followers,
+                          a.risk_score as risk_score,
+                          a.aum as aum
+                 FROM tbl.strategy AS a
+                 WHERE a.pkey_id = a_strategy_id;
+END
+            "#,
+        ),
+        ProceduralFunction::new(
             "fun_user_get_strategy_statistics_net_value",
             vec![Field::new("strategy_id", Type::BigInt)],
             vec![
@@ -241,18 +274,17 @@ END
             vec![
                 Field::new("user_id", Type::BigInt),
                 Field::new("strategy_id", Type::BigInt),
-                Field::new("quantity", Type::Numeric),
+                Field::new("quantity", Type::String),
                 Field::new("purchase_wallet", Type::String),
                 Field::new("blockchain", Type::String),
-                Field::new("dex", Type::String),
                 Field::new("transaction_hash", Type::String),
             ],
             vec![Field::new("success", Type::Boolean)],
             r#"
 BEGIN
-    INSERT INTO tbl.user_back_strategy_history (fkey_user_id, fkey_strategy_id, quantity, purchase_wallet, blockchain, dex,
+    INSERT INTO tbl.user_back_strategy_history (fkey_user_id, fkey_strategy_id, quantity, purchase_wallet, blockchain,
                                                 transaction_hash, back_time)
-    VALUES (a_user_id, a_strategy_id, a_quantity, a_purchase_wallet, a_blockchain, a_dex, a_transaction_hash,
+    VALUES (a_user_id, a_strategy_id, a_quantity, a_purchase_wallet, a_blockchain, a_transaction_hash,
             extract(epoch from now())::bigint);
     RETURN QUERY SELECT TRUE;
 END
@@ -302,7 +334,7 @@ END
             vec![
                 Field::new("back_history_id", Type::BigInt),
                 Field::new("strategy_id", Type::BigInt),
-                Field::new("quantity", Type::Numeric),
+                Field::new("quantity", Type::String),
                 Field::new("wallet_address", Type::String),
                 Field::new("blockchain", Type::String),
                 Field::new("dex", Type::String),
@@ -330,7 +362,7 @@ END
             vec![
                 Field::new("user_id", Type::BigInt),
                 Field::new("strategy_id", Type::BigInt),
-                Field::new("quantity", Type::Numeric),
+                Field::new("quantity", Type::String),
                 Field::new("blockchain", Type::String),
                 Field::new("dex", Type::String),
                 Field::new("back_time", Type::BigInt),
@@ -358,7 +390,7 @@ END
             vec![
                 Field::new("exit_history_id", Type::BigInt),
                 Field::new("strategy_id", Type::BigInt),
-                Field::new("exit_quantity", Type::Numeric),
+                Field::new("exit_quantity", Type::String),
                 Field::new("purchase_wallet_address", Type::String),
                 Field::new("blockchain", Type::String),
                 Field::new("dex", Type::String),
@@ -536,6 +568,7 @@ END
                 Field::new("user_id", Type::BigInt),
                 Field::new("blockchain", Type::String),
                 Field::new("wallet_address", Type::String),
+                Field::new("strategy_id", Type::BigInt),
             ],
             vec![
                 Field::new("success", Type::Boolean),
@@ -545,8 +578,8 @@ END
 DECLARE
     a_wallet_id bigint;
 BEGIN
-    INSERT INTO tbl.user_wallet (fkey_user_id, blockchain, address)
-    VALUES (a_user_id, a_blockchain, a_wallet_address)
+    INSERT INTO tbl.user_wallet (fkey_user_id, blockchain, address, fkey_strategy_id)
+    VALUES (a_user_id, a_blockchain, a_wallet_address, a_strategy_id)
     RETURNING pkey_id INTO a_wallet_id;
     RETURN QUERY SELECT TRUE, a_wallet_id;
 END

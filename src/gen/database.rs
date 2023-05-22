@@ -448,6 +448,50 @@ impl DatabaseRequest for FunUserGetStrategyReq {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserGetStrategyFromWalletReq {
+    pub wallet_address: String,
+    pub blockchain: String,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserGetStrategyFromWalletRespRow {
+    pub strategy_id: i64,
+    pub strategy_name: String,
+    pub strategy_description: String,
+    pub net_value: f32,
+    pub followers: i32,
+    pub backers: i32,
+    pub risk_score: f32,
+    pub aum: f32,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunUserGetStrategyFromWalletReq {
+    type ResponseRow = FunUserGetStrategyFromWalletRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_get_strategy_from_wallet(a_wallet_address => $1::varchar, a_blockchain => $2::varchar);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.wallet_address as &(dyn ToSql + Sync),
+            &self.blockchain as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserGetStrategyFromWalletRespRow> {
+        let r = FunUserGetStrategyFromWalletRespRow {
+            strategy_id: row.try_get(0)?,
+            strategy_name: row.try_get(1)?,
+            strategy_description: row.try_get(2)?,
+            net_value: row.try_get(3)?,
+            followers: row.try_get(4)?,
+            backers: row.try_get(5)?,
+            risk_score: row.try_get(6)?,
+            aum: row.try_get(7)?,
+        };
+        Ok(r)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserGetStrategyStatisticsNetValueReq {
     pub strategy_id: i64,
 }
@@ -537,10 +581,9 @@ impl DatabaseRequest for FunUserGetStrategyStatisticsBackHistoryReq {
 pub struct FunUserBackStrategyReq {
     pub user_id: i64,
     pub strategy_id: i64,
-    pub quantity: f32,
+    pub quantity: String,
     pub purchase_wallet: String,
     pub blockchain: String,
-    pub dex: String,
     pub transaction_hash: String,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -552,7 +595,7 @@ pub struct FunUserBackStrategyRespRow {
 impl DatabaseRequest for FunUserBackStrategyReq {
     type ResponseRow = FunUserBackStrategyRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_back_strategy(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_quantity => $3::real, a_purchase_wallet => $4::varchar, a_blockchain => $5::varchar, a_dex => $6::varchar, a_transaction_hash => $7::varchar);"
+        "SELECT * FROM api.fun_user_back_strategy(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_quantity => $3::varchar, a_purchase_wallet => $4::varchar, a_blockchain => $5::varchar, a_transaction_hash => $6::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -561,7 +604,6 @@ impl DatabaseRequest for FunUserBackStrategyReq {
             &self.quantity as &(dyn ToSql + Sync),
             &self.purchase_wallet as &(dyn ToSql + Sync),
             &self.blockchain as &(dyn ToSql + Sync),
-            &self.dex as &(dyn ToSql + Sync),
             &self.transaction_hash as &(dyn ToSql + Sync),
         ]
     }
@@ -623,7 +665,7 @@ pub struct FunUserListBackStrategyHistoryReq {
 pub struct FunUserListBackStrategyHistoryRespRow {
     pub back_history_id: i64,
     pub strategy_id: i64,
-    pub quantity: f32,
+    pub quantity: String,
     pub wallet_address: String,
     pub blockchain: String,
     pub dex: String,
@@ -662,7 +704,7 @@ impl DatabaseRequest for FunUserListBackStrategyHistoryReq {
 pub struct FunUserExitStrategyReq {
     pub user_id: i64,
     pub strategy_id: i64,
-    pub quantity: f32,
+    pub quantity: String,
     pub blockchain: String,
     pub dex: String,
     pub back_time: i64,
@@ -678,7 +720,7 @@ pub struct FunUserExitStrategyRespRow {
 impl DatabaseRequest for FunUserExitStrategyReq {
     type ResponseRow = FunUserExitStrategyRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_exit_strategy(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_quantity => $3::real, a_blockchain => $4::varchar, a_dex => $5::varchar, a_back_time => $6::bigint, a_transaction_hash => $7::varchar, a_purchase_wallet => $8::varchar);"
+        "SELECT * FROM api.fun_user_exit_strategy(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_quantity => $3::varchar, a_blockchain => $4::varchar, a_dex => $5::varchar, a_back_time => $6::bigint, a_transaction_hash => $7::varchar, a_purchase_wallet => $8::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -710,7 +752,7 @@ pub struct FunUserListExitStrategyHistoryReq {
 pub struct FunUserListExitStrategyHistoryRespRow {
     pub exit_history_id: i64,
     pub strategy_id: i64,
-    pub exit_quantity: f32,
+    pub exit_quantity: String,
     pub purchase_wallet_address: String,
     pub blockchain: String,
     pub dex: String,
@@ -968,6 +1010,7 @@ pub struct FunUserRegisterWalletReq {
     pub user_id: i64,
     pub blockchain: String,
     pub wallet_address: String,
+    pub strategy_id: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserRegisterWalletRespRow {
@@ -979,13 +1022,14 @@ pub struct FunUserRegisterWalletRespRow {
 impl DatabaseRequest for FunUserRegisterWalletReq {
     type ResponseRow = FunUserRegisterWalletRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_register_wallet(a_user_id => $1::bigint, a_blockchain => $2::varchar, a_wallet_address => $3::varchar);"
+        "SELECT * FROM api.fun_user_register_wallet(a_user_id => $1::bigint, a_blockchain => $2::varchar, a_wallet_address => $3::varchar, a_strategy_id => $4::bigint);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
             &self.user_id as &(dyn ToSql + Sync),
             &self.blockchain as &(dyn ToSql + Sync),
             &self.wallet_address as &(dyn ToSql + Sync),
+            &self.strategy_id as &(dyn ToSql + Sync),
         ]
     }
     fn parse_row(&self, row: Row) -> Result<FunUserRegisterWalletRespRow> {

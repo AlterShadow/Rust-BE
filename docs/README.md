@@ -19,10 +19,8 @@ ID: 2
 |20061|UserListStrategies||strategies|User lists followed strategies|
 |20062|UserGetStrategy|strategy_id|strategy_id, strategy_name, strategy_description, creator_user_id, social_media, historical_return, inception_time, total_amount, token_allocation, reputation, risk_score, aum, net_value, followers, backers, watching_wallets, aum_history|User gets a strategy|
 |20070|UserGetStrategyStatistics|strategy_id|strategy_id, net_value, follow_history, back_history|User gets a strategy statistics|
-|20080|UserBackStrategy|strategy_id, quantity, blockchain, dex, transaction_hash|success||
 |20090|UserListBackedStrategies||strategies||
 |20100|UserListBackStrategyHistory||back_history||
-|20110|UserExitStrategy|strategy_id, quantity|success, transaction_hash||
 |20120|UserListExitStrategyHistory|strategy_id|exit_history||
 |20130|UserFollowExpert|expert_id|success|User follows an expert|
 |20140|UserListFollowedExperts||experts|User lists followed experts|
@@ -30,7 +28,7 @@ ID: 2
 |20160|UserListExperts||experts|User lists experts|
 |20170|UserGetExpertProfile|expert_id|expert_id, name, follower_count, description, social_media, risk_score, reputation_score, aum, strategies|User gets an expert profile|
 |20180|UserGetUserProfile|user_id|user_id, name, follower_count, description, social_media, followed_experts, followed_strategies, backed_strategies|User gets an user profile|
-|20190|UserRegisterWallet|blockchain, wallet_address, message_to_sign, message_signature|success, wallet_id|User registers a wallet|
+|20190|UserRegisterWallet|blockchain, wallet_address, message_to_sign, message_signature, strategy_id|success, wallet_id|User registers a wallet|
 |20200|UserListWallets||wallets|User lists wallets|
 |20210|UserDeregisterWallet|wallet_id|success|User deregisters a wallet|
 |20220|UserApplyBecomeExpert||success|User applies to become an expert|

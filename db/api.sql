@@ -436,6 +436,36 @@ END
 $$;
         
 
+CREATE OR REPLACE FUNCTION api.fun_user_get_strategy_from_wallet(a_wallet_address varchar, a_blockchain varchar)
+RETURNS table (
+    "strategy_id" bigint,
+    "strategy_name" varchar,
+    "strategy_description" varchar,
+    "net_value" real,
+    "followers" int,
+    "backers" int,
+    "risk_score" real,
+    "aum" real
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY SELECT a.pkey_id AS strategy_id,
+                          a.name AS strategy_name,
+                          a.description AS strategy_description,
+                          NULL AS net_value,
+                          (SELECT COUNT(*) FROM tbl.user_follow_strategy WHERE fkey_strategy_id = a.pkey_id AND unfollowed = FALSE) AS followers,
+                          (SELECT COUNT(DISTINCT user_back_strategy_history.fkey_user_id) FROM tbl.user_back_strategy_history WHERE fkey_strategy_id = a.pkey_id) AS followers,
+                          a.risk_score as risk_score,
+                          a.aum as aum
+                 FROM tbl.strategy AS a
+                 WHERE a.pkey_id = a_strategy_id;
+END
+            
+$$;
+        
+
 CREATE OR REPLACE FUNCTION api.fun_user_get_strategy_statistics_net_value(a_strategy_id bigint)
 RETURNS table (
     "time" bigint,
@@ -482,7 +512,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_back_strategy(a_user_id bigint, a_strategy_id bigint, a_quantity real, a_purchase_wallet varchar, a_blockchain varchar, a_dex varchar, a_transaction_hash varchar)
+CREATE OR REPLACE FUNCTION api.fun_user_back_strategy(a_user_id bigint, a_strategy_id bigint, a_quantity varchar, a_purchase_wallet varchar, a_blockchain varchar, a_transaction_hash varchar)
 RETURNS table (
     "success" boolean
 )
@@ -490,9 +520,9 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    INSERT INTO tbl.user_back_strategy_history (fkey_user_id, fkey_strategy_id, quantity, purchase_wallet, blockchain, dex,
+    INSERT INTO tbl.user_back_strategy_history (fkey_user_id, fkey_strategy_id, quantity, purchase_wallet, blockchain,
                                                 transaction_hash, back_time)
-    VALUES (a_user_id, a_strategy_id, a_quantity, a_purchase_wallet, a_blockchain, a_dex, a_transaction_hash,
+    VALUES (a_user_id, a_strategy_id, a_quantity, a_purchase_wallet, a_blockchain, a_transaction_hash,
             extract(epoch from now())::bigint);
     RETURN QUERY SELECT TRUE;
 END
@@ -541,7 +571,7 @@ CREATE OR REPLACE FUNCTION api.fun_user_list_back_strategy_history(a_user_id big
 RETURNS table (
     "back_history_id" bigint,
     "strategy_id" bigint,
-    "quantity" real,
+    "quantity" varchar,
     "wallet_address" varchar,
     "blockchain" varchar,
     "dex" varchar,
@@ -568,7 +598,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_exit_strategy(a_user_id bigint, a_strategy_id bigint, a_quantity real, a_blockchain varchar, a_dex varchar, a_back_time bigint, a_transaction_hash varchar, a_purchase_wallet varchar)
+CREATE OR REPLACE FUNCTION api.fun_user_exit_strategy(a_user_id bigint, a_strategy_id bigint, a_quantity varchar, a_blockchain varchar, a_dex varchar, a_back_time bigint, a_transaction_hash varchar, a_purchase_wallet varchar)
 RETURNS table (
     "success" boolean
 )
@@ -591,7 +621,7 @@ CREATE OR REPLACE FUNCTION api.fun_user_list_exit_strategy_history(a_user_id big
 RETURNS table (
     "exit_history_id" bigint,
     "strategy_id" bigint,
-    "exit_quantity" real,
+    "exit_quantity" varchar,
     "purchase_wallet_address" varchar,
     "blockchain" varchar,
     "dex" varchar,
@@ -777,7 +807,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_register_wallet(a_user_id bigint, a_blockchain varchar, a_wallet_address varchar)
+CREATE OR REPLACE FUNCTION api.fun_user_register_wallet(a_user_id bigint, a_blockchain varchar, a_wallet_address varchar, a_strategy_id bigint)
 RETURNS table (
     "success" boolean,
     "wallet_id" bigint
@@ -788,8 +818,8 @@ AS $$
 DECLARE
     a_wallet_id bigint;
 BEGIN
-    INSERT INTO tbl.user_wallet (fkey_user_id, blockchain, address)
-    VALUES (a_user_id, a_blockchain, a_wallet_address)
+    INSERT INTO tbl.user_wallet (fkey_user_id, blockchain, address, fkey_strategy_id)
+    VALUES (a_user_id, a_blockchain, a_wallet_address, a_strategy_id)
     RETURNING pkey_id INTO a_wallet_id;
     RETURN QUERY SELECT TRUE, a_wallet_id;
 END

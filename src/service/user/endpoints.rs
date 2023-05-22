@@ -153,20 +153,20 @@ pub fn endpoint_user_get_strategy_statistics() -> EndpointSchema {
     )
     .with_description("User gets a strategy statistics")
 }
-pub fn endpoint_user_back_strategy() -> EndpointSchema {
-    EndpointSchema::new(
-        "UserBackStrategy",
-        20080,
-        vec![
-            Field::new("strategy_id", Type::BigInt),
-            Field::new("quantity", Type::Numeric),
-            Field::new("blockchain", Type::String),
-            Field::new("dex", Type::String), // could be inferred from transaction hash though
-            Field::new("transaction_hash", Type::String),
-        ],
-        vec![Field::new("success", Type::Boolean)],
-    )
-}
+// pub fn endpoint_user_back_strategy() -> EndpointSchema {
+//     EndpointSchema::new(
+//         "UserBackStrategy",
+//         20080,
+//         vec![
+//             Field::new("strategy_id", Type::BigInt),
+//             Field::new("quantity", Type::String),
+//             Field::new("blockchain", Type::String),
+//             Field::new("dex", Type::String), // could be inferred from transaction hash though
+//             Field::new("transaction_hash", Type::String),
+//         ],
+//         vec![Field::new("success", Type::Boolean)],
+//     )
+// }
 
 pub fn endpoint_user_list_backed_strategies() -> EndpointSchema {
     EndpointSchema::new(
@@ -189,7 +189,7 @@ pub fn endpoint_user_list_back_strategy_history() -> EndpointSchema {
                 vec![
                     Field::new("back_history_id", Type::BigInt),
                     Field::new("strategy_id", Type::BigInt),
-                    Field::new("quantity", Type::Numeric),
+                    Field::new("quantity", Type::String),
                     Field::new("blockchain", Type::String),
                     Field::new("dex", Type::String),
                     Field::new("transaction_hash", Type::String),
@@ -200,20 +200,20 @@ pub fn endpoint_user_list_back_strategy_history() -> EndpointSchema {
     )
 }
 
-pub fn endpoint_user_exit_strategy() -> EndpointSchema {
-    EndpointSchema::new(
-        "UserExitStrategy",
-        20110,
-        vec![
-            Field::new("strategy_id", Type::BigInt),
-            Field::new("quantity", Type::Numeric),
-        ],
-        vec![
-            Field::new("success", Type::Boolean),
-            Field::new("transaction_hash", Type::String),
-        ],
-    )
-}
+// pub fn endpoint_user_exit_strategy() -> EndpointSchema {
+//     EndpointSchema::new(
+//         "UserExitStrategy",
+//         20110,
+//         vec![
+//             Field::new("strategy_id", Type::BigInt),
+//             Field::new("quantity", Type::String),
+//         ],
+//         vec![
+//             Field::new("success", Type::Boolean),
+//             Field::new("transaction_hash", Type::String),
+//         ],
+//     )
+// }
 
 pub fn endpoint_user_list_exit_strategy_history() -> EndpointSchema {
     EndpointSchema::new(
@@ -227,7 +227,7 @@ pub fn endpoint_user_list_exit_strategy_history() -> EndpointSchema {
                 vec![
                     Field::new("exit_history_id", Type::BigInt),
                     Field::new("strategy_id", Type::BigInt),
-                    Field::new("exit_quantity", Type::Numeric),
+                    Field::new("exit_quantity", Type::String),
                     Field::new("purchase_wallet_address", Type::String),
                     Field::new("blockchain", Type::String),
                     Field::new("dex", Type::String),
@@ -337,6 +337,7 @@ pub fn endpoint_user_register_wallet() -> EndpointSchema {
             Field::new("wallet_address", Type::String),
             Field::new("message_to_sign", Type::String),
             Field::new("message_signature", Type::String),
+            Field::new("strategy_id", Type::BigInt),
         ],
         vec![
             Field::new("success", Type::Boolean),
@@ -542,10 +543,10 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
         endpoint_user_list_strategies(),
         endpoint_user_get_strategy(),
         endpoint_user_get_strategy_statistics(),
-        endpoint_user_back_strategy(),
+        // endpoint_user_back_strategy(),
         endpoint_user_list_backed_strategies(),
         endpoint_user_list_back_strategy_history(),
-        endpoint_user_exit_strategy(),
+        // endpoint_user_exit_strategy(),
         endpoint_user_list_exit_strategy_history(),
         endpoint_user_follow_expert(),
         endpoint_user_list_followed_experts(),
