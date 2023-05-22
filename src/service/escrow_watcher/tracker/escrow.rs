@@ -8,7 +8,7 @@ use tracing::info;
 use web3::types::{H160, U256};
 
 use crate::evm::{
-    convert_h160_ethabi_to_web3, convert_u256_ethabi_to_web3, ContractCall, Transaction,
+    convert_h160_ethabi_to_web3, convert_u256_ethabi_to_web3, ContractCall, TransactionReady,
 };
 
 #[derive(Clone, Copy, Debug, Hash, Eq, PartialEq)]
@@ -113,7 +113,7 @@ pub enum Erc20Method {
 
 pub fn parse_escrow(
     chain: EnumBlockChain,
-    tx: &Transaction,
+    tx: &TransactionReady,
     stablecoin_addresses: &StableCoinAddresses,
     erc_20: &Erc20,
 ) -> Result<Escrow> {
@@ -127,7 +127,7 @@ pub fn parse_escrow(
 
     let sender = tx.get_from().context("No sender")?;
 
-    let input_data = tx.get_input_data().context("No input data")?;
+    let input_data = tx.get_input_data();
 
     let call = ContractCall::from_inputs(&erc_20.inner, &input_data)?;
     let method = get_method_by_name(&call.get_name()).context("call is not an escrow")?;
@@ -187,7 +187,7 @@ pub fn parse_escrow(
         }
     };
 
-    info!("tx: {:?}", tx.get_id().unwrap());
+    info!("tx: {:?}", tx.get_hash());
     info!("escrow: {:?}", escrow);
     Ok(escrow)
 }
@@ -217,6 +217,7 @@ mod tests {
     use crate::tracker::escrow::{build_erc_20, parse_escrow, StableCoinAddresses};
     use eyre::*;
     use gen::model::EnumBlockChain;
+    use itertools::Itertools;
     use lib::log::{setup_logs, LogLevel};
     use tracing::info;
 
@@ -224,14 +225,13 @@ mod tests {
     pub async fn test_usdt_transfer() -> Result<()> {
         let _ = setup_logs(LogLevel::Trace);
 
-        let mut tx = Transaction::new(
-            "0x977939d69a0826a6ef1e94ccfe76a2c2d87bac1d3fce53669b5c637435fd23c1".parse()?,
-        );
-        let conn_pool =
-            EthereumRpcConnectionPool::new("https://ethereum.publicnode.com".to_string(), 10)
-                .await?;
+        let conn_pool = EthereumRpcConnectionPool::mainnet();
         let conn = conn_pool.get_conn().await?;
-        tx.update(&conn).await?;
+        let mut tx = Transaction::new_and_assume_ready(
+            "0x977939d69a0826a6ef1e94ccfe76a2c2d87bac1d3fce53669b5c637435fd23c1".parse()?,
+            &conn,
+        )
+        .await?;
         let erc20 = build_erc_20()?;
         let trade = parse_escrow(
             EnumBlockChain::EthereumMainnet,
@@ -245,15 +245,14 @@ mod tests {
     #[tokio::test]
     pub async fn test_usdc_transfer() -> Result<()> {
         let _ = setup_logs(LogLevel::Trace);
-
-        let mut tx = Transaction::new(
-            "0x1f716239290641ad0121814df498e5e04c3759bf6d22c9c89a6aa5175a3ce4c6".parse()?,
-        );
-        let conn_pool =
-            EthereumRpcConnectionPool::new("https://ethereum.publicnode.com".to_string(), 10)
-                .await?;
+        let conn_pool = EthereumRpcConnectionPool::mainnet();
         let conn = conn_pool.get_conn().await?;
-        tx.update(&conn).await?;
+        let mut tx = Transaction::new_and_assume_ready(
+            "0x1f716239290641ad0121814df498e5e04c3759bf6d22c9c89a6aa5175a3ce4c6".parse()?,
+            &conn,
+        )
+        .await?;
+
         let erc20 = build_erc_20()?;
         let trade = parse_escrow(
             EnumBlockChain::EthereumMainnet,
@@ -267,15 +266,14 @@ mod tests {
     #[tokio::test]
     pub async fn test_busd_transfer() -> Result<()> {
         let _ = setup_logs(LogLevel::Trace);
-
-        let mut tx = Transaction::new(
-            "0x27e801a5735e5b530535165a18754c074c673263470fc1fad32cca5eb1bc9fea".parse()?,
-        );
-        let conn_pool =
-            EthereumRpcConnectionPool::new("https://ethereum.publicnode.com".to_string(), 10)
-                .await?;
+        let conn_pool = EthereumRpcConnectionPool::mainnet();
         let conn = conn_pool.get_conn().await?;
-        tx.update(&conn).await?;
+        let mut tx = Transaction::new_and_assume_ready(
+            "0x27e801a5735e5b530535165a18754c074c673263470fc1fad32cca5eb1bc9fea".parse()?,
+            &conn,
+        )
+        .await?;
+
         let erc20 = build_erc_20()?;
         let trade = parse_escrow(
             EnumBlockChain::EthereumMainnet,

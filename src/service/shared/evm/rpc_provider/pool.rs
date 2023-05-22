@@ -45,7 +45,7 @@ async fn new_transport(url: &str) -> Result<EitherTransport> {
 }
 
 impl EthereumRpcConnectionPool {
-    pub async fn new(provider_url: String, max_concurrent_requests: usize) -> Result<Self> {
+    pub fn new(provider_url: String, max_concurrent_requests: usize) -> Result<Self> {
         let pool = deadpool::managed::Pool::builder(EthereumRpcConnectionManager {
             provider_url,
             max_concurrent_requests,
@@ -53,6 +53,9 @@ impl EthereumRpcConnectionPool {
         .build()
         .unwrap();
         Ok(Self { pool })
+    }
+    pub fn mainnet() -> Self {
+        EthereumRpcConnectionPool::new("https://ethereum.publicnode.com".to_string(), 10).unwrap()
     }
 
     pub async fn get_conn(&self) -> Result<EthereumRpcConnectionGuard> {

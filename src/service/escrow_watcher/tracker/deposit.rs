@@ -1,4 +1,4 @@
-use crate::evm::Transaction;
+use crate::evm::TransactionReady;
 use crate::tracker::escrow::{parse_escrow, Erc20, StableCoinAddresses};
 use eyre::*;
 use gen::database::{FunUserBackStrategyReq, FunUserGetStrategyFromWalletReq};
@@ -10,7 +10,7 @@ pub async fn on_user_deposit(
     ctx: &RequestContext,
     db: &DbClient,
     chain: EnumBlockChain,
-    tx: &Transaction,
+    tx: &TransactionReady,
     stablecoin_addresses: &StableCoinAddresses,
     erc_20: &Erc20,
 ) -> Result<()> {
@@ -49,8 +49,9 @@ pub async fn on_user_deposit(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::evm::EthereumRpcConnectionPool;
+    use crate::evm::{EthereumRpcConnectionPool, Transaction};
     use crate::tracker::escrow::build_erc_20;
+    use itertools::Itertools;
     use lib::database::{connect_to_database, DatabaseConfig};
     use lib::log::{setup_logs, LogLevel};
     use tracing::info;
@@ -58,14 +59,13 @@ mod tests {
     async fn test_on_user_deposit() -> Result<()> {
         let _ = setup_logs(LogLevel::Trace);
 
-        let mut tx = Transaction::new(
-            "0x27e801a5735e5b530535165a18754c074c673263470fc1fad32cca5eb1bc9fea".parse()?,
-        );
-        let conn_pool =
-            EthereumRpcConnectionPool::new("https://ethereum.publicnode.com".to_string(), 10)
-                .await?;
+        let conn_pool = EthereumRpcConnectionPool::mainnet();
         let conn = conn_pool.get_conn().await?;
-        tx.update(&conn).await?;
+        let tx = Transaction::new_and_assume_ready(
+            "0x27e801a5735e5b530535165a18754c074c673263470fc1fad32cca5eb1bc9fea".parse()?,
+            &conn,
+        )
+        .await?;
         let erc20 = build_erc_20()?;
         let ctx = RequestContext {
             connection_id: 0,

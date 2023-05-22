@@ -92,20 +92,19 @@ pub async fn save_trade(hash: H256, trade: &Trade, db: &DbClient) -> Result<()> 
     Ok(())
 }
 pub async fn cache_ethereum_transaction(
-    hash: &H256,
-    tx: &Transaction,
+    tx: &TransactionReady,
     db: &DbClient,
+    blockchain: EnumBlockChain,
 ) -> Result<()> {
     if let Err(err) = async {
-        if let Some(content) = tx.get_transaction() {
-            db.execute(FunWatcherSaveRawTransactionReq {
-                transaction_hash: format!("{:?}", hash),
-                chain: EnumBlockChain::EthereumMainnet.to_string(),
-                dex: None,
-                raw_transaction: serde_json::to_string(content).context("transaction")?,
-            })
-            .await?;
-        }
+        db.execute(FunWatcherSaveRawTransactionReq {
+            transaction_hash: format!("{:?}", tx.get_hash()),
+            chain: blockchain.to_string(),
+            dex: None,
+            raw_transaction: serde_json::to_string(tx.get_transaction()).context("transaction")?,
+        })
+        .await?;
+
         Ok::<_, Error>(())
     }
     .await

@@ -7,7 +7,7 @@ use super::v3::{
 use ethabi::{Contract, Token};
 use eyre::*;
 
-use crate::evm::{convert_h256_ethabi_to_web3, ContractCall, DexPath, Trade, Transaction};
+use crate::evm::{convert_h256_ethabi_to_web3, ContractCall, DexPath, Trade, TransactionReady};
 use gen::model::{EnumBlockChain, EnumDex, EnumDexVersion};
 use std::str::FromStr;
 use web3::types::{H160, H256, U256};
@@ -43,14 +43,9 @@ impl PancakeSwap {
         }
     }
 
-    pub fn parse_trade(&self, tx: &Transaction, chain: EnumBlockChain) -> Result<Trade> {
+    pub fn parse_trade(&self, tx: &TransactionReady, chain: EnumBlockChain) -> Result<Trade> {
         /* if tx is successful, all of the following should be Some */
-        let value = match tx.get_value() {
-            Some(value) => value,
-            None => {
-                return Err(eyre!("failed to get value"));
-            }
-        };
+        let value = tx.get_value();
 
         let caller = match tx.get_from() {
             Some(caller) => caller,
@@ -144,7 +139,7 @@ impl PancakeSwap {
                 }
             } else {
                 /* amount in missing */
-                if value != 0 {
+                if value != 0.into() {
                     /* user paid in native tokens, transfer is from router to pool */
                     /* because the router first wrapped the token, in order to use pool */
                     let amount_in = match tx.amount_of_token_sent(
@@ -190,18 +185,13 @@ impl PancakeSwap {
         })
     }
 
-    fn get_multicall_funcs_and_params(&self, tx: &Transaction) -> Result<Vec<ContractCall>> {
+    fn get_multicall_funcs_and_params(&self, tx: &TransactionReady) -> Result<Vec<ContractCall>> {
         /*
                         function multicall(
                                 bytes[] calldata data
                         ) public payable override returns (bytes[] memory results);
         */
-        let multicall_input_data = match tx.get_input_data() {
-            Some(input_data) => input_data,
-            None => {
-                return Err(eyre!("no input data"));
-            }
-        };
+        let multicall_input_data = tx.get_input_data();
 
         let multicall = ContractCall::from_inputs(&self.smart_router, &multicall_input_data)?;
 
@@ -279,8 +269,9 @@ pub fn build_pancake_swap() -> Result<PancakeSwap> {
 mod tests {
     use super::*;
 
-    use crate::evm::EthereumRpcConnectionPool;
+    use crate::evm::{EthereumRpcConnectionPool, Transaction};
     use gen::model::EnumBlockChain;
+    use itertools::Itertools;
     use lib::log::{setup_logs, LogLevel};
     use tracing::info;
 
@@ -289,14 +280,14 @@ mod tests {
         let _ = setup_logs(LogLevel::Info);
 
         let pancake = build_pancake_swap()?;
-        let mut tx = Transaction::new(
-            "0x750d90bf90ad0fe7d035fbbab41334f6bb10bf7e71246d430cb23ed35d1df7c2".parse()?,
-        );
-        let conn_pool =
-            EthereumRpcConnectionPool::new("https://ethereum.publicnode.com".to_string(), 10)
-                .await?;
+        let conn_pool = EthereumRpcConnectionPool::mainnet();
         let conn = conn_pool.get_conn().await?;
-        tx.update(&conn).await?;
+        let tx = Transaction::new_and_assume_ready(
+            "0x750d90bf90ad0fe7d035fbbab41334f6bb10bf7e71246d430cb23ed35d1df7c2".parse()?,
+            &conn,
+        )
+        .await?;
+
         let trade = pancake.parse_trade(&tx, EnumBlockChain::EthereumMainnet)?;
         info!("trade: {:?}", trade);
         Ok(())

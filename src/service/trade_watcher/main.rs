@@ -18,8 +18,8 @@ use tracing::{error, info};
 pub mod evm;
 pub mod tracker;
 
-use crate::evm::parse_ethereum_transaction;
 use crate::evm::EthereumRpcConnectionPool;
+use crate::evm::Transaction;
 use crate::tracker::pancake_swap::pancake::build_pancake_swap;
 use crate::tracker::pancake_swap::PancakeSwap;
 use crate::tracker::parse::parse_dex_trade;
@@ -56,7 +56,7 @@ async fn main() -> Result<()> {
     setup_logs(config.log_level)?;
     let db = connect_to_database(config.app_db).await?;
 
-    let eth_pool = EthereumRpcConnectionPool::new(config.eth_provider_url.to_string(), 10).await?;
+    let eth_pool = EthereumRpcConnectionPool::new(config.eth_provider_url.to_string(), 10)?;
     let app: Router<(), Body> = Router::new()
         .route("/eth-mainnet-swaps", post(handle_eth_swap))
         .with_state(Arc::new(AppState {
@@ -99,26 +99,28 @@ async fn handle_eth_swap(state: State<Arc<AppState>>, body: Bytes) -> Result<(),
         })?;
         let state = state.clone();
         tokio::spawn(async move {
-            match parse_ethereum_transaction(hash, &conn).await {
-                Ok((tx, called_contract)) => {
-                    if let Err(e) = evm::cache_ethereum_transaction(&hash, &tx, &state.db).await {
-                        error!("error caching transaction: {:?}", e);
-                    };
-                    if let Err(e) = parse_dex_trade(
-                        EnumBlockChain::EthereumMainnet,
-                        &tx,
-                        &called_contract,
-                        &state.dex_addresses,
-                        &state.pancake_swap,
-                    )
-                    .await
-                    {
-                        error!("error parsing dex trade: {:?}", e);
-                    };
-                }
+            let tx = match Transaction::new_and_assume_ready(hash, &conn).await {
+                Ok(tx) => tx,
                 Err(err) => {
                     error!("error processing tx: {:?}", err);
+                    return;
                 }
+            };
+            if let Err(e) =
+                evm::cache_ethereum_transaction(&tx, &state.db, EnumBlockChain::EthereumMainnet)
+                    .await
+            {
+                error!("error caching transaction: {:?}", e);
+            };
+            if let Err(e) = parse_dex_trade(
+                EnumBlockChain::EthereumMainnet,
+                &tx,
+                &state.dex_addresses,
+                &state.pancake_swap,
+            )
+            .await
+            {
+                error!("error parsing dex trade: {:?}", e);
             };
         });
     }

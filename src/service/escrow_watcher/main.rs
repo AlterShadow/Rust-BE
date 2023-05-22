@@ -20,7 +20,7 @@ pub mod evm;
 pub mod tracker;
 use crate::tracker::escrow::{build_erc_20, parse_escrow, Erc20, StableCoinAddresses};
 
-use crate::evm::{parse_ethereum_transaction, parse_quickalert_payload, EthereumRpcConnectionPool};
+use crate::evm::{parse_quickalert_payload, EthereumRpcConnectionPool, Transaction};
 
 struct AppState {
     stablecoin_addresses: StableCoinAddresses,
@@ -52,7 +52,7 @@ async fn main() -> Result<()> {
     setup_logs(config.log_level)?;
     let db = connect_to_database(config.app_db).await?;
 
-    let eth_pool = EthereumRpcConnectionPool::new(config.eth_provider_url.to_string(), 10).await?;
+    let eth_pool = EthereumRpcConnectionPool::new(config.eth_provider_url.to_string(), 10)?;
     let app: Router<(), Body> = Router::new()
         .route("/eth-mainnet-escrows", post(handle_eth_escrows))
         .with_state(Arc::new(AppState {
@@ -95,23 +95,26 @@ async fn handle_eth_escrows(state: State<Arc<AppState>>, body: Bytes) -> Result<
         })?;
         let state = state.clone();
         tokio::spawn(async move {
-            match parse_ethereum_transaction(hash, &conn).await {
-                Ok((tx, _called_contract)) => {
-                    if let Err(e) = evm::cache_ethereum_transaction(&hash, &tx, &state.db).await {
-                        error!("error caching transaction: {:?}", e);
-                    };
-                    if let Err(e) = parse_escrow(
-                        EnumBlockChain::EthereumMainnet,
-                        &tx,
-                        &state.stablecoin_addresses,
-                        &state.erc_20,
-                    ) {
-                        error!("error parsing escrow trade: {:?}", e);
-                    };
-                }
+            let tx = match Transaction::new_and_assume_ready(hash, &conn).await {
+                Ok(tx) => tx,
                 Err(err) => {
                     error!("error processing tx: {:?}", err);
+                    return;
                 }
+            };
+            if let Err(e) =
+                evm::cache_ethereum_transaction(&tx, &state.db, EnumBlockChain::EthereumMainnet)
+                    .await
+            {
+                error!("error caching transaction: {:?}", e);
+            };
+            if let Err(e) = parse_escrow(
+                EnumBlockChain::EthereumMainnet,
+                &tx,
+                &state.stablecoin_addresses,
+                &state.erc_20,
+            ) {
+                error!("error parsing escrow trade: {:?}", e);
             };
         });
     }
