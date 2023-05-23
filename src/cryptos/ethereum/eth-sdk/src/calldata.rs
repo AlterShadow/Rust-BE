@@ -1,10 +1,8 @@
+use ethabi::{Contract, Param, ParamType, StateMutability, Token};
+use eyre::*;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::mem::transmute;
-
-use eyre::*;
-
-use ethabi::{Contract, Param, ParamType, StateMutability, Token};
-use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ContractCall {
@@ -22,7 +20,7 @@ impl ContractCall {
         Self {
             name,
             params,
-            state_mutability: state_mutability,
+            state_mutability,
         }
     }
 

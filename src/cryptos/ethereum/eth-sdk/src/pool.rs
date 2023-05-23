@@ -1,9 +1,9 @@
-use super::connection::EthereumRpcConnection;
+use super::conn::EthereumRpcConnection;
 use deadpool::managed::{Manager, Object, RecycleResult};
 use eyre::*;
 use std::sync::Arc;
 
-use crate::evm::rpc_provider::EitherTransport;
+use crate::conn::EitherTransport;
 use web3::transports::{Http, WebSocket};
 
 #[derive(Clone, Debug)]

@@ -1,8 +1,10 @@
-use crate::dex_tracker::DexAddresses;
-use crate::escrow_tracker::handle_eth_escrows;
+use crate::dex_tracker::pancake::build_pancake_swap;
+use crate::dex_tracker::{handle_eth_swap, DexAddresses};
+use crate::escrow_tracker::{handle_eth_escrows, StableCoinAddresses};
 use crate::evm::AppState;
 use axum::{body::Body, routing::post, Router};
 use axum_server::tls_rustls::RustlsConfig;
+use eth_sdk::erc20::build_erc_20;
 use eth_sdk::EthereumRpcConnectionPool;
 use eyre::*;
 use lib::config::load_config;
@@ -10,13 +12,10 @@ use lib::database::{connect_to_database, DatabaseConfig};
 use lib::log::{setup_logs, LogLevel};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tracing::info;
+use tracing::*;
 
-#[path = "../watcher/dex_tracker/mod.rs"]
 pub mod dex_tracker;
-#[path = "../watcher/escrow_tracker/mod.rs"]
 pub mod escrow_tracker;
-#[path = "../watcher/evm.rs"]
 pub mod evm;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -38,20 +37,28 @@ pub struct Config {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let config: Config = load_config("escrow-watcher".to_owned())?;
+    let config: Config = load_config("trade-watcher".to_owned())?;
     setup_logs(config.log_level)?;
     let db = connect_to_database(config.app_db).await?;
 
     let eth_pool = EthereumRpcConnectionPool::new(config.eth_provider_url.to_string(), 10)?;
     let app: Router<(), Body> = Router::new()
+        .route("/eth-mainnet-swaps", post(handle_eth_swap))
         .route("/eth-mainnet-escrows", post(handle_eth_escrows))
-        .with_state(Arc::new(AppState::new(db, eth_pool)?));
+        .with_state(Arc::new(AppState {
+            dex_addresses: DexAddresses::new(),
+            stablecoin_addresses: StableCoinAddresses::new(),
+            eth_pool,
+            erc_20: build_erc_20()?,
+            pancake_swap: build_pancake_swap()?,
+            db,
+        }));
 
     let addr = tokio::net::lookup_host((config.host.as_ref(), config.port))
         .await?
         .next()
         .context("failed to resolve address")?;
-    info!("Escrow watcher listening on {}", addr);
+    info!("Trade watcher listening on {}", addr);
     if let (Some(pub_cert), Some(priv_key)) = (config.pub_cert, config.priv_cert) {
         // configure certificate and private key used by https
         let config = RustlsConfig::from_pem_file(pub_cert, priv_key).await?;

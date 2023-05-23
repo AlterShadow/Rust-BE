@@ -1,21 +1,45 @@
+use crate::dex_tracker::pancake::build_pancake_swap;
+use crate::dex_tracker::{DexAddresses, PancakeSwap};
+use crate::escrow_tracker::StableCoinAddresses;
 use bytes::Bytes;
+use eth_sdk::erc20::{build_erc_20, Erc20Contract};
+use eth_sdk::{ContractCall, EthereumRpcConnectionPool, TransactionReady};
 use eyre::*;
 use gen::database::{FunWatcherSaveRawTransactionReq, FunWatcherSaveWalletActivityHistoryReq};
 use gen::model::{EnumBlockChain, EnumDex, EnumDexVersion};
 use lib::database::DbClient;
 use serde::{Deserialize, Serialize};
+
+
 use tracing::error;
 use web3::types::{H160, H256, U256};
 
-mod calldata;
-mod ethabi_to_web3;
-mod rpc_provider;
-mod tx;
-
-pub use calldata::*;
-pub use ethabi_to_web3::*;
-pub use rpc_provider::*;
-pub use tx::*;
+pub struct AppState {
+    pub dex_addresses: DexAddresses,
+    pub eth_pool: EthereumRpcConnectionPool,
+    pub pancake_swap: PancakeSwap,
+    pub db: DbClient,
+    pub stablecoin_addresses: StableCoinAddresses,
+    pub erc_20: Erc20Contract,
+}
+impl AppState {
+    pub fn new(db: DbClient, eth_pool: EthereumRpcConnectionPool) -> Result<Self> {
+        Ok(Self {
+            dex_addresses: DexAddresses::new(),
+            eth_pool,
+            pancake_swap: build_pancake_swap()?,
+            db,
+            stablecoin_addresses: StableCoinAddresses::new(),
+            erc_20: build_erc_20()?,
+        })
+    }
+}
+#[derive(Clone, Copy, Debug, Hash, Eq, PartialEq)]
+pub enum StableCoin {
+    Usdc,
+    Usdt,
+    Busd,
+}
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum DexPath {

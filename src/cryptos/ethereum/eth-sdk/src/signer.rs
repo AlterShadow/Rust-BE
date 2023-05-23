@@ -4,7 +4,7 @@ use eyre::*;
 use once_cell::sync::Lazy;
 use secp256k1::{All, Message, Secp256k1, SecretKey};
 use std::sync::Arc;
-use tracing::warn;
+use tracing::{info, warn};
 use web3::signing::{keccak256, recover, Key, SigningError};
 use web3::types::{Address, H256};
 
@@ -69,7 +69,7 @@ impl Key for EthereumSigner {
             warn!("sign error: {:?}", x);
             SigningError::InvalidMessage
         })?;
-
+        info!("Signature {}", hex::encode(&signature));
         let recovery_id = get_recovery_id(message, &signature, self.address).map_err(|x| {
             warn!("get_recovery_id error: {:?}", x);
             SigningError::InvalidMessage

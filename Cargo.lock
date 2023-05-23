@@ -856,6 +856,8 @@ dependencies = [
  "async-trait",
  "bytes",
  "crypto",
+ "deadpool",
+ "ethabi 18.0.0",
  "eyre",
  "hex",
  "k256",

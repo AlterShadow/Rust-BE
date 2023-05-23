@@ -12,10 +12,19 @@ use web3::transports::Http;
 use web3::types::{Address, TransactionParameters, TransactionRequest, H256, U256};
 use web3::Web3;
 
+mod calldata;
+mod conn;
 pub mod contract;
 pub mod erc20;
+mod pool;
 pub mod signer;
+mod tx;
 pub mod utils;
+
+pub use calldata::*;
+pub use conn::*;
+pub use pool::*;
+pub use tx::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum EthereumNet {

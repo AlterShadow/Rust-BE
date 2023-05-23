@@ -1,37 +1,22 @@
-use axum::{
-    body::{Body, Bytes},
-    extract::State,
-    http::StatusCode,
-    routing::post,
-    Router,
-};
+use crate::dex_tracker::{handle_eth_swap, DexAddresses};
+use crate::evm::AppState;
+use axum::{body::Body, routing::post, Router};
 use axum_server::tls_rustls::RustlsConfig;
+use eth_sdk::EthereumRpcConnectionPool;
 use eyre::*;
 use lib::config::load_config;
-use lib::database::{connect_to_database, DatabaseConfig, DbClient};
+use lib::database::{connect_to_database, DatabaseConfig};
 use lib::log::{setup_logs, LogLevel};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tracing::{error, info};
+use tracing::info;
 
-#[path = "../shared/evm/mod.rs"]
+#[path = "../watcher/dex_tracker/mod.rs"]
+pub mod dex_tracker;
+#[path = "../watcher/escrow_tracker/mod.rs"]
+pub mod escrow_tracker;
+#[path = "../watcher/evm.rs"]
 pub mod evm;
-pub mod tracker;
-
-use crate::evm::EthereumRpcConnectionPool;
-use crate::evm::Transaction;
-use crate::tracker::pancake_swap::pancake::build_pancake_swap;
-use crate::tracker::pancake_swap::PancakeSwap;
-use crate::tracker::parse::parse_dex_trade;
-use crate::tracker::DexAddresses;
-use gen::model::EnumBlockChain;
-
-struct AppState {
-    dex_addresses: DexAddresses,
-    eth_pool: EthereumRpcConnectionPool,
-    pancake_swap: PancakeSwap,
-    db: DbClient,
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
@@ -59,12 +44,7 @@ async fn main() -> Result<()> {
     let eth_pool = EthereumRpcConnectionPool::new(config.eth_provider_url.to_string(), 10)?;
     let app: Router<(), Body> = Router::new()
         .route("/eth-mainnet-swaps", post(handle_eth_swap))
-        .with_state(Arc::new(AppState {
-            dex_addresses: DexAddresses::new(),
-            eth_pool,
-            pancake_swap: build_pancake_swap()?,
-            db,
-        }));
+        .with_state(Arc::new(AppState::new(db, eth_pool)?));
 
     let addr = tokio::net::lookup_host((config.host.as_ref(), config.port))
         .await?
@@ -81,48 +61,6 @@ async fn main() -> Result<()> {
         axum::Server::bind(&addr)
             .serve(app.into_make_service())
             .await?;
-    }
-
-    Ok(())
-}
-
-async fn handle_eth_swap(state: State<Arc<AppState>>, body: Bytes) -> Result<(), StatusCode> {
-    let hashes = evm::parse_quickalert_payload(body).map_err(|e| {
-        error!("failed to parse QuickAlerts payload: {:?}", e);
-        StatusCode::BAD_REQUEST
-    })?;
-
-    for hash in hashes {
-        let conn = state.eth_pool.get_conn().await.map_err(|err| {
-            error!("error fetching connection guard: {}", err);
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?;
-        let state = state.clone();
-        tokio::spawn(async move {
-            let tx = match Transaction::new_and_assume_ready(hash, &conn).await {
-                Ok(tx) => tx,
-                Err(err) => {
-                    error!("error processing tx: {:?}", err);
-                    return;
-                }
-            };
-            if let Err(e) =
-                evm::cache_ethereum_transaction(&tx, &state.db, EnumBlockChain::EthereumMainnet)
-                    .await
-            {
-                error!("error caching transaction: {:?}", e);
-            };
-            if let Err(e) = parse_dex_trade(
-                EnumBlockChain::EthereumMainnet,
-                &tx,
-                &state.dex_addresses,
-                &state.pancake_swap,
-            )
-            .await
-            {
-                error!("error parsing dex trade: {:?}", e);
-            };
-        });
     }
 
     Ok(())

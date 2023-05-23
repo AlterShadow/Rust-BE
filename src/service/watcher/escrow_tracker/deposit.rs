@@ -1,7 +1,9 @@
-use crate::evm::TransactionReady;
-use crate::tracker::escrow::{parse_escrow, Erc20, StableCoinAddresses};
+use crate::escrow_tracker::escrow::parse_escrow;
+use crate::escrow_tracker::StableCoinAddresses;
 use crypto::Signer;
+use eth_sdk::erc20::Erc20Contract;
 use eth_sdk::signer::EthereumSigner;
+use eth_sdk::TransactionReady;
 use eyre::*;
 use gen::database::{FunUserBackStrategyReq, FunUserGetStrategyFromWalletReq};
 use gen::model::EnumBlockChain;
@@ -16,7 +18,7 @@ pub async fn on_user_deposit(
     chain: EnumBlockChain,
     tx: &TransactionReady,
     stablecoin_addresses: &StableCoinAddresses,
-    erc_20: &Erc20,
+    erc_20: &Erc20Contract,
     signer: Arc<dyn Signer>,
 ) -> Result<()> {
     let user_wallet_address = tx.get_from().context("missing user wallet address")?;
@@ -55,18 +57,27 @@ pub async fn on_user_deposit(
 }
 
 pub async fn deploy_strategy_contract(signer: Arc<dyn Signer>) -> Result<()> {
-    let ethsigner = EthereumSigner::new(signer)?;
+    let _ethsigner = EthereumSigner::new(signer)?;
 
     info!("Deploying strategy contract");
     Ok(())
 }
+pub async fn transfer_token_to_strategy_contract(signer: Arc<dyn Signer>) -> Result<()> {
+    let _ethsigner = EthereumSigner::new(signer)?;
+
+    info!("Transferring token to strategy contract");
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::evm::{EthereumRpcConnectionPool, Transaction};
-    use crate::tracker::escrow::build_erc_20;
     use crypto::openssl::OpensslPrivateKey;
-    use itertools::Itertools;
+    use eth_sdk::erc20::build_erc_20;
+    use eth_sdk::{EthereumRpcConnectionPool, Transaction};
+
+    use crate::escrow_tracker::escrow::parse_escrow;
+    use crate::escrow_tracker::StableCoinAddresses;
     use lib::database::{connect_to_database, DatabaseConfig};
     use lib::log::{setup_logs, LogLevel};
     use tracing::info;

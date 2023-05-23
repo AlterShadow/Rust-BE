@@ -5,8 +5,8 @@ use tracing::level_filters::LevelFilter;
 use tracing_log::LogTracer;
 use tracing_subscriber::{fmt, EnvFilter};
 use web3::api::Eth;
-use web3::signing::keccak256;
-use web3::types::{Address, TransactionReceipt, H256, U256};
+use web3::signing::{keccak256, Signature};
+use web3::types::{Address, TransactionReceipt, H160, H256, U256};
 use web3::Transport;
 pub fn eth_public_exponent_to_address(public_exponent: &crypto::PublicExponent) -> Result<Address> {
     let public_key = PublicKey::from_slice(&public_exponent.content).map_err(|_| {
@@ -65,6 +65,27 @@ where
         hash,
         max_retry
     )
+}
+
+pub fn encode_signature(sig: &Signature) -> String {
+    let mut sig_bytes = vec![];
+    sig_bytes.extend_from_slice(sig.r.as_bytes());
+    sig_bytes.extend_from_slice(sig.s.as_bytes());
+    sig_bytes.push(sig.v as u8 + 27);
+    hex::encode(sig_bytes)
+}
+pub fn convert_h160_ethabi_to_web3(ethabi_h160: ethabi::ethereum_types::H160) -> H160 {
+    H160::from_slice(&ethabi_h160.0)
+}
+
+pub fn convert_h256_ethabi_to_web3(ethabi_h256: ethabi::ethereum_types::H256) -> H256 {
+    H256::from_slice(&ethabi_h256.0)
+}
+
+pub fn convert_u256_ethabi_to_web3(ethabi_u256: ethabi::ethereum_types::U256) -> U256 {
+    let mut buffer = [0u8; 32];
+    ethabi_u256.to_big_endian(&mut buffer);
+    U256::from_big_endian(&buffer)
 }
 
 #[cfg(test)]

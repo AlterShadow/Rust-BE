@@ -310,3 +310,17 @@ impl From<WsClient> for TradeWatcherClient {
         Self::new(client)
     }
 }
+
+pub struct WatcherClient {
+    pub client: WsClient,
+}
+impl WatcherClient {
+    pub fn new(client: WsClient) -> Self {
+        Self { client }
+    }
+}
+impl From<WsClient> for WatcherClient {
+    fn from(client: WsClient) -> Self {
+        Self::new(client)
+    }
+}

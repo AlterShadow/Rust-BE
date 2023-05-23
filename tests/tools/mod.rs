@@ -1,12 +1,18 @@
+use eth_sdk::signer::EthereumSigner;
+use eth_sdk::utils::encode_signature;
 use eyre::*;
 use gen::client::*;
-use gen::model::{AuthorizeRequest, AuthorizeResponse, LoginRequest, LoginResponse};
+use gen::model::{
+    AuthorizeRequest, AuthorizeResponse, EnumService, LoginRequest, LoginResponse, SignupRequest,
+    SignupResponse,
+};
 use lib::utils::encode_header;
 use lib::ws::WsClient;
-use mc2_fi::endpoints::{endpoint_auth_authorize, endpoint_auth_login};
+use mc2_fi::endpoints::{endpoint_auth_authorize, endpoint_auth_login, endpoint_auth_signup};
 use std::path::Path;
 use std::process::Command;
 use tracing::*;
+use web3::signing::{hash_message, Key};
 
 pub async fn get_ws_auth_client(header: &str) -> Result<WsClient> {
     let connect_addr = "ws://localhost:8888";
@@ -38,4 +44,60 @@ pub fn drop_and_recreate_database() -> Result<()> {
         .arg("etc/config.json")
         .status()?;
     Ok(())
+}
+
+pub async fn signup(username: impl Into<String>, signer: &EthereumSigner) -> Result<()> {
+    let txt = format!("Signup {}", username.into());
+    let signature = signer.sign_message(hash_message(txt.as_bytes()).as_bytes())?;
+    let mut client = get_ws_auth_client(&encode_header(
+        SignupRequest {
+            address: format!("{:?}", signer.address),
+            signature_text: hex::encode(&txt),
+            signature: encode_signature(&signature),
+            email: "qjk2001@gmail.com".to_string(),
+            phone: "+00123456".to_string(),
+            agreed_tos: true,
+            agreed_privacy: true,
+            username: None,
+        },
+        endpoint_auth_signup(),
+    )?)
+    .await?;
+    let res: SignupResponse = client.recv_resp().await?;
+    info!("{:?}", res);
+    Ok(())
+}
+pub async fn login(username: impl Into<String>, signer: &EthereumSigner) -> Result<LoginResponse> {
+    let txt = format!("Login {}", username.into());
+    let signature = signer.sign_message(hash_message(txt.as_bytes()).as_bytes())?;
+    let mut client = get_ws_auth_client(&encode_header(
+        LoginRequest {
+            address: format!("{:?}", signer.address),
+            signature_text: hex::encode(txt),
+            signature: encode_signature(&signature),
+            service: EnumService::User as _,
+            device_id: "24787297130491616".to_string(),
+            device_os: "android".to_string(),
+        },
+        endpoint_auth_login(),
+    )?)
+    .await?;
+    let res: LoginResponse = client.recv_resp().await?;
+    println!("{:?}", res);
+    Ok(res)
+}
+pub async fn connect_user(
+    username: impl Into<String>,
+    signer: &EthereumSigner,
+) -> Result<UserClient> {
+    let login = login(username, signer).await?;
+    let client = get_ws_user_client(&AuthorizeRequest {
+        address: login.address,
+        token: login.user_token,
+        service: EnumService::User as _,
+        device_id: "24787297130491616".to_string(),
+        device_os: "android".to_string(),
+    })
+    .await?;
+    Ok(client)
 }

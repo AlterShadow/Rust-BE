@@ -1,8 +1,8 @@
+use eth_sdk::TransactionReady;
 use eyre::*;
 use tracing::info;
 
 use super::pancake_swap::PancakeSwap;
-use crate::evm::TransactionReady;
 use crate::DexAddresses;
 use gen::model::{EnumBlockChain, EnumDex};
 pub async fn parse_dex_trade(

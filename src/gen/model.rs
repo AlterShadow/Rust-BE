@@ -162,6 +162,9 @@ pub enum EnumService {
     ///
     #[postgres(name = "trade-watcher")]
     TradeWatcher = 5,
+    ///
+    #[postgres(name = "watcher")]
+    Watcher = 6,
 }
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]

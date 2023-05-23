@@ -59,3 +59,9 @@ ID: 5
 ## Endpoints
 |Method Code|Method Name|Parameters|Response|Description|
 |-----------|-----------|----------|--------|-----------|
+
+# watcher Server
+ID: 6
+## Endpoints
+|Method Code|Method Name|Parameters|Response|Description|
+|-----------|-----------|----------|--------|-----------|

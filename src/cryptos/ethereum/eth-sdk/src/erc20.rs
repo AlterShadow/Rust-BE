@@ -14,7 +14,7 @@ use web3::contract::{Contract, Options};
 use web3::transports::http::Http;
 use web3::types::{Address, H256, U256};
 
-const ERC20_ABI: &'static str = include_str!("erc20.abi.json");
+pub const ERC20_ABI: &'static str = include_str!("erc20.abi.json");
 
 pub struct Erc20Token {
     client: Web3<Http>,
@@ -232,4 +232,20 @@ impl CryptoToken for Erc20Token {
 
         Ok(format!("{:?}", tx_hash))
     }
+}
+
+pub struct Erc20Contract {
+    pub inner: ethabi::Contract,
+}
+
+impl Erc20Contract {
+    pub fn new(erc_20: ethabi::Contract) -> Self {
+        Self { inner: erc_20 }
+    }
+}
+
+pub fn build_erc_20() -> Result<Erc20Contract> {
+    let erc20 =
+        ethabi::Contract::load(ERC20_ABI.as_bytes()).context("failed to parse contract ABI")?;
+    Ok(Erc20Contract::new(erc20))
 }

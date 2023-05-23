@@ -2,10 +2,10 @@ use eyre::*;
 use std::ops::Deref;
 use std::sync::Arc;
 use tokio::sync::{OwnedSemaphorePermit, Semaphore, SemaphorePermit};
-
-use crate::evm::rpc_provider::EitherTransport;
+use web3::transports::{Either, Http, WebSocket};
 use web3::types::{Transaction, TransactionId, TransactionReceipt, H256};
 use web3::Web3;
+pub type EitherTransport = Either<WebSocket, Http>;
 
 #[derive(Clone, Debug)]
 pub struct EthereumRpcConnection {

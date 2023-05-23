@@ -23,6 +23,8 @@ once_cell = "*"
 serde = { version = "*", features = ["derive"] }
 serde_json = "*"
 bytes = "*"
+deadpool = { version = "0.9.5", features = ["managed", "rt_tokio_1"] }
+ethabi = "18.0.0"
 
 [features]
 default = []

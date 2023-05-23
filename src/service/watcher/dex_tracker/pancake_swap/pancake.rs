@@ -4,10 +4,11 @@ use super::v3::{
     single_hop::{exact_input_single, exact_output_single},
 };
 
+use crate::evm::{DexPath, Trade};
+use eth_sdk::utils::convert_h256_ethabi_to_web3;
+use eth_sdk::{ContractCall, TransactionReady};
 use ethabi::{Contract, Token};
 use eyre::*;
-
-use crate::evm::{convert_h256_ethabi_to_web3, ContractCall, DexPath, Trade, TransactionReady};
 use gen::model::{EnumBlockChain, EnumDex, EnumDexVersion};
 use std::str::FromStr;
 use web3::types::{H160, H256, U256};
@@ -269,7 +270,7 @@ pub fn build_pancake_swap() -> Result<PancakeSwap> {
 mod tests {
     use super::*;
 
-    use crate::evm::{EthereumRpcConnectionPool, Transaction};
+    use eth_sdk::{EthereumRpcConnectionPool, Transaction};
     use gen::model::EnumBlockChain;
     use itertools::Itertools;
     use lib::log::{setup_logs, LogLevel};

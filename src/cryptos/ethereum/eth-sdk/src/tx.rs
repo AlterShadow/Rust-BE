@@ -1,4 +1,4 @@
-use crate::evm::rpc_provider::EthereumRpcConnection;
+use crate::EthereumRpcConnection;
 use eyre::*;
 use web3::types::{Transaction as Web3Transaction, TransactionReceipt, H160, H256, U256};
 

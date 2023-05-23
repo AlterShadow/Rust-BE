@@ -1566,6 +1566,11 @@
       "name": "trade-watcher",
       "id": 5,
       "endpoints": []
+    },
+    {
+      "name": "watcher",
+      "id": 6,
+      "endpoints": []
     }
   ],
   "enums": [
@@ -1699,6 +1704,11 @@
           {
             "name": "trade-watcher",
             "value": 5,
+            "comment": ""
+          },
+          {
+            "name": "watcher",
+            "value": 6,
             "comment": ""
           }
         ]
