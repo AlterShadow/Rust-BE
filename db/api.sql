@@ -445,7 +445,8 @@ RETURNS table (
     "followers" int,
     "backers" int,
     "risk_score" real,
-    "aum" real
+    "aum" real,
+    "evm_contract_address" varchar
 )
 LANGUAGE plpgsql
 AS $$
@@ -458,7 +459,8 @@ BEGIN
                           (SELECT COUNT(*) FROM tbl.user_follow_strategy WHERE fkey_strategy_id = a.pkey_id AND unfollowed = FALSE) AS followers,
                           (SELECT COUNT(DISTINCT user_back_strategy_history.fkey_user_id) FROM tbl.user_back_strategy_history WHERE fkey_strategy_id = a.pkey_id) AS followers,
                           a.risk_score as risk_score,
-                          a.aum as aum
+                          a.aum as aum,
+                          a.evm_contract_address as evm_contract_address
                  FROM tbl.strategy AS a
                  WHERE a.pkey_id = a_strategy_id;
 END
@@ -975,6 +977,27 @@ BEGIN
     UPDATE tbl.strategy
     SET name = COALESCE(a_name, name),
         description = COALESCE(a_description, description)
+    WHERE pkey_id = a_strategy_id
+      AND fkey_user_id = a_user_id;
+    RETURN QUERY SELECT TRUE;
+END
+
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_admin_update_strategy(a_user_id bigint, a_strategy_id bigint, a_name varchar DEFAULT NULL, a_description varchar DEFAULT NULL, a_evm_contract_address varchar DEFAULT NULL)
+RETURNS table (
+    "success" boolean
+)
+LANGUAGE plpgsql
+AS $$
+    
+            
+BEGIN
+    UPDATE tbl.strategy
+    SET name = COALESCE(a_name, name),
+        description = COALESCE(a_description, description),
+        evm_contract_address = COALESCE(a_evm_contrct_address, evm_contrct_address)
     WHERE pkey_id = a_strategy_id
       AND fkey_user_id = a_user_id;
     RETURN QUERY SELECT TRUE;

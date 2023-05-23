@@ -104,6 +104,7 @@ CREATE TABLE tbl.strategy (
     tokens int  NULL,
     apy double precision  NULL,
     swap_fee double precision  NULL,
+    evm_contract_address varchar(20) NULL,
     CONSTRAINT strategy_pk PRIMARY KEY (pkey_id)
 );
 

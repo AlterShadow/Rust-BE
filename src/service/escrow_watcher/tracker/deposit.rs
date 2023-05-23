@@ -1,10 +1,14 @@
 use crate::evm::TransactionReady;
 use crate::tracker::escrow::{parse_escrow, Erc20, StableCoinAddresses};
+use crypto::Signer;
+use eth_sdk::signer::EthereumSigner;
 use eyre::*;
 use gen::database::{FunUserBackStrategyReq, FunUserGetStrategyFromWalletReq};
 use gen::model::EnumBlockChain;
 use lib::database::DbClient;
 use lib::toolbox::RequestContext;
+use std::sync::Arc;
+use tracing::info;
 
 pub async fn on_user_deposit(
     ctx: &RequestContext,
@@ -13,6 +17,7 @@ pub async fn on_user_deposit(
     tx: &TransactionReady,
     stablecoin_addresses: &StableCoinAddresses,
     erc_20: &Erc20,
+    signer: Arc<dyn Signer>,
 ) -> Result<()> {
     let user_wallet_address = tx.get_from().context("missing user wallet address")?;
     let esc = parse_escrow(chain, tx, stablecoin_addresses, erc_20)?;
@@ -40,25 +45,36 @@ pub async fn on_user_deposit(
         transaction_hash: format!("{:?}", tx.get_hash()),
     })
     .await?;
-    // TODO: call strategy contract to save above user back strategy on chain
+    if user_registered_strategy.evm_contract_address.is_none() {
+        deploy_strategy_contract(signer).await?;
+    }
+
     // TODO: invoke escrow wallet transfer to actually move asset to strategy
 
     Ok(())
 }
 
+pub async fn deploy_strategy_contract(signer: Arc<dyn Signer>) -> Result<()> {
+    let ethsigner = EthereumSigner::new(signer)?;
+
+    info!("Deploying strategy contract");
+    Ok(())
+}
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::evm::{EthereumRpcConnectionPool, Transaction};
     use crate::tracker::escrow::build_erc_20;
+    use crypto::openssl::OpensslPrivateKey;
     use itertools::Itertools;
     use lib::database::{connect_to_database, DatabaseConfig};
     use lib::log::{setup_logs, LogLevel};
     use tracing::info;
+
     #[tokio::test]
     async fn test_on_user_deposit() -> Result<()> {
         let _ = setup_logs(LogLevel::Trace);
-
+        let signer = OpensslPrivateKey::new_secp256k1_none("test_signer")?;
         let conn_pool = EthereumRpcConnectionPool::mainnet();
         let conn = conn_pool.get_conn().await?;
         let tx = Transaction::new_and_assume_ready(
@@ -88,6 +104,7 @@ mod tests {
             &tx,
             &StableCoinAddresses::new(),
             &erc20,
+            Arc::new(signer),
         )
         .await?;
         let trade = parse_escrow(

@@ -462,6 +462,8 @@ pub struct FunUserGetStrategyFromWalletRespRow {
     pub backers: i32,
     pub risk_score: f32,
     pub aum: f32,
+    #[serde(default)]
+    pub evm_contract_address: Option<String>,
 }
 
 #[allow(unused_variables)]
@@ -486,6 +488,7 @@ impl DatabaseRequest for FunUserGetStrategyFromWalletReq {
             backers: row.try_get(5)?,
             risk_score: row.try_get(6)?,
             aum: row.try_get(7)?,
+            evm_contract_address: row.try_get(8)?,
         };
         Ok(r)
     }
@@ -1291,6 +1294,45 @@ impl DatabaseRequest for FunUserUpdateStrategyReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunUserUpdateStrategyRespRow> {
         let r = FunUserUpdateStrategyRespRow {
+            success: row.try_get(0)?,
+        };
+        Ok(r)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAdminUpdateStrategyReq {
+    pub user_id: i64,
+    pub strategy_id: i64,
+    #[serde(default)]
+    pub name: Option<String>,
+    #[serde(default)]
+    pub description: Option<String>,
+    #[serde(default)]
+    pub evm_contract_address: Option<String>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAdminUpdateStrategyRespRow {
+    pub success: bool,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunAdminUpdateStrategyReq {
+    type ResponseRow = FunAdminUpdateStrategyRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_admin_update_strategy(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_name => $3::varchar, a_description => $4::varchar, a_evm_contract_address => $5::varchar);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.strategy_id as &(dyn ToSql + Sync),
+            &self.name as &(dyn ToSql + Sync),
+            &self.description as &(dyn ToSql + Sync),
+            &self.evm_contract_address as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunAdminUpdateStrategyRespRow> {
+        let r = FunAdminUpdateStrategyRespRow {
             success: row.try_get(0)?,
         };
         Ok(r)

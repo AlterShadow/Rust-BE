@@ -29,14 +29,6 @@ async fn test_bad_login() {
     println!("{:?}", res);
 }
 
-fn encode_signature(sig: &Signature) -> String {
-    let mut sig_bytes = vec![];
-    sig_bytes.extend_from_slice(sig.r.as_bytes());
-    sig_bytes.extend_from_slice(sig.s.as_bytes());
-    sig_bytes.push(sig.v as u8);
-    hex::encode(sig_bytes)
-}
-
 #[tokio::test]
 async fn test_signup() -> Result<()> {
     test_signup_inner().await?;

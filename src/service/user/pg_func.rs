@@ -212,6 +212,7 @@ END
                 Field::new("backers", Type::Int),
                 Field::new("risk_score", Type::Numeric),
                 Field::new("aum", Type::Numeric),
+                Field::new("evm_contract_address", Type::optional(Type::String)),
                 // TODO more fields
             ],
             r#"
@@ -223,7 +224,8 @@ BEGIN
                           (SELECT COUNT(*) FROM tbl.user_follow_strategy WHERE fkey_strategy_id = a.pkey_id AND unfollowed = FALSE) AS followers,
                           (SELECT COUNT(DISTINCT user_back_strategy_history.fkey_user_id) FROM tbl.user_back_strategy_history WHERE fkey_strategy_id = a.pkey_id) AS followers,
                           a.risk_score as risk_score,
-                          a.aum as aum
+                          a.aum as aum,
+                          a.evm_contract_address as evm_contract_address
                  FROM tbl.strategy AS a
                  WHERE a.pkey_id = a_strategy_id;
 END
@@ -727,6 +729,29 @@ BEGIN
     UPDATE tbl.strategy
     SET name = COALESCE(a_name, name),
         description = COALESCE(a_description, description)
+    WHERE pkey_id = a_strategy_id
+      AND fkey_user_id = a_user_id;
+    RETURN QUERY SELECT TRUE;
+END
+"#,
+        ),
+        ProceduralFunction::new(
+            "fun_admin_update_strategy",
+            vec![
+                Field::new("user_id", Type::BigInt),
+                Field::new("strategy_id", Type::BigInt),
+                Field::new("name", Type::optional(Type::String)),
+                Field::new("description", Type::optional(Type::String)),
+                Field::new("evm_contract_address", Type::optional(Type::String)),
+            ],
+            vec![Field::new("success", Type::Boolean)],
+            r#"
+            
+BEGIN
+    UPDATE tbl.strategy
+    SET name = COALESCE(a_name, name),
+        description = COALESCE(a_description, description),
+        evm_contract_address = COALESCE(a_evm_contrct_address, evm_contrct_address)
     WHERE pkey_id = a_strategy_id
       AND fkey_user_id = a_user_id;
     RETURN QUERY SELECT TRUE;
