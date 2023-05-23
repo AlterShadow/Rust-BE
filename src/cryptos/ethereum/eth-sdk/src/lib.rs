@@ -8,7 +8,6 @@ use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Duration;
 use token::CryptoToken;
-use web3::transports::Http;
 use web3::types::{Address, TransactionParameters, TransactionRequest, H256, U256};
 use web3::Web3;
 
@@ -38,11 +37,11 @@ pub enum EthereumNet {
 
 #[derive(Clone)]
 pub struct EthereumToken {
-    pub client: Web3<Http>,
+    pub client: Web3<EitherTransport>,
     pub net: EthereumNet,
 }
 impl EthereumToken {
-    pub fn new(net: EthereumNet) -> Result<Self> {
+    pub async fn new(net: EthereumNet) -> Result<Self> {
         let url = match net {
             EthereumNet::Mainnet => "https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",
             EthereumNet::Ropsten => "https://ropsten.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",
@@ -51,22 +50,11 @@ impl EthereumToken {
             EthereumNet::Kovan => "https://kovan.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",
             EthereumNet::Local => "http://localhost:8545",
         };
-        let transport = Http::new(url).unwrap();
+        let transport = new_transport(url).await?;
         let client = Web3::new(transport);
         Ok(EthereumToken { client, net })
     }
-    pub fn try_from_str(s: &str) -> Result<Option<Self>> {
-        let x = match s {
-            "ETH@mainnet" => Some(EthereumToken::new(EthereumNet::Mainnet)?),
-            "ETH@ropsten" => Some(EthereumToken::new(EthereumNet::Ropsten)?),
-            "ETH@rinkeby" => Some(EthereumToken::new(EthereumNet::Rinkeby)?),
-            "ETH@goerli" => Some(EthereumToken::new(EthereumNet::Goerli)?),
-            "ETH@kovan" => Some(EthereumToken::new(EthereumNet::Kovan)?),
-            "ETH@local" => Some(EthereumToken::new(EthereumNet::Local)?),
-            _ => None,
-        };
-        Ok(x)
-    }
+
     pub async fn get_accounts(&self) -> Result<Vec<Address>> {
         let accounts = self.client.eth().accounts().await?;
 

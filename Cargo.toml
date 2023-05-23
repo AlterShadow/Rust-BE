@@ -47,6 +47,8 @@ deadpool = { version = "0.9.5", features = ["managed", "rt_tokio_1"] }
 async-trait = "*"
 crypto = { path = "src/cryptos/crypto" }
 eth-sdk = { path = "src/cryptos/ethereum/eth-sdk" }
+token = { path = "src/cryptos/token" }
+
 [dependencies.uuid]
 version = "1.1.2"
 features = [

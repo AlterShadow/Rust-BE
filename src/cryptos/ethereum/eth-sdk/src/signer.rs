@@ -7,9 +7,9 @@ use std::sync::Arc;
 use tracing::{info, warn};
 use web3::signing::{keccak256, recover, Key, SigningError};
 use web3::types::{Address, H256};
-
+#[derive(Clone)]
 pub struct EthereumSigner {
-    inner: Arc<dyn Signer>,
+    pub inner: Arc<dyn Signer>,
     pub address: Address,
 }
 

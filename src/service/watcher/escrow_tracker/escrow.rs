@@ -7,7 +7,6 @@ use ethabi::Token;
 use eyre::*;
 use gen::model::EnumBlockChain;
 
-
 use tracing::info;
 use web3::types::{H160, U256};
 
@@ -39,7 +38,7 @@ pub fn parse_escrow(
     erc_20: &Erc20Contract,
 ) -> Result<Escrow> {
     let called_contract = tx.get_to().context("missing called contract")?;
-    let eth_mainnet_stablecoins = stablecoin_addresses.get(&chain).unwrap();
+    let eth_mainnet_stablecoins = stablecoin_addresses.get(chain).unwrap();
     let token: StableCoin = eth_mainnet_stablecoins
         .iter()
         .find(|(_, address)| *address == called_contract)

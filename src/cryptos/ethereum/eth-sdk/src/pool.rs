@@ -31,7 +31,7 @@ impl Manager for EthereumRpcConnectionManager {
 pub struct EthereumRpcConnectionPool {
     pool: deadpool::managed::Pool<EthereumRpcConnectionManager>,
 }
-async fn new_transport(url: &str) -> Result<EitherTransport> {
+pub async fn new_transport(url: &str) -> Result<EitherTransport> {
     let transport = match url {
         x if x.starts_with("http") => {
             EitherTransport::Right(Http::new(&url).context(url.to_owned())?)

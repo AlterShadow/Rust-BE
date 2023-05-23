@@ -1,6 +1,6 @@
 use crate::signer::EthereumSigner;
 use crate::utils::{eth_public_exponent_to_address, wait_for_confirmations_simple, wei_to_eth};
-use crate::EthereumNet;
+use crate::{new_transport, EitherTransport, EthereumNet};
 use crypto::Signer;
 use eyre::*;
 use std::any::Any;
@@ -11,20 +11,20 @@ use std::time::Duration;
 use token::CryptoToken;
 use web3::api::Web3;
 use web3::contract::{Contract, Options};
-use web3::transports::http::Http;
 use web3::types::{Address, H256, U256};
 
 pub const ERC20_ABI: &'static str = include_str!("erc20.abi.json");
 
 pub struct Erc20Token {
-    client: Web3<Http>,
+    client: Web3<EitherTransport>,
     net: EthereumNet,
     address: Address,
-    contract: Contract<Http>,
+    contract: Contract<EitherTransport>,
 }
 
 impl Erc20Token {
-    pub fn new(net: EthereumNet, address: Address) -> Result<Self> {
+    // TODO: pass transport from main instead
+    pub async fn new(net: EthereumNet, address: Address) -> Result<Self> {
         // I don't know whose token are these. Copilot gave me these
         let url = match net {
             EthereumNet::Mainnet => "https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",
@@ -34,7 +34,7 @@ impl Erc20Token {
             EthereumNet::Kovan => "https://kovan.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",
             EthereumNet::Local => "http://localhost:8545",
         };
-        let transport = Http::new(url).unwrap();
+        let transport = new_transport(url).await?;
         let client = Web3::new(transport);
         let contract = Contract::from_json(client.eth(), address, ERC20_ABI.as_bytes()).unwrap();
         Ok(Erc20Token {
@@ -43,23 +43,6 @@ impl Erc20Token {
             address,
             contract,
         })
-    }
-
-    pub fn try_from_str(s: &str, contract_address: &str) -> Result<Option<Self>> {
-        let address = || {
-            Address::from_str(contract_address)
-                .with_context(|| format!("address {}", contract_address))
-        };
-        let x = match s {
-            "ERC20@mainnet" => Some(Erc20Token::new(EthereumNet::Mainnet, address()?)?),
-            "ERC20@ropsten" => Some(Erc20Token::new(EthereumNet::Ropsten, address()?)?),
-            "ERC20@rinkeby" => Some(Erc20Token::new(EthereumNet::Rinkeby, address()?)?),
-            "ERC20@goerli" => Some(Erc20Token::new(EthereumNet::Goerli, address()?)?),
-            "ERC20@kovan" => Some(Erc20Token::new(EthereumNet::Kovan, address()?)?),
-            "ERC20@local" => Some(Erc20Token::new(EthereumNet::Local, address()?)?),
-            _ => None,
-        };
-        Ok(x)
     }
 }
 

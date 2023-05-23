@@ -11,7 +11,7 @@ use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::Arc;
 use tracing::error;
-use web3::types::H160;
+use web3::types::{Address, H160};
 
 pub mod deposit;
 pub mod escrow;
@@ -83,8 +83,16 @@ impl StableCoinAddresses {
     pub fn new() -> Self {
         Default::default()
     }
-    pub fn get(&self, chain: &EnumBlockChain) -> Option<&Vec<(StableCoin, H160)>> {
-        self.inner.get(chain)
+    pub fn get(&self, chain: EnumBlockChain) -> Option<&Vec<(StableCoin, Address)>> {
+        self.inner.get(&chain)
+    }
+    pub fn get_by_chain_and_token(
+        &self,
+        chain: EnumBlockChain,
+        coin: StableCoin,
+    ) -> Option<Address> {
+        let list = self.inner.get(&chain)?;
+        list.iter().find(|(x, _)| *x == coin).map(|(_, a)| *a)
     }
 }
 pub async fn handle_eth_escrows(

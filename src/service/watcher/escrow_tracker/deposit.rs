@@ -1,16 +1,19 @@
-use crate::escrow_tracker::escrow::parse_escrow;
+use crate::escrow_tracker::escrow::{parse_escrow, Escrow};
 use crate::escrow_tracker::StableCoinAddresses;
 use crypto::Signer;
-use eth_sdk::erc20::Erc20Contract;
+use eth_sdk::erc20::{Erc20Contract, Erc20Token};
 use eth_sdk::signer::EthereumSigner;
-use eth_sdk::TransactionReady;
+use eth_sdk::{EthereumNet, Transaction, TransactionReady};
 use eyre::*;
 use gen::database::{FunUserBackStrategyReq, FunUserGetStrategyFromWalletReq};
 use gen::model::EnumBlockChain;
 use lib::database::DbClient;
 use lib::toolbox::RequestContext;
+use std::str::FromStr;
 use std::sync::Arc;
+use token::CryptoToken;
 use tracing::info;
+use web3::ethabi::Hash;
 
 pub async fn on_user_deposit(
     ctx: &RequestContext,
@@ -21,6 +24,8 @@ pub async fn on_user_deposit(
     erc_20: &Erc20Contract,
     signer: Arc<dyn Signer>,
 ) -> Result<()> {
+    let signer = EthereumSigner::new(signer)?;
+
     let user_wallet_address = tx.get_from().context("missing user wallet address")?;
     let esc = parse_escrow(chain, tx, stablecoin_addresses, erc_20)?;
     // let our_valid_address = esc.recipient == "0x000".parse()?;
@@ -30,7 +35,7 @@ pub async fn on_user_deposit(
         "is not our valid address {:?}",
         esc.recipient
     );
-    let user_registered_strategy = db
+    let mut user_registered_strategy = db
         .execute(FunUserGetStrategyFromWalletReq {
             wallet_address: format!("{:?}", user_wallet_address),
             blockchain: chain.to_string(),
@@ -48,25 +53,60 @@ pub async fn on_user_deposit(
     })
     .await?;
     if user_registered_strategy.evm_contract_address.is_none() {
-        deploy_strategy_contract(signer).await?;
+        user_registered_strategy.evm_contract_address =
+            Some(deploy_strategy_contract(&signer).await?);
     }
 
-    // TODO: invoke escrow wallet transfer to actually move asset to strategy
-
+    // TODO: use a different signer because our escrow tracker is different from strategy address
+    let transaction = transfer_token_to_strategy_contract(
+        signer.clone(),
+        Escrow {
+            token: esc.token,
+            amount: esc.amount,
+            recipient: user_registered_strategy
+                .evm_contract_address
+                .unwrap()
+                .parse()?,
+            owner: signer.address,
+        },
+        stablecoin_addresses,
+    )
+    .await?;
+    info!("Transfer token to strategy contract {:?}", transaction);
     Ok(())
 }
 
-pub async fn deploy_strategy_contract(signer: Arc<dyn Signer>) -> Result<()> {
-    let _ethsigner = EthereumSigner::new(signer)?;
-
+pub async fn deploy_strategy_contract(signer: &EthereumSigner) -> Result<String> {
     info!("Deploying strategy contract");
-    Ok(())
+    Ok(format!("{:?}", signer.address))
 }
-pub async fn transfer_token_to_strategy_contract(signer: Arc<dyn Signer>) -> Result<()> {
-    let _ethsigner = EthereumSigner::new(signer)?;
-
-    info!("Transferring token to strategy contract");
-    Ok(())
+pub async fn transfer_token_to_strategy_contract(
+    signer: EthereumSigner,
+    escrow: Escrow,
+    stablecoin_addresses: &StableCoinAddresses,
+) -> Result<Transaction> {
+    let token = Erc20Token::new(
+        EthereumNet::Mainnet,
+        stablecoin_addresses
+            .get_by_chain_and_token(EnumBlockChain::EthereumMainnet, escrow.token)
+            .context("No token address registered")?,
+    )
+    .await?;
+    info!(
+        "Transferring token from {:?} to strategy contract {:?}",
+        escrow.owner, escrow.recipient
+    );
+    let hash = token
+        .transfer(
+            signer.inner.clone(),
+            signer.inner.clone(),
+            &format!("{:?}", escrow.owner),
+            &format!("{:?}", escrow.recipient),
+            &format!("{:?}", escrow.amount),
+        )
+        .await?;
+    let hash = Hash::from_str(&hash)?;
+    Ok(Transaction::new(hash))
 }
 
 #[cfg(test)]
