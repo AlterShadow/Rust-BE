@@ -14,6 +14,7 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tracing::*;
 
+pub mod contract_wrappers;
 pub mod dex_tracker;
 pub mod escrow_tracker;
 pub mod evm;

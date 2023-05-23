@@ -72,14 +72,65 @@ pub async fn on_user_deposit(
         stablecoin_addresses,
     )
     .await?;
+    /* Actually, on deposit we'll just transfer to a TBD account and add to his balance */
+    /**
+     * But, after he decides which strategy to back, we will:
+     * 1- make trades with the deposited tokens for the strategy's tokens in correct ratios
+     * 2- call "deposit" on the chosen strategy contract with the backer address as receiver of the minted shares
+     */
     info!("Transfer token to strategy contract {:?}", transaction);
     Ok(())
 }
 
+use crate::contract_wrappers::strategy_pool_factory::StrategyPoolFactoryContract;
+use eth_sdk::tx::TxStatus;
 pub async fn deploy_strategy_contract(signer: &EthereumSigner) -> Result<String> {
     info!("Deploying strategy contract");
+
+    let conn: web3::eth::Eth<web3::Transport> =
+        web3::eth::Eth::new(web3::transports::Http::new("http://localhost:8545").unwrap());
+    let factory_address = Address::from_str("strategy pool factory contract address");
+
+    let factory = StrategyPoolFactoryContract::new(conn, factory_address);
+
+    let expert_wallet_address =
+        Address::from_str("expert's EOA address corresponding to strategy").unwrap();
+    let strategy_token_name = "Strategy Pool Token Name".to_owned();
+    let strategy_token_symbol = "Strategy Pool Token SYMBOL".to_owned();
+    let backer_deposit_value = U256::from(1);
+
+    let tx_hash = factory
+        .create_pool(
+            signer,
+            signer.address,
+            expert_wallet_address,
+            strategy_token_name,
+            strategy_token_symbol,
+            backer_deposit_value,
+        )
+        .await?;
+
+    let tx = Transaction::new(tx_hash);
+    tx.update(conn).await?;
+
+    let mut pool_address: Address;
+    match tx.get_status() {
+        TxStatus::Successful => {
+            info!("Deploy strategy contract success");
+            pool_address = factory.get_pool(expert_wallet_address).await?;
+        }
+        TxStatus::Pending => {
+            info!("Deploy strategy contract pending");
+        }
+        _ => {
+            info!("Deploy strategy contract failed");
+        }
+    }
+
     Ok(format!("{:?}", signer.address))
 }
+
+use crate::contract_wrappers::escrow::EscrowContract;
 pub async fn transfer_token_to_strategy_contract(
     signer: EthereumSigner,
     escrow: Escrow,
@@ -96,17 +147,39 @@ pub async fn transfer_token_to_strategy_contract(
         "Transferring token from {:?} to strategy contract {:?}",
         escrow.owner, escrow.recipient
     );
-    let hash = token
-        .transfer(
-            signer.inner.clone(),
-            signer.inner.clone(),
-            &format!("{:?}", escrow.owner),
-            &format!("{:?}", escrow.recipient),
-            &format!("{:?}", escrow.amount),
-        )
+
+    /* the escrow contract holds the tokens, so the transfer comes from it */
+    let conn: web3::eth::Eth<web3::Transport> =
+        web3::eth::Eth::new(web3::transports::Http::new("http://localhost:8545").unwrap());
+    let escrow_address = Address::from_str("escrow contract address");
+
+    let escrow_contract = EscrowContract::new(conn, escrow_address);
+
+    let token_address = Address::from_str("address of token contract that escrow holds");
+    let recipient = Address::from_str(
+        "receiver of the transfer, still being decided, pending contract architecture refactor",
+    );
+    let amount = escrow.amount;
+
+    let tx_hash = escrow_contract
+        .transfer_token_to(signer, signer.address, token_address, recipient, amount)
         .await?;
-    let hash = Hash::from_str(&hash)?;
-    Ok(Transaction::new(hash))
+
+    let tx = Transaction::new(tx_hash);
+    tx.update(conn).await?;
+
+    match tx.get_status() {
+        TxStatus::Successful => {
+            info!("Transfer success");
+        }
+        TxStatus::Pending => {
+            info!("Transfer pending");
+        }
+        _ => {
+            info!("Transfer failed");
+        }
+    }
+    Ok(Transaction::new(tx_hash))
 }
 
 #[cfg(test)]
