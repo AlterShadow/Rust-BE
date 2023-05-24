@@ -118,10 +118,7 @@ mod tests {
     use crate::escrow_tracker::escrow::{parse_escrow, StableCoinAddresses};
     use eth_sdk::erc20::build_erc_20;
     use eth_sdk::{EthereumRpcConnectionPool, Transaction};
-
     use gen::model::EnumBlockChain;
-
-    use crate::escrow_tracker::StableCoinAddresses;
     use lib::log::{setup_logs, LogLevel};
     use tracing::info;
 

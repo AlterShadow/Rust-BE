@@ -185,12 +185,11 @@ pub async fn transfer_token_to_strategy_contract(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crypto::openssl::OpensslPrivateKey;
-    use eth_sdk::erc20::build_erc_20;
-    use eth_sdk::{EthereumRpcConnectionPool, Transaction};
-
     use crate::escrow_tracker::escrow::parse_escrow;
     use crate::escrow_tracker::StableCoinAddresses;
+    use eth_sdk::erc20::build_erc_20;
+    use eth_sdk::signer::Secp256k1SecretKey;
+    use eth_sdk::{EthereumRpcConnectionPool, Transaction};
     use lib::database::{connect_to_database, DatabaseConfig};
     use lib::log::{setup_logs, LogLevel};
     use tracing::info;
@@ -198,7 +197,7 @@ mod tests {
     #[tokio::test]
     async fn test_on_user_deposit() -> Result<()> {
         let _ = setup_logs(LogLevel::Trace);
-        let signer = OpensslPrivateKey::new_secp256k1_none("test_signer")?;
+        let key = Secp256k1SecretKey::new_random();
         let conn_pool = EthereumRpcConnectionPool::mainnet();
         let conn = conn_pool.get_conn().await?;
         let tx = Transaction::new_and_assume_ready(
@@ -228,7 +227,7 @@ mod tests {
             &tx,
             &StableCoinAddresses::new(),
             &erc20,
-            Arc::new(signer),
+            Arc::new(key),
         )
         .await?;
         let trade = parse_escrow(

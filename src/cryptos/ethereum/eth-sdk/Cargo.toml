@@ -10,7 +10,7 @@ web3 = { version = "*", features = ["signing"] }
 token = { path = "../../token" }
 eyre = "*"
 tokio = { version = "1", features = ["full"] }
-secp256k1 = "*"
+secp256k1 = { version = "*", features = ["global-context", "rand"] }
 crypto = { path = "../../crypto" }
 async-trait = "*"
 tracing-subscriber = { version = "*", features = ["env-filter"] }
@@ -18,7 +18,7 @@ tracing-log = "*"
 tracing = "*"
 hex = "*"
 k256 = "*"
-rand = "*"
+rand = "0.6.5"
 once_cell = "*"
 serde = { version = "*", features = ["derive"] }
 serde_json = "*"

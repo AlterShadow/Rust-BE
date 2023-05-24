@@ -90,13 +90,14 @@ pub fn convert_u256_ethabi_to_web3(ethabi_u256: ethabi::ethereum_types::U256) ->
 
 #[cfg(test)]
 mod tests {
-    use crypto::openssl::OpensslPrivateKey;
+
+    use crate::signer::Secp256k1SecretKey;
     use crypto::PublicKey;
     use eyre::*;
 
     #[test]
     fn test_eth_public_exponent_to_address() -> Result<()> {
-        let key = OpensslPrivateKey::new_secp256k1_none("test_eth_key")?;
+        let key = Secp256k1SecretKey::new_random();
         let public_exponent = key.public_exponent()?;
         let address = super::eth_public_exponent_to_address(&public_exponent).unwrap();
         println!("address: {}", address);

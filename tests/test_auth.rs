@@ -1,12 +1,10 @@
 pub mod tools;
 
-use crypto::openssl::OpensslPrivateKey;
-use eth_sdk::signer::EthereumSigner;
+use eth_sdk::signer::{EthereumSigner, Secp256k1SecretKey};
 use eyre::*;
 use gen::model::*;
 use lib::log::{setup_logs, LogLevel};
 use std::sync::Arc;
-
 use tools::*;
 
 #[path = "../src/service/auth/endpoints.rs"]
@@ -24,7 +22,7 @@ async fn test_signup() -> Result<()> {
     let _ = setup_logs(LogLevel::Trace);
     drop_and_recreate_database()?;
 
-    let key = OpensslPrivateKey::new_secp256k1_none("test_eth_key")?;
+    let key = Secp256k1SecretKey::new_random();
     let signer = EthereumSigner::new(Arc::new(key))?;
     signup("user1", &signer).await?;
     Ok(())
@@ -36,7 +34,7 @@ async fn test_login() -> Result<()> {
 
     drop_and_recreate_database()?;
 
-    let key = OpensslPrivateKey::new_secp256k1_none("test_eth_key")?;
+    let key = Secp256k1SecretKey::new_random();
     let signer = EthereumSigner::new(Arc::new(key))?;
     signup("user1", &signer).await?;
 

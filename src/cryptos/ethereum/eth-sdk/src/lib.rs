@@ -236,24 +236,16 @@ impl CryptoToken for EthereumToken {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::contract::{ContractDeployer, ForgeJsonOutput};
-    use crate::signer::SecretKeyOwned;
+    use crate::signer::Secp256k1SecretKey;
     use crate::utils::setup_logs;
     use crate::{EthereumNet, EthereumToken};
-    use crypto::openssl::OpensslPrivateKey;
-    use crypto::securosys::{
-        get_securosys_token, make_single_approver_policy, spawn_auto_approver, SecurosysSdk,
-    };
-    use crypto::PrivateKey;
-    use crypto::PublicKey;
-    use serde_json::Value;
     use token::CryptoToken;
     use tracing::info;
     use web3::types::U256;
 
     #[tokio::test]
     async fn test_get_eth_balance() -> Result<()> {
-        let token = EthereumToken::new(EthereumNet::Mainnet)?;
+        let token = EthereumToken::new(EthereumNet::Mainnet).await?;
         // any address
         let balance = token
             .get_balance("0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D")
@@ -265,12 +257,10 @@ mod test {
     #[tokio::test(flavor = "multi_thread")]
     async fn test_eth_transfer() -> Result<()> {
         setup_logs()?;
-        let token = EthereumToken::new(EthereumNet::Local)?;
+        let token = EthereumToken::new(EthereumNet::Local).await?;
 
         // raw openssl private key is not working with ethereum: https://github.com/ethereum/EIPs/blob/master/EIPS/eip-2.md
-        let signer = OpensslPrivateKey::new_secp256k1_none("local_eth_key")?;
-
-        let signer = SecretKeyOwned::new_from_private_exponent(&signer.private_exponent()?)?;
+        let signer = Secp256k1SecretKey::new_random();
         let signer = Arc::new(signer);
         let addr = format!("{:?}", signer.address);
 
@@ -297,14 +287,10 @@ mod test {
     #[tokio::test(flavor = "multi_thread")]
     async fn test_eth_transfer_on_goerli_eth() -> Result<()> {
         setup_logs()?;
-        let token = EthereumToken::new(EthereumNet::Goerli)?;
+        let token = EthereumToken::new(EthereumNet::Goerli).await?;
 
         // raw openssl private key is not working with ethereum: https://github.com/ethereum/EIPs/blob/master/EIPS/eip-2.md
-        let signer: OpensslPrivateKey = OpensslPrivateKey::new_secp256k1_none("local_eth_key")?;
-        // let private_key = hex::encode(&signer.private_exponent()?.content);
-        // info!("private key: {}", private_key);
-        // return Ok(());
-        let signer = SecretKeyOwned::new_from_private_exponent(&signer.private_exponent()?)?;
+        let signer = Secp256k1SecretKey::new_random();
         let signer = Arc::new(signer);
 
         let addr = format!("{:?}", signer.address);
@@ -321,115 +307,6 @@ mod test {
             )
             .await?;
         token.confirm_transaction(&tx).await?;
-        Ok(())
-    }
-    #[tokio::test(flavor = "multi_thread")]
-    async fn test_eth_transfer_with_securosys() -> Result<()> {
-        setup_logs()?;
-        let token = EthereumToken::new(EthereumNet::Local)?;
-
-        // raw openssl private key is not working with ethereum: https://github.com/ethereum/EIPs/blob/master/EIPS/eip-2.md
-        let signer = OpensslPrivateKey::new_secp256k1_none("local_eth_key")?;
-
-        let signer = SecretKeyOwned::new_from_private_exponent(&signer.private_exponent()?)?;
-        let signer = Arc::new(signer);
-        let addr = format!("{:?}", signer.address);
-
-        let tx = token.request_airdrop(&addr, "10.0").await?;
-        token.confirm_transaction(&tx).await?;
-
-        let to_address = "0x111013b7862Ebc1B9726420aa0E8728De310Ee63";
-        let balance = token.get_balance(&addr).await?;
-        println!("balance: {}", balance);
-        let tx = token
-            .transfer(
-                signer.clone() as _,
-                signer.clone() as _,
-                &addr,
-                to_address,
-                &token.convert_display_unit_to_internal_unit("8.0")?,
-            )
-            .await?;
-        token.confirm_transaction(&tx).await?;
-        Ok(())
-    }
-    #[tokio::test(flavor = "multi_thread")]
-    async fn test_transfer_with_securosys() -> Result<()> {
-        setup_logs()?;
-        let hsm = Arc::new(SecurosysSdk::new(get_securosys_token()?)?);
-        let approver = "approver";
-        let keyname = "test_ethereum_key";
-        let local_key = OpensslPrivateKey::new_secp256k1_none(keyname)?;
-        let approver_key = OpensslPrivateKey::new_secp256k1_sha256(approver)?;
-
-        let approver_key1 = OpensslPrivateKey::new_secp256k1_sha256(approver)?;
-        let hsm_signer = Arc::new(SecretKeyOwned::new_from_private_exponent(
-            &local_key.private_exponent()?,
-        )?);
-
-        let private_key = local_key.private_key()?;
-        let public_key = local_key.public_key()?;
-        hsm.delete_key(keyname).await?;
-        let policy = make_single_approver_policy(approver.to_owned(), approver_key1.public_key()?);
-        hsm.import_key_secp256k1(&keyname, policy, private_key, public_key)
-            .await?;
-        let terminate_tx = spawn_auto_approver(hsm.clone(), approver_key);
-        let token = EthereumToken::new(EthereumNet::Local)?;
-        let addresses = token.get_accounts().await?;
-        info!("addresses: {:?}", addresses);
-        let address1_addr = addresses[0];
-        let address1_str = format!("{:?}", address1_addr);
-        let balance = token.get_balance(&address1_str).await?;
-        info!("balance: {}", balance);
-        let tx = token
-            .transfer_debug(address1_addr, hsm_signer.address, 10.0)
-            .await?;
-        token.confirm_transaction(&tx).await?;
-        let balance2 = token.get_balance(&address1_str).await?;
-        info!("balance: {}", balance2);
-        let balance_signer = token
-            .get_balance(&format!("{:?}", hsm_signer.address))
-            .await?;
-        info!("balance: {}", balance_signer);
-        let tx = token
-            .transfer(
-                hsm_signer.clone() as _,
-                hsm_signer.clone() as _,
-                &format!("{:?}", hsm_signer.address),
-                &address1_str,
-                token.convert_display_unit_to_internal_unit("8.0")?.as_str(),
-            )
-            .await?;
-        token.confirm_transaction(&tx).await?;
-        let balance3 = token.get_balance(&address1_str).await?;
-        info!("balance: {}", balance3);
-        drop(terminate_tx);
-        Ok(())
-    }
-
-    #[tokio::test(flavor = "multi_thread")]
-    async fn test_deploy_erc20() -> Result<()> {
-        setup_logs()?;
-        let token = EthereumToken::new(EthereumNet::Local)?;
-        let signer = OpensslPrivateKey::new_secp256k1_none("local_eth_key")?;
-
-        let signer = SecretKeyOwned::new_from_private_exponent(&signer.private_exponent()?)?;
-        let signer = Arc::new(signer);
-        let addr = format!("{:?}", signer.address);
-
-        let tx = token
-            .request_airdrop(&addr, &token.convert_display_unit_to_internal_unit("10.0")?)
-            .await?;
-        token.confirm_transaction(&tx).await?;
-
-        let output = include_str!("../../erc20/out/MyERC20.sol/MyERC20.json");
-        let output: ForgeJsonOutput = serde_json::from_str(output)?;
-
-        let tx = ContractDeployer::new(token.client.eth(), Value::Array(output.abi))?
-            .code(output.bytecode.object)
-            .sign_with_key_and_execute((), EthereumSigner::new(signer.clone() as _)?)
-            .await?;
-        info!("deployed tx: {:?}", tx.address());
         Ok(())
     }
 }

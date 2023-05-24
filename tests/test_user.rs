@@ -1,8 +1,6 @@
 pub mod tools;
 
-use crypto::openssl::OpensslPrivateKey;
-
-use eth_sdk::signer::EthereumSigner;
+use eth_sdk::signer::{EthereumSigner, Secp256k1SecretKey};
 use eth_sdk::utils::encode_signature;
 use eyre::*;
 use gen::model::*;
@@ -17,7 +15,7 @@ async fn test_register_wallet() -> Result<()> {
     let _ = setup_logs(LogLevel::Info);
 
     drop_and_recreate_database()?;
-    let key = OpensslPrivateKey::new_secp256k1_none("test_eth_key")?;
+    let key = Secp256k1SecretKey::new_random();
     let signer = EthereumSigner::new(Arc::new(key))?;
 
     signup("user1", &signer).await?;
@@ -49,7 +47,7 @@ async fn test_create_update_strategy() -> Result<()> {
     let _ = setup_logs(LogLevel::Info);
     drop_and_recreate_database()?;
 
-    let key = OpensslPrivateKey::new_secp256k1_none("test_eth_key")?;
+    let key = Secp256k1SecretKey::new_random();
     let signer = EthereumSigner::new(Arc::new(key))?;
 
     signup("user1", &signer).await?;

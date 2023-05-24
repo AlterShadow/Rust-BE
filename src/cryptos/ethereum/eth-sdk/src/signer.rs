@@ -1,12 +1,12 @@
 use crate::utils;
 use crypto::{sign_sync_compact, DerPublicKey, PrivateExponent, PublicExponent, PublicKey, Signer};
 use eyre::*;
-use once_cell::sync::Lazy;
-use secp256k1::{All, Message, Secp256k1, SecretKey};
+use secp256k1::{Message, SecretKey, SECP256K1};
 use std::sync::Arc;
 use tracing::{info, warn};
 use web3::signing::{keccak256, recover, Key, SigningError};
 use web3::types::{Address, H256};
+
 #[derive(Clone)]
 pub struct EthereumSigner {
     pub inner: Arc<dyn Signer>,
@@ -86,16 +86,16 @@ impl Key for EthereumSigner {
     }
 }
 
-pub struct SecretKeyOwned {
+pub struct Secp256k1SecretKey {
     pub key: SecretKey,
     pub pubkey: secp256k1::PublicKey,
     pub address: Address,
 }
 
-impl SecretKeyOwned {
+impl Secp256k1SecretKey {
     pub fn new_from_private_exponent(key: &PrivateExponent) -> Result<Self> {
         let key = SecretKey::from_slice(&key.content)?;
-        let pubkey = secp256k1::PublicKey::from_secret_key(&*CONTEXT, &key);
+        let pubkey = secp256k1::PublicKey::from_secret_key(SECP256K1, &key);
         let address = utils::eth_public_exponent_to_address(&PublicExponent {
             content: pubkey.serialize().to_vec(),
         })?;
@@ -105,8 +105,12 @@ impl SecretKeyOwned {
             address,
         })
     }
+    pub fn new_random() -> Self {
+        let secret_key = SecretKey::new(&mut rand::thread_rng());
+        Self::new(secret_key)
+    }
     pub fn new(key: SecretKey) -> Self {
-        let pubkey = secp256k1::PublicKey::from_secret_key(&*CONTEXT, &key);
+        let pubkey = secp256k1::PublicKey::from_secret_key(SECP256K1, &key);
         let address = utils::eth_public_exponent_to_address(&PublicExponent {
             content: pubkey.serialize().to_vec(),
         })
@@ -118,7 +122,7 @@ impl SecretKeyOwned {
         }
     }
 }
-impl PublicKey for SecretKeyOwned {
+impl PublicKey for Secp256k1SecretKey {
     fn public_key(&self) -> Result<DerPublicKey> {
         todo!()
     }
@@ -134,32 +138,32 @@ impl PublicKey for SecretKeyOwned {
     fn verify(&self, data: &[u8], signature: &[u8]) -> Result<bool> {
         let message = Message::from_slice(data).unwrap();
         let signature = secp256k1::ecdsa::Signature::from_compact(signature).unwrap();
-        CONTEXT
+        SECP256K1
             .verify_ecdsa(&message, &signature, &self.pubkey)
             .expect("invalid signature");
         Ok(true)
     }
 }
 #[async_trait::async_trait]
-impl Signer for SecretKeyOwned {
+impl Signer for Secp256k1SecretKey {
     async fn sign(&self, data: &[u8]) -> Result<Vec<u8>> {
         let message = Message::from_slice(data).map_err(|_| SigningError::InvalidMessage)?;
-        let signature = CONTEXT.sign_ecdsa(&message, &self.key);
+        let signature = SECP256K1.sign_ecdsa(&message, &self.key);
         let signature_compact = signature.serialize_der();
         Ok(signature_compact.to_vec())
     }
 }
 
-impl Key for SecretKeyOwned {
+impl Key for Secp256k1SecretKey {
     fn sign(
         &self,
         message: &[u8],
         chain_id: Option<u64>,
     ) -> Result<web3::signing::Signature, SigningError> {
         let message = Message::from_slice(message).map_err(|_| SigningError::InvalidMessage)?;
-        let signature = CONTEXT.sign_ecdsa(&message, &self.key);
+        let signature = SECP256K1.sign_ecdsa(&message, &self.key);
         let signature_compact = signature.serialize_compact();
-        CONTEXT
+        SECP256K1
             .verify_ecdsa(&message, &signature, &self.pubkey)
             .expect("invalid signature");
         let recovery_id = get_recovery_id(message.as_ref(), &signature_compact, self.address())
@@ -184,9 +188,9 @@ impl Key for SecretKeyOwned {
 
     fn sign_message(&self, message: &[u8]) -> Result<web3::signing::Signature, SigningError> {
         let message = Message::from_slice(message).map_err(|_| SigningError::InvalidMessage)?;
-        let signature = CONTEXT.sign_ecdsa(&message, &self.key);
+        let signature = SECP256K1.sign_ecdsa(&message, &self.key);
         let signature_compact = signature.serialize_compact();
-        CONTEXT
+        SECP256K1
             .verify_ecdsa(&message, &signature, &self.pubkey)
             .expect("invalid signature");
         let recovery_id = get_recovery_id(message.as_ref(), &signature_compact, self.address())
@@ -205,7 +209,6 @@ impl Key for SecretKeyOwned {
         secret_key_address(&self.key)
     }
 }
-static CONTEXT: Lazy<Secp256k1<All>> = Lazy::new(Secp256k1::new);
 
 /// Gets the address of a public key.
 ///
@@ -225,8 +228,7 @@ pub fn public_key_address(public_key: &secp256k1::PublicKey) -> Address {
 
 /// Gets the public address of a private key.
 pub(crate) fn secret_key_address(key: &SecretKey) -> Address {
-    let secp = &*CONTEXT;
-    let public_key = secp256k1::PublicKey::from_secret_key(secp, key);
+    let public_key = secp256k1::PublicKey::from_secret_key(SECP256K1, key);
     public_key_address(&public_key)
 }
 
@@ -234,14 +236,11 @@ pub(crate) fn secret_key_address(key: &SecretKey) -> Address {
 mod test {
     use super::*;
     use crate::utils::{eth_public_exponent_to_address, setup_logs};
-    use crypto::openssl::OpensslPrivateKey;
-    use crypto::PrivateKey;
-    use secp256k1::SecretKey;
     use web3::signing::{keccak256, Key};
 
     #[test]
     fn test_convert_key_to_secp255k1() -> Result<()> {
-        let key = OpensslPrivateKey::new_secp256k1_none("test_eth_key")?;
+        let key = Secp256k1SecretKey::new_random();
         let exp = key.public_exponent()?;
         println!("exp len {}", exp.content.len());
         let addr = eth_public_exponent_to_address(&exp)?;
@@ -252,10 +251,7 @@ mod test {
     #[tokio::test(flavor = "multi_thread")]
     async fn test_btc_sign_messages() -> Result<()> {
         setup_logs()?;
-        let key = OpensslPrivateKey::new_secp256k1_sha256("test_eth_key")?;
-        println!("Private key {}", hex::encode(key.private_key()?.content));
-        let key2 = &SecretKey::from_slice(&key.private_exponent()?.content)?;
-        let key_owned = SecretKeyOwned::new(key2.clone());
+        let key_owned = Secp256k1SecretKey::new_random();
         let msg = keccak256(b"hello world");
         // let sig2 = key2.sign_message(&msg)?;
         // println!("sig2: {:?}", sig2.v);
@@ -267,14 +263,14 @@ mod test {
     #[tokio::test(flavor = "multi_thread")]
     async fn test_sign_messages() -> Result<()> {
         setup_logs()?;
-        let key = OpensslPrivateKey::new_secp256k1_none("test_eth_key")?;
-        println!("Private key {}", hex::encode(key.private_key()?.content));
-        let key2 = &SecretKey::from_slice(&key.private_exponent()?.content)?;
-        let key3 = SecretKeyOwned::new(key2.clone());
+        let key = Secp256k1SecretKey::new_random();
+        // println!("Private key {}", hex::encode(key.private_key()?.content));
+        // let key2 = &SecretKey::from_slice(&key.private_exponent()?.content)?;
+        // let key3 = Secp256k1SecretKey::new(key2.clone());
         let key1 = EthereumSigner::new(Arc::new(key))?;
         let msg = keccak256(b"hello world");
-        let sig3 = key3.sign_message(&msg)?;
-        println!("sig3: {:?}", sig3.v);
+        // let sig3 = key3.sign_message(&msg)?;
+        // println!("sig3: {:?}", sig3.v);
         // let sig2 = key2.sign_message(&msg)?;
         // println!("sig2: {:?}", sig2.v);
         let sig1 = key1.sign_message(&msg)?;

@@ -30,7 +30,7 @@ pub fn ensure_success(out: &Output) -> Result<()> {
         let err =
             std::str::from_utf8(&out.stderr).map_err(|e| eyre!("Failed to parse stderr: {}", e))?;
         bail!(
-            "openssl ecparam failed: {}\n{}",
+            "Command failed: {}\n{}",
             err,
             String::from_utf8_lossy(out.stderr.as_slice())
         )

@@ -1,4 +1,3 @@
-pub mod openssl;
 pub mod utils;
 
 use der::Reader;

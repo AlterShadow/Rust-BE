@@ -272,7 +272,6 @@ mod tests {
 
     use eth_sdk::{EthereumRpcConnectionPool, Transaction};
     use gen::model::EnumBlockChain;
-    use itertools::Itertools;
     use lib::log::{setup_logs, LogLevel};
     use tracing::info;
 
