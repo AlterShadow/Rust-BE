@@ -1558,18 +1558,8 @@
       "endpoints": []
     },
     {
-      "name": "escrow-watcher",
-      "id": 4,
-      "endpoints": []
-    },
-    {
-      "name": "trade-watcher",
-      "id": 5,
-      "endpoints": []
-    },
-    {
       "name": "watcher",
-      "id": 6,
+      "id": 4,
       "endpoints": []
     }
   ],
@@ -1697,18 +1687,8 @@
             "comment": ""
           },
           {
-            "name": "escrow-watcher",
-            "value": 4,
-            "comment": ""
-          },
-          {
-            "name": "trade-watcher",
-            "value": 5,
-            "comment": ""
-          },
-          {
             "name": "watcher",
-            "value": 6,
+            "value": 4,
             "comment": ""
           }
         ]

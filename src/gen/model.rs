@@ -157,14 +157,8 @@ pub enum EnumService {
     #[postgres(name = "admin")]
     Admin = 3,
     ///
-    #[postgres(name = "escrow-watcher")]
-    EscrowWatcher = 4,
-    ///
-    #[postgres(name = "trade-watcher")]
-    TradeWatcher = 5,
-    ///
     #[postgres(name = "watcher")]
-    Watcher = 6,
+    Watcher = 4,
 }
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]

@@ -23,16 +23,10 @@
 		"log_level": "trace",
 		"port": 8889
 	},
-	"escrow-watcher": {
+	"watcher": {
 		"host": "localhost",
 		"log_level": "trace",
 		"port": 9000,
-		"eth_provider_url": "https://ethereum.publicnode.com"
-	},
-	"trade-watcher": {
-		"host": "localhost",
-		"log_level": "trace",
-		"port": 9001,
 		"eth_provider_url": "https://ethereum.publicnode.com"
 	}
 }

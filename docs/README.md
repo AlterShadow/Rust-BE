@@ -48,20 +48,8 @@ ID: 3
 |Method Code|Method Name|Parameters|Response|Description|
 |-----------|-----------|----------|--------|-----------|
 
-# escrow-watcher Server
-ID: 4
-## Endpoints
-|Method Code|Method Name|Parameters|Response|Description|
-|-----------|-----------|----------|--------|-----------|
-
-# trade-watcher Server
-ID: 5
-## Endpoints
-|Method Code|Method Name|Parameters|Response|Description|
-|-----------|-----------|----------|--------|-----------|
-
 # watcher Server
-ID: 6
+ID: 4
 ## Endpoints
 |Method Code|Method Name|Parameters|Response|Description|
 |-----------|-----------|----------|--------|-----------|

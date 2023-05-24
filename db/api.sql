@@ -1240,32 +1240,12 @@ AS $$
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.ESCROW_WATCHER_SERVICE()
-RETURNS table (
-    "code" int
-)
-LANGUAGE plpgsql
-AS $$
-    BEGIN RETURN QUERY SELECT 4; END
-$$;
-        
-
-CREATE OR REPLACE FUNCTION api.TRADE_WATCHER_SERVICE()
-RETURNS table (
-    "code" int
-)
-LANGUAGE plpgsql
-AS $$
-    BEGIN RETURN QUERY SELECT 5; END
-$$;
-        
-
 CREATE OR REPLACE FUNCTION api.WATCHER_SERVICE()
 RETURNS table (
     "code" int
 )
 LANGUAGE plpgsql
 AS $$
-    BEGIN RETURN QUERY SELECT 6; END
+    BEGIN RETURN QUERY SELECT 4; END
 $$;
         
