@@ -5,11 +5,6 @@
 				"internalType": "address",
 				"name": "_newOwner",
 				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "_poolOwner",
-				"type": "address"
 			}
 		],
 		"stateMutability": "nonpayable",
@@ -22,12 +17,6 @@
 				"indexed": true,
 				"internalType": "address",
 				"name": "sender",
-				"type": "address"
-			},
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "trader",
 				"type": "address"
 			},
 			{
@@ -62,11 +51,6 @@
 	{
 		"inputs": [
 			{
-				"internalType": "address",
-				"name": "_trader",
-				"type": "address"
-			},
-			{
 				"internalType": "string",
 				"name": "_name",
 				"type": "string"
@@ -96,9 +80,9 @@
 	{
 		"inputs": [
 			{
-				"internalType": "address",
-				"name": "_trader",
-				"type": "address"
+				"internalType": "uint256",
+				"name": "_index",
+				"type": "uint256"
 			}
 		],
 		"name": "getPool",
@@ -107,6 +91,19 @@
 				"internalType": "contract IStrategyPool",
 				"name": "",
 				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getPools",
+		"outputs": [
+			{
+				"internalType": "contract IStrategyPool[]",
+				"name": "",
+				"type": "address[]"
 			}
 		],
 		"stateMutability": "view",
@@ -126,26 +123,6 @@
 		"type": "function"
 	},
 	{
-		"inputs": [],
-		"name": "poolOwner",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "renounceOwnership",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
 		"inputs": [
 			{
 				"internalType": "uint256",
@@ -153,26 +130,7 @@
 				"type": "uint256"
 			}
 		],
-		"name": "traderAddresses",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"name": "traderToPool",
+		"name": "pools",
 		"outputs": [
 			{
 				"internalType": "contract IStrategyPool",
@@ -185,15 +143,9 @@
 	},
 	{
 		"inputs": [],
-		"name": "traders",
-		"outputs": [
-			{
-				"internalType": "address[]",
-				"name": "",
-				"type": "address[]"
-			}
-		],
-		"stateMutability": "view",
+		"name": "renounceOwnership",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{

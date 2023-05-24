@@ -112,7 +112,6 @@ pub async fn deploy_strategy_contract(
         .create_pool(
             signer.clone(),
             signer.address,
-            expert_wallet_address,
             strategy_token_name,
             strategy_token_symbol,
             backer_deposit_value,
@@ -125,7 +124,7 @@ pub async fn deploy_strategy_contract(
     match tx.get_status() {
         TxStatus::Successful => {
             info!("Deploy strategy contract success");
-            // pool_address = factory.get_pool(expert_wallet_address).await?;
+            // TODO: implement a wrapper method to retrieve created pool address from receipt logs
         }
         TxStatus::Pending => {
             info!("Deploy strategy contract pending");

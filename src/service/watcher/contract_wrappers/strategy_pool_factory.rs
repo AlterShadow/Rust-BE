@@ -22,12 +22,11 @@ impl<T: Transport> StrategyPoolFactoryContract<T> {
         &self,
         secret: impl Key,
         by: Address,
-        trader: Address,
         name: String,
         symbol: String,
         initial_deposit_value: U256,
     ) -> Result<H256> {
-        let params = (trader, name, symbol, initial_deposit_value);
+        let params = (name, symbol, initial_deposit_value);
         let estimated_gas = self
             .inner
             .estimate_gas(
@@ -49,12 +48,12 @@ impl<T: Transport> StrategyPoolFactoryContract<T> {
             .await?)
     }
 
-    pub async fn get_pool(&self, trader: Address) -> Result<Address> {
+    pub async fn get_pool(&self, index: U256) -> Result<Address> {
         Ok(self
             .inner
             .query(
                 StrategyPoolFactoryFunctions::GetPool.as_str(),
-                trader,
+                index,
                 None,
                 Options::default(),
                 None,
@@ -62,37 +61,11 @@ impl<T: Transport> StrategyPoolFactoryContract<T> {
             .await?)
     }
 
-    pub async fn pool_owner(&self) -> Result<Address> {
+    pub async fn get_pools(&self) -> Result<Vec<Address>> {
         Ok(self
             .inner
             .query(
-                StrategyPoolFactoryFunctions::PoolOwner.as_str(),
-                (),
-                None,
-                Options::default(),
-                None,
-            )
-            .await?)
-    }
-
-    pub async fn trader_to_pool(&self, trader: Address) -> Result<Address> {
-        Ok(self
-            .inner
-            .query(
-                StrategyPoolFactoryFunctions::TraderToPool.as_str(),
-                trader,
-                None,
-                Options::default(),
-                None,
-            )
-            .await?)
-    }
-
-    pub async fn traders(&self) -> Result<Vec<Address>> {
-        Ok(self
-            .inner
-            .query(
-                StrategyPoolFactoryFunctions::Traders.as_str(),
+                StrategyPoolFactoryFunctions::GetPools.as_str(),
                 (),
                 None,
                 Options::default(),
@@ -144,10 +117,8 @@ impl<T: Transport> StrategyPoolFactoryContract<T> {
 
 enum StrategyPoolFactoryFunctions {
     CreatePool,
+    GetPools,
     GetPool,
-    PoolOwner,
-    TraderToPool,
-    Traders,
     TransferOwnership,
     Owner,
 }
@@ -156,10 +127,8 @@ impl StrategyPoolFactoryFunctions {
     fn as_str(&self) -> &'static str {
         match self {
             Self::CreatePool => "createPool",
+            Self::GetPools => "getPools",
             Self::GetPool => "getPool",
-            Self::PoolOwner => "poolOwner",
-            Self::TraderToPool => "traderToPool",
-            Self::Traders => "traders",
             Self::TransferOwnership => "transferOwnership",
             Self::Owner => "owner",
         }
