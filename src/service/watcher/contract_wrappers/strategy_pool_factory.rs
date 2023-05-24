@@ -8,7 +8,7 @@ use web3::signing::Key;
 use web3::types::{Address, H256, U256};
 use web3::Transport;
 
-const FACTORY_ABI_PATH: &str = "abi/internal/strategy_pool_factory.json";
+const FACTORY_ABI_JSON: &str = include_str!("../../../../abi/internal/strategy_pool_factory.json");
 
 #[derive(Debug, Clone)]
 pub struct StrategyPoolFactoryContract<T: Transport> {
@@ -17,8 +17,7 @@ pub struct StrategyPoolFactoryContract<T: Transport> {
 
 impl<T: Transport> StrategyPoolFactoryContract<T> {
     pub fn new(eth: Eth<T>, address: Address) -> Result<Self> {
-        let json = read(FACTORY_ABI_PATH).context("failed to read contract ABI")?;
-        let contract = Contract::from_json(eth, address, &json)?;
+        let contract = Contract::from_json(eth, address, FACTORY_ABI_JSON.as_bytes())?;
         Ok(Self { inner: contract })
     }
 

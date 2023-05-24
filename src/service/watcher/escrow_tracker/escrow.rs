@@ -11,7 +11,7 @@ use tracing::info;
 use web3::types::{H160, U256};
 
 #[derive(Clone, Debug)]
-pub struct Escrow {
+pub struct EscrowTransfer {
     pub token: StableCoin,
     pub amount: U256,
     pub recipient: H160,
@@ -36,7 +36,7 @@ pub fn parse_escrow(
     tx: &TransactionReady,
     stablecoin_addresses: &StableCoinAddresses,
     erc_20: &Erc20Contract,
-) -> Result<Escrow> {
+) -> Result<EscrowTransfer> {
     let called_contract = tx.get_to().context("missing called contract")?;
     let eth_mainnet_stablecoins = stablecoin_addresses.get(chain).unwrap();
     let token: StableCoin = eth_mainnet_stablecoins
@@ -51,7 +51,7 @@ pub fn parse_escrow(
 
     let call = ContractCall::from_inputs(&erc_20.inner, &input_data)?;
     let method = get_method_by_name(&call.get_name()).context("call is not an escrow")?;
-    let escrow: Escrow = match method {
+    let escrow: EscrowTransfer = match method {
         Erc20Method::Transfer => {
             let to_param = call.get_param("_to").context("no to address")?;
             let recipient = match to_param.get_value() {
@@ -67,7 +67,7 @@ pub fn parse_escrow(
                     bail!("value is not a uint {:?}", x);
                 }
             };
-            Escrow {
+            EscrowTransfer {
                 token,
                 amount: value,
                 recipient,
@@ -98,7 +98,7 @@ pub fn parse_escrow(
                     bail!("value is not a uint {:?}", x);
                 }
             };
-            Escrow {
+            EscrowTransfer {
                 token,
                 amount,
                 recipient,

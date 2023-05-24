@@ -9,12 +9,12 @@ pub type EitherTransport = Either<WebSocket, Http>;
 
 #[derive(Clone, Debug)]
 pub struct EthereumRpcConnection {
-    inner: Arc<Web3<EitherTransport>>,
+    inner: Web3<EitherTransport>,
     semaphore: Arc<Semaphore>,
 }
 
 impl EthereumRpcConnection {
-    pub fn new(connection: Arc<Web3<EitherTransport>>, max_concurrent_requests: usize) -> Self {
+    pub fn new(connection: Web3<EitherTransport>, max_concurrent_requests: usize) -> Self {
         Self {
             inner: connection,
             semaphore: Arc::new(Semaphore::new(max_concurrent_requests)),
@@ -49,16 +49,19 @@ impl EthereumRpcConnection {
         let _ = self.inner.eth().block_number().await?;
         Ok(())
     }
+    pub fn into_raw(self) -> Web3<EitherTransport> {
+        self.inner
+    }
 }
 
 pub struct ConnectionPermitGuard {
-    inner: Arc<Web3<EitherTransport>>,
+    inner: Web3<EitherTransport>,
     /* permit will be dropped automatically when the guard goes out of scope */
     permit: OwnedSemaphorePermit,
 }
 
 impl ConnectionPermitGuard {
-    pub fn new(inner: Arc<Web3<EitherTransport>>, permit: OwnedSemaphorePermit) -> Self {
+    pub fn new(inner: Web3<EitherTransport>, permit: OwnedSemaphorePermit) -> Self {
         Self { inner, permit }
     }
     pub async fn is_permitted(&self) -> Option<SemaphorePermit> {

@@ -1,9 +1,7 @@
 use super::conn::EthereumRpcConnection;
+use crate::conn::EitherTransport;
 use deadpool::managed::{Manager, Object, RecycleResult};
 use eyre::*;
-use std::sync::Arc;
-
-use crate::conn::EitherTransport;
 use web3::transports::{Http, WebSocket};
 
 #[derive(Clone, Debug)]
@@ -19,7 +17,7 @@ impl Manager for EthereumRpcConnectionManager {
     async fn create(&self) -> Result<Self::Type, Self::Error> {
         let transport = new_transport(&self.provider_url).await?;
         let web3 = web3::Web3::new(transport);
-        let conn = EthereumRpcConnection::new(Arc::new(web3), self.max_concurrent_requests);
+        let conn = EthereumRpcConnection::new(web3, self.max_concurrent_requests);
         Ok(conn)
     }
 

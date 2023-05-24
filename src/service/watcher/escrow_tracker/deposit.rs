@@ -1,9 +1,12 @@
-use crate::escrow_tracker::escrow::{parse_escrow, Escrow};
+use crate::escrow_tracker::escrow::{parse_escrow, EscrowTransfer};
 use crate::escrow_tracker::StableCoinAddresses;
 use crypto::Signer;
 use eth_sdk::erc20::{Erc20Contract, Erc20Token};
 use eth_sdk::signer::EthereumSigner;
-use eth_sdk::{EthereumNet, Transaction, TransactionReady};
+use eth_sdk::{
+    new_transport, EitherTransport, EthereumNet, EthereumRpcConnection, Transaction,
+    TransactionReady, TxStatus,
+};
 use eyre::*;
 use gen::database::{FunUserBackStrategyReq, FunUserGetStrategyFromWalletReq};
 use gen::model::EnumBlockChain;
@@ -14,8 +17,11 @@ use std::sync::Arc;
 use token::CryptoToken;
 use tracing::info;
 use web3::ethabi::Hash;
+use web3::types::{Address, U256};
+use web3::{Transport, Web3};
 
 pub async fn on_user_deposit(
+    web3: &EthereumRpcConnection,
     ctx: &RequestContext,
     db: &DbClient,
     chain: EnumBlockChain,
@@ -53,14 +59,24 @@ pub async fn on_user_deposit(
     })
     .await?;
     if user_registered_strategy.evm_contract_address.is_none() {
-        user_registered_strategy.evm_contract_address =
-            Some(deploy_strategy_contract(&signer).await?);
+        user_registered_strategy.evm_contract_address = Some(
+            deploy_strategy_contract(
+                &web3,
+                "".parse()?,
+                &signer,
+                "name".to_string(),
+                "token".to_string(),
+                "address".parse()?,
+            )
+            .await?,
+        );
     }
 
     // TODO: use a different signer because our escrow tracker is different from strategy address
     let transaction = transfer_token_to_strategy_contract(
+        web3,
         signer.clone(),
-        Escrow {
+        EscrowTransfer {
             token: esc.token,
             amount: esc.amount,
             recipient: user_registered_strategy
@@ -69,6 +85,7 @@ pub async fn on_user_deposit(
                 .parse()?,
             owner: signer.address,
         },
+        chain,
         stablecoin_addresses,
     )
     .await?;
@@ -83,20 +100,18 @@ pub async fn on_user_deposit(
 }
 
 use crate::contract_wrappers::strategy_pool_factory::StrategyPoolFactoryContract;
-use eth_sdk::tx::TxStatus;
-pub async fn deploy_strategy_contract(signer: &EthereumSigner) -> Result<String> {
+pub async fn deploy_strategy_contract(
+    conn: &EthereumRpcConnection,
+    factory_address: Address,
+    signer: &EthereumSigner,
+    strategy_token_name: String,
+    strategy_token_symbol: String,
+    expert_wallet_address: Address,
+) -> Result<String> {
     info!("Deploying strategy contract");
 
-    let conn: web3::eth::Eth<web3::Transport> =
-        web3::eth::Eth::new(web3::transports::Http::new("http://localhost:8545").unwrap());
-    let factory_address = Address::from_str("strategy pool factory contract address");
+    let factory = StrategyPoolFactoryContract::new(conn.clone().into_raw().eth(), factory_address)?;
 
-    let factory = StrategyPoolFactoryContract::new(conn, factory_address);
-
-    let expert_wallet_address =
-        Address::from_str("expert's EOA address corresponding to strategy").unwrap();
-    let strategy_token_name = "Strategy Pool Token Name".to_owned();
-    let strategy_token_symbol = "Strategy Pool Token SYMBOL".to_owned();
     let backer_deposit_value = U256::from(1);
 
     let tx_hash = factory
@@ -110,7 +125,7 @@ pub async fn deploy_strategy_contract(signer: &EthereumSigner) -> Result<String>
         )
         .await?;
 
-    let tx = Transaction::new(tx_hash);
+    let mut tx = Transaction::new(tx_hash);
     tx.update(conn).await?;
 
     let mut pool_address: Address;
@@ -132,40 +147,33 @@ pub async fn deploy_strategy_contract(signer: &EthereumSigner) -> Result<String>
 
 use crate::contract_wrappers::escrow::EscrowContract;
 pub async fn transfer_token_to_strategy_contract(
+    conn: &EthereumRpcConnection,
     signer: EthereumSigner,
-    escrow: Escrow,
+    escrow: EscrowTransfer,
+    chain: EnumBlockChain,
     stablecoin_addresses: &StableCoinAddresses,
 ) -> Result<Transaction> {
-    let token = Erc20Token::new(
-        EthereumNet::Mainnet,
-        stablecoin_addresses
-            .get_by_chain_and_token(EnumBlockChain::EthereumMainnet, escrow.token)
-            .context("No token address registered")?,
-    )
-    .await?;
+    // TODO: use Erc20Token for it?
     info!(
         "Transferring token from {:?} to strategy contract {:?}",
         escrow.owner, escrow.recipient
     );
-
-    /* the escrow contract holds the tokens, so the transfer comes from it */
-    let conn: web3::eth::Eth<web3::Transport> =
-        web3::eth::Eth::new(web3::transports::Http::new("http://localhost:8545").unwrap());
-    let escrow_address = Address::from_str("escrow contract address");
-
-    let escrow_contract = EscrowContract::new(conn, escrow_address);
-
-    let token_address = Address::from_str("address of token contract that escrow holds");
-    let recipient = Address::from_str(
-        "receiver of the transfer, still being decided, pending contract architecture refactor",
-    );
-    let amount = escrow.amount;
+    let escrow_address = stablecoin_addresses
+        .get_by_chain_and_token(chain, escrow.token)
+        .context("Could not find stablecoin address")?;
+    let escrow_contract = EscrowContract::new(conn.clone().into_raw().eth(), escrow_address)?;
 
     let tx_hash = escrow_contract
-        .transfer_token_to(signer, signer.address, token_address, recipient, amount)
+        .transfer_token_to(
+            signer,
+            signer.address,
+            escrow.owner,
+            escrow.recipient,
+            escrow.amount,
+        )
         .await?;
 
-    let tx = Transaction::new(tx_hash);
+    let mut tx = Transaction::new(tx_hash);
     tx.update(conn).await?;
 
     match tx.get_status() {
@@ -221,6 +229,7 @@ mod tests {
         .await?;
 
         on_user_deposit(
+            conn.into_raw(),
             &ctx,
             &db,
             EnumBlockChain::EthereumMainnet,
