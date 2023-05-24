@@ -1,7 +1,4 @@
-use std::fs::read;
-
 use eyre::*;
-
 use web3::api::Eth;
 use web3::contract::{Contract, Options};
 use web3::signing::Key;
@@ -57,12 +54,11 @@ impl<T: Transport> EscrowContract<T> {
         by: Address,
         new_owner: Address,
     ) -> Result<H256> {
-        let params = (new_owner);
         let estimated_gas = self
             .inner
             .estimate_gas(
                 EscrowFunctions::TransferOwnership.as_str(),
-                params,
+                new_owner,
                 by,
                 Options::default(),
             )
@@ -72,7 +68,7 @@ impl<T: Transport> EscrowContract<T> {
             .inner
             .signed_call(
                 EscrowFunctions::TransferOwnership.as_str(),
-                params,
+                new_owner,
                 Options::with(|options| options.gas = Some(estimated_gas)),
                 secret,
             )

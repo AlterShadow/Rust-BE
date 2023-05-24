@@ -1,27 +1,26 @@
 use crate::escrow_tracker::escrow::{parse_escrow, EscrowTransfer};
 use crate::escrow_tracker::StableCoinAddresses;
 use crypto::Signer;
-use eth_sdk::erc20::{Erc20Contract, Erc20Token};
+use eth_sdk::erc20::Erc20Contract;
 use eth_sdk::signer::EthereumSigner;
-use eth_sdk::{
-    new_transport, EitherTransport, EthereumNet, EthereumRpcConnection, Transaction,
-    TransactionReady, TxStatus,
-};
+use eth_sdk::*;
 use eyre::*;
 use gen::database::{FunUserBackStrategyReq, FunUserGetStrategyFromWalletReq};
 use gen::model::EnumBlockChain;
 use lib::database::DbClient;
 use lib::toolbox::RequestContext;
-use std::str::FromStr;
-use std::sync::Arc;
-use token::CryptoToken;
-use tracing::info;
-use web3::ethabi::Hash;
-use web3::types::{Address, U256};
-use web3::{Transport, Web3};
 
+use std::sync::Arc;
+use tracing::info;
+use web3::types::{Address, U256};
+use web3::Transport;
+/*
+1. User will decides which strategy S to back with his wallet address A
+2. He will transfer tokens C to escrow address B
+3. We track his transfer and save the "deposit" information to database (this is for multi chain support)
+*/
 pub async fn on_user_deposit(
-    web3: &EthereumRpcConnection,
+    conn: &EthereumRpcConnection,
     ctx: &RequestContext,
     db: &DbClient,
     chain: EnumBlockChain,
@@ -61,7 +60,7 @@ pub async fn on_user_deposit(
     if user_registered_strategy.evm_contract_address.is_none() {
         user_registered_strategy.evm_contract_address = Some(
             deploy_strategy_contract(
-                &web3,
+                &conn,
                 "".parse()?,
                 &signer,
                 "name".to_string(),
@@ -74,7 +73,7 @@ pub async fn on_user_deposit(
 
     // TODO: use a different signer because our escrow tracker is different from strategy address
     let transaction = transfer_token_to_strategy_contract(
-        web3,
+        conn,
         signer.clone(),
         EscrowTransfer {
             token: esc.token,
@@ -89,12 +88,7 @@ pub async fn on_user_deposit(
         stablecoin_addresses,
     )
     .await?;
-    /* Actually, on deposit we'll just transfer to a TBD account and add to his balance */
-    /**
-     * But, after he decides which strategy to back, we will:
-     * 1- make trades with the deposited tokens for the strategy's tokens in correct ratios
-     * 2- call "deposit" on the chosen strategy contract with the backer address as receiver of the minted shares
-     */
+
     info!("Transfer token to strategy contract {:?}", transaction);
     Ok(())
 }
@@ -116,7 +110,7 @@ pub async fn deploy_strategy_contract(
 
     let tx_hash = factory
         .create_pool(
-            signer,
+            signer.clone(),
             signer.address,
             expert_wallet_address,
             strategy_token_name,
@@ -128,11 +122,10 @@ pub async fn deploy_strategy_contract(
     let mut tx = Transaction::new(tx_hash);
     tx.update(conn).await?;
 
-    let mut pool_address: Address;
     match tx.get_status() {
         TxStatus::Successful => {
             info!("Deploy strategy contract success");
-            pool_address = factory.get_pool(expert_wallet_address).await?;
+            // pool_address = factory.get_pool(expert_wallet_address).await?;
         }
         TxStatus::Pending => {
             info!("Deploy strategy contract pending");
@@ -165,7 +158,7 @@ pub async fn transfer_token_to_strategy_contract(
 
     let tx_hash = escrow_contract
         .transfer_token_to(
-            signer,
+            signer.clone(),
             signer.address,
             escrow.owner,
             escrow.recipient,
@@ -229,7 +222,7 @@ mod tests {
         .await?;
 
         on_user_deposit(
-            conn.into_raw(),
+            &conn,
             &ctx,
             &db,
             EnumBlockChain::EthereumMainnet,
