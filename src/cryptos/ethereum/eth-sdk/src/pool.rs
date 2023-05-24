@@ -56,6 +56,9 @@ impl EthereumRpcConnectionPool {
         EthereumRpcConnectionPool::new("https://ethereum.publicnode.com".to_string(), 10).unwrap()
     }
 
+    pub fn localnet() -> Self {
+        EthereumRpcConnectionPool::new("http://127.0.0.1:8545".to_string(), 10).unwrap()
+    }
     pub async fn get_conn(&self) -> Result<EthereumRpcConnectionGuard> {
         let conn = match self.pool.get().await {
             Ok(conn) => conn,

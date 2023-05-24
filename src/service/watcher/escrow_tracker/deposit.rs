@@ -12,6 +12,7 @@ use lib::toolbox::RequestContext;
 
 use std::sync::Arc;
 use tracing::info;
+use web3::signing::Key;
 use web3::types::{Address, U256};
 use web3::Transport;
 /*
@@ -27,19 +28,40 @@ pub async fn on_user_deposit(
     tx: &TransactionReady,
     stablecoin_addresses: &StableCoinAddresses,
     erc_20: &Erc20Contract,
-    signer: Arc<dyn Signer>,
+    signer: impl Key,
 ) -> Result<()> {
-    let signer = EthereumSigner::new(signer)?;
-
-    let user_wallet_address = tx.get_from().context("missing user wallet address")?;
     let esc = parse_escrow(chain, tx, stablecoin_addresses, erc_20)?;
-    // let our_valid_address = esc.recipient == "0x000".parse()?;
+    // TODO: let our_valid_address = esc.recipient == "0x000".parse()?;
     let our_valid_address = true;
     ensure!(
         our_valid_address,
         "is not our valid address {:?}",
         esc.recipient
     );
+    // USER just deposits to our service
+    db.execute(FunUserDepositToEscrowReq {
+        user_id: ctx.user_id,
+        quantity: format!("{:?}", esc.amount),
+        purchase_wallet: format!("{:?}", user_wallet_address),
+        blockchain: chain.to_string(),
+        transaction_hash: format!("{:?}", tx.get_hash()),
+    })
+    .await?;
+    Ok(())
+}
+pub async fn on_user_back_strategy(
+    conn: &EthereumRpcConnection,
+    ctx: &RequestContext,
+    db: &DbClient,
+    chain: EnumBlockChain,
+    user_wallet_address: Address,
+    strategy_address: Address,
+    amount: Address,
+
+    stablecoin_addresses: &StableCoinAddresses,
+    erc_20: &Erc20Contract,
+    signer: impl Key,
+) -> Result<()> {
     let mut user_registered_strategy = db
         .execute(FunUserGetStrategyFromWalletReq {
             wallet_address: format!("{:?}", user_wallet_address),
@@ -48,15 +70,6 @@ pub async fn on_user_deposit(
         .await?
         .into_result()
         .context("user_registered_strategy")?;
-    db.execute(FunUserBackStrategyReq {
-        user_id: ctx.user_id,
-        strategy_id: user_registered_strategy.strategy_id,
-        quantity: format!("{:?}", esc.amount),
-        purchase_wallet: format!("{:?}", user_wallet_address),
-        blockchain: chain.to_string(),
-        transaction_hash: format!("{:?}", tx.get_hash()),
-    })
-    .await?;
     if user_registered_strategy.evm_contract_address.is_none() {
         user_registered_strategy.evm_contract_address = Some(
             deploy_strategy_contract(
@@ -70,27 +83,30 @@ pub async fn on_user_deposit(
             .await?,
         );
     }
-
-    // TODO: use a different signer because our escrow tracker is different from strategy address
-    let transaction = transfer_token_to_strategy_contract(
-        conn,
-        signer.clone(),
-        EscrowTransfer {
-            token: esc.token,
-            amount: esc.amount,
-            recipient: user_registered_strategy
+    let transaction_hash = conn
+        .transfer(
+            signer,
+            strategy_address,
+            user_registered_strategy
                 .evm_contract_address
                 .unwrap()
                 .parse()?,
-            owner: signer.address,
-        },
-        chain,
-        stablecoin_addresses,
-    )
+        )
+        .await?;
+    // TODO: verify transaction_hash
+    // TODO: calculate SP tokens based current price
+    db.execute(FunUserBackStrategyReq {
+        user_id: ctx.user_id,
+        strategy_id: user_registered_strategy.strategy_id,
+        quantity: format!("{:?}", amount),
+        purchase_wallet: format!("{:?}", user_wallet_address),
+        blockchain: chain.to_string(),
+        transaction_hash: format!("{:?}", transaction_hash),
+        earn_sp_tokens: sp_tokens,
+    })
     .await?;
 
     info!("Transfer token to strategy contract {:?}", transaction);
-    Ok(())
 }
 
 use crate::contract_wrappers::strategy_pool_factory::StrategyPoolFactoryContract;
@@ -192,19 +208,36 @@ mod tests {
     use eth_sdk::{EthereumRpcConnectionPool, Transaction};
     use lib::database::{connect_to_database, DatabaseConfig};
     use lib::log::{setup_logs, LogLevel};
+    use secp256k1::SecretKey;
+    use std::str::FromStr;
     use tracing::info;
-
+    use web3::signing::Key;
+    const ANVIL_PRIV_KEY: &str = "ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
     #[tokio::test]
-    async fn test_on_user_deposit() -> Result<()> {
+    async fn test_user_ethereum_testnet_transfer() -> Result<()> {
         let _ = setup_logs(LogLevel::Trace);
-        let key = Secp256k1SecretKey::new_random();
-        let conn_pool = EthereumRpcConnectionPool::mainnet();
+        let key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY)?;
+        let conn_pool = EthereumRpcConnectionPool::localnet();
         let conn = conn_pool.get_conn().await?;
-        let tx = Transaction::new_and_assume_ready(
-            "0x27e801a5735e5b530535165a18754c074c673263470fc1fad32cca5eb1bc9fea".parse()?,
-            &conn,
-        )
-        .await?;
+        let airdrop_tx = conn
+            .transfer(&key.key, key.address, U256::from(20000))
+            .await?;
+        conn.get_receipt(airdrop_tx).await?;
+        Ok(())
+    }
+    #[tokio::test]
+    async fn test_user_ethereum_deposit() -> Result<()> {
+        let _ = setup_logs(LogLevel::Trace);
+        let user_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY)?;
+        let escrow_key = Secp256k1SecretKey::new_random();
+        let conn_pool = EthereumRpcConnectionPool::localnet();
+        let conn = conn_pool.get_conn().await?;
+        // TODO: transfer should be one of stablecoin ERC20 contract
+        let tx_hash = conn
+            .transfer(&user_key.key, escrow_key.address, U256::from(20000))
+            .await?;
+        conn.get_receipt(tx_hash).await?;
+
         let erc20 = build_erc_20()?;
         let ctx = RequestContext {
             connection_id: 0,
@@ -216,9 +249,12 @@ mod tests {
         let db = connect_to_database(DatabaseConfig {
             user: Some("postgres".to_string()),
             password: Some("123456".to_string()),
+            dbname: Some("mc2fi".to_string()),
             ..Default::default()
         })
         .await?;
+        // at this step, tx should be passed with quickalert
+        let tx = Transaction::new_and_assume_ready(tx_hash, &conn).await?;
 
         on_user_deposit(
             &conn,
@@ -228,16 +264,10 @@ mod tests {
             &tx,
             &StableCoinAddresses::new(),
             &erc20,
-            Arc::new(key),
+            Arc::new(user_key),
         )
         .await?;
-        let trade = parse_escrow(
-            EnumBlockChain::EthereumMainnet,
-            &tx,
-            &StableCoinAddresses::new(),
-            &erc20,
-        )?;
-        info!("trade: {:?}", trade);
+
         Ok(())
     }
 }

@@ -2,6 +2,7 @@ use crate::utils;
 use crypto::{sign_sync_compact, DerPublicKey, PrivateExponent, PublicExponent, PublicKey, Signer};
 use eyre::*;
 use secp256k1::{Message, SecretKey, SECP256K1};
+use std::str::FromStr;
 use std::sync::Arc;
 use tracing::{info, warn};
 use web3::signing::{keccak256, recover, Key, SigningError};
@@ -108,6 +109,14 @@ impl Secp256k1SecretKey {
     pub fn new_random() -> Self {
         let secret_key = SecretKey::new(&mut rand::thread_rng());
         Self::new(secret_key)
+    }
+    pub fn from_str(s: &str) -> Result<Self> {
+        let key = if s.starts_with("0x") {
+            SecretKey::from_str(s[2..])?
+        } else {
+            SecretKey::from_str(s)?
+        };
+        Ok(key)
     }
     pub fn new(key: SecretKey) -> Self {
         let pubkey = secp256k1::PublicKey::from_secret_key(SECP256K1, &key);
