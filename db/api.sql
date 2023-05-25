@@ -415,36 +415,6 @@ RETURNS table (
     "followers" int,
     "backers" int,
     "risk_score" real,
-    "aum" real
-)
-LANGUAGE plpgsql
-AS $$
-    
-BEGIN
-    RETURN QUERY SELECT a.pkey_id AS strategy_id,
-                          a.name AS strategy_name,
-                          a.description AS strategy_description,
-                          NULL AS net_value,
-                          (SELECT COUNT(*) FROM tbl.user_follow_strategy WHERE fkey_strategy_id = a.pkey_id AND unfollowed = FALSE) AS followers,
-                          (SELECT COUNT(DISTINCT user_back_strategy_history.fkey_user_id) FROM tbl.user_back_strategy_history WHERE fkey_strategy_id = a.pkey_id) AS followers,
-                          a.risk_score as risk_score,
-                          a.aum as aum
-                 FROM tbl.strategy AS a
-                 WHERE a.pkey_id = a_strategy_id;
-END
-            
-$$;
-        
-
-CREATE OR REPLACE FUNCTION api.fun_user_get_strategy_from_wallet(a_wallet_address varchar, a_blockchain varchar)
-RETURNS table (
-    "strategy_id" bigint,
-    "strategy_name" varchar,
-    "strategy_description" varchar,
-    "net_value" real,
-    "followers" int,
-    "backers" int,
-    "risk_score" real,
     "aum" real,
     "evm_contract_address" varchar
 )
@@ -460,7 +430,7 @@ BEGIN
                           (SELECT COUNT(DISTINCT user_back_strategy_history.fkey_user_id) FROM tbl.user_back_strategy_history WHERE fkey_strategy_id = a.pkey_id) AS followers,
                           a.risk_score as risk_score,
                           a.aum as aum,
-                          a.evm_contract_address as evm_contract_address
+                          a.evm_contract_address
                  FROM tbl.strategy AS a
                  WHERE a.pkey_id = a_strategy_id;
 END
@@ -514,7 +484,41 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_back_strategy(a_user_id bigint, a_strategy_id bigint, a_quantity varchar, a_purchase_wallet varchar, a_blockchain varchar, a_transaction_hash varchar)
+CREATE OR REPLACE FUNCTION api.fun_user_deposit_to_escrow(a_user_id bigint, a_blockchain varchar, a_user_address varchar, a_contract_address varchar, a_receiver_address varchar, a_quantity varchar, a_transaction_hash varchar)
+RETURNS table (
+    "success" boolean
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    IF EXISTS( SELECT * FROM  tbl.user_deposit_history WHERE transaction_hash = a_transaction_hash) THEN
+        RETURN QUERY SELECT FALSE;
+    END
+    INSERT INTO tbl.user_deposit_history (
+        fkey_user_id,
+        blockchain,
+        user_address,
+        contract_address,
+        receiver_address,
+        quantity,
+        transaction_hash
+    ) VALUES (
+     a_user-id,
+     a_blockchain,
+     a_user_address,
+     a_contract_address,
+     a_receiver_address,
+     a_quantity,
+     a_transaction_hash
+    );
+    RETURN QUERY SELECT TRUE;
+END
+            
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_back_strategy(a_user_id bigint, a_strategy_id bigint, a_quantity varchar, a_purchase_wallet varchar, a_blockchain varchar, a_transaction_hash varchar, a_earn_sp_tokens varchar)
 RETURNS table (
     "success" boolean
 )

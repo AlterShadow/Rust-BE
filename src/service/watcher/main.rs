@@ -1,6 +1,6 @@
 use crate::dex_tracker::pancake::build_pancake_swap;
-use crate::dex_tracker::{handle_eth_swap, DexAddresses};
-use crate::escrow_tracker::{handle_eth_escrows, StableCoinAddresses};
+use crate::dex_tracker::*;
+use crate::escrow_tracker::*;
 use crate::evm::AppState;
 use axum::{body::Body, routing::post, Router};
 use axum_server::tls_rustls::RustlsConfig;
@@ -44,8 +44,10 @@ async fn main() -> Result<()> {
 
     let eth_pool = EthereumRpcConnectionPool::new(config.eth_provider_url.to_string(), 10)?;
     let app: Router<(), Body> = Router::new()
-        .route("/eth-mainnet-swaps", post(handle_eth_swap))
-        .route("/eth-mainnet-escrows", post(handle_eth_escrows))
+        .route("/eth-mainnet-swaps", post(handle_eth_swap_mainnet))
+        .route("/eth-goerli-swaps", post(handle_eth_swap_goerli))
+        .route("/eth-mainnet-escrows", post(handle_eth_escrows_mainnet))
+        .route("/eth-goerli-escrows", post(handle_eth_escrows_goerli))
         .with_state(Arc::new(AppState {
             dex_addresses: DexAddresses::new(),
             stablecoin_addresses: StableCoinAddresses::new(),

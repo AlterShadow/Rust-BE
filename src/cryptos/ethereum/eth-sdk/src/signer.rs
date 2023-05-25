@@ -2,6 +2,7 @@ use crate::utils;
 use crypto::{sign_sync_compact, DerPublicKey, PrivateExponent, PublicExponent, PublicKey, Signer};
 use eyre::*;
 use secp256k1::{Message, SecretKey, SECP256K1};
+use std::ops::Deref;
 use std::str::FromStr;
 use std::sync::Arc;
 use tracing::{info, warn};
@@ -86,7 +87,7 @@ impl Key for EthereumSigner {
         self.address
     }
 }
-
+#[derive(Clone)]
 pub struct Secp256k1SecretKey {
     pub key: SecretKey,
     pub pubkey: secp256k1::PublicKey,
@@ -112,11 +113,11 @@ impl Secp256k1SecretKey {
     }
     pub fn from_str(s: &str) -> Result<Self> {
         let key = if s.starts_with("0x") {
-            SecretKey::from_str(s[2..])?
+            SecretKey::from_str(&s[2..])?
         } else {
             SecretKey::from_str(s)?
         };
-        Ok(key)
+        Ok(Self::new(key))
     }
     pub fn new(key: SecretKey) -> Self {
         let pubkey = secp256k1::PublicKey::from_secret_key(SECP256K1, &key);
@@ -129,6 +130,12 @@ impl Secp256k1SecretKey {
             pubkey,
             address,
         }
+    }
+}
+impl Deref for Secp256k1SecretKey {
+    type Target = secp256k1::SecretKey;
+    fn deref(&self) -> &Self::Target {
+        &self.key
     }
 }
 impl PublicKey for Secp256k1SecretKey {
@@ -163,62 +170,6 @@ impl Signer for Secp256k1SecretKey {
     }
 }
 
-impl Key for Secp256k1SecretKey {
-    fn sign(
-        &self,
-        message: &[u8],
-        chain_id: Option<u64>,
-    ) -> Result<web3::signing::Signature, SigningError> {
-        let message = Message::from_slice(message).map_err(|_| SigningError::InvalidMessage)?;
-        let signature = SECP256K1.sign_ecdsa(&message, &self.key);
-        let signature_compact = signature.serialize_compact();
-        SECP256K1
-            .verify_ecdsa(&message, &signature, &self.pubkey)
-            .expect("invalid signature");
-        let recovery_id = get_recovery_id(message.as_ref(), &signature_compact, self.address())
-            .map_err(|x| {
-                warn!("get_recovery_id error: {:?}", x);
-                SigningError::InvalidMessage
-            })?;
-        let standard_v = recovery_id as u64;
-        let v = if let Some(chain_id) = chain_id {
-            // When signing with a chain ID, add chain replay protection.
-            standard_v + 35 + chain_id * 2
-        } else {
-            // Otherwise, convert to 'Electrum' notation.
-            standard_v + 27
-        };
-
-        let r = H256::from_slice(&signature_compact[..32]);
-        let s = H256::from_slice(&signature_compact[32..]);
-
-        Ok(web3::signing::Signature { v, r, s })
-    }
-
-    fn sign_message(&self, message: &[u8]) -> Result<web3::signing::Signature, SigningError> {
-        let message = Message::from_slice(message).map_err(|_| SigningError::InvalidMessage)?;
-        let signature = SECP256K1.sign_ecdsa(&message, &self.key);
-        let signature_compact = signature.serialize_compact();
-        SECP256K1
-            .verify_ecdsa(&message, &signature, &self.pubkey)
-            .expect("invalid signature");
-        let recovery_id = get_recovery_id(message.as_ref(), &signature_compact, self.address())
-            .map_err(|x| {
-                warn!("get_recovery_id error: {:?}", x);
-                SigningError::InvalidMessage
-            })?;
-        let v = recovery_id as u64;
-        let r = H256::from_slice(&signature_compact[..32]);
-        let s = H256::from_slice(&signature_compact[32..]);
-
-        Ok(web3::signing::Signature { v, r, s })
-    }
-
-    fn address(&self) -> Address {
-        secret_key_address(&self.key)
-    }
-}
-
 /// Gets the address of a public key.
 ///
 /// The public address is defined as the low 20 bytes of the keccak hash of
@@ -233,12 +184,6 @@ pub fn public_key_address(public_key: &secp256k1::PublicKey) -> Address {
     let hash = keccak256(&public_key[1..]);
 
     Address::from_slice(&hash[12..])
-}
-
-/// Gets the public address of a private key.
-pub(crate) fn secret_key_address(key: &SecretKey) -> Address {
-    let public_key = secp256k1::PublicKey::from_secret_key(SECP256K1, key);
-    public_key_address(&public_key)
 }
 
 #[cfg(test)]

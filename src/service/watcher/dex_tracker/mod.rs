@@ -66,7 +66,11 @@ impl DexAddresses {
     }
 }
 
-pub async fn handle_eth_swap(state: State<Arc<AppState>>, body: Bytes) -> Result<(), StatusCode> {
+pub async fn handle_eth_swap(
+    state: Arc<AppState>,
+    body: Bytes,
+    blockchain: EnumBlockChain,
+) -> Result<(), StatusCode> {
     let hashes = evm::parse_quickalert_payload(body).map_err(|e| {
         error!("failed to parse QuickAlerts payload: {:?}", e);
         StatusCode::BAD_REQUEST
@@ -86,10 +90,7 @@ pub async fn handle_eth_swap(state: State<Arc<AppState>>, body: Bytes) -> Result
                     return;
                 }
             };
-            if let Err(e) =
-                evm::cache_ethereum_transaction(&tx, &state.db, EnumBlockChain::EthereumMainnet)
-                    .await
-            {
+            if let Err(e) = evm::cache_ethereum_transaction(&tx, &state.db, blockchain).await {
                 error!("error caching transaction: {:?}", e);
             };
             if let Err(e) = parse_dex_trade(
@@ -106,4 +107,18 @@ pub async fn handle_eth_swap(state: State<Arc<AppState>>, body: Bytes) -> Result
     }
 
     Ok(())
+}
+
+pub async fn handle_eth_swap_mainnet(
+    state: State<Arc<AppState>>,
+    body: Bytes,
+) -> Result<(), StatusCode> {
+    handle_eth_swap(state.0, body, EnumBlockChain::EthereumMainnet).await
+}
+
+pub async fn handle_eth_swap_goerli(
+    state: State<Arc<AppState>>,
+    body: Bytes,
+) -> Result<(), StatusCode> {
+    handle_eth_swap(state.0, body, EnumBlockChain::EthereumGoerli).await
 }

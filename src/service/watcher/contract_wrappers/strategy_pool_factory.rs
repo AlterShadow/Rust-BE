@@ -20,19 +20,17 @@ impl<T: Transport> StrategyPoolFactoryContract<T> {
 
     pub async fn create_pool(
         &self,
-        secret: impl Key,
-        by: Address,
+        signer: impl Key,
         name: String,
         symbol: String,
-        initial_deposit_value: U256,
     ) -> Result<H256> {
-        let params = (name, symbol, initial_deposit_value);
+        let params = (name, symbol);
         let estimated_gas = self
             .inner
             .estimate_gas(
                 StrategyPoolFactoryFunctions::CreatePool.as_str(),
                 params.clone(),
-                by,
+                signer.address(),
                 Options::default(),
             )
             .await?;
@@ -43,7 +41,7 @@ impl<T: Transport> StrategyPoolFactoryContract<T> {
                 StrategyPoolFactoryFunctions::CreatePool.as_str(),
                 params,
                 Options::with(|options| options.gas = Some(estimated_gas)),
-                secret,
+                signer,
             )
             .await?)
     }

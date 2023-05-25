@@ -179,39 +179,6 @@ END
                 Field::new("backers", Type::Int),
                 Field::new("risk_score", Type::Numeric),
                 Field::new("aum", Type::Numeric),
-                // TODO more fields
-            ],
-            r#"
-BEGIN
-    RETURN QUERY SELECT a.pkey_id AS strategy_id,
-                          a.name AS strategy_name,
-                          a.description AS strategy_description,
-                          NULL AS net_value,
-                          (SELECT COUNT(*) FROM tbl.user_follow_strategy WHERE fkey_strategy_id = a.pkey_id AND unfollowed = FALSE) AS followers,
-                          (SELECT COUNT(DISTINCT user_back_strategy_history.fkey_user_id) FROM tbl.user_back_strategy_history WHERE fkey_strategy_id = a.pkey_id) AS followers,
-                          a.risk_score as risk_score,
-                          a.aum as aum
-                 FROM tbl.strategy AS a
-                 WHERE a.pkey_id = a_strategy_id;
-END
-            "#,
-        ),
-        ProceduralFunction::new(
-            "fun_user_get_strategy_from_wallet",
-            // TODO search options
-            vec![
-                Field::new("wallet_address", Type::String),
-                Field::new("blockchain", Type::String),
-            ],
-            vec![
-                Field::new("strategy_id", Type::BigInt),
-                Field::new("strategy_name", Type::String),
-                Field::new("strategy_description", Type::String),
-                Field::new("net_value", Type::Numeric),
-                Field::new("followers", Type::Int),
-                Field::new("backers", Type::Int),
-                Field::new("risk_score", Type::Numeric),
-                Field::new("aum", Type::Numeric),
                 Field::new("evm_contract_address", Type::optional(Type::String)),
                 // TODO more fields
             ],
@@ -225,7 +192,7 @@ BEGIN
                           (SELECT COUNT(DISTINCT user_back_strategy_history.fkey_user_id) FROM tbl.user_back_strategy_history WHERE fkey_strategy_id = a.pkey_id) AS followers,
                           a.risk_score as risk_score,
                           a.aum as aum,
-                          a.evm_contract_address as evm_contract_address
+                          a.evm_contract_address
                  FROM tbl.strategy AS a
                  WHERE a.pkey_id = a_strategy_id;
 END
@@ -272,6 +239,44 @@ END
             "#,
         ),
         ProceduralFunction::new(
+            "fun_user_deposit_to_escrow",
+            vec![
+                Field::new("user_id", Type::BigInt),
+                Field::new("blockchain", Type::String),
+                Field::new("user_address", Type::String),
+                Field::new("contract_address", Type::String),
+                Field::new("receiver_address", Type::String),
+                Field::new("quantity", Type::String),
+                Field::new("transaction_hash", Type::String),
+            ],
+            vec![Field::new("success", Type::Boolean)],
+            r#"
+BEGIN
+    IF EXISTS( SELECT * FROM  tbl.user_deposit_history WHERE transaction_hash = a_transaction_hash) THEN
+        RETURN QUERY SELECT FALSE;
+    END
+    INSERT INTO tbl.user_deposit_history (
+        fkey_user_id,
+        blockchain,
+        user_address,
+        contract_address,
+        receiver_address,
+        quantity,
+        transaction_hash
+    ) VALUES (
+     a_user-id,
+     a_blockchain,
+     a_user_address,
+     a_contract_address,
+     a_receiver_address,
+     a_quantity,
+     a_transaction_hash
+    );
+    RETURN QUERY SELECT TRUE;
+END
+            "#,
+        ),
+        ProceduralFunction::new(
             "fun_user_back_strategy",
             vec![
                 Field::new("user_id", Type::BigInt),
@@ -280,6 +285,7 @@ END
                 Field::new("purchase_wallet", Type::String),
                 Field::new("blockchain", Type::String),
                 Field::new("transaction_hash", Type::String),
+                Field::new("earn_sp_tokens", Type::String),
             ],
             vec![Field::new("success", Type::Boolean)],
             r#"

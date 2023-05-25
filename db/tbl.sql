@@ -1,5 +1,5 @@
 -- Created by Vertabelo (http://vertabelo.com)
--- Last modification date: 2023-05-22 14:42:34.686
+-- Last modification date: 2023-05-25 13:59:01.047
 
 CREATE SCHEMA IF NOT EXISTS tbl;;
 
@@ -16,7 +16,7 @@ CREATE TABLE tbl.aum_history (
     transaction_hash varchar(64)  NOT NULL,
     action varchar(8)  NOT NULL,
     price double precision  NOT NULL,
-    quantity double precision  NOT NULL,
+    quantity varchar(64)  NOT NULL,
     current_price double precision  NULL,
     yield_7d double precision  NULL,
     yield_30d double precision  NULL,
@@ -104,7 +104,7 @@ CREATE TABLE tbl.strategy (
     tokens int  NULL,
     apy double precision  NULL,
     swap_fee double precision  NULL,
-    evm_contract_address varchar(20) NULL,
+    evm_contract_address varchar(64)  NULL,
     CONSTRAINT strategy_pk PRIMARY KEY (pkey_id)
 );
 
@@ -171,8 +171,23 @@ CREATE TABLE tbl.user_back_strategy_history (
     blockchain varchar(20)  NOT NULL,
     transaction_hash varchar(64)  NOT NULL,
     quantity varchar(64)  NOT NULL,
+    earn_sp_tokens varchar(64) NOT NULL,
     back_time bigint  NOT NULL,
     CONSTRAINT user_back_strategy_history_pk PRIMARY KEY (pkey_id)
+);
+
+-- Table: user_deposit_history
+CREATE TABLE tbl.user_deposit_history (
+    pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_user_deposit_history_id'),
+    fkey_user_id bigint  NOT NULL,
+    blockchain varchar(20)  NOT NULL,
+    user_address varchar(64)  NOT NULL,
+    contract_address varchar(64)  NOT NULL,
+    receiver_address varchar(64)  NOT NULL,
+    transaction_hash varchar(64)  NOT NULL,
+    created_at bigint  NOT NULL,
+    CONSTRAINT uidx_user_username UNIQUE (user_address) NOT DEFERRABLE  INITIALLY IMMEDIATE,
+    CONSTRAINT user_deposit_history_pk PRIMARY KEY (pkey_id)
 );
 
 -- Table: user_exit_strategy_history
@@ -210,17 +225,6 @@ CREATE TABLE tbl.user_follow_strategy (
     created_at bigint  NOT NULL,
     updated_at bigint  NOT NULL,
     CONSTRAINT user_follow_strategy_pk PRIMARY KEY (pkey_id)
-);
-
--- Table: user_wallet
-CREATE TABLE tbl.user_wallet (
-    pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_user_wallet_id'),
-    fkey_user_id bigint  NOT NULL,
-    blockchain varchar(20)  NOT NULL,
-    address varchar(64)  NOT NULL,
-    fkey_strategy_id bigint  NOT NULL,
-    CONSTRAINT uidx_user_username UNIQUE (address) NOT DEFERRABLE  INITIALLY IMMEDIATE,
-    CONSTRAINT user_wallet_pk PRIMARY KEY (pkey_id)
 );
 
 -- Table: wallet_activity_history
@@ -277,8 +281,8 @@ ALTER TABLE tbl.user_follow_expert ADD CONSTRAINT expert_profile_user_follow_exp
     INITIALLY IMMEDIATE
 ;
 
--- Reference: fkey_user (table: user_wallet)
-ALTER TABLE tbl.user_wallet ADD CONSTRAINT fkey_user
+-- Reference: fkey_user (table: user_deposit_history)
+ALTER TABLE tbl.user_deposit_history ADD CONSTRAINT fkey_user
     FOREIGN KEY (fkey_user_id)
     REFERENCES tbl."user" (pkey_id)  
     NOT DEFERRABLE 
@@ -373,14 +377,6 @@ ALTER TABLE tbl.strategy ADD CONSTRAINT user_strategy
     INITIALLY IMMEDIATE
 ;
 
--- Reference: user_wallet_strategy (table: user_wallet)
-ALTER TABLE tbl.user_wallet ADD CONSTRAINT user_wallet_strategy
-    FOREIGN KEY (fkey_strategy_id)
-    REFERENCES tbl.strategy (pkey_id)  
-    NOT DEFERRABLE 
-    INITIALLY IMMEDIATE
-;
-
 -- sequences
 -- Sequence: seq_aum_history_id
 CREATE SEQUENCE tbl.seq_aum_history_id
@@ -455,6 +451,13 @@ CREATE SEQUENCE tbl.seq_user_back_strategy_history_id
       NO CYCLE
 ;
 
+-- Sequence: seq_user_deposit_history_id
+CREATE SEQUENCE tbl.seq_user_deposit_history_id
+      NO MINVALUE
+      NO MAXVALUE
+      NO CYCLE
+;
+
 -- Sequence: seq_user_exit_strategy_history_id
 CREATE SEQUENCE tbl.seq_user_exit_strategy_history_id
       NO MINVALUE
@@ -482,13 +485,6 @@ CREATE SEQUENCE tbl.seq_user_id
       NO MAXVALUE
       NO CYCLE
       AS bigint
-;
-
--- Sequence: seq_user_wallet_id
-CREATE SEQUENCE tbl.seq_user_wallet_id
-      NO MINVALUE
-      NO MAXVALUE
-      NO CYCLE
 ;
 
 -- Sequence: seq_ver_id

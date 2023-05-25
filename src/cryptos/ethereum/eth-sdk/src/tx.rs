@@ -1,6 +1,10 @@
+use crate::utils::wait_for_confirmations_simple;
 use crate::EthereumRpcConnection;
 use eyre::*;
+use std::time::Duration;
+use web3::api::Eth;
 use web3::types::{Transaction as Web3Transaction, TransactionReceipt, H160, H256, U256};
+use web3::Transport;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum TxStatus {
@@ -294,5 +298,27 @@ impl TransactionReady {
         }
 
         None
+    }
+}
+
+pub struct TxChecker<T: Transport> {
+    conn: Eth<T>,
+}
+
+impl<T: Transport> TxChecker<T> {
+    pub fn new(conn: Eth<T>) -> Self {
+        Self { conn }
+    }
+
+    pub async fn status(&self, tx_hash: H256) -> Result<TxStatus> {
+        let receipt =
+            wait_for_confirmations_simple(&self.conn, tx_hash, Duration::from_secs_f64(3.0), 10)
+                .await?;
+
+        if receipt.status == Some(web3::types::U64::from(1)) {
+            Ok(TxStatus::Successful)
+        } else {
+            Ok(TxStatus::Reverted)
+        }
     }
 }

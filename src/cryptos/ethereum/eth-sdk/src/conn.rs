@@ -1,14 +1,10 @@
-use crate::signer::EthereumSigner;
 use eyre::*;
-use std::str::FromStr;
 use std::sync::Arc;
 use tokio::sync::Semaphore;
-use tracing::info;
 use web3::signing::Key;
 use web3::transports::{Either, Http, WebSocket};
 use web3::types::{
-    Address, Transaction, TransactionId, TransactionParameters, TransactionReceipt,
-    TransactionRequest, H160, H256, U256,
+    Address, Transaction, TransactionId, TransactionParameters, TransactionReceipt, H256, U256,
 };
 use web3::Web3;
 

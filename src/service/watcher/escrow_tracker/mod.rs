@@ -96,8 +96,9 @@ impl StableCoinAddresses {
     }
 }
 pub async fn handle_eth_escrows(
-    state: State<Arc<AppState>>,
+    state: Arc<AppState>,
     body: Bytes,
+    blockchain: EnumBlockChain,
 ) -> Result<(), StatusCode> {
     let hashes = parse_quickalert_payload(body).map_err(|e| {
         error!("failed to parse QuickAlerts payload: {:?}", e);
@@ -118,10 +119,7 @@ pub async fn handle_eth_escrows(
                     return;
                 }
             };
-            if let Err(e) =
-                evm::cache_ethereum_transaction(&tx, &state.db, EnumBlockChain::EthereumMainnet)
-                    .await
-            {
+            if let Err(e) = evm::cache_ethereum_transaction(&tx, &state.db, blockchain).await {
                 error!("error caching transaction: {:?}", e);
             };
             if let Err(e) = parse_escrow(
@@ -136,4 +134,17 @@ pub async fn handle_eth_escrows(
     }
 
     Ok(())
+}
+pub async fn handle_eth_escrows_mainnet(
+    state: State<Arc<AppState>>,
+    body: Bytes,
+) -> Result<(), StatusCode> {
+    handle_eth_escrows(state.0, body, EnumBlockChain::EthereumMainnet).await
+}
+
+pub async fn handle_eth_escrows_goerli(
+    state: State<Arc<AppState>>,
+    body: Bytes,
+) -> Result<(), StatusCode> {
+    handle_eth_escrows(state.0, body, EnumBlockChain::EthereumGoerli).await
 }
