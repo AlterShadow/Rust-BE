@@ -51,7 +51,7 @@ pub async fn on_user_deposit(
 }
 /*
 1. User will decides which strategy S to back with his wallet address A
-2. Backend will save his backing design in database, and transfer his backing token to strategy for copy trading(in this step it may involve auto token conversion)
+2. Backend will save his backing decision in database, and transfer his backing token to strategy for copy trading(in this step it may involve auto token conversion)
 
  */
 pub async fn on_user_back_strategy(
