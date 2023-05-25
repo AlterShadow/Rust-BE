@@ -91,34 +91,37 @@ pub async fn on_user_back_strategy(
         .unwrap()
         .parse()?;
 
+    let escrow_signer_address = escrow_signer.address();
     let transaction = transfer_token_to_strategy_contract(
         conn,
-        escrow_signer.clone(),
+        escrow_signer,
         EscrowTransfer {
             token: stablecoin,
             amount: sp_tokens,
             recipient: strategy_address,
-            owner: escrow_signer.address(),
+            owner: escrow_signer_address,
         },
         chain,
         stablecoin_addresses,
     )
     .await?;
     // TODO: need to do an erc 20 transfer
-
     db.execute(FunUserBackStrategyReq {
         user_id: ctx.user_id,
         strategy_id: user_registered_strategy.strategy_id,
         quantity: format!("{:?}", amount),
         purchase_wallet: format!("{:?}", user_wallet_address),
         blockchain: chain.to_string(),
-        transaction_hash: format!("{:?}", transaction_hash),
+        transaction_hash: format!("{:?}", transaction.get_hash()),
         earn_sp_tokens: format!("{:?}", sp_tokens),
     })
     .await?;
-    info!("Transfer token to strategy contract {:?}", transaction.hash);
+    info!(
+        "Transfer token to strategy contract {:?}",
+        transaction.get_hash()
+    );
 
-    let _tx = Transaction::new_and_assume_ready(transaction_hash, conn).await?;
+    let _tx = Transaction::new_and_assume_ready(transaction.get_hash(), conn).await?;
     Ok(())
 }
 
@@ -183,10 +186,11 @@ pub async fn transfer_token_to_strategy_contract(
         .context("Could not find stablecoin address")?;
     let escrow_contract = EscrowContract::new(conn.clone().into_raw().eth(), escrow_address)?;
 
+    let signer_address = signer.address();
     let tx_hash = escrow_contract
         .transfer_token_to(
-            signer.clone(),
-            signer.address,
+            signer,
+            signer_address,
             escrow.owner,
             escrow.recipient,
             escrow.amount,
@@ -265,7 +269,6 @@ mod tests {
         .await?;
         // at this step, tx should be passed with quickalert
         let tx = Transaction::new_and_assume_ready(tx_hash, &conn).await?;
-
         on_user_deposit(
             &conn,
             &ctx,
