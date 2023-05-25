@@ -63,6 +63,7 @@ pub async fn on_user_back_strategy(
     strategy_id: i64,
     strategy_pool_signer: impl Key,
     escrow_signer: impl Key,
+    stablecoin: StableCoin,
 ) -> Result<()> {
     let mut user_registered_strategy = db
         .execute(FunUserGetStrategyReq { strategy_id })
@@ -86,10 +87,21 @@ pub async fn on_user_back_strategy(
         .unwrap()
         .parse()?;
 
+    let transaction = transfer_token_to_strategy_contract(
+        conn,
+        escrow_signer.clone(),
+        EscrowTransfer {
+            token: stablecoin,
+            amount: sp_tokens,
+            recipient: strategy_address,
+            owner: escrow_signer.address(),
+        },
+        chain,
+        stablecoin_addresses,
+    )
+    .await?;
     // TODO: need to do an erc 20 transfer
-    let transaction_hash = conn
-        .transfer(escrow_signer, strategy_address, sp_tokens)
-        .await?;
+
     db.execute(FunUserBackStrategyReq {
         user_id: ctx.user_id,
         strategy_id: user_registered_strategy.strategy_id,
@@ -100,7 +112,7 @@ pub async fn on_user_back_strategy(
         earn_sp_tokens: format!("{:?}", sp_tokens),
     })
     .await?;
-    info!("Transfer token to strategy contract {:?}", transaction_hash);
+    info!("Transfer token to strategy contract {:?}", transaction.hash);
 
     let _tx = Transaction::new_and_assume_ready(transaction_hash, conn).await?;
     Ok(())
@@ -148,9 +160,11 @@ pub async fn deploy_strategy_contract(
 }
 
 use crate::contract_wrappers::escrow::EscrowContract;
+use crate::evm::StableCoin;
+
 pub async fn transfer_token_to_strategy_contract(
     conn: &EthereumRpcConnection,
-    signer: EthereumSigner,
+    signer: impl Key,
     escrow: EscrowTransfer,
     chain: EnumBlockChain,
     stablecoin_addresses: &StableCoinAddresses,
@@ -175,21 +189,8 @@ pub async fn transfer_token_to_strategy_contract(
         )
         .await?;
 
-    let mut tx = Transaction::new(tx_hash);
-    tx.update(conn).await?;
-
-    match tx.get_status() {
-        TxStatus::Successful => {
-            info!("Transfer success");
-        }
-        TxStatus::Pending => {
-            info!("Transfer pending");
-        }
-        _ => {
-            info!("Transfer failed");
-        }
-    }
-    Ok(Transaction::new(tx_hash))
+    let tx = Transaction::new(tx_hash);
+    Ok(tx)
 }
 
 #[cfg(test)]
