@@ -1,5 +1,4 @@
 use crate::contract::ContractDeployer;
-use crate::erc20::ERC20_ABI;
 use eyre::*;
 use web3::api::Eth;
 use web3::contract::{Contract, Options};
@@ -8,6 +7,7 @@ use web3::types::{Address, H256, U256};
 use web3::Transport;
 
 const MOCK_ERC20_BYTECODE: &str = include_str!("mock_erc20.bin");
+const MOCK_ERC20_ABI: &'static str = include_str!("mock_erc20.json");
 
 pub struct MockERC20Contract<T: Transport> {
     /* unrestricted mint and burn, but all other restrictions apply */
@@ -97,7 +97,7 @@ pub async fn deploy_mock_erc20<T: Transport>(
     conn: Eth<T>,
     key: impl Key,
 ) -> Result<MockERC20Contract<T>> {
-    let abi_json: serde_json::Value = serde_json::from_str(ERC20_ABI)?;
+    let abi_json: serde_json::Value = serde_json::from_str(MOCK_ERC20_ABI)?;
     let deployer = ContractDeployer::new(conn, abi_json)?.code(MOCK_ERC20_BYTECODE.to_owned());
     Ok(MockERC20Contract::new(
         deployer.sign_with_key_and_execute((), key).await?,
