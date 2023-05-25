@@ -15,7 +15,7 @@ use web3::signing::Key;
 use web3::types::{Address, U256};
 use web3::Transport;
 /*
-1. He will transfer tokens C to escrow address B
+1. He will transfer tokens C of USDC to escrow address B
 2. We track his transfer, calculate how much SP token user will have, and save the "deposit" information to database (this is for multi chain support)
 */
 pub async fn on_user_deposit(
@@ -51,7 +51,7 @@ pub async fn on_user_deposit(
 }
 /*
 1. User will decides which strategy S to back with his wallet address A
-2. Backend will save his backing decision in database, and transfer his backing token to strategy for copy trading(in this step it may involve auto token conversion)
+2. Backend will save his backing decision in database, and transfer his USDC to strategy for copy trading(in this step it may involve auto token conversion)
 
  */
 pub async fn on_user_back_strategy(
