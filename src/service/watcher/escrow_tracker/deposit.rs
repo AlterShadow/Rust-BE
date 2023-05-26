@@ -1,6 +1,5 @@
 use crate::escrow_tracker::escrow::{parse_escrow, EscrowTransfer};
 use crate::escrow_tracker::StableCoinAddresses;
-use eth_sdk::signer::EthereumSigner;
 use eth_sdk::utils::wait_for_confirmations_simple;
 use eth_sdk::*;
 use eyre::*;
@@ -13,13 +12,13 @@ use tracing::info;
 use web3::ethabi::Contract;
 use web3::signing::Key;
 use web3::types::{Address, U256};
-use web3::Transport;
+
 /*
 1. He will transfer tokens C of USDC to escrow address B
 2. We track his transfer, calculate how much SP token user will have, and save the "deposit" information to database (this is for multi chain support)
 */
 pub async fn on_user_deposit(
-    conn: &EthereumRpcConnection,
+    _conn: &EthereumRpcConnection,
     ctx: &RequestContext,
     db: &DbClient,
     chain: EnumBlockChain,
@@ -207,20 +206,12 @@ pub async fn transfer_token_to_strategy_contract(
 mod tests {
     use super::*;
     use crate::escrow_tracker::StableCoinAddresses;
-    use eth_sdk::erc20::build_erc_20;
     use eth_sdk::mock_erc20::deploy_mock_erc20;
     use eth_sdk::signer::Secp256k1SecretKey;
     use eth_sdk::{EthereumRpcConnectionPool, Transaction};
     use lib::database::{connect_to_database, DatabaseConfig};
     use lib::log::{setup_logs, LogLevel};
-    use std::str::FromStr;
-    use std::thread::sleep;
-    use std::time::Duration;
-    use tracing::info;
-    use web3::contract::{Contract, Options};
-    use web3::signing::Key;
-    use web3::types::{TransactionReceipt, H256, U64};
-    use web3::Transport;
+
     const ANVIL_PRIV_KEY_1: &str =
         "ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
     const ANVIL_PRIV_KEY_2: &str =
@@ -246,15 +237,13 @@ mod tests {
     async fn test_user_ethereum_deposit() -> Result<()> {
         let _ = setup_logs(LogLevel::Trace);
         let user_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
+        let admin_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_2)?;
         let escrow_key = Secp256k1SecretKey::new_random();
         let conn_pool = EthereumRpcConnectionPool::localnet();
         let conn = conn_pool.get_conn().await?;
-        let mock_erc20 = deploy_mock_erc20(conn.clone().into_raw().eth(), user_key.clone()).await?;
-        mock_erc20
-            .mint(user_key.clone(), user_key.address, U256::from(10000))
-            .await?;
-        let tx_hash = mock_erc20
-            .transfer(user_key.clone(), escrow_key.address, U256::from(10000))
+        let erc20_mock = deploy_mock_erc20(conn.get_raw().clone(), admin_key).await?;
+        let tx_hash = erc20_mock
+            .transfer(&user_key.key, escrow_key.address, U256::from(20000))
             .await?;
 
         let ctx = RequestContext {
@@ -271,19 +260,22 @@ mod tests {
             ..Default::default()
         })
         .await?;
+        let mut stablecoins = StableCoinAddresses::default();
+        stablecoins.inner.insert(
+            EnumBlockChain::EthereumGoerli,
+            vec![(StableCoin::Usdc, erc20_mock.address)],
+        );
+
         // at this step, tx should be passed with quickalert
         let tx = Transaction::new_and_assume_ready(tx_hash, &conn).await?;
         on_user_deposit(
             &conn,
             &ctx,
             &db,
-            EnumBlockChain::EthereumMainnet,
+            EnumBlockChain::EthereumGoerli,
             &tx,
-            &StableCoinAddresses::new(
-                vec![EnumBlockChain::EthereumMainnet],
-                vec![vec![(StableCoin::Usdc, mock_erc20.inner.address())]],
-            )?,
-            &mock_erc20.inner.abi(),
+            &stablecoins,
+            &erc20_mock.contract.abi(),
         )
         .await?;
 

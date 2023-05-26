@@ -1,105 +1,19 @@
 use crate::contract::ContractDeployer;
+use crate::erc20::Erc20Token;
+use crate::EitherTransport;
 use eyre::*;
-use web3::api::Eth;
-use web3::contract::{Contract, Options};
 use web3::signing::Key;
-use web3::types::{Address, H256, U256};
-use web3::Transport;
+use web3::Web3;
 
 const MOCK_ERC20_BYTECODE: &str = include_str!("mock_erc20.bin");
 const MOCK_ERC20_ABI: &'static str = include_str!("mock_erc20.json");
 
-pub struct MockERC20Contract<T: Transport> {
-    /* unrestricted mint and burn, but all other restrictions apply */
-    pub inner: Contract<T>,
-}
-
-impl<T: Transport> MockERC20Contract<T> {
-    pub fn new(contract: Contract<T>) -> Result<Self> {
-        Ok(Self { inner: contract })
-    }
-
-    pub async fn mint(&self, secret: impl Key, to: Address, amount: U256) -> Result<H256> {
-        Ok(self
-            .inner
-            .signed_call("mint", (to, amount), Options::default(), secret)
-            .await?)
-    }
-
-    pub async fn burn(&self, secret: impl Key, from: Address, amount: U256) -> Result<H256> {
-        Ok(self
-            .inner
-            .signed_call("burn", (from, amount), Options::default(), secret)
-            .await?)
-    }
-
-    pub async fn transfer(&self, secret: impl Key, to: Address, amount: U256) -> Result<H256> {
-        Ok(self
-            .inner
-            .signed_call("transfer", (to, amount), Options::default(), secret)
-            .await?)
-    }
-
-    pub async fn transfer_from(
-        &self,
-        secret: impl Key,
-        from: Address,
-        to: Address,
-        amount: U256,
-    ) -> Result<H256> {
-        Ok(self
-            .inner
-            .signed_call(
-                "transferFrom",
-                (from, to, amount),
-                Options::default(),
-                secret,
-            )
-            .await?)
-    }
-
-    pub async fn approve(&self, secret: impl Key, spender: Address, amount: U256) -> Result<H256> {
-        Ok(self
-            .inner
-            .signed_call("approve", (spender, amount), Options::default(), secret)
-            .await?)
-    }
-
-    pub async fn balance_of(&self, owner: Address) -> Result<U256> {
-        Ok(self
-            .inner
-            .query("balanceOf", owner, None, Options::default(), None)
-            .await?)
-    }
-
-    pub async fn allowance(&self, owner: Address, spender: Address) -> Result<U256> {
-        Ok(self
-            .inner
-            .query(
-                "allowance",
-                (owner, spender),
-                None,
-                Options::default(),
-                None,
-            )
-            .await?)
-    }
-
-    pub async fn total_supply(&self) -> Result<U256> {
-        Ok(self
-            .inner
-            .query("totalSupply", (), None, Options::default(), None)
-            .await?)
-    }
-}
-
-pub async fn deploy_mock_erc20<T: Transport>(
-    conn: Eth<T>,
-    key: impl Key,
-) -> Result<MockERC20Contract<T>> {
+pub async fn deploy_mock_erc20(conn: Web3<EitherTransport>, key: impl Key) -> Result<Erc20Token> {
     let abi_json: serde_json::Value = serde_json::from_str(MOCK_ERC20_ABI)?;
-    let deployer = ContractDeployer::new(conn, abi_json)?.code(MOCK_ERC20_BYTECODE.to_owned());
-    Ok(MockERC20Contract::new(
+    let deployer =
+        ContractDeployer::new(conn.eth(), abi_json)?.code(MOCK_ERC20_BYTECODE.to_owned());
+    Ok(Erc20Token::new(
+        conn,
         deployer.sign_with_key_and_execute((), key).await?,
     )?)
 }
@@ -109,6 +23,7 @@ mod tests {
     use super::*;
     use crate::signer::Secp256k1SecretKey;
     use crate::{EthereumRpcConnectionPool, TxChecker, TxStatus};
+    use web3::types::U256;
 
     const ANVIL_PRIV_KEY_1: &str =
         "ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
@@ -124,7 +39,7 @@ mod tests {
         let key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
         let conn_pool = EthereumRpcConnectionPool::localnet();
         let conn = conn_pool.get_conn().await?;
-        let mock_erc20 = deploy_mock_erc20(conn.get_raw().eth(), key.clone()).await?;
+        let mock_erc20 = deploy_mock_erc20(conn.get_raw().clone(), key.clone()).await?;
         let tx_checker = TxChecker::new(conn.get_raw().eth());
 
         let alice = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_2)?;

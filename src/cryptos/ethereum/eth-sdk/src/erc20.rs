@@ -1,6 +1,6 @@
 use crate::signer::EthereumSigner;
 use crate::utils::{eth_public_exponent_to_address, wait_for_confirmations_simple, wei_to_eth};
-use crate::{new_transport, EitherTransport, EthereumNet};
+use crate::{EitherTransport, EthereumNet};
 use crypto::Signer;
 use eyre::*;
 use std::any::Any;
@@ -11,6 +11,7 @@ use std::time::Duration;
 use token::CryptoToken;
 use web3::api::Web3;
 use web3::contract::{Contract, Options};
+use web3::signing::Key;
 use web3::types::{Address, H256, U256};
 
 pub const ERC20_ABI: &'static str = include_str!("erc20.abi.json");
@@ -18,31 +19,91 @@ pub const ERC20_ABI: &'static str = include_str!("erc20.abi.json");
 pub struct Erc20Token {
     client: Web3<EitherTransport>,
     net: EthereumNet,
-    address: Address,
-    contract: Contract<EitherTransport>,
+    pub address: Address,
+    pub contract: Contract<EitherTransport>,
 }
 
 impl Erc20Token {
-    // TODO: pass transport from main instead
-    pub async fn new(net: EthereumNet, address: Address) -> Result<Self> {
-        // I don't know whose token are these. Copilot gave me these
-        let url = match net {
-            EthereumNet::Mainnet => "https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",
-            EthereumNet::Ropsten => "https://ropsten.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",
-            EthereumNet::Rinkeby => "https://rinkeby.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",
-            EthereumNet::Goerli => "https://goerli.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",
-            EthereumNet::Kovan => "https://kovan.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",
-            EthereumNet::Local => "http://localhost:8545",
-        };
-        let transport = new_transport(url).await?;
-        let client = Web3::new(transport);
-        let contract = Contract::from_json(client.eth(), address, ERC20_ABI.as_bytes()).unwrap();
-        Ok(Erc20Token {
+    pub fn new(client: Web3<EitherTransport>, contract: Contract<EitherTransport>) -> Result<Self> {
+        Ok(Self {
             client,
-            net,
-            address,
+            net: EthereumNet::Mainnet,
+            address: contract.address(),
             contract,
         })
+    }
+
+    pub async fn mint(&self, secret: impl Key, to: Address, amount: U256) -> Result<H256> {
+        Ok(self
+            .contract
+            .signed_call("mint", (to, amount), Options::default(), secret)
+            .await?)
+    }
+
+    pub async fn burn(&self, secret: impl Key, from: Address, amount: U256) -> Result<H256> {
+        Ok(self
+            .contract
+            .signed_call("burn", (from, amount), Options::default(), secret)
+            .await?)
+    }
+
+    pub async fn transfer(&self, secret: impl Key, to: Address, amount: U256) -> Result<H256> {
+        Ok(self
+            .contract
+            .signed_call("transfer", (to, amount), Options::default(), secret)
+            .await?)
+    }
+
+    pub async fn transfer_from(
+        &self,
+        secret: impl Key,
+        from: Address,
+        to: Address,
+        amount: U256,
+    ) -> Result<H256> {
+        Ok(self
+            .contract
+            .signed_call(
+                "transferFrom",
+                (from, to, amount),
+                Options::default(),
+                secret,
+            )
+            .await?)
+    }
+
+    pub async fn approve(&self, secret: impl Key, spender: Address, amount: U256) -> Result<H256> {
+        Ok(self
+            .contract
+            .signed_call("approve", (spender, amount), Options::default(), secret)
+            .await?)
+    }
+
+    pub async fn balance_of(&self, owner: Address) -> Result<U256> {
+        Ok(self
+            .contract
+            .query("balanceOf", owner, None, Options::default(), None)
+            .await?)
+    }
+
+    pub async fn allowance(&self, owner: Address, spender: Address) -> Result<U256> {
+        Ok(self
+            .contract
+            .query(
+                "allowance",
+                (owner, spender),
+                None,
+                Options::default(),
+                None,
+            )
+            .await?)
+    }
+
+    pub async fn total_supply(&self) -> Result<U256> {
+        Ok(self
+            .contract
+            .query("totalSupply", (), None, Options::default(), None)
+            .await?)
     }
 }
 

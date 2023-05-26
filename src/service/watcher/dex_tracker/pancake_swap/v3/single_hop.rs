@@ -1,5 +1,5 @@
 use crate::dex_tracker::pancake::Swap;
-use eth_sdk::{ContractCall, SerializableToken};
+use eth_sdk::ContractCall;
 use eyre::*;
 
 use crate::evm::{DexPath, PancakeV3SingleHopPath};

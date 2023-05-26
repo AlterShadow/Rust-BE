@@ -5,7 +5,7 @@ use std::convert::TryInto;
 use std::mem::transmute;
 use web3::ethabi::{Address, Bytes, FixedBytes, Int, Uint};
 use web3::ethabi::{Contract, Param, ParamType, StateMutability, Token};
-use web3::types::{H160, H256, U256};
+use web3::types::{H160, U256};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ContractCall {

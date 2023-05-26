@@ -6,7 +6,7 @@ use tracing_log::LogTracer;
 use tracing_subscriber::{fmt, EnvFilter};
 use web3::api::Eth;
 use web3::signing::{keccak256, Signature};
-use web3::types::{Address, TransactionReceipt, H160, H256, U256};
+use web3::types::{Address, TransactionReceipt, H256, U256};
 use web3::Transport;
 pub fn eth_public_exponent_to_address(public_exponent: &crypto::PublicExponent) -> Result<Address> {
     let public_key = PublicKey::from_slice(&public_exponent.content).map_err(|_| {

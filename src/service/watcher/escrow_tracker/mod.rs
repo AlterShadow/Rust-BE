@@ -81,7 +81,10 @@ impl Default for StableCoinAddresses {
 }
 
 impl StableCoinAddresses {
-    pub fn new(chains: Vec<EnumBlockChain>, coins: Vec<Vec<(StableCoin, H160)>>) -> Result<Self> {
+    pub fn new_from_addresses(
+        chains: Vec<EnumBlockChain>,
+        coins: Vec<Vec<(StableCoin, H160)>>,
+    ) -> Result<Self> {
         if chains.len() != coins.len() {
             return Err(eyre!("chains and coins must have the same length"));
         }

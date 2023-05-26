@@ -1,6 +1,6 @@
 use crate::escrow_tracker::StableCoinAddresses;
 use crate::evm::StableCoin;
-use eth_sdk::{ContractCall, SerializableToken, TransactionReady};
+use eth_sdk::{ContractCall, TransactionReady};
 use eyre::*;
 use gen::model::EnumBlockChain;
 

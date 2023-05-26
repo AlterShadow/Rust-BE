@@ -245,7 +245,6 @@ enum PancakeSwapMethod {
 }
 
 const PANCAKE_SMART_ROUTER_PATH: &str = "abi/pancake_swap/smart_router_v3.json";
-const ERC20_PATH: &str = "abi/generic/erc20.json";
 
 pub fn build_pancake_swap() -> Result<PancakeSwap> {
     let pancake_smart_router = Contract::load(
