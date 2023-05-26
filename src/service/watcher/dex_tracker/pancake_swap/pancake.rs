@@ -5,12 +5,11 @@ use super::v3::{
 };
 
 use crate::evm::{DexPath, Trade};
-use eth_sdk::utils::convert_h256_ethabi_to_web3;
-use eth_sdk::{ContractCall, TransactionReady};
-use ethabi::{Contract, Token};
+use eth_sdk::{erc20::build_erc_20, ContractCall, SerializableToken, TransactionReady};
 use eyre::*;
 use gen::model::{EnumBlockChain, EnumDex, EnumDexVersion};
 use std::str::FromStr;
+use web3::ethabi::Contract;
 use web3::types::{H160, H256, U256};
 
 pub struct Swap {
@@ -198,10 +197,10 @@ impl PancakeSwap {
 
         let mut actual_function_calls: Vec<ContractCall> = Vec::new();
         /* the single parameter from "multicall" is ambiguously called "data" */
-        if let Some(param) = multicall.get_param("data") {
+        if let Ok(param) = multicall.get_param("data") {
             /* data is an unsized array of byte arrays */
             let value_array = match param.get_value() {
-                Token::Array(value) => value,
+                SerializableToken::Array(value) => value,
                 _ => {
                     return Err(eyre!("data is not an array"));
                 }
@@ -210,8 +209,8 @@ impl PancakeSwap {
             for token in value_array {
                 /* each byte array is a nested function call */
                 let input_data = match token.into_bytes() {
-                    Some(input_data) => input_data,
-                    None => {
+                    Ok(input_data) => input_data,
+                    Err(_) => {
                         return Err(eyre!("failed to get input data"));
                     }
                 };
@@ -253,15 +252,11 @@ pub fn build_pancake_swap() -> Result<PancakeSwap> {
         std::fs::File::open(PANCAKE_SMART_ROUTER_PATH).context("failed to read contract ABI")?,
     )
     .context("failed to parse contract ABI")?;
-    let erc20 =
-        Contract::load(std::fs::File::open(ERC20_PATH).context("failed to read contract ABI")?)
-            .context("failed to parse contract ABI")?;
-    let transfer_event_signature = convert_h256_ethabi_to_web3(
-        erc20
-            .event("Transfer")
-            .context("Failed to get Transfer event signature")?
-            .signature(),
-    );
+    let erc20 = build_erc_20()?;
+    let transfer_event_signature = erc20
+        .event("Transfer")
+        .context("Failed to get Transfer event signature")?
+        .signature();
     let pancake = PancakeSwap::new(pancake_smart_router, transfer_event_signature);
     Ok(pancake)
 }

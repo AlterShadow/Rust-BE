@@ -50,7 +50,7 @@ async fn main() -> Result<()> {
         .route("/eth-goerli-escrows", post(handle_eth_escrows_goerli))
         .with_state(Arc::new(AppState {
             dex_addresses: DexAddresses::new(),
-            stablecoin_addresses: StableCoinAddresses::new(),
+            stablecoin_addresses: StableCoinAddresses::default(),
             eth_pool,
             erc_20: build_erc_20()?,
             pancake_swap: build_pancake_swap()?,

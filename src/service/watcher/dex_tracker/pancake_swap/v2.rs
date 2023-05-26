@@ -1,9 +1,7 @@
 use crate::evm::DexPath;
 
 use crate::dex_tracker::pancake_swap::pancake::Swap;
-use eth_sdk::utils::{convert_h160_ethabi_to_web3, convert_u256_ethabi_to_web3};
-use eth_sdk::ContractCall;
-use ethabi::Token;
+use eth_sdk::{ContractCall, SerializableToken};
 use eyre::*;
 use web3::types::H160;
 
@@ -16,63 +14,19 @@ pub fn swap_exact_tokens_for_tokens(call: &ContractCall) -> Result<Swap> {
                                                     address to
                     ) external payable returns (uint256 amountOut);
     */
-    let amount_in = match call.get_param("amountIn") {
-        Some(param) => match param.get_value() {
-            Token::Uint(value) => convert_u256_ethabi_to_web3(value),
-            _ => {
-                return Err(eyre!("amountIn is not a uint"));
-            }
-        },
-        None => {
-            return Err(eyre!("no amountIn"));
-        }
-    };
-
-    let amount_out_min = match call.get_param("amountOutMin") {
-        Some(param) => match param.get_value() {
-            Token::Uint(value) => convert_u256_ethabi_to_web3(value),
-            _ => {
-                return Err(eyre!("amountOutMin is not a uint"));
-            }
-        },
-        None => {
-            return Err(eyre!("no amountOutMin"));
-        }
-    };
-
-    let path: Vec<H160> = match call.get_param("path") {
-        Some(param) => match param.get_value() {
-            Token::Array(value) => value
-                .iter()
-                .map(|token| match token {
-                    Token::Address(value) => Ok(convert_h160_ethabi_to_web3(*value)),
-                    _ => Err(eyre!("token in path is not an address")),
-                })
-                .collect::<Result<Vec<_>, _>>()?,
-            _ => {
-                return Err(eyre!("path is not an array"));
-            }
-        },
-        None => {
-            return Err(eyre!("no path"));
-        }
-    };
-
+    let amount_in = call.get_param("amountIn")?.get_value().into_uint()?;
+    let amount_out_min = call.get_param("amountOutMin")?.get_value().into_uint()?;
+    let path_result: Result<Vec<H160>> = call
+        .get_param("path")?
+        .get_value()
+        .into_array()?
+        .iter()
+        .map(|token| token.into_address())
+        .collect();
+    let path = path_result?;
     let token_in = path[0];
-
     let token_out = path[path.len() - 1];
-
-    let recipient = match call.get_param("to") {
-        Some(param) => match param.get_value() {
-            Token::Address(value) => convert_h160_ethabi_to_web3(value),
-            _ => {
-                return Err(eyre!("recipient is not an address"));
-            }
-        },
-        None => {
-            return Err(eyre!("no recipient"));
-        }
-    };
+    let recipient = call.get_param("to")?.get_value().into_address()?;
 
     Ok(Swap {
         recipient,
@@ -96,63 +50,19 @@ pub fn swap_tokens_for_exact_tokens(call: &ContractCall) -> Result<Swap> {
             ) external payable override nonReentrant returns (uint256 amountIn)
     */
 
-    let amount_out = match call.get_param("amountOut") {
-        Some(param) => match param.get_value() {
-            Token::Uint(value) => convert_u256_ethabi_to_web3(value),
-            _ => {
-                return Err(eyre!("amountOut is not a uint"));
-            }
-        },
-        None => {
-            return Err(eyre!("no amountOut"));
-        }
-    };
-
-    let amount_in_max = match call.get_param("amountInMax") {
-        Some(param) => match param.get_value() {
-            Token::Uint(value) => convert_u256_ethabi_to_web3(value),
-            _ => {
-                return Err(eyre!("amountInMax is not a uint"));
-            }
-        },
-        None => {
-            return Err(eyre!("no amountInMax"));
-        }
-    };
-
-    let path: Vec<H160> = match call.get_param("path") {
-        Some(param) => match param.get_value() {
-            Token::Array(value) => value
-                .iter()
-                .map(|token| match token {
-                    Token::Address(value) => Ok(convert_h160_ethabi_to_web3(*value)),
-                    _ => Err(eyre!("token in path is not an address")),
-                })
-                .collect::<Result<Vec<_>, _>>()?,
-            _ => {
-                return Err(eyre!("path is not an array"));
-            }
-        },
-        None => {
-            return Err(eyre!("no path"));
-        }
-    };
-
+    let amount_out = call.get_param("amountOut")?.get_value().into_uint()?;
+    let amount_in_max = call.get_param("amountInMax")?.get_value().into_uint()?;
+    let path_result: Result<Vec<H160>> = call
+        .get_param("path")?
+        .get_value()
+        .into_array()?
+        .iter()
+        .map(|token| token.into_address())
+        .collect();
+    let path = path_result?;
     let token_in = path[0];
-
     let token_out = path[1];
-
-    let recipient = match call.get_param("to") {
-        Some(param) => match param.get_value() {
-            Token::Address(value) => convert_h160_ethabi_to_web3(value),
-            _ => {
-                return Err(eyre!("recipient is not an address"));
-            }
-        },
-        None => {
-            return Err(eyre!("no recipient"));
-        }
-    };
+    let recipient = call.get_param("to")?.get_value().into_address()?;
 
     Ok(Swap {
         recipient,

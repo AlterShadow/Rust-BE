@@ -1,7 +1,5 @@
 use crate::dex_tracker::pancake::Swap;
-use eth_sdk::utils::{convert_h160_ethabi_to_web3, convert_u256_ethabi_to_web3};
-use eth_sdk::ContractCall;
-use ethabi::Token;
+use eth_sdk::{ContractCall, SerializableToken};
 use eyre::*;
 
 use crate::evm::{DexPath, PancakeV3SingleHopPath};
@@ -23,72 +21,26 @@ pub fn exact_input_single(call: &ContractCall) -> Result<Swap> {
                                                     }
     */
 
-    let params = match call.get_param("params") {
-        Some(param) => match param.get_value() {
-            Token::Tuple(value) => value,
-            _ => {
-                return Err(eyre!("params is not a tuple"));
-            }
-        },
-        None => {
-            return Err(eyre!("no params"));
-        }
-    };
-
-    let token_in = match params[0] {
-        Token::Address(param) => convert_h160_ethabi_to_web3(param),
-        _ => {
-            return Err(eyre!("token_in is not an address"));
-        }
-    };
-
-    let token_out = match params[1] {
-        Token::Address(param) => convert_h160_ethabi_to_web3(param),
-        _ => {
-            return Err(eyre!("token_out is not an address"));
-        }
-    };
-
-    let fee = match params[2] {
-        Token::Uint(param) => convert_u256_ethabi_to_web3(param),
-        _ => {
-            return Err(eyre!("fee is not a uint"));
-        }
-    };
-
-    let recipient = match params[3] {
-        Token::Address(param) => convert_h160_ethabi_to_web3(param),
-        _ => {
-            return Err(eyre!("recipient is not an address"));
-        }
-    };
-
-    let amount_in = match params[4] {
-        Token::Uint(param) => convert_u256_ethabi_to_web3(param),
-        _ => {
-            return Err(eyre!("amount_in is not a uint"));
-        }
-    };
-
-    let amount_out_minimum = match params[5] {
-        Token::Uint(param) => convert_u256_ethabi_to_web3(param),
-        _ => {
-            return Err(eyre!("amount_out_minimum is not a uint"));
-        }
-    };
+    let params = call.get_param("params")?.get_value().into_tuple()?;
+    let token_in = &params[0].into_address()?;
+    let token_out = &params[1].into_address()?;
+    let fee = &params[2].into_uint()?;
+    let recipient = &params[3].into_address()?;
+    let amount_in = &params[4].into_uint()?;
+    let amount_out_minimum = &params[5].into_uint()?;
 
     Ok(Swap {
-        recipient,
-        token_in,
-        token_out,
-        amount_in: Some(amount_in),
+        recipient: *recipient,
+        token_in: *token_in,
+        token_out: *token_out,
+        amount_in: Some(*amount_in),
         amount_out: None,
-        amount_out_minimum: Some(amount_out_minimum),
+        amount_out_minimum: Some(*amount_out_minimum),
         amount_in_maximum: None,
         path: DexPath::PancakeV3SingleHop(PancakeV3SingleHopPath {
-            token_in,
-            token_out,
-            fee,
+            token_in: *token_in,
+            token_out: *token_out,
+            fee: *fee,
         }),
     })
 }
@@ -110,72 +62,26 @@ pub fn exact_output_single(call: &ContractCall) -> Result<Swap> {
                                                     }
     */
 
-    let params = match call.get_param("params") {
-        Some(param) => match param.get_value() {
-            Token::Tuple(value) => value,
-            _ => {
-                return Err(eyre!("params is not a tuple"));
-            }
-        },
-        None => {
-            return Err(eyre!("no params"));
-        }
-    };
-
-    let token_in = match params[0] {
-        Token::Address(param) => convert_h160_ethabi_to_web3(param),
-        _ => {
-            return Err(eyre!("token_in is not an address"));
-        }
-    };
-
-    let token_out = match params[1] {
-        Token::Address(param) => convert_h160_ethabi_to_web3(param),
-        _ => {
-            return Err(eyre!("token_out is not an address"));
-        }
-    };
-
-    let fee = match params[2] {
-        Token::Uint(param) => convert_u256_ethabi_to_web3(param),
-        _ => {
-            return Err(eyre!("fee is not a uint"));
-        }
-    };
-
-    let recipient = match params[3] {
-        Token::Address(param) => convert_h160_ethabi_to_web3(param),
-        _ => {
-            return Err(eyre!("recipient is not an address"));
-        }
-    };
-
-    let amount_out = match params[4] {
-        Token::Uint(param) => convert_u256_ethabi_to_web3(param),
-        _ => {
-            return Err(eyre!("amount_out is not a uint"));
-        }
-    };
-
-    let amount_in_maximum = match params[5] {
-        Token::Uint(param) => convert_u256_ethabi_to_web3(param),
-        _ => {
-            return Err(eyre!("amount_in_maximum is not a uint"));
-        }
-    };
+    let params = call.get_param("params")?.get_value().into_tuple()?;
+    let token_in = &params[0].into_address()?;
+    let token_out = &params[1].into_address()?;
+    let fee = &params[2].into_uint()?;
+    let recipient = &params[3].into_address()?;
+    let amount_out = &params[4].into_uint()?;
+    let amount_in_maximum = &params[5].into_uint()?;
 
     Ok(Swap {
-        recipient,
-        token_in,
-        token_out,
+        recipient: *recipient,
+        token_in: *token_in,
+        token_out: *token_out,
         amount_in: None,
-        amount_out: Some(amount_out),
+        amount_out: Some(*amount_out),
         amount_out_minimum: None,
-        amount_in_maximum: Some(amount_in_maximum),
+        amount_in_maximum: Some(*amount_in_maximum),
         path: DexPath::PancakeV3SingleHop(PancakeV3SingleHopPath {
-            token_in,
-            token_out,
-            fee,
+            token_in: *token_in,
+            token_out: *token_out,
+            fee: *fee,
         }),
     })
 }

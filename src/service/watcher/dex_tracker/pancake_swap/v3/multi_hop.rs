@@ -1,9 +1,7 @@
 use crate::evm::DexPath;
 
 use crate::dex_tracker::pancake::Swap;
-use eth_sdk::utils::{convert_h160_ethabi_to_web3, convert_u256_ethabi_to_web3};
-use eth_sdk::ContractCall;
-use ethabi::Token;
+use eth_sdk::{ContractCall, SerializableToken};
 use eyre::*;
 use web3::types::{H160, U256};
 
@@ -69,47 +67,12 @@ pub fn exact_input(call: &ContractCall) -> Result<Swap> {
                                                     }
     */
 
-    let params = match call.get_param("params") {
-        Some(param) => match param.get_value() {
-            Token::Tuple(value) => value,
-            _ => {
-                return Err(eyre!("params is not a tuple"));
-            }
-        },
-        None => {
-            return Err(eyre!("no params"));
-        }
-    };
-
-    let path = match &params[0] {
-        Token::Bytes(bytes) => bytes,
-        _ => {
-            return Err(eyre!("path is not bytes"));
-        }
-    };
-
-    let full_path = MultiHopPath::from_bytes(path)?;
-
-    let recipient = match &params[1] {
-        Token::Address(param) => convert_h160_ethabi_to_web3(*param),
-        _ => {
-            return Err(eyre!("recipient is not an address"));
-        }
-    };
-
-    let amount_in = match &params[2] {
-        Token::Uint(param) => convert_u256_ethabi_to_web3(*param),
-        _ => {
-            return Err(eyre!("amount_in is not a uint"));
-        }
-    };
-
-    let amount_out_minimum = match &params[3] {
-        Token::Uint(param) => convert_u256_ethabi_to_web3(*param),
-        _ => {
-            return Err(eyre!("amount_out_minimum is not a uint"));
-        }
-    };
+    let params = call.get_param("params")?.get_value().into_tuple()?;
+    let path = params[0].into_bytes()?;
+    let full_path = MultiHopPath::from_bytes(&path)?;
+    let recipient = params[1].into_address()?;
+    let amount_in = params[2].into_uint()?;
+    let amount_out_minimum = params[3].into_uint()?;
 
     Ok(Swap {
         recipient,
@@ -137,47 +100,12 @@ pub fn exact_output(call: &ContractCall) -> Result<Swap> {
                                                     }
     */
 
-    let params = match call.get_param("params") {
-        Some(param) => match param.get_value() {
-            Token::Tuple(value) => value,
-            _ => {
-                return Err(eyre!("params is not a tuple"));
-            }
-        },
-        None => {
-            return Err(eyre!("no params"));
-        }
-    };
-
-    let path = match &params[0] {
-        Token::Bytes(bytes) => bytes,
-        _ => {
-            return Err(eyre!("path is not bytes"));
-        }
-    };
-
-    let full_path = MultiHopPath::from_bytes(path)?;
-
-    let recipient = match &params[1] {
-        Token::Address(param) => convert_h160_ethabi_to_web3(*param),
-        _ => {
-            return Err(eyre!("recipient is not an address"));
-        }
-    };
-
-    let amount_out = match &params[2] {
-        Token::Uint(param) => convert_u256_ethabi_to_web3(*param),
-        _ => {
-            return Err(eyre!("amount_out is not a uint"));
-        }
-    };
-
-    let amount_in_maximum = match &params[3] {
-        Token::Uint(param) => convert_u256_ethabi_to_web3(*param),
-        _ => {
-            return Err(eyre!("amount_in_maximum is not a uint"));
-        }
-    };
+    let params = call.get_param("params")?.get_value().into_tuple()?;
+    let path = params[0].into_bytes()?;
+    let full_path = MultiHopPath::from_bytes(&path)?;
+    let recipient = params[1].into_address()?;
+    let amount_out = params[2].into_uint()?;
+    let amount_in_maximum = params[3].into_uint()?;
 
     Ok(Swap {
         recipient,

@@ -217,18 +217,7 @@ impl CryptoToken for Erc20Token {
     }
 }
 
-pub struct Erc20Contract {
-    pub inner: ethabi::Contract,
-}
-
-impl Erc20Contract {
-    pub fn new(erc_20: ethabi::Contract) -> Self {
-        Self { inner: erc_20 }
-    }
-}
-
-pub fn build_erc_20() -> Result<Erc20Contract> {
-    let erc20 =
-        ethabi::Contract::load(ERC20_ABI.as_bytes()).context("failed to parse contract ABI")?;
-    Ok(Erc20Contract::new(erc20))
+pub fn build_erc_20() -> Result<web3::ethabi::Contract> {
+    Ok(web3::ethabi::Contract::load(ERC20_ABI.as_bytes())
+        .context("failed to parse contract ABI")?)
 }

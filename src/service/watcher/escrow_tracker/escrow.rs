@@ -1,13 +1,11 @@
 use crate::escrow_tracker::StableCoinAddresses;
 use crate::evm::StableCoin;
-use eth_sdk::erc20::Erc20Contract;
-use eth_sdk::utils::{convert_h160_ethabi_to_web3, convert_u256_ethabi_to_web3};
-use eth_sdk::{ContractCall, TransactionReady};
-use ethabi::Token;
+use eth_sdk::{ContractCall, SerializableToken, TransactionReady};
 use eyre::*;
 use gen::model::EnumBlockChain;
 
 use tracing::info;
+use web3::ethabi::Contract;
 use web3::types::{H160, U256};
 
 #[derive(Clone, Debug)]
@@ -35,7 +33,7 @@ pub fn parse_escrow(
     chain: EnumBlockChain,
     tx: &TransactionReady,
     stablecoin_addresses: &StableCoinAddresses,
-    erc_20: &Erc20Contract,
+    erc_20: &Contract,
 ) -> Result<EscrowTransfer> {
     let called_contract = tx.get_to().context("missing called contract")?;
     let eth_mainnet_stablecoins = stablecoin_addresses.get(chain).unwrap();
@@ -49,55 +47,58 @@ pub fn parse_escrow(
 
     let input_data = tx.get_input_data();
 
-    let call = ContractCall::from_inputs(&erc_20.inner, &input_data)?;
+    let call = ContractCall::from_inputs(erc_20, &input_data)?;
+
     let method = get_method_by_name(&call.get_name()).context("call is not an escrow")?;
     let escrow: EscrowTransfer = match method {
         Erc20Method::Transfer => {
-            let to_param = call.get_param("_to").context("no to address")?;
-            let recipient = match to_param.get_value() {
-                Token::Address(value) => convert_h160_ethabi_to_web3(value),
-                x => {
-                    bail!("to is not an address: {:?}", x);
-                }
-            };
-            let value_param = call.get_param("_value").context("no value")?;
-            let value = match value_param.get_value() {
-                Token::Uint(value) => convert_u256_ethabi_to_web3(value),
-                x => {
-                    bail!("value is not a uint {:?}", x);
-                }
-            };
+            let recipient = call
+                .get_param("_to")
+                .or_else(|_| call.get_param("to"))
+                .or_else(|_| Err(eyre!("no recipient address")))?
+                .get_value()
+                .into_address()?;
+
+            let amount = call
+                .get_param("_value")
+                .or_else(|_| call.get_param("value"))
+                .or_else(|_| call.get_param("_amount"))
+                .or_else(|_| call.get_param("amount"))
+                .or_else(|_| Err(eyre!("no amount")))?
+                .get_value()
+                .into_uint()?;
+
             EscrowTransfer {
                 token,
-                amount: value,
+                amount,
                 recipient,
                 owner: sender,
             }
         }
         Erc20Method::TransferFrom => {
-            let from_param = call.get_param("_from").context("no from param")?;
-            let owner = match from_param.get_value() {
-                Token::Address(value) => convert_h160_ethabi_to_web3(value),
-                x => {
-                    bail!("from is not an address {:?}", x);
-                }
-            };
+            let owner = call
+                .get_param("_from")
+                .or_else(|_| call.get_param("from"))
+                .or_else(|_| Err(eyre!("no owner address")))?
+                .get_value()
+                .into_address()?;
 
-            let to_param = call.get_param("_to").context("no to address")?;
-            let recipient = match to_param.get_value() {
-                Token::Address(value) => convert_h160_ethabi_to_web3(value),
-                x => {
-                    bail!("to is not an address: {:?}", x);
-                }
-            };
+            let recipient = call
+                .get_param("_to")
+                .or_else(|_| call.get_param("to"))
+                .or_else(|_| Err(eyre!("no recipient address")))?
+                .get_value()
+                .into_address()?;
 
-            let value_param = call.get_param("_value").context("no value")?;
-            let amount = match value_param.get_value() {
-                Token::Uint(value) => convert_u256_ethabi_to_web3(value),
-                x => {
-                    bail!("value is not a uint {:?}", x);
-                }
-            };
+            let amount = call
+                .get_param("_value")
+                .or_else(|_| call.get_param("value"))
+                .or_else(|_| call.get_param("_amount"))
+                .or_else(|_| call.get_param("amount"))
+                .or_else(|_| Err(eyre!("no amount")))?
+                .get_value()
+                .into_uint()?;
+
             EscrowTransfer {
                 token,
                 amount,
@@ -137,7 +138,7 @@ mod tests {
         let trade = parse_escrow(
             EnumBlockChain::EthereumMainnet,
             &tx,
-            &StableCoinAddresses::new(),
+            &StableCoinAddresses::default(),
             &erc20,
         )?;
         info!("trade: {:?}", trade);
@@ -158,7 +159,7 @@ mod tests {
         let trade = parse_escrow(
             EnumBlockChain::EthereumMainnet,
             &tx,
-            &StableCoinAddresses::new(),
+            &StableCoinAddresses::default(),
             &erc20,
         )?;
         info!("trade: {:?}", trade);
@@ -179,7 +180,7 @@ mod tests {
         let trade = parse_escrow(
             EnumBlockChain::EthereumMainnet,
             &tx,
-            &StableCoinAddresses::new(),
+            &StableCoinAddresses::default(),
             &erc20,
         )?;
         info!("trade: {:?}", trade);

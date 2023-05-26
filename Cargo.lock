@@ -1834,7 +1834,6 @@ dependencies = [
  "deadpool",
  "deadpool-postgres",
  "eth-sdk",
- "ethabi 18.0.0",
  "eyre",
  "futures",
  "gen",

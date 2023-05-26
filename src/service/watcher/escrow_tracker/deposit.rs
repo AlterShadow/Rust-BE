@@ -1,6 +1,5 @@
 use crate::escrow_tracker::escrow::{parse_escrow, EscrowTransfer};
 use crate::escrow_tracker::StableCoinAddresses;
-use eth_sdk::erc20::Erc20Contract;
 use eth_sdk::signer::EthereumSigner;
 use eth_sdk::utils::wait_for_confirmations_simple;
 use eth_sdk::*;
@@ -11,6 +10,7 @@ use lib::database::DbClient;
 use lib::toolbox::RequestContext;
 use std::time::Duration;
 use tracing::info;
+use web3::ethabi::Contract;
 use web3::signing::Key;
 use web3::types::{Address, U256};
 use web3::Transport;
@@ -25,7 +25,7 @@ pub async fn on_user_deposit(
     chain: EnumBlockChain,
     tx: &TransactionReady,
     stablecoin_addresses: &StableCoinAddresses,
-    erc_20: &Erc20Contract,
+    erc_20: &Contract,
 ) -> Result<()> {
     let esc = parse_escrow(chain, tx, stablecoin_addresses, erc_20)?;
     // TODO: let our_valid_address = esc.recipient == "0x000".parse()?;
@@ -35,6 +35,8 @@ pub async fn on_user_deposit(
         "is not our valid address {:?}",
         esc.recipient
     );
+
+    //TODO: call "transferTokenTo" on escrow contract wrapper and transfer tokens to our EOA
 
     // USER just deposits to our service
     db.execute(FunUserDepositToEscrowReq {
@@ -62,7 +64,6 @@ pub async fn on_user_back_strategy(
     user_wallet_address: Address,
     amount: Address,
     stablecoin_addresses: &StableCoinAddresses,
-    erc_20: &Erc20Contract,
     strategy_factory_address: Address,
     strategy_id: i64,
     strategy_pool_signer: impl Key,
@@ -92,6 +93,7 @@ pub async fn on_user_back_strategy(
         .parse()?;
 
     let escrow_signer_address = escrow_signer.address();
+    // we need to trade, not transfer, and then we need to call deposit on the strategy contract
     let transaction = transfer_token_to_strategy_contract(
         conn,
         escrow_signer,
@@ -105,7 +107,7 @@ pub async fn on_user_back_strategy(
         stablecoin_addresses,
     )
     .await?;
-    // TODO: need to do an erc 20 transfer
+    // TODO: need to trade deposit token for strategy's tokens and call "deposit" on the strategy contract wrapper
     db.execute(FunUserBackStrategyReq {
         user_id: ctx.user_id,
         strategy_id: user_registered_strategy.strategy_id,
@@ -206,6 +208,7 @@ mod tests {
     use super::*;
     use crate::escrow_tracker::StableCoinAddresses;
     use eth_sdk::erc20::build_erc_20;
+    use eth_sdk::mock_erc20::deploy_mock_erc20;
     use eth_sdk::signer::Secp256k1SecretKey;
     use eth_sdk::{EthereumRpcConnectionPool, Transaction};
     use lib::database::{connect_to_database, DatabaseConfig};
@@ -246,13 +249,14 @@ mod tests {
         let escrow_key = Secp256k1SecretKey::new_random();
         let conn_pool = EthereumRpcConnectionPool::localnet();
         let conn = conn_pool.get_conn().await?;
-        // TODO: transfer should be one of stablecoin ERC20 contract
-        let tx_hash = conn
-            .transfer(&user_key.key, escrow_key.address, U256::from(20000))
+        let mock_erc20 = deploy_mock_erc20(conn.clone().into_raw().eth(), user_key.clone()).await?;
+        mock_erc20
+            .mint(user_key.clone(), user_key.address, U256::from(10000))
             .await?;
-        conn.get_receipt(tx_hash).await?;
+        let tx_hash = mock_erc20
+            .transfer(user_key.clone(), escrow_key.address, U256::from(10000))
+            .await?;
 
-        let erc20 = build_erc_20()?;
         let ctx = RequestContext {
             connection_id: 0,
             user_id: 0,
@@ -275,8 +279,11 @@ mod tests {
             &db,
             EnumBlockChain::EthereumMainnet,
             &tx,
-            &StableCoinAddresses::new(),
-            &erc20,
+            &StableCoinAddresses::new(
+                vec![EnumBlockChain::EthereumMainnet],
+                vec![vec![(StableCoin::Usdc, mock_erc20.inner.address())]],
+            )?,
+            &mock_erc20.inner.abi(),
         )
         .await?;
 

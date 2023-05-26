@@ -33,7 +33,6 @@ bytes = "*"
 web3 = { version = "0.18", features = ["signing"] }
 secp256k1 = "0.21.3"
 rand = "0.8.5"
-ethabi = "18.0.0"
 axum = { version = "0.6.18", default-features = false, features = [
 	"http1",
 	"json",

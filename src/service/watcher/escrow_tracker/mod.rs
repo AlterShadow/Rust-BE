@@ -5,9 +5,10 @@ use axum::extract::State;
 use axum::http::StatusCode;
 use bytes::Bytes;
 use eth_sdk::Transaction;
+use eyre::*;
 
 use gen::model::EnumBlockChain;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::str::FromStr;
 use std::sync::Arc;
 use tracing::error;
@@ -80,8 +81,39 @@ impl Default for StableCoinAddresses {
 }
 
 impl StableCoinAddresses {
-    pub fn new() -> Self {
-        Default::default()
+    pub fn new(chains: Vec<EnumBlockChain>, coins: Vec<Vec<(StableCoin, H160)>>) -> Result<Self> {
+        if chains.len() != coins.len() {
+            return Err(eyre!("chains and coins must have the same length"));
+        }
+
+        let mut chain_set = HashSet::new();
+        for chain in &chains {
+            if !chain_set.insert(*chain) {
+                return Err(eyre!("duplicate chain detected"));
+            }
+        }
+
+        let mut this = StableCoinAddresses {
+            inner: HashMap::new(),
+        };
+
+        for (chain, chain_coins) in chains.into_iter().zip(coins.into_iter()) {
+            let mut coin_set = HashSet::new();
+            let mut address_set = HashSet::new();
+
+            for (coin, address) in &chain_coins {
+                if !coin_set.insert(*coin) {
+                    return Err(eyre!("duplicate coin detected for a chain"));
+                }
+                if !address_set.insert(*address) {
+                    return Err(eyre!("duplicate address detected for a chain"));
+                }
+            }
+
+            this.inner.insert(chain, chain_coins);
+        }
+
+        Ok(this)
     }
     pub fn get(&self, chain: EnumBlockChain) -> Option<&Vec<(StableCoin, Address)>> {
         self.inner.get(&chain)
