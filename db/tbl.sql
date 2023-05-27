@@ -185,6 +185,7 @@ CREATE TABLE tbl.user_deposit_history (
     contract_address varchar(64)  NOT NULL,
     receiver_address varchar(64)  NOT NULL,
     transaction_hash varchar(64)  NOT NULL,
+    quantity varchar(64)  NOT NULL,
     created_at bigint  NOT NULL,
     CONSTRAINT uidx_user_username UNIQUE (user_address) NOT DEFERRABLE  INITIALLY IMMEDIATE,
     CONSTRAINT user_deposit_history_pk PRIMARY KEY (pkey_id)

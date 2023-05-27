@@ -241,7 +241,10 @@ mod tests {
         let escrow_key = Secp256k1SecretKey::new_random();
         let conn_pool = EthereumRpcConnectionPool::localnet();
         let conn = conn_pool.get_conn().await?;
-        let erc20_mock = deploy_mock_erc20(conn.get_raw().clone(), admin_key).await?;
+        let erc20_mock = deploy_mock_erc20(conn.get_raw().clone(), admin_key.clone()).await?;
+        erc20_mock
+            .mint(&admin_key.key, user_key.address, U256::from(20000000))
+            .await?;
         let tx_hash = erc20_mock
             .transfer(&user_key.key, escrow_key.address, U256::from(20000))
             .await?;
@@ -257,6 +260,7 @@ mod tests {
             user: Some("postgres".to_string()),
             password: Some("123456".to_string()),
             dbname: Some("mc2fi".to_string()),
+            host: Some("localhost".to_string()),
             ..Default::default()
         })
         .await?;

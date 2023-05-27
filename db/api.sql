@@ -491,10 +491,11 @@ RETURNS table (
 LANGUAGE plpgsql
 AS $$
     
+ 
 BEGIN
     IF EXISTS( SELECT * FROM  tbl.user_deposit_history WHERE transaction_hash = a_transaction_hash) THEN
         RETURN QUERY SELECT FALSE;
-    END
+    END IF;
     INSERT INTO tbl.user_deposit_history (
         fkey_user_id,
         blockchain,
@@ -502,15 +503,17 @@ BEGIN
         contract_address,
         receiver_address,
         quantity,
-        transaction_hash
+        transaction_hash,
+        created_at
     ) VALUES (
-     a_user-id,
+     a_user_id,
      a_blockchain,
      a_user_address,
      a_contract_address,
      a_receiver_address,
      a_quantity,
-     a_transaction_hash
+     a_transaction_hash,
+     EXTRACT(EPOCH FROM NOW())::bigint
     );
     RETURN QUERY SELECT TRUE;
 END
@@ -580,7 +583,6 @@ RETURNS table (
     "quantity" varchar,
     "wallet_address" varchar,
     "blockchain" varchar,
-    "dex" varchar,
     "transaction_hash" varchar,
     "time" bigint
 )
@@ -593,7 +595,6 @@ BEGIN
                         a.quantity         AS quantity,
                         a.purchase_wallet  AS wallet_address,
                         a.blockchain       AS blockchain,
-                        a.dex              AS dex,
                         a.transaction_hash AS transaction_hash,
                         a.time             AS time
                  FROM tbl.user_back_strategy_history AS a
@@ -813,67 +814,6 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_register_wallet(a_user_id bigint, a_blockchain varchar, a_wallet_address varchar, a_strategy_id bigint)
-RETURNS table (
-    "success" boolean,
-    "wallet_id" bigint
-)
-LANGUAGE plpgsql
-AS $$
-    
-DECLARE
-    a_wallet_id bigint;
-BEGIN
-    INSERT INTO tbl.user_wallet (fkey_user_id, blockchain, address, fkey_strategy_id)
-    VALUES (a_user_id, a_blockchain, a_wallet_address, a_strategy_id)
-    RETURNING pkey_id INTO a_wallet_id;
-    RETURN QUERY SELECT TRUE, a_wallet_id;
-END
-
-$$;
-        
-
-CREATE OR REPLACE FUNCTION api.fun_user_deregister_wallet(a_user_id bigint, a_wallet_id bigint)
-RETURNS table (
-    "success" boolean
-)
-LANGUAGE plpgsql
-AS $$
-    
-BEGIN
-    DELETE
-    FROM tbl.user_wallet
-    WHERE fkey_user_id = a_user_id
-      AND pkey_id = a_wallet_id;
-    RETURN QUERY SELECT TRUE;
-END
-
-$$;
-        
-
-CREATE OR REPLACE FUNCTION api.fun_user_list_wallets(a_user_id bigint)
-RETURNS table (
-    "wallet_id" bigint,
-    "blockchain" varchar,
-    "wallet_address" varchar,
-    "is_default" boolean
-)
-LANGUAGE plpgsql
-AS $$
-    
-BEGIN
-    RETURN QUERY SELECT a.pkey_id             AS wallet_id,
-                        a.blockchain          AS blockchain,
-                        a.address             AS wallet_address,
-                        a.address = b.address AS is_default
-                 FROM tbl.user_wallet AS a
-                          JOIN tbl."user" AS b ON b.pkey_id = a.fkey_user_id
-                 WHERE a.fkey_user_id = a_user_id;
-END
-
-$$;
-        
-
 CREATE OR REPLACE FUNCTION api.fun_user_apply_become_expert(a_user_id bigint)
 RETURNS table (
     "success" boolean
@@ -996,12 +936,11 @@ RETURNS table (
 LANGUAGE plpgsql
 AS $$
     
-            
 BEGIN
     UPDATE tbl.strategy
     SET name = COALESCE(a_name, name),
         description = COALESCE(a_description, description),
-        evm_contract_address = COALESCE(a_evm_contrct_address, evm_contrct_address)
+        evm_contract_address = COALESCE(a_evm_contract_address, evm_contract_address)
     WHERE pkey_id = a_strategy_id
       AND fkey_user_id = a_user_id;
     RETURN QUERY SELECT TRUE;
@@ -1080,9 +1019,9 @@ AS $$
     
 BEGIN
     RETURN QUERY INSERT INTO tbl.transaction_cache(transaction_hash,
-                                                   chain,
+                                                   blockchain,
                                                    dex,
-                                                   raw_transaction,
+                                                   raw_content,
                                                    created_at)
                  VALUES (a_transaction_hash,
                          a_chain,
@@ -1123,7 +1062,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_watcher_save_wallet_activity_history(a_address varchar, a_transaction_hash varchar, a_chain varchar, a_dex varchar, a_contract_address varchar, a_token_in_address varchar, a_token_out_address varchar, a_caller_address varchar, a_amount_in varchar, a_amount_out varchar, a_swap_calls jsonb, a_paths jsonb, a_dex_versions jsonb, a_created_at bigint DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_watcher_save_wallet_activity_history(a_address varchar, a_transaction_hash varchar, a_blockchain varchar, a_dex varchar, a_contract_address varchar, a_token_in_address varchar, a_token_out_address varchar, a_caller_address varchar, a_amount_in varchar, a_amount_out varchar, a_swap_calls jsonb, a_paths jsonb, a_dex_versions jsonb, a_created_at bigint DEFAULT NULL)
 RETURNS table (
     "wallet_activity_history_id" bigint
 )
@@ -1134,7 +1073,7 @@ BEGIN
     RETURN QUERY INSERT INTO tbl.wallet_activity_history(
         address,
         transaction_hash,
-        chain,
+        blockchain,
         dex,
         contract_address,
         token_in_address,

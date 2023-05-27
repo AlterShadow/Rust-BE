@@ -251,10 +251,11 @@ END
             ],
             vec![Field::new("success", Type::Boolean)],
             r#"
+ 
 BEGIN
     IF EXISTS( SELECT * FROM  tbl.user_deposit_history WHERE transaction_hash = a_transaction_hash) THEN
         RETURN QUERY SELECT FALSE;
-    END
+    END IF;
     INSERT INTO tbl.user_deposit_history (
         fkey_user_id,
         blockchain,
@@ -262,15 +263,17 @@ BEGIN
         contract_address,
         receiver_address,
         quantity,
-        transaction_hash
+        transaction_hash,
+        created_at
     ) VALUES (
-     a_user-id,
+     a_user_id,
      a_blockchain,
      a_user_address,
      a_contract_address,
      a_receiver_address,
      a_quantity,
-     a_transaction_hash
+     a_transaction_hash,
+     EXTRACT(EPOCH FROM NOW())::bigint
     );
     RETURN QUERY SELECT TRUE;
 END
@@ -345,7 +348,6 @@ END
                 Field::new("quantity", Type::String),
                 Field::new("wallet_address", Type::String),
                 Field::new("blockchain", Type::String),
-                Field::new("dex", Type::String),
                 Field::new("transaction_hash", Type::String),
                 Field::new("time", Type::BigInt),
             ],
@@ -356,7 +358,6 @@ BEGIN
                         a.quantity         AS quantity,
                         a.purchase_wallet  AS wallet_address,
                         a.blockchain       AS blockchain,
-                        a.dex              AS dex,
                         a.transaction_hash AS transaction_hash,
                         a.time             AS time
                  FROM tbl.user_back_strategy_history AS a
@@ -571,67 +572,6 @@ END
 "#,
         ),
         ProceduralFunction::new(
-            "fun_user_register_wallet",
-            vec![
-                Field::new("user_id", Type::BigInt),
-                Field::new("blockchain", Type::String),
-                Field::new("wallet_address", Type::String),
-                Field::new("strategy_id", Type::BigInt),
-            ],
-            vec![
-                Field::new("success", Type::Boolean),
-                Field::new("wallet_id", Type::BigInt),
-            ],
-            r#"
-DECLARE
-    a_wallet_id bigint;
-BEGIN
-    INSERT INTO tbl.user_wallet (fkey_user_id, blockchain, address, fkey_strategy_id)
-    VALUES (a_user_id, a_blockchain, a_wallet_address, a_strategy_id)
-    RETURNING pkey_id INTO a_wallet_id;
-    RETURN QUERY SELECT TRUE, a_wallet_id;
-END
-"#,
-        ),
-        ProceduralFunction::new(
-            "fun_user_deregister_wallet",
-            vec![
-                Field::new("user_id", Type::BigInt),
-                Field::new("wallet_id", Type::BigInt),
-            ],
-            vec![Field::new("success", Type::Boolean)],
-            r#"
-BEGIN
-    DELETE
-    FROM tbl.user_wallet
-    WHERE fkey_user_id = a_user_id
-      AND pkey_id = a_wallet_id;
-    RETURN QUERY SELECT TRUE;
-END
-"#,
-        ),
-        ProceduralFunction::new(
-            "fun_user_list_wallets",
-            vec![Field::new("user_id", Type::BigInt)],
-            vec![
-                Field::new("wallet_id", Type::BigInt),
-                Field::new("blockchain", Type::String),
-                Field::new("wallet_address", Type::String),
-                Field::new("is_default", Type::Boolean),
-            ],
-            r#"
-BEGIN
-    RETURN QUERY SELECT a.pkey_id             AS wallet_id,
-                        a.blockchain          AS blockchain,
-                        a.address             AS wallet_address,
-                        a.address = b.address AS is_default
-                 FROM tbl.user_wallet AS a
-                          JOIN tbl."user" AS b ON b.pkey_id = a.fkey_user_id
-                 WHERE a.fkey_user_id = a_user_id;
-END
-"#,
-        ),
-        ProceduralFunction::new(
             "fun_user_apply_become_expert",
             vec![Field::new("user_id", Type::BigInt)],
             vec![Field::new("success", Type::Boolean)],
@@ -752,12 +692,11 @@ END
             ],
             vec![Field::new("success", Type::Boolean)],
             r#"
-            
 BEGIN
     UPDATE tbl.strategy
     SET name = COALESCE(a_name, name),
         description = COALESCE(a_description, description),
-        evm_contract_address = COALESCE(a_evm_contrct_address, evm_contrct_address)
+        evm_contract_address = COALESCE(a_evm_contract_address, evm_contract_address)
     WHERE pkey_id = a_strategy_id
       AND fkey_user_id = a_user_id;
     RETURN QUERY SELECT TRUE;

@@ -14,9 +14,9 @@ pub fn get_trade_watcher_pg_func() -> Vec<ProceduralFunction> {
             r#"
 BEGIN
     RETURN QUERY INSERT INTO tbl.transaction_cache(transaction_hash,
-                                                   chain,
+                                                   blockchain,
                                                    dex,
-                                                   raw_transaction,
+                                                   raw_content,
                                                    created_at)
                  VALUES (a_transaction_hash,
                          a_chain,
@@ -62,7 +62,7 @@ END
             vec![
                 Field::new("address", Type::String),
                 Field::new("transaction_hash", Type::String),
-                Field::new("chain", Type::String),
+                Field::new("blockchain", Type::String),
                 Field::new("dex", Type::String),
                 Field::new("contract_address", Type::String),
                 Field::new("token_in_address", Type::String),
@@ -81,7 +81,7 @@ BEGIN
     RETURN QUERY INSERT INTO tbl.wallet_activity_history(
         address,
         transaction_hash,
-        chain,
+        blockchain,
         dex,
         contract_address,
         token_in_address,

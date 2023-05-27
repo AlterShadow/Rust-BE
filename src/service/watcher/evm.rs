@@ -90,7 +90,7 @@ pub async fn save_trade(hash: H256, trade: &Trade, db: &DbClient) -> Result<()> 
         db.execute(FunWatcherSaveWalletActivityHistoryReq {
             address: format!("{:?}", trade.caller),
             transaction_hash: format!("{:?}", hash),
-            chain: EnumBlockChain::EthereumMainnet.to_string(),
+            blockchain: EnumBlockChain::EthereumMainnet.to_string(),
             dex: trade.dex.to_string(),
             contract_address: format!("{:?}", trade.contract),
             token_in_address: format!("{:?}", trade.token_in),
