@@ -97,7 +97,7 @@ BEGIN
     VALUES (
         a_address,
         a_transaction_hash,
-        a_chain,
+        a_blockchain,
         a_dex,
         a_contract_address,
         a_token_in_address,

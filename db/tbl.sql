@@ -1,5 +1,5 @@
 -- Created by Vertabelo (http://vertabelo.com)
--- Last modification date: 2023-05-25 13:59:01.047
+-- Last modification date: 2023-05-28 04:57:19.93
 
 CREATE SCHEMA IF NOT EXISTS tbl;;
 
@@ -171,7 +171,7 @@ CREATE TABLE tbl.user_back_strategy_history (
     blockchain varchar(20)  NOT NULL,
     transaction_hash varchar(64)  NOT NULL,
     quantity varchar(64)  NOT NULL,
-    earn_sp_tokens varchar(64) NOT NULL,
+    earn_sp_tokens varchar(64)  NOT NULL,
     back_time bigint  NOT NULL,
     CONSTRAINT user_back_strategy_history_pk PRIMARY KEY (pkey_id)
 );
@@ -184,8 +184,8 @@ CREATE TABLE tbl.user_deposit_history (
     user_address varchar(64)  NOT NULL,
     contract_address varchar(64)  NOT NULL,
     receiver_address varchar(64)  NOT NULL,
-    transaction_hash varchar(64)  NOT NULL,
     quantity varchar(64)  NOT NULL,
+    transaction_hash varchar(80)  NOT NULL,
     created_at bigint  NOT NULL,
     CONSTRAINT uidx_user_username UNIQUE (user_address) NOT DEFERRABLE  INITIALLY IMMEDIATE,
     CONSTRAINT user_deposit_history_pk PRIMARY KEY (pkey_id)
@@ -199,7 +199,7 @@ CREATE TABLE tbl.user_exit_strategy_history (
     purchase_wallet varchar(64)  NOT NULL,
     blockchain varchar(20)  NOT NULL,
     dex varchar(20)  NOT NULL,
-    transaction_hash varchar(64)  NOT NULL,
+    transaction_hash varchar(80)  NOT NULL,
     exit_quantity varchar(64)  NOT NULL,
     back_time bigint  NOT NULL,
     exit_time bigint  NOT NULL,
@@ -232,7 +232,7 @@ CREATE TABLE tbl.user_follow_strategy (
 CREATE TABLE tbl.wallet_activity_history (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_wallet_activity_history_id'),
     address varchar(64)  NOT NULL,
-    transaction_hash varchar(64)  NOT NULL,
+    transaction_hash varchar(80)  NOT NULL,
     blockchain varchar(20)  NOT NULL,
     dex varchar(20)  NOT NULL,
     contract_address varchar(64)  NOT NULL,

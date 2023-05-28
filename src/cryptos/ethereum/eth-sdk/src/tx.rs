@@ -42,6 +42,43 @@ impl Transaction {
         this.assume_ready()
     }
 
+    pub async fn update_retry(&mut self, conn: &EthereumRpcConnection) -> Result<()> {
+        // TODO: handle EnumBlockChain connection error
+        let maybe_tx = conn
+            .get_tx(self.hash)
+            .await
+            .context("getting transaction")?;
+        let tx = match maybe_tx {
+            Some(tx) => tx,
+            None => {
+                self.status = TxStatus::NotFound;
+                return Ok(());
+            }
+        };
+
+        self.transaction = Some(tx.clone());
+
+        if tx.block_number.is_none() {
+            self.status = TxStatus::Pending;
+            return Ok(());
+        }
+        let receipt = wait_for_confirmations_simple(
+            &conn.get_raw().eth(),
+            self.hash,
+            Duration::from_secs(3),
+            5,
+        )
+        .await?;
+
+        self.receipt = Some(receipt.clone());
+
+        if receipt.status == Some(web3::types::U64([1])) {
+            self.status = TxStatus::Successful;
+        } else {
+            self.status = TxStatus::Reverted;
+        }
+        Ok(())
+    }
     pub async fn update(&mut self, conn: &EthereumRpcConnection) -> Result<()> {
         // TODO: handle EnumBlockChain connection error
         let maybe_tx = conn

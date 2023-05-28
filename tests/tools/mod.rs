@@ -37,15 +37,6 @@ pub async fn get_ws_user_client(req: &AuthorizeRequest) -> Result<UserClient> {
     Ok(ws_stream.into())
 }
 
-pub fn drop_and_recreate_database() -> Result<()> {
-    let script = Path::new("scripts/drop_and_recreate_database.sh");
-    Command::new("bash")
-        .arg(script)
-        .arg("etc/config.json")
-        .status()?;
-    Ok(())
-}
-
 pub async fn signup(username: impl Into<String>, signer: &EthereumSigner) -> Result<()> {
     let txt = format!("Signup {}", username.into());
     let signature = signer.sign_message(hash_message(txt.as_bytes()).as_bytes())?;

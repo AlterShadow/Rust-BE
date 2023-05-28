@@ -146,21 +146,6 @@ pub async fn deploy_strategy_contract(
         .create_pool(key, strategy_token_name, strategy_token_symbol)
         .await?;
 
-    let mut tx = Transaction::new(tx_hash);
-    tx.update(conn).await?;
-
-    match tx.get_status() {
-        TxStatus::Successful => {
-            info!("Deploy strategy contract success");
-            // TODO: implement a wrapper method to retrieve created pool address from receipt logs
-        }
-        TxStatus::Pending => {
-            info!("Deploy strategy contract pending");
-        }
-        _ => {
-            info!("Deploy strategy contract failed");
-        }
-    }
     wait_for_confirmations_simple(&conn.get_raw().eth(), tx_hash, Duration::from_secs(1), 15)
         .await?;
     info!("Deploy strategy contract success");
@@ -209,8 +194,9 @@ mod tests {
     use eth_sdk::mock_erc20::deploy_mock_erc20;
     use eth_sdk::signer::Secp256k1SecretKey;
     use eth_sdk::{EthereumRpcConnectionPool, Transaction};
-    use lib::database::{connect_to_database, DatabaseConfig};
+    use lib::database::{connect_to_database, drop_and_recreate_database, DatabaseConfig};
     use lib::log::{setup_logs, LogLevel};
+    use std::net::{IpAddr, Ipv4Addr};
 
     const ANVIL_PRIV_KEY_1: &str =
         "ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
@@ -236,6 +222,7 @@ mod tests {
     #[tokio::test]
     async fn test_user_ethereum_deposit() -> Result<()> {
         let _ = setup_logs(LogLevel::Trace);
+        drop_and_recreate_database()?;
         let user_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
         let admin_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_2)?;
         let escrow_key = Secp256k1SecretKey::new_random();
@@ -248,14 +235,6 @@ mod tests {
         let tx_hash = erc20_mock
             .transfer(&user_key.key, escrow_key.address, U256::from(20000))
             .await?;
-
-        let ctx = RequestContext {
-            connection_id: 0,
-            user_id: 0,
-            seq: 0,
-            method: 0,
-            log_id: 0,
-        };
         let db = connect_to_database(DatabaseConfig {
             user: Some("postgres".to_string()),
             password: Some("123456".to_string()),
@@ -264,6 +243,29 @@ mod tests {
             ..Default::default()
         })
         .await?;
+        let ret = db
+            .execute(FunAuthSignupReq {
+                address: format!("{:?}", user_key.address),
+                email: "".to_string(),
+                phone: "".to_string(),
+                preferred_language: "".to_string(),
+                agreed_tos: true,
+                agreed_privacy: true,
+                ip_address: Ipv4Addr::new(127, 0, 0, 1).into(),
+                username: None,
+                age: None,
+            })
+            .await?
+            .into_result()
+            .context("No user signup resp")?;
+        let ctx = RequestContext {
+            connection_id: 0,
+            user_id: ret.user_id,
+            seq: 0,
+            method: 0,
+            log_id: 0,
+        };
+
         let mut stablecoins = StableCoinAddresses::default();
         stablecoins.inner.insert(
             EnumBlockChain::EthereumGoerli,

@@ -6,9 +6,12 @@ use serde::{Deserialize, Serialize};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::Hash;
 use std::hash::Hasher;
+use std::path::Path;
+use std::process::Command;
 pub use tokio_postgres::types::ToSql;
 pub use tokio_postgres::{NoTls, Row, ToStatement};
 use tracing::*;
+
 pub type DatabaseConfig = deadpool_postgres::Config;
 pub trait DatabaseRequest {
     type ResponseRow: Send + Sync + Clone + Serialize + DeserializeOwned;
@@ -91,4 +94,13 @@ pub async fn connect_to_database(config: DatabaseConfig) -> Result<DbClient> {
     let conn_hash = hasher.finish();
     let pool = config.create_pool(Some(Runtime::Tokio1), NoTls)?;
     Ok(DbClient { pool, conn_hash })
+}
+
+pub fn drop_and_recreate_database() -> Result<()> {
+    let script = Path::new("scripts/drop_and_recreate_database.sh");
+    Command::new("bash")
+        .arg(script)
+        .arg("etc/config.json")
+        .status()?;
+    Ok(())
 }

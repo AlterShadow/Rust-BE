@@ -4,6 +4,7 @@ use eth_sdk::signer::{EthereumSigner, Secp256k1SecretKey};
 use eth_sdk::utils::encode_signature;
 use eyre::*;
 use gen::model::*;
+use lib::database::drop_and_recreate_database;
 use lib::log::{setup_logs, LogLevel};
 use std::sync::Arc;
 use tools::*;
