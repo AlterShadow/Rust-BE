@@ -2,6 +2,7 @@ use eyre::ContextCompat;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::future::Future;
+use std::path::{Path, PathBuf};
 use std::{collections::HashMap, time};
 use web3::api::{Accounts, Eth, Namespace};
 use web3::contract::deploy::Error;
@@ -211,4 +212,26 @@ impl<T: Transport> ContractDeployer<T> {
             },
         }
     }
+}
+
+#[cfg(test)]
+/// only valid in unit test
+pub fn get_project_root() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .to_owned()
+}
+
+pub fn read_abi_from_solc_output(path: &Path) -> eyre::Result<Value> {
+    let json = std::fs::read(path)?;
+    let json: Value = serde_json::from_slice(&json)?;
+    let abi = json.get("abi").context("No abi")?;
+    Ok(abi.to_owned())
 }

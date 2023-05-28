@@ -1,17 +1,25 @@
-use crate::contract::ContractDeployer;
+use crate::contract::{get_project_root, read_abi_from_solc_output, ContractDeployer};
 use crate::erc20::Erc20Token;
-use crate::EitherTransport;
+use crate::{contract, EitherTransport};
 use eyre::*;
+use serde_json::Value;
+use std::path::{Path, PathBuf};
+use web3::api::Eth;
+use web3::contract::{Contract, Options};
 use web3::signing::Key;
 use web3::Web3;
 
-const MOCK_ERC20_BYTECODE: &str = include_str!("mock_erc20.bin");
-const MOCK_ERC20_ABI: &'static str = include_str!("mock_erc20.json");
-
+#[cfg(test)]
 pub async fn deploy_mock_erc20(conn: Web3<EitherTransport>, key: impl Key) -> Result<Erc20Token> {
-    let abi_json: serde_json::Value = serde_json::from_str(MOCK_ERC20_ABI)?;
-    let deployer =
-        ContractDeployer::new(conn.eth(), abi_json)?.code(MOCK_ERC20_BYTECODE.to_owned());
+    let mut base = get_project_root().parent().unwrap().to_owned();
+
+    let abi_json = read_abi_from_solc_output(
+        &base.join("app.mc2.fi-solidity/out/MockToken.sol/MockToken.json"),
+    )?;
+    let bin =
+        std::fs::read_to_string(base.join("app.mc2.fi-solidity/out/MockToken.sol/MockToken.bin"))?;
+    // web3::contract::web3 never worked: Abi error: Invalid data for ABI json
+    let deployer = ContractDeployer::new(conn.eth(), abi_json)?.code(bin);
     Ok(Erc20Token::new(
         conn,
         deployer.sign_with_key_and_execute((), key).await?,

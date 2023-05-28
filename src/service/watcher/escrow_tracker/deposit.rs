@@ -148,6 +148,7 @@ pub async fn deploy_strategy_contract(
 
     wait_for_confirmations_simple(&conn.get_raw().eth(), tx_hash, Duration::from_secs(1), 15)
         .await?;
+    // FIXME: is strategy pool the same as strategy?
     info!("Deploy strategy contract success");
     todo!("Could not get strategy contract address yet")
 }
@@ -355,7 +356,9 @@ mod tests {
         )
         .await?;
         // TODO: deploy strategy address
-        let strategy_factory_address = Address::from_str("")?;
+        let strategy_factory =
+            StrategyPoolFactoryContract::deploy(conn.get_raw().eth(), admin_key.clone()).await?;
+
         let strategy = db
             .execute(FunUserCreateStrategyReq {
                 user_id: ctx.user_id,
@@ -365,6 +368,7 @@ mod tests {
             .await?
             .into_result()
             .context("create strategy")?;
+
         on_user_back_strategy(
             &conn,
             &ctx,
@@ -373,7 +377,7 @@ mod tests {
             user_key.address,
             U256::from(1000),
             &stablecoins,
-            strategy_factory_address,
+            strategy_factory.address(),
             strategy.strategy_id,
             &admin_key.key,
             &escrow_key.key,
