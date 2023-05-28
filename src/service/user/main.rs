@@ -53,11 +53,6 @@ async fn main() -> Result<()> {
     );
     server.add_handler(endpoint_user_list_strategies(), MethodUserListStrategies);
 
-    server.add_handler(endpoint_user_register_wallet(), MethodUserRegisterWallet);
-    server.add_handler(
-        endpoint_user_deregister_wallet(),
-        MethodUserDeregisterWallet,
-    );
     server.add_handler(endpoint_user_create_strategy(), MethodUserCreateStrategy);
     server.add_handler(endpoint_user_update_strategy(), MethodUserUpdateStrategy);
     server.add_handler(
