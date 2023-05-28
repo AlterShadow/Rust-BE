@@ -61,7 +61,7 @@ pub async fn on_user_back_strategy(
     db: &DbClient,
     chain: EnumBlockChain,
     user_wallet_address: Address,
-    amount: Address,
+    amount: U256,
     stablecoin_addresses: &StableCoinAddresses,
     strategy_factory_address: Address,
     strategy_id: i64,
@@ -196,7 +196,8 @@ mod tests {
     use eth_sdk::{EthereumRpcConnectionPool, Transaction};
     use lib::database::{connect_to_database, drop_and_recreate_database, DatabaseConfig};
     use lib::log::{setup_logs, LogLevel};
-    use std::net::{IpAddr, Ipv4Addr};
+    use std::net::Ipv4Addr;
+    use std::str::FromStr;
 
     const ANVIL_PRIV_KEY_1: &str =
         "ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
@@ -285,6 +286,100 @@ mod tests {
         )
         .await?;
 
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_user_ethereum_back_strategy() -> Result<()> {
+        let _ = setup_logs(LogLevel::Trace);
+        drop_and_recreate_database()?;
+        let user_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
+        let admin_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_2)?;
+        let escrow_key = Secp256k1SecretKey::new_random();
+        let conn_pool = EthereumRpcConnectionPool::localnet();
+        let conn = conn_pool.get_conn().await?;
+        let erc20_mock = deploy_mock_erc20(conn.get_raw().clone(), admin_key.clone()).await?;
+        erc20_mock
+            .mint(&admin_key.key, user_key.address, U256::from(20000000))
+            .await?;
+        let tx_hash = erc20_mock
+            .transfer(&user_key.key, escrow_key.address, U256::from(20000))
+            .await?;
+        let db = connect_to_database(DatabaseConfig {
+            user: Some("postgres".to_string()),
+            password: Some("123456".to_string()),
+            dbname: Some("mc2fi".to_string()),
+            host: Some("localhost".to_string()),
+            ..Default::default()
+        })
+        .await?;
+        let ret = db
+            .execute(FunAuthSignupReq {
+                address: format!("{:?}", user_key.address),
+                email: "".to_string(),
+                phone: "".to_string(),
+                preferred_language: "".to_string(),
+                agreed_tos: true,
+                agreed_privacy: true,
+                ip_address: Ipv4Addr::new(127, 0, 0, 1).into(),
+                username: None,
+                age: None,
+            })
+            .await?
+            .into_result()
+            .context("No user signup resp")?;
+        let ctx = RequestContext {
+            connection_id: 0,
+            user_id: ret.user_id,
+            seq: 0,
+            method: 0,
+            log_id: 0,
+        };
+
+        let mut stablecoins = StableCoinAddresses::default();
+        stablecoins.inner.insert(
+            EnumBlockChain::EthereumGoerli,
+            vec![(StableCoin::Usdc, erc20_mock.address)],
+        );
+
+        // at this step, tx should be passed with quickalert
+        let tx = Transaction::new_and_assume_ready(tx_hash, &conn).await?;
+        on_user_deposit(
+            &conn,
+            &ctx,
+            &db,
+            EnumBlockChain::EthereumGoerli,
+            &tx,
+            &stablecoins,
+            &erc20_mock.contract.abi(),
+        )
+        .await?;
+        // TODO: deploy strategy address
+        let strategy_factory_address = Address::from_str("")?;
+        let strategy = db
+            .execute(FunUserCreateStrategyReq {
+                user_id: ctx.user_id,
+                name: "TEST".to_string(),
+                description: "TEST".to_string(),
+            })
+            .await?
+            .into_result()
+            .context("create strategy")?;
+        on_user_back_strategy(
+            &conn,
+            &ctx,
+            &db,
+            EnumBlockChain::EthereumGoerli,
+            user_key.address,
+            U256::from(1000),
+            &stablecoins,
+            strategy_factory_address,
+            strategy.strategy_id,
+            &admin_key.key,
+            &escrow_key.key,
+            StableCoin::Usdc,
+        )
+        .await?;
         Ok(())
     }
 }
