@@ -142,12 +142,14 @@ pub async fn deploy_strategy_contract(
 
     let factory = StrategyPoolFactoryContract::new(conn.clone().into_raw().eth(), factory_address)?;
 
+    // FIXME: The result is a tx_hash, not an index. There's no way to obtain a newly created strategy address
     let tx_hash = factory
         .create_pool(key, strategy_token_name, strategy_token_symbol)
         .await?;
 
     wait_for_confirmations_simple(&conn.get_raw().eth(), tx_hash, Duration::from_secs(1), 15)
         .await?;
+    // FIXME: where should I obtain index from factory.get_pool(INDEX); ?
     // FIXME: is strategy pool the same as strategy?
     info!("Deploy strategy contract success");
     todo!("Could not get strategy contract address yet")
