@@ -14,6 +14,7 @@ pub fn get_auth_pg_func() -> Vec<ProceduralFunction> {
                 Field::new("ip_address", Type::Inet),
                 Field::new("username", Type::optional(Type::String)),
                 Field::new("age", Type::optional(Type::Int)),
+                Field::new("public_id", Type::BigInt),
             ],
             vec![Field::new("user_id", Type::BigInt)],
             r#"
@@ -38,6 +39,7 @@ BEGIN
                           agreed_tos,
                           agreed_privacy,
                           last_ip,
+                          public_id
                           updated_at,
                           created_at)
     VALUES (a_address,
@@ -50,6 +52,7 @@ BEGIN
             a_agreed_tos,
             a_agreed_privacy,
             a_ip_address,
+            a_public_id,
             extract(Epoch FROM (NOW()))::bigint,
             extract(Epoch FROM (NOW()))::bigint)
     RETURNING pkey_id INTO STRICT id_;
@@ -119,7 +122,7 @@ END
         ProceduralFunction::new(
             "fun_auth_set_token",
             vec![
-                Field::new("user_id", Type::BigInt),
+                Field::new("public_user_id", Type::BigInt),
                 Field::new("user_token", Type::UUID),
                 Field::new("admin_token", Type::UUID),
                 Field::new("service_code", Type::Int),
@@ -130,10 +133,10 @@ DECLARE
   rc_         integer;
   is_blocked_ boolean;
 BEGIN
-  ASSERT (a_user_id NOTNULL AND a_service_code NOTNULL AND a_user_token NOTNULL AND
+  ASSERT (a_public_user_id NOTNULL AND a_service_code NOTNULL AND a_user_token NOTNULL AND
           a_admin_token NOTNULL);
   -- Looking up the user.
-  SELECT is_blocked INTO is_blocked_ FROM tbl.user WHERE pkey_id = a_user_id;
+  SELECT is_blocked INTO is_blocked_ FROM tbl.user WHERE public_id = a_public_user_id;
   IF (is_blocked_ ISNULL) THEN
     RAISE SQLSTATE 'R0007'; -- UnknownUser
   ELSIF (is_blocked_) THEN
@@ -144,12 +147,12 @@ BEGIN
   IF a_service_code = (SELECT code FROM api.USER_SERVICE()) THEN
     UPDATE tbl.user
     SET user_token = a_user_token
-    WHERE pkey_id = a_user_id;
+    WHERE public_id = a_public_user_id;
   END IF;
   IF a_service_code = (SELECT code FROM api.ADMIN_SERVICE())  THEN
     UPDATE tbl.user
     SET admin_token = a_admin_token
-    WHERE pkey_id = a_user_id;
+    WHERE public_id = a_public_user_id;
   END IF;
 
   GET DIAGNOSTICS rc_ := ROW_COUNT;

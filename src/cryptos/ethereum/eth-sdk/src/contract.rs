@@ -2,6 +2,7 @@ use eyre::ContextCompat;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::future::Future;
+#[allow(unused_imports)]
 use std::path::{Path, PathBuf};
 use std::{collections::HashMap, time};
 use web3::api::{Accounts, Eth, Namespace};

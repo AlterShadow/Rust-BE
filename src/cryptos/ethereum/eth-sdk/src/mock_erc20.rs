@@ -1,17 +1,12 @@
 use crate::contract::{get_project_root, read_abi_from_solc_output, ContractDeployer};
 use crate::erc20::Erc20Token;
-use crate::{contract, EitherTransport};
+use crate::EitherTransport;
 use eyre::*;
-use serde_json::Value;
-use std::path::{Path, PathBuf};
-use web3::api::Eth;
-use web3::contract::{Contract, Options};
 use web3::signing::Key;
 use web3::Web3;
 
-#[cfg(test)]
 pub async fn deploy_mock_erc20(conn: Web3<EitherTransport>, key: impl Key) -> Result<Erc20Token> {
-    let mut base = get_project_root().parent().unwrap().to_owned();
+    let base = get_project_root().parent().unwrap().to_owned();
 
     let abi_json = read_abi_from_solc_output(
         &base.join("app.mc2.fi-solidity/out/MockToken.sol/MockToken.json"),

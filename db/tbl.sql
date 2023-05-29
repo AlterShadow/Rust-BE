@@ -1,5 +1,5 @@
 -- Created by Vertabelo (http://vertabelo.com)
--- Last modification date: 2023-05-28 04:57:19.93
+-- Last modification date: 2023-05-29 11:49:38.954
 
 CREATE SCHEMA IF NOT EXISTS tbl;;
 
@@ -13,7 +13,7 @@ CREATE TABLE tbl.aum_history (
     blockchain varchar(20)  NOT NULL,
     dex varchar(20)  NOT NULL,
     wallet_address varchar(64)  NOT NULL,
-    transaction_hash varchar(64)  NOT NULL,
+    transaction_hash varchar(80)  NOT NULL,
     action varchar(8)  NOT NULL,
     price double precision  NOT NULL,
     quantity varchar(64)  NOT NULL,
@@ -159,6 +159,9 @@ CREATE TABLE tbl."user" (
     is_blocked boolean  NOT NULL DEFAULT FALSE,
     pending_expert boolean  NOT NULL DEFAULT FALSE,
     username varchar(32)  NULL,
+    public_id bigint  NOT NULL,
+    CONSTRAINT uidx_public_id UNIQUE (public_id) NOT DEFERRABLE  INITIALLY IMMEDIATE,
+    CONSTRAINT uidx_address UNIQUE (address) NOT DEFERRABLE  INITIALLY IMMEDIATE,
     CONSTRAINT user_pk PRIMARY KEY (pkey_id)
 );
 
@@ -169,7 +172,7 @@ CREATE TABLE tbl.user_back_strategy_history (
     fkey_strategy_id bigint  NOT NULL,
     purchase_wallet varchar(64)  NOT NULL,
     blockchain varchar(20)  NOT NULL,
-    transaction_hash varchar(64)  NOT NULL,
+    transaction_hash varchar(80)  NOT NULL,
     quantity varchar(64)  NOT NULL,
     earn_sp_tokens varchar(64)  NOT NULL,
     back_time bigint  NOT NULL,

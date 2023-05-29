@@ -1,6 +1,6 @@
 CREATE SCHEMA IF NOT EXISTS api;
 
-CREATE OR REPLACE FUNCTION api.fun_auth_signup(a_address varchar, a_email varchar, a_phone varchar, a_preferred_language varchar, a_agreed_tos boolean, a_agreed_privacy boolean, a_ip_address inet, a_username varchar DEFAULT NULL, a_age int DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_auth_signup(a_address varchar, a_email varchar, a_phone varchar, a_preferred_language varchar, a_agreed_tos boolean, a_agreed_privacy boolean, a_ip_address inet, a_username varchar DEFAULT NULL, a_age int DEFAULT NULL, a_public_id bigint)
 RETURNS table (
     "user_id" bigint
 )
@@ -28,6 +28,7 @@ BEGIN
                           agreed_tos,
                           agreed_privacy,
                           last_ip,
+                          public_id
                           updated_at,
                           created_at)
     VALUES (a_address,
@@ -40,6 +41,7 @@ BEGIN
             a_agreed_tos,
             a_agreed_privacy,
             a_ip_address,
+            a_public_id,
             extract(Epoch FROM (NOW()))::bigint,
             extract(Epoch FROM (NOW()))::bigint)
     RETURNING pkey_id INTO STRICT id_;
@@ -106,7 +108,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_auth_set_token(a_user_id bigint, a_user_token uuid, a_admin_token uuid, a_service_code int)
+CREATE OR REPLACE FUNCTION api.fun_auth_set_token(a_public_user_id bigint, a_user_token uuid, a_admin_token uuid, a_service_code int)
 RETURNS void
 LANGUAGE plpgsql
 AS $$
@@ -115,10 +117,10 @@ DECLARE
   rc_         integer;
   is_blocked_ boolean;
 BEGIN
-  ASSERT (a_user_id NOTNULL AND a_service_code NOTNULL AND a_user_token NOTNULL AND
+  ASSERT (a_public_user_id NOTNULL AND a_service_code NOTNULL AND a_user_token NOTNULL AND
           a_admin_token NOTNULL);
   -- Looking up the user.
-  SELECT is_blocked INTO is_blocked_ FROM tbl.user WHERE pkey_id = a_user_id;
+  SELECT is_blocked INTO is_blocked_ FROM tbl.user WHERE public_id = a_public_user_id;
   IF (is_blocked_ ISNULL) THEN
     RAISE SQLSTATE 'R0007'; -- UnknownUser
   ELSIF (is_blocked_) THEN
@@ -129,12 +131,12 @@ BEGIN
   IF a_service_code = (SELECT code FROM api.USER_SERVICE()) THEN
     UPDATE tbl.user
     SET user_token = a_user_token
-    WHERE pkey_id = a_user_id;
+    WHERE public_id = a_public_user_id;
   END IF;
   IF a_service_code = (SELECT code FROM api.ADMIN_SERVICE())  THEN
     UPDATE tbl.user
     SET admin_token = a_admin_token
-    WHERE pkey_id = a_user_id;
+    WHERE public_id = a_public_user_id;
   END IF;
 
   GET DIAGNOSTICS rc_ := ROW_COUNT;

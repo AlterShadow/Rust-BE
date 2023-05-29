@@ -15,6 +15,7 @@ mod calldata;
 mod conn;
 pub mod contract;
 pub mod erc20;
+#[cfg(test)]
 pub mod mock_erc20;
 mod pool;
 pub mod signer;

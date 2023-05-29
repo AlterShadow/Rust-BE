@@ -63,8 +63,8 @@ impl RequestHandler for MethodAuthSignup {
                     Value::Null
                 ));
             }
-
-            let signup = db_auth
+            let public_id = chrono::Utc::now().timestamp_millis();
+            let _signup = db_auth
                 .execute(FunAuthSignupReq {
                     address: address_string.clone(),
                     email: req.email.clone(),
@@ -75,6 +75,7 @@ impl RequestHandler for MethodAuthSignup {
                     ip_address: conn.address.ip(),
                     username: req.username.clone(),
                     age: None,
+                    public_id,
                 })
                 .await?;
             if db_auth.conn_hash() != db.conn_hash() {
@@ -88,12 +89,13 @@ impl RequestHandler for MethodAuthSignup {
                     ip_address: conn.address.ip(),
                     username: req.username,
                     age: None,
+                    public_id,
                 })
                 .await?;
             }
             Ok(SignupResponse {
                 address: address_string,
-                user_id: signup.into_result().context("Signup")?.user_id,
+                user_id: public_id,
             })
         });
     }
@@ -157,7 +159,7 @@ impl RequestHandler for MethodAuthLogin {
             let admin_token = Uuid::new_v4();
             db_auth
                 .execute(FunAuthSetTokenReq {
-                    user_id: row.user_id,
+                    public_user_id: row.user_id,
                     user_token,
                     admin_token,
                     service_code: service_code as _,
