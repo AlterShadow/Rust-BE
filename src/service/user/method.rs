@@ -1,12 +1,16 @@
+use eth_sdk::utils::verify_message_address;
 use eyre::*;
 use gen::database::*;
 use gen::model::*;
 use lib::database::DbClient;
 use lib::handler::RequestHandler;
 use lib::toolbox::*;
+use lib::utils::hex_decode;
 use lib::ws::*;
+use std::str::FromStr;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
+use web3::types::Address;
 
 pub fn ensure_user_role(conn: &Connection, role: EnumRole) -> Result<()> {
     let user_role = conn.role.load(Ordering::Relaxed);
@@ -573,7 +577,119 @@ impl RequestHandler for MethodUserGetUserProfile {
         })
     }
 }
+pub struct MethodUserRegisterWallet;
+impl RequestHandler for MethodUserRegisterWallet {
+    type Request = UserRegisterWalletRequest;
+    type Response = UserRegisterWalletResponse;
 
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        conn: Arc<Connection>,
+        req: Self::Request,
+    ) {
+        let db: DbClient = toolbox.get_db();
+        toolbox.spawn_response(ctx, async move {
+            ensure_user_role(&conn, EnumRole::User)?;
+            let address = Address::from_str(&req.wallet_address).map_err(|x| {
+                CustomError::new(
+                    EnumErrorCode::UnknownUser,
+                    format!("Invalid address: {}", x),
+                )
+            })?;
+
+            let signature_text = hex_decode(req.message_to_sign.as_bytes())?;
+            let signature = hex_decode(req.message_signature.as_bytes())?;
+
+            let verified = verify_message_address(&signature_text, &signature, address)?;
+
+            ensure!(
+                verified,
+                CustomError::new(EnumErrorCode::InvalidPassword, "Signature is not valid")
+            );
+            let ret = db
+                .execute(FunUserAddRegisteredWalletReq {
+                    user_id: ctx.user_id,
+                    blockchain: req.blockchain,
+                    address: req.wallet_address,
+                })
+                .await?
+                .into_result()
+                .context("failed to register wallet")?;
+
+            Ok(UserRegisterWalletResponse {
+                success: true,
+                wallet_id: ret.registered_wallet_id,
+            })
+        })
+    }
+}
+
+pub struct MethodUserListWallets;
+impl RequestHandler for MethodUserListWallets {
+    type Request = UserListWalletsRequest;
+    type Response = UserListWalletsResponse;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        conn: Arc<Connection>,
+        _req: Self::Request,
+    ) {
+        let db: DbClient = toolbox.get_db();
+        toolbox.spawn_response(ctx, async move {
+            ensure_user_role(&conn, EnumRole::User)?;
+
+            let ret = db
+                .execute(FunUserListRegisteredWalletsReq {
+                    user_id: ctx.user_id,
+                })
+                .await?;
+
+            Ok(UserListWalletsResponse {
+                wallets: ret
+                    .into_rows()
+                    .into_iter()
+                    .map(|x| ListWalletsRow {
+                        wallet_id: x.registered_wallet_id,
+                        blockchain: x.blockchain,
+                        wallet_address: x.address,
+                        is_default: false,
+                    })
+                    .collect(),
+            })
+        })
+    }
+}
+pub struct MethodUserDeregisterWallet;
+impl RequestHandler for MethodUserDeregisterWallet {
+    type Request = UserDeregisterWalletRequest;
+    type Response = UserDeregisterWalletResponse;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        conn: Arc<Connection>,
+        req: Self::Request,
+    ) {
+        let db: DbClient = toolbox.get_db();
+        toolbox.spawn_response(ctx, async move {
+            ensure_user_role(&conn, EnumRole::User)?;
+
+            let _ret = db
+                .execute(FunUserRemoveRegisteredWalletReq {
+                    registered_wallet_id: req.wallet_id,
+                    user_id: ctx.user_id,
+                })
+                .await?;
+
+            Ok(UserDeregisterWalletResponse { success: true })
+        })
+    }
+}
 pub struct MethodUserApplyBecomeExpert;
 impl RequestHandler for MethodUserApplyBecomeExpert {
     type Request = UserApplyBecomeExpertRequest;

@@ -337,7 +337,6 @@ pub fn endpoint_user_register_wallet() -> EndpointSchema {
             Field::new("wallet_address", Type::String),
             Field::new("message_to_sign", Type::String),
             Field::new("message_signature", Type::String),
-            Field::new("strategy_id", Type::BigInt),
         ],
         vec![
             Field::new("success", Type::Boolean),

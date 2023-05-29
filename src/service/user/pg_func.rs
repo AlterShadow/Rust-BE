@@ -766,5 +766,47 @@ BEGIN
 END
 "#,
         ),
+        ProceduralFunction::new(
+            "fun_user_add_registered_wallet",
+            vec![
+                Field::new("user_id", Type::BigInt),
+                Field::new("blockchain", Type::String),
+                Field::new("address", Type::String),
+            ],
+            vec![Field::new("registered_wallet_id", Type::BigInt)],
+            r#"
+BEGIN
+    RETURN QUERY INSERT INTO tbl.user_registered_wallet (fkey_user_id, blockchain, address) 
+            VALUES ( a_user_id, a_blockchain, a_address) RETURNING pkey_id;
+END
+"#,
+        ),
+        ProceduralFunction::new(
+            "fun_user_remove_registered_wallet",
+            vec![
+                Field::new("registered_wallet_id", Type::BigInt),
+                Field::new("user_id", Type::BigInt),
+            ],
+            vec![],
+            r#"
+BEGIN
+    DELETE FROM tbl.user_registered_wallet WHERE pkey_id = a_registered_wallet_id AND fkey_user_id = a_user_id;
+END
+"#,
+        ),
+        ProceduralFunction::new(
+            "fun_user_list_registered_wallets",
+            vec![Field::new("user_id", Type::BigInt)],
+            vec![
+                Field::new("registered_wallet_id", Type::BigInt),
+                Field::new("blockchain", Type::String),
+                Field::new("address", Type::String),
+            ],
+            r#"
+BEGIN
+    RETURN QUERY SELECT pkey_id, blockchain, address FROM tbl.user_registered_wallet WHERE fkey_user_id = a_user_id;
+END
+"#,
+        ),
     ]
 }

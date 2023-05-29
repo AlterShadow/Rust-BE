@@ -53,3 +53,10 @@ pub fn get_time_milliseconds() -> i64 {
         .unwrap()
         .as_millis() as _
 }
+pub fn hex_decode(s: &[u8]) -> Result<Vec<u8>> {
+    if s.starts_with(b"0x") {
+        Ok(hex::decode(&s[2..])?)
+    } else {
+        Ok(hex::decode(s)?)
+    }
+}

@@ -1342,6 +1342,94 @@ impl DatabaseRequest for FunUserListStrategyWatchWalletsReq {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserAddRegisteredWalletReq {
+    pub user_id: i64,
+    pub blockchain: String,
+    pub address: String,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserAddRegisteredWalletRespRow {
+    pub registered_wallet_id: i64,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunUserAddRegisteredWalletReq {
+    type ResponseRow = FunUserAddRegisteredWalletRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_add_registered_wallet(a_user_id => $1::bigint, a_blockchain => $2::varchar, a_address => $3::varchar);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.blockchain as &(dyn ToSql + Sync),
+            &self.address as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserAddRegisteredWalletRespRow> {
+        let r = FunUserAddRegisteredWalletRespRow {
+            registered_wallet_id: row.try_get(0)?,
+        };
+        Ok(r)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserRemoveRegisteredWalletReq {
+    pub registered_wallet_id: i64,
+    pub user_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserRemoveRegisteredWalletRespRow {}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunUserRemoveRegisteredWalletReq {
+    type ResponseRow = FunUserRemoveRegisteredWalletRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_remove_registered_wallet(a_registered_wallet_id => $1::bigint, a_user_id => $2::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.registered_wallet_id as &(dyn ToSql + Sync),
+            &self.user_id as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserRemoveRegisteredWalletRespRow> {
+        let r = FunUserRemoveRegisteredWalletRespRow {};
+        Ok(r)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserListRegisteredWalletsReq {
+    pub user_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserListRegisteredWalletsRespRow {
+    pub registered_wallet_id: i64,
+    pub blockchain: String,
+    pub address: String,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunUserListRegisteredWalletsReq {
+    type ResponseRow = FunUserListRegisteredWalletsRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_list_registered_wallets(a_user_id => $1::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![&self.user_id as &(dyn ToSql + Sync)]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserListRegisteredWalletsRespRow> {
+        let r = FunUserListRegisteredWalletsRespRow {
+            registered_wallet_id: row.try_get(0)?,
+            blockchain: row.try_get(1)?,
+            address: row.try_get(2)?,
+        };
+        Ok(r)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunWatcherSaveRawTransactionReq {
     pub transaction_hash: String,
     pub chain: String,

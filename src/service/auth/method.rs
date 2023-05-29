@@ -1,9 +1,11 @@
+use eth_sdk::utils::verify_message_address;
 use eyre::*;
 use gen::database::*;
 use gen::model::*;
 use lib::database::DbClient;
 use lib::handler::RequestHandler;
 use lib::toolbox::*;
+use lib::utils::hex_decode;
 use lib::ws::*;
 use serde_json::Value;
 use std::str::FromStr;
@@ -11,7 +13,6 @@ use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use tracing::info;
 use uuid::Uuid;
-use web3::signing::{hash_message, recover, RecoveryError};
 use web3::types::Address;
 
 pub struct MethodAuthSignup;
@@ -101,13 +102,6 @@ impl RequestHandler for MethodAuthSignup {
     }
 }
 
-fn hex_decode(s: &[u8]) -> Result<Vec<u8>> {
-    if s.starts_with(b"0x") {
-        Ok(hex::decode(&s[2..])?)
-    } else {
-        Ok(hex::decode(s)?)
-    }
-}
 pub struct MethodAuthLogin;
 
 impl RequestHandler for MethodAuthLogin {
@@ -233,31 +227,10 @@ impl RequestHandler for MethodAuthAuthorize {
     }
 }
 
-fn verify_message_address(
-    message: &[u8],
-    signature: &[u8],
-    expected_address: Address,
-) -> Result<bool, RecoveryError> {
-    if signature.len() != 65 {
-        return Err(RecoveryError::InvalidSignature);
-    }
-    if signature[64] as i32 != 27 && signature[64] as i32 != 28 {
-        // only supports 27/28 recovery id for ethereum
-        return Err(RecoveryError::InvalidSignature);
-    }
-    let message_hash = hash_message(message);
-    let recovery_id = signature[64] as i32 - 27;
-    // info!("Recovery id: {}", recovery_id);
-    let addr = recover(&message_hash.0, &signature[..64], recovery_id)?;
-    // info!(
-    //     "Expected address: {:?}, Recovered address: {:?}",
-    //     expected_address, addr
-    // );
-    Ok(addr == expected_address)
-}
 #[cfg(test)]
 mod tests {
     use super::*;
+    use eth_sdk::utils::verify_message_address;
     use lib::log::{setup_logs, LogLevel};
     use std::str::FromStr;
 

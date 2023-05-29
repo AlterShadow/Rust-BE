@@ -997,7 +997,6 @@ pub struct UserRegisterWalletRequest {
     pub wallet_address: String,
     pub message_to_sign: String,
     pub message_signature: String,
-    pub strategy_id: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
