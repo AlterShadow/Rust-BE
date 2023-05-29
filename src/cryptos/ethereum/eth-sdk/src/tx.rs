@@ -165,7 +165,7 @@ impl Transaction {
         token_contract: H160,
         recipient: H160,
         transfer_event_signature: H256,
-    ) -> Option<U256> {
+    ) -> Result<U256> {
         if let Some(receipt) = self.get_receipt() {
             for log in receipt.logs {
                 /* there can only be 4 indexed (topic) values in a event log */
@@ -177,19 +177,27 @@ impl Transaction {
                 {
                     /* 3rd topic according to ERC20 is the "to" address */
                     /* topics have 32 bytes, so we must fetch the last 20 bytes for an address */
-                    let to = H160::from_slice(&log.topics[2].as_bytes()[12..]);
+                    let to_bytes = log.topics[2].as_bytes();
+                    if to_bytes.len() < 32 {
+                        return Err(eyre!("invalid topic length"));
+                    }
+                    let to = H160::from_slice(&to_bytes[12..]);
 
                     if to == recipient {
                         /* transfer value is not indexed according to ERC20, and is stored in log data */
                         let data = log.data.0.as_slice();
+                        if data.len() < 32 {
+                            return Err(eyre!("invalid data length"));
+                        }
                         let amount_out = U256::from_big_endian(&data);
-                        return Some(amount_out);
+                        return Ok(amount_out);
                     }
                 }
             }
+            return Err(eyre!("transfer log not found"));
         }
 
-        None
+        Err(eyre!("no receipt"))
     }
 
     pub fn amount_of_token_sent(
@@ -197,7 +205,7 @@ impl Transaction {
         token_contract: H160,
         sender: H160,
         transfer_event_signature: H256,
-    ) -> Option<U256> {
+    ) -> Result<U256> {
         if let Some(receipt) = self.get_receipt() {
             for log in receipt.logs {
                 /* there can only be 4 indexed (topic) values in a event log */
@@ -209,19 +217,27 @@ impl Transaction {
                 {
                     /* 2nd topic according to ERC20 is the "from" address */
                     /* topics have 32 bytes, so we must fetch the last 20 bytes for an address */
-                    let from = H160::from_slice(&log.topics[1].as_bytes()[12..]);
+                    let from_bytes = log.topics[1].as_bytes();
+                    if from_bytes.len() < 32 {
+                        return Err(eyre!("invalid topic length"));
+                    }
+                    let from = H160::from_slice(&from_bytes[12..]);
 
                     if from == sender {
                         /* transfer value is not indexed according to ERC20, and is stored in log data */
                         let data = log.data.0.as_slice();
+                        if data.len() < 32 {
+                            return Err(eyre!("invalid data length"));
+                        }
                         let amount_out = U256::from_big_endian(&data);
-                        return Some(amount_out);
+                        return Ok(amount_out);
                     }
                 }
             }
+            return Err(eyre!("transfer log not found"));
         }
 
-        None
+        Err(eyre!("no receipt"))
     }
     pub fn assume_ready(self) -> Result<TransactionReady> {
         ensure!(
@@ -279,7 +295,7 @@ impl TransactionReady {
         token_contract: H160,
         recipient: H160,
         transfer_event_signature: H256,
-    ) -> Option<U256> {
+    ) -> Result<U256> {
         let receipt = self.get_receipt();
 
         for log in &receipt.logs {
@@ -292,17 +308,25 @@ impl TransactionReady {
             {
                 /* 3rd topic according to ERC20 is the "to" address */
                 /* topics have 32 bytes, so we must fetch the last 20 bytes for an address */
-                let to = H160::from_slice(&log.topics[2].as_bytes()[12..]);
+                let to_bytes = log.topics[2].as_bytes();
+                if to_bytes.len() < 32 {
+                    return Err(eyre!("invalid topic length"));
+                }
+                let to = H160::from_slice(&to_bytes[12..]);
 
                 if to == recipient {
                     /* transfer value is not indexed according to ERC20, and is stored in log data */
                     let data = log.data.0.as_slice();
+                    if data.len() < 32 {
+                        return Err(eyre!("invalid data length"));
+                    }
                     let amount_out = U256::from_big_endian(&data);
-                    return Some(amount_out);
+                    return Ok(amount_out);
                 }
             }
         }
-        None
+
+        Err(eyre!("transfer log not found"))
     }
 
     pub fn amount_of_token_sent(
@@ -310,7 +334,7 @@ impl TransactionReady {
         token_contract: H160,
         sender: H160,
         transfer_event_signature: H256,
-    ) -> Option<U256> {
+    ) -> Result<U256> {
         let receipt = self.get_receipt();
 
         for log in &receipt.logs {
@@ -323,18 +347,25 @@ impl TransactionReady {
             {
                 /* 2nd topic according to ERC20 is the "from" address */
                 /* topics have 32 bytes, so we must fetch the last 20 bytes for an address */
-                let from = H160::from_slice(&log.topics[1].as_bytes()[12..]);
+                let from_bytes = log.topics[1].as_bytes();
+                if from_bytes.len() < 32 {
+                    return Err(eyre!("invalid topic length"));
+                }
+                let from = H160::from_slice(&from_bytes[12..]);
 
                 if from == sender {
                     /* transfer value is not indexed according to ERC20, and is stored in log data */
                     let data = log.data.0.as_slice();
+                    if data.len() < 32 {
+                        return Err(eyre!("invalid data length"));
+                    }
                     let amount_out = U256::from_big_endian(&data);
-                    return Some(amount_out);
+                    return Ok(amount_out);
                 }
             }
         }
 
-        None
+        Err(eyre!("transfer log not found"))
     }
 }
 

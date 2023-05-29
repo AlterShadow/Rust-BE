@@ -112,29 +112,23 @@ impl PancakeSwap {
                 /* amount out missing */
                 if swap.recipient == self.paid_in_native_flag {
                     /* user got paid in native tokens, transfer is from token_out to router */
-                    let amount_out = match tx.amount_of_token_received(
-                        swap.token_out,
-                        contract,
-                        self.transfer_event_signature,
-                    ) {
-                        Some(amount) => amount,
-                        None => {
-                            return Err(eyre!("failed to get amount_out"));
-                        }
-                    };
+                    let amount_out = tx
+                        .amount_of_token_received(
+                            swap.token_out,
+                            contract,
+                            self.transfer_event_signature,
+                        )
+                        .map_err(|err| eyre!("failed to get amount_out: {}", err))?;
                     swap.amount_out = Some(amount_out);
                 } else {
                     /* user got paid in token_out, transfer is from token_out to recipient */
-                    let amount_out = match tx.amount_of_token_received(
-                        swap.token_out,
-                        swap.recipient,
-                        self.transfer_event_signature,
-                    ) {
-                        Some(amount) => amount,
-                        None => {
-                            return Err(eyre!("failed to get amount_out"));
-                        }
-                    };
+                    let amount_out = tx
+                        .amount_of_token_received(
+                            swap.token_out,
+                            swap.recipient,
+                            self.transfer_event_signature,
+                        )
+                        .map_err(|err| eyre!("failed to get amount_out: {}", err))?;
                     swap.amount_out = Some(amount_out);
                 }
             } else {
@@ -142,29 +136,19 @@ impl PancakeSwap {
                 if value != 0.into() {
                     /* user paid in native tokens, transfer is from router to pool */
                     /* because the router first wrapped the token, in order to use pool */
-                    let amount_in = match tx.amount_of_token_sent(
-                        swap.token_in,
-                        contract,
-                        self.transfer_event_signature,
-                    ) {
-                        Some(amount) => amount,
-                        None => {
-                            return Err(eyre!("failed to get amount_in"));
-                        }
-                    };
+                    let amount_in = tx
+                        .amount_of_token_sent(
+                            swap.token_in,
+                            contract,
+                            self.transfer_event_signature,
+                        )
+                        .map_err(|err| eyre!("failed to get amount_in: {}", err))?;
                     swap.amount_in = Some(amount_in);
                 } else {
                     /* user paid in token_in, transfer is from user to pool */
-                    let amount_in = match tx.amount_of_token_sent(
-                        swap.token_in,
-                        caller,
-                        self.transfer_event_signature,
-                    ) {
-                        Some(amount) => amount,
-                        None => {
-                            return Err(eyre!("failed to get amount_in"));
-                        }
-                    };
+                    let amount_in = tx
+                        .amount_of_token_sent(swap.token_in, caller, self.transfer_event_signature)
+                        .map_err(|err| eyre!("failed to get amount_in: {}", err))?;
                     swap.amount_in = Some(amount_in);
                 }
             }
