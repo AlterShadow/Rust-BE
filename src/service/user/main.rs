@@ -53,13 +53,61 @@ async fn main() -> Result<()> {
     );
 
     server.add_handler(endpoint_user_register_wallet(), MethodUserRegisterWallet);
+    server.add_handler(endpoint_user_list_wallets(), MethodUserListWallets);
     server.add_handler(
         endpoint_user_deregister_wallet(),
         MethodUserDeregisterWallet,
     );
     server.add_handler(endpoint_user_list_strategies(), MethodUserListStrategies);
+    server.add_handler(endpoint_user_get_strategy(), MethodUserGetStrategy);
+    server.add_handler(
+        endpoint_user_get_strategy_statistics(),
+        MethodUserGetStrategyStatistics,
+    );
+    server.add_handler(
+        endpoint_user_list_backed_strategies(),
+        MethodUserListBackedStrategies,
+    );
+    server.add_handler(
+        endpoint_user_list_exit_strategy_history(),
+        MethodUserListExitStrategyHistory,
+    );
+
+    server.add_handler(endpoint_user_follow_expert(), MethodUserFollowExpert);
+
+    server.add_handler(
+        endpoint_user_list_followed_experts(),
+        MethodUserListFollowedExperts,
+    );
+
+    server.add_handler(endpoint_user_unfollow_expert(), MethodUserUnfollowExpert);
+    server.add_handler(endpoint_user_list_experts(), MethodUserListExperts);
+    server.add_handler(
+        endpoint_user_get_expert_profile(),
+        MethodUserGetExpertProfile,
+    );
+
+    server.add_handler(endpoint_user_get_user_profile(), MethodUserGetUserProfile);
+    server.add_handler(
+        endpoint_user_apply_become_expert(),
+        MethodUserApplyBecomeExpert,
+    );
+
+    server.add_handler(
+        endpoint_admin_approve_user_become_expert(),
+        MethodAdminApproveUserBecomeExpert,
+    );
+    server.add_handler(
+        endpoint_admin_reject_user_become_expert(),
+        MethodAdminRejectUserBecomeExpert,
+    );
+    server.add_handler(
+        endpoint_admin_list_pending_expert_applications(),
+        MethodAdminListPendingExpertApplications,
+    );
     server.add_handler(endpoint_user_create_strategy(), MethodUserCreateStrategy);
     server.add_handler(endpoint_user_update_strategy(), MethodUserUpdateStrategy);
+
     server.add_handler(
         endpoint_user_add_strategy_watching_wallet(),
         MethodUserAddStrategyWatchingWallet,
@@ -67,6 +115,10 @@ async fn main() -> Result<()> {
     server.add_handler(
         endpoint_user_remove_strategy_watching_wallet(),
         MethodUserRemoveStrategyWatchingWallet,
+    );
+    server.add_handler(
+        endpoint_user_list_wallet_activity_history(),
+        MethodUserListWalletActivityHistory,
     );
     server.listen().await?;
     Ok(())

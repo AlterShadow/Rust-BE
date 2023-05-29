@@ -438,8 +438,8 @@ impl RequestHandler for MethodUserListFollowedExperts {
         })
     }
 }
-pub struct UserUnfollowExpert;
-impl RequestHandler for UserUnfollowExpert {
+pub struct MethodUserUnfollowExpert;
+impl RequestHandler for MethodUserUnfollowExpert {
     type Request = UserUnfollowExpertRequest;
     type Response = UserUnfollowExpertResponse;
 
@@ -973,9 +973,9 @@ impl RequestHandler for MethodUserRemoveStrategyWatchingWallet {
     }
 }
 
-pub struct EndpointUserListWalletActivityHistory;
+pub struct MethodUserListWalletActivityHistory;
 
-impl RequestHandler for EndpointUserListWalletActivityHistory {
+impl RequestHandler for MethodUserListWalletActivityHistory {
     type Request = UserListWalletActivityHistoryRequest;
     type Response = UserListWalletActivityHistoryResponse;
 
