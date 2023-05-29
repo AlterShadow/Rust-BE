@@ -28,7 +28,7 @@ BEGIN
                           agreed_tos,
                           agreed_privacy,
                           last_ip,
-                          public_id
+                          public_id,
                           updated_at,
                           created_at)
     VALUES (a_address,
