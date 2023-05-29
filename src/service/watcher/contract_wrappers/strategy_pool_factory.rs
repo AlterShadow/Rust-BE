@@ -1,24 +1,30 @@
 use eth_sdk::contract::{get_project_root, read_abi_from_solc_output, ContractDeployer};
 use eth_sdk::erc20::Erc20Token;
+use eth_sdk::utils::wait_for_confirmations_simple;
 use eyre::*;
+use futures::StreamExt;
 use serde_json::json;
 use std::env::current_dir;
-use web3::api::Eth;
+use std::str::FromStr;
+use std::time::Duration;
+use tracing::instrument::WithSubscriber;
+use web3::api::{Eth, Namespace};
 use web3::contract::{Contract, Options};
 use web3::signing::Key;
-use web3::types::{Address, H256, U256};
-use web3::Transport;
+use web3::types::{Address, BlockNumber, FilterBuilder, H256, U256};
+use web3::{Transport, Web3};
 
 const FACTORY_ABI_JSON: &str = include_str!("../../../../abi/internal/strategy_pool_factory.json");
 
 #[derive(Debug, Clone)]
 pub struct StrategyPoolFactoryContract<T: Transport> {
     contract: Contract<T>,
+    w3: Web3<T>,
 }
 
 impl<T: Transport> StrategyPoolFactoryContract<T> {
     #[cfg(test)]
-    pub async fn deploy(eth: Eth<T>, key: impl Key) -> Result<Self> {
+    pub async fn deploy(w3: Web3<T>, key: impl Key) -> Result<Self> {
         let base = get_project_root().parent().unwrap().to_owned();
 
         let abi_json = read_abi_from_solc_output(
@@ -28,17 +34,18 @@ impl<T: Transport> StrategyPoolFactoryContract<T> {
             base.join("app.mc2.fi-solidity/out/StrategyPoolFactory.sol/StrategyPoolFactory.bin"),
         )?;
         // web3::contract::web3 never worked: Abi error: Invalid data for ABI json
-        let deployer = ContractDeployer::new(eth, abi_json)?.code(bin);
+        let deployer = ContractDeployer::new(w3.eth(), abi_json)?.code(bin);
 
         Ok(Self {
             contract: deployer
                 .sign_with_key_and_execute(key.address(), key)
                 .await?,
+            w3,
         })
     }
-    pub fn new(eth: Eth<T>, address: Address) -> Result<Self> {
-        let contract = Contract::from_json(eth, address, FACTORY_ABI_JSON.as_bytes())?;
-        Ok(Self { contract })
+    pub fn new(w3: Web3<T>, address: Address) -> Result<Self> {
+        let contract = Contract::from_json(w3.eth(), address, FACTORY_ABI_JSON.as_bytes())?;
+        Ok(Self { contract, w3 })
     }
     pub fn address(&self) -> Address {
         self.contract.address()
@@ -49,8 +56,9 @@ impl<T: Transport> StrategyPoolFactoryContract<T> {
         signer: impl Key,
         name: String,
         symbol: String,
-    ) -> Result<H256> {
-        let params = (name, symbol);
+    ) -> Result<Address> {
+        let index = self.get_pools().await?.len();
+        let params = (index, name, symbol);
         let estimated_gas = self
             .contract
             .estimate_gas(
@@ -60,8 +68,7 @@ impl<T: Transport> StrategyPoolFactoryContract<T> {
                 Options::default(),
             )
             .await?;
-
-        Ok(self
+        let tx = self
             .contract
             .signed_call(
                 StrategyPoolFactoryFunctions::CreatePool.as_str(),
@@ -69,7 +76,9 @@ impl<T: Transport> StrategyPoolFactoryContract<T> {
                 Options::with(|options| options.gas = Some(estimated_gas)),
                 signer,
             )
-            .await?)
+            .await?;
+        wait_for_confirmations_simple(&self.w3.eth(), tx, Duration::from_secs(3), 5).await?;
+        self.get_pool(index.into()).await
     }
 
     pub async fn get_pool(&self, index: U256) -> Result<Address> {
