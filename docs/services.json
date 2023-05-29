@@ -1105,10 +1105,6 @@
             {
               "name": "message_signature",
               "ty": "String"
-            },
-            {
-              "name": "strategy_id",
-              "ty": "BigInt"
             }
           ],
           "returns": [

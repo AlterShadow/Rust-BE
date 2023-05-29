@@ -1012,6 +1012,49 @@ END
 $$;
         
 
+CREATE OR REPLACE FUNCTION api.fun_user_add_registered_wallet(a_user_id bigint, a_blockchain varchar, a_address varchar)
+RETURNS table (
+    "registered_wallet_id" bigint
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY INSERT INTO tbl.user_registered_wallet (fkey_user_id, blockchain, address) 
+            VALUES ( a_user_id, a_blockchain, a_address) RETURNING pkey_id;
+END
+
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_remove_registered_wallet(a_registered_wallet_id bigint, a_user_id bigint)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    DELETE FROM tbl.user_registered_wallet WHERE pkey_id = a_registered_wallet_id AND fkey_user_id = a_user_id;
+END
+
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_list_registered_wallets(a_user_id bigint)
+RETURNS table (
+    "registered_wallet_id" bigint,
+    "blockchain" varchar,
+    "address" varchar
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY SELECT pkey_id, blockchain, address FROM tbl.user_registered_wallet WHERE fkey_user_id = a_user_id;
+END
+
+$$;
+        
+
 CREATE OR REPLACE FUNCTION api.fun_watcher_save_raw_transaction(a_transaction_hash varchar, a_chain varchar, a_raw_transaction varchar, a_dex varchar DEFAULT NULL)
 RETURNS table (
     "transaction_cache_id" bigint

@@ -232,7 +232,7 @@ CREATE TABLE tbl.user_follow_strategy (
 );
 
 -- Table: user_registered_wallet
-CREATE TABLE user_registered_wallet (
+CREATE TABLE tbl.user_registered_wallet (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_user_registered_wallet_id'),
     fkey_user_id bigint  NOT NULL,
     blockchain varchar(20)  NOT NULL,
