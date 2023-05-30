@@ -12,9 +12,9 @@ pub fn get_auth_pg_func() -> Vec<ProceduralFunction> {
                 Field::new("agreed_tos", Type::Boolean),
                 Field::new("agreed_privacy", Type::Boolean),
                 Field::new("ip_address", Type::Inet),
+                Field::new("public_id", Type::BigInt),
                 Field::new("username", Type::optional(Type::String)),
                 Field::new("age", Type::optional(Type::Int)),
-                Field::new("public_id", Type::BigInt),
             ],
             vec![Field::new("user_id", Type::BigInt)],
             r#"

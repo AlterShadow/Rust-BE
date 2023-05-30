@@ -12,11 +12,11 @@ pub struct FunAuthSignupReq {
     pub agreed_tos: bool,
     pub agreed_privacy: bool,
     pub ip_address: std::net::IpAddr,
+    pub public_id: i64,
     #[serde(default)]
     pub username: Option<String>,
     #[serde(default)]
     pub age: Option<i32>,
-    pub public_id: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAuthSignupRespRow {
@@ -27,7 +27,7 @@ pub struct FunAuthSignupRespRow {
 impl DatabaseRequest for FunAuthSignupReq {
     type ResponseRow = FunAuthSignupRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_auth_signup(a_address => $1::varchar, a_email => $2::varchar, a_phone => $3::varchar, a_preferred_language => $4::varchar, a_agreed_tos => $5::boolean, a_agreed_privacy => $6::boolean, a_ip_address => $7::inet, a_username => $8::varchar, a_age => $9::int, a_public_id => $10::bigint);"
+        "SELECT * FROM api.fun_auth_signup(a_address => $1::varchar, a_email => $2::varchar, a_phone => $3::varchar, a_preferred_language => $4::varchar, a_agreed_tos => $5::boolean, a_agreed_privacy => $6::boolean, a_ip_address => $7::inet, a_public_id => $8::bigint, a_username => $9::varchar, a_age => $10::int);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -38,9 +38,9 @@ impl DatabaseRequest for FunAuthSignupReq {
             &self.agreed_tos as &(dyn ToSql + Sync),
             &self.agreed_privacy as &(dyn ToSql + Sync),
             &self.ip_address as &(dyn ToSql + Sync),
+            &self.public_id as &(dyn ToSql + Sync),
             &self.username as &(dyn ToSql + Sync),
             &self.age as &(dyn ToSql + Sync),
-            &self.public_id as &(dyn ToSql + Sync),
         ]
     }
     fn parse_row(&self, row: Row) -> Result<FunAuthSignupRespRow> {
