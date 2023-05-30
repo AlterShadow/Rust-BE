@@ -20,8 +20,7 @@ impl<T: Transport> EscrowContract<T> {
 
     pub async fn transfer_token_to(
         &self,
-        secret: impl Key,
-        by: Address,
+        caller: impl Key,
         token_address: Address,
         recipient: Address,
         amount: U256,
@@ -32,7 +31,7 @@ impl<T: Transport> EscrowContract<T> {
             .estimate_gas(
                 EscrowFunctions::TransferTokenTo.as_str(),
                 params,
-                by,
+                caller.address(),
                 Options::default(),
             )
             .await?;
@@ -43,7 +42,7 @@ impl<T: Transport> EscrowContract<T> {
                 EscrowFunctions::TransferTokenTo.as_str(),
                 params,
                 Options::with(|options| options.gas = Some(estimated_gas)),
-                secret,
+                caller,
             )
             .await?)
     }

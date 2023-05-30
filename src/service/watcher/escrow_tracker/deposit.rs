@@ -167,15 +167,8 @@ pub async fn transfer_token_to_strategy_contract(
         .context("Could not find stablecoin address")?;
     let escrow_contract = EscrowContract::new(conn.clone().into_raw().eth(), escrow.owner)?;
 
-    let signer_address = signer.address();
     let tx_hash = escrow_contract
-        .transfer_token_to(
-            signer,
-            signer_address,
-            token_address,
-            escrow.recipient,
-            escrow.amount,
-        )
+        .transfer_token_to(signer, token_address, escrow.recipient, escrow.amount)
         .await?;
 
     let tx = Transaction::new(tx_hash);
@@ -295,10 +288,18 @@ mod tests {
         let conn = conn_pool.get_conn().await?;
         let erc20_mock = deploy_mock_erc20(conn.get_raw().clone(), admin_key.clone()).await?;
         erc20_mock
-            .mint(&admin_key.key, user_key.address, U256::from(20000000))
+            .mint(
+                &admin_key.key,
+                user_key.address,
+                U256::from(200000000000i64),
+            )
             .await?;
         let tx_hash = erc20_mock
-            .transfer(&user_key.key, escrow_key.address, U256::from(20000))
+            .transfer(
+                &user_key.key,
+                escrow_key.address,
+                U256::from(20000000000i64),
+            )
             .await?;
         let db = connect_to_database(DatabaseConfig {
             user: Some("postgres".to_string()),
