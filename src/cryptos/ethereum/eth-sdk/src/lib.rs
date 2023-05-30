@@ -8,6 +8,8 @@ use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Duration;
 use token::CryptoToken;
+use tracing::info;
+use web3::signing::Key;
 use web3::types::{Address, TransactionParameters, TransactionRequest, H256, U256};
 use web3::Web3;
 
@@ -57,6 +59,42 @@ impl EthereumToken {
         Ok(EthereumToken { client, net })
     }
 
+    pub fn new2(web3: Web3<EitherTransport>) -> Self {
+        Self {
+            client: web3,
+            net: EthereumNet::Mainnet,
+        }
+    }
+    pub async fn transfer(&self, key: impl Key, to: Address, amount: U256) -> Result<H256> {
+        info!(
+            "Transferring {} ETH from {:?} to {:?}",
+            wei_to_eth(amount),
+            key.address(),
+            to
+        );
+        let gas_price = self.client.eth().gas_price().await?;
+        let params = TransactionParameters {
+            to: Some(to),
+            gas: 21000.into(),
+            gas_price: Some(gas_price),
+            value: amount,
+            data: "".into(),
+            nonce: None,
+            transaction_type: None,
+            access_list: None,
+            max_fee_per_gas: None,
+            max_priority_fee_per_gas: None,
+            chain_id: None,
+        };
+        let signed_transaction = self.client.accounts().sign_transaction(params, key).await?;
+        let tx = self
+            .client
+            .eth()
+            .send_raw_transaction(signed_transaction.raw_transaction)
+            .await?;
+        wait_for_confirmations_simple(&self.client.eth(), tx, Duration::from_secs(3), 5).await?;
+        Ok(tx)
+    }
     pub async fn get_accounts(&self) -> Result<Vec<Address>> {
         let accounts = self.client.eth().accounts().await?;
 

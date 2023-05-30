@@ -108,8 +108,7 @@ pub fn parse_escrow(
         }
     };
 
-    info!("tx: {:?}", tx.get_hash());
-    info!("escrow: {:?}", escrow);
+    info!("parsed escrow: {:?} {:?}", tx.get_hash(), escrow);
     Ok(escrow)
 }
 

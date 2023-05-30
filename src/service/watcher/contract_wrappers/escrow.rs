@@ -1,4 +1,5 @@
 use eyre::*;
+use tracing::info;
 use web3::api::Eth;
 use web3::contract::{Contract, Options};
 use web3::signing::Key;
@@ -25,6 +26,13 @@ impl<T: Transport> EscrowContract<T> {
         recipient: Address,
         amount: U256,
     ) -> Result<H256> {
+        info!(
+            "Transferring {:?} token {:?} from {:?} to {:?}",
+            amount,
+            token_address,
+            caller.address(),
+            recipient
+        );
         let params = (token_address, recipient, amount);
         let estimated_gas = self
             .inner

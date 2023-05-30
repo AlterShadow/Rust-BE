@@ -157,11 +157,6 @@ pub async fn transfer_token_to_strategy_contract(
     chain: EnumBlockChain,
     stablecoin_addresses: &StableCoinAddresses,
 ) -> Result<Transaction> {
-    // TODO: use Erc20Token for it?
-    info!(
-        "Transferring token from {:?} to strategy contract {:?}",
-        escrow.owner, escrow.recipient
-    );
     let token_address = stablecoin_addresses
         .get_by_chain_and_token(chain, escrow.token)
         .context("Could not find stablecoin address")?;
@@ -185,6 +180,7 @@ mod tests {
     use lib::database::{connect_to_database, drop_and_recreate_database, DatabaseConfig};
     use lib::log::{setup_logs, LogLevel};
     use std::net::Ipv4Addr;
+    use web3::types::TransactionRequest;
 
     const ANVIL_PRIV_KEY_1: &str =
         "ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
@@ -279,7 +275,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_user_ethereum_back_strategy() -> Result<()> {
-        let _ = setup_logs(LogLevel::Trace);
+        let _ = setup_logs(LogLevel::Info);
         drop_and_recreate_database()?;
         let user_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
         let admin_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_2)?;
@@ -294,6 +290,13 @@ mod tests {
                 U256::from(200000000000i64),
             )
             .await?;
+        let eth = EthereumToken::new2(conn.get_raw().clone());
+        eth.transfer(
+            admin_key.clone(),
+            escrow_key.address,
+            U256::from(1e18 as i64),
+        )
+        .await?;
         let tx_hash = erc20_mock
             .transfer(
                 &user_key.key,

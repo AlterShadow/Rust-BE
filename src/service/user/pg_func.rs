@@ -294,8 +294,8 @@ END
             r#"
 BEGIN
     INSERT INTO tbl.user_back_strategy_history (fkey_user_id, fkey_strategy_id, quantity, purchase_wallet, blockchain,
-                                                transaction_hash, back_time)
-    VALUES (a_user_id, a_strategy_id, a_quantity, a_purchase_wallet, a_blockchain, a_transaction_hash,
+                                                transaction_hash, earn_sp_tokens, back_time)
+    VALUES (a_user_id, a_strategy_id, a_quantity, a_purchase_wallet, a_blockchain, a_transaction_hash, a_earn_sp_tokens,
             extract(epoch from now())::bigint);
     RETURN QUERY SELECT TRUE;
 END
@@ -431,8 +431,8 @@ END
             vec![Field::new("success", Type::Boolean)],
             r#"
 BEGIN
-    INSERT INTO tbl.user_follow_expert (fkey_user_id, fkey_expert_id)
-    VALUES (a_user_id, a_expert_id);
+    INSERT INTO tbl.user_follow_expert (fkey_user_id, fkey_expert_id, updated_at, created_at)
+    VALUES (a_user_id, a_expert_id, extract(epoch from now())::bigint, extract(epoch from now())::bigint);
     RETURN QUERY SELECT TRUE;
 END
 "#,
@@ -776,8 +776,8 @@ END
             vec![Field::new("registered_wallet_id", Type::BigInt)],
             r#"
 BEGIN
-    RETURN QUERY INSERT INTO tbl.user_registered_wallet (fkey_user_id, blockchain, address) 
-            VALUES ( a_user_id, a_blockchain, a_address) RETURNING pkey_id;
+    RETURN QUERY INSERT INTO tbl.user_registered_wallet (fkey_user_id, blockchain, address, created_at)
+            VALUES ( a_user_id, a_blockchain, a_address, EXTRACT(EPOCH FROM NOW())::bigint) RETURNING pkey_id;
 END
 "#,
         ),
