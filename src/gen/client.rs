@@ -94,6 +94,14 @@ impl UserClient {
     }
 }
 impl UserClient {
+    pub async fn user_back_strategy(
+        &mut self,
+        req: UserBackStrategyRequest,
+    ) -> Result<UserBackStrategyResponse> {
+        self.client.request(20080, req).await
+    }
+}
+impl UserClient {
     pub async fn user_list_backed_strategies(
         &mut self,
         req: UserListBackedStrategiesRequest,

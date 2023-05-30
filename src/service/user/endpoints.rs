@@ -153,20 +153,18 @@ pub fn endpoint_user_get_strategy_statistics() -> EndpointSchema {
     )
     .with_description("User gets a strategy statistics")
 }
-// pub fn endpoint_user_back_strategy() -> EndpointSchema {
-//     EndpointSchema::new(
-//         "UserBackStrategy",
-//         20080,
-//         vec![
-//             Field::new("strategy_id", Type::BigInt),
-//             Field::new("quantity", Type::String),
-//             Field::new("blockchain", Type::String),
-//             Field::new("dex", Type::String), // could be inferred from transaction hash though
-//             Field::new("transaction_hash", Type::String),
-//         ],
-//         vec![Field::new("success", Type::Boolean)],
-//     )
-// }
+pub fn endpoint_user_back_strategy() -> EndpointSchema {
+    EndpointSchema::new(
+        "UserBackStrategy",
+        20080,
+        vec![
+            Field::new("strategy_id", Type::BigInt),
+            Field::new("quantity", Type::String),
+            Field::new("blockchain", Type::String),
+        ],
+        vec![Field::new("success", Type::Boolean)],
+    )
+}
 
 pub fn endpoint_user_list_backed_strategies() -> EndpointSchema {
     EndpointSchema::new(
@@ -542,7 +540,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
         endpoint_user_list_strategies(),
         endpoint_user_get_strategy(),
         endpoint_user_get_strategy_statistics(),
-        // endpoint_user_back_strategy(),
+        endpoint_user_back_strategy(),
         endpoint_user_list_backed_strategies(),
         endpoint_user_list_back_strategy_history(),
         // endpoint_user_exit_strategy(),

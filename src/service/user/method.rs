@@ -1,4 +1,5 @@
 use eth_sdk::utils::verify_message_address;
+use eth_sdk::EthereumRpcConnection;
 use eyre::*;
 use gen::database::*;
 use gen::model::*;
@@ -10,7 +11,9 @@ use lib::ws::*;
 use std::str::FromStr;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
-use web3::types::Address;
+use tracing::info;
+use web3::signing::Key;
+use web3::types::{Address, Transaction, U256};
 
 pub fn ensure_user_role(conn: &Connection, role: EnumRole) -> Result<()> {
     let user_role = conn.role.load(Ordering::Relaxed);
@@ -171,9 +174,9 @@ impl RequestHandler for MethodUserGetStrategy {
                 inception_time: 0,
                 total_amount: 0.0,
                 token_allocation: 0,
-                net_value: ret.net_value,
-                followers: ret.followers,
-                backers: ret.backers,
+                net_value: 0.0,
+                followers: ret.followers as _,
+                backers: ret.backers as _,
                 watching_wallets: watching_wallets
                     .into_rows()
                     .into_iter()
@@ -185,8 +188,8 @@ impl RequestHandler for MethodUserGetStrategy {
                         ratio_distribution: x.ratio,
                     })
                     .collect(),
-                risk_score: ret.risk_score,
-                aum: ret.aum,
+                risk_score: ret.risk_score.unwrap_or(0.0),
+                aum: ret.aum.unwrap_or(0.0),
                 reputation: 0,
                 aum_history: vec![],
             })
@@ -292,6 +295,121 @@ impl RequestHandler for MethodUserListBackedStrategies {
                     })
                     .collect(),
             })
+        })
+    }
+}
+pub async fn on_user_back_strategy(
+    conn: &EthereumRpcConnection,
+    ctx: &RequestContext,
+    db: &DbClient,
+    chain: EnumBlockChain,
+    user_wallet_address: Address,
+    amount: U256,
+    stablecoin_addresses: &StableCoinAddresses,
+    strategy_id: i64,
+    strategy_pool_signer: impl Key,
+    escrow_signer: impl Key,
+    stablecoin: StableCoin,
+) -> Result<()> {
+    let mut user_registered_strategy = db
+        .execute(FunUserGetStrategyReq { strategy_id })
+        .await?
+        .into_result()
+        .context("user_registered_strategy")?;
+    if user_registered_strategy.evm_contract_address.is_none() {
+        let contract = deploy_strategy_contract(
+            &conn,
+            strategy_pool_signer,
+            user_registered_strategy.strategy_name.clone(),
+            user_registered_strategy.strategy_name, // strategy symbol
+        )
+        .await?;
+        user_registered_strategy.evm_contract_address = Some(format!("{:?}", contract.address()));
+    }
+    let sp_tokens = calculate_sp_tokens().await;
+    let strategy_address: Address = user_registered_strategy
+        .evm_contract_address
+        .unwrap()
+        .parse()?;
+
+    let escrow_signer_address = escrow_signer.address();
+    // we need to trade, not transfer, and then we need to call deposit on the strategy contract
+    let transaction = transfer_token_to_strategy_contract(
+        conn,
+        escrow_signer,
+        EscrowTransfer {
+            token: stablecoin,
+            amount: sp_tokens,
+            recipient: strategy_address,
+            owner: escrow_signer_address,
+        },
+        chain,
+        stablecoin_addresses,
+    )
+    .await?;
+    // TODO: need to trade deposit token for strategy's tokens and call "deposit" on the strategy contract wrapper
+    db.execute(FunUserBackStrategyReq {
+        user_id: ctx.user_id,
+        strategy_id: user_registered_strategy.strategy_id,
+        quantity: format!("{:?}", amount),
+        purchase_wallet: format!("{:?}", user_wallet_address),
+        blockchain: chain.to_string(),
+        transaction_hash: format!("{:?}", transaction.get_hash()),
+        earn_sp_tokens: format!("{:?}", sp_tokens),
+    })
+    .await?;
+    info!(
+        "Transfer token to strategy contract {:?}",
+        transaction.get_hash()
+    );
+
+    let _tx = Transaction::new_and_assume_ready(transaction.get_hash(), conn).await?;
+    Ok(())
+}
+
+pub struct MethodUserBackStrategy {
+    conn: EthereumRpcConnection,
+    stablecoin_addresses: StableoinAddresses,
+}
+impl RequestHandler for MethodUserBackStrategy {
+    type Request = UserBackStrategyRequest;
+    type Response = UserBackStrategyResponse;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        conn: Arc<Connection>,
+        req: Self::Request,
+    ) {
+        let db: DbClient = toolbox.get_db();
+        let conn = self.conn.clone();
+        let stablecoin_addresses = self.stablecoin_addresses.clone();
+        toolbox.spawn_response(ctx.clone(), async move {
+            ensure_user_role(&conn, EnumRole::User).await?;
+            let strategy = db
+                .execute(FunUserGetStrategyReq {
+                    strategy_id: req.strategy_id,
+                })
+                .await?
+                .into_result()
+                .with_context(|| CustomError::new(EnumErrorCode::NotFound, "strategy not found"))?;
+            let user_wallet_addr = todo!();
+            on_user_back_strategy(
+                &conn,
+                &ctx,
+                &db,
+                EnumBlockChain::from_str(&req.blockchain)?,
+                user_wallet_addr,
+                req.quantity.parse()?,
+                &stablecoin_addresses,
+                req.strategy_id,
+                strategy.strategy_pool_signer,
+                strategy.escrow_signer,
+                strategy.stablecoin,
+            )
+            .await?;
+            Ok(())
         })
     }
 }
@@ -1020,5 +1138,126 @@ impl RequestHandler for MethodUserListWalletActivityHistory {
                     .collect(),
             })
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use eth_sdk::mock_erc20::deploy_mock_erc20;
+    use eth_sdk::signer::Secp256k1SecretKey;
+    use eth_sdk::utils::setup_logs;
+    use eth_sdk::{EthereumRpcConnectionPool, EthereumToken};
+    use lib::database::{connect_to_database, drop_and_recreate_database, DatabaseConfig};
+    use lib::log::LogLevel;
+    use std::net::Ipv4Addr;
+
+    #[tokio::test]
+    async fn test_user_ethereum_back_strategy() -> Result<()> {
+        let _ = setup_logs(LogLevel::Info);
+        drop_and_recreate_database()?;
+        let user_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
+        let admin_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_2)?;
+        let escrow_key = Secp256k1SecretKey::new_random();
+        let conn_pool = EthereumRpcConnectionPool::localnet();
+        let conn = conn_pool.get_conn().await?;
+        let erc20_mock = deploy_mock_erc20(conn.get_raw().clone(), admin_key.clone()).await?;
+        erc20_mock
+            .mint(
+                &admin_key.key,
+                user_key.address,
+                U256::from(200000000000i64),
+            )
+            .await?;
+        let eth = EthereumToken::new2(conn.get_raw().clone());
+        eth.transfer(
+            admin_key.clone(),
+            escrow_key.address,
+            U256::from(1e18 as i64),
+        )
+        .await?;
+        let tx_hash = erc20_mock
+            .transfer(
+                &user_key.key,
+                escrow_key.address,
+                U256::from(20000000000i64),
+            )
+            .await?;
+        let db = connect_to_database(DatabaseConfig {
+            user: Some("postgres".to_string()),
+            password: Some("123456".to_string()),
+            dbname: Some("mc2fi".to_string()),
+            host: Some("localhost".to_string()),
+            ..Default::default()
+        })
+        .await?;
+        let ret = db
+            .execute(FunAuthSignupReq {
+                address: format!("{:?}", user_key.address),
+                email: "".to_string(),
+                phone: "".to_string(),
+                preferred_language: "".to_string(),
+                agreed_tos: true,
+                agreed_privacy: true,
+                ip_address: Ipv4Addr::new(127, 0, 0, 1).into(),
+                username: None,
+                age: None,
+                public_id: 1,
+            })
+            .await?
+            .into_result()
+            .context("No user signup resp")?;
+        let ctx = RequestContext {
+            connection_id: 0,
+            user_id: ret.user_id,
+            seq: 0,
+            method: 0,
+            log_id: 0,
+        };
+
+        let mut stablecoins = StableCoinAddresses::default();
+        stablecoins.inner.insert(
+            EnumBlockChain::EthereumGoerli,
+            vec![(StableCoin::Usdc, erc20_mock.address)],
+        );
+
+        // at this step, tx should be passed with quickalert
+        let tx = Transaction::new_and_assume_ready(tx_hash, &conn).await?;
+        on_user_deposit(
+            &conn,
+            &ctx,
+            &db,
+            EnumBlockChain::EthereumGoerli,
+            &tx,
+            &stablecoins,
+            &erc20_mock.contract.abi(),
+        )
+        .await?;
+
+        let strategy = db
+            .execute(FunUserCreateStrategyReq {
+                user_id: ctx.user_id,
+                name: "TEST".to_string(),
+                description: "TEST".to_string(),
+            })
+            .await?
+            .into_result()
+            .context("create strategy")?;
+
+        on_user_back_strategy(
+            &conn,
+            &ctx,
+            &db,
+            EnumBlockChain::EthereumGoerli,
+            user_key.address,
+            U256::from(1000),
+            &stablecoins,
+            strategy.strategy_id,
+            &admin_key.key,
+            &escrow_key.key,
+            StableCoin::Usdc,
+        )
+        .await?;
+        Ok(())
     }
 }

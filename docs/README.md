@@ -19,6 +19,7 @@ ID: 2
 |20061|UserListStrategies||strategies|User lists followed strategies|
 |20062|UserGetStrategy|strategy_id|strategy_id, strategy_name, strategy_description, creator_user_id, social_media, historical_return, inception_time, total_amount, token_allocation, reputation, risk_score, aum, net_value, followers, backers, watching_wallets, aum_history|User gets a strategy|
 |20070|UserGetStrategyStatistics|strategy_id|strategy_id, net_value, follow_history, back_history|User gets a strategy statistics|
+|20080|UserBackStrategy|strategy_id, quantity, blockchain|success||
 |20090|UserListBackedStrategies||strategies||
 |20100|UserListBackStrategyHistory||back_history||
 |20120|UserListExitStrategyHistory|strategy_id|exit_history||

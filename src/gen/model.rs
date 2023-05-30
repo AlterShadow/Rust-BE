@@ -788,6 +788,18 @@ pub struct UserApplyBecomeExpertResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct UserBackStrategyRequest {
+    pub strategy_id: i64,
+    pub quantity: String,
+    pub blockchain: String,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserBackStrategyResponse {
+    pub success: bool,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct UserCreateStrategyRequest {
     pub name: String,
     pub description: String,
