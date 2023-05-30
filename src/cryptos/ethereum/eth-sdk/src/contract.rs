@@ -100,7 +100,9 @@ impl<T: Transport> ContractDeployer<T> {
         let poll_interval = self.poll_interval;
         let max_retries = self.max_retries;
         let chain_id = Some(self.eth.chain_id().await?.as_u64());
-        let x = self
+        let eth = self.eth.clone();
+        let gas = self.options.gas;
+        let contract = self
             .do_execute(
                 self.code.as_deref().context("Code is not provided")?,
                 params,
@@ -109,7 +111,7 @@ impl<T: Transport> ContractDeployer<T> {
                     let tx = TransactionParameters {
                         nonce: tx.nonce,
                         to: tx.to,
-                        gas: tx.gas.unwrap_or_else(|| 1_000_000.into()),
+                        gas: gas.expect("No gas set"),
                         gas_price: tx.gas_price,
                         value: tx.value.unwrap_or_else(|| 0.into()),
                         data: tx
@@ -124,21 +126,14 @@ impl<T: Transport> ContractDeployer<T> {
                     let signed_tx = Accounts::new(transport.clone())
                         .sign_transaction(tx, signer)
                         .await?;
+
                     // TODO: buggy here
-                    let tx_hash = Eth::new(transport.clone())
-                        .send_raw_transaction(signed_tx.raw_transaction)
-                        .await?;
-                    wait_for_confirmations_simple(
-                        &Eth::new(transport),
-                        tx_hash,
-                        poll_interval,
-                        max_retries,
-                    )
-                    .await
+                    let tx_hash = eth.send_raw_transaction(signed_tx.raw_transaction).await?;
+                    wait_for_confirmations_simple(&eth, tx_hash, poll_interval, max_retries).await
                 },
             )
             .await?;
-        Ok(x)
+        Ok(contract)
     }
 
     async fn do_execute<P, V, Ft>(

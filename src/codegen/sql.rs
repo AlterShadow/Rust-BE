@@ -18,7 +18,7 @@ impl ToSql for Type {
             Type::Date => "int".to_owned(), // TODO: fix things
             Type::Int => "int".to_owned(),
             Type::BigInt => "bigint".to_owned(),
-            Type::Numeric => "real".to_owned(),
+            Type::Numeric => "double precision".to_owned(),
             Type::Struct { fields, .. } => {
                 let fields = fields
                     .iter()

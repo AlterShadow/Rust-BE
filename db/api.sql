@@ -351,11 +351,11 @@ RETURNS table (
     "strategy_id" bigint,
     "strategy_name" varchar,
     "strategy_description" varchar,
-    "net_value" real,
+    "net_value" double precision,
     "followers" int,
     "backers" int,
-    "risk_score" real,
-    "aum" real
+    "risk_score" double precision,
+    "aum" double precision
 )
 LANGUAGE plpgsql
 AS $$
@@ -382,11 +382,11 @@ RETURNS table (
     "strategy_id" bigint,
     "strategy_name" varchar,
     "strategy_description" varchar,
-    "net_value" real,
+    "net_value" double precision,
     "followers" int,
     "backers" int,
-    "risk_score" real,
-    "aum" real
+    "risk_score" double precision,
+    "aum" double precision
 )
 LANGUAGE plpgsql
 AS $$
@@ -413,11 +413,10 @@ RETURNS table (
     "strategy_id" bigint,
     "strategy_name" varchar,
     "strategy_description" varchar,
-    "net_value" real,
-    "followers" int,
-    "backers" int,
-    "risk_score" real,
-    "aum" real,
+    "followers" bigint,
+    "backers" bigint,
+    "risk_score" double precision,
+    "aum" double precision,
     "evm_contract_address" varchar
 )
 LANGUAGE plpgsql
@@ -427,7 +426,7 @@ BEGIN
     RETURN QUERY SELECT a.pkey_id AS strategy_id,
                           a.name AS strategy_name,
                           a.description AS strategy_description,
-                          NULL AS net_value,
+                          -- 0.0 AS net_value,
                           (SELECT COUNT(*) FROM tbl.user_follow_strategy WHERE fkey_strategy_id = a.pkey_id AND unfollowed = FALSE) AS followers,
                           (SELECT COUNT(DISTINCT user_back_strategy_history.fkey_user_id) FROM tbl.user_back_strategy_history WHERE fkey_strategy_id = a.pkey_id) AS followers,
                           a.risk_score as risk_score,
@@ -443,7 +442,7 @@ $$;
 CREATE OR REPLACE FUNCTION api.fun_user_get_strategy_statistics_net_value(a_strategy_id bigint)
 RETURNS table (
     "time" bigint,
-    "net_value" real
+    "net_value" double precision
 )
 LANGUAGE plpgsql
 AS $$
@@ -458,7 +457,7 @@ $$;
 CREATE OR REPLACE FUNCTION api.fun_user_get_strategy_statistics_follow_history(a_strategy_id bigint)
 RETURNS table (
     "time" bigint,
-    "follower_count" real
+    "follower_count" double precision
 )
 LANGUAGE plpgsql
 AS $$
@@ -473,8 +472,8 @@ $$;
 CREATE OR REPLACE FUNCTION api.fun_user_get_strategy_statistics_back_history(a_strategy_id bigint)
 RETURNS table (
     "time" bigint,
-    "backer_count" real,
-    "backer_quantity_usd" real
+    "backer_count" double precision,
+    "backer_quantity_usd" double precision
 )
 LANGUAGE plpgsql
 AS $$
@@ -546,11 +545,11 @@ RETURNS table (
     "strategy_id" bigint,
     "strategy_name" varchar,
     "strategy_description" varchar,
-    "net_value" real,
+    "net_value" double precision,
     "followers" int,
     "backers" int,
-    "risk_score" real,
-    "aum" real
+    "risk_score" double precision,
+    "aum" double precision
 )
 LANGUAGE plpgsql
 AS $$
@@ -697,9 +696,9 @@ RETURNS table (
     "follower_count" int,
     "description" varchar,
     "social_media" varchar,
-    "risk_score" real,
-    "reputation_score" real,
-    "aum" real
+    "risk_score" double precision,
+    "reputation_score" double precision,
+    "aum" double precision
 )
 LANGUAGE plpgsql
 AS $$
@@ -731,9 +730,9 @@ RETURNS table (
     "follower_count" int,
     "description" varchar,
     "social_media" varchar,
-    "risk_score" real,
-    "reputation_score" real,
-    "aum" real
+    "risk_score" double precision,
+    "reputation_score" double precision,
+    "aum" double precision
 )
 LANGUAGE plpgsql
 AS $$
@@ -760,9 +759,9 @@ RETURNS table (
     "follower_count" int,
     "description" varchar,
     "social_media" varchar,
-    "risk_score" real,
-    "reputation_score" real,
-    "aum" real
+    "risk_score" double precision,
+    "reputation_score" double precision,
+    "aum" double precision
 )
 LANGUAGE plpgsql
 AS $$
@@ -790,9 +789,9 @@ RETURNS table (
     "follower_count" int,
     "description" varchar,
     "social_media" varchar,
-    "risk_score" real,
-    "reputation_score" real,
-    "aum" real
+    "risk_score" double precision,
+    "reputation_score" double precision,
+    "aum" double precision
 )
 LANGUAGE plpgsql
 AS $$
@@ -866,9 +865,9 @@ RETURNS table (
     "follower_count" int,
     "description" varchar,
     "social_media" varchar,
-    "risk_score" real,
-    "reputation_score" real,
-    "aum" real
+    "risk_score" double precision,
+    "reputation_score" double precision,
+    "aum" double precision
 )
 LANGUAGE plpgsql
 AS $$
@@ -951,7 +950,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_add_strategy_watch_wallet(a_user_id bigint, a_strategy_id bigint, a_wallet_address varchar, a_blockchain varchar, a_ratio real, a_dex varchar)
+CREATE OR REPLACE FUNCTION api.fun_user_add_strategy_watch_wallet(a_user_id bigint, a_strategy_id bigint, a_wallet_address varchar, a_blockchain varchar, a_ratio double precision, a_dex varchar)
 RETURNS table (
     "success" boolean,
     "watch_wallet_id" bigint
@@ -995,7 +994,7 @@ RETURNS table (
     "watch_wallet_id" bigint,
     "wallet_address" varchar,
     "blockchain" varchar,
-    "ratio" real
+    "ratio" double precision
 )
 LANGUAGE plpgsql
 AS $$

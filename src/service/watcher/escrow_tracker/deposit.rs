@@ -1,13 +1,14 @@
+use crate::contract_wrappers::escrow::EscrowContract;
+use crate::contract_wrappers::strategy_pool::StrategyPoolContract;
 use crate::escrow_tracker::escrow::{parse_escrow, EscrowTransfer};
 use crate::escrow_tracker::StableCoinAddresses;
-
+use crate::evm::StableCoin;
 use eth_sdk::*;
 use eyre::*;
 use gen::database::*;
 use gen::model::EnumBlockChain;
 use lib::database::DbClient;
 use lib::toolbox::RequestContext;
-
 use tracing::info;
 use web3::ethabi::Contract;
 use web3::signing::Key;
@@ -63,7 +64,6 @@ pub async fn on_user_back_strategy(
     user_wallet_address: Address,
     amount: U256,
     stablecoin_addresses: &StableCoinAddresses,
-    strategy_factory_address: Address,
     strategy_id: i64,
     strategy_pool_signer: impl Key,
     escrow_signer: impl Key,
@@ -75,15 +75,14 @@ pub async fn on_user_back_strategy(
         .into_result()
         .context("user_registered_strategy")?;
     if user_registered_strategy.evm_contract_address.is_none() {
-        let address = deploy_strategy_contract(
+        let contract = deploy_strategy_contract(
             &conn,
-            strategy_factory_address,
             strategy_pool_signer,
-            "name".to_string(),
-            "token".to_string(),
+            user_registered_strategy.strategy_name.clone(),
+            user_registered_strategy.strategy_name, // strategy symbol
         )
         .await?;
-        user_registered_strategy.evm_contract_address = Some(format!("{:?}", address));
+        user_registered_strategy.evm_contract_address = Some(format!("{:?}", contract.address()));
     }
     let sp_tokens = calculate_sp_tokens().await;
     let strategy_address: Address = user_registered_strategy
@@ -133,25 +132,23 @@ pub async fn calculate_sp_tokens() -> U256 {
 use crate::contract_wrappers::strategy_pool_factory::StrategyPoolFactoryContract;
 pub async fn deploy_strategy_contract(
     conn: &EthereumRpcConnection,
-    factory_address: Address,
     key: impl Key,
     strategy_token_name: String,
     strategy_token_symbol: String,
-) -> Result<Address> {
+) -> Result<StrategyPoolContract<EitherTransport>> {
     info!("Deploying strategy contract");
 
-    let factory = StrategyPoolFactoryContract::new(conn.clone().into_raw(), factory_address)?;
-
-    let address = factory
-        .create_pool(key, strategy_token_name, strategy_token_symbol)
-        .await?;
+    let strategy = StrategyPoolContract::deploy(
+        conn.clone().into_raw(),
+        key,
+        strategy_token_name,
+        strategy_token_symbol,
+    )
+    .await?;
 
     info!("Deploy strategy contract success");
-    Ok(address)
+    Ok(strategy)
 }
-
-use crate::contract_wrappers::escrow::EscrowContract;
-use crate::evm::StableCoin;
 
 pub async fn transfer_token_to_strategy_contract(
     conn: &EthereumRpcConnection,
@@ -165,17 +162,17 @@ pub async fn transfer_token_to_strategy_contract(
         "Transferring token from {:?} to strategy contract {:?}",
         escrow.owner, escrow.recipient
     );
-    let escrow_address = stablecoin_addresses
+    let token_address = stablecoin_addresses
         .get_by_chain_and_token(chain, escrow.token)
         .context("Could not find stablecoin address")?;
-    let escrow_contract = EscrowContract::new(conn.clone().into_raw().eth(), escrow_address)?;
+    let escrow_contract = EscrowContract::new(conn.clone().into_raw().eth(), escrow.owner)?;
 
     let signer_address = signer.address();
     let tx_hash = escrow_contract
         .transfer_token_to(
             signer,
             signer_address,
-            escrow.owner,
+            token_address,
             escrow.recipient,
             escrow.amount,
         )
@@ -353,9 +350,6 @@ mod tests {
             &erc20_mock.contract.abi(),
         )
         .await?;
-        // TODO: deploy strategy address
-        let strategy_factory =
-            StrategyPoolFactoryContract::deploy(conn.get_raw().clone(), admin_key.clone()).await?;
 
         let strategy = db
             .execute(FunUserCreateStrategyReq {
@@ -375,7 +369,6 @@ mod tests {
             user_key.address,
             U256::from(1000),
             &stablecoins,
-            strategy_factory.address(),
             strategy.strategy_id,
             &admin_key.key,
             &escrow_key.key,

@@ -22,7 +22,7 @@ impl ToRust for Type {
             Type::Date => "u32".to_owned(), // TODO: resolve date
             Type::Int => "i32".to_owned(),
             Type::BigInt => "i64".to_owned(),
-            Type::Numeric => "f32".to_owned(),
+            Type::Numeric => "f64".to_owned(),
             Type::Struct { name, .. } => name.clone(),
             Type::StructRef(name) => name.clone(),
             Type::Object => "serde_json::Value".to_owned(),

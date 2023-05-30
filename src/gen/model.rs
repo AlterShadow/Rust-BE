@@ -594,11 +594,11 @@ pub struct AumHistoryRow {
     pub dex: String,
     pub action: String,
     pub wallet_address: String,
-    pub price: f32,
-    pub current_price: f32,
-    pub quantity: f32,
-    pub yield_7d: f32,
-    pub yield_30d: f32,
+    pub price: f64,
+    pub current_price: f64,
+    pub quantity: f64,
+    pub yield_7d: f64,
+    pub yield_30d: f64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -618,8 +618,8 @@ pub struct AuthorizeResponse {
 #[serde(rename_all = "camelCase")]
 pub struct BackHistoryPoint {
     pub time: i64,
-    pub backer_count: f32,
-    pub backer_quantity_usd: f32,
+    pub backer_count: f64,
+    pub backer_quantity_usd: f64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -648,7 +648,7 @@ pub struct ExitStrategyHistoryRow {
 #[serde(rename_all = "camelCase")]
 pub struct FollowHistoryPoint {
     pub time: i64,
-    pub follower_count: f32,
+    pub follower_count: f64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -658,9 +658,9 @@ pub struct ListExpertsRow {
     pub follower_count: i32,
     pub description: String,
     pub social_media: String,
-    pub risk_score: f32,
-    pub reputation_score: f32,
-    pub aum: f32,
+    pub risk_score: f64,
+    pub reputation_score: f64,
+    pub aum: f64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -670,9 +670,9 @@ pub struct ListPendingExpertApplicationsRow {
     pub follower_count: i32,
     pub description: String,
     pub social_media: String,
-    pub risk_score: f32,
-    pub reputation_score: f32,
-    pub aum: f32,
+    pub risk_score: f64,
+    pub reputation_score: f64,
+    pub aum: f64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -680,11 +680,11 @@ pub struct ListStrategiesRow {
     pub strategy_id: i64,
     pub strategy_name: String,
     pub strategy_description: String,
-    pub net_value: f32,
+    pub net_value: f64,
     pub followers: i32,
     pub backers: i32,
-    pub risk_score: f32,
-    pub aum: f32,
+    pub risk_score: f64,
+    pub aum: f64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -692,7 +692,7 @@ pub struct ListStrategyWatchingWalletsRow {
     pub wallet_id: i64,
     pub blockchain: String,
     pub wallet_address: String,
-    pub ratio: f32,
+    pub ratio: f64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -743,7 +743,7 @@ pub struct LoginResponse {
 #[serde(rename_all = "camelCase")]
 pub struct NetValuePoint {
     pub time: i64,
-    pub net_value: f32,
+    pub net_value: f64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -770,7 +770,7 @@ pub struct UserAddStrategyWatchingWalletRequest {
     pub strategy_id: i64,
     pub blockchain: String,
     pub wallet_address: String,
-    pub ratio: f32,
+    pub ratio: f64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -841,9 +841,9 @@ pub struct UserGetExpertProfileResponse {
     pub follower_count: i32,
     pub description: String,
     pub social_media: String,
-    pub risk_score: f32,
-    pub reputation_score: f32,
-    pub aum: f32,
+    pub risk_score: f64,
+    pub reputation_score: f64,
+    pub aum: f64,
     pub strategies: Vec<ListStrategiesRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -859,14 +859,14 @@ pub struct UserGetStrategyResponse {
     pub strategy_description: String,
     pub creator_user_id: i64,
     pub social_media: String,
-    pub historical_return: f32,
+    pub historical_return: f64,
     pub inception_time: i64,
-    pub total_amount: f32,
+    pub total_amount: f64,
     pub token_allocation: i64,
     pub reputation: i32,
-    pub risk_score: f32,
-    pub aum: f32,
-    pub net_value: f32,
+    pub risk_score: f64,
+    pub aum: f64,
+    pub net_value: f64,
     pub followers: i32,
     pub backers: i32,
     pub watching_wallets: Vec<WatchingWalletRow>,
@@ -1045,11 +1045,11 @@ pub struct UserUpdateStrategyRequest {
     #[serde(default)]
     pub social_media: Option<String>,
     #[serde(default)]
-    pub risk_score: Option<f32>,
+    pub risk_score: Option<f64>,
     #[serde(default)]
-    pub reputation_score: Option<f32>,
+    pub reputation_score: Option<f64>,
     #[serde(default)]
-    pub aum: Option<f32>,
+    pub aum: Option<f64>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1063,5 +1063,5 @@ pub struct WatchingWalletRow {
     pub wallet_address: String,
     pub blockchain: String,
     pub dex: String,
-    pub ratio_distribution: f32,
+    pub ratio_distribution: f64,
 }

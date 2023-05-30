@@ -340,11 +340,11 @@ pub struct FunUserListFollowedStrategiesRespRow {
     pub strategy_id: i64,
     pub strategy_name: String,
     pub strategy_description: String,
-    pub net_value: f32,
+    pub net_value: f64,
     pub followers: i32,
     pub backers: i32,
-    pub risk_score: f32,
-    pub aum: f32,
+    pub risk_score: f64,
+    pub aum: f64,
 }
 
 #[allow(unused_variables)]
@@ -378,11 +378,11 @@ pub struct FunUserListStrategiesRespRow {
     pub strategy_id: i64,
     pub strategy_name: String,
     pub strategy_description: String,
-    pub net_value: f32,
+    pub net_value: f64,
     pub followers: i32,
     pub backers: i32,
-    pub risk_score: f32,
-    pub aum: f32,
+    pub risk_score: f64,
+    pub aum: f64,
 }
 
 #[allow(unused_variables)]
@@ -418,11 +418,12 @@ pub struct FunUserGetStrategyRespRow {
     pub strategy_id: i64,
     pub strategy_name: String,
     pub strategy_description: String,
-    pub net_value: f32,
-    pub followers: i32,
-    pub backers: i32,
-    pub risk_score: f32,
-    pub aum: f32,
+    pub followers: i64,
+    pub backers: i64,
+    #[serde(default)]
+    pub risk_score: Option<f64>,
+    #[serde(default)]
+    pub aum: Option<f64>,
     #[serde(default)]
     pub evm_contract_address: Option<String>,
 }
@@ -441,12 +442,11 @@ impl DatabaseRequest for FunUserGetStrategyReq {
             strategy_id: row.try_get(0)?,
             strategy_name: row.try_get(1)?,
             strategy_description: row.try_get(2)?,
-            net_value: row.try_get(3)?,
-            followers: row.try_get(4)?,
-            backers: row.try_get(5)?,
-            risk_score: row.try_get(6)?,
-            aum: row.try_get(7)?,
-            evm_contract_address: row.try_get(8)?,
+            followers: row.try_get(3)?,
+            backers: row.try_get(4)?,
+            risk_score: row.try_get(5)?,
+            aum: row.try_get(6)?,
+            evm_contract_address: row.try_get(7)?,
         };
         Ok(r)
     }
@@ -459,7 +459,7 @@ pub struct FunUserGetStrategyStatisticsNetValueReq {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserGetStrategyStatisticsNetValueRespRow {
     pub time: i64,
-    pub net_value: f32,
+    pub net_value: f64,
 }
 
 #[allow(unused_variables)]
@@ -487,7 +487,7 @@ pub struct FunUserGetStrategyStatisticsFollowHistoryReq {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserGetStrategyStatisticsFollowHistoryRespRow {
     pub time: i64,
-    pub follower_count: f32,
+    pub follower_count: f64,
 }
 
 #[allow(unused_variables)]
@@ -515,8 +515,8 @@ pub struct FunUserGetStrategyStatisticsBackHistoryReq {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserGetStrategyStatisticsBackHistoryRespRow {
     pub time: i64,
-    pub backer_count: f32,
-    pub backer_quantity_usd: f32,
+    pub backer_count: f64,
+    pub backer_quantity_usd: f64,
 }
 
 #[allow(unused_variables)]
@@ -627,11 +627,11 @@ pub struct FunUserListBackedStrategiesRespRow {
     pub strategy_id: i64,
     pub strategy_name: String,
     pub strategy_description: String,
-    pub net_value: f32,
+    pub net_value: f64,
     pub followers: i32,
     pub backers: i32,
-    pub risk_score: f32,
-    pub aum: f32,
+    pub risk_score: f64,
+    pub aum: f64,
 }
 
 #[allow(unused_variables)]
@@ -859,9 +859,9 @@ pub struct FunUserListFollowedExpertsRespRow {
     pub follower_count: i32,
     pub description: String,
     pub social_media: String,
-    pub risk_score: f32,
-    pub reputation_score: f32,
-    pub aum: f32,
+    pub risk_score: f64,
+    pub reputation_score: f64,
+    pub aum: f64,
 }
 
 #[allow(unused_variables)]
@@ -897,9 +897,9 @@ pub struct FunUserListExpertsRespRow {
     pub follower_count: i32,
     pub description: String,
     pub social_media: String,
-    pub risk_score: f32,
-    pub reputation_score: f32,
-    pub aum: f32,
+    pub risk_score: f64,
+    pub reputation_score: f64,
+    pub aum: f64,
 }
 
 #[allow(unused_variables)]
@@ -937,9 +937,9 @@ pub struct FunUserGetExpertProfileRespRow {
     pub follower_count: i32,
     pub description: String,
     pub social_media: String,
-    pub risk_score: f32,
-    pub reputation_score: f32,
-    pub aum: f32,
+    pub risk_score: f64,
+    pub reputation_score: f64,
+    pub aum: f64,
 }
 
 #[allow(unused_variables)]
@@ -977,9 +977,9 @@ pub struct FunUserGetUserProfileRespRow {
     pub follower_count: i32,
     pub description: String,
     pub social_media: String,
-    pub risk_score: f32,
-    pub reputation_score: f32,
-    pub aum: f32,
+    pub risk_score: f64,
+    pub reputation_score: f64,
+    pub aum: f64,
 }
 
 #[allow(unused_variables)]
@@ -1101,9 +1101,9 @@ pub struct FunAdminListPendingUserExpertApplicationsRespRow {
     pub follower_count: i32,
     pub description: String,
     pub social_media: String,
-    pub risk_score: f32,
-    pub reputation_score: f32,
-    pub aum: f32,
+    pub risk_score: f64,
+    pub reputation_score: f64,
+    pub aum: f64,
 }
 
 #[allow(unused_variables)]
@@ -1245,7 +1245,7 @@ pub struct FunUserAddStrategyWatchWalletReq {
     pub strategy_id: i64,
     pub wallet_address: String,
     pub blockchain: String,
-    pub ratio: f32,
+    pub ratio: f64,
     pub dex: String,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1258,7 +1258,7 @@ pub struct FunUserAddStrategyWatchWalletRespRow {
 impl DatabaseRequest for FunUserAddStrategyWatchWalletReq {
     type ResponseRow = FunUserAddStrategyWatchWalletRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_add_strategy_watch_wallet(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_wallet_address => $3::varchar, a_blockchain => $4::varchar, a_ratio => $5::real, a_dex => $6::varchar);"
+        "SELECT * FROM api.fun_user_add_strategy_watch_wallet(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_wallet_address => $3::varchar, a_blockchain => $4::varchar, a_ratio => $5::double precision, a_dex => $6::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -1318,7 +1318,7 @@ pub struct FunUserListStrategyWatchWalletsRespRow {
     pub watch_wallet_id: i64,
     pub wallet_address: String,
     pub blockchain: String,
-    pub ratio: f32,
+    pub ratio: f64,
 }
 
 #[allow(unused_variables)]
