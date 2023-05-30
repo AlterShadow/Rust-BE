@@ -215,7 +215,7 @@ impl<T: Transport> ContractDeployer<T> {
     }
 }
 
-#[cfg(test)]
+// #[cfg(test)]
 /// only valid in unit test
 pub fn get_project_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))

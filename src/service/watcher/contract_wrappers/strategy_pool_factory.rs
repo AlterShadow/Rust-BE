@@ -1,17 +1,10 @@
-use eth_sdk::contract::{get_project_root, read_abi_from_solc_output, ContractDeployer};
-use eth_sdk::erc20::Erc20Token;
+use eth_sdk::contract::{read_abi_from_solc_output, ContractDeployer};
 use eth_sdk::utils::wait_for_confirmations_simple;
 use eyre::*;
-use futures::StreamExt;
-use serde_json::json;
-use std::env::current_dir;
-use std::str::FromStr;
 use std::time::Duration;
-use tracing::instrument::WithSubscriber;
-use web3::api::{Eth, Namespace};
 use web3::contract::{Contract, Options};
 use web3::signing::Key;
-use web3::types::{Address, BlockNumber, FilterBuilder, H256, U256};
+use web3::types::{Address, H256, U256};
 use web3::{Transport, Web3};
 
 const FACTORY_ABI_JSON: &str = include_str!("../../../../abi/internal/strategy_pool_factory.json");
@@ -25,7 +18,10 @@ pub struct StrategyPoolFactoryContract<T: Transport> {
 impl<T: Transport> StrategyPoolFactoryContract<T> {
     #[cfg(test)]
     pub async fn deploy(w3: Web3<T>, key: impl Key) -> Result<Self> {
-        let base = get_project_root().parent().unwrap().to_owned();
+        let base = eth_sdk::contract::get_project_root()
+            .parent()
+            .unwrap()
+            .to_owned();
 
         let abi_json = read_abi_from_solc_output(
             &base.join("app.mc2.fi-solidity/out/StrategyPoolFactory.sol/StrategyPoolFactory.json"),
@@ -57,7 +53,7 @@ impl<T: Transport> StrategyPoolFactoryContract<T> {
         name: String,
         symbol: String,
     ) -> Result<Address> {
-        let index = self.get_pools().await?.len();
+        let index = U256::from(self.get_pools().await?.len());
         let params = (index, name, symbol);
         let estimated_gas = self
             .contract

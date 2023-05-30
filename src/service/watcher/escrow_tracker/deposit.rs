@@ -1,13 +1,13 @@
 use crate::escrow_tracker::escrow::{parse_escrow, EscrowTransfer};
 use crate::escrow_tracker::StableCoinAddresses;
-use eth_sdk::utils::wait_for_confirmations_simple;
+
 use eth_sdk::*;
 use eyre::*;
 use gen::database::*;
 use gen::model::EnumBlockChain;
 use lib::database::DbClient;
 use lib::toolbox::RequestContext;
-use std::time::Duration;
+
 use tracing::info;
 use web3::ethabi::Contract;
 use web3::signing::Key;
@@ -140,13 +140,10 @@ pub async fn deploy_strategy_contract(
 ) -> Result<Address> {
     info!("Deploying strategy contract");
 
-    let factory = StrategyPoolFactoryContract::new(conn.clone().into_raw().eth(), factory_address)?;
+    let factory = StrategyPoolFactoryContract::new(conn.clone().into_raw(), factory_address)?;
 
     let address = factory
         .create_pool(key, strategy_token_name, strategy_token_symbol)
-        .await?;
-
-    wait_for_confirmations_simple(&conn.get_raw().eth(), tx_hash, Duration::from_secs(1), 15)
         .await?;
 
     info!("Deploy strategy contract success");
@@ -198,7 +195,6 @@ mod tests {
     use lib::database::{connect_to_database, drop_and_recreate_database, DatabaseConfig};
     use lib::log::{setup_logs, LogLevel};
     use std::net::Ipv4Addr;
-    use std::str::FromStr;
 
     const ANVIL_PRIV_KEY_1: &str =
         "ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
@@ -256,6 +252,7 @@ mod tests {
                 ip_address: Ipv4Addr::new(127, 0, 0, 1).into(),
                 username: None,
                 age: None,
+                public_id: 1,
             })
             .await?
             .into_result()
@@ -325,6 +322,7 @@ mod tests {
                 ip_address: Ipv4Addr::new(127, 0, 0, 1).into(),
                 username: None,
                 age: None,
+                public_id: 1,
             })
             .await?
             .into_result()
@@ -357,7 +355,7 @@ mod tests {
         .await?;
         // TODO: deploy strategy address
         let strategy_factory =
-            StrategyPoolFactoryContract::deploy(conn.get_raw().eth(), admin_key.clone()).await?;
+            StrategyPoolFactoryContract::deploy(conn.get_raw().clone(), admin_key.clone()).await?;
 
         let strategy = db
             .execute(FunUserCreateStrategyReq {
