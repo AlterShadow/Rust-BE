@@ -21,7 +21,7 @@ struct CliArgument {
     )]
     config: PathBuf,
     /// The path to config file
-    #[clap(short, long)]
+    #[clap(long)]
     config_entry: Option<String>,
 }
 

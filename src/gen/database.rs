@@ -89,7 +89,7 @@ impl DatabaseRequest for FunAuthAuthenticateReq {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAuthSetTokenReq {
-    pub public_user_id: i64,
+    pub user_id: i64,
     pub user_token: uuid::Uuid,
     pub admin_token: uuid::Uuid,
     pub service_code: i32,
@@ -101,11 +101,11 @@ pub struct FunAuthSetTokenRespRow {}
 impl DatabaseRequest for FunAuthSetTokenReq {
     type ResponseRow = FunAuthSetTokenRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_auth_set_token(a_public_user_id => $1::bigint, a_user_token => $2::uuid, a_admin_token => $3::uuid, a_service_code => $4::int);"
+        "SELECT * FROM api.fun_auth_set_token(a_user_id => $1::bigint, a_user_token => $2::uuid, a_admin_token => $3::uuid, a_service_code => $4::int);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
-            &self.public_user_id as &(dyn ToSql + Sync),
+            &self.user_id as &(dyn ToSql + Sync),
             &self.user_token as &(dyn ToSql + Sync),
             &self.admin_token as &(dyn ToSql + Sync),
             &self.service_code as &(dyn ToSql + Sync),

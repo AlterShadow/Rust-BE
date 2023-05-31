@@ -153,7 +153,7 @@ impl RequestHandler for MethodAuthLogin {
             let admin_token = Uuid::new_v4();
             db_auth
                 .execute(FunAuthSetTokenReq {
-                    public_user_id: row.user_id,
+                    user_id: row.user_id,
                     user_token,
                     admin_token,
                     service_code: service_code as _,
