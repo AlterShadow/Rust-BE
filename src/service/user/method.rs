@@ -422,10 +422,10 @@ pub async fn on_user_back_strategy(
 }
 
 pub struct MethodUserBackStrategy {
-    conn: EthereumRpcConnection,
-    stablecoin_addresses: Arc<StableCoinAddresses>,
-    strategy_pool_signer: Arc<Secp256k1SecretKey>,
-    escrow_signer: Arc<Secp256k1SecretKey>,
+    pub conn: EthereumRpcConnection,
+    pub stablecoin_addresses: Arc<StableCoinAddresses>,
+    pub strategy_pool_signer: Arc<Secp256k1SecretKey>,
+    pub escrow_signer: Arc<Secp256k1SecretKey>,
 }
 impl RequestHandler for MethodUserBackStrategy {
     type Request = UserBackStrategyRequest;

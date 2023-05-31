@@ -4,6 +4,8 @@ use eyre::*;
 
 use crate::endpoints::*;
 use crate::method::*;
+use eth_sdk::signer::Secp256k1SecretKey;
+use eth_sdk::EthereumRpcConnectionPool;
 use gen::model::EnumService;
 use lib::config::{load_config, WsServerConfig};
 use lib::database::{connect_to_database, DatabaseConfig};
@@ -13,6 +15,7 @@ use mc2_fi::endpoints::endpoint_auth_authorize;
 use mc2_fi::method::MethodAuthAuthorize;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
+use std::sync::Arc;
 
 pub mod endpoints;
 
@@ -20,6 +23,7 @@ pub mod endpoints;
 pub struct Config {
     pub app_db: DatabaseConfig,
     pub auth_db: DatabaseConfig,
+    pub eth_provider_url: String,
     #[serde(default)]
     pub log_level: LogLevel,
     #[serde(flatten)]
@@ -119,6 +123,16 @@ async fn main() -> Result<()> {
     server.add_handler(
         endpoint_user_list_wallet_activity_history(),
         MethodUserListWalletActivityHistory,
+    );
+    let eth_pool = EthereumRpcConnectionPool::new(config.eth_provider_url.to_string(), 10)?;
+    server.add_handler(
+        endpoint_user_back_strategy(),
+        MethodUserBackStrategy {
+            conn: eth_pool.get_conn().await?.to_owned(),
+            stablecoin_addresses: Arc::new(Default::default()),
+            strategy_pool_signer: Arc::new(Secp256k1SecretKey::new_random()),
+            escrow_signer: Arc::new(Secp256k1SecretKey::new_random()),
+        },
     );
     server.listen().await?;
     Ok(())
