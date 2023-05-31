@@ -170,7 +170,6 @@ CREATE TABLE tbl.user_back_strategy_history (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_user_back_strategy_history_id'),
     fkey_user_id bigint  NOT NULL,
     fkey_strategy_id bigint  NOT NULL,
-    purchase_wallet varchar(64)  NOT NULL,
     blockchain varchar(20)  NOT NULL,
     transaction_hash varchar(80)  NOT NULL,
     quantity varchar(64)  NOT NULL,

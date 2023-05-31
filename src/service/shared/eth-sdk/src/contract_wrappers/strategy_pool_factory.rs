@@ -1,5 +1,5 @@
-use eth_sdk::contract::{read_abi_from_solc_output, ContractDeployer};
-use eth_sdk::utils::wait_for_confirmations_simple;
+use crate::contract::{get_project_root, read_abi_from_solc_output, ContractDeployer};
+use crate::utils::wait_for_confirmations_simple;
 use eyre::*;
 use std::time::Duration;
 use web3::contract::{Contract, Options};
@@ -7,7 +7,8 @@ use web3::signing::Key;
 use web3::types::{Address, H256, U256};
 use web3::{Transport, Web3};
 
-const FACTORY_ABI_JSON: &str = include_str!("../../../../abi/internal/strategy_pool_factory.json");
+const FACTORY_ABI_JSON: &str =
+    include_str!("../../../../../../abi/internal/strategy_pool_factory.json");
 
 #[derive(Debug, Clone)]
 pub struct StrategyPoolFactoryContract<T: Transport> {
@@ -16,12 +17,9 @@ pub struct StrategyPoolFactoryContract<T: Transport> {
 }
 
 impl<T: Transport> StrategyPoolFactoryContract<T> {
-    #[cfg(test)]
+    // #[cfg(test)]
     pub async fn deploy(w3: Web3<T>, key: impl Key) -> Result<Self> {
-        let base = eth_sdk::contract::get_project_root()
-            .parent()
-            .unwrap()
-            .to_owned();
+        let base = get_project_root().parent().unwrap().to_owned();
 
         let abi_json = read_abi_from_solc_output(
             &base.join("app.mc2.fi-solidity/out/StrategyPoolFactory.sol/StrategyPoolFactory.json"),

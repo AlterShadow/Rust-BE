@@ -5,7 +5,7 @@ use crate::evm::AppState;
 use axum::{body::Body, routing::post, Router};
 use axum_server::tls_rustls::RustlsConfig;
 use eth_sdk::erc20::build_erc_20;
-use eth_sdk::EthereumRpcConnectionPool;
+use eth_sdk::{DexAddresses, EthereumRpcConnectionPool, StableCoinAddresses};
 use eyre::*;
 use lib::config::load_config;
 use lib::database::{connect_to_database, DatabaseConfig};
@@ -14,7 +14,6 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tracing::*;
 
-pub mod contract_wrappers;
 pub mod dex_tracker;
 pub mod escrow_tracker;
 pub mod evm;

@@ -189,7 +189,7 @@ pub fn public_key_address(public_key: &secp256k1::PublicKey) -> Address {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::utils::{eth_public_exponent_to_address, setup_logs};
+    use crate::utils::eth_public_exponent_to_address;
     use web3::signing::{keccak256, Key};
 
     #[test]
@@ -204,7 +204,6 @@ mod test {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_btc_sign_messages() -> Result<()> {
-        setup_logs()?;
         let key_owned = Secp256k1SecretKey::new_random();
         let msg = keccak256(b"hello world");
         // let sig2 = key2.sign_message(&msg)?;
@@ -216,7 +215,6 @@ mod test {
     }
     #[tokio::test(flavor = "multi_thread")]
     async fn test_sign_messages() -> Result<()> {
-        setup_logs()?;
         let key = Secp256k1SecretKey::new_random();
         // println!("Private key {}", hex::encode(key.private_key()?.content));
         // let key2 = &SecretKey::from_slice(&key.private_exponent()?.content)?;

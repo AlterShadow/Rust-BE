@@ -1,15 +1,15 @@
 use crate::dex_tracker::pancake::build_pancake_swap;
-use crate::dex_tracker::{DexAddresses, PancakeSwap};
-use crate::escrow_tracker::StableCoinAddresses;
+use crate::dex_tracker::PancakeSwap;
 use bytes::Bytes;
 use eth_sdk::erc20::build_erc_20;
-use eth_sdk::{ContractCall, EthereumRpcConnectionPool, TransactionReady};
+use eth_sdk::{
+    ContractCall, DexAddresses, EthereumRpcConnectionPool, StableCoinAddresses, TransactionReady,
+};
 use eyre::*;
 use gen::database::{FunWatcherSaveRawTransactionReq, FunWatcherSaveWalletActivityHistoryReq};
 use gen::model::{EnumBlockChain, EnumDex, EnumDexVersion};
 use lib::database::DbClient;
 use serde::{Deserialize, Serialize};
-
 use tracing::error;
 use web3::ethabi::Contract;
 use web3::types::{H160, H256, U256};
@@ -34,13 +34,6 @@ impl AppState {
         })
     }
 }
-#[derive(Clone, Copy, Debug, Hash, Eq, PartialEq)]
-pub enum StableCoin {
-    Usdc,
-    Usdt,
-    Busd,
-}
-
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum DexPath {
     /* every path for every token_in token_out pair in every dex in every chain must be recorded in the database */

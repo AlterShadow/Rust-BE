@@ -1,13 +1,11 @@
-use crate::contract_wrappers::strategy_pool_factory::StrategyPoolFactoryContract;
-use eth_sdk::contract::{read_abi_from_solc_output, ContractDeployer};
+use crate::contract::{read_abi_from_solc_output, ContractDeployer};
 use eyre::*;
-use std::time::Duration;
 use web3::contract::{Contract, Options};
 use web3::signing::Key;
-use web3::types::{Address, H256, U256};
+use web3::types::Address;
 use web3::{Transport, Web3};
 
-const POOL_ABI_JSON: &str = include_str!("../../../../abi/internal/strategy_pool.json");
+const POOL_ABI_JSON: &str = include_str!("../../../../../../abi/internal/strategy_pool.json");
 
 #[derive(Debug, Clone)]
 pub struct StrategyPoolContract<T: Transport> {
@@ -16,9 +14,9 @@ pub struct StrategyPoolContract<T: Transport> {
 }
 
 impl<T: Transport> StrategyPoolContract<T> {
-    #[cfg(test)]
+    // only for testing
     pub async fn deploy(w3: Web3<T>, key: impl Key, name: String, symbol: String) -> Result<Self> {
-        let base = eth_sdk::contract::get_project_root()
+        let base = crate::contract::get_project_root()
             .parent()
             .unwrap()
             .to_owned();

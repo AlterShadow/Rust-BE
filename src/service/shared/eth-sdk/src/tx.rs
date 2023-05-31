@@ -16,7 +16,7 @@ pub enum TxStatus {
 }
 
 #[derive(Clone, Debug)]
-pub struct Transaction {
+pub struct TransactionFetcher {
     hash: H256,
     transaction: Option<Web3Transaction>,
     receipt: Option<TransactionReceipt>,
@@ -24,7 +24,7 @@ pub struct Transaction {
     // TODO: add field: EnumBlockchain
 }
 
-impl Transaction {
+impl TransactionFetcher {
     pub fn new(hash: H256) -> Self {
         Self {
             hash,

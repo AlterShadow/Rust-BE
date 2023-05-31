@@ -1,20 +1,9 @@
-use crate::escrow_tracker::StableCoinAddresses;
-use crate::evm::StableCoin;
-use eth_sdk::{ContractCall, TransactionReady};
+use eth_sdk::{ContractCall, EscrowTransfer, StableCoin, StableCoinAddresses, TransactionReady};
 use eyre::*;
 use gen::model::EnumBlockChain;
-
 use tracing::info;
 use web3::ethabi::Contract;
 use web3::types::{H160, U256};
-
-#[derive(Clone, Debug)]
-pub struct EscrowTransfer {
-    pub token: StableCoin,
-    pub amount: U256,
-    pub recipient: H160,
-    pub owner: H160,
-}
 
 fn get_method_by_name(name: &str) -> Option<Erc20Method> {
     match name {
@@ -115,9 +104,8 @@ pub fn parse_escrow(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::escrow_tracker::escrow::{parse_escrow, StableCoinAddresses};
     use eth_sdk::erc20::build_erc_20;
-    use eth_sdk::{EthereumRpcConnectionPool, Transaction};
+    use eth_sdk::{EthereumRpcConnectionPool, StableCoinAddresses, TransactionFetcher};
     use gen::model::EnumBlockChain;
     use lib::log::{setup_logs, LogLevel};
     use tracing::info;
@@ -128,7 +116,7 @@ mod tests {
 
         let conn_pool = EthereumRpcConnectionPool::mainnet();
         let conn = conn_pool.get_conn().await?;
-        let tx = Transaction::new_and_assume_ready(
+        let tx = TransactionFetcher::new_and_assume_ready(
             "0x977939d69a0826a6ef1e94ccfe76a2c2d87bac1d3fce53669b5c637435fd23c1".parse()?,
             &conn,
         )
@@ -148,7 +136,7 @@ mod tests {
         let _ = setup_logs(LogLevel::Trace);
         let conn_pool = EthereumRpcConnectionPool::mainnet();
         let conn = conn_pool.get_conn().await?;
-        let tx = Transaction::new_and_assume_ready(
+        let tx = TransactionFetcher::new_and_assume_ready(
             "0x1f716239290641ad0121814df498e5e04c3759bf6d22c9c89a6aa5175a3ce4c6".parse()?,
             &conn,
         )
@@ -169,7 +157,7 @@ mod tests {
         let _ = setup_logs(LogLevel::Trace);
         let conn_pool = EthereumRpcConnectionPool::mainnet();
         let conn = conn_pool.get_conn().await?;
-        let tx = Transaction::new_and_assume_ready(
+        let tx = TransactionFetcher::new_and_assume_ready(
             "0x27e801a5735e5b530535165a18754c074c673263470fc1fad32cca5eb1bc9fea".parse()?,
             &conn,
         )

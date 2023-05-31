@@ -522,7 +522,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_back_strategy(a_user_id bigint, a_strategy_id bigint, a_quantity varchar, a_purchase_wallet varchar, a_blockchain varchar, a_transaction_hash varchar, a_earn_sp_tokens varchar)
+CREATE OR REPLACE FUNCTION api.fun_user_back_strategy(a_user_id bigint, a_strategy_id bigint, a_quantity varchar, a_blockchain varchar, a_transaction_hash varchar, a_earn_sp_tokens varchar)
 RETURNS table (
     "success" boolean
 )
@@ -530,9 +530,9 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    INSERT INTO tbl.user_back_strategy_history (fkey_user_id, fkey_strategy_id, quantity, purchase_wallet, blockchain,
+    INSERT INTO tbl.user_back_strategy_history (fkey_user_id, fkey_strategy_id, quantity, blockchain,
                                                 transaction_hash, earn_sp_tokens, back_time)
-    VALUES (a_user_id, a_strategy_id, a_quantity, a_purchase_wallet, a_blockchain, a_transaction_hash, a_earn_sp_tokens,
+    VALUES (a_user_id, a_strategy_id, a_quantity, a_blockchain, a_transaction_hash, a_earn_sp_tokens,
             extract(epoch from now())::bigint);
     RETURN QUERY SELECT TRUE;
 END

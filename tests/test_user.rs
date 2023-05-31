@@ -32,7 +32,6 @@ async fn test_register_wallet() -> Result<()> {
             wallet_address: format!("{:?}", signer.address),
             message_to_sign: hex::encode(txt),
             message_signature: encode_signature(&signature),
-            strategy_id: 0, // TODO: create strategy id before filling this
         })
         .await?;
     info!("Register wallet {:?}", resp);

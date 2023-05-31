@@ -7,11 +7,10 @@ edition = "2021"
 
 [dependencies]
 web3 = { version = "*", features = ["signing"] }
-token = { path = "../../token" }
 eyre = "*"
 tokio = { version = "1", features = ["full"] }
 secp256k1 = { version = "*", features = ["global-context", "rand"] }
-crypto = { path = "../../crypto" }
+crypto = { path = "../crypto" }
 async-trait = "*"
 tracing-subscriber = { version = "*", features = ["env-filter"] }
 tracing-log = "*"
@@ -24,7 +23,8 @@ serde = { version = "*", features = ["derive"] }
 serde_json = "*"
 bytes = "*"
 deadpool = { version = "0.9.5", features = ["managed", "rt_tokio_1"] }
-ethabi = "18.0.0"
+gen = { path = "../../../gen" }
+lib = { path = "../../../lib" }
 
 [features]
 default = []

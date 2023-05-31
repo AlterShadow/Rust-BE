@@ -38,17 +38,11 @@ pub async fn deploy_mock_erc20(conn: Web3<EitherTransport>, key: impl Key) -> Re
 mod tests {
     use super::*;
     use crate::signer::Secp256k1SecretKey;
-    use crate::{EthereumRpcConnectionPool, TxChecker, TxStatus};
+    use crate::{
+        EthereumRpcConnectionPool, TxChecker, TxStatus, ANVIL_PRIV_KEY_1, ANVIL_PRIV_KEY_2,
+        ANVIL_PRIV_KEY_3, ANVIL_PRIV_KEY_4,
+    };
     use web3::types::U256;
-
-    const ANVIL_PRIV_KEY_1: &str =
-        "ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
-    const ANVIL_PRIV_KEY_2: &str =
-        "59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d";
-    const ANVIL_PRIV_KEY_3: &str =
-        "5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a";
-    const ANVIL_PRIV_KEY_4: &str =
-        "7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6";
 
     #[tokio::test]
     async fn test_mock_erc20_contract() -> Result<()> {

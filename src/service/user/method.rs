@@ -1,5 +1,11 @@
+use eth_sdk::escrow::EscrowContract;
+use eth_sdk::signer::Secp256k1SecretKey;
+use eth_sdk::strategy_pool::StrategyPoolContract;
 use eth_sdk::utils::verify_message_address;
-use eth_sdk::EthereumRpcConnection;
+use eth_sdk::{
+    EitherTransport, EscrowTransfer, EthereumRpcConnection, StableCoin, StableCoinAddresses,
+    TransactionFetcher, TransactionReady,
+};
 use eyre::*;
 use gen::database::*;
 use gen::model::*;
@@ -12,8 +18,9 @@ use std::str::FromStr;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use tracing::info;
+use web3::ethabi::Contract;
 use web3::signing::Key;
-use web3::types::{Address, Transaction, U256};
+use web3::types::{Address, U256};
 
 pub fn ensure_user_role(conn: &Connection, role: EnumRole) -> Result<()> {
     let user_role = conn.role.load(Ordering::Relaxed);
@@ -298,12 +305,60 @@ impl RequestHandler for MethodUserListBackedStrategies {
         })
     }
 }
+pub async fn calculate_sp_tokens() -> U256 {
+    // TODO: calculate SP tokens based current price
+    U256::from(123)
+}
+
+pub async fn deploy_strategy_contract(
+    conn: &EthereumRpcConnection,
+    key: impl Key,
+    strategy_token_name: String,
+    strategy_token_symbol: String,
+) -> Result<StrategyPoolContract<EitherTransport>> {
+    info!("Deploying strategy contract");
+
+    let strategy = StrategyPoolContract::deploy(
+        conn.clone().into_raw(),
+        key,
+        strategy_token_name,
+        strategy_token_symbol,
+    )
+    .await?;
+
+    info!("Deploy strategy contract success");
+    Ok(strategy)
+}
+/*
+1. User will decides which strategy S to back with his wallet address A
+2. Backend will save his backing decision in database, and transfer his USDC to strategy for copy trading(in this step it may involve auto token conversion)
+
+ */
+
+pub async fn transfer_token_to_strategy_contract(
+    conn: &EthereumRpcConnection,
+    signer: impl Key,
+    escrow: EscrowTransfer,
+    chain: EnumBlockChain,
+    stablecoin_addresses: &StableCoinAddresses,
+) -> Result<TransactionFetcher> {
+    let token_address = stablecoin_addresses
+        .get_by_chain_and_token(chain, escrow.token)
+        .context("Could not find stablecoin address")?;
+    let escrow_contract = EscrowContract::new(conn.clone().into_raw().eth(), escrow.owner)?;
+
+    let tx_hash = escrow_contract
+        .transfer_token_to(signer, token_address, escrow.recipient, escrow.amount)
+        .await?;
+
+    let tx = TransactionFetcher::new(tx_hash);
+    Ok(tx)
+}
 pub async fn on_user_back_strategy(
     conn: &EthereumRpcConnection,
     ctx: &RequestContext,
     db: &DbClient,
     chain: EnumBlockChain,
-    user_wallet_address: Address,
     amount: U256,
     stablecoin_addresses: &StableCoinAddresses,
     strategy_id: i64,
@@ -352,7 +407,6 @@ pub async fn on_user_back_strategy(
         user_id: ctx.user_id,
         strategy_id: user_registered_strategy.strategy_id,
         quantity: format!("{:?}", amount),
-        purchase_wallet: format!("{:?}", user_wallet_address),
         blockchain: chain.to_string(),
         transaction_hash: format!("{:?}", transaction.get_hash()),
         earn_sp_tokens: format!("{:?}", sp_tokens),
@@ -363,13 +417,15 @@ pub async fn on_user_back_strategy(
         transaction.get_hash()
     );
 
-    let _tx = Transaction::new_and_assume_ready(transaction.get_hash(), conn).await?;
+    let _tx = TransactionFetcher::new_and_assume_ready(transaction.get_hash(), conn).await?;
     Ok(())
 }
 
 pub struct MethodUserBackStrategy {
     conn: EthereumRpcConnection,
-    stablecoin_addresses: StableoinAddresses,
+    stablecoin_addresses: Arc<StableCoinAddresses>,
+    strategy_pool_signer: Arc<Secp256k1SecretKey>,
+    escrow_signer: Arc<Secp256k1SecretKey>,
 }
 impl RequestHandler for MethodUserBackStrategy {
     type Request = UserBackStrategyRequest;
@@ -383,30 +439,24 @@ impl RequestHandler for MethodUserBackStrategy {
         req: Self::Request,
     ) {
         let db: DbClient = toolbox.get_db();
-        let conn = self.conn.clone();
+        let eth_conn = self.conn.clone();
         let stablecoin_addresses = self.stablecoin_addresses.clone();
+        let strategy_pool_signer = self.strategy_pool_signer.clone();
+        let escrow_signer = self.escrow_signer.clone();
         toolbox.spawn_response(ctx.clone(), async move {
-            ensure_user_role(&conn, EnumRole::User).await?;
-            let strategy = db
-                .execute(FunUserGetStrategyReq {
-                    strategy_id: req.strategy_id,
-                })
-                .await?
-                .into_result()
-                .with_context(|| CustomError::new(EnumErrorCode::NotFound, "strategy not found"))?;
-            let user_wallet_addr = todo!();
+            ensure_user_role(&conn, EnumRole::User)?;
+
             on_user_back_strategy(
-                &conn,
+                &eth_conn,
                 &ctx,
                 &db,
                 EnumBlockChain::from_str(&req.blockchain)?,
-                user_wallet_addr,
                 req.quantity.parse()?,
                 &stablecoin_addresses,
                 req.strategy_id,
-                strategy.strategy_pool_signer,
-                strategy.escrow_signer,
-                strategy.stablecoin,
+                &**strategy_pool_signer,
+                &**escrow_signer,
+                StableCoin::Usdc,
             )
             .await?;
             Ok(())
@@ -1140,16 +1190,51 @@ impl RequestHandler for MethodUserListWalletActivityHistory {
         })
     }
 }
+/*
+1. He will transfer tokens C of USDC to escrow address B
+2. We track his transfer, calculate how much SP token user will have, and save the "deposit" information to database (this is for multi chain support)
+*/
+pub async fn on_user_deposit(
+    _conn: &EthereumRpcConnection,
+    ctx: &RequestContext,
+    db: &DbClient,
+    chain: EnumBlockChain,
+    tx: &TransactionReady,
+    stablecoin_addresses: &StableCoinAddresses,
+    erc_20: &Contract,
+) -> Result<()> {
+    // let esc = parse_escrow(chain, tx, stablecoin_addresses, erc_20)?;
+    let esc: EscrowTransfer = todo!("move parse escrow to a proper place");
+    // TODO: let our_valid_address = esc.recipient == "0x000".parse()?;
+    let our_valid_address = true;
+    ensure!(
+        our_valid_address,
+        "is not our valid address {:?}",
+        esc.recipient
+    );
+
+    // USER just deposits to our service
+    db.execute(FunUserDepositToEscrowReq {
+        user_id: ctx.user_id,
+        quantity: format!("{:?}", esc.amount),
+        blockchain: chain.to_string(),
+        user_address: format!("{:?}", esc.owner),
+        contract_address: format!("{:?}", tx.get_to().context("no to")?),
+        transaction_hash: format!("{:?}", tx.get_hash()),
+        receiver_address: format!("{:?}", esc.recipient),
+    })
+    .await?;
+    Ok(())
+}
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use eth_sdk::mock_erc20::deploy_mock_erc20;
     use eth_sdk::signer::Secp256k1SecretKey;
-    use eth_sdk::utils::setup_logs;
-    use eth_sdk::{EthereumRpcConnectionPool, EthereumToken};
+    use eth_sdk::*;
     use lib::database::{connect_to_database, drop_and_recreate_database, DatabaseConfig};
-    use lib::log::LogLevel;
+    use lib::log::{setup_logs, LogLevel};
     use std::net::Ipv4Addr;
 
     #[tokio::test]
@@ -1222,7 +1307,7 @@ mod tests {
         );
 
         // at this step, tx should be passed with quickalert
-        let tx = Transaction::new_and_assume_ready(tx_hash, &conn).await?;
+        let tx = TransactionFetcher::new_and_assume_ready(tx_hash, &conn).await?;
         on_user_deposit(
             &conn,
             &ctx,
@@ -1249,7 +1334,6 @@ mod tests {
             &ctx,
             &db,
             EnumBlockChain::EthereumGoerli,
-            user_key.address,
             U256::from(1000),
             &stablecoins,
             strategy.strategy_id,

@@ -285,7 +285,6 @@ END
                 Field::new("user_id", Type::BigInt),
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("quantity", Type::String),
-                Field::new("purchase_wallet", Type::String),
                 Field::new("blockchain", Type::String),
                 Field::new("transaction_hash", Type::String),
                 Field::new("earn_sp_tokens", Type::String),
@@ -293,9 +292,9 @@ END
             vec![Field::new("success", Type::Boolean)],
             r#"
 BEGIN
-    INSERT INTO tbl.user_back_strategy_history (fkey_user_id, fkey_strategy_id, quantity, purchase_wallet, blockchain,
+    INSERT INTO tbl.user_back_strategy_history (fkey_user_id, fkey_strategy_id, quantity, blockchain,
                                                 transaction_hash, earn_sp_tokens, back_time)
-    VALUES (a_user_id, a_strategy_id, a_quantity, a_purchase_wallet, a_blockchain, a_transaction_hash, a_earn_sp_tokens,
+    VALUES (a_user_id, a_strategy_id, a_quantity, a_blockchain, a_transaction_hash, a_earn_sp_tokens,
             extract(epoch from now())::bigint);
     RETURN QUERY SELECT TRUE;
 END

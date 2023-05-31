@@ -1,8 +1,5 @@
-use crate::contract_wrappers::escrow::EscrowContract;
-use crate::contract_wrappers::strategy_pool::StrategyPoolContract;
-use crate::escrow_tracker::escrow::{parse_escrow, EscrowTransfer};
-use crate::escrow_tracker::StableCoinAddresses;
-use crate::evm::StableCoin;
+use crate::escrow_tracker::escrow::parse_escrow;
+use eth_sdk::escrow::EscrowContract;
 use eth_sdk::*;
 use eyre::*;
 use gen::database::*;
@@ -51,77 +48,17 @@ pub async fn on_user_deposit(
     .await?;
     Ok(())
 }
-/*
-1. User will decides which strategy S to back with his wallet address A
-2. Backend will save his backing decision in database, and transfer his USDC to strategy for copy trading(in this step it may involve auto token conversion)
-
- */
-
-pub async fn calculate_sp_tokens() -> U256 {
-    // TODO: calculate SP tokens based current price
-    U256::from(123)
-}
-use crate::contract_wrappers::strategy_pool_factory::StrategyPoolFactoryContract;
-pub async fn deploy_strategy_contract(
-    conn: &EthereumRpcConnection,
-    key: impl Key,
-    strategy_token_name: String,
-    strategy_token_symbol: String,
-) -> Result<StrategyPoolContract<EitherTransport>> {
-    info!("Deploying strategy contract");
-
-    let strategy = StrategyPoolContract::deploy(
-        conn.clone().into_raw(),
-        key,
-        strategy_token_name,
-        strategy_token_symbol,
-    )
-    .await?;
-
-    info!("Deploy strategy contract success");
-    Ok(strategy)
-}
-
-pub async fn transfer_token_to_strategy_contract(
-    conn: &EthereumRpcConnection,
-    signer: impl Key,
-    escrow: EscrowTransfer,
-    chain: EnumBlockChain,
-    stablecoin_addresses: &StableCoinAddresses,
-) -> Result<Transaction> {
-    let token_address = stablecoin_addresses
-        .get_by_chain_and_token(chain, escrow.token)
-        .context("Could not find stablecoin address")?;
-    let escrow_contract = EscrowContract::new(conn.clone().into_raw().eth(), escrow.owner)?;
-
-    let tx_hash = escrow_contract
-        .transfer_token_to(signer, token_address, escrow.recipient, escrow.amount)
-        .await?;
-
-    let tx = Transaction::new(tx_hash);
-    Ok(tx)
-}
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::escrow_tracker::StableCoinAddresses;
     use eth_sdk::mock_erc20::deploy_mock_erc20;
     use eth_sdk::signer::Secp256k1SecretKey;
-    use eth_sdk::{EthereumRpcConnectionPool, Transaction};
+    use eth_sdk::{EthereumRpcConnectionPool, TransactionFetcher};
     use lib::database::{connect_to_database, drop_and_recreate_database, DatabaseConfig};
     use lib::log::{setup_logs, LogLevel};
     use std::net::Ipv4Addr;
     use web3::types::TransactionRequest;
-
-    const ANVIL_PRIV_KEY_1: &str =
-        "ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
-    const ANVIL_PRIV_KEY_2: &str =
-        "59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d";
-    const ANVIL_PRIV_KEY_3: &str =
-        "5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a";
-    const ANVIL_PRIV_KEY_4: &str =
-        "7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6";
 
     #[tokio::test]
     async fn test_user_ethereum_testnet_transfer() -> Result<()> {
@@ -190,7 +127,7 @@ mod tests {
         );
 
         // at this step, tx should be passed with quickalert
-        let tx = Transaction::new_and_assume_ready(tx_hash, &conn).await?;
+        let tx = TransactionFetcher::new_and_assume_ready(tx_hash, &conn).await?;
         on_user_deposit(
             &conn,
             &ctx,

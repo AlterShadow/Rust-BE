@@ -44,9 +44,9 @@ axum-server = { version = "0.5.0", features = ["tls-rustls"] }
 
 deadpool = { version = "0.9.5", features = ["managed", "rt_tokio_1"] }
 async-trait = "*"
-crypto = { path = "src/cryptos/crypto" }
-eth-sdk = { path = "src/cryptos/ethereum/eth-sdk" }
-token = { path = "src/cryptos/token" }
+crypto = { path = "src/service/shared/crypto" }
+eth-sdk = { path = "src/service/shared/eth-sdk" }
+
 
 [dependencies.uuid]
 version = "1.1.2"
@@ -82,8 +82,8 @@ path = "src/service/watcher/main.rs"
 
 [workspace]
 members = [
-	"src/cryptos/ethereum/eth-sdk",
-	"src/cryptos/crypto",
+	"src/service/shared/eth-sdk",
+	"src/service/shared/crypto",
 	"src/lib",
 	"src/gen",
 ]

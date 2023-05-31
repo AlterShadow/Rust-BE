@@ -1,9 +1,9 @@
 use eyre::*;
 use secp256k1::PublicKey;
 use std::time::Duration;
-use tracing::level_filters::LevelFilter;
-use tracing_log::LogTracer;
-use tracing_subscriber::{fmt, EnvFilter};
+
+
+
 use web3::api::Eth;
 use web3::signing::{hash_message, keccak256, recover, RecoveryError, Signature};
 use web3::types::{Address, TransactionReceipt, H256, U256};
@@ -28,20 +28,6 @@ pub fn wei_to_eth(wei_val: web3::types::U256) -> f64 {
     let n = wei_val / u;
     let f = wei_val % u;
     (n.as_u128() as f64) + f.as_u128() as f64 / 1e18
-}
-
-// for testing only
-pub fn setup_logs() -> Result<()> {
-    LogTracer::init().context("Cannot setup_logs")?;
-    let filter = EnvFilter::from_default_env().add_directive(LevelFilter::TRACE.into());
-
-    let subscriber = fmt()
-        .with_thread_names(true)
-        .with_env_filter(filter)
-        .finish();
-
-    tracing::subscriber::set_global_default(subscriber).context("Cannot setup_logs")?;
-    Ok(())
 }
 
 /// Should be used to wait for confirmations

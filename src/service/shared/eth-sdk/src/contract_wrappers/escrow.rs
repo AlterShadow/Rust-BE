@@ -6,7 +6,7 @@ use web3::signing::Key;
 use web3::types::{Address, H256, U256};
 use web3::Transport;
 
-const ESCROW_ABI_JSON: &str = include_str!("../../../../abi/internal/escrow.json");
+const ESCROW_ABI_JSON: &str = include_str!("../../../../../../abi/internal/escrow.json");
 
 #[derive(Debug, Clone)]
 pub struct EscrowContract<T: Transport> {
