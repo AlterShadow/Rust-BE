@@ -2,11 +2,21 @@ use crate::dex_tracker::pancake::build_pancake_swap;
 use crate::dex_tracker::*;
 use crate::escrow_tracker::*;
 use crate::evm::AppState;
+use axum::extract::State;
+use axum::http::StatusCode;
 use axum::{body::Body, routing::post, Router};
 use axum_server::tls_rustls::RustlsConfig;
+use bytes::Bytes;
+use eth_sdk::dex_tracker::handle_eth_swap;
+use eth_sdk::dex_tracker::pancake::build_pancake_swap;
 use eth_sdk::erc20::build_erc_20;
+use eth_sdk::escrow_tracker::{
+    handle_eth_escrows, handle_eth_escrows_goerli, handle_eth_escrows_mainnet,
+};
+use eth_sdk::evm::AppState;
 use eth_sdk::{DexAddresses, EthereumRpcConnectionPool, StableCoinAddresses};
 use eyre::*;
+use gen::model::EnumBlockChain;
 use lib::config::load_config;
 use lib::database::{connect_to_database, DatabaseConfig};
 use lib::log::{setup_logs, LogLevel};
@@ -74,4 +84,32 @@ async fn main() -> Result<()> {
     }
 
     Ok(())
+}
+
+pub async fn handle_eth_swap_mainnet(
+    state: State<Arc<AppState>>,
+    body: Bytes,
+) -> Result<(), StatusCode> {
+    handle_eth_swap(state.0, body, EnumBlockChain::EthereumMainnet).await
+}
+
+pub async fn handle_eth_swap_goerli(
+    state: State<Arc<AppState>>,
+    body: Bytes,
+) -> Result<(), StatusCode> {
+    handle_eth_swap(state.0, body, EnumBlockChain::EthereumGoerli).await
+}
+
+pub async fn handle_eth_escrows_mainnet(
+    state: State<Arc<AppState>>,
+    body: Bytes,
+) -> Result<(), StatusCode> {
+    handle_eth_escrows(state.0, body, EnumBlockChain::EthereumMainnet).await
+}
+
+pub async fn handle_eth_escrows_goerli(
+    state: State<Arc<AppState>>,
+    body: Bytes,
+) -> Result<(), StatusCode> {
+    handle_eth_escrows(state.0, body, EnumBlockChain::EthereumGoerli).await
 }

@@ -1428,6 +1428,98 @@ impl DatabaseRequest for FunUserListRegisteredWalletsReq {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserRequestRefundReq {
+    pub user_id: i64,
+    pub blockchain: String,
+    pub quantity: String,
+    pub wallet_address: String,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserRequestRefundRespRow {
+    pub request_refund_id: i64,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunUserRequestRefundReq {
+    type ResponseRow = FunUserRequestRefundRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_request_refund(a_user_id => $1::bigint, a_blockchain => $2::varchar, a_quantity => $3::varchar, a_wallet_address => $4::varchar);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.blockchain as &(dyn ToSql + Sync),
+            &self.quantity as &(dyn ToSql + Sync),
+            &self.wallet_address as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserRequestRefundRespRow> {
+        let r = FunUserRequestRefundRespRow {
+            request_refund_id: row.try_get(0)?,
+        };
+        Ok(r)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserListRequestRefundHistoryReq {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserListRequestRefundHistoryRespRow {
+    pub request_refund_id: i64,
+    pub user_id: i64,
+    pub blockchain: String,
+    pub quantity: String,
+    pub wallet_address: String,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunUserListRequestRefundHistoryReq {
+    type ResponseRow = FunUserListRequestRefundHistoryRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_list_request_refund_history();"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserListRequestRefundHistoryRespRow> {
+        let r = FunUserListRequestRefundHistoryRespRow {
+            request_refund_id: row.try_get(0)?,
+            user_id: row.try_get(1)?,
+            blockchain: row.try_get(2)?,
+            quantity: row.try_get(3)?,
+            wallet_address: row.try_get(4)?,
+        };
+        Ok(r)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserUpdateRequestRefundHistoryReq {
+    pub request_refund_id: i64,
+    pub transaction_hash: String,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserUpdateRequestRefundHistoryRespRow {}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunUserUpdateRequestRefundHistoryReq {
+    type ResponseRow = FunUserUpdateRequestRefundHistoryRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_update_request_refund_history(a_request_refund_id => $1::bigint, a_transaction_hash => $2::varchar);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.request_refund_id as &(dyn ToSql + Sync),
+            &self.transaction_hash as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserUpdateRequestRefundHistoryRespRow> {
+        let r = FunUserUpdateRequestRefundHistoryRespRow {};
+        Ok(r)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunWatcherSaveRawTransactionReq {
     pub transaction_hash: String,
     pub chain: String,

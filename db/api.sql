@@ -1054,6 +1054,54 @@ END
 $$;
         
 
+CREATE OR REPLACE FUNCTION api.fun_user_request_refund(a_user_id bigint, a_blockchain varchar, a_quantity varchar, a_wallet_address varchar)
+RETURNS table (
+    "request_refund_id" bigint
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY INSERT INTO tbl.user_request_refund_history (fkey_user_id, blockchain, quantity, wallet_address, updated_at, created_at)
+            VALUES ( a_user_id, a_blockchain, a_quantity, a_wallet_address, EXTRACT(EPOCH FROM NOW())::bigint, EXTRACT(EPOCH FROM NOW())::bigint) RETURNING pkey_id;
+END
+
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_list_request_refund_history()
+RETURNS table (
+    "request_refund_id" bigint,
+    "user_id" bigint,
+    "blockchain" varchar,
+    "quantity" varchar,
+    "wallet_address" varchar
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY SELECT pkey_id, fkey_user_id, blockchain, quantity, wallet_address FROM tbl.user_request_refund_history;
+END
+
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_update_request_refund_history(a_request_refund_id bigint, a_transaction_hash varchar)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    UPDATE tbl.user_request_refund_history SET
+            transaction_hash = a_transaction_hash, 
+            updated_at = EXTRACT(EPOCH FROM NOW())::bigint
+    WHERE pkey_id = a_request_refund_id;
+END
+
+$$;
+        
+
 CREATE OR REPLACE FUNCTION api.fun_watcher_save_raw_transaction(a_transaction_hash varchar, a_chain varchar, a_raw_transaction varchar, a_dex varchar DEFAULT NULL)
 RETURNS table (
     "transaction_cache_id" bigint

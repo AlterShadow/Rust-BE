@@ -102,6 +102,14 @@ impl UserClient {
     }
 }
 impl UserClient {
+    pub async fn user_request_refund(
+        &mut self,
+        req: UserRequestRefundRequest,
+    ) -> Result<UserRequestRefundResponse> {
+        self.client.request(20081, req).await
+    }
+}
+impl UserClient {
     pub async fn user_list_backed_strategies(
         &mut self,
         req: UserListBackedStrategiesRequest,

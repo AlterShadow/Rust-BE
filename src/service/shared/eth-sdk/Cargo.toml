@@ -25,6 +25,7 @@ bytes = "*"
 deadpool = { version = "0.9.5", features = ["managed", "rt_tokio_1"] }
 gen = { path = "../../../gen" }
 lib = { path = "../../../lib" }
+http = "*"
 
 [features]
 default = []

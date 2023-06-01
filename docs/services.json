@@ -563,6 +563,33 @@
           "json_schema": null
         },
         {
+          "name": "UserRequestRefund",
+          "code": 20081,
+          "parameters": [
+            {
+              "name": "quantity",
+              "ty": "String"
+            },
+            {
+              "name": "wallet_address",
+              "ty": "String"
+            },
+            {
+              "name": "blockchain",
+              "ty": "String"
+            }
+          ],
+          "returns": [
+            {
+              "name": "success",
+              "ty": "Boolean"
+            }
+          ],
+          "stream_response": [],
+          "description": "",
+          "json_schema": null
+        },
+        {
           "name": "UserListBackedStrategies",
           "code": 20090,
           "parameters": [],

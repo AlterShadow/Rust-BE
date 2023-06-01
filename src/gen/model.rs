@@ -1028,6 +1028,18 @@ pub struct UserRemoveStrategyWatchingWalletResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct UserRequestRefundRequest {
+    pub quantity: String,
+    pub wallet_address: String,
+    pub blockchain: String,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserRequestRefundResponse {
+    pub success: bool,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct UserUnfollowExpertRequest {
     pub expert_id: i64,
 }

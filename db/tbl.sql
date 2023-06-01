@@ -1,5 +1,5 @@
 -- Created by Vertabelo (http://vertabelo.com)
--- Last modification date: 2023-05-29 12:53:03.14
+-- Last modification date: 2023-06-01 13:57:28.941
 
 CREATE SCHEMA IF NOT EXISTS tbl;;
 
@@ -241,6 +241,19 @@ CREATE TABLE tbl.user_registered_wallet (
     CONSTRAINT user_registered_wallet_pk PRIMARY KEY (pkey_id)
 );
 
+-- Table: user_request_refund_history
+CREATE TABLE tbl.user_request_refund_history (
+    pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_user_request_refund_history_id'),
+    fkey_user_id bigint  NOT NULL,
+    blockchain varchar(20)  NOT NULL,
+    quantity varchar(64)  NOT NULL,
+    wallet_address varchar(64)  NOT NULL,
+    transaction_hash varchar(80)  NULL,
+    created_at bigint  NOT NULL,
+    updated_at bigint  NOT NULL,
+    CONSTRAINT user_request_refund_history_pk PRIMARY KEY (pkey_id)
+);
+
 -- Table: wallet_activity_history
 CREATE TABLE tbl.wallet_activity_history (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_wallet_activity_history_id'),
@@ -384,7 +397,7 @@ ALTER TABLE tbl.expert_profile ADD CONSTRAINT user_profile_user
 ;
 
 -- Reference: user_registered_wallet_user (table: user_registered_wallet)
-ALTER TABLE user_registered_wallet ADD CONSTRAINT user_registered_wallet_user
+ALTER TABLE tbl.user_registered_wallet ADD CONSTRAINT user_registered_wallet_user
     FOREIGN KEY (fkey_user_id)
     REFERENCES tbl."user" (pkey_id)  
     NOT DEFERRABLE 
@@ -393,6 +406,14 @@ ALTER TABLE user_registered_wallet ADD CONSTRAINT user_registered_wallet_user
 
 -- Reference: user_strategy (table: strategy)
 ALTER TABLE tbl.strategy ADD CONSTRAINT user_strategy
+    FOREIGN KEY (fkey_user_id)
+    REFERENCES tbl."user" (pkey_id)  
+    NOT DEFERRABLE 
+    INITIALLY IMMEDIATE
+;
+
+-- Reference: user_user_request_refund_history (table: user_request_refund_history)
+ALTER TABLE tbl.user_request_refund_history ADD CONSTRAINT user_user_request_refund_history
     FOREIGN KEY (fkey_user_id)
     REFERENCES tbl."user" (pkey_id)  
     NOT DEFERRABLE 
@@ -511,6 +532,13 @@ CREATE SEQUENCE tbl.seq_user_id
 
 -- Sequence: seq_user_registered_wallet_id
 CREATE SEQUENCE tbl.seq_user_registered_wallet_id
+      NO MINVALUE
+      NO MAXVALUE
+      NO CYCLE
+;
+
+-- Sequence: seq_user_request_refund_history_id
+CREATE SEQUENCE seq_user_request_refund_history_id
       NO MINVALUE
       NO MAXVALUE
       NO CYCLE

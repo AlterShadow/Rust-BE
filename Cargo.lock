@@ -866,6 +866,7 @@ dependencies = [
  "eyre",
  "gen",
  "hex",
+ "http",
  "k256",
  "lib",
  "once_cell",

@@ -1,4 +1,4 @@
-use eth_sdk::{ContractCall, EscrowTransfer, StableCoin, StableCoinAddresses, TransactionReady};
+use crate::{ContractCall, EscrowTransfer, StableCoin, StableCoinAddresses, TransactionReady};
 use eyre::*;
 use gen::model::EnumBlockChain;
 use tracing::info;
@@ -104,6 +104,8 @@ pub fn parse_escrow(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::erc20::build_erc_20;
+    use crate::{EthereumRpcConnectionPool, StableCoinAddresses, TransactionFetcher};
     use eth_sdk::erc20::build_erc_20;
     use eth_sdk::{EthereumRpcConnectionPool, StableCoinAddresses, TransactionFetcher};
     use gen::model::EnumBlockChain;

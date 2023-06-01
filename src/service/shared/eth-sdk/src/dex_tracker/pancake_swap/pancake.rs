@@ -4,8 +4,9 @@ use super::v3::{
     single_hop::{exact_input_single, exact_output_single},
 };
 
+use crate::erc20::build_erc_20;
 use crate::evm::{DexPath, Trade};
-use eth_sdk::{erc20::build_erc_20, ContractCall, SerializableToken, TransactionReady};
+use crate::{ContractCall, SerializableToken, TransactionReady};
 use eyre::*;
 use gen::model::{EnumBlockChain, EnumDex, EnumDexVersion};
 use std::str::FromStr;
@@ -248,6 +249,7 @@ pub fn build_pancake_swap() -> Result<PancakeSwap> {
 mod tests {
     use super::*;
 
+    use crate::{EthereumRpcConnectionPool, TransactionFetcher};
     use eth_sdk::{EthereumRpcConnectionPool, TransactionFetcher};
     use gen::model::EnumBlockChain;
     use lib::log::{setup_logs, LogLevel};

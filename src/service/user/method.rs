@@ -1,4 +1,5 @@
 use eth_sdk::escrow::EscrowContract;
+use eth_sdk::escrow_tracker::escrow::parse_escrow;
 use eth_sdk::signer::Secp256k1SecretKey;
 use eth_sdk::strategy_pool::StrategyPoolContract;
 use eth_sdk::utils::verify_message_address;
@@ -20,7 +21,7 @@ use std::sync::Arc;
 use tracing::info;
 use web3::ethabi::Contract;
 use web3::signing::Key;
-use web3::types::{Address, U256};
+use web3::types::{Address, H256, U256};
 
 pub fn ensure_user_role(conn: &Connection, role: EnumRole) -> Result<()> {
     let user_role = conn.role.load(Ordering::Relaxed);
@@ -463,7 +464,49 @@ impl RequestHandler for MethodUserBackStrategy {
         })
     }
 }
+pub struct MethodUserRequestRefund {
+    pub conn: EthereumRpcConnection,
+    pub stablecoin_addresses: Arc<StableCoinAddresses>,
+    pub escrow_contract: Arc<EscrowContract<EitherTransport>>,
+    pub escrow_signer: Arc<Secp256k1SecretKey>,
+}
 
+impl RequestHandler for MethodUserRequestRefund {
+    type Request = UserRequestRefundRequest;
+    type Response = UserRequestRefundResponse;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        conn: Arc<Connection>,
+        req: Self::Request,
+    ) {
+        let db: DbClient = toolbox.get_db();
+        let eth_conn = self.conn.clone();
+        let stablecoin_addresses = self.stablecoin_addresses.clone();
+        let escrow_signer = self.escrow_signer.clone();
+        let escrow_contract = self.escrow_contract.clone();
+        toolbox.spawn_response(ctx.clone(), async move {
+            ensure_user_role(&conn, EnumRole::User)?;
+
+            on_user_request_refund(
+                &eth_conn,
+                &ctx,
+                &db,
+                EnumBlockChain::from_str(&req.blockchain)?,
+                &stablecoin_addresses,
+                &escrow_contract,
+                req.quantity.parse()?,
+                req.wallet_address.parse()?,
+                &escrow_signer.key,
+                StableCoin::Usdc,
+            )
+            .await?;
+            Ok(())
+        })
+    }
+}
 pub struct MethodUserUnfollowStrategy;
 impl RequestHandler for MethodUserUnfollowStrategy {
     type Request = UserUnfollowStrategyRequest;
@@ -1203,8 +1246,8 @@ pub async fn on_user_deposit(
     stablecoin_addresses: &StableCoinAddresses,
     erc_20: &Contract,
 ) -> Result<()> {
-    // let esc = parse_escrow(chain, tx, stablecoin_addresses, erc_20)?;
-    let esc: EscrowTransfer = todo!("move parse escrow to a proper place");
+    let esc = parse_escrow(chain, tx, stablecoin_addresses, erc_20)?;
+
     // TODO: let our_valid_address = esc.recipient == "0x000".parse()?;
     let our_valid_address = true;
     ensure!(
@@ -1225,6 +1268,50 @@ pub async fn on_user_deposit(
     })
     .await?;
     Ok(())
+}
+pub async fn on_user_request_refund(
+    _conn: &EthereumRpcConnection,
+    ctx: &RequestContext,
+    db: &DbClient,
+    chain: EnumBlockChain,
+    stablecoin_addresses: &StableCoinAddresses,
+    contract: &EscrowContract<EitherTransport>,
+    quantity: U256,
+    wallet_address: Address,
+    escrow_signer: impl Key,
+    token: StableCoin,
+) -> Result<H256> {
+    info!(
+        "on_user_request_refund {:?} from {:?} transfer {:?} {:?} to {:?}",
+        chain,
+        contract.address(),
+        quantity,
+        token,
+        wallet_address
+    );
+    let row = db
+        .execute(FunUserRequestRefundReq {
+            user_id: ctx.user_id,
+            quantity: format!("{:?}", quantity),
+            blockchain: chain.to_string(),
+            wallet_address: format!("{:?}", wallet_address),
+        })
+        .await?
+        .into_result()
+        .context("No result")?;
+    let token_address = stablecoin_addresses
+        .get_by_chain_and_token(chain, token)
+        .context("no stablecoin address")?;
+    let hash = contract
+        .transfer_token_to(escrow_signer, token_address, wallet_address, quantity)
+        .await?;
+    db.execute(FunUserUpdateRequestRefundHistoryReq {
+        request_refund_id: row.request_refund_id,
+        transaction_hash: format!("{:?}", hash),
+    })
+    .await?;
+    // TODO: do we wait until confirmation here?
+    Ok(hash)
 }
 
 #[cfg(test)]

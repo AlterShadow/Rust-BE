@@ -1,10 +1,10 @@
 use crate::dex_tracker::pancake::build_pancake_swap;
 use crate::dex_tracker::PancakeSwap;
-use bytes::Bytes;
-use eth_sdk::erc20::build_erc_20;
-use eth_sdk::{
+use crate::erc20::build_erc_20;
+use crate::{
     ContractCall, DexAddresses, EthereumRpcConnectionPool, StableCoinAddresses, TransactionReady,
 };
+use bytes::Bytes;
 use eyre::*;
 use gen::database::{FunWatcherSaveRawTransactionReq, FunWatcherSaveWalletActivityHistoryReq};
 use gen::model::{EnumBlockChain, EnumDex, EnumDexVersion};
@@ -13,6 +13,7 @@ use serde::{Deserialize, Serialize};
 use tracing::error;
 use web3::ethabi::Contract;
 use web3::types::{H160, H256, U256};
+use web3::Transport;
 
 pub struct AppState {
     pub dex_addresses: DexAddresses,

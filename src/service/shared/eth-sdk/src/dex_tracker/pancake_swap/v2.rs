@@ -1,7 +1,7 @@
 use crate::evm::DexPath;
 
 use crate::dex_tracker::pancake_swap::pancake::Swap;
-use eth_sdk::ContractCall;
+use crate::ContractCall;
 use eyre::*;
 use web3::types::H160;
 

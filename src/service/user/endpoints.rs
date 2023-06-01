@@ -165,6 +165,18 @@ pub fn endpoint_user_back_strategy() -> EndpointSchema {
         vec![Field::new("success", Type::Boolean)],
     )
 }
+pub fn endpoint_user_request_refund() -> EndpointSchema {
+    EndpointSchema::new(
+        "UserRequestRefund",
+        20081,
+        vec![
+            Field::new("quantity", Type::String),
+            Field::new("wallet_address", Type::String),
+            Field::new("blockchain", Type::String),
+        ],
+        vec![Field::new("success", Type::Boolean)],
+    )
+}
 
 pub fn endpoint_user_list_backed_strategies() -> EndpointSchema {
     EndpointSchema::new(
@@ -541,6 +553,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
         endpoint_user_get_strategy(),
         endpoint_user_get_strategy_statistics(),
         endpoint_user_back_strategy(),
+        endpoint_user_request_refund(),
         endpoint_user_list_backed_strategies(),
         endpoint_user_list_back_strategy_history(),
         // endpoint_user_exit_strategy(),

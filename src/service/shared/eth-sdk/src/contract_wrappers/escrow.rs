@@ -94,6 +94,9 @@ impl<T: Transport> EscrowContract<T> {
             )
             .await?)
     }
+    pub fn address(&self) -> Address {
+        self.inner.address()
+    }
 }
 
 enum EscrowFunctions {

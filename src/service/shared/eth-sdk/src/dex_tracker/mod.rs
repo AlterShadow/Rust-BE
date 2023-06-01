@@ -1,8 +1,7 @@
-use axum::extract::State;
-use axum::http::StatusCode;
 use bytes::Bytes;
-use eth_sdk::TransactionFetcher;
 use gen::model::{EnumBlockChain, EnumDex};
+use http::StatusCode;
+use serde_json::ser::State;
 use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -12,8 +11,8 @@ use web3::types::H160;
 mod pancake_swap;
 pub use pancake_swap::*;
 mod parse;
-use crate::evm;
-use crate::evm::AppState;
+use crate::evm::{parse_quickalert_payload, AppState};
+use crate::{evm, TransactionFetcher};
 pub use parse::*;
 
 pub async fn handle_eth_swap(
@@ -21,7 +20,7 @@ pub async fn handle_eth_swap(
     body: Bytes,
     blockchain: EnumBlockChain,
 ) -> Result<(), StatusCode> {
-    let hashes = evm::parse_quickalert_payload(body).map_err(|e| {
+    let hashes = parse_quickalert_payload(body).map_err(|e| {
         error!("failed to parse QuickAlerts payload: {:?}", e);
         StatusCode::BAD_REQUEST
     })?;
@@ -57,18 +56,4 @@ pub async fn handle_eth_swap(
     }
 
     Ok(())
-}
-
-pub async fn handle_eth_swap_mainnet(
-    state: State<Arc<AppState>>,
-    body: Bytes,
-) -> Result<(), StatusCode> {
-    handle_eth_swap(state.0, body, EnumBlockChain::EthereumMainnet).await
-}
-
-pub async fn handle_eth_swap_goerli(
-    state: State<Arc<AppState>>,
-    body: Bytes,
-) -> Result<(), StatusCode> {
-    handle_eth_swap(state.0, body, EnumBlockChain::EthereumGoerli).await
 }

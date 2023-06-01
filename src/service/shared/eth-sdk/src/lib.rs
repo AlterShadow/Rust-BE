@@ -14,13 +14,15 @@ mod contract_wrappers;
 pub mod erc20;
 // #[cfg(test)]
 mod dex;
+pub mod dex_tracker;
+pub mod escrow_tracker;
+pub mod evm;
 pub mod mock_erc20;
 mod pool;
 pub mod signer;
 mod stablecoins;
 mod tx;
 pub mod utils;
-
 pub use calldata::*;
 pub use conn::*;
 pub use contract_wrappers::*;

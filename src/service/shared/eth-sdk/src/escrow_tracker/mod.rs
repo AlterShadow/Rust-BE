@@ -1,12 +1,11 @@
 use crate::escrow_tracker::escrow::parse_escrow;
-use crate::evm::parse_quickalert_payload;
-use crate::{evm, AppState};
-use axum::extract::State;
-use axum::http::StatusCode;
+use crate::evm::{parse_quickalert_payload, AppState};
+use crate::{evm, TransactionFetcher};
 use bytes::Bytes;
-use eth_sdk::TransactionFetcher;
 use eyre::*;
 use gen::model::EnumBlockChain;
+use http::StatusCode;
+use serde_json::ser::State;
 use std::collections::{HashMap, HashSet};
 use std::str::FromStr;
 use std::sync::Arc;
@@ -55,17 +54,4 @@ pub async fn handle_eth_escrows(
     }
 
     Ok(())
-}
-pub async fn handle_eth_escrows_mainnet(
-    state: State<Arc<AppState>>,
-    body: Bytes,
-) -> Result<(), StatusCode> {
-    handle_eth_escrows(state.0, body, EnumBlockChain::EthereumMainnet).await
-}
-
-pub async fn handle_eth_escrows_goerli(
-    state: State<Arc<AppState>>,
-    body: Bytes,
-) -> Result<(), StatusCode> {
-    handle_eth_escrows(state.0, body, EnumBlockChain::EthereumGoerli).await
 }

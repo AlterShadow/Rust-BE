@@ -807,5 +807,53 @@ BEGIN
 END
 "#,
         ),
+        ProceduralFunction::new(
+            "fun_user_request_refund",
+            vec![
+                Field::new("user_id", Type::BigInt),
+                Field::new("blockchain", Type::String),
+                Field::new("quantity", Type::String),
+                Field::new("wallet_address", Type::String),
+            ],
+            vec![Field::new("request_refund_id", Type::BigInt)],
+            r#"
+BEGIN
+    RETURN QUERY INSERT INTO tbl.user_request_refund_history (fkey_user_id, blockchain, quantity, wallet_address, updated_at, created_at)
+            VALUES ( a_user_id, a_blockchain, a_quantity, a_wallet_address, EXTRACT(EPOCH FROM NOW())::bigint, EXTRACT(EPOCH FROM NOW())::bigint) RETURNING pkey_id;
+END
+"#,
+        ),
+        ProceduralFunction::new(
+            "fun_user_list_request_refund_history",
+            vec![],
+            vec![
+                Field::new("request_refund_id", Type::BigInt),
+                Field::new("user_id", Type::BigInt),
+                Field::new("blockchain", Type::String),
+                Field::new("quantity", Type::String),
+                Field::new("wallet_address", Type::String),
+            ],
+            r#"
+BEGIN
+    RETURN QUERY SELECT pkey_id, fkey_user_id, blockchain, quantity, wallet_address FROM tbl.user_request_refund_history;
+END
+"#,
+        ),
+        ProceduralFunction::new(
+            "fun_user_update_request_refund_history",
+            vec![
+                Field::new("request_refund_id", Type::BigInt),
+                Field::new("transaction_hash", Type::String),
+            ],
+            vec![],
+            r#"
+BEGIN
+    UPDATE tbl.user_request_refund_history SET
+            transaction_hash = a_transaction_hash, 
+            updated_at = EXTRACT(EPOCH FROM NOW())::bigint
+    WHERE pkey_id = a_request_refund_id;
+END
+"#,
+        ),
     ]
 }

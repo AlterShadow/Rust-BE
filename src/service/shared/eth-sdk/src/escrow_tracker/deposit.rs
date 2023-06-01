@@ -1,6 +1,5 @@
 use crate::escrow_tracker::escrow::parse_escrow;
-use eth_sdk::escrow::EscrowContract;
-use eth_sdk::*;
+use crate::{EthereumRpcConnection, StableCoinAddresses, TransactionReady};
 use eyre::*;
 use gen::database::*;
 use gen::model::EnumBlockChain;
@@ -10,6 +9,7 @@ use tracing::info;
 use web3::ethabi::Contract;
 use web3::signing::Key;
 use web3::types::{Address, U256};
+use web3::Transport;
 
 /*
 1. He will transfer tokens C of USDC to escrow address B
@@ -52,6 +52,12 @@ pub async fn on_user_deposit(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::mock_erc20::deploy_mock_erc20;
+    use crate::signer::Secp256k1SecretKey;
+    use crate::{
+        EthereumRpcConnectionPool, StableCoin, StableCoinAddresses, TransactionFetcher,
+        ANVIL_PRIV_KEY_1, ANVIL_PRIV_KEY_2,
+    };
     use eth_sdk::mock_erc20::deploy_mock_erc20;
     use eth_sdk::signer::Secp256k1SecretKey;
     use eth_sdk::{EthereumRpcConnectionPool, TransactionFetcher};
