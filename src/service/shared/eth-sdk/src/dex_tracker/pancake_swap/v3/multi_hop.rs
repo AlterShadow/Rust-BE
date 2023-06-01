@@ -12,23 +12,27 @@ pub struct MultiHopPath {
 }
 
 impl MultiHopPath {
-    fn from_bytes(path: &[u8]) -> Result<Vec<Self>> {
+    pub fn from_bytes(path: &[u8]) -> Result<Vec<Self>> {
         if path.len() < 43 {
             /* 20 bytes for address, 3 bytes for uint24, 20 bytes for address */
-            return Err(eyre!("path is too short"));
+            bail!("path is too short");
         }
 
         let mut full_path: Vec<MultiHopPath> = Vec::new();
         let mut first_token: H160 = H160::from_slice(&path[0..20]);
         for i in 0..((path.len() - 20) / 23) {
             let start = 20 + i * 23;
+            if start + 23 > path.len() {
+                bail!("path does not have enough bytes for reading next path entry");
+            }
+
             let fee_bytes: [u8; 3] = match path[start..start + 3].try_into() {
                 Ok(bytes) => bytes,
                 Err(e) => {
-                    return Err(eyre!(
-                        "Error parsing 'path' from PancakeSwap exactInput call: {}",
+                    bail!(
+                        "error parsing 'path' from PancakeSwap exactInput call: {}",
                         e
-                    ));
+                    );
                 }
             };
             let fee = U256::from(u32::from_be_bytes([
@@ -47,6 +51,7 @@ impl MultiHopPath {
         }
         Ok(full_path)
     }
+
     pub fn get_fee(&self) -> U256 {
         self.fee
     }
