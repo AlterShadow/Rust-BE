@@ -30,7 +30,7 @@ pub struct Swap {
 pub struct PancakeSwap {
     smart_router: Contract,
     transfer_event_signature: H256,
-    paid_in_native_flag: H160,
+    refer_to_self_flag: H160,
 }
 
 impl PancakeSwap {
@@ -41,7 +41,7 @@ impl PancakeSwap {
         Self {
             smart_router,
             transfer_event_signature,
-            paid_in_native_flag: H160::from_str("0x0000000000000000000000000000000000000002")
+            refer_to_self_flag: H160::from_str("0x0000000000000000000000000000000000000002")
                 .unwrap(),
         }
     }
@@ -202,9 +202,16 @@ impl PancakeSwap {
             versions.push(*version);
             calls.push(call.clone());
             if swap.amount_out.is_none() {
-                /* amount out missing */
-                if swap.recipient == self.paid_in_native_flag {
-                    /* user got paid in native tokens, transfer is from token_out to router */
+                /* "exact in" type swap, find amount out */
+                if swap.recipient == self.refer_to_self_flag {
+                    /* if the recipient is the router, it's either: */
+                    /* 1- one of n swaps, and the intermitent amount out goes to the router, so that it can execute next swap */
+                    /* 2- not the final call, which means there is a call to "unwrap" and the caller gets paid in native tokens */
+                    /* we know the call is to "unwrap" and not "refund" because the amount in was exact */
+                    /* in both cases the swap's amount_out is in the transfer of token_out to router */
+                    /* in case "1" it's useful to find out the amount out of the individual swap */
+                    /* in case "2" it's useful to know the amount of unwrapped native tokens, and use the wrapped token as token_out */
+                    /* differentiation between native and non-native is meaningless since only the wrapped version supports trading */
                     let amount_out = tx
                         .amount_of_token_received(
                             swap.token_out,
@@ -214,7 +221,10 @@ impl PancakeSwap {
                         .map_err(|err| eyre!("failed to get amount_out: {}", err))?;
                     swap.amount_out = Some(amount_out);
                 } else {
-                    /* user got paid in token_out, transfer is from token_out to recipient */
+                    /* if the recipient is the caller, it's always the final call */
+                    /* since we are only looping through swap calls, the final call is a swap */
+                    /* it means that the caller gets paid in non-native tokens */
+                    /* swap's amount_out is the transfer of token_out to recipient */
                     let amount_out = tx
                         .amount_of_token_received(
                             swap.token_out,
@@ -225,10 +235,16 @@ impl PancakeSwap {
                     swap.amount_out = Some(amount_out);
                 }
             } else {
-                /* amount in missing */
+                /* "exact out" type swap, find amount in */
+                /* "exact out" swaps always include a single swap call */
+                /* only "exact in" swaps can be chained since the router only spends its balance when "amount_in" is zero */
+                /* this means we can refer to "tx.value" with confidence to infer if the sender of token_in is the caller or the router */
+                /* if this was part of a chain of swap calls, this would not be possible */
                 if value != 0.into() {
-                    /* user paid in native tokens, transfer is from router to pool */
-                    /* because the router first wrapped the token, in order to use pool */
+                    /* if the call has value, the caller paid in native tokens */
+                    /* the router has to wrap native tokens before swapping */
+                    /* swap's amount_in is in the transfer of token_in from router */
+                    /* TODO: fix possible bug where caller sends value without a purpose */
                     let amount_in = tx
                         .amount_of_token_sent(
                             swap.token_in,
@@ -238,7 +254,8 @@ impl PancakeSwap {
                         .map_err(|err| eyre!("failed to get amount_in: {}", err))?;
                     swap.amount_in = Some(amount_in);
                 } else {
-                    /* user paid in token_in, transfer is from user to pool */
+                    /* if the call has no value, the caller paid in non-native tokens */
+                    /* swap's amount_in is in the transfer of token_in from caller */
                     let amount_in = tx
                         .amount_of_token_sent(swap.token_in, caller, self.transfer_event_signature)
                         .map_err(|err| eyre!("failed to get amount_in: {}", err))?;
