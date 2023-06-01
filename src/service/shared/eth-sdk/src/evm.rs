@@ -13,7 +13,6 @@ use serde::{Deserialize, Serialize};
 use tracing::error;
 use web3::ethabi::Contract;
 use web3::types::{H160, H256, U256};
-use web3::Transport;
 
 pub struct AppState {
     pub dex_addresses: DexAddresses,

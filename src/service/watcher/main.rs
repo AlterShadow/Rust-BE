@@ -1,7 +1,3 @@
-use crate::dex_tracker::pancake::build_pancake_swap;
-use crate::dex_tracker::*;
-use crate::escrow_tracker::*;
-use crate::evm::AppState;
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::{body::Body, routing::post, Router};
@@ -10,9 +6,7 @@ use bytes::Bytes;
 use eth_sdk::dex_tracker::handle_eth_swap;
 use eth_sdk::dex_tracker::pancake::build_pancake_swap;
 use eth_sdk::erc20::build_erc_20;
-use eth_sdk::escrow_tracker::{
-    handle_eth_escrows, handle_eth_escrows_goerli, handle_eth_escrows_mainnet,
-};
+use eth_sdk::escrow_tracker::handle_eth_escrows;
 use eth_sdk::evm::AppState;
 use eth_sdk::{DexAddresses, EthereumRpcConnectionPool, StableCoinAddresses};
 use eyre::*;
@@ -23,10 +17,6 @@ use lib::log::{setup_logs, LogLevel};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tracing::*;
-
-pub mod dex_tracker;
-pub mod escrow_tracker;
-pub mod evm;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {

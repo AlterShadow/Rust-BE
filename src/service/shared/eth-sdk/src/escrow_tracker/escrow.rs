@@ -2,8 +2,6 @@ use crate::{ContractCall, EscrowTransfer, StableCoin, StableCoinAddresses, Trans
 use eyre::*;
 use gen::model::EnumBlockChain;
 use tracing::info;
-use web3::ethabi::Contract;
-use web3::types::{H160, U256};
 
 fn get_method_by_name(name: &str) -> Option<Erc20Method> {
     match name {
@@ -106,8 +104,6 @@ mod tests {
     use super::*;
     use crate::erc20::build_erc_20;
     use crate::{EthereumRpcConnectionPool, StableCoinAddresses, TransactionFetcher};
-    use eth_sdk::erc20::build_erc_20;
-    use eth_sdk::{EthereumRpcConnectionPool, StableCoinAddresses, TransactionFetcher};
     use gen::model::EnumBlockChain;
     use lib::log::{setup_logs, LogLevel};
     use tracing::info;

@@ -250,7 +250,6 @@ mod tests {
     use super::*;
 
     use crate::{EthereumRpcConnectionPool, TransactionFetcher};
-    use eth_sdk::{EthereumRpcConnectionPool, TransactionFetcher};
     use gen::model::EnumBlockChain;
     use lib::log::{setup_logs, LogLevel};
     use tracing::info;

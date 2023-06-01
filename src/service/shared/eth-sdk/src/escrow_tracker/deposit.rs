@@ -5,11 +5,7 @@ use gen::database::*;
 use gen::model::EnumBlockChain;
 use lib::database::DbClient;
 use lib::toolbox::RequestContext;
-use tracing::info;
 use web3::ethabi::Contract;
-use web3::signing::Key;
-use web3::types::{Address, U256};
-use web3::Transport;
 
 /*
 1. He will transfer tokens C of USDC to escrow address B
@@ -58,13 +54,10 @@ mod tests {
         EthereumRpcConnectionPool, StableCoin, StableCoinAddresses, TransactionFetcher,
         ANVIL_PRIV_KEY_1, ANVIL_PRIV_KEY_2,
     };
-    use eth_sdk::mock_erc20::deploy_mock_erc20;
-    use eth_sdk::signer::Secp256k1SecretKey;
-    use eth_sdk::{EthereumRpcConnectionPool, TransactionFetcher};
     use lib::database::{connect_to_database, drop_and_recreate_database, DatabaseConfig};
     use lib::log::{setup_logs, LogLevel};
     use std::net::Ipv4Addr;
-    use web3::types::TransactionRequest;
+    use web3::types::U256;
 
     #[tokio::test]
     async fn test_user_ethereum_testnet_transfer() -> Result<()> {
