@@ -1,9 +1,20 @@
-use crate::dex_tracker::pancake::Swap;
-use crate::evm::{DexPath, PancakeV3SingleHopPath};
-use crate::ContractCall;
 use eyre::*;
+use web3::types::{H160, U256};
 
-pub fn exact_input_single(call: &ContractCall) -> Result<Swap> {
+use crate::ContractCall;
+
+#[derive(Debug, Clone)]
+pub struct ExactInputSingleParams {
+    pub token_in: H160,
+    pub token_out: H160,
+    pub fee: U256,
+    pub recipient: H160,
+    pub amount_in: U256,
+    pub amount_out_minimum: U256,
+    pub sqrt_price_limit_x96: U256,
+}
+
+pub fn exact_input_single(call: &ContractCall) -> Result<ExactInputSingleParams> {
     /*
                     function exactInputSingle(
                                     ExactInputSingleParams memory params
@@ -21,30 +32,30 @@ pub fn exact_input_single(call: &ContractCall) -> Result<Swap> {
     */
 
     let params = call.get_param("params")?.get_value().into_tuple()?;
-    let token_in = &params[0].into_address()?;
-    let token_out = &params[1].into_address()?;
-    let fee = &params[2].into_uint()?;
-    let recipient = &params[3].into_address()?;
-    let amount_in = &params[4].into_uint()?;
-    let amount_out_minimum = &params[5].into_uint()?;
 
-    Ok(Swap {
-        recipient: *recipient,
-        token_in: *token_in,
-        token_out: *token_out,
-        amount_in: Some(*amount_in),
-        amount_out: None,
-        amount_out_minimum: Some(*amount_out_minimum),
-        amount_in_maximum: None,
-        path: DexPath::PancakeV3SingleHop(PancakeV3SingleHopPath {
-            token_in: *token_in,
-            token_out: *token_out,
-            fee: *fee,
-        }),
+    Ok(ExactInputSingleParams {
+        token_in: params[0].into_address()?,
+        token_out: params[1].into_address()?,
+        fee: params[2].into_uint()?,
+        recipient: params[3].into_address()?,
+        amount_in: params[4].into_uint()?,
+        amount_out_minimum: params[5].into_uint()?,
+        sqrt_price_limit_x96: params[6].into_uint()?,
     })
 }
 
-pub fn exact_output_single(call: &ContractCall) -> Result<Swap> {
+#[derive(Debug, Clone)]
+pub struct ExactOutputSingleParams {
+    pub token_in: H160,
+    pub token_out: H160,
+    pub fee: U256,
+    pub recipient: H160,
+    pub amount_out: U256,
+    pub amount_in_maximum: U256,
+    pub sqrt_price_limit_x96: U256,
+}
+
+pub fn exact_output_single(call: &ContractCall) -> Result<ExactOutputSingleParams> {
     /*
                     function exactOutputSingle(
                                     ExactOutputSingleParams calldata params
@@ -62,25 +73,14 @@ pub fn exact_output_single(call: &ContractCall) -> Result<Swap> {
     */
 
     let params = call.get_param("params")?.get_value().into_tuple()?;
-    let token_in = &params[0].into_address()?;
-    let token_out = &params[1].into_address()?;
-    let fee = &params[2].into_uint()?;
-    let recipient = &params[3].into_address()?;
-    let amount_out = &params[4].into_uint()?;
-    let amount_in_maximum = &params[5].into_uint()?;
 
-    Ok(Swap {
-        recipient: *recipient,
-        token_in: *token_in,
-        token_out: *token_out,
-        amount_in: None,
-        amount_out: Some(*amount_out),
-        amount_out_minimum: None,
-        amount_in_maximum: Some(*amount_in_maximum),
-        path: DexPath::PancakeV3SingleHop(PancakeV3SingleHopPath {
-            token_in: *token_in,
-            token_out: *token_out,
-            fee: *fee,
-        }),
+    Ok(ExactOutputSingleParams {
+        token_in: params[0].into_address()?,
+        token_out: params[1].into_address()?,
+        fee: params[2].into_uint()?,
+        recipient: params[3].into_address()?,
+        amount_out: params[4].into_uint()?,
+        amount_in_maximum: params[5].into_uint()?,
+        sqrt_price_limit_x96: params[6].into_uint()?,
     })
 }

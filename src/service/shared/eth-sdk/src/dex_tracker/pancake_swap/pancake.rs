@@ -1,17 +1,19 @@
+use std::str::FromStr;
+
+use eyre::*;
+use web3::ethabi::Contract;
+use web3::types::{H160, H256, U256};
+
 use super::v2::{swap_exact_tokens_for_tokens, swap_tokens_for_exact_tokens};
 use super::v3::{
     multi_hop::{exact_input, exact_output},
     single_hop::{exact_input_single, exact_output_single},
 };
-
+use crate::dex_tracker::v3::multi_hop::MultiHopPath;
 use crate::erc20::build_erc_20;
-use crate::evm::{DexPath, Trade};
+use crate::evm::{DexPath, PancakeV3SingleHopPath, Trade};
 use crate::{ContractCall, SerializableToken, TransactionReady};
-use eyre::*;
 use gen::model::{EnumBlockChain, EnumDex, EnumDexVersion};
-use std::str::FromStr;
-use web3::ethabi::Contract;
-use web3::types::{H160, H256, U256};
 
 pub struct Swap {
     pub recipient: H160,
@@ -80,28 +82,109 @@ impl PancakeSwap {
             if let Some(method) = self.get_method_by_name(&method_name) {
                 swap_infos.push(match method {
                     /* V2 */
-                    PancakeSwapMethod::SwapExactTokensForTokens => (
-                        swap_exact_tokens_for_tokens(&call)?,
-                        EnumDexVersion::V2,
-                        call,
-                    ),
-                    PancakeSwapMethod::SwapTokensForExactTokens => (
-                        swap_tokens_for_exact_tokens(&call)?,
-                        EnumDexVersion::V2,
-                        call,
-                    ),
+                    PancakeSwapMethod::SwapExactTokensForTokens => {
+                        let swap_exact_tokens_for_tokens_params =
+                            swap_exact_tokens_for_tokens(&call)?;
+                        let swap = Swap {
+                            recipient: swap_exact_tokens_for_tokens_params.to,
+                            token_in: swap_exact_tokens_for_tokens_params.path[0],
+                            token_out: swap_exact_tokens_for_tokens_params.path
+                                [swap_exact_tokens_for_tokens_params.path.len() - 1],
+                            amount_in: Some(swap_exact_tokens_for_tokens_params.amount_in),
+                            amount_out: None,
+                            amount_out_minimum: Some(
+                                swap_exact_tokens_for_tokens_params.amount_out_min,
+                            ),
+                            amount_in_maximum: None,
+                            path: DexPath::PancakeV2(swap_exact_tokens_for_tokens_params.path),
+                        };
+                        (swap, EnumDexVersion::V2, call)
+                    }
+                    PancakeSwapMethod::SwapTokensForExactTokens => {
+                        let swap_tokens_for_exact_tokens_params =
+                            swap_tokens_for_exact_tokens(&call)?;
+                        let swap = Swap {
+                            recipient: swap_tokens_for_exact_tokens_params.to,
+                            token_in: swap_tokens_for_exact_tokens_params.path[0],
+                            token_out: swap_tokens_for_exact_tokens_params.path
+                                [swap_tokens_for_exact_tokens_params.path.len() - 1],
+                            amount_in: None,
+                            amount_out: Some(swap_tokens_for_exact_tokens_params.amount_out),
+                            amount_out_minimum: None,
+                            amount_in_maximum: Some(
+                                swap_tokens_for_exact_tokens_params.amount_in_max,
+                            ),
+                            path: DexPath::PancakeV2(swap_tokens_for_exact_tokens_params.path),
+                        };
+
+                        (swap, EnumDexVersion::V2, call)
+                    }
                     /* V3 */
                     PancakeSwapMethod::ExactInputSingle => {
-                        (exact_input_single(&call)?, EnumDexVersion::V3, call)
+                        let exact_input_single_params = exact_input_single(&call)?;
+                        let swap = Swap {
+                            recipient: exact_input_single_params.recipient,
+                            token_in: exact_input_single_params.token_in,
+                            token_out: exact_input_single_params.token_out,
+                            amount_in: Some(exact_input_single_params.amount_in),
+                            amount_out: None,
+                            amount_out_minimum: Some(exact_input_single_params.amount_out_minimum),
+                            amount_in_maximum: None,
+                            path: DexPath::PancakeV3SingleHop(PancakeV3SingleHopPath {
+                                token_in: exact_input_single_params.token_in,
+                                token_out: exact_input_single_params.token_out,
+                                fee: exact_input_single_params.fee,
+                            }),
+                        };
+                        (swap, EnumDexVersion::V3, call)
                     }
                     PancakeSwapMethod::ExactOutputSingle => {
-                        (exact_output_single(&call)?, EnumDexVersion::V3, call)
+                        let exact_output_single_params = exact_output_single(&call)?;
+                        let swap = Swap {
+                            recipient: exact_output_single_params.recipient,
+                            token_in: exact_output_single_params.token_in,
+                            token_out: exact_output_single_params.token_out,
+                            amount_in: None,
+                            amount_out: Some(exact_output_single_params.amount_out),
+                            amount_out_minimum: None,
+                            amount_in_maximum: Some(exact_output_single_params.amount_in_maximum),
+                            path: DexPath::PancakeV3SingleHop(PancakeV3SingleHopPath {
+                                token_in: exact_output_single_params.token_in,
+                                token_out: exact_output_single_params.token_out,
+                                fee: exact_output_single_params.fee,
+                            }),
+                        };
+                        (swap, EnumDexVersion::V3, call)
                     }
                     PancakeSwapMethod::ExactInput => {
-                        (exact_input(&call)?, EnumDexVersion::V3, call)
+                        let exact_input_params = exact_input(&call)?;
+                        let full_path = MultiHopPath::from_bytes(&exact_input_params.path)?;
+                        let swap = Swap {
+                            recipient: exact_input_params.recipient,
+                            token_in: full_path[0].first_token,
+                            token_out: full_path[full_path.len() - 1].second_token,
+                            amount_in: Some(exact_input_params.amount_in),
+                            amount_out: None,
+                            amount_out_minimum: Some(exact_input_params.amount_out_minimum),
+                            amount_in_maximum: None,
+                            path: DexPath::PancakeV3MultiHop(exact_input_params.path.to_vec()),
+                        };
+                        (swap, EnumDexVersion::V3, call)
                     }
                     PancakeSwapMethod::ExactOutput => {
-                        (exact_output(&call)?, EnumDexVersion::V3, call)
+                        let exact_output_params = exact_output(&call)?;
+                        let full_path = MultiHopPath::from_bytes(&exact_output_params.path)?;
+                        let swap = Swap {
+                            recipient: exact_output_params.recipient,
+                            token_in: full_path[full_path.len() - 1].second_token,
+                            token_out: full_path[0].first_token,
+                            amount_in: None,
+                            amount_out: Some(exact_output_params.amount_out),
+                            amount_out_minimum: None,
+                            amount_in_maximum: Some(exact_output_params.amount_in_maximum),
+                            path: DexPath::PancakeV3MultiHop(exact_output_params.path.to_vec()),
+                        };
+                        (swap, EnumDexVersion::V3, call)
                     }
                 });
             }

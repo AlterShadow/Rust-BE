@@ -1,14 +1,13 @@
-use crate::dex_tracker::pancake::Swap;
-use crate::evm::DexPath;
-use crate::ContractCall;
 use eyre::*;
 use web3::types::{H160, U256};
 
+use crate::ContractCall;
+
 #[derive(Debug)]
 pub struct MultiHopPath {
-    first_token: H160,
-    fee: U256,
-    second_token: H160,
+    pub first_token: H160,
+    pub fee: U256,
+    pub second_token: H160,
 }
 
 impl MultiHopPath {
@@ -57,7 +56,15 @@ impl MultiHopPath {
     }
 }
 
-pub fn exact_input(call: &ContractCall) -> Result<Swap> {
+#[derive(Debug, Clone)]
+pub struct ExactInputParams {
+    pub path: Vec<u8>,
+    pub recipient: H160,
+    pub amount_in: U256,
+    pub amount_out_minimum: U256,
+}
+
+pub fn exact_input(call: &ContractCall) -> Result<ExactInputParams> {
     /*
                     function exactInput(
                                     ExactInputParams memory params
@@ -72,25 +79,24 @@ pub fn exact_input(call: &ContractCall) -> Result<Swap> {
     */
 
     let params = call.get_param("params")?.get_value().into_tuple()?;
-    let path = params[0].into_bytes()?;
-    let full_path = MultiHopPath::from_bytes(&path)?;
-    let recipient = params[1].into_address()?;
-    let amount_in = params[2].into_uint()?;
-    let amount_out_minimum = params[3].into_uint()?;
 
-    Ok(Swap {
-        recipient,
-        token_in: full_path[0].first_token,
-        token_out: full_path[full_path.len() - 1].second_token,
-        amount_in: Some(amount_in),
-        amount_out: None,
-        amount_out_minimum: Some(amount_out_minimum),
-        amount_in_maximum: None,
-        path: DexPath::PancakeV3MultiHop(path.to_vec()),
+    Ok(ExactInputParams {
+        path: params[0].into_bytes()?,
+        recipient: params[1].into_address()?,
+        amount_in: params[2].into_uint()?,
+        amount_out_minimum: params[3].into_uint()?,
     })
 }
 
-pub fn exact_output(call: &ContractCall) -> Result<Swap> {
+#[derive(Debug, Clone)]
+pub struct ExactOutputParams {
+    pub path: Vec<u8>,
+    pub recipient: H160,
+    pub amount_out: U256,
+    pub amount_in_maximum: U256,
+}
+
+pub fn exact_output(call: &ContractCall) -> Result<ExactOutputParams> {
     /*
                     function exactOutput(
                                     ExactOutputParams calldata params
@@ -105,20 +111,11 @@ pub fn exact_output(call: &ContractCall) -> Result<Swap> {
     */
 
     let params = call.get_param("params")?.get_value().into_tuple()?;
-    let path = params[0].into_bytes()?;
-    let full_path = MultiHopPath::from_bytes(&path)?;
-    let recipient = params[1].into_address()?;
-    let amount_out = params[2].into_uint()?;
-    let amount_in_maximum = params[3].into_uint()?;
 
-    Ok(Swap {
-        recipient,
-        token_in: full_path[full_path.len() - 1].second_token,
-        token_out: full_path[0].first_token,
-        amount_in: None,
-        amount_out: Some(amount_out),
-        amount_out_minimum: None,
-        amount_in_maximum: Some(amount_in_maximum),
-        path: DexPath::PancakeV3MultiHop(path.to_vec()),
+    Ok(ExactOutputParams {
+        path: params[0].into_bytes()?,
+        recipient: params[1].into_address()?,
+        amount_out: params[2].into_uint()?,
+        amount_in_maximum: params[3].into_uint()?,
     })
 }
