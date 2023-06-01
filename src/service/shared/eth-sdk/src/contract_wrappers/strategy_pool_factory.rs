@@ -1,4 +1,5 @@
 use crate::contract::{get_project_root, read_abi_from_solc_output, ContractDeployer};
+use crate::deploy_contract;
 use crate::utils::wait_for_confirmations_simple;
 use eyre::*;
 use std::time::Duration;
@@ -19,23 +20,9 @@ pub struct StrategyPoolFactoryContract<T: Transport> {
 impl<T: Transport> StrategyPoolFactoryContract<T> {
     // #[cfg(test)]
     pub async fn deploy(w3: Web3<T>, key: impl Key) -> Result<Self> {
-        let base = get_project_root().parent().unwrap().to_owned();
-
-        let abi_json = read_abi_from_solc_output(
-            &base.join("app.mc2.fi-solidity/out/StrategyPoolFactory.sol/StrategyPoolFactory.json"),
-        )?;
-        let bin = std::fs::read_to_string(
-            base.join("app.mc2.fi-solidity/out/StrategyPoolFactory.sol/StrategyPoolFactory.bin"),
-        )?;
-        // web3::contract::web3 never worked: Abi error: Invalid data for ABI json
-        let deployer = ContractDeployer::new(w3.eth(), abi_json)?.code(bin);
-
-        Ok(Self {
-            contract: deployer
-                .sign_with_key_and_execute(key.address(), key)
-                .await?,
-            w3,
-        })
+        let params = (key.address(),);
+        let contract = deploy_contract(w3.clone(), key, params, "StrategyPoolFactory").await?;
+        Ok(Self { contract, w3 })
     }
     pub fn new(w3: Web3<T>, address: Address) -> Result<Self> {
         let contract = Contract::from_json(w3.eth(), address, FACTORY_ABI_JSON.as_bytes())?;

@@ -344,11 +344,11 @@ pub async fn transfer_token_to_strategy_contract(
     escrow: EscrowTransfer,
     chain: EnumBlockChain,
     stablecoin_addresses: &StableCoinAddresses,
+    escrow_contract: &EscrowContract<EitherTransport>,
 ) -> Result<TransactionFetcher> {
     let token_address = stablecoin_addresses
         .get_by_chain_and_token(chain, escrow.token)
         .context("Could not find stablecoin address")?;
-    let escrow_contract = EscrowContract::new(conn.clone().into_raw().eth(), escrow.owner)?;
 
     let tx_hash = escrow_contract
         .transfer_token_to(signer, token_address, escrow.recipient, escrow.amount)
@@ -368,6 +368,7 @@ pub async fn on_user_back_strategy(
     strategy_pool_signer: impl Key,
     escrow_signer: impl Key,
     stablecoin: StableCoin,
+    escrow_contract: EscrowContract<EitherTransport>,
 ) -> Result<()> {
     let mut user_registered_strategy = db
         .execute(FunUserGetStrategyReq { strategy_id })
@@ -403,6 +404,7 @@ pub async fn on_user_back_strategy(
         },
         chain,
         stablecoin_addresses,
+        &escrow_contract,
     )
     .await?;
     // TODO: need to trade deposit token for strategy's tokens and call "deposit" on the strategy contract wrapper
@@ -1247,11 +1249,11 @@ pub async fn on_user_deposit(
     tx: &TransactionReady,
     stablecoin_addresses: &StableCoinAddresses,
     erc_20: &web3::ethabi::Contract,
+    escrow_contract: &EscrowContract<EitherTransport>,
 ) -> Result<()> {
     let esc = parse_escrow(chain, tx, stablecoin_addresses, erc_20)?;
 
-    // TODO: let our_valid_address = esc.recipient == "0x000".parse()?;
-    let our_valid_address = true;
+    let our_valid_address = esc.recipient == escrow_contract.address();
     ensure!(
         our_valid_address,
         "is not our valid address {:?}",
@@ -1277,7 +1279,7 @@ pub async fn on_user_request_refund(
     db: &DbClient,
     chain: EnumBlockChain,
     stablecoin_addresses: &StableCoinAddresses,
-    // TODO: contract: &EscrowContract<EitherTransport>,
+    escrow_contract: &EscrowContract<EitherTransport>,
     quantity: U256,
     wallet_address: Address,
     escrow_signer: impl Key,
@@ -1286,8 +1288,7 @@ pub async fn on_user_request_refund(
     info!(
         "on_user_request_refund {:?} from {:?} transfer {:?} {:?} to {:?}",
         chain,
-        // TODO: contract.address(),
-        escrow_signer.address(),
+        escrow_contract.address(),
         quantity,
         token,
         wallet_address
@@ -1305,17 +1306,11 @@ pub async fn on_user_request_refund(
     let token_address = stablecoin_addresses
         .get_by_chain_and_token(chain, token)
         .context("no stablecoin address")?;
-    // TODO: use escrow wallet instead
-    // let hash = contract
-    //     .transfer_token_to(escrow_signer, token_address, wallet_address, quantity)
-    //     .await?;
-    let erc20 = Erc20Token::new(
-        _conn.get_raw().clone(),
-        Contract::new(_conn.get_raw().eth(), token_address, build_erc_20()?),
-    )?;
-    let hash = erc20
-        .transfer(escrow_signer, wallet_address, quantity)
+
+    let hash = contract
+        .transfer_token_to(escrow_signer, token_address, wallet_address, quantity)
         .await?;
+
     db.execute(FunUserUpdateRequestRefundHistoryReq {
         request_refund_id: row.request_refund_id,
         transaction_hash: format!("{:?}", hash),
@@ -1359,12 +1354,13 @@ mod tests {
             U256::from(1e18 as i64),
         )
         .await?;
-        // TODO: we want to replace escrow_key with escrow_contract
+        let escrow_contract =
+            EscrowContract::deploy(conn.get_raw().clone(), &escrow_key.key).await?;
 
         let tx_hash = erc20_mock
             .transfer(
                 &user_key.key,
-                escrow_key.address,
+                escrow_contract.address(),
                 U256::from(20000000000i64),
             )
             .await?;
@@ -1469,11 +1465,13 @@ mod tests {
             U256::from(1e18 as i64),
         )
         .await?;
+        let escrow_contract =
+            EscrowContract::deploy(conn.get_raw().clone(), &escrow_key.key).await?;
         // TODO: we want to replace escrow_key with escrow_contract
         let tx_hash = erc20_mock
             .transfer(
                 &user_key.key,
-                escrow_key.address,
+                escrow_contract.address(),
                 U256::from(20000000000i64),
             )
             .await?;
@@ -1525,6 +1523,7 @@ mod tests {
             &tx,
             &stablecoins,
             &erc20_mock.contract.abi(),
+            &escrow_contract,
         )
         .await?;
 
@@ -1544,6 +1543,7 @@ mod tests {
             &db,
             EnumBlockChain::EthereumGoerli,
             &stablecoins,
+            &escrow_contract,
             U256::from(1000),
             user_key.address,
             &escrow_key.key,

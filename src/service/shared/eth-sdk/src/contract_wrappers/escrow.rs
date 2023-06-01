@@ -1,22 +1,29 @@
+use crate::contract::{read_abi_from_solc_output, ContractDeployer};
+use crate::deploy_contract;
 use eyre::*;
 use tracing::info;
 use web3::api::Eth;
 use web3::contract::{Contract, Options};
 use web3::signing::Key;
 use web3::types::{Address, H256, U256};
-use web3::Transport;
+use web3::{Transport, Web3};
 
 const ESCROW_ABI_JSON: &str = include_str!("../../../../../../abi/internal/escrow.json");
 
 #[derive(Debug, Clone)]
 pub struct EscrowContract<T: Transport> {
-    inner: Contract<T>,
+    contract: Contract<T>,
 }
 
 impl<T: Transport> EscrowContract<T> {
+    // only for testing
+    pub async fn deploy(w3: Web3<T>, key: impl Key) -> Result<Self> {
+        let contract = deploy_contract(w3, key, (), "Escrow").await?;
+        Ok(Self { contract })
+    }
     pub fn new(eth: Eth<T>, address: Address) -> Result<Self> {
         let contract = Contract::from_json(eth, address, ESCROW_ABI_JSON.as_bytes())?;
-        Ok(Self { inner: contract })
+        Ok(Self { contract })
     }
 
     pub async fn transfer_token_to(
@@ -35,7 +42,7 @@ impl<T: Transport> EscrowContract<T> {
         );
         let params = (token_address, recipient, amount);
         let estimated_gas = self
-            .inner
+            .contract
             .estimate_gas(
                 EscrowFunctions::TransferTokenTo.as_str(),
                 params,
@@ -45,7 +52,7 @@ impl<T: Transport> EscrowContract<T> {
             .await?;
 
         Ok(self
-            .inner
+            .contract
             .signed_call(
                 EscrowFunctions::TransferTokenTo.as_str(),
                 params,
@@ -62,7 +69,7 @@ impl<T: Transport> EscrowContract<T> {
         new_owner: Address,
     ) -> Result<H256> {
         let estimated_gas = self
-            .inner
+            .contract
             .estimate_gas(
                 EscrowFunctions::TransferOwnership.as_str(),
                 new_owner,
@@ -72,7 +79,7 @@ impl<T: Transport> EscrowContract<T> {
             .await?;
 
         Ok(self
-            .inner
+            .contract
             .signed_call(
                 EscrowFunctions::TransferOwnership.as_str(),
                 new_owner,
@@ -84,7 +91,7 @@ impl<T: Transport> EscrowContract<T> {
 
     pub async fn owner(&self) -> Result<Address> {
         Ok(self
-            .inner
+            .contract
             .query(
                 EscrowFunctions::Owner.as_str(),
                 (),
@@ -95,7 +102,7 @@ impl<T: Transport> EscrowContract<T> {
             .await?)
     }
     pub fn address(&self) -> Address {
-        self.inner.address()
+        self.contract.address()
     }
 }
 
