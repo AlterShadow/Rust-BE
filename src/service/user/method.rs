@@ -1,3 +1,4 @@
+use eth_sdk::erc20::{build_erc_20, Erc20Token};
 use eth_sdk::escrow::EscrowContract;
 use eth_sdk::escrow_tracker::escrow::parse_escrow;
 use eth_sdk::signer::Secp256k1SecretKey;
@@ -15,11 +16,12 @@ use lib::handler::RequestHandler;
 use lib::toolbox::*;
 use lib::utils::hex_decode;
 use lib::ws::*;
+use std::ptr::hash;
 use std::str::FromStr;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use tracing::info;
-use web3::ethabi::Contract;
+use web3::contract::Contract;
 use web3::signing::Key;
 use web3::types::{Address, H256, U256};
 
@@ -496,7 +498,7 @@ impl RequestHandler for MethodUserRequestRefund {
                 &db,
                 EnumBlockChain::from_str(&req.blockchain)?,
                 &stablecoin_addresses,
-                &escrow_contract,
+                // &escrow_contract,
                 req.quantity.parse()?,
                 req.wallet_address.parse()?,
                 &escrow_signer.key,
@@ -1244,7 +1246,7 @@ pub async fn on_user_deposit(
     chain: EnumBlockChain,
     tx: &TransactionReady,
     stablecoin_addresses: &StableCoinAddresses,
-    erc_20: &Contract,
+    erc_20: &web3::ethabi::Contract,
 ) -> Result<()> {
     let esc = parse_escrow(chain, tx, stablecoin_addresses, erc_20)?;
 
@@ -1275,7 +1277,7 @@ pub async fn on_user_request_refund(
     db: &DbClient,
     chain: EnumBlockChain,
     stablecoin_addresses: &StableCoinAddresses,
-    contract: &EscrowContract<EitherTransport>,
+    // TODO: contract: &EscrowContract<EitherTransport>,
     quantity: U256,
     wallet_address: Address,
     escrow_signer: impl Key,
@@ -1284,7 +1286,8 @@ pub async fn on_user_request_refund(
     info!(
         "on_user_request_refund {:?} from {:?} transfer {:?} {:?} to {:?}",
         chain,
-        contract.address(),
+        // TODO: contract.address(),
+        escrow_signer.address(),
         quantity,
         token,
         wallet_address
@@ -1302,8 +1305,16 @@ pub async fn on_user_request_refund(
     let token_address = stablecoin_addresses
         .get_by_chain_and_token(chain, token)
         .context("no stablecoin address")?;
-    let hash = contract
-        .transfer_token_to(escrow_signer, token_address, wallet_address, quantity)
+    // TODO: use escrow wallet instead
+    // let hash = contract
+    //     .transfer_token_to(escrow_signer, token_address, wallet_address, quantity)
+    //     .await?;
+    let erc20 = Erc20Token::new(
+        _conn.get_raw().clone(),
+        Contract::new(_conn.get_raw().eth(), token_address, build_erc_20()?),
+    )?;
+    let hash = erc20
+        .transfer(escrow_signer, wallet_address, quantity)
         .await?;
     db.execute(FunUserUpdateRequestRefundHistoryReq {
         request_refund_id: row.request_refund_id,
@@ -1325,7 +1336,7 @@ mod tests {
     use std::net::Ipv4Addr;
 
     #[tokio::test]
-    async fn test_user_ethereum_back_strategy() -> Result<()> {
+    async fn test_user_ethereum_deposit_back_strategy() -> Result<()> {
         let _ = setup_logs(LogLevel::Info);
         drop_and_recreate_database()?;
         let user_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
@@ -1348,6 +1359,8 @@ mod tests {
             U256::from(1e18 as i64),
         )
         .await?;
+        // TODO: we want to replace escrow_key with escrow_contract
+
         let tx_hash = erc20_mock
             .transfer(
                 &user_key.key,
@@ -1425,6 +1438,114 @@ mod tests {
             &stablecoins,
             strategy.strategy_id,
             &admin_key.key,
+            &escrow_key.key,
+            StableCoin::Usdc,
+        )
+        .await?;
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_user_ethereum_deposit_refund() -> Result<()> {
+        let _ = setup_logs(LogLevel::Info);
+        drop_and_recreate_database()?;
+        let user_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
+        let admin_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_2)?;
+        let escrow_key = Secp256k1SecretKey::new_random();
+        let conn_pool = EthereumRpcConnectionPool::localnet();
+        let conn = conn_pool.get_conn().await?;
+        let erc20_mock = deploy_mock_erc20(conn.get_raw().clone(), admin_key.clone()).await?;
+        erc20_mock
+            .mint(
+                &admin_key.key,
+                user_key.address,
+                U256::from(200000000000i64),
+            )
+            .await?;
+        let eth = EthereumToken::new2(conn.get_raw().clone());
+        eth.transfer(
+            admin_key.clone(),
+            escrow_key.address,
+            U256::from(1e18 as i64),
+        )
+        .await?;
+        // TODO: we want to replace escrow_key with escrow_contract
+        let tx_hash = erc20_mock
+            .transfer(
+                &user_key.key,
+                escrow_key.address,
+                U256::from(20000000000i64),
+            )
+            .await?;
+        let db = connect_to_database(DatabaseConfig {
+            user: Some("postgres".to_string()),
+            password: Some("123456".to_string()),
+            dbname: Some("mc2fi".to_string()),
+            host: Some("localhost".to_string()),
+            ..Default::default()
+        })
+        .await?;
+        let ret = db
+            .execute(FunAuthSignupReq {
+                address: format!("{:?}", user_key.address),
+                email: "".to_string(),
+                phone: "".to_string(),
+                preferred_language: "".to_string(),
+                agreed_tos: true,
+                agreed_privacy: true,
+                ip_address: Ipv4Addr::new(127, 0, 0, 1).into(),
+                username: None,
+                age: None,
+                public_id: 1,
+            })
+            .await?
+            .into_result()
+            .context("No user signup resp")?;
+        let ctx = RequestContext {
+            connection_id: 0,
+            user_id: ret.user_id,
+            seq: 0,
+            method: 0,
+            log_id: 0,
+        };
+
+        let mut stablecoins = StableCoinAddresses::default();
+        stablecoins.inner.insert(
+            EnumBlockChain::EthereumGoerli,
+            vec![(StableCoin::Usdc, erc20_mock.address)],
+        );
+
+        // at this step, tx should be passed with quickalert
+        let tx = TransactionFetcher::new_and_assume_ready(tx_hash, &conn).await?;
+        on_user_deposit(
+            &conn,
+            &ctx,
+            &db,
+            EnumBlockChain::EthereumGoerli,
+            &tx,
+            &stablecoins,
+            &erc20_mock.contract.abi(),
+        )
+        .await?;
+
+        let strategy = db
+            .execute(FunUserCreateStrategyReq {
+                user_id: ctx.user_id,
+                name: "TEST".to_string(),
+                description: "TEST".to_string(),
+            })
+            .await?
+            .into_result()
+            .context("create strategy")?;
+
+        on_user_request_refund(
+            &conn,
+            &ctx,
+            &db,
+            EnumBlockChain::EthereumGoerli,
+            &stablecoins,
+            U256::from(1000),
+            user_key.address,
             &escrow_key.key,
             StableCoin::Usdc,
         )

@@ -538,7 +538,7 @@ CREATE SEQUENCE tbl.seq_user_registered_wallet_id
 ;
 
 -- Sequence: seq_user_request_refund_history_id
-CREATE SEQUENCE seq_user_request_refund_history_id
+CREATE SEQUENCE tbl.seq_user_request_refund_history_id
       NO MINVALUE
       NO MAXVALUE
       NO CYCLE

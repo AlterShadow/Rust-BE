@@ -22,7 +22,7 @@ pub fn parse_escrow(
     chain: EnumBlockChain,
     tx: &TransactionReady,
     stablecoin_addresses: &StableCoinAddresses,
-    erc_20: &Contract,
+    erc_20: &web3::ethabi::Contract,
 ) -> Result<EscrowTransfer> {
     let called_contract = tx.get_to().context("missing called contract")?;
     let eth_mainnet_stablecoins = stablecoin_addresses.get(chain).unwrap();
