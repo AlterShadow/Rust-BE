@@ -61,7 +61,7 @@ pub fn swap_tokens_for_exact_tokens(call: &ContractCall) -> Result<Swap> {
         .collect();
     let path = path_result?;
     let token_in = path[0];
-    let token_out = path[1];
+    let token_out = path[path.len() - 1];
     let recipient = call.get_param("to")?.get_value().into_address()?;
 
     Ok(Swap {
