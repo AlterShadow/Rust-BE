@@ -62,8 +62,17 @@ impl PancakeSwap {
             }
         };
 
-        /* all swaps go through the "multicall" smart router function */
-        let function_calls = self.get_multicall_funcs_and_params(tx)?;
+        let function_called = ContractCall::from_inputs(&self.smart_router, &tx.get_input_data())?;
+        let function_calls: Vec<ContractCall>;
+        if function_called.get_name() == "multicall" {
+            /* swaps go through the "multicall" smart router function if: */
+            /* the caller pays or receives native tokens, so the swap includes other calls like unwrapETH or refundETH */
+            /* the swap requires calls to both v2 and v3 pools to be completed */
+            function_calls = self.get_multicall_funcs_and_params(&function_called)?;
+        } else {
+            /* swaps call a swap function directly instead of multicall if it's token to token and a single pool version is enough */
+            function_calls = vec![function_called];
+        }
 
         let mut swap_infos: Vec<(Swap, EnumDexVersion, ContractCall)> = Vec::new();
         for call in function_calls {
@@ -170,16 +179,15 @@ impl PancakeSwap {
         })
     }
 
-    fn get_multicall_funcs_and_params(&self, tx: &TransactionReady) -> Result<Vec<ContractCall>> {
+    fn get_multicall_funcs_and_params(
+        &self,
+        multicall: &ContractCall,
+    ) -> Result<Vec<ContractCall>> {
         /*
                         function multicall(
                                 bytes[] calldata data
                         ) public payable override returns (bytes[] memory results);
         */
-        let multicall_input_data = tx.get_input_data();
-
-        let multicall = ContractCall::from_inputs(&self.smart_router, &multicall_input_data)?;
-
         let mut actual_function_calls: Vec<ContractCall> = Vec::new();
         /* the single parameter from "multicall" is ambiguously called "data" */
         if let Ok(param) = multicall.get_param("data") {
