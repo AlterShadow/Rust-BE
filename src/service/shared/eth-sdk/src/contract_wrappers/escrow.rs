@@ -1,4 +1,3 @@
-use crate::contract::{read_abi_from_solc_output, ContractDeployer};
 use crate::deploy_contract;
 use eyre::*;
 use tracing::info;

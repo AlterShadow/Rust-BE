@@ -31,6 +31,11 @@ impl AuthClient {
         self.client.request(10030, req).await
     }
 }
+impl AuthClient {
+    pub async fn logout(&mut self, req: LogoutRequest) -> Result<LogoutResponse> {
+        self.client.request(10040, req).await
+    }
+}
 pub struct UserClient {
     pub client: WsClient,
 }

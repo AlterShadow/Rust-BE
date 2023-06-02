@@ -146,6 +146,24 @@ END
 $$;
         
 
+CREATE OR REPLACE FUNCTION api.fun_auth_remove_token(a_user_id bigint)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+  ASSERT (a_user_id NOTNULL);
+
+  -- Setting up the token.
+  UPDATE tbl.user
+  SET user_token = NULL, admin_token = NULL
+  WHERE pkey_id = a_user_id;
+
+END
+            
+$$;
+        
+
 CREATE OR REPLACE FUNCTION api.fun_auth_authorize(a_address varchar, a_token uuid, a_service enum_service, a_device_id varchar, a_device_os varchar, a_ip_address inet)
 RETURNS table (
     "user_id" bigint,

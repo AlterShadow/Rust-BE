@@ -227,6 +227,33 @@ impl RequestHandler for MethodAuthAuthorize {
     }
 }
 
+pub struct MethodAuthLogout;
+impl RequestHandler for MethodAuthLogout {
+    type Request = LogoutRequest;
+    type Response = LogoutResponse;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        conn: Arc<Connection>,
+        _req: Self::Request,
+    ) {
+        let db_auth: DbClient = toolbox.get_nth_db(1);
+
+        toolbox.spawn_response(ctx, async move {
+            db_auth
+                .execute(FunAuthRemoveTokenReq {
+                    user_id: ctx.user_id,
+                })
+                .await?;
+            conn.user_id.store(0, Ordering::Relaxed);
+            conn.role.store(EnumRole::Guest as _, Ordering::Relaxed);
+            Ok(LogoutResponse {})
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

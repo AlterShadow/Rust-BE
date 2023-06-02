@@ -55,11 +55,15 @@ pub fn endpoint_auth_authorize() -> EndpointSchema {
         vec![Field::new("success", Type::Boolean)],
     )
 }
+pub fn endpoint_auth_logout() -> EndpointSchema {
+    EndpointSchema::new("Logout", 10040, vec![], vec![])
+}
 
 pub fn get_auth_endpoints() -> Vec<EndpointSchema> {
     vec![
         endpoint_auth_login(),
         endpoint_auth_signup(),
         endpoint_auth_authorize(),
+        endpoint_auth_logout(),
     ]
 }

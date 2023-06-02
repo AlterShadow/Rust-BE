@@ -118,6 +118,28 @@ impl DatabaseRequest for FunAuthSetTokenReq {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAuthRemoveTokenReq {
+    pub user_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAuthRemoveTokenRespRow {}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunAuthRemoveTokenReq {
+    type ResponseRow = FunAuthRemoveTokenRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_auth_remove_token(a_user_id => $1::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![&self.user_id as &(dyn ToSql + Sync)]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunAuthRemoveTokenRespRow> {
+        let r = FunAuthRemoveTokenRespRow {};
+        Ok(r)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAuthAuthorizeReq {
     pub address: String,
     pub token: uuid::Uuid,

@@ -1,7 +1,6 @@
-use crate::contract::{read_abi_from_solc_output, ContractDeployer};
 use crate::deploy_contract;
 use eyre::*;
-use web3::contract::{Contract, Options};
+use web3::contract::Contract;
 use web3::signing::Key;
 use web3::types::Address;
 use web3::{Transport, Web3};

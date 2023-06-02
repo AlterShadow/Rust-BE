@@ -7,6 +7,7 @@ ID: 1
 |10020|Login|address, signature_text, signature, service, device_id, device_os|address, user_id, user_token, admin_token||
 |10010|Signup|address, signature_text, signature, email, phone, agreed_tos, agreed_privacy, username|address, user_id||
 |10030|Authorize|address, token, service, device_id, device_os|success||
+|10040|Logout||||
 
 # user Server
 ID: 2

@@ -146,6 +146,15 @@
           "stream_response": [],
           "description": "",
           "json_schema": null
+        },
+        {
+          "name": "Logout",
+          "code": 10040,
+          "parameters": [],
+          "returns": [],
+          "stream_response": [],
+          "description": "",
+          "json_schema": null
         }
       ]
     },

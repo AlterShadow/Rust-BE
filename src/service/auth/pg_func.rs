@@ -161,6 +161,22 @@ END
             "#,
         ),
         ProceduralFunction::new(
+            "fun_auth_remove_token",
+            vec![Field::new("user_id", Type::BigInt)],
+            vec![],
+            r#"
+BEGIN
+  ASSERT (a_user_id NOTNULL);
+
+  -- Setting up the token.
+  UPDATE tbl.user
+  SET user_token = NULL, admin_token = NULL
+  WHERE pkey_id = a_user_id;
+
+END
+            "#,
+        ),
+        ProceduralFunction::new(
             "fun_auth_authorize",
             vec![
                 Field::new("address", Type::String),

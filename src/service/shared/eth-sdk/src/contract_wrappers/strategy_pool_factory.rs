@@ -1,4 +1,3 @@
-use crate::contract::{get_project_root, read_abi_from_solc_output, ContractDeployer};
 use crate::deploy_contract;
 use crate::utils::wait_for_confirmations_simple;
 use eyre::*;
