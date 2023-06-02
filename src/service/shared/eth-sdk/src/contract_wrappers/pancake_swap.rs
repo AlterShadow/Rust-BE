@@ -1,5 +1,4 @@
 use std::str::FromStr;
-use std::time::Duration;
 
 use eyre::*;
 use web3::contract::{Contract, Options};
@@ -17,7 +16,6 @@ use crate::dex_tracker::{
     v3::single_hop::exact_output_single,
 };
 use crate::evm::Trade;
-use crate::utils::wait_for_confirmations_simple;
 use crate::ContractCall;
 
 const SMART_ROUTER_ABI_JSON: &str =
@@ -211,7 +209,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
             )
             .await?;
 
-        let tx_hash = self
+        Ok(self
             .contract
             .signed_call(
                 PancakeSmartRouterV3Functions::SwapExactTokensForTokens.as_str(),
@@ -219,9 +217,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
                 Options::with(|options| options.gas = Some(estimated_gas)),
                 signer,
             )
-            .await?;
-        wait_for_confirmations_simple(&self.w3.eth(), tx_hash, Duration::from_secs(3), 5).await?;
-        Ok(tx_hash)
+            .await?)
     }
 
     pub async fn swap_tokens_for_exact_tokens(
@@ -243,7 +239,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
             )
             .await?;
 
-        let tx_hash = self
+        Ok(self
             .contract
             .signed_call(
                 PancakeSmartRouterV3Functions::SwapTokensForExactTokens.as_str(),
@@ -251,9 +247,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
                 Options::with(|options| options.gas = Some(estimated_gas)),
                 signer,
             )
-            .await?;
-        wait_for_confirmations_simple(&self.w3.eth(), tx_hash, Duration::from_secs(3), 5).await?;
-        Ok(tx_hash)
+            .await?)
     }
 
     pub async fn exact_input_single(
@@ -292,7 +286,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
             )
             .await?;
 
-        let tx_hash = self
+        Ok(self
             .contract
             .signed_call(
                 PancakeSmartRouterV3Functions::ExactInputSingle.as_str(),
@@ -300,9 +294,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
                 Options::with(|options| options.gas = Some(estimated_gas)),
                 signer,
             )
-            .await?;
-        wait_for_confirmations_simple(&self.w3.eth(), tx_hash, Duration::from_secs(3), 5).await?;
-        Ok(tx_hash)
+            .await?)
     }
 
     pub async fn exact_output_single(
@@ -341,7 +333,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
             )
             .await?;
 
-        let tx_hash = self
+        Ok(self
             .contract
             .signed_call(
                 PancakeSmartRouterV3Functions::ExactOutputSingle.as_str(),
@@ -349,9 +341,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
                 Options::with(|options| options.gas = Some(estimated_gas)),
                 signer,
             )
-            .await?;
-        wait_for_confirmations_simple(&self.w3.eth(), tx_hash, Duration::from_secs(3), 5).await?;
-        Ok(tx_hash)
+            .await?)
     }
 
     pub async fn exact_input(
@@ -380,7 +370,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
             )
             .await?;
 
-        let tx_hash = self
+        Ok(self
             .contract
             .signed_call(
                 PancakeSmartRouterV3Functions::ExactInput.as_str(),
@@ -388,9 +378,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
                 Options::with(|options| options.gas = Some(estimated_gas)),
                 signer,
             )
-            .await?;
-        wait_for_confirmations_simple(&self.w3.eth(), tx_hash, Duration::from_secs(3), 5).await?;
-        Ok(tx_hash)
+            .await?)
     }
 
     pub async fn exact_output(
@@ -418,7 +406,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
             )
             .await?;
 
-        let tx_hash = self
+        Ok(self
             .contract
             .signed_call(
                 PancakeSmartRouterV3Functions::ExactOutput.as_str(),
@@ -426,9 +414,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
                 Options::with(|options| options.gas = Some(estimated_gas)),
                 signer,
             )
-            .await?;
-        wait_for_confirmations_simple(&self.w3.eth(), tx_hash, Duration::from_secs(3), 5).await?;
-        Ok(tx_hash)
+            .await?)
     }
 
     pub async fn multi_call(
@@ -547,7 +533,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
             )
             .await?;
 
-        let tx_hash = self
+        Ok(self
             .contract
             .signed_call(
                 "multicall",
@@ -555,9 +541,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
                 Options::with(|options| options.gas = Some(estimated_gas)),
                 signer,
             )
-            .await?;
-
-        Ok(tx_hash)
+            .await?)
     }
 
     fn setup_exact_input(
