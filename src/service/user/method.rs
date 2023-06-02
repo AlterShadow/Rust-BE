@@ -350,7 +350,7 @@ pub async fn transfer_token_to_strategy_contract(
     let tx = TransactionFetcher::new(tx_hash);
     Ok(tx)
 }
-pub async fn on_user_back_strategy(
+pub async fn user_back_strategy(
     conn: &EthereumRpcConnection,
     ctx: &RequestContext,
     db: &DbClient,
@@ -362,6 +362,7 @@ pub async fn on_user_back_strategy(
     escrow_signer: impl Key,
     stablecoin: StableCoin,
     escrow_contract: EscrowContract<EitherTransport>,
+    // TODO: externally_owned_account: impl Key,
 ) -> Result<()> {
     let mut user_registered_strategy = db
         .execute(FunUserGetStrategyReq { strategy_id })
@@ -393,6 +394,7 @@ pub async fn on_user_back_strategy(
             token: stablecoin,
             amount: sp_tokens,
             recipient: strategy_address,
+            // TODO: recipient: externally_owned_account.address(),
             owner: escrow_signer_address,
         },
         chain,
@@ -400,6 +402,7 @@ pub async fn on_user_back_strategy(
         &escrow_contract,
     )
     .await?;
+    // TODO: transfer from externally_owned_account to strategy contract, ERC20
     // TODO: need to trade deposit token for strategy's tokens and call "deposit" on the strategy contract wrapper
     db.execute(FunUserBackStrategyReq {
         user_id: ctx.user_id,
@@ -446,7 +449,7 @@ impl RequestHandler for MethodUserBackStrategy {
         toolbox.spawn_response(ctx.clone(), async move {
             ensure_user_role(&conn, EnumRole::User)?;
 
-            on_user_back_strategy(
+            user_back_strategy(
                 &eth_conn,
                 &ctx,
                 &db,
@@ -1422,7 +1425,7 @@ mod tests {
             .into_result()
             .context("create strategy")?;
 
-        on_user_back_strategy(
+        user_back_strategy(
             &conn,
             &ctx,
             &db,
