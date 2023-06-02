@@ -6,6 +6,7 @@ use web3::signing::Key;
 use web3::{Transport, Web3};
 
 pub mod escrow;
+pub mod pancake_swap;
 pub mod strategy_pool;
 pub mod strategy_pool_factory;
 

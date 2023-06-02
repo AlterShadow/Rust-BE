@@ -54,6 +54,41 @@ impl MultiHopPath {
     pub fn get_fee(&self) -> U256 {
         self.fee
     }
+
+    pub fn invert(paths: &Vec<Self>) -> Vec<Self> {
+        let mut inverted_paths: Vec<Self> = Vec::with_capacity(paths.len());
+        for path in paths.iter().rev() {
+            inverted_paths.push(Self {
+                first_token: path.second_token,
+                fee: path.fee,
+                second_token: path.first_token,
+            });
+        }
+        inverted_paths
+    }
+
+    pub fn to_bytes(paths: &Vec<Self>) -> Result<Vec<u8>> {
+        if paths.is_empty() {
+            bail!("paths is empty");
+        }
+        let max_fee = U256::from(2).pow(U256::from(24)) - U256::from(1);
+        let mut res: Vec<u8> = Vec::new();
+        for (i, path) in paths.iter().enumerate() {
+            if path.fee > max_fee {
+                // fee can't be larger than max value for uint24
+                bail!("Fee is larger than the maximum value for uint24");
+            }
+            if i == 0 {
+                res.extend_from_slice(&path.first_token.0);
+            }
+            let mut buffer = [0u8; 32];
+            path.fee.to_big_endian(&mut buffer);
+            let fee_bytes = &buffer[29..32];
+            res.extend_from_slice(fee_bytes);
+            res.extend_from_slice(&path.second_token.0);
+        }
+        Ok(res)
+    }
 }
 
 #[derive(Debug, Clone)]
