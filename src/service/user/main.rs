@@ -4,6 +4,7 @@ use eyre::*;
 
 use crate::endpoints::*;
 use crate::method::*;
+use eth_sdk::escrow::EscrowContract;
 use eth_sdk::signer::Secp256k1SecretKey;
 use eth_sdk::EthereumRpcConnectionPool;
 use gen::model::EnumService;
@@ -125,13 +126,27 @@ async fn main() -> Result<()> {
         MethodUserListWalletActivityHistory,
     );
     let eth_pool = EthereumRpcConnectionPool::new(config.eth_provider_url.to_string(), 10)?;
+    let eth_conn = eth_pool.get_conn().await?.to_owned();
+    let escrow_signer = Arc::new(Secp256k1SecretKey::new_random());
+    let escrow_contract =
+        EscrowContract::deploy(eth_conn.clone().into_raw(), &escrow_signer.key).await?;
     server.add_handler(
         endpoint_user_back_strategy(),
         MethodUserBackStrategy {
-            conn: eth_pool.get_conn().await?.to_owned(),
+            conn: eth_conn.clone(),
             stablecoin_addresses: Arc::new(Default::default()),
             strategy_pool_signer: Arc::new(Secp256k1SecretKey::new_random()),
-            escrow_signer: Arc::new(Secp256k1SecretKey::new_random()),
+            escrow_contract: escrow_contract.clone(),
+            escrow_signer: escrow_signer.clone(),
+        },
+    );
+    server.add_handler(
+        endpoint_user_request_refund(),
+        MethodUserRequestRefund {
+            conn: eth_pool.get_conn().await?.to_owned(),
+            stablecoin_addresses: Arc::new(Default::default()),
+            escrow_contract,
+            escrow_signer,
         },
     );
     server.listen().await?;

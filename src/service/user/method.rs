@@ -1,13 +1,8 @@
-use eth_sdk::erc20::{build_erc_20, Erc20Token};
 use eth_sdk::escrow::EscrowContract;
-use eth_sdk::escrow_tracker::escrow::parse_escrow;
 use eth_sdk::signer::Secp256k1SecretKey;
 use eth_sdk::strategy_pool::StrategyPoolContract;
 use eth_sdk::utils::verify_message_address;
-use eth_sdk::{
-    EitherTransport, EscrowTransfer, EthereumRpcConnection, StableCoin, StableCoinAddresses,
-    TransactionFetcher, TransactionReady,
-};
+use eth_sdk::*;
 use eyre::*;
 use gen::database::*;
 use gen::model::*;
@@ -16,12 +11,10 @@ use lib::handler::RequestHandler;
 use lib::toolbox::*;
 use lib::utils::hex_decode;
 use lib::ws::*;
-use std::ptr::hash;
 use std::str::FromStr;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use tracing::info;
-use web3::contract::Contract;
 use web3::signing::Key;
 use web3::types::{Address, H256, U256};
 
@@ -430,6 +423,7 @@ pub struct MethodUserBackStrategy {
     pub conn: EthereumRpcConnection,
     pub stablecoin_addresses: Arc<StableCoinAddresses>,
     pub strategy_pool_signer: Arc<Secp256k1SecretKey>,
+    pub escrow_contract: EscrowContract<EitherTransport>,
     pub escrow_signer: Arc<Secp256k1SecretKey>,
 }
 impl RequestHandler for MethodUserBackStrategy {
@@ -448,6 +442,7 @@ impl RequestHandler for MethodUserBackStrategy {
         let stablecoin_addresses = self.stablecoin_addresses.clone();
         let strategy_pool_signer = self.strategy_pool_signer.clone();
         let escrow_signer = self.escrow_signer.clone();
+        let escrow_contract = self.escrow_contract.clone();
         toolbox.spawn_response(ctx.clone(), async move {
             ensure_user_role(&conn, EnumRole::User)?;
 
@@ -462,6 +457,7 @@ impl RequestHandler for MethodUserBackStrategy {
                 &**strategy_pool_signer,
                 &**escrow_signer,
                 StableCoin::Usdc,
+                escrow_contract,
             )
             .await?;
             Ok(())
@@ -471,7 +467,7 @@ impl RequestHandler for MethodUserBackStrategy {
 pub struct MethodUserRequestRefund {
     pub conn: EthereumRpcConnection,
     pub stablecoin_addresses: Arc<StableCoinAddresses>,
-    pub escrow_contract: Arc<EscrowContract<EitherTransport>>,
+    pub escrow_contract: EscrowContract<EitherTransport>,
     pub escrow_signer: Arc<Secp256k1SecretKey>,
 }
 
@@ -500,7 +496,7 @@ impl RequestHandler for MethodUserRequestRefund {
                 &db,
                 EnumBlockChain::from_str(&req.blockchain)?,
                 &stablecoin_addresses,
-                // &escrow_contract,
+                &escrow_contract,
                 req.quantity.parse()?,
                 req.wallet_address.parse()?,
                 &escrow_signer.key,
@@ -1237,42 +1233,6 @@ impl RequestHandler for MethodUserListWalletActivityHistory {
         })
     }
 }
-/*
-1. He will transfer tokens C of USDC to escrow address B
-2. We track his transfer, calculate how much SP token user will have, and save the "deposit" information to database (this is for multi chain support)
-*/
-pub async fn on_user_deposit(
-    _conn: &EthereumRpcConnection,
-    ctx: &RequestContext,
-    db: &DbClient,
-    chain: EnumBlockChain,
-    tx: &TransactionReady,
-    stablecoin_addresses: &StableCoinAddresses,
-    erc_20: &web3::ethabi::Contract,
-    escrow_contract: &EscrowContract<EitherTransport>,
-) -> Result<()> {
-    let esc = parse_escrow(chain, tx, stablecoin_addresses, erc_20)?;
-
-    let our_valid_address = esc.recipient == escrow_contract.address();
-    ensure!(
-        our_valid_address,
-        "is not our valid address {:?}",
-        esc.recipient
-    );
-
-    // USER just deposits to our service
-    db.execute(FunUserDepositToEscrowReq {
-        user_id: ctx.user_id,
-        quantity: format!("{:?}", esc.amount),
-        blockchain: chain.to_string(),
-        user_address: format!("{:?}", esc.owner),
-        contract_address: format!("{:?}", tx.get_to().context("no to")?),
-        transaction_hash: format!("{:?}", tx.get_hash()),
-        receiver_address: format!("{:?}", esc.recipient),
-    })
-    .await?;
-    Ok(())
-}
 pub async fn on_user_request_refund(
     _conn: &EthereumRpcConnection,
     ctx: &RequestContext,
@@ -1307,7 +1267,7 @@ pub async fn on_user_request_refund(
         .get_by_chain_and_token(chain, token)
         .context("no stablecoin address")?;
 
-    let hash = contract
+    let hash = escrow_contract
         .transfer_token_to(escrow_signer, token_address, wallet_address, quantity)
         .await?;
 
@@ -1323,6 +1283,7 @@ pub async fn on_user_request_refund(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use eth_sdk::escrow_tracker::escrow::parse_escrow;
     use eth_sdk::mock_erc20::deploy_mock_erc20;
     use eth_sdk::signer::Secp256k1SecretKey;
     use eth_sdk::*;
@@ -1330,6 +1291,42 @@ mod tests {
     use lib::log::{setup_logs, LogLevel};
     use std::net::Ipv4Addr;
 
+    /*
+    1. He will transfer tokens C of USDC to escrow address B
+    2. We track his transfer, calculate how much SP token user will have, and save the "deposit" information to database (this is for multi chain support)
+    */
+    pub async fn on_user_deposit(
+        _conn: &EthereumRpcConnection,
+        ctx: &RequestContext,
+        db: &DbClient,
+        chain: EnumBlockChain,
+        tx: &TransactionReady,
+        stablecoin_addresses: &StableCoinAddresses,
+        erc_20: &web3::ethabi::Contract,
+        escrow_contract: &EscrowContract<EitherTransport>,
+    ) -> Result<()> {
+        let esc = parse_escrow(chain, tx, stablecoin_addresses, erc_20)?;
+
+        let our_valid_address = esc.recipient == escrow_contract.address();
+        ensure!(
+            our_valid_address,
+            "is not our valid address {:?}",
+            esc.recipient
+        );
+
+        // USER just deposits to our service
+        db.execute(FunUserDepositToEscrowReq {
+            user_id: ctx.user_id,
+            quantity: format!("{:?}", esc.amount),
+            blockchain: chain.to_string(),
+            user_address: format!("{:?}", esc.owner),
+            contract_address: format!("{:?}", tx.get_to().context("no to")?),
+            transaction_hash: format!("{:?}", tx.get_hash()),
+            receiver_address: format!("{:?}", esc.recipient),
+        })
+        .await?;
+        Ok(())
+    }
     #[tokio::test]
     async fn test_user_ethereum_deposit_back_strategy() -> Result<()> {
         let _ = setup_logs(LogLevel::Info);
