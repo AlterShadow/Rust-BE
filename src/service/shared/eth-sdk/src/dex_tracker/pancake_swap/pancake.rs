@@ -1,3 +1,4 @@
+use std::io::Cursor;
 use std::str::FromStr;
 
 use eyre::*;
@@ -337,13 +338,12 @@ enum PancakeSwapMethod {
     ExactOutput,
 }
 
-const PANCAKE_SMART_ROUTER_PATH: &str = "abi/pancake_swap/smart_router_v3.json";
+const SMART_ROUTER_ABI_JSON: &str =
+    include_str!("../../../../../../../abi/pancake_swap/smart_router_v3.json");
 
 pub fn build_pancake_swap() -> Result<PancakeSwap> {
-    let pancake_smart_router = Contract::load(
-        std::fs::File::open(PANCAKE_SMART_ROUTER_PATH).context("failed to read contract ABI")?,
-    )
-    .context("failed to parse contract ABI")?;
+    let cursor = Cursor::new(SMART_ROUTER_ABI_JSON);
+    let pancake_smart_router = Contract::load(cursor).context("failed to read contract ABI")?;
     let erc20 = build_erc_20()?;
     let transfer_event_signature = erc20
         .event("Transfer")
