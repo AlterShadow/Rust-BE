@@ -7,16 +7,8 @@ use web3::signing::Key;
 use web3::types::{Address, H256, U256};
 use web3::{Transport, Web3};
 
-use crate::dex_tracker::{
-    v2::swap_exact_tokens_for_tokens,
-    v2::swap_tokens_for_exact_tokens,
-    v3::multi_hop::exact_input,
-    v3::multi_hop::{exact_output, MultiHopPath},
-    v3::single_hop::exact_input_single,
-    v3::single_hop::exact_output_single,
-};
-use crate::evm::Trade;
-use crate::ContractCall;
+use crate::dex_tracker::v3::multi_hop::MultiHopPath;
+use crate::evm::{DexPath, PancakePairPaths};
 
 const SMART_ROUTER_ABI_JSON: &str =
     include_str!("../../../../../../abi/pancake_swap/smart_router_v3.json");
@@ -54,20 +46,21 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
     pub async fn copy_trade(
         &self,
         signer: impl Key + Clone,
-        trade: Trade,
+        paths: PancakePairPaths,
         amount_in: U256,
         amount_out_minimum: U256,
     ) -> Result<H256> {
         let recipient = signer.address();
-        match trade.swap_calls.len() {
-            0 => bail!("no swap calls in trade"),
+        match paths.len() {
+            0 => bail!("no swap paths"),
             /* if only one swap call, call swap directly */
             /* saves GAS compared to multicall that would call contract +1 times */
             1 => {
                 return Ok(self
                     .single_call(
                         signer,
-                        trade.swap_calls[0].clone(),
+                        paths.get_func_name(0)?,
+                        paths.get_path(0)?,
                         recipient,
                         amount_in,
                         amount_out_minimum,
@@ -78,13 +71,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
             /* saves GAS compared to calling each swap call because it only needs approval once */
             _ => {
                 return Ok(self
-                    .multi_call(
-                        signer,
-                        trade.swap_calls,
-                        recipient,
-                        amount_in,
-                        amount_out_minimum,
-                    )
+                    .multi_call(signer, paths, recipient, amount_in, amount_out_minimum)
                     .await?)
             }
         }
@@ -93,50 +80,58 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
     pub async fn single_call(
         &self,
         signer: impl Key + Clone,
-        call: ContractCall,
+        func_name: String,
+        path: DexPath,
         recipient: Address,
         amount_in: U256,
         amount_out_minimum: U256,
     ) -> Result<H256> {
-        match PancakeSmartRouterV3Functions::from_str(&call.get_name())? {
+        match PancakeSmartRouterV3Functions::from_str(&func_name)? {
             PancakeSmartRouterV3Functions::SwapExactTokensForTokens => {
                 /* path is the same on V2 pools, regardless of exact in or out */
                 /* path[0] is tokenIn, path[path.len()-1] is tokenOut */
-                let params = swap_exact_tokens_for_tokens(&call)?;
                 Ok(self
                     .swap_exact_tokens_for_tokens(
                         signer.clone(),
                         recipient,
                         amount_in,
                         amount_out_minimum,
-                        params.path,
+                        match path {
+                            DexPath::PancakeV2(path) => path,
+                            _ => bail!("invalid path for v2"),
+                        },
                     )
                     .await?)
             }
             PancakeSmartRouterV3Functions::SwapTokensForExactTokens => {
                 /* path is the same on V2 pools, regardless of exact in or out */
                 /* path[0] is tokenIn, path[path.len()-1] is tokenOut */
-                let params = swap_tokens_for_exact_tokens(&call)?;
                 Ok(self
                     .swap_exact_tokens_for_tokens(
                         signer.clone(),
                         recipient,
                         amount_in,
                         amount_out_minimum,
-                        params.path,
+                        match path {
+                            DexPath::PancakeV2(path) => path,
+                            _ => bail!("invalid path for v2"),
+                        },
                     )
                     .await?)
             }
             PancakeSmartRouterV3Functions::ExactInputSingle => {
                 /* path is the same on V3 single hop calls */
                 /* tokenIn, tokenOut, and fee are passed on every call */
-                let params = exact_input_single(&call)?;
+                let v3_single_hop_path = match path {
+                    DexPath::PancakeV3SingleHop(path) => path,
+                    _ => bail!("invalid path for v3 single hop"),
+                };
                 Ok(self
                     .exact_input_single(
                         signer.clone(),
-                        params.token_in,
-                        params.token_out,
-                        params.fee,
+                        v3_single_hop_path.token_in,
+                        v3_single_hop_path.token_out,
+                        v3_single_hop_path.fee,
                         recipient,
                         amount_in,
                         amount_out_minimum,
@@ -146,13 +141,16 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
             PancakeSmartRouterV3Functions::ExactOutputSingle => {
                 /* path is the same on V3 single hop calls */
                 /* tokenIn, tokenOut, and fee are passed on every call */
-                let params = exact_output_single(&call)?;
+                let v3_single_hop_path = match path {
+                    DexPath::PancakeV3SingleHop(path) => path,
+                    _ => bail!("invalid path for v3 single hop"),
+                };
                 Ok(self
                     .exact_input_single(
                         signer.clone(),
-                        params.token_in,
-                        params.token_out,
-                        params.fee,
+                        v3_single_hop_path.token_in,
+                        v3_single_hop_path.token_out,
+                        v3_single_hop_path.fee,
                         recipient,
                         amount_in,
                         amount_out_minimum,
@@ -163,11 +161,13 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
                 /* path is opposite on V3 multi hop calls */
                 /* first address is tokenIn on exact in */
                 /* first address is tokenOut on exact out */
-                let params = exact_input(&call)?;
                 Ok(self
                     .exact_input(
                         signer.clone(),
-                        MultiHopPath::from_bytes(&params.path)?,
+                        MultiHopPath::from_bytes(&match path {
+                            DexPath::PancakeV3MultiHop(path) => path,
+                            _ => bail!("invalid path for v3 multi hop"),
+                        })?,
                         recipient,
                         amount_in,
                         amount_out_minimum,
@@ -176,11 +176,13 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
             }
             PancakeSmartRouterV3Functions::ExactOutput => {
                 /* invert the "exactOutput" call path to reuse it in the "exactInput" call */
-                let params = exact_output(&call)?;
                 Ok(self
                     .exact_input(
                         signer.clone(),
-                        MultiHopPath::invert(&MultiHopPath::from_bytes(&params.path)?),
+                        MultiHopPath::invert(&MultiHopPath::from_bytes(&match path {
+                            DexPath::PancakeV3MultiHop(path) => path,
+                            _ => bail!("invalid path for v3 multi hop"),
+                        })?),
                         recipient,
                         amount_in,
                         amount_out_minimum,
@@ -420,7 +422,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
     pub async fn multi_call(
         &self,
         signer: impl Key,
-        calls: Vec<ContractCall>,
+        paths: PancakePairPaths,
         recipient: Address,
         amount_in: U256,
         amount_out_minimum: U256,
@@ -429,7 +431,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
         let mut temp_recipient: Address;
         let mut temp_amount_in: U256;
         let mut temp_amount_out_minimum: U256;
-        for i in 0..calls.len() {
+        for i in 0..paths.len() {
             if i == 0 {
                 /* first swap, set recipient of tokenOut as the contract itself */
                 /* the flag (address 0x2) saves GAS compared to providing the real address of the contract */
@@ -438,7 +440,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
                 temp_amount_in = amount_in;
                 /* no limit on amount out, this limit is for the last tokenOut only */
                 temp_amount_out_minimum = U256::from(0);
-            } else if i == calls.len() - 1 {
+            } else if i == paths.len() - 1 {
                 /* last swap, set recipient of tokenOut as the true recipient */
                 temp_recipient = recipient;
                 /* set amount_in to zero, will make the contract spend its own balance */
@@ -454,60 +456,76 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
                 /* no limit on amount out, this limit is for the last tokenOut only */
                 temp_amount_out_minimum = U256::from(0);
             }
-            match PancakeSmartRouterV3Functions::from_str(&calls[i].get_name())? {
+            match PancakeSmartRouterV3Functions::from_str(&paths.get_func_name(i)?)? {
                 PancakeSmartRouterV3Functions::SwapExactTokensForTokens => {
-                    let params = swap_exact_tokens_for_tokens(&calls[i])?;
                     call_data.push(self.setup_swap_exact_tokens_for_tokens(
                         temp_recipient,
                         temp_amount_in,
                         temp_amount_out_minimum,
-                        params.path,
+                        match paths.get_path(i)? {
+                            DexPath::PancakeV2(path) => path,
+                            _ => bail!("invalid path for v2"),
+                        },
                     )?)
                 }
                 PancakeSmartRouterV3Functions::SwapTokensForExactTokens => {
-                    let params = swap_tokens_for_exact_tokens(&calls[i])?;
                     call_data.push(self.setup_swap_exact_tokens_for_tokens(
                         temp_recipient,
                         temp_amount_in,
                         temp_amount_out_minimum,
-                        params.path,
+                        match paths.get_path(i)? {
+                            DexPath::PancakeV2(path) => path,
+                            _ => bail!("invalid path for v2"),
+                        },
                     )?)
                 }
                 PancakeSmartRouterV3Functions::ExactInputSingle => {
-                    let params = exact_input_single(&calls[i])?;
+                    let v3_single_hop_path = match paths.get_path(i)? {
+                        DexPath::PancakeV3SingleHop(path) => path,
+                        _ => bail!("invalid path for v3 single hop"),
+                    };
                     call_data.push(self.setup_exact_input_single(
-                        params.token_in,
-                        params.token_out,
-                        params.fee,
-                        temp_recipient,
-                        temp_amount_in,
-                        temp_amount_out_minimum,
-                    )?)
-                }
-                PancakeSmartRouterV3Functions::ExactInput => {
-                    let params = exact_input(&calls[i])?;
-                    call_data.push(self.setup_exact_input(
-                        MultiHopPath::from_bytes(&params.path)?,
+                        v3_single_hop_path.token_in,
+                        v3_single_hop_path.token_out,
+                        v3_single_hop_path.fee,
                         temp_recipient,
                         temp_amount_in,
                         temp_amount_out_minimum,
                     )?)
                 }
                 PancakeSmartRouterV3Functions::ExactOutputSingle => {
-                    let params = exact_output_single(&calls[i])?;
+                    let v3_single_hop_path = match paths.get_path(i)? {
+                        DexPath::PancakeV3SingleHop(path) => path,
+                        _ => bail!("invalid path for v3 single hop"),
+                    };
                     call_data.push(self.setup_exact_input_single(
-                        params.token_in,
-                        params.token_out,
-                        params.fee,
+                        v3_single_hop_path.token_in,
+                        v3_single_hop_path.token_out,
+                        v3_single_hop_path.fee,
+                        temp_recipient,
+                        temp_amount_in,
+                        temp_amount_out_minimum,
+                    )?)
+                }
+                PancakeSmartRouterV3Functions::ExactInput => {
+                    call_data.push(self.setup_exact_input(
+                        MultiHopPath::from_bytes(&match paths.get_path(i)? {
+                            DexPath::PancakeV3MultiHop(path) => path,
+                            _ => bail!("invalid path for v3 multi hop"),
+                        })?,
                         temp_recipient,
                         temp_amount_in,
                         temp_amount_out_minimum,
                     )?)
                 }
                 PancakeSmartRouterV3Functions::ExactOutput => {
-                    let params = exact_output(&calls[i])?;
                     call_data.push(self.setup_exact_input(
-                        MultiHopPath::invert(&MultiHopPath::from_bytes(&params.path)?),
+                        MultiHopPath::invert(&MultiHopPath::from_bytes(
+                            &match paths.get_path(i)? {
+                                DexPath::PancakeV3MultiHop(path) => path,
+                                _ => bail!("invalid path for v3 multi hop"),
+                            },
+                        )?),
                         temp_recipient,
                         temp_amount_in,
                         temp_amount_out_minimum,

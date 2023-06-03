@@ -69,6 +69,73 @@ pub struct Trade {
     pub dex_versions: Vec<EnumDexVersion>,
 }
 
+impl Trade {
+    pub fn get_pancake_pair_paths(&self) -> Result<PancakePairPaths> {
+        if self.dex != EnumDex::PancakeSwap {
+            bail!("dex is not pancakeswap")
+        }
+        let mut func_names_and_paths = Vec::new();
+        for (i, swap_call) in self.swap_calls.iter().enumerate() {
+            func_names_and_paths.push((swap_call.get_name(), self.paths[i].clone()));
+        }
+        Ok(PancakePairPaths::new(
+            self.token_in,
+            self.token_out,
+            func_names_and_paths,
+        )?)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct PancakePairPaths {
+    token_in: H160,
+    token_out: H160,
+    func_names_and_paths: Vec<(String, DexPath)>,
+}
+
+impl PancakePairPaths {
+    pub fn new(
+        token_in: H160,
+        token_out: H160,
+        func_names_and_paths: Vec<(String, DexPath)>,
+    ) -> Result<Self> {
+        if func_names_and_paths.len() == 0 {
+            bail!("empty names and paths");
+        }
+        Ok(Self {
+            token_in,
+            token_out,
+            func_names_and_paths: func_names_and_paths,
+        })
+    }
+
+    pub fn get_token_in(&self) -> H160 {
+        self.token_in
+    }
+
+    pub fn get_token_out(&self) -> H160 {
+        self.token_out
+    }
+
+    pub fn len(&self) -> usize {
+        self.func_names_and_paths.len()
+    }
+
+    pub fn get_func_name(&self, idx: usize) -> Result<String> {
+        if idx >= self.len() {
+            bail!("index out of bounds");
+        }
+        Ok(self.func_names_and_paths[idx].0.clone())
+    }
+
+    pub fn get_path(&self, idx: usize) -> Result<DexPath> {
+        if idx >= self.len() {
+            bail!("index out of bounds");
+        }
+        Ok(self.func_names_and_paths[idx].1.clone())
+    }
+}
+
 pub fn parse_quickalert_payload(payload: Bytes) -> Result<Vec<H256>> {
     let result: Result<Vec<H256>, _> = serde_json::from_slice(&payload);
 
