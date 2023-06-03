@@ -15,11 +15,11 @@ pub struct Erc20Token {
 }
 
 impl Erc20Token {
-    pub fn new(client: Web3<EitherTransport>, contract: Contract<EitherTransport>) -> Result<Self> {
+    pub fn new(client: Web3<EitherTransport>, address: Address) -> Result<Self> {
         Ok(Self {
-            client,
-            address: contract.address(),
-            contract,
+            client: client.clone(),
+            address,
+            contract: Contract::new(client.eth(), address, build_erc_20()?),
         })
     }
 

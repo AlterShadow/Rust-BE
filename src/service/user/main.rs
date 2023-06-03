@@ -138,6 +138,7 @@ async fn main() -> Result<()> {
             strategy_pool_signer: Arc::new(Secp256k1SecretKey::new_random()),
             escrow_contract: escrow_contract.clone(),
             escrow_signer: escrow_signer.clone(),
+            externally_owned_account: Arc::new(Secp256k1SecretKey::new_random()),
         },
     );
     server.add_handler(

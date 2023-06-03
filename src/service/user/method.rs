@@ -1,7 +1,8 @@
+use eth_sdk::erc20::{build_erc_20, Erc20Token};
 use eth_sdk::escrow::EscrowContract;
 use eth_sdk::signer::Secp256k1SecretKey;
 use eth_sdk::strategy_pool::StrategyPoolContract;
-use eth_sdk::utils::verify_message_address;
+use eth_sdk::utils::{verify_message_address, wait_for_confirmations_simple};
 use eth_sdk::*;
 use eyre::*;
 use gen::database::*;
@@ -14,6 +15,7 @@ use lib::ws::*;
 use std::str::FromStr;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
+use std::time::Duration;
 use tracing::info;
 use web3::signing::Key;
 use web3::types::{Address, H256, U256};
@@ -362,7 +364,7 @@ pub async fn user_back_strategy(
     escrow_signer: impl Key,
     stablecoin: StableCoin,
     escrow_contract: EscrowContract<EitherTransport>,
-    // TODO: externally_owned_account: impl Key,
+    externally_owned_account: impl Key,
 ) -> Result<()> {
     let mut user_registered_strategy = db
         .execute(FunUserGetStrategyReq { strategy_id })
@@ -393,8 +395,8 @@ pub async fn user_back_strategy(
         EscrowTransfer {
             token: stablecoin,
             amount: sp_tokens,
-            recipient: strategy_address,
-            // TODO: recipient: externally_owned_account.address(),
+            // recipient: strategy_address,
+            recipient: externally_owned_account.address(),
             owner: escrow_signer_address,
         },
         chain,
@@ -402,7 +404,15 @@ pub async fn user_back_strategy(
         &escrow_contract,
     )
     .await?;
-    // TODO: transfer from externally_owned_account to strategy contract, ERC20
+    let erc20_address = stablecoin_addresses
+        .get_by_chain_and_token(chain, stablecoin)
+        .context("Could not find stablecoin address")?;
+    let erc20 = Erc20Token::new(conn.clone().into_raw(), erc20_address)?;
+    let hash = erc20
+        .transfer(externally_owned_account, strategy_address, sp_tokens)
+        .await?;
+    wait_for_confirmations_simple(&conn.get_raw().eth(), hash, Duration::from_secs(3), 5).await?;
+
     // TODO: need to trade deposit token for strategy's tokens and call "deposit" on the strategy contract wrapper
     db.execute(FunUserBackStrategyReq {
         user_id: ctx.user_id,
@@ -428,6 +438,7 @@ pub struct MethodUserBackStrategy {
     pub strategy_pool_signer: Arc<Secp256k1SecretKey>,
     pub escrow_contract: EscrowContract<EitherTransport>,
     pub escrow_signer: Arc<Secp256k1SecretKey>,
+    pub externally_owned_account: Arc<Secp256k1SecretKey>,
 }
 impl RequestHandler for MethodUserBackStrategy {
     type Request = UserBackStrategyRequest;
@@ -446,6 +457,7 @@ impl RequestHandler for MethodUserBackStrategy {
         let strategy_pool_signer = self.strategy_pool_signer.clone();
         let escrow_signer = self.escrow_signer.clone();
         let escrow_contract = self.escrow_contract.clone();
+        let externally_owned_account = self.externally_owned_account.clone();
         toolbox.spawn_response(ctx.clone(), async move {
             ensure_user_role(&conn, EnumRole::User)?;
 
@@ -461,6 +473,7 @@ impl RequestHandler for MethodUserBackStrategy {
                 &**escrow_signer,
                 StableCoin::Usdc,
                 escrow_contract,
+                &**externally_owned_account,
             )
             .await?;
             Ok(())
@@ -1289,7 +1302,6 @@ mod tests {
     use eth_sdk::escrow_tracker::escrow::parse_escrow;
     use eth_sdk::mock_erc20::deploy_mock_erc20;
     use eth_sdk::signer::Secp256k1SecretKey;
-    use eth_sdk::*;
     use lib::database::{connect_to_database, drop_and_recreate_database, DatabaseConfig};
     use lib::log::{setup_logs, LogLevel};
     use std::net::Ipv4Addr;
@@ -1340,12 +1352,16 @@ mod tests {
         let conn_pool = EthereumRpcConnectionPool::localnet();
         let conn = conn_pool.get_conn().await?;
         let erc20_mock = deploy_mock_erc20(conn.get_raw().clone(), admin_key.clone()).await?;
+        let eoa = Secp256k1SecretKey::new_random();
         erc20_mock
             .mint(
                 &admin_key.key,
                 user_key.address,
                 U256::from(200000000000i64),
             )
+            .await?;
+        erc20_mock
+            .mint(&admin_key.key, eoa.address, U256::from(200000000000i64))
             .await?;
         let eth = EthereumToken::new2(conn.get_raw().clone());
         eth.transfer(
@@ -1412,6 +1428,7 @@ mod tests {
             &tx,
             &stablecoins,
             &erc20_mock.contract.abi(),
+            &escrow_contract,
         )
         .await?;
 
@@ -1436,6 +1453,8 @@ mod tests {
             &admin_key.key,
             &escrow_key.key,
             StableCoin::Usdc,
+            escrow_contract,
+            eoa,
         )
         .await?;
         Ok(())

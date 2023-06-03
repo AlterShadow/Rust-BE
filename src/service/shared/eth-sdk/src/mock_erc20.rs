@@ -30,7 +30,7 @@ pub async fn deploy_mock_erc20(conn: Web3<EitherTransport>, key: impl Key) -> Re
         });
     Ok(Erc20Token::new(
         conn,
-        deployer.sign_with_key_and_execute((), key).await?,
+        deployer.sign_with_key_and_execute((), key).await?.address(),
     )?)
 }
 
