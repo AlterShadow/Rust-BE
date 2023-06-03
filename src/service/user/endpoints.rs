@@ -544,6 +544,55 @@ pub fn endpoint_user_list_wallet_activity_history() -> EndpointSchema {
         )],
     )
 }
+pub fn endpoint_user_add_strategy_initial_token_ratio() -> EndpointSchema {
+    EndpointSchema::new(
+        "UserAddStrategyInitialTokenRatio",
+        20310,
+        vec![
+            Field::new("strategy_id", Type::BigInt),
+            Field::new("token_name", Type::String),
+            Field::new("token_address", Type::String),
+            Field::new("quantity", Type::String),
+        ],
+        vec![
+            Field::new("success", Type::Boolean),
+            Field::new("token_id", Type::BigInt),
+        ],
+    )
+}
+pub fn endpoint_user_remove_strategy_initial_token_ratio() -> EndpointSchema {
+    EndpointSchema::new(
+        "UserRemoveStrategyInitialTokenRatio",
+        20320,
+        vec![
+            Field::new("strategy_id", Type::BigInt),
+            Field::new("token_id", Type::BigInt),
+        ],
+        vec![Field::new("success", Type::Boolean)],
+    )
+}
+pub fn endpoint_user_list_strategy_initial_token_ratio() -> EndpointSchema {
+    EndpointSchema::new(
+        "UserListStrategyInitialTokenRatio",
+        20330,
+        vec![Field::new("strategy_id", Type::BigInt)],
+        vec![Field::new(
+            "token_ratios",
+            Type::datatable(
+                "ListStrategyInitialTokenRatioRow",
+                vec![
+                    Field::new("token_id", Type::BigInt),
+                    Field::new("token_name", Type::String),
+                    Field::new("token_address", Type::String),
+                    Field::new("quantity", Type::String),
+                    Field::new("updated_at", Type::BigInt),
+                    Field::new("created_at", Type::BigInt),
+                ],
+            ),
+        )],
+    )
+}
+
 pub fn get_user_endpoints() -> Vec<EndpointSchema> {
     vec![
         endpoint_user_follow_strategy(),
@@ -577,5 +626,8 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
         endpoint_user_remove_strategy_watching_wallet(),
         endpoint_user_list_strategy_watching_wallets(),
         endpoint_user_list_wallet_activity_history(),
+        endpoint_user_add_strategy_initial_token_ratio(),
+        endpoint_user_remove_strategy_initial_token_ratio(),
+        endpoint_user_list_strategy_initial_token_ratio(),
     ]
 }

@@ -1556,6 +1556,104 @@ impl DatabaseRequest for FunUserUpdateRequestRefundHistoryReq {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserAddStrategyInitialTokenRatioReq {
+    pub strategy_id: i64,
+    pub token_name: String,
+    pub token_address: String,
+    pub quantity: String,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserAddStrategyInitialTokenRatioRespRow {
+    pub strategy_initial_token_ratio_id: i64,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunUserAddStrategyInitialTokenRatioReq {
+    type ResponseRow = FunUserAddStrategyInitialTokenRatioRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_add_strategy_initial_token_ratio(a_strategy_id => $1::bigint, a_token_name => $2::varchar, a_token_address => $3::varchar, a_quantity => $4::varchar);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.strategy_id as &(dyn ToSql + Sync),
+            &self.token_name as &(dyn ToSql + Sync),
+            &self.token_address as &(dyn ToSql + Sync),
+            &self.quantity as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserAddStrategyInitialTokenRatioRespRow> {
+        let r = FunUserAddStrategyInitialTokenRatioRespRow {
+            strategy_initial_token_ratio_id: row.try_get(0)?,
+        };
+        Ok(r)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserRemoveStrategyInitialTokenRatioReq {
+    pub strategy_initial_token_ratio_id: i64,
+    pub strategy_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserRemoveStrategyInitialTokenRatioRespRow {}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunUserRemoveStrategyInitialTokenRatioReq {
+    type ResponseRow = FunUserRemoveStrategyInitialTokenRatioRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_remove_strategy_initial_token_ratio(a_strategy_initial_token_ratio_id => $1::bigint, a_strategy_id => $2::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.strategy_initial_token_ratio_id as &(dyn ToSql + Sync),
+            &self.strategy_id as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserRemoveStrategyInitialTokenRatioRespRow> {
+        let r = FunUserRemoveStrategyInitialTokenRatioRespRow {};
+        Ok(r)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserListStrategyInitialTokenRatiosReq {
+    pub strategy_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserListStrategyInitialTokenRatiosRespRow {
+    pub strategy_initial_token_ratio_id: i64,
+    pub token_name: String,
+    pub token_address: String,
+    pub quantity: String,
+    pub strategy_id: i64,
+    pub created_at: i64,
+    pub updated_at: i64,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunUserListStrategyInitialTokenRatiosReq {
+    type ResponseRow = FunUserListStrategyInitialTokenRatiosRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_list_strategy_initial_token_ratios(a_strategy_id => $1::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![&self.strategy_id as &(dyn ToSql + Sync)]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserListStrategyInitialTokenRatiosRespRow> {
+        let r = FunUserListStrategyInitialTokenRatiosRespRow {
+            strategy_initial_token_ratio_id: row.try_get(0)?,
+            token_name: row.try_get(1)?,
+            token_address: row.try_get(2)?,
+            quantity: row.try_get(3)?,
+            strategy_id: row.try_get(4)?,
+            created_at: row.try_get(5)?,
+            updated_at: row.try_get(6)?,
+        };
+        Ok(r)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunWatcherSaveRawTransactionReq {
     pub transaction_hash: String,
     pub chain: String,

@@ -1,5 +1,5 @@
 -- Created by Vertabelo (http://vertabelo.com)
--- Last modification date: 2023-06-03 08:01:16.918
+-- Last modification date: 2023-06-03 16:36:17.357
 
 CREATE SCHEMA IF NOT EXISTS tbl;;
 
@@ -97,7 +97,7 @@ CREATE TABLE tbl.strategy (
     historical_return double precision  NULL,
     inception_time bigint  NULL,
     current_usdc varchar(64)  NOT NULL,
-    total_backed_usdc varchar(64) NOT NULL,
+    total_backed_usdc varchar(64)  NOT NULL,
     total_exited_usdc varchar(64)  NOT NULL,
     reputation int  NULL,
     risk_score double precision  NULL,
@@ -106,6 +106,18 @@ CREATE TABLE tbl.strategy (
     swap_fee double precision  NULL,
     evm_contract_address varchar(64)  NULL,
     CONSTRAINT strategy_pk PRIMARY KEY (pkey_id)
+);
+
+-- Table: strategy_initial_token_ratio
+CREATE TABLE tbl.strategy_initial_token_ratio (
+    pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_strategy_initial_token_ratio_id'),
+    fkey_strategy_id bigint  NOT NULL,
+    token_name varchar(20)  NOT NULL,
+    token_address varchar(64)  NOT NULL,
+    quantity varchar(64)  NOT NULL,
+    updated_at bigint  NOT NULL,
+    created_at bigint  NOT NULL,
+    CONSTRAINT strategy_initial_token_ratio_pk PRIMARY KEY (pkey_id)
 );
 
 -- Table: strategy_watching_wallet
@@ -324,6 +336,14 @@ ALTER TABLE tbl.login_attempt ADD CONSTRAINT login_attempt_user
     INITIALLY IMMEDIATE
 ;
 
+-- Reference: strategy_strategy_initial_token_ratio (table: strategy_initial_token_ratio)
+ALTER TABLE tbl.strategy_initial_token_ratio ADD CONSTRAINT strategy_strategy_initial_token_ratio
+    FOREIGN KEY (fkey_strategy_id)
+    REFERENCES tbl.strategy (pkey_id)  
+    NOT DEFERRABLE 
+    INITIALLY IMMEDIATE
+;
+
 -- Reference: strategy_strategy_watching_wallet (table: strategy_watching_wallet)
 ALTER TABLE tbl.strategy_watching_wallet ADD CONSTRAINT strategy_strategy_watching_wallet
     FOREIGN KEY (fkey_strategy_id)
@@ -468,6 +488,13 @@ CREATE SEQUENCE tbl.seq_login_attempt_id
 
 -- Sequence: seq_strategy_id
 CREATE SEQUENCE tbl.seq_strategy_id
+      NO MINVALUE
+      NO MAXVALUE
+      NO CYCLE
+;
+
+-- Sequence: seq_strategy_initial_token_ratio_id
+CREATE SEQUENCE tbl.seq_strategy_initial_token_ratio_id
       NO MINVALUE
       NO MAXVALUE
       NO CYCLE

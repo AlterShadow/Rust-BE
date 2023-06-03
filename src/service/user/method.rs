@@ -1315,7 +1315,111 @@ pub async fn on_user_request_refund(
     Ok(hash)
 }
 
-#[cfg(test)]
+pub struct MethodUserAddStrategyInitialTokenRatio;
+impl RequestHandler for MethodUserAddStrategyInitialTokenRatio {
+    type Request = UserAddStrategyInitialTokenRatioRequest;
+    type Response = UserAddStrategyInitialTokenRatioResponse;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        conn: Arc<Connection>,
+        req: Self::Request,
+    ) {
+        let db: DbClient = toolbox.get_db();
+
+        toolbox.spawn_response(ctx, async move {
+            ensure_user_role(&conn, EnumRole::Expert)?;
+            // TODO: verify strategy belongs to user
+            let ret = db
+                .execute(FunUserAddStrategyInitialTokenRatioReq {
+                    strategy_id: req.strategy_id,
+                    token_name: req.token_name,
+                    token_address: req.token_address,
+                    quantity: req.quantity,
+                })
+                .await?
+                .into_result()
+                .context("failed to add strategy initial token ratio")?;
+
+            Ok(UserAddStrategyInitialTokenRatioResponse {
+                success: true,
+                token_id: ret.strategy_initial_token_ratio_id,
+            })
+        })
+    }
+}
+pub struct MethodUserRemoveStrategyInitialTokenRatio;
+impl RequestHandler for MethodUserRemoveStrategyInitialTokenRatio {
+    type Request = UserRemoveStrategyInitialTokenRatioRequest;
+    type Response = UserRemoveStrategyInitialTokenRatioResponse;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        conn: Arc<Connection>,
+        req: Self::Request,
+    ) {
+        let db: DbClient = toolbox.get_db();
+
+        toolbox.spawn_response(ctx, async move {
+            ensure_user_role(&conn, EnumRole::Expert)?;
+
+            let ret = db
+                .execute(FunUserRemoveStrategyInitialTokenRatioReq {
+                    strategy_initial_token_ratio_id: req.token_id,
+                    strategy_id: req.strategy_id,
+                })
+                .await?
+                .into_result()
+                .context("failed to remove strategy initial token ratio")?;
+
+            Ok(UserRemoveStrategyInitialTokenRatioResponse { success: true })
+        })
+    }
+}
+pub struct MethodUserListStrategyInitialTokenRatio;
+impl RequestHandler for MethodUserListStrategyInitialTokenRatio {
+    type Request = UserListStrategyInitialTokenRatioRequest;
+    type Response = UserListStrategyInitialTokenRatioResponse;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        conn: Arc<Connection>,
+        req: Self::Request,
+    ) {
+        let db: DbClient = toolbox.get_db();
+
+        toolbox.spawn_response(ctx, async move {
+            ensure_user_role(&conn, EnumRole::Expert)?;
+
+            let ret = db
+                .execute(FunUserListStrategyInitialTokenRatiosReq {
+                    strategy_id: req.strategy_id,
+                })
+                .await?;
+
+            Ok(UserListStrategyInitialTokenRatioResponse {
+                token_ratios: ret
+                    .into_rows()
+                    .into_iter()
+                    .map(|x| ListStrategyInitialTokenRatioRow {
+                        token_id: x.strategy_initial_token_ratio_id,
+                        token_name: x.token_name,
+                        token_address: x.token_address,
+                        quantity: x.quantity,
+                        updated_at: x.updated_at,
+                        created_at: x.created_at,
+                    })
+                    .collect(),
+            })
+        })
+    }
+}
 mod tests {
     use super::*;
     use eth_sdk::escrow_tracker::escrow::parse_escrow;
@@ -1324,6 +1428,7 @@ mod tests {
     use lib::database::{connect_to_database, drop_and_recreate_database, DatabaseConfig};
     use lib::log::{setup_logs, LogLevel};
     use std::net::Ipv4Addr;
+    use std::{format, vec};
 
     /*
     1. He will transfer tokens C of USDC to escrow address B

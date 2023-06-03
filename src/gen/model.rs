@@ -688,6 +688,16 @@ pub struct ListStrategiesRow {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct ListStrategyInitialTokenRatioRow {
+    pub token_id: i64,
+    pub token_name: String,
+    pub token_address: String,
+    pub quantity: String,
+    pub updated_at: i64,
+    pub created_at: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct ListStrategyWatchingWalletsRow {
     pub wallet_id: i64,
     pub blockchain: String,
@@ -769,6 +779,20 @@ pub struct SignupRequest {
 pub struct SignupResponse {
     pub address: String,
     pub user_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserAddStrategyInitialTokenRatioRequest {
+    pub strategy_id: i64,
+    pub token_name: String,
+    pub token_address: String,
+    pub quantity: String,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserAddStrategyInitialTokenRatioResponse {
+    pub success: bool,
+    pub token_id: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -981,6 +1005,16 @@ pub struct UserListStrategiesResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct UserListStrategyInitialTokenRatioRequest {
+    pub strategy_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListStrategyInitialTokenRatioResponse {
+    pub token_ratios: Vec<ListStrategyInitialTokenRatioRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct UserListStrategyWatchingWalletsRequest {
     pub strategy_id: i64,
 }
@@ -1021,6 +1055,17 @@ pub struct UserRegisterWalletRequest {
 pub struct UserRegisterWalletResponse {
     pub success: bool,
     pub wallet_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserRemoveStrategyInitialTokenRatioRequest {
+    pub strategy_id: i64,
+    pub token_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserRemoveStrategyInitialTokenRatioResponse {
+    pub success: bool,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]

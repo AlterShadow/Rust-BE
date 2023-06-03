@@ -125,6 +125,18 @@ async fn main() -> Result<()> {
         endpoint_user_list_wallet_activity_history(),
         MethodUserListWalletActivityHistory,
     );
+    server.add_handler(
+        endpoint_user_add_strategy_initial_token_ratio(),
+        MethodUserAddStrategyInitialTokenRatio,
+    );
+    server.add_handler(
+        endpoint_user_remove_strategy_initial_token_ratio(),
+        MethodUserRemoveStrategyInitialTokenRatio,
+    );
+    server.add_handler(
+        endpoint_user_list_strategy_initial_token_ratio(),
+        MethodUserListStrategyInitialTokenRatio,
+    );
     let eth_pool = EthereumRpcConnectionPool::new(config.eth_provider_url.to_string(), 10)?;
     let eth_conn = eth_pool.get_conn().await?.to_owned();
     let escrow_signer = Arc::new(Secp256k1SecretKey::new_random());

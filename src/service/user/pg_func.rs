@@ -877,5 +877,52 @@ BEGIN
 END
 "#,
         ),
+        ProceduralFunction::new(
+            "fun_user_add_strategy_initial_token_ratio",
+            vec![
+                Field::new("strategy_id", Type::BigInt),
+                Field::new("token_name", Type::String),
+                Field::new("token_address", Type::String),
+                Field::new("quantity", Type::String),
+            ],
+            vec![Field::new("strategy_initial_token_ratio_id", Type::BigInt)],
+            r#"
+BEGIN
+    RETURN QUERY INSERT INTO tbl.strategy_initial_token_ratio (fkey_strategy_id, token_name, token_address, quantity, created_at, updated_at)
+            VALUES ( a_strategy_id, a_token_name, a_token_address, a_quantity, EXTRACT(EPOCH FROM NOW())::bigint, EXTRACT(EPOCH FROM NOW())::bigint) RETURNING pkey_id;
+END
+"#,
+        ),
+        ProceduralFunction::new(
+            "fun_user_remove_strategy_initial_token_ratio",
+            vec![
+                Field::new("strategy_initial_token_ratio_id", Type::BigInt),
+                Field::new("strategy_id", Type::BigInt),
+            ],
+            vec![],
+            r#"
+BEGIN
+    DELETE FROM tbl.strategy_initial_token_ratio WHERE pkey_id = a_strategy_initial_token_ratio_id AND fkey_strategy_id = a_strategy_id;
+END
+"#,
+        ),
+        ProceduralFunction::new(
+            "fun_user_list_strategy_initial_token_ratios",
+            vec![Field::new("strategy_id", Type::BigInt)],
+            vec![
+                Field::new("strategy_initial_token_ratio_id", Type::BigInt),
+                Field::new("token_name", Type::String),
+                Field::new("token_address", Type::String),
+                Field::new("quantity", Type::String),
+                Field::new("strategy_id", Type::BigInt),
+                Field::new("created_at", Type::BigInt),
+                Field::new("updated_at", Type::BigInt),
+            ],
+            r#"
+BEGIN
+    RETURN QUERY SELECT pkey_id, token_name, token_address, quantity, fkey_quantity_id, updated_at, created_at FROM tbl.strategy_initial_token_ratio WHERE fkey_strategy_id = a_strategy_id;
+END
+"#,
+        ),
     ]
 }

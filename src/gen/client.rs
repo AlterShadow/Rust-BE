@@ -290,6 +290,30 @@ impl UserClient {
         self.client.request(20300, req).await
     }
 }
+impl UserClient {
+    pub async fn user_add_strategy_initial_token_ratio(
+        &mut self,
+        req: UserAddStrategyInitialTokenRatioRequest,
+    ) -> Result<UserAddStrategyInitialTokenRatioResponse> {
+        self.client.request(20310, req).await
+    }
+}
+impl UserClient {
+    pub async fn user_remove_strategy_initial_token_ratio(
+        &mut self,
+        req: UserRemoveStrategyInitialTokenRatioRequest,
+    ) -> Result<UserRemoveStrategyInitialTokenRatioResponse> {
+        self.client.request(20320, req).await
+    }
+}
+impl UserClient {
+    pub async fn user_list_strategy_initial_token_ratio(
+        &mut self,
+        req: UserListStrategyInitialTokenRatioRequest,
+    ) -> Result<UserListStrategyInitialTokenRatioResponse> {
+        self.client.request(20330, req).await
+    }
+}
 pub struct AdminClient {
     pub client: WsClient,
 }

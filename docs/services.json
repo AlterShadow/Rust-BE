@@ -1608,6 +1608,113 @@
           "stream_response": [],
           "description": "",
           "json_schema": null
+        },
+        {
+          "name": "UserAddStrategyInitialTokenRatio",
+          "code": 20310,
+          "parameters": [
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "token_name",
+              "ty": "String"
+            },
+            {
+              "name": "token_address",
+              "ty": "String"
+            },
+            {
+              "name": "quantity",
+              "ty": "String"
+            }
+          ],
+          "returns": [
+            {
+              "name": "success",
+              "ty": "Boolean"
+            },
+            {
+              "name": "token_id",
+              "ty": "BigInt"
+            }
+          ],
+          "stream_response": [],
+          "description": "",
+          "json_schema": null
+        },
+        {
+          "name": "UserRemoveStrategyInitialTokenRatio",
+          "code": 20320,
+          "parameters": [
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "token_id",
+              "ty": "BigInt"
+            }
+          ],
+          "returns": [
+            {
+              "name": "success",
+              "ty": "Boolean"
+            }
+          ],
+          "stream_response": [],
+          "description": "",
+          "json_schema": null
+        },
+        {
+          "name": "UserListStrategyInitialTokenRatio",
+          "code": 20330,
+          "parameters": [
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            }
+          ],
+          "returns": [
+            {
+              "name": "token_ratios",
+              "ty": {
+                "DataTable": {
+                  "name": "ListStrategyInitialTokenRatioRow",
+                  "fields": [
+                    {
+                      "name": "token_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "token_name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "token_address",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "quantity",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "updated_at",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "created_at",
+                      "ty": "BigInt"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "stream_response": [],
+          "description": "",
+          "json_schema": null
         }
       ]
     },
