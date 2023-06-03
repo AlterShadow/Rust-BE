@@ -113,3 +113,7 @@ pub const ANVIL_PRIV_KEY_3: &str =
     "5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a";
 pub const ANVIL_PRIV_KEY_4: &str =
     "7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6";
+/* please send testnet native tokens to this account from time to time */
+pub const DEV_ACCOUNT_PRIV_KEY: &str =
+    "a1d4e3b4920346376b8cf2e56e43bece349320f172b9086209ea765f7a61c283";
+pub const DEV_ACCOUNT_ADDRESS: &str = "0x65B03d40437C9533F262729Af931E0b5295deeeE";

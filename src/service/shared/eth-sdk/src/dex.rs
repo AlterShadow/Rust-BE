@@ -51,4 +51,9 @@ impl DexAddresses {
     pub fn get(&self, chain: &EnumBlockChain) -> Option<&Vec<(EnumDex, H160)>> {
         self.inner.get(chain)
     }
+
+    pub fn get_by_chain_and_dex(&self, chain: EnumBlockChain, dex: EnumDex) -> Option<H160> {
+        let list = self.inner.get(&chain)?;
+        list.iter().find(|(d, _)| *d == dex).map(|(_, addr)| *addr)
+    }
 }

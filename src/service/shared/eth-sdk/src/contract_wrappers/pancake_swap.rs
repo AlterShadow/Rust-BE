@@ -661,3 +661,257 @@ impl PancakeSmartRouterV3Functions {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+    use std::time::Duration;
+
+    use super::*;
+    use crate::contract_wrappers::wrapped_token::WrappedTokenContract;
+    use crate::dex::DexAddresses;
+    use crate::dex_tracker::pancake::build_pancake_swap;
+    use crate::erc20::{build_erc_20, Erc20Token};
+    use crate::signer::Secp256k1SecretKey;
+    use crate::tx::{TransactionFetcher, TransactionReady};
+    use crate::wait_for_confirmations_simple;
+    use crate::{EthereumRpcConnectionPool, TxStatus};
+    use crate::{StableCoin, StableCoinAddresses};
+    use crate::{DEV_ACCOUNT_ADDRESS, DEV_ACCOUNT_PRIV_KEY};
+    use gen::model::{EnumBlockChain, EnumDex};
+    use web3::contract::Contract;
+
+    pub struct WorkingPairPaths {
+        inner: HashMap<EnumBlockChain, Vec<PancakePairPaths>>,
+    }
+
+    impl WorkingPairPaths {
+        pub fn new() -> Result<Self> {
+            let mut this: HashMap<EnumBlockChain, Vec<PancakePairPaths>> = HashMap::new();
+
+            this.insert(EnumBlockChain::BscTestnet, Vec::new());
+            this.insert(EnumBlockChain::EthereumGoerli, Vec::new());
+
+            this.get_mut(&EnumBlockChain::BscTestnet)
+                .unwrap()
+                /* tx: 0x272919df10865fbb8ea14df513772a853d2e1a2457f1b7dae186b1fb59630089 */
+                /* amount_in: 1000 */
+                .push(PancakePairPaths::new(
+                    /* token_in is wrapped Testnet BNB */
+                    Address::from_str("0xae13d989dac2f0debff460ac112a837c89baa7cd")?,
+                    /* token_out is Testnet BUSD */
+                    Address::from_str("0xab1a4d4f1d656d2450692d237fdd6c7f9146e814")?,
+                    /* path is one v2 function call */
+                    vec![(
+                        "swapExactTokensForTokens".to_string(),
+                        DexPath::PancakeV2(vec![
+                            Address::from_str("0xae13d989dac2f0debff460ac112a837c89baa7cd")?,
+                            Address::from_str("0xab1a4d4f1d656d2450692d237fdd6c7f9146e814")?,
+                        ]),
+                    )],
+                )?);
+
+            /* tx: 0x99cd5746eb0aa3ce832e149f9c7b70b7db95c932d0534354c9f0230a56d5b8e6 */
+            /* amount_in: 10000000000 */
+            this.get_mut(&EnumBlockChain::EthereumGoerli)
+                .unwrap()
+                .push(PancakePairPaths::new(
+                    /* token_in is wrapped Goerli ETH */
+                    Address::from_str("0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6")?,
+                    /* token_out is Goerli USDC */
+                    Address::from_str("0x07865c6e87b9f70255377e024ace6630c1eaa37f")?,
+                    /* path is one v2 function call */
+                    vec![(
+                        "swapExactTokensForTokens".to_string(),
+                        DexPath::PancakeV2(vec![
+                            Address::from_str("0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6")?,
+                            Address::from_str("0x07865c6e87b9f70255377e024ace6630c1eaa37f")?,
+                        ]),
+                    )],
+                )?);
+
+            Ok(Self { inner: this })
+        }
+
+        fn get_pair_paths_by_chain(&self, chain: EnumBlockChain) -> Result<Vec<PancakePairPaths>> {
+            match self.inner.get(&chain) {
+                Some(paths) => Ok(paths.clone()),
+                None => bail!("no paths for chain"),
+            }
+        }
+    }
+
+    const WBNB_TESTNET_ADDRESS: &str = "0xae13d989dac2f0debff460ac112a837c89baa7cd";
+    const WETH_GOERLI_ADDRESS: &str = "0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6";
+
+    #[tokio::test]
+    async fn test_copy_trade_testnet() -> Result<()> {
+        let conn_pool = EthereumRpcConnectionPool::bsc_testnet();
+        let conn = conn_pool.get_conn().await?;
+
+        /* dev account must have native tokens */
+        let key = Secp256k1SecretKey::from_str(DEV_ACCOUNT_PRIV_KEY)?;
+
+        /* wbnb contract so we can wrap and approve tokens to the router */
+        let wbnb = WrappedTokenContract::new(
+            conn.clone().into_raw(),
+            Address::from_str(WBNB_TESTNET_ADDRESS)?,
+        )?;
+
+        /* busd contract so we can check balances */
+        let bsc_testnet_busd_address = StableCoinAddresses::default()
+            .get_by_chain_and_token(EnumBlockChain::BscTestnet, StableCoin::Busd)
+            .unwrap();
+        let busd = Erc20Token::new(
+            conn.clone().into_raw(),
+            Contract::new(
+                conn.clone().into_raw().eth(),
+                bsc_testnet_busd_address,
+                build_erc_20()?,
+            ),
+        )?;
+
+        let pancake_swap = PancakeSmartRouterV3Contract::new(
+            conn.clone().into_raw(),
+            DexAddresses::default()
+                .get_by_chain_and_dex(EnumBlockChain::BscTestnet, EnumDex::PancakeSwap)
+                .unwrap(),
+        )?;
+
+        /* wrap BNB so we can use it to trade tokens */
+        /* assert transaction is successful */
+        let mut wrap_tx_hash = wbnb.wrap(key.clone(), U256::from(1000)).await?;
+        loop {
+            wait_for_confirmations_simple(
+                &conn.clone().into_raw().eth(),
+                wrap_tx_hash,
+                Duration::from_secs(30),
+                10,
+            )
+            .await?;
+
+            let mut tx = TransactionFetcher::new(wrap_tx_hash);
+            tx.update(&conn).await?;
+
+            match tx.get_status() {
+                TxStatus::Successful => break,
+                TxStatus::Pending => {
+                    tokio::time::sleep(Duration::from_secs(10)).await;
+                }
+                TxStatus::Reverted | TxStatus::NotFound => {
+                    wrap_tx_hash = wbnb.wrap(key.clone(), U256::from(1000)).await?;
+                }
+                _ => continue,
+            }
+        }
+
+        /* approve the pancake swap smart router for wrapped tokens, so it can trade them */
+        /* assert transaction is successful */
+        let mut approve_tx_hash = wbnb
+            .approve(key.clone(), pancake_swap.address(), U256::from(1000))
+            .await?;
+        loop {
+            wait_for_confirmations_simple(
+                &conn.clone().into_raw().eth(),
+                approve_tx_hash,
+                Duration::from_secs(10),
+                10,
+            )
+            .await?;
+
+            let mut tx = TransactionFetcher::new(approve_tx_hash);
+            tx.update(&conn).await?;
+
+            match tx.get_status() {
+                TxStatus::Successful => break,
+                TxStatus::Pending => {
+                    tokio::time::sleep(Duration::from_secs(10)).await;
+                }
+                TxStatus::Reverted | TxStatus::NotFound => {
+                    approve_tx_hash = wbnb
+                        .approve(key.clone(), pancake_swap.address(), U256::from(1000))
+                        .await?;
+                }
+                _ => continue,
+            }
+        }
+
+        let balance_wbnb_before_copy_trade = wbnb.balance_of(key.address()).await?;
+        let balance_busd_before_copy_trade = busd.balance_of(key.address()).await?;
+        /* fetch previous trade from wbnb to busd */
+        let working_pair_paths =
+            WorkingPairPaths::new()?.get_pair_paths_by_chain(EnumBlockChain::BscTestnet)?;
+        /* copy trade */
+        /* assert transaction is successful */
+        let mut copied_trade_tx: Option<TransactionReady> = None;
+        let mut copy_trade_tx_hash = pancake_swap
+            .copy_trade(
+                key.clone(),
+                working_pair_paths[0].clone(),
+                U256::from(1000),
+                U256::from(1),
+            )
+            .await?;
+        loop {
+            wait_for_confirmations_simple(
+                &conn.clone().into_raw().eth(),
+                copy_trade_tx_hash,
+                Duration::from_secs(10),
+                10,
+            )
+            .await?;
+
+            let mut tx = TransactionFetcher::new(copy_trade_tx_hash);
+            tx.update(&conn).await?;
+
+            match tx.get_status() {
+                TxStatus::Successful => {
+                    copied_trade_tx = Some(tx.assume_ready()?);
+                    break;
+                }
+                TxStatus::Pending => {
+                    tokio::time::sleep(Duration::from_secs(10)).await;
+                }
+                TxStatus::Reverted | TxStatus::NotFound => {
+                    copy_trade_tx_hash = pancake_swap
+                        .copy_trade(
+                            key.clone(),
+                            working_pair_paths[0].clone(),
+                            U256::from(1000),
+                            U256::from(1),
+                        )
+                        .await?;
+                }
+                _ => continue,
+            }
+        }
+
+        let balance_wbnb_after_copy_trade = wbnb.balance_of(key.address()).await?;
+        let balance_busd_after_copy_trade = busd.balance_of(key.address()).await?;
+
+        /* parse copied trade */
+        let trade_tracker = build_pancake_swap()?;
+        let copied_trade = trade_tracker.parse_trade(
+            match &copied_trade_tx {
+                Some(tx) => tx,
+                None => bail!("no copied trade tx"),
+            },
+            EnumBlockChain::BscTestnet,
+        )?;
+
+        /* check amounts and addresses */
+        assert_eq!(copied_trade.amount_in, U256::from(1000));
+        assert_eq!(copied_trade.caller, Address::from_str(DEV_ACCOUNT_ADDRESS)?);
+        assert_eq!(
+            copied_trade.token_in,
+            Address::from_str(WBNB_TESTNET_ADDRESS)?
+        );
+        assert_eq!(copied_trade.token_out, bsc_testnet_busd_address);
+        assert_eq!(
+            balance_wbnb_before_copy_trade,
+            balance_wbnb_after_copy_trade + U256::from(1000)
+        );
+        assert!(balance_busd_before_copy_trade < balance_busd_after_copy_trade);
+        Ok(())
+    }
+}

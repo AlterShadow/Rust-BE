@@ -9,6 +9,7 @@ pub mod escrow;
 pub mod pancake_swap;
 pub mod strategy_pool;
 pub mod strategy_pool_factory;
+pub mod wrapped_token;
 
 pub async fn deploy_contract<T: Transport>(
     w3: Web3<T>,

@@ -56,6 +56,15 @@ impl EthereumRpcConnectionPool {
         EthereumRpcConnectionPool::new("https://ethereum.publicnode.com".to_string(), 10).unwrap()
     }
 
+    pub fn bsc_testnet() -> Self {
+        EthereumRpcConnectionPool::new("https://bsc-testnet.publicnode.com".to_string(), 10)
+            .unwrap()
+    }
+
+    pub fn bsc_mainnet() -> Self {
+        EthereumRpcConnectionPool::new("https://bsc.publicnode.com".to_string(), 10).unwrap()
+    }
+
     pub fn localnet() -> Self {
         EthereumRpcConnectionPool::new("http://127.0.0.1:8545".to_string(), 10).unwrap()
     }
