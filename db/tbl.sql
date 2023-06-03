@@ -1,5 +1,5 @@
 -- Created by Vertabelo (http://vertabelo.com)
--- Last modification date: 2023-06-01 13:57:28.941
+-- Last modification date: 2023-06-03 08:01:16.918
 
 CREATE SCHEMA IF NOT EXISTS tbl;;
 
@@ -96,12 +96,12 @@ CREATE TABLE tbl.strategy (
     social_media varchar  NULL,
     historical_return double precision  NULL,
     inception_time bigint  NULL,
-    total_amount bigint  NULL,
-    token_allocation bigint  NULL,
+    current_usdc varchar(64)  NOT NULL,
+    total_backed_usdc varchar(64) NOT NULL,
+    total_exited_usdc varchar(64)  NOT NULL,
     reputation int  NULL,
     risk_score double precision  NULL,
     AUM double precision  NULL,
-    tokens int  NULL,
     apy double precision  NULL,
     swap_fee double precision  NULL,
     evm_contract_address varchar(64)  NULL,

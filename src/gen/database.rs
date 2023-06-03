@@ -440,6 +440,9 @@ pub struct FunUserGetStrategyRespRow {
     pub strategy_id: i64,
     pub strategy_name: String,
     pub strategy_description: String,
+    pub current_usdc: String,
+    pub total_backed_usdc: String,
+    pub total_exited_usdc: String,
     pub followers: i64,
     pub backers: i64,
     #[serde(default)]
@@ -464,11 +467,14 @@ impl DatabaseRequest for FunUserGetStrategyReq {
             strategy_id: row.try_get(0)?,
             strategy_name: row.try_get(1)?,
             strategy_description: row.try_get(2)?,
-            followers: row.try_get(3)?,
-            backers: row.try_get(4)?,
-            risk_score: row.try_get(5)?,
-            aum: row.try_get(6)?,
-            evm_contract_address: row.try_get(7)?,
+            current_usdc: row.try_get(3)?,
+            total_backed_usdc: row.try_get(4)?,
+            total_exited_usdc: row.try_get(5)?,
+            followers: row.try_get(6)?,
+            backers: row.try_get(7)?,
+            risk_score: row.try_get(8)?,
+            aum: row.try_get(9)?,
+            evm_contract_address: row.try_get(10)?,
         };
         Ok(r)
     }
@@ -605,6 +611,10 @@ pub struct FunUserBackStrategyReq {
     pub user_id: i64,
     pub strategy_id: i64,
     pub quantity: String,
+    pub new_total_backed_quantity: String,
+    pub old_total_backed_quantity: String,
+    pub new_current_quantity: String,
+    pub old_current_quantity: String,
     pub blockchain: String,
     pub transaction_hash: String,
     pub earn_sp_tokens: String,
@@ -618,13 +628,17 @@ pub struct FunUserBackStrategyRespRow {
 impl DatabaseRequest for FunUserBackStrategyReq {
     type ResponseRow = FunUserBackStrategyRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_back_strategy(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_quantity => $3::varchar, a_blockchain => $4::varchar, a_transaction_hash => $5::varchar, a_earn_sp_tokens => $6::varchar);"
+        "SELECT * FROM api.fun_user_back_strategy(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_quantity => $3::varchar, a_new_total_backed_quantity => $4::varchar, a_old_total_backed_quantity => $5::varchar, a_new_current_quantity => $6::varchar, a_old_current_quantity => $7::varchar, a_blockchain => $8::varchar, a_transaction_hash => $9::varchar, a_earn_sp_tokens => $10::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
             &self.user_id as &(dyn ToSql + Sync),
             &self.strategy_id as &(dyn ToSql + Sync),
             &self.quantity as &(dyn ToSql + Sync),
+            &self.new_total_backed_quantity as &(dyn ToSql + Sync),
+            &self.old_total_backed_quantity as &(dyn ToSql + Sync),
+            &self.new_current_quantity as &(dyn ToSql + Sync),
+            &self.old_current_quantity as &(dyn ToSql + Sync),
             &self.blockchain as &(dyn ToSql + Sync),
             &self.transaction_hash as &(dyn ToSql + Sync),
             &self.earn_sp_tokens as &(dyn ToSql + Sync),

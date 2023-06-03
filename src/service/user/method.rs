@@ -20,6 +20,10 @@ use tracing::info;
 use web3::signing::Key;
 use web3::types::{Address, H256, U256};
 
+pub fn initial_sp_token_supply() -> U256 {
+    U256::from(1000000000u64) * U256::exp10(18)
+}
+
 pub fn ensure_user_role(conn: &Connection, role: EnumRole) -> Result<()> {
     let user_role = conn.role.load(Ordering::Relaxed);
 
@@ -303,9 +307,9 @@ impl RequestHandler for MethodUserListBackedStrategies {
         })
     }
 }
-pub async fn calculate_sp_tokens() -> U256 {
-    // TODO: calculate SP tokens based current price
-    U256::from(123)
+pub async fn calculate_sp_tokens(back_usdc: U256, total_usdc: U256) -> U256 {
+    let sp_tokens = back_usdc * initial_sp_token_supply() / total_usdc;
+    sp_tokens
 }
 
 pub async fn deploy_strategy_contract(
@@ -357,7 +361,7 @@ pub async fn user_back_strategy(
     ctx: &RequestContext,
     db: &DbClient,
     chain: EnumBlockChain,
-    amount: U256,
+    back_usdc_amount: U256,
     stablecoin_addresses: &StableCoinAddresses,
     strategy_id: i64,
     strategy_pool_signer: impl Key,
@@ -366,26 +370,23 @@ pub async fn user_back_strategy(
     escrow_contract: EscrowContract<EitherTransport>,
     externally_owned_account: impl Key,
 ) -> Result<()> {
-    let mut user_registered_strategy = db
+    let mut strategy = db
         .execute(FunUserGetStrategyReq { strategy_id })
         .await?
         .into_result()
         .context("user_registered_strategy")?;
-    if user_registered_strategy.evm_contract_address.is_none() {
+    if strategy.evm_contract_address.is_none() {
         let contract = deploy_strategy_contract(
             &conn,
             strategy_pool_signer,
-            user_registered_strategy.strategy_name.clone(),
-            user_registered_strategy.strategy_name, // strategy symbol
+            strategy.strategy_name.clone(),
+            strategy.strategy_name, // strategy symbol
         )
         .await?;
-        user_registered_strategy.evm_contract_address = Some(format!("{:?}", contract.address()));
+        strategy.evm_contract_address = Some(format!("{:?}", contract.address()));
     }
-    let sp_tokens = calculate_sp_tokens().await;
-    let strategy_address: Address = user_registered_strategy
-        .evm_contract_address
-        .unwrap()
-        .parse()?;
+    let sp_tokens = calculate_sp_tokens(back_usdc_amount, strategy.current_usdc.parse()?).await;
+    let strategy_address: Address = strategy.evm_contract_address.unwrap().parse()?;
 
     let escrow_signer_address = escrow_signer.address();
     // we need to trade, not transfer, and then we need to call deposit on the strategy contract
@@ -412,17 +413,35 @@ pub async fn user_back_strategy(
         .transfer(externally_owned_account, strategy_address, sp_tokens)
         .await?;
     wait_for_confirmations_simple(&conn.get_raw().eth(), hash, Duration::from_secs(3), 5).await?;
+    // TODO: process retry here or have a lock
+    let ret = db
+        .execute(FunUserBackStrategyReq {
+            user_id: ctx.user_id,
+            strategy_id: strategy.strategy_id,
+            quantity: format!("{:?}", back_usdc_amount),
+            new_total_backed_quantity: format!(
+                "{:?}",
+                strategy.total_backed_usdc.parse::<U256>()? + back_usdc_amount
+            ),
+            old_total_backed_quantity: strategy.total_backed_usdc,
+            new_current_quantity: format!(
+                "{:?}",
+                strategy.current_usdc.parse::<U256>()? + back_usdc_amount
+            ),
+            old_current_quantity: strategy.current_usdc,
+            blockchain: chain.to_string(),
+            transaction_hash: format!("{:?}", transaction.get_hash()),
+            earn_sp_tokens: format!("{:?}", sp_tokens),
+        })
+        .await?
+        .into_result()
+        .context("No record")?;
+    if !ret.success {
+        bail!(
+            "User back strategy not sucessful due to other clients updated record at the same time"
+        )
+    }
 
-    // TODO: need to trade deposit token for strategy's tokens and call "deposit" on the strategy contract wrapper
-    db.execute(FunUserBackStrategyReq {
-        user_id: ctx.user_id,
-        strategy_id: user_registered_strategy.strategy_id,
-        quantity: format!("{:?}", amount),
-        blockchain: chain.to_string(),
-        transaction_hash: format!("{:?}", transaction.get_hash()),
-        earn_sp_tokens: format!("{:?}", sp_tokens),
-    })
-    .await?;
     info!(
         "Transfer token to strategy contract {:?}",
         transaction.get_hash()

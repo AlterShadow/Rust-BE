@@ -174,7 +174,9 @@ END
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("strategy_name", Type::String),
                 Field::new("strategy_description", Type::String),
-                // Field::new("net_value", Type::Numeric),
+                Field::new("current_usdc", Type::String),
+                Field::new("total_backed_usdc", Type::String),
+                Field::new("total_exited_usdc", Type::String),
                 Field::new("followers", Type::BigInt),
                 Field::new("backers", Type::BigInt),
                 Field::new("risk_score", Type::optional(Type::Numeric)),
@@ -187,7 +189,9 @@ BEGIN
     RETURN QUERY SELECT a.pkey_id AS strategy_id,
                           a.name AS strategy_name,
                           a.description AS strategy_description,
-                          -- 0.0 AS net_value,
+                          current_usdc,
+                          total_backed_usdc,
+                          total_exited_usdc,
                           (SELECT COUNT(*) FROM tbl.user_follow_strategy WHERE fkey_strategy_id = a.pkey_id AND unfollowed = FALSE) AS followers,
                           (SELECT COUNT(DISTINCT user_back_strategy_history.fkey_user_id) FROM tbl.user_back_strategy_history WHERE fkey_strategy_id = a.pkey_id) AS followers,
                           a.risk_score as risk_score,
@@ -285,6 +289,10 @@ END
                 Field::new("user_id", Type::BigInt),
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("quantity", Type::String),
+                Field::new("new_total_backed_quantity", Type::String),
+                Field::new("old_total_backed_quantity", Type::String),
+                Field::new("new_current_quantity", Type::String),
+                Field::new("old_current_quantity", Type::String),
                 Field::new("blockchain", Type::String),
                 Field::new("transaction_hash", Type::String),
                 Field::new("earn_sp_tokens", Type::String),
@@ -292,6 +300,21 @@ END
             vec![Field::new("success", Type::Boolean)],
             r#"
 BEGIN
+    -- check if old total backed quantity is the one in strategy
+    IF NOT EXISTS(SELECT * FROM tbl.strategy WHERE pkey_id = a_strategy_id AND total_backed_usdc = a_old_total_backed_quantity) THEN
+        RETURN QUERY SELECT FALSE;
+    END IF;
+    -- update strategy total backed quantity
+    UPDATE tbl.strategy SET total_backed_usdc = a_new_total_backed_quantity WHERE pkey_id = a_strategy_id;
+    
+    -- check if old current quantity is the one in strategy
+    IF NOT EXISTS(SELECT * FROM tbl.strategy WHERE pkey_id = a_strategy_id AND current_usdc = a_old_current_quantity) THEN
+        RETURN QUERY SELECT FALSE;
+    END IF;
+    -- update strategy current quantity
+    UPDATE tbl.strategy SET current_usdc = a_new_current_quantity WHERE pkey_id = a_strategy_id;
+    
+    -- save record
     INSERT INTO tbl.user_back_strategy_history (fkey_user_id, fkey_strategy_id, quantity, blockchain,
                                                 transaction_hash, earn_sp_tokens, back_time)
     VALUES (a_user_id, a_strategy_id, a_quantity, a_blockchain, a_transaction_hash, a_earn_sp_tokens,
@@ -355,7 +378,6 @@ BEGIN
     RETURN QUERY SELECT a.pkey_id          AS back_history_id,
                         a.fkey_strategy_id AS strategy_id,
                         a.quantity         AS quantity,
-                        a.purchase_wallet  AS wallet_address,
                         a.blockchain       AS blockchain,
                         a.transaction_hash AS transaction_hash,
                         a.time             AS time
@@ -653,8 +675,8 @@ END
 DECLARE
     a_strategy_id BIGINT;
 BEGIN
-    INSERT INTO tbl.strategy (fkey_user_id, name, description)
-    VALUES (a_user_id, a_name, a_description) RETURNING pkey_id INTO a_strategy_id;
+    INSERT INTO tbl.strategy (fkey_user_id, name, description, current_usdc, total_backed_usdc, total_exited_usdc)
+    VALUES (a_user_id, a_name, a_description, '0', '0', '0') RETURNING pkey_id INTO a_strategy_id;
     RETURN QUERY SELECT TRUE, a_strategy_id;
 END
 "#,
