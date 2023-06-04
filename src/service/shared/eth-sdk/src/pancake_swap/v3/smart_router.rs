@@ -1,21 +1,15 @@
-use std::str::FromStr;
-
-use crate::dex_tracker::PancakePairPathSet;
-
+use crate::evm::DexPath;
+use crate::v3::multi_hop::MultiHopPath;
+use crate::PancakePairPathSet;
 use eyre::*;
-
+use std::str::FromStr;
 use web3::contract::{Contract, Options};
 use web3::ethabi::Token;
 use web3::signing::Key;
 use web3::types::{Address, H256, U256};
 use web3::{Transport, Web3};
 
-use crate::dex_tracker::v3::multi_hop::MultiHopPath;
-
-use crate::evm::DexPath;
-
-const SMART_ROUTER_ABI_JSON: &str =
-    include_str!("../../../../../../abi/pancake_swap/smart_router_v3.json");
+pub const SMART_ROUTER_ABI_JSON: &str = include_str!("smart_router_v3.json");
 
 /**	Contract Wrapper for PancakeSwap Smart Router V3
  *
@@ -675,12 +669,11 @@ mod tests {
     use super::*;
     use crate::contract_wrappers::wrapped_token::WrappedTokenContract;
     use crate::dex::DexAddresses;
-    use crate::dex_tracker::build_pancake_swap;
     use crate::erc20::Erc20Token;
     use crate::signer::Secp256k1SecretKey;
     use crate::tx::{TransactionFetcher, TransactionReady};
-    use crate::wait_for_confirmations_simple;
     use crate::BlockchainCoinAddresses;
+    use crate::{build_pancake_swap, wait_for_confirmations_simple, PancakePairPathSet};
     use crate::{EthereumRpcConnectionPool, TxStatus};
     use crate::{DEV_ACCOUNT_ADDRESS, DEV_ACCOUNT_PRIV_KEY};
     use gen::model::{EnumBlockChain, EnumBlockchainCoin, EnumDex};

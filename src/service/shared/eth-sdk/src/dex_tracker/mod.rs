@@ -4,8 +4,6 @@ use http::StatusCode;
 use std::sync::Arc;
 use tracing::error;
 
-mod pancake_swap;
-pub use pancake_swap::*;
 mod parse;
 use crate::evm::{parse_quickalert_payload, AppState};
 use crate::{evm, TransactionFetcher};

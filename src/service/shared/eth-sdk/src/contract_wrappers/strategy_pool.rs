@@ -5,7 +5,7 @@ use web3::signing::Key;
 use web3::types::Address;
 use web3::{Transport, Web3};
 
-const POOL_ABI_JSON: &str = include_str!("../../../../../../abi/internal/strategy_pool.json");
+const POOL_ABI_JSON: &str = include_str!("strategy_pool.json");
 
 #[derive(Debug, Clone)]
 pub struct StrategyPoolContract<T: Transport> {

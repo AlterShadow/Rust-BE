@@ -1,9 +1,9 @@
-use eth_sdk::erc20::{build_erc_20, Erc20Token};
+use eth_sdk::erc20::Erc20Token;
 use eth_sdk::escrow::EscrowContract;
-use eth_sdk::pancake_swap::PancakeSmartRouterV3Contract;
 use eth_sdk::signer::Secp256k1SecretKey;
 use eth_sdk::strategy_pool::StrategyPoolContract;
 use eth_sdk::utils::{verify_message_address, wait_for_confirmations_simple};
+use eth_sdk::v3::smart_router::PancakeSmartRouterV3Contract;
 use eth_sdk::*;
 use eyre::*;
 use gen::database::*;
@@ -348,7 +348,7 @@ pub async fn transfer_token_to_strategy_contract(
     escrow_contract: &EscrowContract<EitherTransport>,
 ) -> Result<TransactionFetcher> {
     let token_address = stablecoin_addresses
-        .get_by_chain_and_token(chain, escrow.token)
+        .get(chain, escrow.token)
         .context("Could not find stablecoin address")?;
 
     let tx_hash = escrow_contract
@@ -409,7 +409,7 @@ pub async fn user_back_strategy(
     )
     .await?;
     let erc20_address = stablecoin_addresses
-        .get_by_chain_and_token(chain, stablecoin)
+        .get(chain, stablecoin)
         .context("Could not find stablecoin address")?;
     let erc20 = Erc20Token::new(conn.clone().into_raw(), erc20_address)?;
     let hash = erc20
@@ -481,7 +481,7 @@ pub async fn trade_usdc_to_tokens_on_pancakeswap(
     backed_usdc: f64,
 ) -> Result<Vec<TransactionFetcher>> {
     let token_address = dex_addresses
-        .get_by_chain_and_dex(chain, EnumDex::PancakeSwap)
+        .get(chain, EnumDex::PancakeSwap)
         .context("Could not find stablecoin address")?;
     let pancake_swap = PancakeSmartRouterV3Contract::new(conn.clone().into_raw(), token_address)?;
     let receipt = signer.address();
@@ -1362,7 +1362,7 @@ pub async fn on_user_request_refund(
         .into_result()
         .context("No result")?;
     let token_address = stablecoin_addresses
-        .get_by_chain_and_token(chain, token)
+        .get(chain, token)
         .context("no stablecoin address")?;
 
     let hash = escrow_contract
@@ -1599,10 +1599,11 @@ mod tests {
             log_id: 0,
         };
 
-        let mut stablecoins = BlockchainCoinAddresses::default();
-        stablecoins.inner.insert(
+        let mut stablecoins = BlockchainCoinAddresses::new();
+        stablecoins.insert(
             EnumBlockChain::EthereumGoerli,
-            vec![(EnumBlockchainCoin::USDC, erc20_mock.address)],
+            EnumBlockchainCoin::USDC,
+            erc20_mock.address,
         );
 
         // at this step, tx should be passed with quickalert
@@ -1714,10 +1715,11 @@ mod tests {
             log_id: 0,
         };
 
-        let mut stablecoins = BlockchainCoinAddresses::default();
-        stablecoins.inner.insert(
+        let mut stablecoins = BlockchainCoinAddresses::new();
+        stablecoins.insert(
             EnumBlockChain::EthereumGoerli,
-            vec![(EnumBlockchainCoin::USDC, erc20_mock.address)],
+            EnumBlockchainCoin::USDC,
+            erc20_mock.address,
         );
 
         // at this step, tx should be passed with quickalert

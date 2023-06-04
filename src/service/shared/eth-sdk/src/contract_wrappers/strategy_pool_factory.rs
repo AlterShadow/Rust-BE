@@ -7,8 +7,7 @@ use web3::signing::Key;
 use web3::types::{Address, H256, U256};
 use web3::{Transport, Web3};
 
-const FACTORY_ABI_JSON: &str =
-    include_str!("../../../../../../abi/internal/strategy_pool_factory.json");
+const FACTORY_ABI_JSON: &str = include_str!("strategy_pool_factory.json");
 
 #[derive(Debug, Clone)]
 pub struct StrategyPoolFactoryContract<T: Transport> {

@@ -6,10 +6,11 @@ use super::v3::{
     multi_hop::{exact_input, exact_output},
     single_hop::{exact_input_single, exact_output_single},
 };
-use crate::dex_tracker::v3::multi_hop::MultiHopPath;
 use crate::erc20::build_erc_20;
 use crate::evm::DexPath;
 use crate::evm::{DexTrade, PancakeV3SingleHopPath};
+use crate::v3::multi_hop::MultiHopPath;
+use crate::v3::smart_router::SMART_ROUTER_ABI_JSON;
 use crate::{ContractCall, SerializableToken, TransactionReady};
 use eyre::bail;
 use eyre::*;
@@ -490,9 +491,6 @@ enum PancakeSwapMethod {
     ExactOutputSingle,
     ExactOutput,
 }
-
-const SMART_ROUTER_ABI_JSON: &str =
-    include_str!("../../../../../../../abi/pancake_swap/smart_router_v3.json");
 
 pub fn build_pancake_swap() -> Result<PancakeSwap> {
     let cursor = Cursor::new(SMART_ROUTER_ABI_JSON);

@@ -5,7 +5,7 @@ use web3::signing::Key;
 use web3::types::{Address, H256, U256};
 use web3::{Transport, Web3};
 
-const WRAPPED_ABI_JSON: &str = include_str!("../../../../../../abi/weth.json");
+const WRAPPED_ABI_JSON: &str = include_str!("weth.json");
 
 #[derive(Debug, Clone)]
 pub struct WrappedTokenContract<T: Transport> {

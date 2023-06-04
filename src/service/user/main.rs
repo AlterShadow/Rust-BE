@@ -6,7 +6,7 @@ use crate::endpoints::*;
 use crate::method::*;
 use eth_sdk::escrow::EscrowContract;
 use eth_sdk::signer::Secp256k1SecretKey;
-use eth_sdk::EthereumRpcConnectionPool;
+use eth_sdk::{BlockchainCoinAddresses, DexAddresses, EthereumRpcConnectionPool};
 use gen::model::EnumService;
 use lib::config::{load_config, WsServerConfig};
 use lib::database::{connect_to_database, DatabaseConfig};
@@ -146,19 +146,19 @@ async fn main() -> Result<()> {
         endpoint_user_back_strategy(),
         MethodUserBackStrategy {
             conn: eth_conn.clone(),
-            stablecoin_addresses: Arc::new(Default::default()),
+            stablecoin_addresses: Arc::new(BlockchainCoinAddresses::new()),
             strategy_pool_signer: Arc::new(Secp256k1SecretKey::new_random()),
             escrow_contract: escrow_contract.clone(),
             escrow_signer: escrow_signer.clone(),
             externally_owned_account: Arc::new(Secp256k1SecretKey::new_random()),
-            dex_addresses: Arc::new(Default::default()),
+            dex_addresses: Arc::new(DexAddresses::new()),
         },
     );
     server.add_handler(
         endpoint_user_request_refund(),
         MethodUserRequestRefund {
             conn: eth_pool.get_conn().await?.to_owned(),
-            stablecoin_addresses: Arc::new(Default::default()),
+            stablecoin_addresses: Arc::new(BlockchainCoinAddresses::new()),
             escrow_contract,
             escrow_signer,
         },

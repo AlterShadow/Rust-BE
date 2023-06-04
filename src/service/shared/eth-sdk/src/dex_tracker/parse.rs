@@ -1,9 +1,7 @@
-use super::pancake_swap::PancakeSwap;
 use crate::evm::DexTrade;
-use crate::{DexAddresses, TransactionReady};
+use crate::{DexAddresses, PancakeSwap, TransactionReady};
 use eyre::*;
 use gen::model::{EnumBlockChain, EnumDex};
-
 
 pub async fn parse_dex_trade(
     chain: EnumBlockChain,

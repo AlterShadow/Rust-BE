@@ -1,9 +1,7 @@
-use crate::dex_tracker::PancakePairPathSet;
-use crate::dex_tracker::{build_pancake_swap, PancakeSwap};
 use crate::erc20::build_erc_20;
 use crate::{
-    BlockchainCoinAddresses, ContractCall, DexAddresses, EthereumRpcConnectionPool,
-    TransactionReady,
+    build_pancake_swap, BlockchainCoinAddresses, ContractCall, DexAddresses,
+    EthereumRpcConnectionPool, PancakePairPathSet, PancakeSwap, TransactionReady,
 };
 use bytes::Bytes;
 use eyre::*;

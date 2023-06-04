@@ -6,12 +6,11 @@ use tracing::info;
 use web3::signing::Key;
 use web3::types::{Address, TransactionParameters, TransactionRequest, H160, H256, U256};
 use web3::Web3;
-
 mod calldata;
 mod conn;
 pub mod contract;
 mod contract_wrappers;
-pub mod erc20;
+mod pancake_swap;
 // #[cfg(test)]
 mod address_table;
 mod coins;
@@ -19,7 +18,6 @@ mod dex;
 pub mod dex_tracker;
 pub mod escrow_tracker;
 pub mod evm;
-pub mod mock_erc20;
 mod pool;
 pub mod signer;
 mod tx;
@@ -31,6 +29,7 @@ pub use conn::*;
 pub use contract_wrappers::*;
 pub use dex::*;
 use gen::model::EnumBlockchainCoin;
+pub use pancake_swap::*;
 pub use pool::*;
 pub use tx::*;
 

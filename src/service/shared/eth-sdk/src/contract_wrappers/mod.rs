@@ -5,8 +5,9 @@ use web3::contract::{Contract, Options};
 use web3::signing::Key;
 use web3::{Transport, Web3};
 
+pub mod erc20;
 pub mod escrow;
-pub mod pancake_swap;
+pub mod mock_erc20;
 pub mod strategy_pool;
 pub mod strategy_pool_factory;
 pub mod wrapped_token;
