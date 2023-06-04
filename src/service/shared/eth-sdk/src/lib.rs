@@ -13,6 +13,7 @@ pub mod contract;
 mod contract_wrappers;
 pub mod erc20;
 // #[cfg(test)]
+mod address_table;
 mod dex;
 pub mod dex_tracker;
 pub mod escrow_tracker;
@@ -23,6 +24,7 @@ pub mod signer;
 mod stablecoins;
 mod tx;
 pub mod utils;
+pub use address_table::*;
 pub use calldata::*;
 pub use conn::*;
 pub use contract_wrappers::*;

@@ -770,15 +770,15 @@ mod tests {
         )?;
 
         /* busd contract so we can check balances */
-        let bsc_testnet_busd_address = StableCoinAddresses::default()
-            .get_by_chain_and_token(EnumBlockChain::BscTestnet, StableCoin::Busd)
+        let bsc_testnet_busd_address = StableCoinAddresses::new()
+            .get(EnumBlockChain::BscTestnet, StableCoin::Busd)
             .unwrap();
         let busd = Erc20Token::new(conn.clone().into_raw(), bsc_testnet_busd_address)?;
 
         let pancake_swap = PancakeSmartRouterV3Contract::new(
             conn.clone().into_raw(),
-            DexAddresses::default()
-                .get_by_chain_and_dex(EnumBlockChain::BscTestnet, EnumDex::PancakeSwap)
+            DexAddresses::new()
+                .get(EnumBlockChain::BscTestnet, EnumDex::PancakeSwap)
                 .unwrap(),
         )?;
 

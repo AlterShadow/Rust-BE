@@ -5,12 +5,8 @@ use bytes::Bytes;
 use eyre::*;
 use gen::model::EnumBlockChain;
 use http::StatusCode;
-
-
-
 use std::sync::Arc;
 use tracing::error;
-
 
 pub mod deposit;
 pub mod escrow;

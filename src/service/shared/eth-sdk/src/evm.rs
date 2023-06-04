@@ -29,7 +29,7 @@ impl AppState {
             eth_pool,
             pancake_swap: build_pancake_swap()?,
             db,
-            stablecoin_addresses: StableCoinAddresses::default(),
+            stablecoin_addresses: StableCoinAddresses::new(),
             erc_20: build_erc_20()?,
         })
     }

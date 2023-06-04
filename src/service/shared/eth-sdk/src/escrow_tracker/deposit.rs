@@ -119,10 +119,11 @@ mod tests {
             log_id: 0,
         };
 
-        let mut stablecoins = StableCoinAddresses::default();
-        stablecoins.inner.insert(
+        let mut stablecoins = StableCoinAddresses::empty();
+        stablecoins.insert(
             EnumBlockChain::EthereumGoerli,
-            vec![(StableCoin::Usdc, erc20_mock.address)],
+            StableCoin::Usdc,
+            erc20_mock.address,
         );
 
         // at this step, tx should be passed with quickalert

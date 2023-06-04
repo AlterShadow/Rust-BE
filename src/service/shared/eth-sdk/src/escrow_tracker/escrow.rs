@@ -1,4 +1,4 @@
-use crate::{ContractCall, EscrowTransfer, StableCoin, StableCoinAddresses, TransactionReady};
+use crate::{ContractCall, EscrowTransfer, StableCoinAddresses, TransactionReady};
 use eyre::*;
 use gen::model::EnumBlockChain;
 use tracing::info;
@@ -23,11 +23,8 @@ pub fn parse_escrow(
     erc_20: &web3::ethabi::Contract,
 ) -> Result<EscrowTransfer> {
     let called_contract = tx.get_to().context("missing called contract")?;
-    let eth_mainnet_stablecoins = stablecoin_addresses.get(chain).unwrap();
-    let token: StableCoin = eth_mainnet_stablecoins
-        .iter()
-        .find(|(_, address)| *address == called_contract)
-        .map(|x| x.0)
+    let token = stablecoin_addresses
+        .get_by_address(chain, called_contract)
         .context("Unsupported coin")?;
 
     let sender = tx.get_from().context("No sender")?;
@@ -123,7 +120,7 @@ mod tests {
         let trade = parse_escrow(
             EnumBlockChain::EthereumMainnet,
             &tx,
-            &StableCoinAddresses::default(),
+            &StableCoinAddresses::new(),
             &erc20,
         )?;
         info!("trade: {:?}", trade);
@@ -144,7 +141,7 @@ mod tests {
         let trade = parse_escrow(
             EnumBlockChain::EthereumMainnet,
             &tx,
-            &StableCoinAddresses::default(),
+            &StableCoinAddresses::new(),
             &erc20,
         )?;
         info!("trade: {:?}", trade);
@@ -165,7 +162,7 @@ mod tests {
         let trade = parse_escrow(
             EnumBlockChain::EthereumMainnet,
             &tx,
-            &StableCoinAddresses::default(),
+            &StableCoinAddresses::new(),
             &erc20,
         )?;
         info!("trade: {:?}", trade);
