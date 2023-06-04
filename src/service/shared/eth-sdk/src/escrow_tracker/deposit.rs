@@ -1,5 +1,5 @@
 use crate::escrow_tracker::escrow::parse_escrow;
-use crate::{EthereumRpcConnection, StableCoinAddresses, TransactionReady};
+use crate::{BlockchainCoinAddresses, EthereumRpcConnection, TransactionReady};
 use eyre::*;
 use gen::database::*;
 use gen::model::EnumBlockChain;
@@ -17,7 +17,7 @@ pub async fn on_user_deposit(
     db: &DbClient,
     chain: EnumBlockChain,
     tx: &TransactionReady,
-    stablecoin_addresses: &StableCoinAddresses,
+    stablecoin_addresses: &BlockchainCoinAddresses,
     erc_20: &Contract,
 ) -> Result<()> {
     let esc = parse_escrow(chain, tx, stablecoin_addresses, erc_20)?;
@@ -51,9 +51,10 @@ mod tests {
     use crate::mock_erc20::deploy_mock_erc20;
     use crate::signer::Secp256k1SecretKey;
     use crate::{
-        EthereumRpcConnectionPool, StableCoin, StableCoinAddresses, TransactionFetcher,
-        ANVIL_PRIV_KEY_1, ANVIL_PRIV_KEY_2,
+        BlockchainCoinAddresses, EthereumRpcConnectionPool, TransactionFetcher, ANVIL_PRIV_KEY_1,
+        ANVIL_PRIV_KEY_2,
     };
+    use gen::model::EnumBlockchainCoin;
     use lib::database::{connect_to_database, drop_and_recreate_database, DatabaseConfig};
     use lib::log::{setup_logs, LogLevel};
     use std::net::Ipv4Addr;
@@ -119,10 +120,10 @@ mod tests {
             log_id: 0,
         };
 
-        let mut stablecoins = StableCoinAddresses::empty();
+        let mut stablecoins = BlockchainCoinAddresses::empty();
         stablecoins.insert(
             EnumBlockChain::EthereumGoerli,
-            StableCoin::Usdc,
+            EnumBlockchainCoin::USDC,
             erc20_mock.address,
         );
 

@@ -48,10 +48,7 @@ impl ToRust for Type {
         match self {
             Type::Struct { name, fields } => {
                 let mut fields = fields.iter().map(|x| {
-                    let opt = match &x.ty {
-                        Type::Optional(_) => true,
-                        _ => false,
-                    };
+                    let opt = matches!(&x.ty, Type::Optional(_));
                     format!(
                         "{} pub {}: {}",
                         if opt { "#[serde(default)]" } else { "" },
@@ -74,7 +71,11 @@ impl ToRust for Type {
 "#,
                         x.comment,
                         x.name,
-                        x.name.to_case(Case::Pascal),
+                        if x.name.chars().last().unwrap().is_lowercase() {
+                            x.name.to_case(Case::Pascal)
+                        } else {
+                            x.name.clone()
+                        },
                         x.value
                     )
                 });

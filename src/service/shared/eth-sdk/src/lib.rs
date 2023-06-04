@@ -14,6 +14,7 @@ mod contract_wrappers;
 pub mod erc20;
 // #[cfg(test)]
 mod address_table;
+mod coins;
 mod dex;
 pub mod dex_tracker;
 pub mod escrow_tracker;
@@ -21,16 +22,16 @@ pub mod evm;
 pub mod mock_erc20;
 mod pool;
 pub mod signer;
-mod stablecoins;
 mod tx;
 pub mod utils;
 pub use address_table::*;
 pub use calldata::*;
+pub use coins::*;
 pub use conn::*;
 pub use contract_wrappers::*;
 pub use dex::*;
+use gen::model::EnumBlockchainCoin;
 pub use pool::*;
-pub use stablecoins::*;
 pub use tx::*;
 
 #[derive(Clone)]
@@ -101,7 +102,7 @@ impl Debug for EthereumToken {
 // TODO: put it in proper module
 #[derive(Clone, Debug)]
 pub struct EscrowTransfer {
-    pub token: StableCoin,
+    pub token: EnumBlockchainCoin,
     pub amount: U256,
     pub recipient: H160,
     pub owner: H160,

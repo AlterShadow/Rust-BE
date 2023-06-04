@@ -8,7 +8,7 @@ use eth_sdk::dex_tracker::pancake::build_pancake_swap;
 use eth_sdk::erc20::build_erc_20;
 use eth_sdk::escrow_tracker::handle_eth_escrows;
 use eth_sdk::evm::AppState;
-use eth_sdk::{DexAddresses, EthereumRpcConnectionPool, StableCoinAddresses};
+use eth_sdk::{BlockchainCoinAddresses, DexAddresses, EthereumRpcConnectionPool};
 use eyre::*;
 use gen::model::EnumBlockChain;
 use lib::config::load_config;
@@ -49,7 +49,7 @@ async fn main() -> Result<()> {
         .route("/eth-goerli-escrows", post(handle_eth_escrows_goerli))
         .with_state(Arc::new(AppState {
             dex_addresses: DexAddresses::new(),
-            stablecoin_addresses: StableCoinAddresses::default(),
+            stablecoin_addresses: BlockchainCoinAddresses::default(),
             eth_pool,
             erc_20: build_erc_20()?,
             pancake_swap: build_pancake_swap()?,

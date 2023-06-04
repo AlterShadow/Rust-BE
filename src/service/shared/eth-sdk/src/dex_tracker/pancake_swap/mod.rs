@@ -117,6 +117,7 @@ impl PancakeSwap {
                     /* V3 */
                     PancakeSwapMethod::ExactInputSingle => {
                         let exact_input_single_params = exact_input_single(&call)?;
+                        // FIXME: for V3, exact_input_single_params.token_in is a Smart Router V3, not the token itself
                         let swap = Swap {
                             recipient: exact_input_single_params.recipient,
                             token_in: exact_input_single_params.token_in,
@@ -189,7 +190,7 @@ impl PancakeSwap {
         let mut paths: Vec<DexPath> = Vec::new();
         let mut versions: Vec<EnumDexVersion> = Vec::new();
         let mut calls: Vec<ContractCall> = Vec::new();
-        for (swap, version, call) in &mut swap_infos {
+        for (swap, version, call) in &swap_infos {
             paths.push(swap.path.clone());
             versions.push(*version);
             calls.push(call.clone());
@@ -528,11 +529,11 @@ impl PancakePairPathSet {
         })
     }
 
-    pub fn get_token_in(&self) -> H160 {
+    pub fn get_token_in(&self) -> Address {
         self.token_in
     }
 
-    pub fn get_token_out(&self) -> H160 {
+    pub fn get_token_out(&self) -> Address {
         self.token_out
     }
 
@@ -540,14 +541,14 @@ impl PancakePairPathSet {
         self.func_names_and_paths.len()
     }
 
-    pub fn get_func_name(&self, idx: usize) -> eyre::Result<String> {
+    pub fn get_func_name(&self, idx: usize) -> Result<String> {
         if idx >= self.len() {
             bail!("index out of bounds");
         }
         Ok(self.func_names_and_paths[idx].0.clone())
     }
 
-    pub fn get_path(&self, idx: usize) -> eyre::Result<DexPath> {
+    pub fn get_path(&self, idx: usize) -> Result<DexPath> {
         if idx >= self.len() {
             bail!("index out of bounds");
         }

@@ -29,6 +29,15 @@ pub fn get_enums() -> Vec<Type> {
                 EnumVariant::new("EthereumGoerli", 1),
                 EnumVariant::new("BscMainnet", 2),
                 EnumVariant::new("BscTestnet", 3),
+                EnumVariant::new("LocalNet", 4),
+            ],
+        ),
+        Type::enum_(
+            "blockchain_coin".to_owned(),
+            vec![
+                EnumVariant::new("USDC", 0),
+                EnumVariant::new("USDT", 1),
+                EnumVariant::new("BUSD", 2),
             ],
         ),
         Type::enum_(

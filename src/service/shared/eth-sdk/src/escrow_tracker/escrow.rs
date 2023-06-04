@@ -1,4 +1,4 @@
-use crate::{ContractCall, EscrowTransfer, StableCoinAddresses, TransactionReady};
+use crate::{BlockchainCoinAddresses, ContractCall, EscrowTransfer, TransactionReady};
 use eyre::*;
 use gen::model::EnumBlockChain;
 use tracing::info;
@@ -19,7 +19,7 @@ pub enum Erc20Method {
 pub fn parse_escrow(
     chain: EnumBlockChain,
     tx: &TransactionReady,
-    stablecoin_addresses: &StableCoinAddresses,
+    stablecoin_addresses: &BlockchainCoinAddresses,
     erc_20: &web3::ethabi::Contract,
 ) -> Result<EscrowTransfer> {
     let called_contract = tx.get_to().context("missing called contract")?;
@@ -100,7 +100,7 @@ pub fn parse_escrow(
 mod tests {
     use super::*;
     use crate::erc20::build_erc_20;
-    use crate::{EthereumRpcConnectionPool, StableCoinAddresses, TransactionFetcher};
+    use crate::{BlockchainCoinAddresses, EthereumRpcConnectionPool, TransactionFetcher};
     use gen::model::EnumBlockChain;
     use lib::log::{setup_logs, LogLevel};
     use tracing::info;
@@ -120,7 +120,7 @@ mod tests {
         let trade = parse_escrow(
             EnumBlockChain::EthereumMainnet,
             &tx,
-            &StableCoinAddresses::new(),
+            &BlockchainCoinAddresses::new(),
             &erc20,
         )?;
         info!("trade: {:?}", trade);
@@ -141,7 +141,7 @@ mod tests {
         let trade = parse_escrow(
             EnumBlockChain::EthereumMainnet,
             &tx,
-            &StableCoinAddresses::new(),
+            &BlockchainCoinAddresses::new(),
             &erc20,
         )?;
         info!("trade: {:?}", trade);
@@ -162,7 +162,7 @@ mod tests {
         let trade = parse_escrow(
             EnumBlockChain::EthereumMainnet,
             &tx,
-            &StableCoinAddresses::new(),
+            &BlockchainCoinAddresses::new(),
             &erc20,
         )?;
         info!("trade: {:?}", trade);

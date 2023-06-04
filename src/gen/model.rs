@@ -69,6 +69,38 @@ pub enum EnumBlockChain {
     ///
     #[postgres(name = "BscTestnet")]
     BscTestnet = 3,
+    ///
+    #[postgres(name = "LocalNet")]
+    LocalNet = 4,
+}
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    ToSql,
+    FromSql,
+    Serialize,
+    Deserialize,
+    FromPrimitive,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    EnumString,
+    Display,
+    Hash,
+)]
+#[postgres(name = "enum_blockchain_coin")]
+pub enum EnumBlockchainCoin {
+    ///
+    #[postgres(name = "USDC")]
+    USDC = 0,
+    ///
+    #[postgres(name = "USDT")]
+    USDT = 1,
+    ///
+    #[postgres(name = "BUSD")]
+    BUSD = 2,
 }
 #[derive(
     Debug,

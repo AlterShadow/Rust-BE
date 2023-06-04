@@ -1785,6 +1785,33 @@
             "name": "BscTestnet",
             "value": 3,
             "comment": ""
+          },
+          {
+            "name": "LocalNet",
+            "value": 4,
+            "comment": ""
+          }
+        ]
+      }
+    },
+    {
+      "Enum": {
+        "name": "blockchain_coin",
+        "variants": [
+          {
+            "name": "USDC",
+            "value": 0,
+            "comment": ""
+          },
+          {
+            "name": "USDT",
+            "value": 1,
+            "comment": ""
+          },
+          {
+            "name": "BUSD",
+            "value": 2,
+            "comment": ""
           }
         ]
       }

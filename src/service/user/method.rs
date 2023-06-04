@@ -344,7 +344,7 @@ pub async fn transfer_token_to_strategy_contract(
     signer: impl Key,
     escrow: EscrowTransfer,
     chain: EnumBlockChain,
-    stablecoin_addresses: &StableCoinAddresses,
+    stablecoin_addresses: &BlockchainCoinAddresses,
     escrow_contract: &EscrowContract<EitherTransport>,
 ) -> Result<TransactionFetcher> {
     let token_address = stablecoin_addresses
@@ -364,11 +364,11 @@ pub async fn user_back_strategy(
     db: &DbClient,
     chain: EnumBlockChain,
     back_usdc_amount: U256,
-    stablecoin_addresses: &StableCoinAddresses,
+    stablecoin_addresses: &BlockchainCoinAddresses,
     strategy_id: i64,
     strategy_pool_signer: impl Key,
     escrow_signer: impl Key,
-    stablecoin: StableCoin,
+    stablecoin: EnumBlockchainCoin,
     escrow_contract: EscrowContract<EitherTransport>,
     externally_owned_account: impl Key + Clone,
     dex_addresses: &DexAddresses,
@@ -513,7 +513,7 @@ pub async fn trade_usdc_to_tokens_on_pancakeswap(
 }
 pub struct MethodUserBackStrategy {
     pub conn: EthereumRpcConnection,
-    pub stablecoin_addresses: Arc<StableCoinAddresses>,
+    pub stablecoin_addresses: Arc<BlockchainCoinAddresses>,
     pub strategy_pool_signer: Arc<Secp256k1SecretKey>,
     pub escrow_contract: EscrowContract<EitherTransport>,
     pub escrow_signer: Arc<Secp256k1SecretKey>,
@@ -552,7 +552,7 @@ impl RequestHandler for MethodUserBackStrategy {
                 req.strategy_id,
                 &**strategy_pool_signer,
                 &**escrow_signer,
-                StableCoin::Usdc,
+                EnumBlockchainCoin::USDC,
                 escrow_contract,
                 &**externally_owned_account,
                 &dex_addresses,
@@ -564,7 +564,7 @@ impl RequestHandler for MethodUserBackStrategy {
 }
 pub struct MethodUserRequestRefund {
     pub conn: EthereumRpcConnection,
-    pub stablecoin_addresses: Arc<StableCoinAddresses>,
+    pub stablecoin_addresses: Arc<BlockchainCoinAddresses>,
     pub escrow_contract: EscrowContract<EitherTransport>,
     pub escrow_signer: Arc<Secp256k1SecretKey>,
 }
@@ -598,7 +598,7 @@ impl RequestHandler for MethodUserRequestRefund {
                 req.quantity.parse()?,
                 req.wallet_address.parse()?,
                 &escrow_signer.key,
-                StableCoin::Usdc,
+                EnumBlockchainCoin::USDC,
             )
             .await?;
             Ok(())
@@ -1336,12 +1336,12 @@ pub async fn on_user_request_refund(
     ctx: &RequestContext,
     db: &DbClient,
     chain: EnumBlockChain,
-    stablecoin_addresses: &StableCoinAddresses,
+    stablecoin_addresses: &BlockchainCoinAddresses,
     escrow_contract: &EscrowContract<EitherTransport>,
     quantity: U256,
     wallet_address: Address,
     escrow_signer: impl Key,
-    token: StableCoin,
+    token: EnumBlockchainCoin,
 ) -> Result<H256> {
     info!(
         "on_user_request_refund {:?} from {:?} transfer {:?} {:?} to {:?}",
@@ -1503,7 +1503,7 @@ mod tests {
         db: &DbClient,
         chain: EnumBlockChain,
         tx: &TransactionReady,
-        stablecoin_addresses: &StableCoinAddresses,
+        stablecoin_addresses: &BlockchainCoinAddresses,
         erc_20: &web3::ethabi::Contract,
         escrow_contract: &EscrowContract<EitherTransport>,
     ) -> Result<()> {
@@ -1599,10 +1599,10 @@ mod tests {
             log_id: 0,
         };
 
-        let mut stablecoins = StableCoinAddresses::default();
+        let mut stablecoins = BlockchainCoinAddresses::default();
         stablecoins.inner.insert(
             EnumBlockChain::EthereumGoerli,
-            vec![(StableCoin::Usdc, erc20_mock.address)],
+            vec![(EnumBlockchainCoin::USDC, erc20_mock.address)],
         );
 
         // at this step, tx should be passed with quickalert
@@ -1639,9 +1639,10 @@ mod tests {
             strategy.strategy_id,
             &admin_key.key,
             &escrow_key.key,
-            StableCoin::Usdc,
+            EnumBlockchainCoin::USDC,
             escrow_contract,
             eoa,
+            &DexAddresses::new(),
         )
         .await?;
         Ok(())
@@ -1713,10 +1714,10 @@ mod tests {
             log_id: 0,
         };
 
-        let mut stablecoins = StableCoinAddresses::default();
+        let mut stablecoins = BlockchainCoinAddresses::default();
         stablecoins.inner.insert(
             EnumBlockChain::EthereumGoerli,
-            vec![(StableCoin::Usdc, erc20_mock.address)],
+            vec![(EnumBlockchainCoin::USDC, erc20_mock.address)],
         );
 
         // at this step, tx should be passed with quickalert
@@ -1753,7 +1754,7 @@ mod tests {
             U256::from(1000),
             user_key.address,
             &escrow_key.key,
-            StableCoin::Usdc,
+            EnumBlockchainCoin::USDC,
         )
         .await?;
         Ok(())

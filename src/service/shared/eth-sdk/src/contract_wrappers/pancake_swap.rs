@@ -680,10 +680,10 @@ mod tests {
     use crate::signer::Secp256k1SecretKey;
     use crate::tx::{TransactionFetcher, TransactionReady};
     use crate::wait_for_confirmations_simple;
+    use crate::BlockchainCoinAddresses;
     use crate::{EthereumRpcConnectionPool, TxStatus};
-    use crate::{StableCoin, StableCoinAddresses};
     use crate::{DEV_ACCOUNT_ADDRESS, DEV_ACCOUNT_PRIV_KEY};
-    use gen::model::{EnumBlockChain, EnumDex};
+    use gen::model::{EnumBlockChain, EnumBlockchainCoin, EnumDex};
     use lib::log::{setup_logs, LogLevel};
     use lib::utils::hex_decode;
 
@@ -770,8 +770,8 @@ mod tests {
         )?;
 
         /* busd contract so we can check balances */
-        let bsc_testnet_busd_address = StableCoinAddresses::new()
-            .get(EnumBlockChain::BscTestnet, StableCoin::Busd)
+        let bsc_testnet_busd_address = BlockchainCoinAddresses::new()
+            .get(EnumBlockChain::BscTestnet, EnumBlockchainCoin::BUSD)
             .unwrap();
         let busd = Erc20Token::new(conn.clone().into_raw(), bsc_testnet_busd_address)?;
 
@@ -909,6 +909,23 @@ mod tests {
         let paths = copied_trade.get_pancake_pair_paths()?;
         assert_eq!(paths.len(), 1);
         info!("Paths: {:?}", paths);
+        let coins = BlockchainCoinAddresses::new();
+        assert_eq!(
+            Address::from_str("0x524bC91Dc82d6b90EF29F76A3ECAaBAffFD490Bc")?,
+            paths.get_token_in()
+        );
+        let token_in = coins
+            .get_by_address(EnumBlockChain::BscMainnet, paths.get_token_in())
+            .unwrap();
+        assert_eq!(token_in, EnumBlockchainCoin::USDT);
+        assert_eq!(
+            Address::from_str("0xB04906e95AB5D797aDA81508115611fee694c2b3")?,
+            paths.get_token_out()
+        );
+        let token_out = coins
+            .get_by_address(EnumBlockChain::BscMainnet, paths.get_token_out())
+            .unwrap();
+        assert_eq!(token_out, EnumBlockchainCoin::USDC);
         Ok(())
     }
 }
