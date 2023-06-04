@@ -48,7 +48,6 @@ impl Default for LogLevel {
     }
 }
 pub fn setup_logs(log_level: LogLevel) -> Result<()> {
-    println!("Log level: {:?}", log_level);
     LogTracer::init().context("Cannot setup_logs")?;
     let filter = EnvFilter::from_default_env()
         .add_directive(log_level.as_level_filter().into())

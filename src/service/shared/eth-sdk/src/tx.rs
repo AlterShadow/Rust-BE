@@ -3,7 +3,7 @@ use crate::EthereumRpcConnection;
 use eyre::*;
 use std::time::Duration;
 use web3::api::Eth;
-use web3::types::{Transaction as Web3Transaction, TransactionReceipt, H160, H256, U256};
+use web3::types::{Address, Transaction as Web3Transaction, TransactionReceipt, H160, H256, U256};
 use web3::Transport;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -282,22 +282,20 @@ impl TransactionReady {
         &self.receipt
     }
 
-    pub fn get_to(&self) -> Option<H160> {
+    pub fn get_to(&self) -> Option<Address> {
         self.transaction.to
     }
 
-    pub fn get_from(&self) -> Option<H160> {
+    pub fn get_from(&self) -> Option<Address> {
         self.transaction.from
     }
-
-    pub fn amount_of_token_received(
-        &self,
-        token_contract: H160,
-        recipient: H160,
+    // TODO: move to ERC20, as Transfer event is defined in ERC20
+    pub fn parse_amount_of_token_received(
+        receipt: &TransactionReceipt,
+        token_contract: Address,
+        recipient: Address,
         transfer_event_signature: H256,
     ) -> Result<U256> {
-        let receipt = self.get_receipt();
-
         for log in &receipt.logs {
             /* there can only be 4 indexed (topic) values in a event log */
             if log.topics.len() >= 3
@@ -309,24 +307,69 @@ impl TransactionReady {
                 /* 3rd topic according to ERC20 is the "to" address */
                 /* topics have 32 bytes, so we must fetch the last 20 bytes for an address */
                 let to_bytes = log.topics[2].as_bytes();
-                if to_bytes.len() < 32 {
-                    return Err(eyre!("invalid topic length"));
-                }
+                ensure!(to_bytes.len() >= 32, "invalid topic length");
+
                 let to = H160::from_slice(&to_bytes[12..]);
 
                 if to == recipient {
                     /* transfer value is not indexed according to ERC20, and is stored in log data */
                     let data = log.data.0.as_slice();
-                    if data.len() < 32 {
-                        return Err(eyre!("invalid data length"));
-                    }
+                    ensure!(data.len() >= 32, "invalid data length");
+
                     let amount_out = U256::from_big_endian(&data);
                     return Ok(amount_out);
                 }
             }
         }
 
-        Err(eyre!("transfer log not found"))
+        bail!("transfer log not found")
+    }
+
+    pub fn amount_of_token_received(
+        &self,
+        token_contract: Address,
+        recipient: Address,
+        transfer_event_signature: H256,
+    ) -> Result<U256> {
+        Self::parse_amount_of_token_received(
+            &self.receipt,
+            token_contract,
+            recipient,
+            transfer_event_signature,
+        )
+    }
+    pub fn parse_amount_of_token_sent(
+        receipt: &TransactionReceipt,
+        token_contract: H160,
+        sender: H160,
+        transfer_event_signature: H256,
+    ) -> Result<U256> {
+        for log in &receipt.logs {
+            /* there can only be 4 indexed (topic) values in a event log */
+            if log.topics.len() >= 3
+                    /* 1st topic is always the hash of the event signature */
+                    && log.topics[0] == transfer_event_signature
+                    /* address of the contract that fired the event */
+                    && log.address == token_contract
+            {
+                /* 2nd topic according to ERC20 is the "from" address */
+                /* topics have 32 bytes, so we must fetch the last 20 bytes for an address */
+                let from_bytes = log.topics[1].as_bytes();
+                ensure!(from_bytes.len() >= 32, "invalid topic length");
+
+                let from = H160::from_slice(&from_bytes[12..]);
+
+                if from == sender {
+                    /* transfer value is not indexed according to ERC20, and is stored in log data */
+                    let data = log.data.0.as_slice();
+                    ensure!(data.len() >= 32, "invalid data length");
+
+                    let amount_out = U256::from_big_endian(&data);
+                    return Ok(amount_out);
+                }
+            }
+        }
+        bail!("transfer log not found")
     }
 
     pub fn amount_of_token_sent(

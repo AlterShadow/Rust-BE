@@ -1,5 +1,5 @@
-use crate::dex_tracker::pancake::build_pancake_swap;
-use crate::dex_tracker::PancakeSwap;
+use crate::dex_tracker::PancakePairPathSet;
+use crate::dex_tracker::{build_pancake_swap, PancakeSwap};
 use crate::erc20::build_erc_20;
 use crate::{
     ContractCall, DexAddresses, EthereumRpcConnectionPool, StableCoinAddresses, TransactionReady,
@@ -12,7 +12,7 @@ use lib::database::DbClient;
 use serde::{Deserialize, Serialize};
 use tracing::error;
 use web3::ethabi::Contract;
-use web3::types::{H160, H256, U256};
+use web3::types::{Address, H160, H256, U256};
 
 pub struct AppState {
     pub dex_addresses: DexAddresses,
@@ -47,19 +47,19 @@ pub enum DexPath {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PancakeV3SingleHopPath {
-    pub token_in: H160,
-    pub token_out: H160,
+    pub token_in: Address,
+    pub token_out: Address,
     pub fee: U256,
 }
 
 #[derive(Clone, Debug)]
-pub struct Trade {
+pub struct DexTrade {
     pub chain: EnumBlockChain,
-    pub contract: H160,
+    pub contract: Address,
     pub dex: EnumDex,
-    pub token_in: H160,
-    pub token_out: H160,
-    pub caller: H160,
+    pub token_in: Address,
+    pub token_out: Address,
+    pub caller: Address,
     pub amount_in: U256,
     pub amount_out: U256,
     /* some trades go through multiple swap calls because of pool availability */
@@ -69,8 +69,8 @@ pub struct Trade {
     pub dex_versions: Vec<EnumDexVersion>,
 }
 
-impl Trade {
-    pub fn get_pancake_pair_paths(&self) -> Result<PancakePairPaths> {
+impl DexTrade {
+    pub fn get_pancake_pair_paths(&self) -> Result<PancakePairPathSet> {
         if self.dex != EnumDex::PancakeSwap {
             bail!("dex is not pancakeswap")
         }
@@ -78,61 +78,11 @@ impl Trade {
         for (i, swap_call) in self.swap_calls.iter().enumerate() {
             func_names_and_paths.push((swap_call.get_name(), self.paths[i].clone()));
         }
-        Ok(PancakePairPaths::new(
+        Ok(PancakePairPathSet::new(
             self.token_in,
             self.token_out,
             func_names_and_paths,
         )?)
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct PancakePairPaths {
-    token_in: H160,
-    token_out: H160,
-    func_names_and_paths: Vec<(String, DexPath)>,
-}
-
-impl PancakePairPaths {
-    pub fn new(
-        token_in: H160,
-        token_out: H160,
-        func_names_and_paths: Vec<(String, DexPath)>,
-    ) -> Result<Self> {
-        if func_names_and_paths.len() == 0 {
-            bail!("empty names and paths");
-        }
-        Ok(Self {
-            token_in,
-            token_out,
-            func_names_and_paths: func_names_and_paths,
-        })
-    }
-
-    pub fn get_token_in(&self) -> H160 {
-        self.token_in
-    }
-
-    pub fn get_token_out(&self) -> H160 {
-        self.token_out
-    }
-
-    pub fn len(&self) -> usize {
-        self.func_names_and_paths.len()
-    }
-
-    pub fn get_func_name(&self, idx: usize) -> Result<String> {
-        if idx >= self.len() {
-            bail!("index out of bounds");
-        }
-        Ok(self.func_names_and_paths[idx].0.clone())
-    }
-
-    pub fn get_path(&self, idx: usize) -> Result<DexPath> {
-        if idx >= self.len() {
-            bail!("index out of bounds");
-        }
-        Ok(self.func_names_and_paths[idx].1.clone())
     }
 }
 
@@ -145,7 +95,7 @@ pub fn parse_quickalert_payload(payload: Bytes) -> Result<Vec<H256>> {
     }
 }
 
-pub async fn save_trade(hash: H256, trade: &Trade, db: &DbClient) -> Result<()> {
+pub async fn save_trade(hash: H256, trade: &DexTrade, db: &DbClient) -> Result<()> {
     if let Err(err) = async {
         db.execute(FunWatcherSaveWalletActivityHistoryReq {
             address: format!("{:?}", trade.caller),
