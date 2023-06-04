@@ -197,3 +197,8 @@ The platform will be developed for testnet and will include the following featur
 - [ ] As much data models as we can get (I'll get vertabelo setup)
 - [ ] The user/backer endpoint docs up and more accurate and better planned out
 
+## TODO on June 4
+- [ ] calculate tokens need to trade with initial token ratio
+- [ ] apply copy trade on testnet
+- [ ] setup testnet testing environment
+- [ ] deploy user on chonky

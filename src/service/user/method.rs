@@ -1,5 +1,6 @@
 use eth_sdk::erc20::{build_erc_20, Erc20Token};
 use eth_sdk::escrow::EscrowContract;
+use eth_sdk::pancake_swap::PancakeSmartRouterV3Contract;
 use eth_sdk::signer::Secp256k1SecretKey;
 use eth_sdk::strategy_pool::StrategyPoolContract;
 use eth_sdk::utils::{verify_message_address, wait_for_confirmations_simple};
@@ -12,6 +13,7 @@ use lib::handler::RequestHandler;
 use lib::toolbox::*;
 use lib::utils::hex_decode;
 use lib::ws::*;
+use std::clone;
 use std::str::FromStr;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
@@ -368,7 +370,8 @@ pub async fn user_back_strategy(
     escrow_signer: impl Key,
     stablecoin: StableCoin,
     escrow_contract: EscrowContract<EitherTransport>,
-    externally_owned_account: impl Key,
+    externally_owned_account: impl Key + Clone,
+    dex_addresses: &DexAddresses,
 ) -> Result<()> {
     let mut strategy = db
         .execute(FunUserGetStrategyReq { strategy_id })
@@ -410,7 +413,11 @@ pub async fn user_back_strategy(
         .context("Could not find stablecoin address")?;
     let erc20 = Erc20Token::new(conn.clone().into_raw(), erc20_address)?;
     let hash = erc20
-        .transfer(externally_owned_account, strategy_address, sp_tokens)
+        .transfer(
+            externally_owned_account.clone(),
+            strategy_address,
+            sp_tokens,
+        )
         .await?;
     wait_for_confirmations_simple(&conn.get_raw().eth(), hash, Duration::from_secs(3), 5).await?;
     // TODO: process retry here or have a lock
@@ -448,9 +455,62 @@ pub async fn user_back_strategy(
     );
 
     let _tx = TransactionFetcher::new_and_assume_ready(transaction.get_hash(), conn).await?;
+
+    let initial_tokens = db
+        .execute(FunUserListStrategyInitialTokenRatiosReq { strategy_id })
+        .await?
+        .into_rows();
+    trade_usdc_to_tokens_on_pancakeswap(
+        conn,
+        chain,
+        externally_owned_account,
+        &dex_addresses,
+        initial_tokens,
+        // TODO: check if there's overflow or precision loss
+        back_usdc_amount.as_u128() as f64,
+    )
+    .await?;
     Ok(())
 }
+pub async fn trade_usdc_to_tokens_on_pancakeswap(
+    conn: &EthereumRpcConnection,
+    chain: EnumBlockChain,
+    signer: impl Key + Clone,
+    dex_addresses: &DexAddresses,
+    tokens: Vec<FunUserListStrategyInitialTokenRatiosRespRow>,
+    backed_usdc: f64,
+) -> Result<Vec<TransactionFetcher>> {
+    let token_address = dex_addresses
+        .get_by_chain_and_dex(chain, EnumDex::PancakeSwap)
+        .context("Could not find stablecoin address")?;
+    let pancake_swap = PancakeSmartRouterV3Contract::new(conn.clone().into_raw(), token_address)?;
+    let receipt = signer.address();
+    let mut txs = vec![];
+    let mut total_value_usdc = 0.0;
+    for token in &tokens {
+        let market_price: f64 = todo!();
+        total_value_usdc += token.quantity.parse::<f64>()? * market_price;
+    }
+    for token in tokens {
+        let market_price: f64 = todo!();
+        let should_buy =
+            backed_usdc * token.quantity.parse::<f64>()? * market_price / total_value_usdc;
+        let path = todo!();
+        let tx_hash = pancake_swap
+            .swap_exact_tokens_for_tokens(
+                signer.clone(),
+                receipt,
+                (should_buy as u128).into(),
+                ((should_buy * market_price * 0.99) as u128).into(),
+                path,
+            )
+            .await?;
 
+        let tx = TransactionFetcher::new(tx_hash);
+        txs.push(tx);
+    }
+    Ok(txs)
+}
 pub struct MethodUserBackStrategy {
     pub conn: EthereumRpcConnection,
     pub stablecoin_addresses: Arc<StableCoinAddresses>,
@@ -458,6 +518,7 @@ pub struct MethodUserBackStrategy {
     pub escrow_contract: EscrowContract<EitherTransport>,
     pub escrow_signer: Arc<Secp256k1SecretKey>,
     pub externally_owned_account: Arc<Secp256k1SecretKey>,
+    pub dex_addresses: Arc<DexAddresses>,
 }
 impl RequestHandler for MethodUserBackStrategy {
     type Request = UserBackStrategyRequest;
@@ -477,6 +538,7 @@ impl RequestHandler for MethodUserBackStrategy {
         let escrow_signer = self.escrow_signer.clone();
         let escrow_contract = self.escrow_contract.clone();
         let externally_owned_account = self.externally_owned_account.clone();
+        let dex_addresses = self.dex_addresses.clone();
         toolbox.spawn_response(ctx.clone(), async move {
             ensure_user_role(&conn, EnumRole::User)?;
 
@@ -493,6 +555,7 @@ impl RequestHandler for MethodUserBackStrategy {
                 StableCoin::Usdc,
                 escrow_contract,
                 &**externally_owned_account,
+                &dex_addresses,
             )
             .await?;
             Ok(())
@@ -1610,7 +1673,7 @@ mod tests {
         .await?;
         let escrow_contract =
             EscrowContract::deploy(conn.get_raw().clone(), &escrow_key.key).await?;
-        // TODO: we want to replace escrow_key with escrow_contract
+
         let tx_hash = erc20_mock
             .transfer(
                 &user_key.key,
