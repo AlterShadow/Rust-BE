@@ -197,8 +197,18 @@ The platform will be developed for testnet and will include the following featur
 - [ ] As much data models as we can get (I'll get vertabelo setup)
 - [ ] The user/backer endpoint docs up and more accurate and better planned out
 
-## TODO on June 4
+## TODO
 - [ ] calculate tokens need to trade with initial token ratio
 - [ ] apply copy trade on testnet
 - [ ] setup testnet testing environment
 - [ ] deploy user on chonky
+- [ ] System config
+- [ ] User management
+- [ ] expert management
+- [ ] vault management
+- [ ] all reports from network
+- [ ] all reports of investors
+- [ ] see user portfolio performance
+- [ ] system stability and monitoring
+- [ ] activity streaming log - platform trades
+- [ ] activity streaming log - watched wallets
