@@ -8,7 +8,8 @@ use eth_sdk::erc20::build_erc_20;
 use eth_sdk::escrow_tracker::handle_eth_escrows;
 use eth_sdk::evm::AppState;
 use eth_sdk::{
-    build_pancake_swap, BlockchainCoinAddresses, DexAddresses, EthereumRpcConnectionPool,
+    build_pancake_swap, BlockchainCoinAddresses, DexAddresses, EthereumConns,
+    EthereumRpcConnectionPool,
 };
 use eyre::*;
 use gen::model::EnumBlockChain;
@@ -34,6 +35,7 @@ pub struct Config {
     pub pub_cert: Option<String>,
     #[serde(default)]
     pub priv_cert: Option<String>,
+    pub ethereum_urls: EthereumConns,
 }
 
 #[tokio::main]
@@ -42,7 +44,7 @@ async fn main() -> Result<()> {
     setup_logs(config.log_level)?;
     let db = connect_to_database(config.app_db).await?;
 
-    let eth_pool = EthereumRpcConnectionPool::new(config.eth_provider_url.to_string(), 10)?;
+    let eth_pool = EthereumRpcConnectionPool::from_conns(config.ethereum_urls);
     let app: Router<(), Body> = Router::new()
         .route("/eth-mainnet-swaps", post(handle_eth_swap_mainnet))
         .route("/eth-goerli-swaps", post(handle_eth_swap_goerli))

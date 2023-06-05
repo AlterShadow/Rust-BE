@@ -8,8 +8,6 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 
-
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct EthereumConns {
     #[serde(flatten)]
@@ -33,12 +31,12 @@ impl EthereumConns {
             "https://rpc.sepolia.dev".to_string(),
         );
         this.conns.insert(
-            EnumBlockChain::BscTestnet,
-            "https://bsc-testnet.publicnode.com".to_string(),
-        );
-        this.conns.insert(
             EnumBlockChain::BscMainnet,
             "https://bsc.publicnode.com".to_string(),
+        );
+        this.conns.insert(
+            EnumBlockChain::BscTestnet,
+            "https://bsc-testnet.publicnode.com".to_string(),
         );
         this.conns.insert(
             EnumBlockChain::LocalNet,
@@ -75,8 +73,7 @@ pub struct EthereumRpcConnectionPoolInner {
 pub struct EthereumRpcConnectionPool(Arc<EthereumRpcConnectionPoolInner>);
 
 impl EthereumRpcConnectionPool {
-    pub fn new() -> Self {
-        let conns = EthereumConns::new();
+    pub fn from_conns(conns: EthereumConns) -> Self {
         let mut pools = HashMap::new();
         for (key, val) in conns.conns.iter() {
             let pool = deadpool::managed::Pool::builder(EthereumRpcConnectionManager {
@@ -87,6 +84,10 @@ impl EthereumRpcConnectionPool {
             pools.insert(key.clone(), pool);
         }
         Self(Arc::new(EthereumRpcConnectionPoolInner { conns, pools }))
+    }
+    pub fn new() -> Self {
+        let conns = EthereumConns::new();
+        Self::from_conns(conns)
     }
 
     pub async fn get(&self, chain: EnumBlockChain) -> Result<EthereumRpcConnectionGuard> {

@@ -4,7 +4,7 @@ use crate::endpoints::*;
 use crate::method::*;
 use eth_sdk::escrow::EscrowContract;
 use eth_sdk::signer::Secp256k1SecretKey;
-use eth_sdk::{BlockchainCoinAddresses, DexAddresses, EthereumRpcConnectionPool};
+use eth_sdk::{BlockchainCoinAddresses, DexAddresses, EthereumConns, EthereumRpcConnectionPool};
 use eyre::*;
 use gen::model::{EnumBlockChain, EnumService};
 use lib::config::{load_config, WsServerConfig};
@@ -28,6 +28,7 @@ pub struct Config {
     pub log_level: LogLevel,
     #[serde(flatten)]
     pub app: WsServerConfig,
+    pub ethereum_urls: EthereumConns,
 }
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -136,7 +137,7 @@ async fn main() -> Result<()> {
         endpoint_user_list_strategy_initial_token_ratio(),
         MethodUserListStrategyInitialTokenRatio,
     );
-    let eth_pool = EthereumRpcConnectionPool::new();
+    let eth_pool = EthereumRpcConnectionPool::from_conns(config.ethereum_urls);
 
     let escrow_signer = Arc::new(Secp256k1SecretKey::new_random());
     // TODO: get escrow_signer from MultiChainAddressTable

@@ -1,6 +1,11 @@
 {
 	"ethereum_urls": {
-		"mainnet": "https://ethereum.publicnode.com",
+		"EthereumMainnet": "https://ethereum.publicnode.com",
+		"EthereumGoerli": "https://ethereum-goerli.publicnode.com",
+		"BscMainnet": "https://bsc.publicnode.com",
+		"BscTestnet": "https://bsc-testnet.publicnode.com",
+		"LocalNet": "http://127.0.0.1:8545",
+		"EthereumSepolia": "https://rpc.sepolia.dev"
 	},
 	"app_db": {
 		"host": "localhost",
