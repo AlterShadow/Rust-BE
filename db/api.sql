@@ -508,7 +508,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_deposit_to_escrow(a_user_id bigint, a_blockchain varchar, a_user_address varchar, a_contract_address varchar, a_receiver_address varchar, a_quantity varchar, a_transaction_hash varchar)
+CREATE OR REPLACE FUNCTION api.fun_user_deposit_to_escrow(a_user_id bigint, a_blockchain enum_block_chain, a_user_address varchar, a_contract_address varchar, a_receiver_address varchar, a_quantity varchar, a_transaction_hash varchar)
 RETURNS table (
     "success" boolean
 )
@@ -545,7 +545,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_back_strategy(a_user_id bigint, a_strategy_id bigint, a_quantity varchar, a_new_total_backed_quantity varchar, a_old_total_backed_quantity varchar, a_new_current_quantity varchar, a_old_current_quantity varchar, a_blockchain varchar, a_transaction_hash varchar, a_earn_sp_tokens varchar)
+CREATE OR REPLACE FUNCTION api.fun_user_back_strategy(a_user_id bigint, a_strategy_id bigint, a_quantity varchar, a_new_total_backed_quantity varchar, a_old_total_backed_quantity varchar, a_new_current_quantity varchar, a_old_current_quantity varchar, a_blockchain enum_block_chain, a_transaction_hash varchar, a_earn_sp_tokens varchar)
 RETURNS table (
     "success" boolean
 )
@@ -621,7 +621,7 @@ RETURNS table (
     "strategy_id" bigint,
     "quantity" varchar,
     "wallet_address" varchar,
-    "blockchain" varchar,
+    "blockchain" enum_block_chain,
     "transaction_hash" varchar,
     "time" bigint
 )
@@ -643,7 +643,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_exit_strategy(a_user_id bigint, a_strategy_id bigint, a_quantity varchar, a_blockchain varchar, a_dex varchar, a_back_time bigint, a_transaction_hash varchar, a_purchase_wallet varchar)
+CREATE OR REPLACE FUNCTION api.fun_user_exit_strategy(a_user_id bigint, a_strategy_id bigint, a_quantity varchar, a_blockchain enum_block_chain, a_dex varchar, a_back_time bigint, a_transaction_hash varchar, a_purchase_wallet varchar)
 RETURNS table (
     "success" boolean
 )
@@ -668,7 +668,7 @@ RETURNS table (
     "strategy_id" bigint,
     "exit_quantity" varchar,
     "purchase_wallet_address" varchar,
-    "blockchain" varchar,
+    "blockchain" enum_block_chain,
     "dex" varchar,
     "back_time" bigint,
     "exit_time" bigint
@@ -987,7 +987,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_add_strategy_watch_wallet(a_user_id bigint, a_strategy_id bigint, a_wallet_address varchar, a_blockchain varchar, a_ratio double precision, a_dex varchar)
+CREATE OR REPLACE FUNCTION api.fun_user_add_strategy_watch_wallet(a_user_id bigint, a_strategy_id bigint, a_wallet_address varchar, a_blockchain enum_block_chain, a_ratio double precision, a_dex varchar)
 RETURNS table (
     "success" boolean,
     "watch_wallet_id" bigint
@@ -1030,7 +1030,7 @@ CREATE OR REPLACE FUNCTION api.fun_user_list_strategy_watch_wallets(a_strategy_i
 RETURNS table (
     "watch_wallet_id" bigint,
     "wallet_address" varchar,
-    "blockchain" varchar,
+    "blockchain" enum_block_chain,
     "ratio" double precision
 )
 LANGUAGE plpgsql
@@ -1048,7 +1048,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_add_registered_wallet(a_user_id bigint, a_blockchain varchar, a_address varchar)
+CREATE OR REPLACE FUNCTION api.fun_user_add_registered_wallet(a_user_id bigint, a_blockchain enum_block_chain, a_address varchar)
 RETURNS table (
     "registered_wallet_id" bigint
 )
@@ -1078,7 +1078,7 @@ $$;
 CREATE OR REPLACE FUNCTION api.fun_user_list_registered_wallets(a_user_id bigint)
 RETURNS table (
     "registered_wallet_id" bigint,
-    "blockchain" varchar,
+    "blockchain" enum_block_chain,
     "address" varchar
 )
 LANGUAGE plpgsql
@@ -1091,7 +1091,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_request_refund(a_user_id bigint, a_blockchain varchar, a_quantity varchar, a_wallet_address varchar)
+CREATE OR REPLACE FUNCTION api.fun_user_request_refund(a_user_id bigint, a_blockchain enum_block_chain, a_quantity varchar, a_wallet_address varchar)
 RETURNS table (
     "request_refund_id" bigint
 )
@@ -1110,7 +1110,7 @@ CREATE OR REPLACE FUNCTION api.fun_user_list_request_refund_history()
 RETURNS table (
     "request_refund_id" bigint,
     "user_id" bigint,
-    "blockchain" varchar,
+    "blockchain" enum_block_chain,
     "quantity" varchar,
     "wallet_address" varchar
 )
@@ -1238,7 +1238,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_watcher_save_wallet_activity_history(a_address varchar, a_transaction_hash varchar, a_blockchain varchar, a_dex varchar, a_contract_address varchar, a_token_in_address varchar, a_token_out_address varchar, a_caller_address varchar, a_amount_in varchar, a_amount_out varchar, a_swap_calls jsonb, a_paths jsonb, a_dex_versions jsonb, a_created_at bigint DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_watcher_save_wallet_activity_history(a_address varchar, a_transaction_hash varchar, a_blockchain enum_block_chain, a_dex varchar, a_contract_address varchar, a_token_in_address varchar, a_token_out_address varchar, a_caller_address varchar, a_amount_in varchar, a_amount_out varchar, a_swap_calls jsonb, a_paths jsonb, a_dex_versions jsonb, a_created_at bigint DEFAULT NULL)
 RETURNS table (
     "wallet_activity_history_id" bigint
 )
@@ -1284,12 +1284,12 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_watcher_list_wallet_activity_history(a_address varchar, a_blockchain varchar)
+CREATE OR REPLACE FUNCTION api.fun_watcher_list_wallet_activity_history(a_address varchar, a_blockchain enum_block_chain)
 RETURNS table (
     "wallet_activity_history_id" bigint,
     "address" varchar,
     "transaction_hash" varchar,
-    "blockchain" varchar,
+    "blockchain" enum_block_chain,
     "dex" varchar,
     "contract_address" varchar,
     "token_in_address" varchar,

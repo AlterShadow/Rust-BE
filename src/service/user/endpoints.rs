@@ -81,7 +81,7 @@ pub fn endpoint_user_get_strategy() -> EndpointSchema {
                     vec![
                         Field::new("watching_wallet_id", Type::BigInt),
                         Field::new("wallet_address", Type::String),
-                        Field::new("blockchain", Type::String),
+                        Field::new("blockchain", Type::enum_ref("block_chain")),
                         Field::new("dex", Type::String),
                         Field::new("ratio_distribution", Type::Numeric),
                     ],
@@ -95,7 +95,7 @@ pub fn endpoint_user_get_strategy() -> EndpointSchema {
                         Field::new("aum_history_id", Type::BigInt),
                         Field::new("base_token", Type::String),
                         Field::new("quote_token", Type::String),
-                        Field::new("blockchain", Type::String),
+                        Field::new("blockchain", Type::enum_ref("block_chain")),
                         Field::new("dex", Type::String),
                         Field::new("action", Type::String),
                         Field::new("wallet_address", Type::String),
@@ -160,7 +160,7 @@ pub fn endpoint_user_back_strategy() -> EndpointSchema {
         vec![
             Field::new("strategy_id", Type::BigInt),
             Field::new("quantity", Type::String),
-            Field::new("blockchain", Type::String),
+            Field::new("blockchain", Type::enum_ref("block_chain")),
         ],
         vec![Field::new("success", Type::Boolean)],
     )
@@ -172,7 +172,7 @@ pub fn endpoint_user_request_refund() -> EndpointSchema {
         vec![
             Field::new("quantity", Type::String),
             Field::new("wallet_address", Type::String),
-            Field::new("blockchain", Type::String),
+            Field::new("blockchain", Type::enum_ref("block_chain")),
         ],
         vec![Field::new("success", Type::Boolean)],
     )
@@ -200,7 +200,7 @@ pub fn endpoint_user_list_back_strategy_history() -> EndpointSchema {
                     Field::new("back_history_id", Type::BigInt),
                     Field::new("strategy_id", Type::BigInt),
                     Field::new("quantity", Type::String),
-                    Field::new("blockchain", Type::String),
+                    Field::new("blockchain", Type::enum_ref("block_chain")),
                     Field::new("dex", Type::String),
                     Field::new("transaction_hash", Type::String),
                     Field::new("time", Type::BigInt),
@@ -239,7 +239,7 @@ pub fn endpoint_user_list_exit_strategy_history() -> EndpointSchema {
                     Field::new("strategy_id", Type::BigInt),
                     Field::new("exit_quantity", Type::String),
                     Field::new("purchase_wallet_address", Type::String),
-                    Field::new("blockchain", Type::String),
+                    Field::new("blockchain", Type::enum_ref("block_chain")),
                     Field::new("dex", Type::String),
                     Field::new("back_time", Type::BigInt),
                     Field::new("exit_time", Type::BigInt),
@@ -343,7 +343,7 @@ pub fn endpoint_user_register_wallet() -> EndpointSchema {
         "UserRegisterWallet",
         20190,
         vec![
-            Field::new("blockchain", Type::String),
+            Field::new("blockchain", Type::enum_ref("block_chain")),
             Field::new("wallet_address", Type::String),
             Field::new("message_to_sign", Type::String),
             Field::new("message_signature", Type::String),
@@ -366,7 +366,7 @@ pub fn endpoint_user_list_wallets() -> EndpointSchema {
                 "ListWalletsRow",
                 vec![
                     Field::new("wallet_id", Type::BigInt),
-                    Field::new("blockchain", Type::String),
+                    Field::new("blockchain", Type::enum_ref("block_chain")),
                     Field::new("wallet_address", Type::String),
                     Field::new("is_default", Type::Boolean),
                 ],
@@ -474,7 +474,7 @@ pub fn endpoint_user_add_strategy_watching_wallet() -> EndpointSchema {
         20270,
         vec![
             Field::new("strategy_id", Type::BigInt),
-            Field::new("blockchain", Type::String),
+            Field::new("blockchain", Type::enum_ref("block_chain")),
             Field::new("wallet_address", Type::String),
             Field::new("ratio", Type::Numeric),
         ],
@@ -503,7 +503,7 @@ pub fn endpoint_user_list_strategy_watching_wallets() -> EndpointSchema {
                 "ListStrategyWatchingWalletsRow",
                 vec![
                     Field::new("wallet_id", Type::BigInt),
-                    Field::new("blockchain", Type::String),
+                    Field::new("blockchain", Type::enum_ref("block_chain")),
                     Field::new("wallet_address", Type::String),
                     Field::new("ratio", Type::Numeric),
                 ],
@@ -517,7 +517,7 @@ pub fn endpoint_user_list_wallet_activity_history() -> EndpointSchema {
         20300,
         vec![
             Field::new("wallet_address", Type::String),
-            Field::new("blockchain", Type::String),
+            Field::new("blockchain", Type::enum_ref("block_chain")),
         ],
         vec![Field::new(
             "wallet_activities",
@@ -528,7 +528,7 @@ pub fn endpoint_user_list_wallet_activity_history() -> EndpointSchema {
                     Field::new("wallet_address", Type::String),
                     Field::new("transaction_hash", Type::String),
                     Field::new("dex", Type::String),
-                    Field::new("blockchain", Type::String),
+                    Field::new("blockchain", Type::enum_ref("block_chain")),
                     Field::new("contract_address", Type::String),
                     Field::new("token_in_address", Type::String),
                     Field::new("token_out_address", Type::String),

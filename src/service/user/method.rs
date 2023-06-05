@@ -435,7 +435,7 @@ pub async fn user_back_strategy(
                 strategy.current_usdc.parse::<U256>()? + back_usdc_amount
             ),
             old_current_quantity: strategy.current_usdc,
-            blockchain: chain.to_string(),
+            blockchain: chain,
             transaction_hash: format!("{:?}", transaction.get_hash()),
             earn_sp_tokens: format!("{:?}", sp_tokens),
         })
@@ -547,7 +547,7 @@ impl RequestHandler for MethodUserBackStrategy {
                 &eth_conn,
                 &ctx,
                 &db,
-                EnumBlockChain::from_str(&req.blockchain)?,
+                req.blockchain,
                 req.quantity.parse()?,
                 &stablecoin_addresses,
                 req.strategy_id,
@@ -595,7 +595,7 @@ impl RequestHandler for MethodUserRequestRefund {
                 &eth_conn,
                 &ctx,
                 &db,
-                EnumBlockChain::from_str(&req.blockchain)?,
+                req.blockchain,
                 &stablecoin_addresses,
                 &escrow_contract,
                 req.quantity.parse()?,
@@ -1358,7 +1358,7 @@ pub async fn on_user_request_refund(
         .execute(FunUserRequestRefundReq {
             user_id: ctx.user_id,
             quantity: format!("{:?}", quantity),
-            blockchain: chain.to_string(),
+            blockchain: chain,
             wallet_address: format!("{:?}", wallet_address),
         })
         .await?

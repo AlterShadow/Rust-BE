@@ -62,7 +62,7 @@ END
             vec![
                 Field::new("address", Type::String),
                 Field::new("transaction_hash", Type::String),
-                Field::new("blockchain", Type::String),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("dex", Type::String),
                 Field::new("contract_address", Type::String),
                 Field::new("token_in_address", Type::String),
@@ -118,13 +118,13 @@ END
             "fun_watcher_list_wallet_activity_history",
             vec![
                 Field::new("address", Type::String),
-                Field::new("blockchain", Type::String),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
             ],
             vec![
                 Field::new("wallet_activity_history_id", Type::BigInt),
                 Field::new("address", Type::String),
                 Field::new("transaction_hash", Type::String),
-                Field::new("blockchain", Type::String),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("dex", Type::String),
                 Field::new("contract_address", Type::String),
                 Field::new("token_in_address", Type::String),

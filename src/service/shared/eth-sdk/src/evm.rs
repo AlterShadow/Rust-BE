@@ -94,12 +94,17 @@ pub fn parse_quickalert_payload(payload: Bytes) -> Result<Vec<H256>> {
     }
 }
 
-pub async fn save_trade(hash: H256, trade: &DexTrade, db: &DbClient) -> Result<()> {
+pub async fn save_trade(
+    hash: H256,
+    trade: &DexTrade,
+    db: &DbClient,
+    blockchain: EnumBlockChain,
+) -> Result<()> {
     if let Err(err) = async {
         db.execute(FunWatcherSaveWalletActivityHistoryReq {
             address: format!("{:?}", trade.caller),
             transaction_hash: format!("{:?}", hash),
-            blockchain: EnumBlockChain::EthereumMainnet.to_string(),
+            blockchain,
             dex: trade.dex.to_string(),
             contract_address: format!("{:?}", trade.contract),
             token_in_address: format!("{:?}", trade.token_in),

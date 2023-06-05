@@ -35,7 +35,7 @@ pub async fn on_user_deposit(
     db.execute(FunUserDepositToEscrowReq {
         user_id: ctx.user_id,
         quantity: format!("{:?}", esc.amount),
-        blockchain: chain.to_string(),
+        blockchain: chain,
         user_address: format!("{:?}", esc.owner),
         contract_address: format!("{:?}", tx.get_to().context("no to")?),
         transaction_hash: format!("{:?}", tx.get_hash()),

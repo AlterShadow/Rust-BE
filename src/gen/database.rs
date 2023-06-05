@@ -569,7 +569,7 @@ impl DatabaseRequest for FunUserGetStrategyStatisticsBackHistoryReq {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserDepositToEscrowReq {
     pub user_id: i64,
-    pub blockchain: String,
+    pub blockchain: EnumBlockChain,
     pub user_address: String,
     pub contract_address: String,
     pub receiver_address: String,
@@ -585,7 +585,7 @@ pub struct FunUserDepositToEscrowRespRow {
 impl DatabaseRequest for FunUserDepositToEscrowReq {
     type ResponseRow = FunUserDepositToEscrowRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_deposit_to_escrow(a_user_id => $1::bigint, a_blockchain => $2::varchar, a_user_address => $3::varchar, a_contract_address => $4::varchar, a_receiver_address => $5::varchar, a_quantity => $6::varchar, a_transaction_hash => $7::varchar);"
+        "SELECT * FROM api.fun_user_deposit_to_escrow(a_user_id => $1::bigint, a_blockchain => $2::enum_block_chain, a_user_address => $3::varchar, a_contract_address => $4::varchar, a_receiver_address => $5::varchar, a_quantity => $6::varchar, a_transaction_hash => $7::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -615,7 +615,7 @@ pub struct FunUserBackStrategyReq {
     pub old_total_backed_quantity: String,
     pub new_current_quantity: String,
     pub old_current_quantity: String,
-    pub blockchain: String,
+    pub blockchain: EnumBlockChain,
     pub transaction_hash: String,
     pub earn_sp_tokens: String,
 }
@@ -628,7 +628,7 @@ pub struct FunUserBackStrategyRespRow {
 impl DatabaseRequest for FunUserBackStrategyReq {
     type ResponseRow = FunUserBackStrategyRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_back_strategy(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_quantity => $3::varchar, a_new_total_backed_quantity => $4::varchar, a_old_total_backed_quantity => $5::varchar, a_new_current_quantity => $6::varchar, a_old_current_quantity => $7::varchar, a_blockchain => $8::varchar, a_transaction_hash => $9::varchar, a_earn_sp_tokens => $10::varchar);"
+        "SELECT * FROM api.fun_user_back_strategy(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_quantity => $3::varchar, a_new_total_backed_quantity => $4::varchar, a_old_total_backed_quantity => $5::varchar, a_new_current_quantity => $6::varchar, a_old_current_quantity => $7::varchar, a_blockchain => $8::enum_block_chain, a_transaction_hash => $9::varchar, a_earn_sp_tokens => $10::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -704,7 +704,7 @@ pub struct FunUserListBackStrategyHistoryRespRow {
     pub strategy_id: i64,
     pub quantity: String,
     pub wallet_address: String,
-    pub blockchain: String,
+    pub blockchain: EnumBlockChain,
     pub transaction_hash: String,
     pub time: i64,
 }
@@ -740,7 +740,7 @@ pub struct FunUserExitStrategyReq {
     pub user_id: i64,
     pub strategy_id: i64,
     pub quantity: String,
-    pub blockchain: String,
+    pub blockchain: EnumBlockChain,
     pub dex: String,
     pub back_time: i64,
     pub transaction_hash: String,
@@ -755,7 +755,7 @@ pub struct FunUserExitStrategyRespRow {
 impl DatabaseRequest for FunUserExitStrategyReq {
     type ResponseRow = FunUserExitStrategyRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_exit_strategy(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_quantity => $3::varchar, a_blockchain => $4::varchar, a_dex => $5::varchar, a_back_time => $6::bigint, a_transaction_hash => $7::varchar, a_purchase_wallet => $8::varchar);"
+        "SELECT * FROM api.fun_user_exit_strategy(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_quantity => $3::varchar, a_blockchain => $4::enum_block_chain, a_dex => $5::varchar, a_back_time => $6::bigint, a_transaction_hash => $7::varchar, a_purchase_wallet => $8::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -789,7 +789,7 @@ pub struct FunUserListExitStrategyHistoryRespRow {
     pub strategy_id: i64,
     pub exit_quantity: String,
     pub purchase_wallet_address: String,
-    pub blockchain: String,
+    pub blockchain: EnumBlockChain,
     pub dex: String,
     pub back_time: i64,
     pub exit_time: i64,
@@ -1278,7 +1278,7 @@ pub struct FunUserAddStrategyWatchWalletReq {
     pub user_id: i64,
     pub strategy_id: i64,
     pub wallet_address: String,
-    pub blockchain: String,
+    pub blockchain: EnumBlockChain,
     pub ratio: f64,
     pub dex: String,
 }
@@ -1292,7 +1292,7 @@ pub struct FunUserAddStrategyWatchWalletRespRow {
 impl DatabaseRequest for FunUserAddStrategyWatchWalletReq {
     type ResponseRow = FunUserAddStrategyWatchWalletRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_add_strategy_watch_wallet(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_wallet_address => $3::varchar, a_blockchain => $4::varchar, a_ratio => $5::double precision, a_dex => $6::varchar);"
+        "SELECT * FROM api.fun_user_add_strategy_watch_wallet(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_wallet_address => $3::varchar, a_blockchain => $4::enum_block_chain, a_ratio => $5::double precision, a_dex => $6::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -1351,7 +1351,7 @@ pub struct FunUserListStrategyWatchWalletsReq {
 pub struct FunUserListStrategyWatchWalletsRespRow {
     pub watch_wallet_id: i64,
     pub wallet_address: String,
-    pub blockchain: String,
+    pub blockchain: EnumBlockChain,
     pub ratio: f64,
 }
 
@@ -1378,7 +1378,7 @@ impl DatabaseRequest for FunUserListStrategyWatchWalletsReq {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserAddRegisteredWalletReq {
     pub user_id: i64,
-    pub blockchain: String,
+    pub blockchain: EnumBlockChain,
     pub address: String,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1390,7 +1390,7 @@ pub struct FunUserAddRegisteredWalletRespRow {
 impl DatabaseRequest for FunUserAddRegisteredWalletReq {
     type ResponseRow = FunUserAddRegisteredWalletRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_add_registered_wallet(a_user_id => $1::bigint, a_blockchain => $2::varchar, a_address => $3::varchar);"
+        "SELECT * FROM api.fun_user_add_registered_wallet(a_user_id => $1::bigint, a_blockchain => $2::enum_block_chain, a_address => $3::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -1440,7 +1440,7 @@ pub struct FunUserListRegisteredWalletsReq {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserListRegisteredWalletsRespRow {
     pub registered_wallet_id: i64,
-    pub blockchain: String,
+    pub blockchain: EnumBlockChain,
     pub address: String,
 }
 
@@ -1466,7 +1466,7 @@ impl DatabaseRequest for FunUserListRegisteredWalletsReq {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserRequestRefundReq {
     pub user_id: i64,
-    pub blockchain: String,
+    pub blockchain: EnumBlockChain,
     pub quantity: String,
     pub wallet_address: String,
 }
@@ -1479,7 +1479,7 @@ pub struct FunUserRequestRefundRespRow {
 impl DatabaseRequest for FunUserRequestRefundReq {
     type ResponseRow = FunUserRequestRefundRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_request_refund(a_user_id => $1::bigint, a_blockchain => $2::varchar, a_quantity => $3::varchar, a_wallet_address => $4::varchar);"
+        "SELECT * FROM api.fun_user_request_refund(a_user_id => $1::bigint, a_blockchain => $2::enum_block_chain, a_quantity => $3::varchar, a_wallet_address => $4::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -1503,7 +1503,7 @@ pub struct FunUserListRequestRefundHistoryReq {}
 pub struct FunUserListRequestRefundHistoryRespRow {
     pub request_refund_id: i64,
     pub user_id: i64,
-    pub blockchain: String,
+    pub blockchain: EnumBlockChain,
     pub quantity: String,
     pub wallet_address: String,
 }
@@ -1736,7 +1736,7 @@ impl DatabaseRequest for FunWatcherGetRawTransactionReq {
 pub struct FunWatcherSaveWalletActivityHistoryReq {
     pub address: String,
     pub transaction_hash: String,
-    pub blockchain: String,
+    pub blockchain: EnumBlockChain,
     pub dex: String,
     pub contract_address: String,
     pub token_in_address: String,
@@ -1759,7 +1759,7 @@ pub struct FunWatcherSaveWalletActivityHistoryRespRow {
 impl DatabaseRequest for FunWatcherSaveWalletActivityHistoryReq {
     type ResponseRow = FunWatcherSaveWalletActivityHistoryRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_watcher_save_wallet_activity_history(a_address => $1::varchar, a_transaction_hash => $2::varchar, a_blockchain => $3::varchar, a_dex => $4::varchar, a_contract_address => $5::varchar, a_token_in_address => $6::varchar, a_token_out_address => $7::varchar, a_caller_address => $8::varchar, a_amount_in => $9::varchar, a_amount_out => $10::varchar, a_swap_calls => $11::jsonb, a_paths => $12::jsonb, a_dex_versions => $13::jsonb, a_created_at => $14::bigint);"
+        "SELECT * FROM api.fun_watcher_save_wallet_activity_history(a_address => $1::varchar, a_transaction_hash => $2::varchar, a_blockchain => $3::enum_block_chain, a_dex => $4::varchar, a_contract_address => $5::varchar, a_token_in_address => $6::varchar, a_token_out_address => $7::varchar, a_caller_address => $8::varchar, a_amount_in => $9::varchar, a_amount_out => $10::varchar, a_swap_calls => $11::jsonb, a_paths => $12::jsonb, a_dex_versions => $13::jsonb, a_created_at => $14::bigint);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -1790,14 +1790,14 @@ impl DatabaseRequest for FunWatcherSaveWalletActivityHistoryReq {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunWatcherListWalletActivityHistoryReq {
     pub address: String,
-    pub blockchain: String,
+    pub blockchain: EnumBlockChain,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunWatcherListWalletActivityHistoryRespRow {
     pub wallet_activity_history_id: i64,
     pub address: String,
     pub transaction_hash: String,
-    pub blockchain: String,
+    pub blockchain: EnumBlockChain,
     pub dex: String,
     pub contract_address: String,
     pub token_in_address: String,
@@ -1815,7 +1815,7 @@ pub struct FunWatcherListWalletActivityHistoryRespRow {
 impl DatabaseRequest for FunWatcherListWalletActivityHistoryReq {
     type ResponseRow = FunWatcherListWalletActivityHistoryRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_watcher_list_wallet_activity_history(a_address => $1::varchar, a_blockchain => $2::varchar);"
+        "SELECT * FROM api.fun_watcher_list_wallet_activity_history(a_address => $1::varchar, a_blockchain => $2::enum_block_chain);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![

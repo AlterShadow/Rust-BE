@@ -390,7 +390,9 @@
                     },
                     {
                       "name": "blockchain",
-                      "ty": "String"
+                      "ty": {
+                        "EnumRef": "block_chain"
+                      }
                     },
                     {
                       "name": "dex",
@@ -424,7 +426,9 @@
                     },
                     {
                       "name": "blockchain",
-                      "ty": "String"
+                      "ty": {
+                        "EnumRef": "block_chain"
+                      }
                     },
                     {
                       "name": "dex",
@@ -558,7 +562,9 @@
             },
             {
               "name": "blockchain",
-              "ty": "String"
+              "ty": {
+                "EnumRef": "block_chain"
+              }
             }
           ],
           "returns": [
@@ -585,7 +591,9 @@
             },
             {
               "name": "blockchain",
-              "ty": "String"
+              "ty": {
+                "EnumRef": "block_chain"
+              }
             }
           ],
           "returns": [
@@ -675,7 +683,9 @@
                     },
                     {
                       "name": "blockchain",
-                      "ty": "String"
+                      "ty": {
+                        "EnumRef": "block_chain"
+                      }
                     },
                     {
                       "name": "dex",
@@ -734,7 +744,9 @@
                     },
                     {
                       "name": "blockchain",
-                      "ty": "String"
+                      "ty": {
+                        "EnumRef": "block_chain"
+                      }
                     },
                     {
                       "name": "dex",
@@ -1155,7 +1167,9 @@
           "parameters": [
             {
               "name": "blockchain",
-              "ty": "String"
+              "ty": {
+                "EnumRef": "block_chain"
+              }
             },
             {
               "name": "wallet_address",
@@ -1201,7 +1215,9 @@
                     },
                     {
                       "name": "blockchain",
-                      "ty": "String"
+                      "ty": {
+                        "EnumRef": "block_chain"
+                      }
                     },
                     {
                       "name": "wallet_address",
@@ -1435,7 +1451,9 @@
             },
             {
               "name": "blockchain",
-              "ty": "String"
+              "ty": {
+                "EnumRef": "block_chain"
+              }
             },
             {
               "name": "wallet_address",
@@ -1501,7 +1519,9 @@
                     },
                     {
                       "name": "blockchain",
-                      "ty": "String"
+                      "ty": {
+                        "EnumRef": "block_chain"
+                      }
                     },
                     {
                       "name": "wallet_address",
@@ -1530,7 +1550,9 @@
             },
             {
               "name": "blockchain",
-              "ty": "String"
+              "ty": {
+                "EnumRef": "block_chain"
+              }
             }
           ],
           "returns": [
@@ -1558,7 +1580,9 @@
                     },
                     {
                       "name": "blockchain",
-                      "ty": "String"
+                      "ty": {
+                        "EnumRef": "block_chain"
+                      }
                     },
                     {
                       "name": "contract_address",

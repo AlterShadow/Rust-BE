@@ -246,7 +246,7 @@ END
             "fun_user_deposit_to_escrow",
             vec![
                 Field::new("user_id", Type::BigInt),
-                Field::new("blockchain", Type::String),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("user_address", Type::String),
                 Field::new("contract_address", Type::String),
                 Field::new("receiver_address", Type::String),
@@ -293,7 +293,7 @@ END
                 Field::new("old_total_backed_quantity", Type::String),
                 Field::new("new_current_quantity", Type::String),
                 Field::new("old_current_quantity", Type::String),
-                Field::new("blockchain", Type::String),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("transaction_hash", Type::String),
                 Field::new("earn_sp_tokens", Type::String),
             ],
@@ -369,7 +369,7 @@ END
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("quantity", Type::String),
                 Field::new("wallet_address", Type::String),
-                Field::new("blockchain", Type::String),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("transaction_hash", Type::String),
                 Field::new("time", Type::BigInt),
             ],
@@ -393,7 +393,7 @@ END
                 Field::new("user_id", Type::BigInt),
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("quantity", Type::String),
-                Field::new("blockchain", Type::String),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("dex", Type::String),
                 Field::new("back_time", Type::BigInt),
                 Field::new("transaction_hash", Type::String),
@@ -422,7 +422,7 @@ END
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("exit_quantity", Type::String),
                 Field::new("purchase_wallet_address", Type::String),
-                Field::new("blockchain", Type::String),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("dex", Type::String),
                 Field::new("back_time", Type::BigInt),
                 Field::new("exit_time", Type::BigInt),
@@ -730,7 +730,7 @@ END
                 Field::new("user_id", Type::BigInt),
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("wallet_address", Type::String),
-                Field::new("blockchain", Type::String),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("ratio", Type::Numeric), // TODO: insert ratio into database
                 Field::new("dex", Type::String),
             ],
@@ -773,7 +773,7 @@ END
             vec![
                 Field::new("watch_wallet_id", Type::BigInt),
                 Field::new("wallet_address", Type::String),
-                Field::new("blockchain", Type::String),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("ratio", Type::Numeric), // TODO: insert ratio into database
             ],
             r#"
@@ -791,7 +791,7 @@ END
             "fun_user_add_registered_wallet",
             vec![
                 Field::new("user_id", Type::BigInt),
-                Field::new("blockchain", Type::String),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("address", Type::String),
             ],
             vec![Field::new("registered_wallet_id", Type::BigInt)],
@@ -820,7 +820,7 @@ END
             vec![Field::new("user_id", Type::BigInt)],
             vec![
                 Field::new("registered_wallet_id", Type::BigInt),
-                Field::new("blockchain", Type::String),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("address", Type::String),
             ],
             r#"
@@ -833,7 +833,7 @@ END
             "fun_user_request_refund",
             vec![
                 Field::new("user_id", Type::BigInt),
-                Field::new("blockchain", Type::String),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("quantity", Type::String),
                 Field::new("wallet_address", Type::String),
             ],
@@ -851,7 +851,7 @@ END
             vec![
                 Field::new("request_refund_id", Type::BigInt),
                 Field::new("user_id", Type::BigInt),
-                Field::new("blockchain", Type::String),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("quantity", Type::String),
                 Field::new("wallet_address", Type::String),
             ],

@@ -625,7 +625,7 @@ pub struct AumHistoryRow {
     pub aum_history_id: i64,
     pub base_token: String,
     pub quote_token: String,
-    pub blockchain: String,
+    pub blockchain: EnumBlockChain,
     pub dex: String,
     pub action: String,
     pub wallet_address: String,
@@ -662,7 +662,7 @@ pub struct BackStrategyHistoryRow {
     pub back_history_id: i64,
     pub strategy_id: i64,
     pub quantity: String,
-    pub blockchain: String,
+    pub blockchain: EnumBlockChain,
     pub dex: String,
     pub transaction_hash: String,
     pub time: i64,
@@ -674,7 +674,7 @@ pub struct ExitStrategyHistoryRow {
     pub strategy_id: i64,
     pub exit_quantity: String,
     pub purchase_wallet_address: String,
-    pub blockchain: String,
+    pub blockchain: EnumBlockChain,
     pub dex: String,
     pub back_time: i64,
     pub exit_time: i64,
@@ -735,7 +735,7 @@ pub struct ListStrategyInitialTokenRatioRow {
 #[serde(rename_all = "camelCase")]
 pub struct ListStrategyWatchingWalletsRow {
     pub wallet_id: i64,
-    pub blockchain: String,
+    pub blockchain: EnumBlockChain,
     pub wallet_address: String,
     pub ratio: f64,
 }
@@ -746,7 +746,7 @@ pub struct ListWalletActivityHistoryRow {
     pub wallet_address: String,
     pub transaction_hash: String,
     pub dex: String,
-    pub blockchain: String,
+    pub blockchain: EnumBlockChain,
     pub contract_address: String,
     pub token_in_address: String,
     pub token_out_address: String,
@@ -762,7 +762,7 @@ pub struct ListWalletActivityHistoryRow {
 #[serde(rename_all = "camelCase")]
 pub struct ListWalletsRow {
     pub wallet_id: i64,
-    pub blockchain: String,
+    pub blockchain: EnumBlockChain,
     pub wallet_address: String,
     pub is_default: bool,
 }
@@ -833,7 +833,7 @@ pub struct UserAddStrategyInitialTokenRatioResponse {
 #[serde(rename_all = "camelCase")]
 pub struct UserAddStrategyWatchingWalletRequest {
     pub strategy_id: i64,
-    pub blockchain: String,
+    pub blockchain: EnumBlockChain,
     pub wallet_address: String,
     pub ratio: f64,
 }
@@ -856,7 +856,7 @@ pub struct UserApplyBecomeExpertResponse {
 pub struct UserBackStrategyRequest {
     pub strategy_id: i64,
     pub quantity: String,
-    pub blockchain: String,
+    pub blockchain: EnumBlockChain,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1062,7 +1062,7 @@ pub struct UserListStrategyWatchingWalletsResponse {
 #[serde(rename_all = "camelCase")]
 pub struct UserListWalletActivityHistoryRequest {
     pub wallet_address: String,
-    pub blockchain: String,
+    pub blockchain: EnumBlockChain,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1080,7 +1080,7 @@ pub struct UserListWalletsResponse {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserRegisterWalletRequest {
-    pub blockchain: String,
+    pub blockchain: EnumBlockChain,
     pub wallet_address: String,
     pub message_to_sign: String,
     pub message_signature: String,
@@ -1117,7 +1117,7 @@ pub struct UserRemoveStrategyWatchingWalletResponse {
 pub struct UserRequestRefundRequest {
     pub quantity: String,
     pub wallet_address: String,
-    pub blockchain: String,
+    pub blockchain: EnumBlockChain,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1171,7 +1171,7 @@ pub struct UserUpdateStrategyResponse {
 pub struct WatchingWalletRow {
     pub watching_wallet_id: i64,
     pub wallet_address: String,
-    pub blockchain: String,
+    pub blockchain: EnumBlockChain,
     pub dex: String,
     pub ratio_distribution: f64,
 }

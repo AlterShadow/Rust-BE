@@ -1,5 +1,5 @@
 -- Created by Vertabelo (http://vertabelo.com)
--- Last modification date: 2023-06-03 16:36:17.357
+-- Last modification date: 2023-06-05 14:05:27.265
 
 CREATE SCHEMA IF NOT EXISTS tbl;;
 
@@ -10,7 +10,7 @@ CREATE TABLE tbl.aum_history (
     fkey_strategy_id bigint  NOT NULL,
     base_token varchar(20)  NOT NULL,
     quote_token varchar(20)  NOT NULL,
-    blockchain varchar(20)  NOT NULL,
+    blockchain enum_block_chain  NOT NULL,
     dex varchar(20)  NOT NULL,
     wallet_address varchar(64)  NOT NULL,
     transaction_hash varchar(80)  NOT NULL,
@@ -112,6 +112,7 @@ CREATE TABLE tbl.strategy (
 CREATE TABLE tbl.strategy_initial_token_ratio (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_strategy_initial_token_ratio_id'),
     fkey_strategy_id bigint  NOT NULL,
+    blockchain enum_block_chain  NOT NULL,
     token_name varchar(20)  NOT NULL,
     token_address varchar(64)  NOT NULL,
     quantity varchar(64)  NOT NULL,
@@ -125,7 +126,7 @@ CREATE TABLE tbl.strategy_watching_wallet (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_strategy_watching_wallet_id'),
     fkey_user_id bigint  NULL,
     fkey_strategy_id bigint  NOT NULL,
-    blockchain varchar(20)  NOT NULL,
+    blockchain enum_block_chain  NOT NULL,
     address varchar(64)  NOT NULL,
     dex varchar(20)  NOT NULL,
     ratio_distribution double precision  NOT NULL,
@@ -182,7 +183,7 @@ CREATE TABLE tbl.user_back_strategy_history (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_user_back_strategy_history_id'),
     fkey_user_id bigint  NOT NULL,
     fkey_strategy_id bigint  NOT NULL,
-    blockchain varchar(20)  NOT NULL,
+    blockchain enum_block_chain  NOT NULL,
     transaction_hash varchar(80)  NOT NULL,
     quantity varchar(64)  NOT NULL,
     earn_sp_tokens varchar(64)  NOT NULL,
@@ -194,7 +195,7 @@ CREATE TABLE tbl.user_back_strategy_history (
 CREATE TABLE tbl.user_deposit_history (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_user_deposit_history_id'),
     fkey_user_id bigint  NOT NULL,
-    blockchain varchar(20)  NOT NULL,
+    blockchain enum_block_chain  NOT NULL,
     user_address varchar(64)  NOT NULL,
     contract_address varchar(64)  NOT NULL,
     receiver_address varchar(64)  NOT NULL,
@@ -211,7 +212,7 @@ CREATE TABLE tbl.user_exit_strategy_history (
     fkey_user_id bigint  NOT NULL,
     fkey_strategy_id bigint  NOT NULL,
     purchase_wallet varchar(64)  NOT NULL,
-    blockchain varchar(20)  NOT NULL,
+    blockchain enum_block_chain  NOT NULL,
     dex varchar(20)  NOT NULL,
     transaction_hash varchar(80)  NOT NULL,
     exit_quantity varchar(64)  NOT NULL,
@@ -257,7 +258,7 @@ CREATE TABLE tbl.user_registered_wallet (
 CREATE TABLE tbl.user_request_refund_history (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_user_request_refund_history_id'),
     fkey_user_id bigint  NOT NULL,
-    blockchain varchar(20)  NOT NULL,
+    blockchain enum_block_chain  NOT NULL,
     quantity varchar(64)  NOT NULL,
     wallet_address varchar(64)  NOT NULL,
     transaction_hash varchar(80)  NULL,
