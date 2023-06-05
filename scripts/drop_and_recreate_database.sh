@@ -16,7 +16,7 @@ pg_exec2() {
 # this is special, it will use mc2fi as user with -c option
 #echo "DROP DATABASE IF EXISTS mc2fi WITH (FORCE); CREATE DATABASE mc2fi;" | pg_exec
 
-pg_exec2 -c "DROP SCHEMA tbl CASCADE; DROP SCHEMA api CASCADE; DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+pg_exec2 -c "DROP SCHEMA tbl CASCADE; COMMIT; DROP SCHEMA api CASCADE; COMMIT; DROP SCHEMA public CASCADE; COMMIT; CREATE SCHEMA public; COMMIT;"
 
 pg_exec2 -f db/model.sql
 # run twice because of wrong dependencies
