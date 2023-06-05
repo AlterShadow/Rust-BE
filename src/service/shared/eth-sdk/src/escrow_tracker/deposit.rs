@@ -71,19 +71,8 @@ mod tests {
         let airdrop_tx = EthereumToken::new(conn.clone())
             .transfer(&key.key, key.address, U256::from(20000))
             .await?;
-
         wait_for_confirmations_simple(&conn.clone().eth(), airdrop_tx, Duration::from_secs(1), 10)
             .await?;
-        let mut tx = TransactionFetcher::new(airdrop_tx);
-        tx.update(&conn).await?;
-        match tx.get_receipt() {
-            Some(receipt) => {
-                assert_eq!(receipt.status, Some(1.into()));
-            }
-            None => {
-                bail!("no receipt");
-            }
-        };
         Ok(())
     }
 

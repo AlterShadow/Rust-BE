@@ -10,7 +10,6 @@ use lib::utils::encode_header;
 use lib::ws::WsClient;
 use mc2_fi::endpoints::{endpoint_auth_authorize, endpoint_auth_login, endpoint_auth_signup};
 
-
 use tracing::*;
 use web3::signing::{hash_message, Key};
 
@@ -37,12 +36,12 @@ pub async fn get_ws_user_client(req: &AuthorizeRequest) -> Result<UserClient> {
     Ok(ws_stream.into())
 }
 
-pub async fn signup(username: impl Into<String>, signer: &EthereumSigner) -> Result<()> {
+pub async fn signup(username: impl Into<String>, signer: impl Key) -> Result<()> {
     let txt = format!("Signup {}", username.into());
     let signature = signer.sign_message(hash_message(txt.as_bytes()).as_bytes())?;
     let mut client = get_ws_auth_client(&encode_header(
         SignupRequest {
-            address: format!("{:?}", signer.address),
+            address: format!("{:?}", signer.address()),
             signature_text: hex::encode(&txt),
             signature: encode_signature(&signature),
             email: "qjk2001@gmail.com".to_string(),
@@ -58,12 +57,12 @@ pub async fn signup(username: impl Into<String>, signer: &EthereumSigner) -> Res
     info!("{:?}", res);
     Ok(())
 }
-pub async fn login(username: impl Into<String>, signer: &EthereumSigner) -> Result<LoginResponse> {
+pub async fn login(username: impl Into<String>, signer: impl Key) -> Result<LoginResponse> {
     let txt = format!("Login {}", username.into());
     let signature = signer.sign_message(hash_message(txt.as_bytes()).as_bytes())?;
     let mut client = get_ws_auth_client(&encode_header(
         LoginRequest {
-            address: format!("{:?}", signer.address),
+            address: format!("{:?}", signer.address()),
             signature_text: hex::encode(txt),
             signature: encode_signature(&signature),
             service: EnumService::User as _,
@@ -77,10 +76,7 @@ pub async fn login(username: impl Into<String>, signer: &EthereumSigner) -> Resu
     println!("{:?}", res);
     Ok(res)
 }
-pub async fn connect_user(
-    username: impl Into<String>,
-    signer: &EthereumSigner,
-) -> Result<UserClient> {
+pub async fn connect_user(username: impl Into<String>, signer: impl Key) -> Result<UserClient> {
     let login = login(username, signer).await?;
     let client = get_ws_user_client(&AuthorizeRequest {
         address: login.address,

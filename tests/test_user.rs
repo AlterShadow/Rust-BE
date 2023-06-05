@@ -16,19 +16,18 @@ async fn test_register_wallet() -> Result<()> {
     let _ = setup_logs(LogLevel::Info);
 
     drop_and_recreate_database()?;
-    let key = Secp256k1SecretKey::new_random();
-    let signer = EthereumSigner::new(Arc::new(key))?;
+    let signer = Secp256k1SecretKey::new_random();
 
-    signup("user1", &signer).await?;
+    signup("user1", &signer.key).await?;
 
-    let mut client = connect_user("user1", &signer).await?;
+    let mut client = connect_user("user1", &signer.key).await?;
 
     let txt = format!("Register {}", "wallet");
     let signature = signer.sign_message(hash_message(txt.as_bytes()).as_bytes())?;
 
     let resp = client
         .user_register_wallet(UserRegisterWalletRequest {
-            blockchain: "ethereum".to_string(),
+            blockchain: EnumBlockChain::LocalNet,
             wallet_address: format!("{:?}", signer.address),
             message_to_sign: hex::encode(txt),
             message_signature: encode_signature(&signature),
@@ -47,12 +46,11 @@ async fn test_create_update_strategy() -> Result<()> {
     let _ = setup_logs(LogLevel::Info);
     drop_and_recreate_database()?;
 
-    let key = Secp256k1SecretKey::new_random();
-    let signer = EthereumSigner::new(Arc::new(key))?;
+    let signer = Secp256k1SecretKey::new_random();
 
-    signup("user1", &signer).await?;
+    signup("user1", &signer.key).await?;
 
-    let mut client = connect_user("user1", &signer).await?;
+    let mut client = connect_user("user1", &signer.key).await?;
 
     let resp = client
         .user_create_strategy(UserCreateStrategyRequest {
@@ -75,7 +73,7 @@ async fn test_create_update_strategy() -> Result<()> {
     let wallet = client
         .user_add_strategy_watching_wallet(UserAddStrategyWatchingWalletRequest {
             strategy_id: resp.strategy_id,
-            blockchain: "ethereum".to_string(),
+            blockchain: EnumBlockChain::LocalNet,
             wallet_address: "0x000000000001".to_string(),
             ratio: 1.0,
         })

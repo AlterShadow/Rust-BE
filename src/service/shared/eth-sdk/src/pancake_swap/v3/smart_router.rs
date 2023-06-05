@@ -778,8 +778,7 @@ mod tests {
         /* assert transaction is successful */
         let wrap_tx_hash = wbnb.wrap(key.clone(), U256::from(1000)).await?;
 
-        wait_for_confirmations_simple(&conn.clone().eth(), wrap_tx_hash, Duration::from_secs(3), 5)
-            .await?;
+        wait_for_confirmations_simple(&conn.eth(), wrap_tx_hash, Duration::from_secs(3), 5).await?;
 
         let mut tx = TransactionFetcher::new(wrap_tx_hash);
         tx.update(&conn).await?;
@@ -799,13 +798,8 @@ mod tests {
         let approve_tx_hash = wbnb
             .approve(key.clone(), pancake_swap.address(), U256::from(1000))
             .await?;
-        wait_for_confirmations_simple(
-            &conn.clone().eth(),
-            approve_tx_hash,
-            Duration::from_secs(3),
-            5,
-        )
-        .await?;
+        wait_for_confirmations_simple(&conn.eth(), approve_tx_hash, Duration::from_secs(3), 5)
+            .await?;
 
         let mut tx = TransactionFetcher::new(approve_tx_hash);
         tx.update(&conn).await?;
@@ -834,13 +828,8 @@ mod tests {
                 U256::from(1),
             )
             .await?;
-        wait_for_confirmations_simple(
-            &conn.clone().eth(),
-            copy_trade_tx_hash,
-            Duration::from_secs(3),
-            5,
-        )
-        .await?;
+        wait_for_confirmations_simple(&conn.eth(), copy_trade_tx_hash, Duration::from_secs(3), 5)
+            .await?;
 
         let mut tx = TransactionFetcher::new(copy_trade_tx_hash);
         tx.update(&conn).await?;
