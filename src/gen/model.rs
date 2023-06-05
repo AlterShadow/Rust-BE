@@ -72,6 +72,9 @@ pub enum EnumBlockChain {
     ///
     #[postgres(name = "LocalNet")]
     LocalNet = 4,
+    ///
+    #[postgres(name = "EthereumSepolia")]
+    EthereumSepolia = 5,
 }
 #[derive(
     Debug,

@@ -1,13 +1,55 @@
 use super::conn::EthereumRpcConnection;
-use crate::conn::EitherTransport;
+use crate::conn;
+
 use deadpool::managed::{Manager, Object, RecycleResult};
 use eyre::*;
-use web3::transports::{Http, WebSocket};
+use gen::model::EnumBlockChain;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::sync::Arc;
 
+
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct EthereumConns {
+    #[serde(flatten)]
+    conns: HashMap<EnumBlockChain, String>,
+}
+impl EthereumConns {
+    pub fn new() -> Self {
+        let mut this = Self {
+            conns: HashMap::new(),
+        };
+        this.conns.insert(
+            EnumBlockChain::EthereumMainnet,
+            "https://ethereum.publicnode.com".to_string(),
+        );
+        this.conns.insert(
+            EnumBlockChain::EthereumGoerli,
+            "https://ethereum-goerli.publicnode.com".to_string(),
+        );
+        this.conns.insert(
+            EnumBlockChain::EthereumSepolia,
+            "https://rpc.sepolia.dev".to_string(),
+        );
+        this.conns.insert(
+            EnumBlockChain::BscTestnet,
+            "https://bsc-testnet.publicnode.com".to_string(),
+        );
+        this.conns.insert(
+            EnumBlockChain::BscMainnet,
+            "https://bsc.publicnode.com".to_string(),
+        );
+        this.conns.insert(
+            EnumBlockChain::LocalNet,
+            "http://127.0.0.1:8545".to_string(),
+        );
+        this
+    }
+}
 #[derive(Clone, Debug)]
 pub struct EthereumRpcConnectionManager {
     provider_url: String,
-    max_concurrent_requests: usize,
 }
 #[async_trait::async_trait]
 impl Manager for EthereumRpcConnectionManager {
@@ -15,10 +57,9 @@ impl Manager for EthereumRpcConnectionManager {
     type Error = Error;
 
     async fn create(&self) -> Result<Self::Type, Self::Error> {
-        let transport = new_transport(&self.provider_url).await?;
+        let transport = conn::new_transport(&self.provider_url).await?;
         let web3 = web3::Web3::new(transport);
-        let conn = EthereumRpcConnection::new(web3, self.max_concurrent_requests);
-        Ok(conn)
+        Ok(web3)
     }
 
     async fn recycle(&self, _obj: &mut Self::Type) -> RecycleResult<Self::Error> {
@@ -26,55 +67,37 @@ impl Manager for EthereumRpcConnectionManager {
     }
 }
 #[derive(Clone, Debug)]
-pub struct EthereumRpcConnectionPool {
-    pool: deadpool::managed::Pool<EthereumRpcConnectionManager>,
+pub struct EthereumRpcConnectionPoolInner {
+    conns: EthereumConns,
+    pools: HashMap<EnumBlockChain, deadpool::managed::Pool<EthereumRpcConnectionManager>>,
 }
-pub async fn new_transport(url: &str) -> Result<EitherTransport> {
-    let transport = match url {
-        x if x.starts_with("http") => {
-            EitherTransport::Right(Http::new(&url).context(url.to_owned())?)
-        }
-        x if x.starts_with("ws") => {
-            EitherTransport::Left(WebSocket::new(&url).await.context(url.to_owned())?)
-        }
-        _ => bail!("Invalid provider url: {}", url),
-    };
-    Ok(transport)
-}
+#[derive(Clone, Debug)]
+pub struct EthereumRpcConnectionPool(Arc<EthereumRpcConnectionPoolInner>);
 
 impl EthereumRpcConnectionPool {
-    pub fn new(provider_url: String, max_concurrent_requests: usize) -> Result<Self> {
-        let pool = deadpool::managed::Pool::builder(EthereumRpcConnectionManager {
-            provider_url,
-            max_concurrent_requests,
-        })
-        .build()
-        .unwrap();
-        Ok(Self { pool })
-    }
-    pub fn mainnet() -> Self {
-        EthereumRpcConnectionPool::new("https://ethereum.publicnode.com".to_string(), 10).unwrap()
-    }
-
-    pub fn bsc_testnet() -> Self {
-        EthereumRpcConnectionPool::new("https://bsc-testnet.publicnode.com".to_string(), 10)
-            .unwrap()
+    pub fn new() -> Self {
+        let conns = EthereumConns::new();
+        let mut pools = HashMap::new();
+        for (key, val) in conns.conns.iter() {
+            let pool = deadpool::managed::Pool::builder(EthereumRpcConnectionManager {
+                provider_url: val.to_string(),
+            })
+            .build()
+            .unwrap();
+            pools.insert(key.clone(), pool);
+        }
+        Self(Arc::new(EthereumRpcConnectionPoolInner { conns, pools }))
     }
 
-    pub fn bsc_mainnet() -> Self {
-        EthereumRpcConnectionPool::new("https://bsc.publicnode.com".to_string(), 10).unwrap()
-    }
-
-    pub fn localnet() -> Self {
-        EthereumRpcConnectionPool::new("http://127.0.0.1:8545".to_string(), 10).unwrap()
-    }
-    pub async fn get_conn(&self) -> Result<EthereumRpcConnectionGuard> {
-        let conn = match self.pool.get().await {
-            Ok(conn) => conn,
-            Err(e) => {
-                bail!("Failed to get connection from pool: {:?}", e);
-            }
-        };
+    pub async fn get(&self, chain: EnumBlockChain) -> Result<EthereumRpcConnectionGuard> {
+        let conn = self
+            .0
+            .pools
+            .get(&chain)
+            .context("No available chain")?
+            .get()
+            .await
+            .map_err(|err| eyre!("Failed to get connection from pool: {:?}", err))?;
         Ok(conn)
     }
 }

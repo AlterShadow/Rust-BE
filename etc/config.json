@@ -1,4 +1,7 @@
 {
+	"ethereum_urls": {
+		"mainnet": "https://ethereum.publicnode.com",
+	},
 	"app_db": {
 		"host": "localhost",
 		"port": 5432,
@@ -26,7 +29,6 @@
 	"watcher": {
 		"host": "localhost",
 		"log_level": "trace",
-		"port": 9000,
-		"eth_provider_url": "https://ethereum.publicnode.com"
+		"port": 9000
 	}
 }

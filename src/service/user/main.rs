@@ -1,13 +1,12 @@
 mod method;
 
-use eyre::*;
-
 use crate::endpoints::*;
 use crate::method::*;
 use eth_sdk::escrow::EscrowContract;
 use eth_sdk::signer::Secp256k1SecretKey;
 use eth_sdk::{BlockchainCoinAddresses, DexAddresses, EthereumRpcConnectionPool};
-use gen::model::EnumService;
+use eyre::*;
+use gen::model::{EnumBlockChain, EnumService};
 use lib::config::{load_config, WsServerConfig};
 use lib::database::{connect_to_database, DatabaseConfig};
 use lib::log::{setup_logs, LogLevel};
@@ -137,16 +136,21 @@ async fn main() -> Result<()> {
         endpoint_user_list_strategy_initial_token_ratio(),
         MethodUserListStrategyInitialTokenRatio,
     );
-    let eth_pool = EthereumRpcConnectionPool::new(config.eth_provider_url.to_string(), 10)?;
-    let eth_conn = eth_pool.get_conn().await?.to_owned();
+    let eth_pool = EthereumRpcConnectionPool::new();
+
     let escrow_signer = Arc::new(Secp256k1SecretKey::new_random());
-    let escrow_contract =
-        EscrowContract::deploy(eth_conn.clone().into_raw(), &escrow_signer.key).await?;
+    // TODO: get escrow_signer from MultiChainAddressTable
+    let escrow_contract = EscrowContract::deploy(
+        eth_pool.get(EnumBlockChain::LocalNet).await?.clone(),
+        &escrow_signer.key,
+    )
+    .await?;
+    let coin_addresses = Arc::new(BlockchainCoinAddresses::new());
     server.add_handler(
         endpoint_user_back_strategy(),
         MethodUserBackStrategy {
-            conn: eth_conn.clone(),
-            stablecoin_addresses: Arc::new(BlockchainCoinAddresses::new()),
+            pool: eth_pool.clone(),
+            stablecoin_addresses: coin_addresses.clone(),
             strategy_pool_signer: Arc::new(Secp256k1SecretKey::new_random()),
             escrow_contract: escrow_contract.clone(),
             escrow_signer: escrow_signer.clone(),
@@ -157,8 +161,8 @@ async fn main() -> Result<()> {
     server.add_handler(
         endpoint_user_request_refund(),
         MethodUserRequestRefund {
-            conn: eth_pool.get_conn().await?.to_owned(),
-            stablecoin_addresses: Arc::new(BlockchainCoinAddresses::new()),
+            pool: eth_pool,
+            stablecoin_addresses: coin_addresses,
             escrow_contract,
             escrow_signer,
         },

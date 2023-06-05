@@ -1790,6 +1790,11 @@
             "name": "LocalNet",
             "value": 4,
             "comment": ""
+          },
+          {
+            "name": "EthereumSepolia",
+            "value": 5,
+            "comment": ""
           }
         ]
       }

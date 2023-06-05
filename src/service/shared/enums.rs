@@ -30,6 +30,7 @@ pub fn get_enums() -> Vec<Type> {
                 EnumVariant::new("BscMainnet", 2),
                 EnumVariant::new("BscTestnet", 3),
                 EnumVariant::new("LocalNet", 4),
+                EnumVariant::new("EthereumSepolia", 5),
             ],
         ),
         Type::enum_(

@@ -51,8 +51,8 @@ mod tests {
     use crate::mock_erc20::deploy_mock_erc20;
     use crate::signer::Secp256k1SecretKey;
     use crate::{
-        BlockchainCoinAddresses, EthereumRpcConnectionPool, TransactionFetcher, ANVIL_PRIV_KEY_1,
-        ANVIL_PRIV_KEY_2,
+        BlockchainCoinAddresses, EthereumRpcConnectionPool, EthereumToken, TransactionFetcher,
+        ANVIL_PRIV_KEY_1, ANVIL_PRIV_KEY_2,
     };
     use gen::model::EnumBlockchainCoin;
     use lib::database::{connect_to_database, drop_and_recreate_database, DatabaseConfig};
@@ -66,7 +66,7 @@ mod tests {
         let key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
         let conn_pool = EthereumRpcConnectionPool::localnet();
         let conn = conn_pool.get_conn().await?;
-        let airdrop_tx = conn
+        let airdrop_tx = EthereumToken::new(conn.get_raw().clone())
             .transfer(&key.key, key.address, U256::from(20000))
             .await?;
         conn.get_receipt(airdrop_tx).await?;

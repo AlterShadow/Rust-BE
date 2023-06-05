@@ -38,7 +38,7 @@ pub struct EthereumToken {
     pub client: Web3<EitherTransport>,
 }
 impl EthereumToken {
-    pub fn new2(web3: Web3<EitherTransport>) -> Self {
+    pub fn new(web3: Web3<EitherTransport>) -> Self {
         Self { client: web3 }
     }
     pub async fn transfer(&self, key: impl Key, to: Address, amount: U256) -> Result<H256> {

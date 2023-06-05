@@ -22,7 +22,7 @@ pub async fn handle_eth_escrows(
     })?;
 
     for hash in hashes {
-        let conn = state.eth_pool.get_conn().await.map_err(|err| {
+        let conn = state.eth_pool.get(blockchain).await.map_err(|err| {
             error!("error fetching connection guard: {}", err);
             StatusCode::INTERNAL_SERVER_ERROR
         })?;

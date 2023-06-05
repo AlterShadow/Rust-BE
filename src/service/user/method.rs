@@ -13,7 +13,6 @@ use lib::handler::RequestHandler;
 use lib::toolbox::*;
 use lib::utils::hex_decode;
 use lib::ws::*;
-use std::clone;
 use std::str::FromStr;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
@@ -323,7 +322,7 @@ pub async fn deploy_strategy_contract(
     info!("Deploying strategy contract");
 
     let strategy = StrategyPoolContract::deploy(
-        conn.clone().into_raw(),
+        conn.clone(),
         key,
         strategy_token_name,
         strategy_token_symbol,
@@ -411,7 +410,7 @@ pub async fn user_back_strategy(
     let erc20_address = stablecoin_addresses
         .get(chain, stablecoin)
         .context("Could not find stablecoin address")?;
-    let erc20 = Erc20Token::new(conn.clone().into_raw(), erc20_address)?;
+    let erc20 = Erc20Token::new(conn.clone(), erc20_address)?;
     let hash = erc20
         .transfer(
             externally_owned_account.clone(),
@@ -419,7 +418,7 @@ pub async fn user_back_strategy(
             sp_tokens,
         )
         .await?;
-    wait_for_confirmations_simple(&conn.get_raw().eth(), hash, Duration::from_secs(3), 5).await?;
+    wait_for_confirmations_simple(&conn.eth(), hash, Duration::from_secs(3), 5).await?;
     // TODO: process retry here or have a lock
     let ret = db
         .execute(FunUserBackStrategyReq {
@@ -483,7 +482,7 @@ pub async fn trade_usdc_to_tokens_on_pancakeswap(
     let token_address = dex_addresses
         .get(chain, EnumDex::PancakeSwap)
         .context("Could not find stablecoin address")?;
-    let pancake_swap = PancakeSmartRouterV3Contract::new(conn.clone().into_raw(), token_address)?;
+    let pancake_swap = PancakeSmartRouterV3Contract::new(conn.clone(), token_address)?;
     let receipt = signer.address();
     let mut txs = vec![];
     let mut total_value_usdc = 0.0;
@@ -512,7 +511,7 @@ pub async fn trade_usdc_to_tokens_on_pancakeswap(
     Ok(txs)
 }
 pub struct MethodUserBackStrategy {
-    pub conn: EthereumRpcConnection,
+    pub pool: EthereumRpcConnectionPool,
     pub stablecoin_addresses: Arc<BlockchainCoinAddresses>,
     pub strategy_pool_signer: Arc<Secp256k1SecretKey>,
     pub escrow_contract: EscrowContract<EitherTransport>,
@@ -532,7 +531,7 @@ impl RequestHandler for MethodUserBackStrategy {
         req: Self::Request,
     ) {
         let db: DbClient = toolbox.get_db();
-        let eth_conn = self.conn.clone();
+        let pool = self.pool.clone();
         let stablecoin_addresses = self.stablecoin_addresses.clone();
         let strategy_pool_signer = self.strategy_pool_signer.clone();
         let escrow_signer = self.escrow_signer.clone();
@@ -540,6 +539,8 @@ impl RequestHandler for MethodUserBackStrategy {
         let externally_owned_account = self.externally_owned_account.clone();
         let dex_addresses = self.dex_addresses.clone();
         toolbox.spawn_response(ctx.clone(), async move {
+            // TODO: support multi chains
+            let eth_conn = pool.get(EnumBlockChain::LocalNet).await?;
             ensure_user_role(&conn, EnumRole::User)?;
 
             user_back_strategy(
@@ -563,7 +564,7 @@ impl RequestHandler for MethodUserBackStrategy {
     }
 }
 pub struct MethodUserRequestRefund {
-    pub conn: EthereumRpcConnection,
+    pub pool: EthereumRpcConnectionPool,
     pub stablecoin_addresses: Arc<BlockchainCoinAddresses>,
     pub escrow_contract: EscrowContract<EitherTransport>,
     pub escrow_signer: Arc<Secp256k1SecretKey>,
@@ -581,11 +582,13 @@ impl RequestHandler for MethodUserRequestRefund {
         req: Self::Request,
     ) {
         let db: DbClient = toolbox.get_db();
-        let eth_conn = self.conn.clone();
+        let pool = self.pool.clone();
         let stablecoin_addresses = self.stablecoin_addresses.clone();
         let escrow_signer = self.escrow_signer.clone();
         let escrow_contract = self.escrow_contract.clone();
         toolbox.spawn_response(ctx.clone(), async move {
+            let eth_conn = pool.get(EnumBlockChain::LocalNet).await?;
+
             ensure_user_role(&conn, EnumRole::User)?;
 
             on_user_request_refund(
@@ -1483,6 +1486,7 @@ impl RequestHandler for MethodUserListStrategyInitialTokenRatio {
         })
     }
 }
+#[cfg(test)]
 mod tests {
     use super::*;
     use eth_sdk::escrow_tracker::escrow::parse_escrow;
@@ -1550,7 +1554,7 @@ mod tests {
         erc20_mock
             .mint(&admin_key.key, eoa.address, U256::from(200000000000i64))
             .await?;
-        let eth = EthereumToken::new2(conn.get_raw().clone());
+        let eth = EthereumToken::new(conn.get_raw().clone());
         eth.transfer(
             admin_key.clone(),
             escrow_key.address,
@@ -1666,7 +1670,7 @@ mod tests {
                 U256::from(200000000000i64),
             )
             .await?;
-        let eth = EthereumToken::new2(conn.get_raw().clone());
+        let eth = EthereumToken::new(conn.get_raw().clone());
         eth.transfer(
             admin_key.clone(),
             escrow_key.address,

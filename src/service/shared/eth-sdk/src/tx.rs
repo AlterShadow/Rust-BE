@@ -3,7 +3,9 @@ use crate::EthereumRpcConnection;
 use eyre::*;
 use std::time::Duration;
 use web3::api::Eth;
-use web3::types::{Address, Transaction as Web3Transaction, TransactionReceipt, H160, H256, U256};
+use web3::types::{
+    Address, Transaction as Web3Transaction, TransactionId, TransactionReceipt, H160, H256, U256,
+};
 use web3::Transport;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -45,7 +47,8 @@ impl TransactionFetcher {
     pub async fn update_retry(&mut self, conn: &EthereumRpcConnection) -> Result<()> {
         // TODO: handle EnumBlockChain connection error
         let maybe_tx = conn
-            .get_tx(self.hash)
+            .eth()
+            .transaction(TransactionId::Hash(self.hash))
             .await
             .context("getting transaction")?;
         let tx = match maybe_tx {
@@ -62,13 +65,9 @@ impl TransactionFetcher {
             self.status = TxStatus::Pending;
             return Ok(());
         }
-        let receipt = wait_for_confirmations_simple(
-            &conn.get_raw().eth(),
-            self.hash,
-            Duration::from_secs(3),
-            5,
-        )
-        .await?;
+        let receipt =
+            wait_for_confirmations_simple(&conn.eth(), self.hash, Duration::from_secs(3), 5)
+                .await?;
 
         self.receipt = Some(receipt.clone());
 
@@ -82,7 +81,8 @@ impl TransactionFetcher {
     pub async fn update(&mut self, conn: &EthereumRpcConnection) -> Result<()> {
         // TODO: handle EnumBlockChain connection error
         let maybe_tx = conn
-            .get_tx(self.hash)
+            .eth()
+            .transaction(TransactionId::Hash(self.hash))
             .await
             .context("getting transaction")?;
         let tx = match maybe_tx {
@@ -100,7 +100,8 @@ impl TransactionFetcher {
             return Ok(());
         }
         let maybe_receipt = conn
-            .get_receipt(self.hash)
+            .eth()
+            .transaction_receipt(self.hash)
             .await
             .context("getting receipt")?;
         let receipt = match maybe_receipt {
