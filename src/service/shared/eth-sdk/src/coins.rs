@@ -41,21 +41,21 @@ impl BlockchainCoinAddresses {
         this.insert(
             EnumBlockChain::BscMainnet,
             EnumBlockchainCoin::USDC,
-            "0xB04906e95AB5D797aDA81508115611fee694c2b3"
+            "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d"
                 .parse()
                 .unwrap(),
         );
         this.insert(
             EnumBlockChain::BscMainnet,
             EnumBlockchainCoin::USDT,
-            "0x524bC91Dc82d6b90EF29F76A3ECAaBAffFD490Bc"
+            "0x55d398326f99059ff775485246999027b3197955"
                 .parse()
                 .unwrap(),
         );
         this.insert(
             EnumBlockChain::BscMainnet,
             EnumBlockchainCoin::BUSD,
-            "0x035de3679E692C471072d1A09bEb9298fBB2BD31"
+            "0xe9e7cea3dedca5984780bafc599bd69add087d56"
                 .parse()
                 .unwrap(),
         );

@@ -866,41 +866,43 @@ mod tests {
         assert!(balance_busd_before_copy_trade < balance_busd_after_copy_trade);
         Ok(())
     }
+
     #[tokio::test]
-    async fn test_parse_trade_from_raw_data() -> Result<()> {
+    async fn test_parse_path_from_raw_data() -> Result<()> {
         let _ = setup_logs(LogLevel::Debug);
 
-        /* parse copied trade */
         let pancake = build_pancake_swap()?;
-        let caller = DEV_ACCOUNT_ADDRESS.parse()?;
-        let copied_trade = pancake.parse_trade2(
-            1.into(),
-            caller,
-            BNB_TEST_SWAP_CONTRACT_ADDRESS.parse()?,
-            &hex_decode(BNB_TEST_SWAP_INPUT_DATA.as_bytes())?,
-            EnumBlockChain::BscMainnet,
-        )?;
+        /* parse swap inputs */
+        let pancake_path_set =
+						/* input is USDT, output is USDC, path is single v2 call [USDT,USDC] */
+            pancake.parse_paths_from_inputs(&hex_decode(BNB_TEST_SWAP_INPUT_DATA.as_bytes())?)?;
 
-        let paths = copied_trade.get_pancake_pair_paths()?;
-        assert_eq!(paths.len(), 1);
-        info!("Paths: {:?}", paths);
+        assert_eq!(pancake_path_set.len(), 1);
         let coins = BlockchainCoinAddresses::new();
-        assert_eq!(
-            Address::from_str("0x524bC91Dc82d6b90EF29F76A3ECAaBAffFD490Bc")?,
-            paths.get_token_in()
-        );
         let token_in = coins
-            .get_by_address(EnumBlockChain::BscMainnet, paths.get_token_in())
+            .get_by_address(EnumBlockChain::BscMainnet, pancake_path_set.get_token_in())
             .unwrap();
         assert_eq!(token_in, EnumBlockchainCoin::USDT);
-        assert_eq!(
-            Address::from_str("0xB04906e95AB5D797aDA81508115611fee694c2b3")?,
-            paths.get_token_out()
-        );
         let token_out = coins
-            .get_by_address(EnumBlockChain::BscMainnet, paths.get_token_out())
+            .get_by_address(EnumBlockChain::BscMainnet, pancake_path_set.get_token_out())
             .unwrap();
         assert_eq!(token_out, EnumBlockchainCoin::USDC);
+        let usdt_address = coins
+            .get(EnumBlockChain::BscMainnet, EnumBlockchainCoin::USDT)
+            .unwrap();
+        let usdc_address = coins
+            .get(EnumBlockChain::BscMainnet, EnumBlockchainCoin::USDC)
+            .unwrap();
+        assert_eq!(pancake_path_set.get_token_in(), usdt_address);
+        assert_eq!(pancake_path_set.get_token_out(), usdc_address);
+        assert_eq!(
+            pancake_path_set.get_func_name(0)?,
+            "swapExactTokensForTokens".to_string()
+        );
+        assert_eq!(
+            pancake_path_set.get_path(0)?,
+            DexPath::PancakeV2(vec![usdt_address, usdc_address])
+        );
         Ok(())
     }
 }

@@ -50,16 +50,8 @@ impl PancakeSwap {
                 .unwrap(),
         }
     }
-    pub fn parse_trade2(
-        &self,
-        _value: U256,
-        caller: Address,
-        contract: Address,
-        input_data: &[u8],
-        chain: EnumBlockChain,
-    ) -> Result<DexTrade> {
-        /* if tx is successful, all of the following should be Some */
 
+    pub fn parse_paths_from_inputs(&self, input_data: &[u8]) -> Result<PancakePairPathSet> {
         let function_called = ContractCall::from_inputs(&self.smart_router, input_data)?;
         let function_calls: Vec<ContractCall>;
         if function_called.get_name() == "multicall" {
@@ -118,7 +110,6 @@ impl PancakeSwap {
                     /* V3 */
                     PancakeSwapMethod::ExactInputSingle => {
                         let exact_input_single_params = exact_input_single(&call)?;
-                        // FIXME: for V3, exact_input_single_params.token_in is a Smart Router V3, not the token itself
                         let swap = Swap {
                             recipient: exact_input_single_params.recipient,
                             token_in: exact_input_single_params.token_in,
@@ -188,26 +179,14 @@ impl PancakeSwap {
         }
         ensure!(swap_infos.len() > 0, "no suitable method found");
 
-        let mut paths: Vec<DexPath> = Vec::new();
-        let mut versions: Vec<EnumDexVersion> = Vec::new();
-        let mut calls: Vec<ContractCall> = Vec::new();
+        let mut func_names_and_paths: Vec<(String, DexPath)> = Vec::new();
         for (swap, version, call) in &swap_infos {
-            paths.push(swap.path.clone());
-            versions.push(*version);
-            calls.push(call.clone());
+            func_names_and_paths.push((call.get_name(), swap.path.clone()));
         }
-        Ok(DexTrade {
-            chain,
-            contract,
-            dex: EnumDex::PancakeSwap,
+        Ok(PancakePairPathSet {
             token_in: swap_infos[0].0.token_in,
             token_out: swap_infos[swap_infos.len() - 1].0.token_out,
-            caller,
-            amount_in: 0.into(),
-            amount_out: 0.into(),
-            swap_calls: calls,
-            paths,
-            dex_versions: versions,
+            func_names_and_paths: func_names_and_paths,
         })
     }
 

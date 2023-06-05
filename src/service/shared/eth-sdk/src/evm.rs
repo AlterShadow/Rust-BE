@@ -33,7 +33,7 @@ impl AppState {
         })
     }
 }
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum DexPath {
     /* every path for every token_in token_out pair in every dex in every chain must be recorded in the database */
     /* so that we can trigger our own trades in the futures */
@@ -44,7 +44,7 @@ pub enum DexPath {
     PancakeV3MultiHop(Vec<u8>),
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct PancakeV3SingleHopPath {
     pub token_in: Address,
     pub token_out: Address,
