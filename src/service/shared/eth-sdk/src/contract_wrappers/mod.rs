@@ -1,5 +1,6 @@
 use crate::contract::{read_abi_from_solc_output, ContractDeployer};
 use eyre::*;
+use tracing::info;
 use web3::contract::tokens::Tokenize;
 use web3::contract::{Contract, Options};
 use web3::signing::Key;
@@ -22,15 +23,18 @@ pub async fn deploy_contract<T: Transport>(
         .parent()
         .unwrap()
         .to_owned();
-
-    let abi_json = read_abi_from_solc_output(&base.join(format!(
+    let abi_json_path = &base.join(format!(
         "app.mc2.fi-solidity/out/{}.sol/{}.json",
         contract_name, contract_name
-    )))?;
-    let bin = std::fs::read_to_string(base.join(format!(
+    ));
+    info!("Reading {}", abi_json_path.display());
+    let abi_json = read_abi_from_solc_output(abi_json_path)?;
+    let bin_path = base.join(format!(
         "app.mc2.fi-solidity/out/{}.sol/{}.bin",
         contract_name, contract_name
-    )))?;
+    ));
+    info!("Reading {}", bin_path.display());
+    let bin = std::fs::read_to_string(bin_path)?;
     // web3::contract::web3 never worked: Abi error: Invalid data for ABI json
     let options = Options {
         gas: Some(20000000.into()),

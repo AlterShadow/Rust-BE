@@ -2,7 +2,6 @@ use eyre::ContextCompat;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::future::Future;
-#[allow(unused_imports)]
 use std::path::{Path, PathBuf};
 use std::{collections::HashMap, time};
 use web3::api::{Accounts, Eth, Namespace};
@@ -210,8 +209,7 @@ impl<T: Transport> ContractDeployer<T> {
     }
 }
 
-// #[cfg(test)]
-/// only valid in unit test
+#[cfg(test)]
 pub fn get_project_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .parent()
@@ -223,6 +221,11 @@ pub fn get_project_root() -> PathBuf {
         .parent()
         .unwrap()
         .to_owned()
+}
+
+#[cfg(not(test))]
+pub fn get_project_root() -> PathBuf {
+    std::fs::canonicalize(".").unwrap()
 }
 
 pub fn read_abi_from_solc_output(path: &Path) -> eyre::Result<Value> {

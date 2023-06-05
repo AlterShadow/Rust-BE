@@ -513,10 +513,10 @@ pub async fn trade_usdc_to_tokens_on_pancakeswap(
 pub struct MethodUserBackStrategy {
     pub pool: EthereumRpcConnectionPool,
     pub stablecoin_addresses: Arc<BlockchainCoinAddresses>,
-    pub strategy_pool_signer: Arc<Secp256k1SecretKey>,
+    pub strategy_pool_signer: Secp256k1SecretKey,
     pub escrow_contract: EscrowContract<EitherTransport>,
-    pub escrow_signer: Arc<Secp256k1SecretKey>,
-    pub externally_owned_account: Arc<Secp256k1SecretKey>,
+    pub escrow_signer: Secp256k1SecretKey,
+    pub externally_owned_account: Secp256k1SecretKey,
     pub dex_addresses: Arc<DexAddresses>,
 }
 impl RequestHandler for MethodUserBackStrategy {
@@ -551,11 +551,11 @@ impl RequestHandler for MethodUserBackStrategy {
                 req.quantity.parse()?,
                 &stablecoin_addresses,
                 req.strategy_id,
-                &**strategy_pool_signer,
-                &**escrow_signer,
+                &*strategy_pool_signer,
+                &*escrow_signer,
                 EnumBlockchainCoin::USDC,
                 escrow_contract,
-                &**externally_owned_account,
+                &*externally_owned_account,
                 &dex_addresses,
             )
             .await?;
@@ -567,7 +567,7 @@ pub struct MethodUserRequestRefund {
     pub pool: EthereumRpcConnectionPool,
     pub stablecoin_addresses: Arc<BlockchainCoinAddresses>,
     pub escrow_contract: EscrowContract<EitherTransport>,
-    pub escrow_signer: Arc<Secp256k1SecretKey>,
+    pub escrow_signer: Secp256k1SecretKey,
 }
 
 impl RequestHandler for MethodUserRequestRefund {
