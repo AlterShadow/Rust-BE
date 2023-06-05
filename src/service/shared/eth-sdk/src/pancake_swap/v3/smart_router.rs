@@ -750,26 +750,24 @@ mod tests {
     #[tokio::test]
     async fn test_copy_trade_testnet() -> Result<()> {
         let _ = setup_logs(LogLevel::Debug);
-        let conn_pool = EthereumRpcConnectionPool::bsc_testnet();
-        let conn = conn_pool.get_conn().await?;
+        let conn_pool = EthereumRpcConnectionPool::new();
+        let conn = conn_pool.get(EnumBlockChain::BscTestnet).await?;
 
         /* dev account must have native tokens */
         let key = Secp256k1SecretKey::from_str(DEV_ACCOUNT_PRIV_KEY)?;
 
         /* wbnb contract so we can wrap and approve tokens to the router */
-        let wbnb = WrappedTokenContract::new(
-            conn.clone().into_raw(),
-            Address::from_str(WBNB_TESTNET_ADDRESS)?,
-        )?;
+        let wbnb =
+            WrappedTokenContract::new(conn.clone(), Address::from_str(WBNB_TESTNET_ADDRESS)?)?;
 
         /* busd contract so we can check balances */
         let bsc_testnet_busd_address = BlockchainCoinAddresses::new()
             .get(EnumBlockChain::BscTestnet, EnumBlockchainCoin::BUSD)
             .unwrap();
-        let busd = Erc20Token::new(conn.clone().into_raw(), bsc_testnet_busd_address)?;
+        let busd = Erc20Token::new(conn.clone(), bsc_testnet_busd_address)?;
 
         let pancake_swap = PancakeSmartRouterV3Contract::new(
-            conn.clone().into_raw(),
+            conn.clone(),
             DexAddresses::new()
                 .get(EnumBlockChain::BscTestnet, EnumDex::PancakeSwap)
                 .unwrap(),
@@ -780,13 +778,8 @@ mod tests {
         /* assert transaction is successful */
         let wrap_tx_hash = wbnb.wrap(key.clone(), U256::from(1000)).await?;
 
-        wait_for_confirmations_simple(
-            &conn.clone().into_raw().eth(),
-            wrap_tx_hash,
-            Duration::from_secs(3),
-            5,
-        )
-        .await?;
+        wait_for_confirmations_simple(&conn.clone().eth(), wrap_tx_hash, Duration::from_secs(3), 5)
+            .await?;
 
         let mut tx = TransactionFetcher::new(wrap_tx_hash);
         tx.update(&conn).await?;
@@ -807,7 +800,7 @@ mod tests {
             .approve(key.clone(), pancake_swap.address(), U256::from(1000))
             .await?;
         wait_for_confirmations_simple(
-            &conn.clone().into_raw().eth(),
+            &conn.clone().eth(),
             approve_tx_hash,
             Duration::from_secs(3),
             5,
@@ -842,7 +835,7 @@ mod tests {
             )
             .await?;
         wait_for_confirmations_simple(
-            &conn.clone().into_raw().eth(),
+            &conn.clone().eth(),
             copy_trade_tx_hash,
             Duration::from_secs(3),
             5,

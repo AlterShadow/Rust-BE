@@ -568,8 +568,8 @@ mod tests {
         let _ = setup_logs(LogLevel::Info);
 
         let pancake = build_pancake_swap()?;
-        let conn_pool = EthereumRpcConnectionPool::mainnet();
-        let conn = conn_pool.get_conn().await?;
+        let conn_pool = EthereumRpcConnectionPool::new();
+        let conn = conn_pool.get(EnumBlockChain::EthereumMainnet).await?;
         let tx = TransactionFetcher::new_and_assume_ready(
             "0x750d90bf90ad0fe7d035fbbab41334f6bb10bf7e71246d430cb23ed35d1df7c2".parse()?,
             &conn,

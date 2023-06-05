@@ -109,8 +109,8 @@ mod tests {
     pub async fn test_usdt_transfer() -> Result<()> {
         let _ = setup_logs(LogLevel::Trace);
 
-        let conn_pool = EthereumRpcConnectionPool::mainnet();
-        let conn = conn_pool.get_conn().await?;
+        let conn_pool = EthereumRpcConnectionPool::new();
+        let conn = conn_pool.get(EnumBlockChain::EthereumMainnet).await?;
         let tx = TransactionFetcher::new_and_assume_ready(
             "0x977939d69a0826a6ef1e94ccfe76a2c2d87bac1d3fce53669b5c637435fd23c1".parse()?,
             &conn,
@@ -129,8 +129,8 @@ mod tests {
     #[tokio::test]
     pub async fn test_usdc_transfer() -> Result<()> {
         let _ = setup_logs(LogLevel::Trace);
-        let conn_pool = EthereumRpcConnectionPool::mainnet();
-        let conn = conn_pool.get_conn().await?;
+        let conn_pool = EthereumRpcConnectionPool::new();
+        let conn = conn_pool.get(EnumBlockChain::EthereumMainnet).await?;
         let tx = TransactionFetcher::new_and_assume_ready(
             "0x1f716239290641ad0121814df498e5e04c3759bf6d22c9c89a6aa5175a3ce4c6".parse()?,
             &conn,
@@ -150,8 +150,8 @@ mod tests {
     #[tokio::test]
     pub async fn test_busd_transfer() -> Result<()> {
         let _ = setup_logs(LogLevel::Trace);
-        let conn_pool = EthereumRpcConnectionPool::mainnet();
-        let conn = conn_pool.get_conn().await?;
+        let conn_pool = EthereumRpcConnectionPool::new();
+        let conn = conn_pool.get(EnumBlockChain::EthereumMainnet).await?;
         let tx = TransactionFetcher::new_and_assume_ready(
             "0x27e801a5735e5b530535165a18754c074c673263470fc1fad32cca5eb1bc9fea".parse()?,
             &conn,

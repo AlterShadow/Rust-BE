@@ -47,14 +47,16 @@ pub async fn on_user_deposit(
 
 #[cfg(test)]
 mod tests {
+    use std::time::Duration;
+
     use super::*;
     use crate::mock_erc20::deploy_mock_erc20;
     use crate::signer::Secp256k1SecretKey;
     use crate::{
-        BlockchainCoinAddresses, EthereumRpcConnectionPool, EthereumToken, TransactionFetcher,
-        ANVIL_PRIV_KEY_1, ANVIL_PRIV_KEY_2,
+        wait_for_confirmations_simple, BlockchainCoinAddresses, EthereumRpcConnectionPool,
+        EthereumToken, TransactionFetcher, ANVIL_PRIV_KEY_1, ANVIL_PRIV_KEY_2,
     };
-    use gen::model::EnumBlockchainCoin;
+    use gen::model::{EnumBlockChain, EnumBlockchainCoin};
     use lib::database::{connect_to_database, drop_and_recreate_database, DatabaseConfig};
     use lib::log::{setup_logs, LogLevel};
     use std::net::Ipv4Addr;
@@ -64,14 +66,27 @@ mod tests {
     async fn test_user_ethereum_testnet_transfer() -> Result<()> {
         let _ = setup_logs(LogLevel::Trace);
         let key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
-        let conn_pool = EthereumRpcConnectionPool::localnet();
-        let conn = conn_pool.get_conn().await?;
-        let airdrop_tx = EthereumToken::new(conn.get_raw().clone())
+        let conn_pool = EthereumRpcConnectionPool::new();
+        let conn = conn_pool.get(EnumBlockChain::LocalNet).await?;
+        let airdrop_tx = EthereumToken::new(conn.clone())
             .transfer(&key.key, key.address, U256::from(20000))
             .await?;
-        conn.get_receipt(airdrop_tx).await?;
+
+        wait_for_confirmations_simple(&conn.clone().eth(), airdrop_tx, Duration::from_secs(1), 10)
+            .await?;
+        let mut tx = TransactionFetcher::new(airdrop_tx);
+        tx.update(&conn).await?;
+        match tx.get_receipt() {
+            Some(receipt) => {
+                assert_eq!(receipt.status, Some(1.into()));
+            }
+            None => {
+                bail!("no receipt");
+            }
+        };
         Ok(())
     }
+
     #[tokio::test]
     async fn test_user_ethereum_deposit() -> Result<()> {
         let _ = setup_logs(LogLevel::Trace);
@@ -79,9 +94,9 @@ mod tests {
         let user_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
         let admin_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_2)?;
         let escrow_key = Secp256k1SecretKey::new_random();
-        let conn_pool = EthereumRpcConnectionPool::localnet();
-        let conn = conn_pool.get_conn().await?;
-        let erc20_mock = deploy_mock_erc20(conn.get_raw().clone(), admin_key.clone()).await?;
+        let conn_pool = EthereumRpcConnectionPool::new();
+        let conn = conn_pool.get(EnumBlockChain::LocalNet).await?;
+        let erc20_mock = deploy_mock_erc20(conn.clone(), admin_key.clone()).await?;
         erc20_mock
             .mint(&admin_key.key, user_key.address, U256::from(20000000))
             .await?;

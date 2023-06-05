@@ -42,15 +42,16 @@ mod tests {
         EthereumRpcConnectionPool, TxChecker, TxStatus, ANVIL_PRIV_KEY_1, ANVIL_PRIV_KEY_2,
         ANVIL_PRIV_KEY_3, ANVIL_PRIV_KEY_4,
     };
+    use gen::model::EnumBlockChain;
     use web3::types::U256;
 
     #[tokio::test]
     async fn test_mock_erc20_contract() -> Result<()> {
         let key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
-        let conn_pool = EthereumRpcConnectionPool::localnet();
-        let conn = conn_pool.get_conn().await?;
-        let mock_erc20 = deploy_mock_erc20(conn.get_raw().clone(), key.clone()).await?;
-        let tx_checker = TxChecker::new(conn.get_raw().eth());
+        let conn_pool = EthereumRpcConnectionPool::new();
+        let conn = conn_pool.get(EnumBlockChain::LocalNet).await?;
+        let mock_erc20 = deploy_mock_erc20(conn.clone(), key.clone()).await?;
+        let tx_checker = TxChecker::new(conn.eth());
 
         let alice = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_2)?;
         let bob = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_3)?;
