@@ -598,20 +598,19 @@ END
             vec![Field::new("success", Type::Boolean)],
             r#"
 BEGIN
-    UPDATE tbl.user SET pending_expert = TRUE WHERE pkey_id = a_user_id;
+    UPDATE tbl.user SET pending_expert = TRUE WHERE pkey_id = a_user_id AND role = 'user';
+    RETURN QUERY SELECT TRUE;
 END
 "#,
         ),
         ProceduralFunction::new(
             "fun_admin_approve_user_become_admin",
-            vec![
-                Field::new("admin_user_id", Type::BigInt),
-                Field::new("user_id", Type::BigInt),
-            ],
+            vec![Field::new("user_id", Type::BigInt)],
             vec![Field::new("success", Type::Boolean)],
             r#"
 BEGIN
--- TODO: check permission and update tbl.user.role to expert
+    UPDATE tbl.user SET pending_expert = FALSE AND role = 'expert' WHERE pkey_id = a_user_id AND role = 'user';
+    RETURN QUERY SELECT TRUE;
 END
 "#,
         ),
@@ -634,8 +633,8 @@ END
             vec![],
             vec![
                 Field::new("user_id", Type::BigInt),
-                Field::new("name", Type::String),
-                Field::new("follower_count", Type::Int),
+                Field::new("name", Type::optional(Type::String)),
+                Field::new("follower_count", Type::BigInt),
                 Field::new("description", Type::String),
                 Field::new("social_media", Type::String),
                 Field::new("risk_score", Type::Numeric),
@@ -645,16 +644,16 @@ END
             r#"
 BEGIN
     RETURN QUERY SELECT a.pkey_id                  AS expert_id,
-                        a.name                     AS name,
+                        a.username                 AS name,
                         (SELECT COUNT(*)
                          FROM tbl.user_follow_expert
                          WHERE fkey_expert_id = a.pkey_id
                            AND unfollowed = FALSE) AS follower_count,
-                        ''                         AS description,
-                        ''                         AS social_media,
-                        0.0                        AS risk_score,
-                        0.0                        AS reputation_score,
-                        0.0                        AS aum
+                        ''::varchar                AS description,
+                        ''::varchar                AS social_media,
+                        0.0::double precision      AS risk_score,
+                        0.0::double precision      AS reputation_score,
+                        0.0::double precision      AS aum
                  FROM tbl."user" AS a
                  WHERE a.pending_expert = TRUE;
 END
@@ -920,7 +919,7 @@ END
             ],
             r#"
 BEGIN
-    RETURN QUERY SELECT pkey_id, token_name, token_address, quantity, fkey_quantity_id, updated_at, created_at FROM tbl.strategy_initial_token_ratio WHERE fkey_strategy_id = a_strategy_id;
+    RETURN QUERY SELECT pkey_id, token_name, token_address, quantity, fkey_strategy_id, updated_at, created_at FROM tbl.strategy_initial_token_ratio WHERE fkey_strategy_id = a_strategy_id;
 END
 "#,
         ),

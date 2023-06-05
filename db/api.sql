@@ -54,7 +54,8 @@ $$;
 
 CREATE OR REPLACE FUNCTION api.fun_auth_authenticate(a_address varchar, a_service_code int, a_device_id varchar, a_device_os varchar, a_ip_address inet)
 RETURNS table (
-    "user_id" bigint
+    "user_id" bigint,
+    "public_user_id" bigint
 )
 LANGUAGE plpgsql
 AS $$
@@ -62,14 +63,15 @@ AS $$
 DECLARE
     is_blocked_     boolean;
     _user_id        bigint;
+    _public_user_id bigint;
     _role           enum_role;
 BEGIN
     ASSERT (a_ip_address NOTNULL AND a_device_id NOTNULL AND a_device_os NOTNULL AND
             a_address NOTNULL AND a_service_code NOTNULL);
 
     -- Looking up the user.
-    SELECT pkey_id, is_blocked, u.role
-    INTO _user_id, is_blocked_, _role
+    SELECT pkey_id, is_blocked, u.role, u.public_id
+    INTO _user_id, is_blocked_, _role, _public_user_id
     FROM tbl.user u
     WHERE address = a_address;
 
@@ -102,7 +104,7 @@ BEGIN
     IF a_service_code = api.ADMIN_SERVICE() THEN
         UPDATE tbl.user SET admin_device_id = a_device_id WHERE pkey_id = _user_id;
     END IF;
-    RETURN QUERY SELECT _user_id;
+    RETURN QUERY SELECT _user_id, _public_user_id;
 END
         
 $$;
@@ -231,33 +233,13 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_auth_basic_authenticate(a_address varchar, a_device_id varchar, a_device_os varchar, a_ip_address inet)
-RETURNS table (
-    "user_id" inet
-)
+CREATE OR REPLACE FUNCTION api.fun_auth_set_role(a_public_user_id bigint, a_role enum_role)
+RETURNS void
 LANGUAGE plpgsql
 AS $$
     
-DECLARE
-  is_blocked_ boolean;
-  user_id_    bigint;
 BEGIN
-    ASSERT (a_address NOTNULL AND a_device_id NOTNULL AND a_device_os NOTNULL AND
-            a_ip_address NOTNULL);
-    SELECT pkey_id, is_blocked
-    INTO user_id_, is_blocked_
-    FROM tbl.user
-    WHERE address = a_address;
-    INSERT INTO tbl.login_attempt(fkey_user, address, ip_address,
-                                  device_id, device_os, moment)
-    VALUES (user_id_, a_address, a_ip_address, a_device_id, a_device_os, extract(epoch from now())::bigint);
-    -- COMMIT;
-    IF (user_id_ ISNULL) THEN
-        RAISE SQLSTATE 'R0007'; -- UnknownUser
-    ELSEIF (is_blocked_) THEN
-        RAISE SQLSTATE 'R0008'; -- BlockedUser
-    END IF;
-    RETURN QUERY SELECT user_id_;
+    UPDATE tbl.user SET role = a_role WHERE public_id = a_public_user_id;
 END
             
 $$;
@@ -860,13 +842,14 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    UPDATE tbl.user SET pending_expert = TRUE WHERE pkey_id = a_user_id;
+    UPDATE tbl.user SET pending_expert = TRUE WHERE pkey_id = a_user_id AND role = 'user';
+    RETURN QUERY SELECT TRUE;
 END
 
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_admin_approve_user_become_admin(a_admin_user_id bigint, a_user_id bigint)
+CREATE OR REPLACE FUNCTION api.fun_admin_approve_user_become_admin(a_user_id bigint)
 RETURNS table (
     "success" boolean
 )
@@ -874,7 +857,8 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
--- TODO: check permission and update tbl.user.role to expert
+    UPDATE tbl.user SET pending_expert = FALSE AND role = 'expert' WHERE pkey_id = a_user_id AND role = 'user';
+    RETURN QUERY SELECT TRUE;
 END
 
 $$;
@@ -899,7 +883,7 @@ CREATE OR REPLACE FUNCTION api.fun_admin_list_pending_user_expert_applications()
 RETURNS table (
     "user_id" bigint,
     "name" varchar,
-    "follower_count" int,
+    "follower_count" bigint,
     "description" varchar,
     "social_media" varchar,
     "risk_score" double precision,
@@ -911,16 +895,16 @@ AS $$
     
 BEGIN
     RETURN QUERY SELECT a.pkey_id                  AS expert_id,
-                        a.name                     AS name,
+                        a.username                 AS name,
                         (SELECT COUNT(*)
                          FROM tbl.user_follow_expert
                          WHERE fkey_expert_id = a.pkey_id
                            AND unfollowed = FALSE) AS follower_count,
-                        ''                         AS description,
-                        ''                         AS social_media,
-                        0.0                        AS risk_score,
-                        0.0                        AS reputation_score,
-                        0.0                        AS aum
+                        ''::varchar                AS description,
+                        ''::varchar                AS social_media,
+                        0.0::double precision      AS risk_score,
+                        0.0::double precision      AS reputation_score,
+                        0.0::double precision      AS aum
                  FROM tbl."user" AS a
                  WHERE a.pending_expert = TRUE;
 END
@@ -1180,7 +1164,7 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY SELECT pkey_id, token_name, token_address, quantity, fkey_quantity_id, updated_at, created_at FROM tbl.strategy_initial_token_ratio WHERE fkey_strategy_id = a_strategy_id;
+    RETURN QUERY SELECT pkey_id, token_name, token_address, quantity, fkey_strategy_id, updated_at, created_at FROM tbl.strategy_initial_token_ratio WHERE fkey_strategy_id = a_strategy_id;
 END
 
 $$;

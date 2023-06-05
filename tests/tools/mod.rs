@@ -73,7 +73,7 @@ pub async fn login(username: impl Into<String>, signer: impl Key) -> Result<Logi
     )?)
     .await?;
     let res: LoginResponse = client.recv_resp().await?;
-    println!("{:?}", res);
+    info!("{:?}", res);
     Ok(res)
 }
 pub async fn connect_user(username: impl Into<String>, signer: impl Key) -> Result<UserClient> {
@@ -87,4 +87,19 @@ pub async fn connect_user(username: impl Into<String>, signer: impl Key) -> Resu
     })
     .await?;
     Ok(client)
+}
+pub async fn connect_user_ext(
+    username: impl Into<String>,
+    signer: impl Key,
+) -> Result<(UserClient, LoginResponse)> {
+    let login = login(username, signer).await?;
+    let client = get_ws_user_client(&AuthorizeRequest {
+        address: login.address.clone(),
+        token: login.user_token.clone(),
+        service: EnumService::User as _,
+        device_id: "24787297130491616".to_string(),
+        device_os: "android".to_string(),
+    })
+    .await?;
+    Ok((client, login))
 }

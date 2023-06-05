@@ -161,7 +161,7 @@ impl RequestHandler for MethodAuthLogin {
                 .await?;
             Ok(LoginResponse {
                 address: format!("{:?}", address),
-                user_id: row.user_id,
+                user_id: row.public_user_id,
                 user_token,
                 admin_token,
             })
@@ -213,7 +213,8 @@ impl RequestHandler for MethodAuthAuthorize {
                     device_os: req.device_os,
                     ip_address: conn.address.ip(),
                 })
-                .await?;
+                .await
+                .context("FunAuthAuthorizeReq")?;
 
             let auth_data = auth_data.into_result().with_context(|| {
                 CustomError::new(EnumErrorCode::UserInvalidAuthToken, Value::Null)

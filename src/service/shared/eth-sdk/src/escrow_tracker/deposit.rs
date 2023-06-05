@@ -57,7 +57,9 @@ mod tests {
         EthereumToken, TransactionFetcher, ANVIL_PRIV_KEY_1, ANVIL_PRIV_KEY_2,
     };
     use gen::model::{EnumBlockChain, EnumBlockchainCoin};
-    use lib::database::{connect_to_database, drop_and_recreate_database, DatabaseConfig};
+    use lib::database::{
+        connect_to_database, database_test_config, drop_and_recreate_database, DatabaseConfig,
+    };
     use lib::log::{setup_logs, LogLevel};
     use std::net::Ipv4Addr;
     use web3::types::U256;
@@ -92,14 +94,7 @@ mod tests {
         let tx_hash = erc20_mock
             .transfer(&user_key.key, escrow_key.address, U256::from(20000))
             .await?;
-        let db = connect_to_database(DatabaseConfig {
-            user: Some("postgres".to_string()),
-            password: Some("123456".to_string()),
-            dbname: Some("mc2fi".to_string()),
-            host: Some("localhost".to_string()),
-            ..Default::default()
-        })
-        .await?;
+        let db = connect_to_database(database_test_config()).await?;
         let ret = db
             .execute(FunAuthSignupReq {
                 address: format!("{:?}", user_key.address),

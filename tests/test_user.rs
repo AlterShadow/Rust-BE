@@ -3,9 +3,13 @@ pub mod tools;
 use eth_sdk::signer::{EthereumSigner, Secp256k1SecretKey};
 use eth_sdk::utils::encode_signature;
 use eyre::*;
+use gen::database::FunAuthSetRoleReq;
 use gen::model::*;
-use lib::database::drop_and_recreate_database;
+use lib::database::{
+    connect_to_database, database_test_config, drop_and_recreate_database, DatabaseConfig, DbClient,
+};
 use lib::log::{setup_logs, LogLevel};
+use serde_json::to_string;
 use std::sync::Arc;
 use tools::*;
 use tracing::*;
@@ -85,5 +89,43 @@ async fn test_create_update_strategy() -> Result<()> {
         })
         .await?;
     info!("Remove wallet {:?}", remove_wallet);
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_user_become_expert() -> Result<()> {
+    let _ = setup_logs(LogLevel::Info);
+    drop_and_recreate_database()?;
+
+    let admin = Secp256k1SecretKey::new_random();
+    signup("admin", &admin.key).await?;
+    let (_admin_client, admin_login) = connect_user_ext("admin", &admin.key).await?;
+    let db = connect_to_database(database_test_config()).await?;
+    db.execute(FunAuthSetRoleReq {
+        public_user_id: admin_login.user_id,
+        role: EnumRole::Admin,
+    })
+    .await?;
+    let mut admin_client = connect_user("admin", &admin.key).await?;
+
+    let user = Secp256k1SecretKey::new_random();
+    signup("user1", &user.key).await?;
+
+    let mut client = connect_user("user1", &user.key).await?;
+    let resp = client
+        .user_apply_become_expert(UserApplyBecomeExpertRequest {})
+        .await?;
+    info!("Register wallet {:?}", resp);
+
+    let resp = admin_client
+        .admin_list_pending_expert_applications(AdminListPendingExpertApplicationsRequest {})
+        .await?;
+    assert_eq!(resp.users.len(), 1);
+    let resp = admin_client
+        .admin_approve_user_become_expert(AdminApproveUserBecomeExpertRequest {
+            user_id: resp.users[0].user_id,
+        })
+        .await?;
+    info!("Approve {:?}", resp);
     Ok(())
 }

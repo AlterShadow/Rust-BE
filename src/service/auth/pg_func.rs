@@ -70,19 +70,23 @@ END
                 Field::new("device_os", Type::String),
                 Field::new("ip_address", Type::Inet),
             ],
-            vec![Field::new("user_id", Type::BigInt)],
+            vec![
+                Field::new("user_id", Type::BigInt),
+                Field::new("public_user_id", Type::BigInt),
+            ],
             r#"
 DECLARE
     is_blocked_     boolean;
     _user_id        bigint;
+    _public_user_id bigint;
     _role           enum_role;
 BEGIN
     ASSERT (a_ip_address NOTNULL AND a_device_id NOTNULL AND a_device_os NOTNULL AND
             a_address NOTNULL AND a_service_code NOTNULL);
 
     -- Looking up the user.
-    SELECT pkey_id, is_blocked, u.role
-    INTO _user_id, is_blocked_, _role
+    SELECT pkey_id, is_blocked, u.role, u.public_id
+    INTO _user_id, is_blocked_, _role, _public_user_id
     FROM tbl.user u
     WHERE address = a_address;
 
@@ -115,7 +119,7 @@ BEGIN
     IF a_service_code = api.ADMIN_SERVICE() THEN
         UPDATE tbl.user SET admin_device_id = a_device_id WHERE pkey_id = _user_id;
     END IF;
-    RETURN QUERY SELECT _user_id;
+    RETURN QUERY SELECT _user_id, _public_user_id;
 END
         "#,
         ),
@@ -249,35 +253,15 @@ END
             "#,
         ),
         ProceduralFunction::new(
-            "fun_auth_basic_authenticate",
+            "fun_auth_set_role",
             vec![
-                Field::new("address", Type::String),
-                Field::new("device_id", Type::String),
-                Field::new("device_os", Type::String),
-                Field::new("ip_address", Type::Inet),
+                Field::new("public_user_id", Type::BigInt),
+                Field::new("role", Type::enum_ref("role")),
             ],
-            vec![Field::new("user_id", Type::Inet)],
+            vec![],
             r#"
-DECLARE
-  is_blocked_ boolean;
-  user_id_    bigint;
 BEGIN
-    ASSERT (a_address NOTNULL AND a_device_id NOTNULL AND a_device_os NOTNULL AND
-            a_ip_address NOTNULL);
-    SELECT pkey_id, is_blocked
-    INTO user_id_, is_blocked_
-    FROM tbl.user
-    WHERE address = a_address;
-    INSERT INTO tbl.login_attempt(fkey_user, address, ip_address,
-                                  device_id, device_os, moment)
-    VALUES (user_id_, a_address, a_ip_address, a_device_id, a_device_os, extract(epoch from now())::bigint);
-    -- COMMIT;
-    IF (user_id_ ISNULL) THEN
-        RAISE SQLSTATE 'R0007'; -- UnknownUser
-    ELSEIF (is_blocked_) THEN
-        RAISE SQLSTATE 'R0008'; -- BlockedUser
-    END IF;
-    RETURN QUERY SELECT user_id_;
+    UPDATE tbl.user SET role = a_role WHERE public_id = a_public_user_id;
 END
             "#,
         ),

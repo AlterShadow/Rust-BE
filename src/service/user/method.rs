@@ -30,7 +30,10 @@ pub fn ensure_user_role(conn: &Connection, role: EnumRole) -> Result<()> {
 
     ensure!(
         user_role >= (role as u32),
-        CustomError::new(EnumErrorCode::InvalidRole, ErrorInvalidRole {})
+        CustomError::new(
+            EnumErrorCode::InvalidRole,
+            format!("Requires {} Actual {}", (role as u32), user_role)
+        )
     );
     Ok(())
 }
@@ -1055,7 +1058,6 @@ impl RequestHandler for MethodAdminApproveUserBecomeExpert {
 
             let ret = db
                 .execute(FunAdminApproveUserBecomeAdminReq {
-                    admin_user_id: ctx.user_id,
                     user_id: req.user_id,
                 })
                 .await?;
@@ -1127,8 +1129,8 @@ impl RequestHandler for MethodAdminListPendingExpertApplications {
                     .into_iter()
                     .map(|x| ListPendingExpertApplicationsRow {
                         user_id: x.user_id,
-                        name: x.name,
-                        follower_count: x.follower_count,
+                        name: x.name.unwrap_or_default(),
+                        follower_count: x.follower_count as _,
                         description: x.description,
                         social_media: x.social_media,
                         risk_score: x.risk_score,
@@ -1492,7 +1494,9 @@ mod tests {
     use eth_sdk::escrow_tracker::escrow::parse_escrow;
     use eth_sdk::mock_erc20::deploy_mock_erc20;
     use eth_sdk::signer::Secp256k1SecretKey;
-    use lib::database::{connect_to_database, drop_and_recreate_database, DatabaseConfig};
+    use lib::database::{
+        connect_to_database, database_test_config, drop_and_recreate_database, DatabaseConfig,
+    };
     use lib::log::{setup_logs, LogLevel};
     use std::net::Ipv4Addr;
     use std::{format, vec};
@@ -1571,14 +1575,7 @@ mod tests {
                 U256::from(20000000000i64),
             )
             .await?;
-        let db = connect_to_database(DatabaseConfig {
-            user: Some("postgres".to_string()),
-            password: Some("123456".to_string()),
-            dbname: Some("mc2fi".to_string()),
-            host: Some("localhost".to_string()),
-            ..Default::default()
-        })
-        .await?;
+        let db = connect_to_database(database_test_config()).await?;
         let ret = db
             .execute(FunAuthSignupReq {
                 address: format!("{:?}", user_key.address),
@@ -1687,14 +1684,7 @@ mod tests {
                 U256::from(20000000000i64),
             )
             .await?;
-        let db = connect_to_database(DatabaseConfig {
-            user: Some("postgres".to_string()),
-            password: Some("123456".to_string()),
-            dbname: Some("mc2fi".to_string()),
-            host: Some("localhost".to_string()),
-            ..Default::default()
-        })
-        .await?;
+        let db = connect_to_database(database_test_config()).await?;
         let ret = db
             .execute(FunAuthSignupReq {
                 address: format!("{:?}", user_key.address),

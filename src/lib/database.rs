@@ -95,6 +95,15 @@ pub async fn connect_to_database(config: DatabaseConfig) -> Result<DbClient> {
     let pool = config.create_pool(Some(Runtime::Tokio1), NoTls)?;
     Ok(DbClient { pool, conn_hash })
 }
+pub fn database_test_config() -> DatabaseConfig {
+    DatabaseConfig {
+        user: Some("postgres".to_string()),
+        password: Some("123456".to_string()),
+        dbname: Some("mc2fi".to_string()),
+        host: Some("localhost".to_string()),
+        ..Default::default()
+    }
+}
 
 pub fn drop_and_recreate_database() -> Result<()> {
     let script = Path::new("scripts/drop_and_recreate_database.sh");
