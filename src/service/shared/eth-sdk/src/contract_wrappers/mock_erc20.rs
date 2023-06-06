@@ -3,7 +3,6 @@ use crate::erc20::Erc20Token;
 use crate::utils::get_project_root;
 use crate::EitherTransport;
 use eyre::*;
-use std::fs::read_to_string;
 use web3::contract::Options;
 use web3::signing::Key;
 use web3::Web3;
