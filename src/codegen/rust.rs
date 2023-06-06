@@ -17,8 +17,6 @@ pub trait ToRust {
 impl ToRust for Type {
     fn to_rust_ref(&self) -> String {
         match self {
-            Type::Second => "u32".to_owned(),
-            Type::MilliSecond => "u64".to_owned(),
             Type::Date => "u32".to_owned(), // TODO: resolve date
             Type::Int => "i32".to_owned(),
             Type::BigInt => "i64".to_owned(),

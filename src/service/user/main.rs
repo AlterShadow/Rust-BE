@@ -1,5 +1,12 @@
+#[path = "../admin/endpoints.rs"]
+pub mod admin_endpoints;
+#[path = "../admin/method.rs"]
+mod admin_method;
+pub mod endpoints;
 mod method;
 
+use crate::admin_endpoints::*;
+use crate::admin_method::*;
 use crate::endpoints::*;
 use crate::method::*;
 use eth_sdk::escrow::{AbstractEscrowContract, EscrowContract};
@@ -20,8 +27,6 @@ use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 use std::sync::Arc;
 use web3::types::U256;
-
-pub mod endpoints;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
@@ -115,18 +120,6 @@ async fn main() -> Result<()> {
         MethodUserApplyBecomeExpert,
     );
 
-    server.add_handler(
-        endpoint_admin_approve_user_become_expert(),
-        MethodAdminApproveUserBecomeExpert,
-    );
-    server.add_handler(
-        endpoint_admin_reject_user_become_expert(),
-        MethodAdminRejectUserBecomeExpert,
-    );
-    server.add_handler(
-        endpoint_admin_list_pending_expert_applications(),
-        MethodAdminListPendingExpertApplications,
-    );
     server.add_handler(endpoint_user_create_strategy(), MethodUserCreateStrategy);
     server.add_handler(endpoint_user_update_strategy(), MethodUserUpdateStrategy);
 
@@ -153,6 +146,21 @@ async fn main() -> Result<()> {
     server.add_handler(
         endpoint_user_list_strategy_initial_token_ratio(),
         MethodUserListStrategyInitialTokenRatio,
+    );
+    server.add_handler(endpoint_admin_list_users(), MethodAdminListUsers);
+    server.add_handler(endpoint_admin_set_user_role(), MethodAdminSetUserRole);
+    server.add_handler(endpoint_admin_set_block_user(), MethodAdminSetBlockUser);
+    server.add_handler(
+        endpoint_admin_approve_user_become_expert(),
+        MethodAdminApproveUserBecomeExpert,
+    );
+    server.add_handler(
+        endpoint_admin_reject_user_become_expert(),
+        MethodAdminRejectUserBecomeExpert,
+    );
+    server.add_handler(
+        endpoint_admin_list_pending_expert_applications(),
+        MethodAdminListPendingExpertApplications,
     );
     let eth_pool = EthereumRpcConnectionPool::from_conns(config.ethereum_urls);
     let escrow_signer = Secp256k1SecretKey::new_random();

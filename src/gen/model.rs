@@ -611,6 +611,26 @@ pub struct AdminListPendingExpertApplicationsResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct AdminListUsersRequest {
+    pub limit: i64,
+    pub offset: i64,
+    #[serde(default)]
+    pub user_id: Option<i64>,
+    #[serde(default)]
+    pub address: Option<String>,
+    #[serde(default)]
+    pub username: Option<String>,
+    #[serde(default)]
+    pub email: Option<String>,
+    pub role: EnumRole,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminListUsersResponse {
+    pub users: Vec<ListUserRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct AdminRejectUserBecomeExpertRequest {
     pub user_id: i64,
 }
@@ -619,6 +639,24 @@ pub struct AdminRejectUserBecomeExpertRequest {
 pub struct AdminRejectUserBecomeExpertResponse {
     pub success: bool,
 }
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminSetBlockUserRequest {
+    pub user_id: i64,
+    pub blocked: bool,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminSetBlockUserResponse {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminSetUserRoleRequest {
+    pub user_id: i64,
+    pub role: EnumRole,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminSetUserRoleResponse {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AumHistoryRow {
@@ -738,6 +776,23 @@ pub struct ListStrategyWatchingWalletsRow {
     pub blockchain: EnumBlockChain,
     pub wallet_address: String,
     pub ratio: f64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ListUserRow {
+    pub user_id: i64,
+    pub public_user_id: i64,
+    #[serde(default)]
+    pub username: Option<String>,
+    pub address: String,
+    pub last_ip: std::net::IpAddr,
+    pub last_login_at: i64,
+    pub login_count: i32,
+    pub role: EnumRole,
+    #[serde(default)]
+    pub email: Option<String>,
+    pub updated_at: i64,
+    pub created_at: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]

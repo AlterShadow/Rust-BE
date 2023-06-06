@@ -42,8 +42,6 @@ impl EnumVariant {
 }
 #[derive(Clone, Debug, Serialize, Deserialize, Hash, PartialEq, PartialOrd, Eq, Ord)]
 pub enum Type {
-    Second,
-    MilliSecond,
     Date,
     Int,
     BigInt,

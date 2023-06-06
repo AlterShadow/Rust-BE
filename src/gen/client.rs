@@ -243,30 +243,6 @@ impl UserClient {
     }
 }
 impl UserClient {
-    pub async fn admin_approve_user_become_expert(
-        &mut self,
-        req: AdminApproveUserBecomeExpertRequest,
-    ) -> Result<AdminApproveUserBecomeExpertResponse> {
-        self.client.request(20230, req).await
-    }
-}
-impl UserClient {
-    pub async fn admin_reject_user_become_expert(
-        &mut self,
-        req: AdminRejectUserBecomeExpertRequest,
-    ) -> Result<AdminRejectUserBecomeExpertResponse> {
-        self.client.request(20231, req).await
-    }
-}
-impl UserClient {
-    pub async fn admin_list_pending_expert_applications(
-        &mut self,
-        req: AdminListPendingExpertApplicationsRequest,
-    ) -> Result<AdminListPendingExpertApplicationsResponse> {
-        self.client.request(20240, req).await
-    }
-}
-impl UserClient {
     pub async fn user_create_strategy(
         &mut self,
         req: UserCreateStrategyRequest,
@@ -352,6 +328,54 @@ impl From<WsClient> for AdminClient {
     }
 }
 
+impl AdminClient {
+    pub async fn admin_list_users(
+        &mut self,
+        req: AdminListUsersRequest,
+    ) -> Result<AdminListUsersResponse> {
+        self.client.request(30010, req).await
+    }
+}
+impl AdminClient {
+    pub async fn admin_set_user_role(
+        &mut self,
+        req: AdminSetUserRoleRequest,
+    ) -> Result<AdminSetUserRoleResponse> {
+        self.client.request(30020, req).await
+    }
+}
+impl AdminClient {
+    pub async fn admin_set_block_user(
+        &mut self,
+        req: AdminSetBlockUserRequest,
+    ) -> Result<AdminSetBlockUserResponse> {
+        self.client.request(30030, req).await
+    }
+}
+impl AdminClient {
+    pub async fn admin_list_pending_expert_applications(
+        &mut self,
+        req: AdminListPendingExpertApplicationsRequest,
+    ) -> Result<AdminListPendingExpertApplicationsResponse> {
+        self.client.request(20240, req).await
+    }
+}
+impl AdminClient {
+    pub async fn admin_approve_user_become_expert(
+        &mut self,
+        req: AdminApproveUserBecomeExpertRequest,
+    ) -> Result<AdminApproveUserBecomeExpertResponse> {
+        self.client.request(20230, req).await
+    }
+}
+impl AdminClient {
+    pub async fn admin_reject_user_become_expert(
+        &mut self,
+        req: AdminRejectUserBecomeExpertRequest,
+    ) -> Result<AdminRejectUserBecomeExpertResponse> {
+        self.client.request(20231, req).await
+    }
+}
 pub struct WatcherClient {
     pub client: WsClient,
 }

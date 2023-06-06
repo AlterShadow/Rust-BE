@@ -13,8 +13,6 @@ pub trait ToSql {
 impl ToSql for Type {
     fn to_sql(&self) -> String {
         match self {
-            Type::Second => "oid".to_owned(),
-            Type::MilliSecond => "int".to_owned(),
             Type::Date => "int".to_owned(), // TODO: fix things
             Type::Int => "int".to_owned(),
             Type::BigInt => "bigint".to_owned(),

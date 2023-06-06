@@ -245,57 +245,6 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_admin_list_users(a_offset int, a_limit int, a_user_id bigint DEFAULT NULL, a_email varchar DEFAULT NULL, a_address varchar DEFAULT NULL, a_role enum_role DEFAULT NULL)
-RETURNS table (
-    "user_id" bigint,
-    "email" varchar,
-    "address" varchar,
-    "role" enum_role,
-    "updated_at" oid,
-    "created_at" oid
-)
-LANGUAGE plpgsql
-AS $$
-    
-BEGIN
-    RETURN QUERY SELECT
-        u.pkey_id,
-        u.email,
-        u.address,
-        u.role,
-        u.updated_at::int,
-        u.created_at::int
-    FROM tbl.user AS u
-    WHERE a_user_id IS NOT NULL OR u.pkey_id = a_user_id
-        AND a_email IS NOT NULL OR u.email = a_email
-        AND a_address IS NOT NULL OR u.address = a_address
-        AND a_role IS NOT NULL OR u.role = a_role
-    ORDER BY user_id
-    OFFSET a_offset
-    LIMIT a_limit;
-END
-        
-$$;
-        
-
-CREATE OR REPLACE FUNCTION api.fun_admin_assign_role(a_operator_user_id bigint, a_user_id bigint, a_new_role enum_role)
-RETURNS void
-LANGUAGE plpgsql
-AS $$
-    
-DECLARE
-    _operator_role enum_role;
-BEGIN
-    SELECT role FROM tbl.user WHERE pkey_id = a_operator_user_id INTO STRICT _operator_role;
-    IF _operator_role <> 'admin' THEN
-        RAISE SQLSTATE 'R000S'; -- InvalidRole
-    END IF;
-    UPDATE tbl.user SET role = a_new_role WHERE pkey_id = a_user_id;
-END
-        
-$$;
-        
-
 CREATE OR REPLACE FUNCTION api.fun_user_follow_strategy(a_user_id bigint, a_strategy_id bigint)
 RETURNS table (
     "success" boolean
@@ -849,69 +798,6 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_admin_approve_user_become_admin(a_user_id bigint)
-RETURNS table (
-    "success" boolean
-)
-LANGUAGE plpgsql
-AS $$
-    
-BEGIN
-    UPDATE tbl.user SET pending_expert = FALSE AND role = 'expert' WHERE pkey_id = a_user_id AND role = 'user';
-    RETURN QUERY SELECT TRUE;
-END
-
-$$;
-        
-
-CREATE OR REPLACE FUNCTION api.fun_admin_reject_user_become_admin(a_admin_user_id bigint, a_user_id bigint)
-RETURNS table (
-    "success" boolean
-)
-LANGUAGE plpgsql
-AS $$
-    
-BEGIN
-    UPDATE tbl.user SET pending_expert = FALSE WHERE pkey_id = a_user_id;
-    RETURN QUERY SELECT TRUE;
-END
-
-$$;
-        
-
-CREATE OR REPLACE FUNCTION api.fun_admin_list_pending_user_expert_applications()
-RETURNS table (
-    "user_id" bigint,
-    "name" varchar,
-    "follower_count" bigint,
-    "description" varchar,
-    "social_media" varchar,
-    "risk_score" double precision,
-    "reputation_score" double precision,
-    "aum" double precision
-)
-LANGUAGE plpgsql
-AS $$
-    
-BEGIN
-    RETURN QUERY SELECT a.pkey_id                  AS expert_id,
-                        a.username                 AS name,
-                        (SELECT COUNT(*)
-                         FROM tbl.user_follow_expert
-                         WHERE fkey_expert_id = a.pkey_id
-                           AND unfollowed = FALSE) AS follower_count,
-                        ''::varchar                AS description,
-                        ''::varchar                AS social_media,
-                        0.0::double precision      AS risk_score,
-                        0.0::double precision      AS reputation_score,
-                        0.0::double precision      AS aum
-                 FROM tbl."user" AS a
-                 WHERE a.pending_expert = TRUE;
-END
-
-$$;
-        
-
 CREATE OR REPLACE FUNCTION api.fun_user_create_strategy(a_user_id bigint, a_name varchar, a_description varchar)
 RETURNS table (
     "success" boolean,
@@ -1165,6 +1051,143 @@ AS $$
     
 BEGIN
     RETURN QUERY SELECT pkey_id, token_name, token_address, quantity, fkey_strategy_id, updated_at, created_at FROM tbl.strategy_initial_token_ratio WHERE fkey_strategy_id = a_strategy_id;
+END
+
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_admin_list_users(a_limit bigint, a_offset bigint, a_user_id bigint DEFAULT NULL, a_address varchar DEFAULT NULL, a_username varchar DEFAULT NULL, a_email varchar DEFAULT NULL, a_role enum_role)
+RETURNS table (
+    "user_id" bigint,
+    "public_user_id" bigint,
+    "username" varchar,
+    "address" varchar,
+    "last_ip" inet,
+    "last_login_at" bigint,
+    "login_count" int,
+    "role" enum_role,
+    "email" varchar,
+    "updated_at" bigint,
+    "created_at" bigint
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY
+    SELECT
+        u.user_id,
+        u.public_id,
+        u.username,
+        u.address,
+        u.login_ip,
+        u.last_login_at,
+        u.login_count,
+        u.role,
+        u.email,
+        u.updated_at,
+        u.created_at
+    FROM
+        tbl.users u
+    WHERE
+        (a_user_id ISNULL OR u.pkey_id = a_user_id) AND
+        (a_address ISNULL OR u.address ILIKE a_address || '%') AND
+        (a_username ISNULL OR u.username ILIKE a_username || '%') AND
+        (a_email ISNULL OR u.email ILIKE a_email || '%') AND
+        (a_role ISNULL OR u.role = a_role)
+    ORDER BY
+        u.user_id
+    LIMIT
+        a_limit
+    OFFSET
+        a_offset;
+END;
+        
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_admin_set_user_role(a_user_id bigint, a_role enum_role)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    UPDATE tbl.user SET role = a_role WHERE pkey_id = a_user_id;
+END;
+        
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_admin_set_block_user(a_user_id bigint, a_blocked boolean)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    UPDATE tbl.user SET is_blocked = a_blocked WHERE pkey_id = a_user_id;
+END;
+        
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_admin_approve_user_become_admin(a_user_id bigint)
+RETURNS table (
+    "success" boolean
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    UPDATE tbl.user SET pending_expert = FALSE AND role = 'expert' WHERE pkey_id = a_user_id AND role = 'user';
+    RETURN QUERY SELECT TRUE;
+END
+
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_admin_reject_user_become_admin(a_admin_user_id bigint, a_user_id bigint)
+RETURNS table (
+    "success" boolean
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    UPDATE tbl.user SET pending_expert = FALSE WHERE pkey_id = a_user_id;
+    RETURN QUERY SELECT TRUE;
+END
+
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_admin_list_pending_user_expert_applications()
+RETURNS table (
+    "user_id" bigint,
+    "name" varchar,
+    "follower_count" bigint,
+    "description" varchar,
+    "social_media" varchar,
+    "risk_score" double precision,
+    "reputation_score" double precision,
+    "aum" double precision
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY SELECT a.pkey_id                  AS expert_id,
+                        a.username                 AS name,
+                        (SELECT COUNT(*)
+                         FROM tbl.user_follow_expert
+                         WHERE fkey_expert_id = a.pkey_id
+                           AND unfollowed = FALSE) AS follower_count,
+                        ''::varchar                AS description,
+                        ''::varchar                AS social_media,
+                        0.0::double precision      AS risk_score,
+                        0.0::double precision      AS reputation_score,
+                        0.0::double precision      AS aum
+                 FROM tbl."user" AS a
+                 WHERE a.pending_expert = TRUE;
 END
 
 $$;

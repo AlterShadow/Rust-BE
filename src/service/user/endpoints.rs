@@ -427,48 +427,7 @@ pub fn endpoint_user_apply_become_expert() -> EndpointSchema {
     )
     .with_description("User applies to become an expert")
 }
-pub fn endpoint_admin_approve_user_become_expert() -> EndpointSchema {
-    EndpointSchema::new(
-        "AdminApproveUserBecomeExpert",
-        20230,
-        vec![Field::new("user_id", Type::BigInt)],
-        vec![Field::new("success", Type::Boolean)],
-    )
-    .with_description("Admin approves a user to become an expert")
-}
-pub fn endpoint_admin_reject_user_become_expert() -> EndpointSchema {
-    EndpointSchema::new(
-        "AdminRejectUserBecomeExpert",
-        20231,
-        vec![Field::new("user_id", Type::BigInt)],
-        vec![Field::new("success", Type::Boolean)],
-    )
-    .with_description("Admin approves a user to become an expert")
-}
-pub fn endpoint_admin_list_pending_expert_applications() -> EndpointSchema {
-    EndpointSchema::new(
-        "AdminListPendingExpertApplications",
-        20240,
-        vec![],
-        vec![Field::new(
-            "users",
-            Type::datatable(
-                "ListPendingExpertApplicationsRow",
-                vec![
-                    Field::new("user_id", Type::BigInt),
-                    Field::new("name", Type::String),
-                    Field::new("follower_count", Type::Int),
-                    Field::new("description", Type::String),
-                    Field::new("social_media", Type::String),
-                    Field::new("risk_score", Type::Numeric),
-                    Field::new("reputation_score", Type::Numeric),
-                    Field::new("aum", Type::Numeric),
-                ],
-            ),
-        )],
-    )
-    .with_description("Admin approves a user to become an expert")
-}
+
 pub fn endpoint_user_create_strategy() -> EndpointSchema {
     EndpointSchema::new(
         "UserCreateStrategy",
@@ -654,9 +613,6 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
         endpoint_user_list_wallets(),
         endpoint_user_deregister_wallet(),
         endpoint_user_apply_become_expert(),
-        endpoint_admin_approve_user_become_expert(),
-        endpoint_admin_reject_user_become_expert(),
-        endpoint_admin_list_pending_expert_applications(),
         endpoint_user_create_strategy(),
         endpoint_user_update_strategy(),
         endpoint_user_add_strategy_watching_wallet(),

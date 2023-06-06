@@ -208,86 +208,6 @@ impl DatabaseRequest for FunAuthSetRoleReq {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunAdminListUsersReq {
-    pub offset: i32,
-    pub limit: i32,
-    #[serde(default)]
-    pub user_id: Option<i64>,
-    #[serde(default)]
-    pub email: Option<String>,
-    #[serde(default)]
-    pub address: Option<String>,
-    #[serde(default)]
-    pub role: Option<EnumRole>,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunAdminListUsersRespRow {
-    pub user_id: i64,
-    pub email: String,
-    pub address: String,
-    pub role: EnumRole,
-    pub updated_at: u32,
-    pub created_at: u32,
-}
-
-#[allow(unused_variables)]
-impl DatabaseRequest for FunAdminListUsersReq {
-    type ResponseRow = FunAdminListUsersRespRow;
-    fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_admin_list_users(a_offset => $1::int, a_limit => $2::int, a_user_id => $3::bigint, a_email => $4::varchar, a_address => $5::varchar, a_role => $6::enum_role);"
-    }
-    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
-        vec![
-            &self.offset as &(dyn ToSql + Sync),
-            &self.limit as &(dyn ToSql + Sync),
-            &self.user_id as &(dyn ToSql + Sync),
-            &self.email as &(dyn ToSql + Sync),
-            &self.address as &(dyn ToSql + Sync),
-            &self.role as &(dyn ToSql + Sync),
-        ]
-    }
-    fn parse_row(&self, row: Row) -> Result<FunAdminListUsersRespRow> {
-        let r = FunAdminListUsersRespRow {
-            user_id: row.try_get(0)?,
-            email: row.try_get(1)?,
-            address: row.try_get(2)?,
-            role: row.try_get(3)?,
-            updated_at: row.try_get(4)?,
-            created_at: row.try_get(5)?,
-        };
-        Ok(r)
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunAdminAssignRoleReq {
-    pub operator_user_id: i64,
-    pub user_id: i64,
-    pub new_role: EnumRole,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunAdminAssignRoleRespRow {}
-
-#[allow(unused_variables)]
-impl DatabaseRequest for FunAdminAssignRoleReq {
-    type ResponseRow = FunAdminAssignRoleRespRow;
-    fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_admin_assign_role(a_operator_user_id => $1::bigint, a_user_id => $2::bigint, a_new_role => $3::enum_role);"
-    }
-    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
-        vec![
-            &self.operator_user_id as &(dyn ToSql + Sync),
-            &self.user_id as &(dyn ToSql + Sync),
-            &self.new_role as &(dyn ToSql + Sync),
-        ]
-    }
-    fn parse_row(&self, row: Row) -> Result<FunAdminAssignRoleRespRow> {
-        let r = FunAdminAssignRoleRespRow {};
-        Ok(r)
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserFollowStrategyReq {
     pub user_id: i64,
     pub strategy_id: i64,
@@ -1061,101 +981,6 @@ impl DatabaseRequest for FunUserApplyBecomeExpertReq {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunAdminApproveUserBecomeAdminReq {
-    pub user_id: i64,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunAdminApproveUserBecomeAdminRespRow {
-    pub success: bool,
-}
-
-#[allow(unused_variables)]
-impl DatabaseRequest for FunAdminApproveUserBecomeAdminReq {
-    type ResponseRow = FunAdminApproveUserBecomeAdminRespRow;
-    fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_admin_approve_user_become_admin(a_user_id => $1::bigint);"
-    }
-    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
-        vec![&self.user_id as &(dyn ToSql + Sync)]
-    }
-    fn parse_row(&self, row: Row) -> Result<FunAdminApproveUserBecomeAdminRespRow> {
-        let r = FunAdminApproveUserBecomeAdminRespRow {
-            success: row.try_get(0)?,
-        };
-        Ok(r)
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunAdminRejectUserBecomeAdminReq {
-    pub admin_user_id: i64,
-    pub user_id: i64,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunAdminRejectUserBecomeAdminRespRow {
-    pub success: bool,
-}
-
-#[allow(unused_variables)]
-impl DatabaseRequest for FunAdminRejectUserBecomeAdminReq {
-    type ResponseRow = FunAdminRejectUserBecomeAdminRespRow;
-    fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_admin_reject_user_become_admin(a_admin_user_id => $1::bigint, a_user_id => $2::bigint);"
-    }
-    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
-        vec![
-            &self.admin_user_id as &(dyn ToSql + Sync),
-            &self.user_id as &(dyn ToSql + Sync),
-        ]
-    }
-    fn parse_row(&self, row: Row) -> Result<FunAdminRejectUserBecomeAdminRespRow> {
-        let r = FunAdminRejectUserBecomeAdminRespRow {
-            success: row.try_get(0)?,
-        };
-        Ok(r)
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunAdminListPendingUserExpertApplicationsReq {}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunAdminListPendingUserExpertApplicationsRespRow {
-    pub user_id: i64,
-    #[serde(default)]
-    pub name: Option<String>,
-    pub follower_count: i64,
-    pub description: String,
-    pub social_media: String,
-    pub risk_score: f64,
-    pub reputation_score: f64,
-    pub aum: f64,
-}
-
-#[allow(unused_variables)]
-impl DatabaseRequest for FunAdminListPendingUserExpertApplicationsReq {
-    type ResponseRow = FunAdminListPendingUserExpertApplicationsRespRow;
-    fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_admin_list_pending_user_expert_applications();"
-    }
-    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
-        vec![]
-    }
-    fn parse_row(&self, row: Row) -> Result<FunAdminListPendingUserExpertApplicationsRespRow> {
-        let r = FunAdminListPendingUserExpertApplicationsRespRow {
-            user_id: row.try_get(0)?,
-            name: row.try_get(1)?,
-            follower_count: row.try_get(2)?,
-            description: row.try_get(3)?,
-            social_media: row.try_get(4)?,
-            risk_score: row.try_get(5)?,
-            reputation_score: row.try_get(6)?,
-            aum: row.try_get(7)?,
-        };
-        Ok(r)
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserCreateStrategyReq {
     pub user_id: i64,
     pub name: String,
@@ -1639,6 +1464,219 @@ impl DatabaseRequest for FunUserListStrategyInitialTokenRatiosReq {
             strategy_id: row.try_get(4)?,
             created_at: row.try_get(5)?,
             updated_at: row.try_get(6)?,
+        };
+        Ok(r)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAdminListUsersReq {
+    pub limit: i64,
+    pub offset: i64,
+    #[serde(default)]
+    pub user_id: Option<i64>,
+    #[serde(default)]
+    pub address: Option<String>,
+    #[serde(default)]
+    pub username: Option<String>,
+    #[serde(default)]
+    pub email: Option<String>,
+    pub role: EnumRole,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAdminListUsersRespRow {
+    pub user_id: i64,
+    pub public_user_id: i64,
+    #[serde(default)]
+    pub username: Option<String>,
+    pub address: String,
+    pub last_ip: std::net::IpAddr,
+    pub last_login_at: i64,
+    pub login_count: i32,
+    pub role: EnumRole,
+    #[serde(default)]
+    pub email: Option<String>,
+    pub updated_at: i64,
+    pub created_at: i64,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunAdminListUsersReq {
+    type ResponseRow = FunAdminListUsersRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_admin_list_users(a_limit => $1::bigint, a_offset => $2::bigint, a_user_id => $3::bigint, a_address => $4::varchar, a_username => $5::varchar, a_email => $6::varchar, a_role => $7::enum_role);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.limit as &(dyn ToSql + Sync),
+            &self.offset as &(dyn ToSql + Sync),
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.address as &(dyn ToSql + Sync),
+            &self.username as &(dyn ToSql + Sync),
+            &self.email as &(dyn ToSql + Sync),
+            &self.role as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunAdminListUsersRespRow> {
+        let r = FunAdminListUsersRespRow {
+            user_id: row.try_get(0)?,
+            public_user_id: row.try_get(1)?,
+            username: row.try_get(2)?,
+            address: row.try_get(3)?,
+            last_ip: row.try_get(4)?,
+            last_login_at: row.try_get(5)?,
+            login_count: row.try_get(6)?,
+            role: row.try_get(7)?,
+            email: row.try_get(8)?,
+            updated_at: row.try_get(9)?,
+            created_at: row.try_get(10)?,
+        };
+        Ok(r)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAdminSetUserRoleReq {
+    pub user_id: i64,
+    pub role: EnumRole,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAdminSetUserRoleRespRow {}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunAdminSetUserRoleReq {
+    type ResponseRow = FunAdminSetUserRoleRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_admin_set_user_role(a_user_id => $1::bigint, a_role => $2::enum_role);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.role as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunAdminSetUserRoleRespRow> {
+        let r = FunAdminSetUserRoleRespRow {};
+        Ok(r)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAdminSetBlockUserReq {
+    pub user_id: i64,
+    pub blocked: bool,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAdminSetBlockUserRespRow {}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunAdminSetBlockUserReq {
+    type ResponseRow = FunAdminSetBlockUserRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_admin_set_block_user(a_user_id => $1::bigint, a_blocked => $2::boolean);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.blocked as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunAdminSetBlockUserRespRow> {
+        let r = FunAdminSetBlockUserRespRow {};
+        Ok(r)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAdminApproveUserBecomeAdminReq {
+    pub user_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAdminApproveUserBecomeAdminRespRow {
+    pub success: bool,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunAdminApproveUserBecomeAdminReq {
+    type ResponseRow = FunAdminApproveUserBecomeAdminRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_admin_approve_user_become_admin(a_user_id => $1::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![&self.user_id as &(dyn ToSql + Sync)]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunAdminApproveUserBecomeAdminRespRow> {
+        let r = FunAdminApproveUserBecomeAdminRespRow {
+            success: row.try_get(0)?,
+        };
+        Ok(r)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAdminRejectUserBecomeAdminReq {
+    pub admin_user_id: i64,
+    pub user_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAdminRejectUserBecomeAdminRespRow {
+    pub success: bool,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunAdminRejectUserBecomeAdminReq {
+    type ResponseRow = FunAdminRejectUserBecomeAdminRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_admin_reject_user_become_admin(a_admin_user_id => $1::bigint, a_user_id => $2::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.admin_user_id as &(dyn ToSql + Sync),
+            &self.user_id as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunAdminRejectUserBecomeAdminRespRow> {
+        let r = FunAdminRejectUserBecomeAdminRespRow {
+            success: row.try_get(0)?,
+        };
+        Ok(r)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAdminListPendingUserExpertApplicationsReq {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAdminListPendingUserExpertApplicationsRespRow {
+    pub user_id: i64,
+    #[serde(default)]
+    pub name: Option<String>,
+    pub follower_count: i64,
+    pub description: String,
+    pub social_media: String,
+    pub risk_score: f64,
+    pub reputation_score: f64,
+    pub aum: f64,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunAdminListPendingUserExpertApplicationsReq {
+    type ResponseRow = FunAdminListPendingUserExpertApplicationsRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_admin_list_pending_user_expert_applications();"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunAdminListPendingUserExpertApplicationsRespRow> {
+        let r = FunAdminListPendingUserExpertApplicationsRespRow {
+            user_id: row.try_get(0)?,
+            name: row.try_get(1)?,
+            follower_count: row.try_get(2)?,
+            description: row.try_get(3)?,
+            social_media: row.try_get(4)?,
+            risk_score: row.try_get(5)?,
+            reputation_score: row.try_get(6)?,
+            aum: row.try_get(7)?,
         };
         Ok(r)
     }

@@ -3,64 +3,6 @@ use model::types::*;
 pub fn get_user_pg_func() -> Vec<ProceduralFunction> {
     vec![
         ProceduralFunction::new(
-            "fun_admin_list_users",
-            vec![
-                Field::new("offset", Type::Int),
-                Field::new("limit", Type::Int),
-                Field::new("user_id", Type::optional(Type::BigInt)),
-                Field::new("email", Type::optional(Type::String)),
-                Field::new("address", Type::optional(Type::String)),
-                Field::new("role", Type::optional(Type::enum_ref("role"))),
-            ],
-            vec![
-                Field::new("user_id", Type::BigInt),
-                Field::new("email", Type::String),
-                Field::new("address", Type::String),
-                Field::new("role", Type::enum_ref("role")),
-                Field::new("updated_at", Type::Second),
-                Field::new("created_at", Type::Second),
-            ],
-            r#"
-BEGIN
-    RETURN QUERY SELECT
-        u.pkey_id,
-        u.email,
-        u.address,
-        u.role,
-        u.updated_at::int,
-        u.created_at::int
-    FROM tbl.user AS u
-    WHERE a_user_id IS NOT NULL OR u.pkey_id = a_user_id
-        AND a_email IS NOT NULL OR u.email = a_email
-        AND a_address IS NOT NULL OR u.address = a_address
-        AND a_role IS NOT NULL OR u.role = a_role
-    ORDER BY user_id
-    OFFSET a_offset
-    LIMIT a_limit;
-END
-        "#,
-        ),
-        ProceduralFunction::new(
-            "fun_admin_assign_role",
-            vec![
-                Field::new("operator_user_id", Type::BigInt),
-                Field::new("user_id", Type::BigInt),
-                Field::new("new_role", Type::enum_ref("role")),
-            ],
-            vec![],
-            r#"
-DECLARE
-    _operator_role enum_role;
-BEGIN
-    SELECT role FROM tbl.user WHERE pkey_id = a_operator_user_id INTO STRICT _operator_role;
-    IF _operator_role <> 'admin' THEN
-        RAISE SQLSTATE 'R000S'; -- InvalidRole
-    END IF;
-    UPDATE tbl.user SET role = a_new_role WHERE pkey_id = a_user_id;
-END
-        "#,
-        ),
-        ProceduralFunction::new(
             "fun_user_follow_strategy",
             vec![
                 Field::new("user_id", Type::BigInt),
@@ -600,62 +542,6 @@ END
 BEGIN
     UPDATE tbl.user SET pending_expert = TRUE WHERE pkey_id = a_user_id AND role = 'user';
     RETURN QUERY SELECT TRUE;
-END
-"#,
-        ),
-        ProceduralFunction::new(
-            "fun_admin_approve_user_become_admin",
-            vec![Field::new("user_id", Type::BigInt)],
-            vec![Field::new("success", Type::Boolean)],
-            r#"
-BEGIN
-    UPDATE tbl.user SET pending_expert = FALSE AND role = 'expert' WHERE pkey_id = a_user_id AND role = 'user';
-    RETURN QUERY SELECT TRUE;
-END
-"#,
-        ),
-        ProceduralFunction::new(
-            "fun_admin_reject_user_become_admin",
-            vec![
-                Field::new("admin_user_id", Type::BigInt),
-                Field::new("user_id", Type::BigInt),
-            ],
-            vec![Field::new("success", Type::Boolean)],
-            r#"
-BEGIN
-    UPDATE tbl.user SET pending_expert = FALSE WHERE pkey_id = a_user_id;
-    RETURN QUERY SELECT TRUE;
-END
-"#,
-        ),
-        ProceduralFunction::new(
-            "fun_admin_list_pending_user_expert_applications",
-            vec![],
-            vec![
-                Field::new("user_id", Type::BigInt),
-                Field::new("name", Type::optional(Type::String)),
-                Field::new("follower_count", Type::BigInt),
-                Field::new("description", Type::String),
-                Field::new("social_media", Type::String),
-                Field::new("risk_score", Type::Numeric),
-                Field::new("reputation_score", Type::Numeric),
-                Field::new("aum", Type::Numeric),
-            ],
-            r#"
-BEGIN
-    RETURN QUERY SELECT a.pkey_id                  AS expert_id,
-                        a.username                 AS name,
-                        (SELECT COUNT(*)
-                         FROM tbl.user_follow_expert
-                         WHERE fkey_expert_id = a.pkey_id
-                           AND unfollowed = FALSE) AS follower_count,
-                        ''::varchar                AS description,
-                        ''::varchar                AS social_media,
-                        0.0::double precision      AS risk_score,
-                        0.0::double precision      AS reputation_score,
-                        0.0::double precision      AS aum
-                 FROM tbl."user" AS a
-                 WHERE a.pending_expert = TRUE;
 END
 "#,
         ),

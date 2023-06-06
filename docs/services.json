@@ -1408,96 +1408,6 @@
           "json_schema": null
         },
         {
-          "name": "AdminApproveUserBecomeExpert",
-          "code": 20230,
-          "parameters": [
-            {
-              "name": "user_id",
-              "ty": "BigInt"
-            }
-          ],
-          "returns": [
-            {
-              "name": "success",
-              "ty": "Boolean"
-            }
-          ],
-          "stream_response": [],
-          "description": "Admin approves a user to become an expert",
-          "json_schema": null
-        },
-        {
-          "name": "AdminRejectUserBecomeExpert",
-          "code": 20231,
-          "parameters": [
-            {
-              "name": "user_id",
-              "ty": "BigInt"
-            }
-          ],
-          "returns": [
-            {
-              "name": "success",
-              "ty": "Boolean"
-            }
-          ],
-          "stream_response": [],
-          "description": "Admin approves a user to become an expert",
-          "json_schema": null
-        },
-        {
-          "name": "AdminListPendingExpertApplications",
-          "code": 20240,
-          "parameters": [],
-          "returns": [
-            {
-              "name": "users",
-              "ty": {
-                "DataTable": {
-                  "name": "ListPendingExpertApplicationsRow",
-                  "fields": [
-                    {
-                      "name": "user_id",
-                      "ty": "BigInt"
-                    },
-                    {
-                      "name": "name",
-                      "ty": "String"
-                    },
-                    {
-                      "name": "follower_count",
-                      "ty": "Int"
-                    },
-                    {
-                      "name": "description",
-                      "ty": "String"
-                    },
-                    {
-                      "name": "social_media",
-                      "ty": "String"
-                    },
-                    {
-                      "name": "risk_score",
-                      "ty": "Numeric"
-                    },
-                    {
-                      "name": "reputation_score",
-                      "ty": "Numeric"
-                    },
-                    {
-                      "name": "aum",
-                      "ty": "Numeric"
-                    }
-                  ]
-                }
-              }
-            }
-          ],
-          "stream_response": [],
-          "description": "Admin approves a user to become an expert",
-          "json_schema": null
-        },
-        {
           "name": "UserCreateStrategy",
           "code": 20250,
           "parameters": [
@@ -1883,7 +1793,245 @@
     {
       "name": "admin",
       "id": 3,
-      "endpoints": []
+      "endpoints": [
+        {
+          "name": "AdminListUsers",
+          "code": 30010,
+          "parameters": [
+            {
+              "name": "limit",
+              "ty": "BigInt"
+            },
+            {
+              "name": "offset",
+              "ty": "BigInt"
+            },
+            {
+              "name": "user_id",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "address",
+              "ty": {
+                "Optional": "String"
+              }
+            },
+            {
+              "name": "username",
+              "ty": {
+                "Optional": "String"
+              }
+            },
+            {
+              "name": "email",
+              "ty": {
+                "Optional": "String"
+              }
+            },
+            {
+              "name": "role",
+              "ty": {
+                "EnumRef": "role"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "name": "users",
+              "ty": {
+                "DataTable": {
+                  "name": "ListUserRow",
+                  "fields": [
+                    {
+                      "name": "user_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "public_user_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "username",
+                      "ty": {
+                        "Optional": "String"
+                      }
+                    },
+                    {
+                      "name": "address",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "last_ip",
+                      "ty": "Inet"
+                    },
+                    {
+                      "name": "last_login_at",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "login_count",
+                      "ty": "Int"
+                    },
+                    {
+                      "name": "role",
+                      "ty": {
+                        "EnumRef": "role"
+                      }
+                    },
+                    {
+                      "name": "email",
+                      "ty": {
+                        "Optional": "String"
+                      }
+                    },
+                    {
+                      "name": "updated_at",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "created_at",
+                      "ty": "BigInt"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "stream_response": [],
+          "description": "",
+          "json_schema": null
+        },
+        {
+          "name": "AdminSetUserRole",
+          "code": 30020,
+          "parameters": [
+            {
+              "name": "user_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "role",
+              "ty": {
+                "EnumRef": "role"
+              }
+            }
+          ],
+          "returns": [],
+          "stream_response": [],
+          "description": "",
+          "json_schema": null
+        },
+        {
+          "name": "AdminSetBlockUser",
+          "code": 30030,
+          "parameters": [
+            {
+              "name": "user_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "blocked",
+              "ty": "Boolean"
+            }
+          ],
+          "returns": [],
+          "stream_response": [],
+          "description": "",
+          "json_schema": null
+        },
+        {
+          "name": "AdminListPendingExpertApplications",
+          "code": 20240,
+          "parameters": [],
+          "returns": [
+            {
+              "name": "users",
+              "ty": {
+                "DataTable": {
+                  "name": "ListPendingExpertApplicationsRow",
+                  "fields": [
+                    {
+                      "name": "user_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "follower_count",
+                      "ty": "Int"
+                    },
+                    {
+                      "name": "description",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "social_media",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "risk_score",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "reputation_score",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "aum",
+                      "ty": "Numeric"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "stream_response": [],
+          "description": "Admin approves a user to become an expert",
+          "json_schema": null
+        },
+        {
+          "name": "AdminApproveUserBecomeExpert",
+          "code": 20230,
+          "parameters": [
+            {
+              "name": "user_id",
+              "ty": "BigInt"
+            }
+          ],
+          "returns": [
+            {
+              "name": "success",
+              "ty": "Boolean"
+            }
+          ],
+          "stream_response": [],
+          "description": "Admin approves a user to become an expert",
+          "json_schema": null
+        },
+        {
+          "name": "AdminRejectUserBecomeExpert",
+          "code": 20231,
+          "parameters": [
+            {
+              "name": "user_id",
+              "ty": "BigInt"
+            }
+          ],
+          "returns": [
+            {
+              "name": "success",
+              "ty": "Boolean"
+            }
+          ],
+          "stream_response": [],
+          "description": "Admin approves a user to become an expert",
+          "json_schema": null
+        }
+      ]
     },
     {
       "name": "watcher",
