@@ -2,29 +2,34 @@ use crate::error_code::ErrorCode;
 use crate::toolbox::{RequestContext, Toolbox};
 use crate::ws::*;
 use core::marker::{Send, Sync};
-use serde::de::DeserializeOwned;
-use serde::ser::Serialize;
 use serde_json::Value;
-use std::sync::Arc;
-
+use std::marker::PhantomData;
+pub struct SpawnedResponse<T> {
+    _phantom: PhantomData<T>,
+}
+impl<T> SpawnedResponse<T> {
+    pub fn new() -> Self {
+        Self {
+            _phantom: Default::default(),
+        }
+    }
+}
 pub trait RequestHandler: Send + Sync {
-    type Request: DeserializeOwned;
-    type Response: Serialize + 'static;
+    type Request: WsRequest;
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<Connection>,
         req: Self::Request,
-    );
+    ) -> SpawnedResponse<Self::Request>;
 }
 
 pub trait RequestHandlerErased: Send + Sync {
-    fn handle(&self, toolbox: &Toolbox, ctx: RequestContext, conn: Arc<Connection>, req: Value);
+    fn handle(&self, toolbox: &Toolbox, ctx: RequestContext, req: Value);
 }
 
 impl<T: RequestHandler> RequestHandlerErased for T {
-    fn handle(&self, toolbox: &Toolbox, ctx: RequestContext, conn: Arc<Connection>, req: Value) {
+    fn handle(&self, toolbox: &Toolbox, ctx: RequestContext, req: Value) {
         let data: T::Request = match serde_json::from_value(req) {
             Ok(data) => data,
             Err(err) => {
@@ -40,6 +45,6 @@ impl<T: RequestHandler> RequestHandlerErased for T {
             }
         };
 
-        RequestHandler::handle(self, toolbox, ctx, conn, data)
+        RequestHandler::handle(self, toolbox, ctx, data);
     }
 }

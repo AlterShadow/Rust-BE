@@ -6,8 +6,8 @@ use std::sync::Arc;
 use tokio_tungstenite::tungstenite::Message;
 use tokio_tungstenite::WebSocketStream;
 
-use crate::ws::basics::Connection;
-use crate::ws::WsResponse;
+use crate::ws::basics::WsConnection;
+use crate::ws::WsResponseValue;
 
 pub struct WebsocketStates<S> {
     connection: DashMap<u32, Arc<WsStreamSink<S>>>,
@@ -39,7 +39,7 @@ impl<S> WebsocketStates<S> {
         &self,
         connection_id: u32,
         ws_stream: SplitSink<WebSocketStream<S>, Message>,
-        conn: Arc<Connection>,
+        conn: Arc<WsConnection>,
     ) {
         self.connection.insert(
             connection_id,
@@ -61,6 +61,6 @@ pub struct WsStreamSink<S> {
     pub ws_sink: tokio::sync::Mutex<SplitSink<WebSocketStream<S>, Message>>,
 }
 pub struct WsStreamState {
-    pub conn: Arc<Connection>,
-    pub message_queue: SegQueue<WsResponse>,
+    pub conn: Arc<WsConnection>,
+    pub message_queue: SegQueue<WsResponseValue>,
 }

@@ -1,4 +1,5 @@
 use lib::error_code::ErrorCode;
+use lib::ws::*;
 use num_derive::FromPrimitive;
 use serde::*;
 use strum_macros::{Display, EnumString};
@@ -194,6 +195,155 @@ pub enum EnumService {
     ///
     #[postgres(name = "watcher")]
     Watcher = 4,
+}
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    ToSql,
+    FromSql,
+    Serialize,
+    Deserialize,
+    FromPrimitive,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    EnumString,
+    Display,
+    Hash,
+)]
+#[postgres(name = "enum_Endpoint")]
+pub enum EnumEndpoint {
+    ///
+    #[postgres(name = "Login")]
+    Login = 10020,
+    ///
+    #[postgres(name = "Signup")]
+    Signup = 10010,
+    ///
+    #[postgres(name = "Authorize")]
+    Authorize = 10030,
+    ///
+    #[postgres(name = "Logout")]
+    Logout = 10040,
+    ///
+    #[postgres(name = "UserFollowStrategy")]
+    UserFollowStrategy = 20040,
+    ///
+    #[postgres(name = "UserListFollowedStrategies")]
+    UserListFollowedStrategies = 20050,
+    ///
+    #[postgres(name = "UserUnfollowStrategy")]
+    UserUnfollowStrategy = 20060,
+    ///
+    #[postgres(name = "UserListStrategies")]
+    UserListStrategies = 20061,
+    ///
+    #[postgres(name = "UserGetStrategy")]
+    UserGetStrategy = 20062,
+    ///
+    #[postgres(name = "UserGetStrategyStatistics")]
+    UserGetStrategyStatistics = 20070,
+    ///
+    #[postgres(name = "UserGetStrategiesStatistics")]
+    UserGetStrategiesStatistics = 20071,
+    ///
+    #[postgres(name = "UserBackStrategy")]
+    UserBackStrategy = 20080,
+    ///
+    #[postgres(name = "UserRequestRefund")]
+    UserRequestRefund = 20081,
+    ///
+    #[postgres(name = "UserListBackedStrategies")]
+    UserListBackedStrategies = 20090,
+    ///
+    #[postgres(name = "UserListBackStrategyHistory")]
+    UserListBackStrategyHistory = 20100,
+    ///
+    #[postgres(name = "UserListExitStrategyHistory")]
+    UserListExitStrategyHistory = 20120,
+    ///
+    #[postgres(name = "UserFollowExpert")]
+    UserFollowExpert = 20130,
+    ///
+    #[postgres(name = "UserListFollowedExperts")]
+    UserListFollowedExperts = 20140,
+    ///
+    #[postgres(name = "UserUnfollowExpert")]
+    UserUnfollowExpert = 20150,
+    ///
+    #[postgres(name = "UserListExperts")]
+    UserListExperts = 20160,
+    ///
+    #[postgres(name = "UserListTopPerformingExperts")]
+    UserListTopPerformingExperts = 20161,
+    ///
+    #[postgres(name = "UserListFeaturedExperts")]
+    UserListFeaturedExperts = 20162,
+    ///
+    #[postgres(name = "UserGetExpertProfile")]
+    UserGetExpertProfile = 20170,
+    ///
+    #[postgres(name = "UserGetUserProfile")]
+    UserGetUserProfile = 20180,
+    ///
+    #[postgres(name = "UserRegisterWallet")]
+    UserRegisterWallet = 20190,
+    ///
+    #[postgres(name = "UserListWallets")]
+    UserListWallets = 20200,
+    ///
+    #[postgres(name = "UserDeregisterWallet")]
+    UserDeregisterWallet = 20210,
+    ///
+    #[postgres(name = "UserApplyBecomeExpert")]
+    UserApplyBecomeExpert = 20220,
+    ///
+    #[postgres(name = "UserCreateStrategy")]
+    UserCreateStrategy = 20250,
+    ///
+    #[postgres(name = "UserUpdateStrategy")]
+    UserUpdateStrategy = 20260,
+    ///
+    #[postgres(name = "UserAddStrategyWatchingWallet")]
+    UserAddStrategyWatchingWallet = 20270,
+    ///
+    #[postgres(name = "UserRemoveStrategyWatchingWallet")]
+    UserRemoveStrategyWatchingWallet = 20280,
+    ///
+    #[postgres(name = "UserListStrategyWatchingWallets")]
+    UserListStrategyWatchingWallets = 20290,
+    ///
+    #[postgres(name = "UserListWalletActivityHistory")]
+    UserListWalletActivityHistory = 20300,
+    ///
+    #[postgres(name = "UserAddStrategyInitialTokenRatio")]
+    UserAddStrategyInitialTokenRatio = 20310,
+    ///
+    #[postgres(name = "UserRemoveStrategyInitialTokenRatio")]
+    UserRemoveStrategyInitialTokenRatio = 20320,
+    ///
+    #[postgres(name = "UserListStrategyInitialTokenRatio")]
+    UserListStrategyInitialTokenRatio = 20330,
+    ///
+    #[postgres(name = "AdminListUsers")]
+    AdminListUsers = 30010,
+    ///
+    #[postgres(name = "AdminSetUserRole")]
+    AdminSetUserRole = 30020,
+    ///
+    #[postgres(name = "AdminSetBlockUser")]
+    AdminSetBlockUser = 30030,
+    ///
+    #[postgres(name = "AdminListPendingExpertApplications")]
+    AdminListPendingExpertApplications = 20240,
+    ///
+    #[postgres(name = "AdminApproveUserBecomeExpert")]
+    AdminApproveUserBecomeExpert = 20230,
+    ///
+    #[postgres(name = "AdminRejectUserBecomeExpert")]
+    AdminRejectUserBecomeExpert = 20231,
 }
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -1258,4 +1408,347 @@ pub struct WatchingWalletRow {
     pub blockchain: EnumBlockChain,
     pub dex: String,
     pub ratio_distribution: f64,
+}
+impl WsRequest for LoginRequest {
+    type Response = LoginResponse;
+    const METHOD_ID: u32 = 10020;
+}
+impl WsResponse for LoginResponse {
+    type Request = LoginRequest;
+}
+
+impl WsRequest for SignupRequest {
+    type Response = SignupResponse;
+    const METHOD_ID: u32 = 10010;
+}
+impl WsResponse for SignupResponse {
+    type Request = SignupRequest;
+}
+
+impl WsRequest for AuthorizeRequest {
+    type Response = AuthorizeResponse;
+    const METHOD_ID: u32 = 10030;
+}
+impl WsResponse for AuthorizeResponse {
+    type Request = AuthorizeRequest;
+}
+
+impl WsRequest for LogoutRequest {
+    type Response = LogoutResponse;
+    const METHOD_ID: u32 = 10040;
+}
+impl WsResponse for LogoutResponse {
+    type Request = LogoutRequest;
+}
+
+impl WsRequest for UserFollowStrategyRequest {
+    type Response = UserFollowStrategyResponse;
+    const METHOD_ID: u32 = 20040;
+}
+impl WsResponse for UserFollowStrategyResponse {
+    type Request = UserFollowStrategyRequest;
+}
+
+impl WsRequest for UserListFollowedStrategiesRequest {
+    type Response = UserListFollowedStrategiesResponse;
+    const METHOD_ID: u32 = 20050;
+}
+impl WsResponse for UserListFollowedStrategiesResponse {
+    type Request = UserListFollowedStrategiesRequest;
+}
+
+impl WsRequest for UserUnfollowStrategyRequest {
+    type Response = UserUnfollowStrategyResponse;
+    const METHOD_ID: u32 = 20060;
+}
+impl WsResponse for UserUnfollowStrategyResponse {
+    type Request = UserUnfollowStrategyRequest;
+}
+
+impl WsRequest for UserListStrategiesRequest {
+    type Response = UserListStrategiesResponse;
+    const METHOD_ID: u32 = 20061;
+}
+impl WsResponse for UserListStrategiesResponse {
+    type Request = UserListStrategiesRequest;
+}
+
+impl WsRequest for UserGetStrategyRequest {
+    type Response = UserGetStrategyResponse;
+    const METHOD_ID: u32 = 20062;
+}
+impl WsResponse for UserGetStrategyResponse {
+    type Request = UserGetStrategyRequest;
+}
+
+impl WsRequest for UserGetStrategyStatisticsRequest {
+    type Response = UserGetStrategyStatisticsResponse;
+    const METHOD_ID: u32 = 20070;
+}
+impl WsResponse for UserGetStrategyStatisticsResponse {
+    type Request = UserGetStrategyStatisticsRequest;
+}
+
+impl WsRequest for UserGetStrategiesStatisticsRequest {
+    type Response = UserGetStrategiesStatisticsResponse;
+    const METHOD_ID: u32 = 20071;
+}
+impl WsResponse for UserGetStrategiesStatisticsResponse {
+    type Request = UserGetStrategiesStatisticsRequest;
+}
+
+impl WsRequest for UserBackStrategyRequest {
+    type Response = UserBackStrategyResponse;
+    const METHOD_ID: u32 = 20080;
+}
+impl WsResponse for UserBackStrategyResponse {
+    type Request = UserBackStrategyRequest;
+}
+
+impl WsRequest for UserRequestRefundRequest {
+    type Response = UserRequestRefundResponse;
+    const METHOD_ID: u32 = 20081;
+}
+impl WsResponse for UserRequestRefundResponse {
+    type Request = UserRequestRefundRequest;
+}
+
+impl WsRequest for UserListBackedStrategiesRequest {
+    type Response = UserListBackedStrategiesResponse;
+    const METHOD_ID: u32 = 20090;
+}
+impl WsResponse for UserListBackedStrategiesResponse {
+    type Request = UserListBackedStrategiesRequest;
+}
+
+impl WsRequest for UserListBackStrategyHistoryRequest {
+    type Response = UserListBackStrategyHistoryResponse;
+    const METHOD_ID: u32 = 20100;
+}
+impl WsResponse for UserListBackStrategyHistoryResponse {
+    type Request = UserListBackStrategyHistoryRequest;
+}
+
+impl WsRequest for UserListExitStrategyHistoryRequest {
+    type Response = UserListExitStrategyHistoryResponse;
+    const METHOD_ID: u32 = 20120;
+}
+impl WsResponse for UserListExitStrategyHistoryResponse {
+    type Request = UserListExitStrategyHistoryRequest;
+}
+
+impl WsRequest for UserFollowExpertRequest {
+    type Response = UserFollowExpertResponse;
+    const METHOD_ID: u32 = 20130;
+}
+impl WsResponse for UserFollowExpertResponse {
+    type Request = UserFollowExpertRequest;
+}
+
+impl WsRequest for UserListFollowedExpertsRequest {
+    type Response = UserListFollowedExpertsResponse;
+    const METHOD_ID: u32 = 20140;
+}
+impl WsResponse for UserListFollowedExpertsResponse {
+    type Request = UserListFollowedExpertsRequest;
+}
+
+impl WsRequest for UserUnfollowExpertRequest {
+    type Response = UserUnfollowExpertResponse;
+    const METHOD_ID: u32 = 20150;
+}
+impl WsResponse for UserUnfollowExpertResponse {
+    type Request = UserUnfollowExpertRequest;
+}
+
+impl WsRequest for UserListExpertsRequest {
+    type Response = UserListExpertsResponse;
+    const METHOD_ID: u32 = 20160;
+}
+impl WsResponse for UserListExpertsResponse {
+    type Request = UserListExpertsRequest;
+}
+
+impl WsRequest for UserListTopPerformingExpertsRequest {
+    type Response = UserListTopPerformingExpertsResponse;
+    const METHOD_ID: u32 = 20161;
+}
+impl WsResponse for UserListTopPerformingExpertsResponse {
+    type Request = UserListTopPerformingExpertsRequest;
+}
+
+impl WsRequest for UserListFeaturedExpertsRequest {
+    type Response = UserListFeaturedExpertsResponse;
+    const METHOD_ID: u32 = 20162;
+}
+impl WsResponse for UserListFeaturedExpertsResponse {
+    type Request = UserListFeaturedExpertsRequest;
+}
+
+impl WsRequest for UserGetExpertProfileRequest {
+    type Response = UserGetExpertProfileResponse;
+    const METHOD_ID: u32 = 20170;
+}
+impl WsResponse for UserGetExpertProfileResponse {
+    type Request = UserGetExpertProfileRequest;
+}
+
+impl WsRequest for UserGetUserProfileRequest {
+    type Response = UserGetUserProfileResponse;
+    const METHOD_ID: u32 = 20180;
+}
+impl WsResponse for UserGetUserProfileResponse {
+    type Request = UserGetUserProfileRequest;
+}
+
+impl WsRequest for UserRegisterWalletRequest {
+    type Response = UserRegisterWalletResponse;
+    const METHOD_ID: u32 = 20190;
+}
+impl WsResponse for UserRegisterWalletResponse {
+    type Request = UserRegisterWalletRequest;
+}
+
+impl WsRequest for UserListWalletsRequest {
+    type Response = UserListWalletsResponse;
+    const METHOD_ID: u32 = 20200;
+}
+impl WsResponse for UserListWalletsResponse {
+    type Request = UserListWalletsRequest;
+}
+
+impl WsRequest for UserDeregisterWalletRequest {
+    type Response = UserDeregisterWalletResponse;
+    const METHOD_ID: u32 = 20210;
+}
+impl WsResponse for UserDeregisterWalletResponse {
+    type Request = UserDeregisterWalletRequest;
+}
+
+impl WsRequest for UserApplyBecomeExpertRequest {
+    type Response = UserApplyBecomeExpertResponse;
+    const METHOD_ID: u32 = 20220;
+}
+impl WsResponse for UserApplyBecomeExpertResponse {
+    type Request = UserApplyBecomeExpertRequest;
+}
+
+impl WsRequest for UserCreateStrategyRequest {
+    type Response = UserCreateStrategyResponse;
+    const METHOD_ID: u32 = 20250;
+}
+impl WsResponse for UserCreateStrategyResponse {
+    type Request = UserCreateStrategyRequest;
+}
+
+impl WsRequest for UserUpdateStrategyRequest {
+    type Response = UserUpdateStrategyResponse;
+    const METHOD_ID: u32 = 20260;
+}
+impl WsResponse for UserUpdateStrategyResponse {
+    type Request = UserUpdateStrategyRequest;
+}
+
+impl WsRequest for UserAddStrategyWatchingWalletRequest {
+    type Response = UserAddStrategyWatchingWalletResponse;
+    const METHOD_ID: u32 = 20270;
+}
+impl WsResponse for UserAddStrategyWatchingWalletResponse {
+    type Request = UserAddStrategyWatchingWalletRequest;
+}
+
+impl WsRequest for UserRemoveStrategyWatchingWalletRequest {
+    type Response = UserRemoveStrategyWatchingWalletResponse;
+    const METHOD_ID: u32 = 20280;
+}
+impl WsResponse for UserRemoveStrategyWatchingWalletResponse {
+    type Request = UserRemoveStrategyWatchingWalletRequest;
+}
+
+impl WsRequest for UserListStrategyWatchingWalletsRequest {
+    type Response = UserListStrategyWatchingWalletsResponse;
+    const METHOD_ID: u32 = 20290;
+}
+impl WsResponse for UserListStrategyWatchingWalletsResponse {
+    type Request = UserListStrategyWatchingWalletsRequest;
+}
+
+impl WsRequest for UserListWalletActivityHistoryRequest {
+    type Response = UserListWalletActivityHistoryResponse;
+    const METHOD_ID: u32 = 20300;
+}
+impl WsResponse for UserListWalletActivityHistoryResponse {
+    type Request = UserListWalletActivityHistoryRequest;
+}
+
+impl WsRequest for UserAddStrategyInitialTokenRatioRequest {
+    type Response = UserAddStrategyInitialTokenRatioResponse;
+    const METHOD_ID: u32 = 20310;
+}
+impl WsResponse for UserAddStrategyInitialTokenRatioResponse {
+    type Request = UserAddStrategyInitialTokenRatioRequest;
+}
+
+impl WsRequest for UserRemoveStrategyInitialTokenRatioRequest {
+    type Response = UserRemoveStrategyInitialTokenRatioResponse;
+    const METHOD_ID: u32 = 20320;
+}
+impl WsResponse for UserRemoveStrategyInitialTokenRatioResponse {
+    type Request = UserRemoveStrategyInitialTokenRatioRequest;
+}
+
+impl WsRequest for UserListStrategyInitialTokenRatioRequest {
+    type Response = UserListStrategyInitialTokenRatioResponse;
+    const METHOD_ID: u32 = 20330;
+}
+impl WsResponse for UserListStrategyInitialTokenRatioResponse {
+    type Request = UserListStrategyInitialTokenRatioRequest;
+}
+
+impl WsRequest for AdminListUsersRequest {
+    type Response = AdminListUsersResponse;
+    const METHOD_ID: u32 = 30010;
+}
+impl WsResponse for AdminListUsersResponse {
+    type Request = AdminListUsersRequest;
+}
+
+impl WsRequest for AdminSetUserRoleRequest {
+    type Response = AdminSetUserRoleResponse;
+    const METHOD_ID: u32 = 30020;
+}
+impl WsResponse for AdminSetUserRoleResponse {
+    type Request = AdminSetUserRoleRequest;
+}
+
+impl WsRequest for AdminSetBlockUserRequest {
+    type Response = AdminSetBlockUserResponse;
+    const METHOD_ID: u32 = 30030;
+}
+impl WsResponse for AdminSetBlockUserResponse {
+    type Request = AdminSetBlockUserRequest;
+}
+
+impl WsRequest for AdminListPendingExpertApplicationsRequest {
+    type Response = AdminListPendingExpertApplicationsResponse;
+    const METHOD_ID: u32 = 20240;
+}
+impl WsResponse for AdminListPendingExpertApplicationsResponse {
+    type Request = AdminListPendingExpertApplicationsRequest;
+}
+
+impl WsRequest for AdminApproveUserBecomeExpertRequest {
+    type Response = AdminApproveUserBecomeExpertResponse;
+    const METHOD_ID: u32 = 20230;
+}
+impl WsResponse for AdminApproveUserBecomeExpertResponse {
+    type Request = AdminApproveUserBecomeExpertRequest;
+}
+
+impl WsRequest for AdminRejectUserBecomeExpertRequest {
+    type Response = AdminRejectUserBecomeExpertResponse;
+    const METHOD_ID: u32 = 20231;
+}
+impl WsResponse for AdminRejectUserBecomeExpertResponse {
+    type Request = AdminRejectUserBecomeExpertRequest;
 }

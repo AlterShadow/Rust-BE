@@ -3,7 +3,7 @@ use eyre::*;
 use gen::database::*;
 use gen::model::*;
 use lib::database::DbClient;
-use lib::handler::RequestHandler;
+use lib::handler::{RequestHandler, SpawnedResponse};
 use lib::toolbox::*;
 use lib::utils::hex_decode;
 use lib::ws::*;
@@ -19,15 +19,13 @@ pub struct MethodAuthSignup;
 
 impl RequestHandler for MethodAuthSignup {
     type Request = SignupRequest;
-    type Response = SignupResponse;
 
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<Connection>,
         req: Self::Request,
-    ) {
+    ) -> SpawnedResponse<Self::Request> {
         info!("Signup request: {:?}", req);
         let db: DbClient = toolbox.get_db();
         let db_auth: DbClient = toolbox.get_nth_db(1);
@@ -73,7 +71,7 @@ impl RequestHandler for MethodAuthSignup {
                     preferred_language: "en".to_string(),
                     agreed_tos,
                     agreed_privacy,
-                    ip_address: conn.address.ip(),
+                    ip_address: ctx.ip_addr,
                     username: req.username.clone(),
                     age: None,
                     public_id,
@@ -87,7 +85,7 @@ impl RequestHandler for MethodAuthSignup {
                     preferred_language: "en".to_string(),
                     agreed_tos,
                     agreed_privacy,
-                    ip_address: conn.address.ip(),
+                    ip_address: ctx.ip_addr,
                     username: req.username,
                     age: None,
                     public_id,
@@ -98,7 +96,7 @@ impl RequestHandler for MethodAuthSignup {
                 address: address_string,
                 user_id: public_id,
             })
-        });
+        })
     }
 }
 
@@ -106,15 +104,14 @@ pub struct MethodAuthLogin;
 
 impl RequestHandler for MethodAuthLogin {
     type Request = LoginRequest;
-    type Response = LoginResponse;
 
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<Connection>,
+
         req: Self::Request,
-    ) {
+    ) -> SpawnedResponse<Self::Request> {
         info!("Login request: {:?}", req);
         let db_auth: DbClient = toolbox.get_nth_db(1);
         toolbox.spawn_response(ctx, async move {
@@ -143,7 +140,7 @@ impl RequestHandler for MethodAuthLogin {
                     service_code: service_code as _,
                     device_id: req.device_id,
                     device_os: req.device_os,
-                    ip_address: conn.address.ip(),
+                    ip_address: ctx.ip_addr,
                 })
                 .await?;
             let row = data
@@ -174,15 +171,13 @@ pub struct MethodAuthAuthorize {
 }
 impl RequestHandler for MethodAuthAuthorize {
     type Request = AuthorizeRequest;
-    type Response = AuthorizeResponse;
 
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<Connection>,
         req: Self::Request,
-    ) {
+    ) -> SpawnedResponse<Self::Request> {
         info!("Authorize request: {:?}", req);
         let db_auth: DbClient = toolbox.get_nth_db(1);
         let accepted_service = self.accept_service;
@@ -211,7 +206,7 @@ impl RequestHandler for MethodAuthAuthorize {
                     service,
                     device_id: req.device_id,
                     device_os: req.device_os,
-                    ip_address: conn.address.ip(),
+                    ip_address: ctx.ip_addr,
                 })
                 .await
                 .context("FunAuthAuthorizeReq")?;
@@ -231,15 +226,13 @@ impl RequestHandler for MethodAuthAuthorize {
 pub struct MethodAuthLogout;
 impl RequestHandler for MethodAuthLogout {
     type Request = LogoutRequest;
-    type Response = LogoutResponse;
 
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<Connection>,
         _req: Self::Request,
-    ) {
+    ) -> SpawnedResponse<Self::Request> {
         let db_auth: DbClient = toolbox.get_nth_db(1);
 
         toolbox.spawn_response(ctx, async move {

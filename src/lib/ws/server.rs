@@ -5,7 +5,7 @@ use futures::StreamExt;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::net::{SocketAddr, ToSocketAddrs};
-use std::sync::atomic::AtomicU32;
+use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::io::{AsyncRead, AsyncWrite};
@@ -23,12 +23,12 @@ use crate::handler::*;
 use crate::listener::{ConnectionListener, TcpListener, TlsListener};
 use crate::toolbox::{RequestContext, Toolbox};
 use crate::utils::{get_conn_id, get_log_id};
-use crate::ws::basics::{Connection, WsRequest};
+use crate::ws::basics::{WsConnection, WsRequestValue};
 use crate::ws::SimpleAuthContoller;
 use crate::ws::VerifyProtocol;
 use crate::ws::WebsocketStates;
 use crate::ws::WsEndpoint;
-use crate::ws::WsResponse;
+use crate::ws::WsResponseValue;
 use crate::ws::WsStreamSink;
 use crate::ws::{request_error_to_resp, WsStreamState};
 use crate::ws::{AuthController, ConnectionId};
@@ -88,7 +88,7 @@ impl WebsocketServer {
             let (tx, mut rx) = mpsc::channel(1);
             let hs = tokio_tungstenite::accept_hdr_async(stream, VerifyProtocol { addr, tx }).await;
             let stream = wrap_ws_error(hs)?;
-            let conn = Arc::new(Connection {
+            let conn = Arc::new(WsConnection {
                 connection_id: get_conn_id(),
                 user_id: Default::default(),
                 role: AtomicU32::new(0),
@@ -114,6 +114,8 @@ impl WebsocketServer {
                 seq: 0,
                 method: 0,
                 log_id: conn.log_id.clone(),
+                role: conn.role.load(Ordering::Relaxed),
+                ip_addr: conn.address.ip(),
             };
             if let Err(err) = auth_result {
                 self.toolbox.send_request_error(
@@ -137,7 +139,7 @@ impl WebsocketServer {
 
     pub async fn recv_msg<S: AsyncRead + AsyncWrite + Unpin + Send + 'static>(
         self: Arc<Self>,
-        conn: Arc<Connection>,
+        conn: Arc<WsConnection>,
         states: Arc<WebsocketStates<S>>,
         mut reader: SplitStream<WebSocketStream<S>>,
     ) {
@@ -148,11 +150,13 @@ impl WebsocketServer {
             seq: 0,
             method: 0,
             log_id: conn.log_id.clone(),
+            role: conn.role.load(Ordering::Relaxed),
+            ip_addr: conn.address.ip(),
         };
         while let Some(msg) = reader.next().await {
             match msg {
                 Ok(req) => {
-                    let obj: Result<WsRequest, _> = match req {
+                    let obj: Result<WsRequestValue, _> = match req {
                         Message::Text(t) => {
                             debug!(?addr, "Handling request {}", t);
 
@@ -210,12 +214,9 @@ impl WebsocketServer {
                             continue;
                         }
                     };
-                    handler.handler.handle(
-                        &self.toolbox,
-                        context.clone(),
-                        Arc::clone(&conn),
-                        req.params,
-                    );
+                    handler
+                        .handler
+                        .handle(&self.toolbox, context.clone(), req.params);
                 }
                 Err(WsError::Protocol(ProtocolError::ResetWithoutClosingHandshake)) => {
                     debug!(?addr, "Receive side terminated");
@@ -241,7 +242,7 @@ impl WebsocketServer {
         while let Some(msg) = state.message_queue.pop() {
             let timeout_operation = async {
                 match &msg {
-                    WsResponse::Close => {
+                    WsResponseValue::Close => {
                         debug!(?addr, "Closing connection");
                         let _ = sink.send(Message::Close(None)).await;
                         let _ = sink.close().await;
@@ -376,9 +377,6 @@ pub fn check_handler<T: RequestHandler + 'static>(schema: &EndpointSchema) -> Re
     let request_name = std::any::type_name::<T::Request>();
     let should_req_name = format!("{}Request", schema.name);
     check_name("Request", request_name, &should_req_name)?;
-    let response_name = std::any::type_name::<T::Response>();
-    let should_resp_name = format!("{}Response", schema.name);
-    check_name("Response", response_name, &should_resp_name)?;
 
     Ok(())
 }

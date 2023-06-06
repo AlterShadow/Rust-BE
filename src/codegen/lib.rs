@@ -13,7 +13,6 @@ mod services;
 mod enums;
 
 pub fn main() -> Result<()> {
-    rust::check_endpoint_codes()?;
     let mut root = env::current_dir()?;
     loop {
         if root.join(".cargo").exists() {
@@ -29,7 +28,6 @@ pub fn main() -> Result<()> {
     rust::gen_model_rs(root, &dir)?;
     sql::gen_model_sql(root)?;
     sql::gen_db_sql(root)?;
-    rust::gen_client_rs(&dir)?;
     rust::gen_db_rs(&dir)?;
     docs::gen_systemd_services(root, "mc2fi", "mc2fi")?;
     docs::gen_error_message_md(root)?;

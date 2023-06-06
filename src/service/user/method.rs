@@ -9,12 +9,11 @@ use eyre::*;
 use gen::database::*;
 use gen::model::*;
 use lib::database::DbClient;
-use lib::handler::RequestHandler;
+use lib::handler::{RequestHandler, SpawnedResponse};
 use lib::toolbox::*;
 use lib::utils::hex_decode;
 use lib::ws::*;
 use std::str::FromStr;
-use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::time::Duration;
 use tracing::info;
@@ -25,14 +24,12 @@ pub fn initial_sp_token_supply() -> U256 {
     U256::from(1000000000u64) * U256::exp10(18)
 }
 
-pub fn ensure_user_role(conn: &Connection, role: EnumRole) -> Result<()> {
-    let user_role = conn.role.load(Ordering::Relaxed);
-
+pub fn ensure_user_role(ctx: RequestContext, role: EnumRole) -> Result<()> {
     ensure!(
-        user_role >= (role as u32),
+        ctx.role >= (role as u32),
         CustomError::new(
             EnumErrorCode::InvalidRole,
-            format!("Requires {} Actual {}", (role as u32), user_role)
+            format!("Requires {} Actual {}", (role as u32), ctx.role)
         )
     );
     Ok(())
@@ -41,18 +38,17 @@ pub struct MethodUserFollowStrategy;
 
 impl RequestHandler for MethodUserFollowStrategy {
     type Request = UserFollowStrategyRequest;
-    type Response = UserFollowStrategyResponse;
 
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<Connection>,
+        conn: Arc<WsConnection>,
         req: Self::Request,
-    ) {
+    ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         toolbox.spawn_response(ctx, async move {
-            ensure_user_role(&conn, EnumRole::User)?;
+            ensure_user_role(ctx, EnumRole::User)?;
 
             let ret = db
                 .execute(FunUserFollowStrategyReq {
@@ -74,18 +70,17 @@ pub struct MethodUserListFollowedStrategies;
 
 impl RequestHandler for MethodUserListFollowedStrategies {
     type Request = UserListFollowedStrategiesRequest;
-    type Response = UserListFollowedStrategiesResponse;
 
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<Connection>,
+        conn: Arc<WsConnection>,
         _req: Self::Request,
-    ) {
+    ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         toolbox.spawn_response(ctx, async move {
-            ensure_user_role(&conn, EnumRole::User)?;
+            ensure_user_role(ctx, EnumRole::User)?;
 
             let ret = db
                 .execute(FunUserListFollowedStrategiesReq {
@@ -116,18 +111,17 @@ pub struct MethodUserListStrategies;
 
 impl RequestHandler for MethodUserListStrategies {
     type Request = UserListStrategiesRequest;
-    type Response = UserListStrategiesResponse;
 
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<Connection>,
+        conn: Arc<WsConnection>,
         _req: Self::Request,
-    ) {
+    ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         toolbox.spawn_response(ctx, async move {
-            ensure_user_role(&conn, EnumRole::User)?;
+            ensure_user_role(ctx, EnumRole::User)?;
 
             let ret = db.execute(FunUserListStrategiesReq {}).await?;
             Ok(UserListStrategiesResponse {
@@ -152,18 +146,17 @@ impl RequestHandler for MethodUserListStrategies {
 pub struct MethodUserGetStrategy;
 impl RequestHandler for MethodUserGetStrategy {
     type Request = UserGetStrategyRequest;
-    type Response = UserGetStrategyResponse;
 
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<Connection>,
+        conn: Arc<WsConnection>,
         req: Self::Request,
-    ) {
+    ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         toolbox.spawn_response(ctx, async move {
-            ensure_user_role(&conn, EnumRole::User)?;
+            ensure_user_role(ctx, EnumRole::User)?;
 
             let ret = db
                 .execute(FunUserGetStrategyReq {
@@ -212,18 +205,17 @@ impl RequestHandler for MethodUserGetStrategy {
 pub struct MethodUserGetStrategyStatistics;
 impl RequestHandler for MethodUserGetStrategyStatistics {
     type Request = UserGetStrategyStatisticsRequest;
-    type Response = UserGetStrategyStatisticsResponse;
 
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<Connection>,
+        conn: Arc<WsConnection>,
         req: Self::Request,
-    ) {
+    ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         toolbox.spawn_response(ctx, async move {
-            ensure_user_role(&conn, EnumRole::User)?;
+            ensure_user_role(ctx, EnumRole::User)?;
             let net_value = db
                 .execute(FunUserGetStrategyStatisticsNetValueReq {
                     strategy_id: req.strategy_id,
@@ -274,17 +266,16 @@ impl RequestHandler for MethodUserGetStrategyStatistics {
 pub struct MethodUserGetStrategiesStatistics;
 impl RequestHandler for MethodUserGetStrategiesStatistics {
     type Request = UserGetStrategiesStatisticsRequest;
-    type Response = UserGetStrategiesStatisticsResponse;
 
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<Connection>,
+        conn: Arc<WsConnection>,
         req: Self::Request,
-    ) {
+    ) -> SpawnedResponse<Self::Request> {
         toolbox.spawn_response(ctx, async move {
-            ensure_user_role(&conn, EnumRole::User)?;
+            ensure_user_role(ctx, EnumRole::User)?;
             // TODO: query from database
             Ok(UserGetStrategiesStatisticsResponse {
                 tracking_amount_usd: 0.0,
@@ -301,18 +292,17 @@ impl RequestHandler for MethodUserGetStrategiesStatistics {
 pub struct MethodUserListBackedStrategies;
 impl RequestHandler for MethodUserListBackedStrategies {
     type Request = UserListBackedStrategiesRequest;
-    type Response = UserListBackedStrategiesResponse;
 
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<Connection>,
+        conn: Arc<WsConnection>,
         _req: Self::Request,
-    ) {
+    ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         toolbox.spawn_response(ctx, async move {
-            ensure_user_role(&conn, EnumRole::User)?;
+            ensure_user_role(ctx, EnumRole::User)?;
             let ret = db
                 .execute(FunUserListBackedStrategiesReq {
                     user_id: ctx.user_id,
@@ -550,15 +540,14 @@ pub struct MethodUserBackStrategy {
 }
 impl RequestHandler for MethodUserBackStrategy {
     type Request = UserBackStrategyRequest;
-    type Response = UserBackStrategyResponse;
 
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<Connection>,
+        conn: Arc<WsConnection>,
         req: Self::Request,
-    ) {
+    ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         let pool = self.pool.clone();
         let stablecoin_addresses = self.stablecoin_addresses.clone();
@@ -570,7 +559,7 @@ impl RequestHandler for MethodUserBackStrategy {
         toolbox.spawn_response(ctx.clone(), async move {
             let escrow_contract = escrow_contract.get(&pool, req.blockchain).await?;
             let eth_conn = pool.get(EnumBlockChain::LocalNet).await?;
-            ensure_user_role(&conn, EnumRole::User)?;
+            ensure_user_role(ctx, EnumRole::User)?;
 
             user_back_strategy(
                 &eth_conn,
@@ -588,7 +577,7 @@ impl RequestHandler for MethodUserBackStrategy {
                 &dex_addresses,
             )
             .await?;
-            Ok(())
+            Ok(UserBackStrategyResponse { success: true })
         })
     }
 }
@@ -601,15 +590,14 @@ pub struct MethodUserRequestRefund {
 
 impl RequestHandler for MethodUserRequestRefund {
     type Request = UserRequestRefundRequest;
-    type Response = UserRequestRefundResponse;
 
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<Connection>,
+        conn: Arc<WsConnection>,
         req: Self::Request,
-    ) {
+    ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         let pool = self.pool.clone();
         let stablecoin_addresses = self.stablecoin_addresses.clone();
@@ -619,7 +607,7 @@ impl RequestHandler for MethodUserRequestRefund {
             let escrow_contract = escrow_contract.get(&pool, req.blockchain).await?;
             let eth_conn = pool.get(req.blockchain).await?;
 
-            ensure_user_role(&conn, EnumRole::User)?;
+            ensure_user_role(ctx, EnumRole::User)?;
 
             on_user_request_refund(
                 &eth_conn,
@@ -634,26 +622,25 @@ impl RequestHandler for MethodUserRequestRefund {
                 EnumBlockchainCoin::USDC,
             )
             .await?;
-            Ok(())
+            Ok(UserRequestRefundResponse { success: true })
         })
     }
 }
 pub struct MethodUserUnfollowStrategy;
 impl RequestHandler for MethodUserUnfollowStrategy {
     type Request = UserUnfollowStrategyRequest;
-    type Response = UserUnfollowStrategyResponse;
 
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<Connection>,
+        conn: Arc<WsConnection>,
         req: Self::Request,
-    ) {
+    ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
 
         toolbox.spawn_response(ctx, async move {
-            ensure_user_role(&conn, EnumRole::User)?;
+            ensure_user_role(ctx, EnumRole::User)?;
             let ret = db
                 .execute(FunUserUnfollowStrategyReq {
                     user_id: ctx.user_id,
@@ -673,18 +660,17 @@ impl RequestHandler for MethodUserUnfollowStrategy {
 pub struct MethodUserListExitStrategyHistory;
 impl RequestHandler for MethodUserListExitStrategyHistory {
     type Request = UserListExitStrategyHistoryRequest;
-    type Response = UserListExitStrategyHistoryResponse;
 
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<Connection>,
+        conn: Arc<WsConnection>,
         _req: Self::Request,
-    ) {
+    ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         toolbox.spawn_response(ctx, async move {
-            ensure_user_role(&conn, EnumRole::User)?;
+            ensure_user_role(ctx, EnumRole::User)?;
             let ret = db
                 .execute(FunUserListExitStrategyHistoryReq {
                     user_id: ctx.user_id,
@@ -713,19 +699,18 @@ impl RequestHandler for MethodUserListExitStrategyHistory {
 pub struct MethodUserFollowExpert;
 impl RequestHandler for MethodUserFollowExpert {
     type Request = UserFollowExpertRequest;
-    type Response = UserFollowExpertResponse;
 
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<Connection>,
+        conn: Arc<WsConnection>,
         req: Self::Request,
-    ) {
+    ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
 
         toolbox.spawn_response(ctx, async move {
-            ensure_user_role(&conn, EnumRole::User)?;
+            ensure_user_role(ctx, EnumRole::User)?;
             let ret = db
                 .execute(FunUserFollowExpertReq {
                     user_id: ctx.user_id,
@@ -744,18 +729,17 @@ impl RequestHandler for MethodUserFollowExpert {
 pub struct MethodUserListFollowedExperts;
 impl RequestHandler for MethodUserListFollowedExperts {
     type Request = UserListFollowedExpertsRequest;
-    type Response = UserListFollowedExpertsResponse;
 
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<Connection>,
+        conn: Arc<WsConnection>,
         _req: Self::Request,
-    ) {
+    ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         toolbox.spawn_response(ctx, async move {
-            ensure_user_role(&conn, EnumRole::User)?;
+            ensure_user_role(ctx, EnumRole::User)?;
             let ret = db
                 .execute(FunUserListFollowedExpertsReq {
                     user_id: ctx.user_id,
@@ -783,19 +767,18 @@ impl RequestHandler for MethodUserListFollowedExperts {
 pub struct MethodUserUnfollowExpert;
 impl RequestHandler for MethodUserUnfollowExpert {
     type Request = UserUnfollowExpertRequest;
-    type Response = UserUnfollowExpertResponse;
 
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<Connection>,
+        conn: Arc<WsConnection>,
         req: Self::Request,
-    ) {
+    ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
 
         toolbox.spawn_response(ctx, async move {
-            ensure_user_role(&conn, EnumRole::User)?;
+            ensure_user_role(ctx, EnumRole::User)?;
             let ret = db
                 .execute(FunUserUnfollowExpertReq {
                     user_id: ctx.user_id,
@@ -814,18 +797,17 @@ impl RequestHandler for MethodUserUnfollowExpert {
 pub struct MethodUserListExperts;
 impl RequestHandler for MethodUserListExperts {
     type Request = UserListExpertsRequest;
-    type Response = UserListExpertsResponse;
 
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<Connection>,
+        conn: Arc<WsConnection>,
         _req: Self::Request,
-    ) {
+    ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         toolbox.spawn_response(ctx, async move {
-            ensure_user_role(&conn, EnumRole::User)?;
+            ensure_user_role(ctx, EnumRole::User)?;
             let ret = db.execute(FunUserListExpertsReq {}).await?;
             Ok(UserListExpertsResponse {
                 experts: ret
@@ -849,20 +831,19 @@ impl RequestHandler for MethodUserListExperts {
 pub struct MethodUserListTopPerformingExperts;
 impl RequestHandler for MethodUserListTopPerformingExperts {
     type Request = UserListTopPerformingExpertsRequest;
-    type Response = UserListTopPerformingExpertsResponse;
 
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<Connection>,
+        conn: Arc<WsConnection>,
         _req: Self::Request,
-    ) {
+    ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         toolbox.spawn_response(ctx, async move {
-            ensure_user_role(&conn, EnumRole::User)?;
+            ensure_user_role(ctx, EnumRole::User)?;
             let ret = db.execute(FunUserListExpertsReq {}).await?;
-            Ok(UserListExpertsResponse {
+            Ok(UserListTopPerformingExpertsResponse {
                 experts: ret
                     .into_rows()
                     .into_iter()
@@ -884,20 +865,19 @@ impl RequestHandler for MethodUserListTopPerformingExperts {
 pub struct MethodUserListFeaturedExperts;
 impl RequestHandler for MethodUserListFeaturedExperts {
     type Request = UserListFeaturedExpertsRequest;
-    type Response = UserListFeaturedExpertsResponse;
 
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<Connection>,
+        conn: Arc<WsConnection>,
         _req: Self::Request,
-    ) {
+    ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         toolbox.spawn_response(ctx, async move {
-            ensure_user_role(&conn, EnumRole::User)?;
+            ensure_user_role(ctx, EnumRole::User)?;
             let ret = db.execute(FunUserListExpertsReq {}).await?;
-            Ok(UserListExpertsResponse {
+            Ok(UserListFeaturedExpertsResponse {
                 experts: ret
                     .into_rows()
                     .into_iter()
@@ -919,18 +899,17 @@ impl RequestHandler for MethodUserListFeaturedExperts {
 pub struct MethodUserGetExpertProfile;
 impl RequestHandler for MethodUserGetExpertProfile {
     type Request = UserGetExpertProfileRequest;
-    type Response = UserGetExpertProfileResponse;
 
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<Connection>,
+        conn: Arc<WsConnection>,
         req: Self::Request,
-    ) {
+    ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         toolbox.spawn_response(ctx, async move {
-            ensure_user_role(&conn, EnumRole::User)?;
+            ensure_user_role(ctx, EnumRole::User)?;
             let ret = db
                 .execute(FunUserGetExpertProfileReq {
                     expert_id: req.expert_id,
@@ -956,18 +935,17 @@ impl RequestHandler for MethodUserGetExpertProfile {
 pub struct MethodUserGetUserProfile;
 impl RequestHandler for MethodUserGetUserProfile {
     type Request = UserGetUserProfileRequest;
-    type Response = UserGetUserProfileResponse;
 
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<Connection>,
+        conn: Arc<WsConnection>,
         _req: Self::Request,
-    ) {
+    ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         toolbox.spawn_response(ctx, async move {
-            ensure_user_role(&conn, EnumRole::User)?;
+            ensure_user_role(ctx, EnumRole::User)?;
             let ret = db
                 .execute(FunUserGetUserProfileReq {
                     user_id: ctx.user_id,
@@ -992,18 +970,17 @@ impl RequestHandler for MethodUserGetUserProfile {
 pub struct MethodUserRegisterWallet;
 impl RequestHandler for MethodUserRegisterWallet {
     type Request = UserRegisterWalletRequest;
-    type Response = UserRegisterWalletResponse;
 
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<Connection>,
+        conn: Arc<WsConnection>,
         req: Self::Request,
-    ) {
+    ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         toolbox.spawn_response(ctx, async move {
-            ensure_user_role(&conn, EnumRole::User)?;
+            ensure_user_role(ctx, EnumRole::User)?;
             let address = Address::from_str(&req.wallet_address).map_err(|x| {
                 CustomError::new(
                     EnumErrorCode::UnknownUser,
@@ -1041,18 +1018,17 @@ impl RequestHandler for MethodUserRegisterWallet {
 pub struct MethodUserListWallets;
 impl RequestHandler for MethodUserListWallets {
     type Request = UserListWalletsRequest;
-    type Response = UserListWalletsResponse;
 
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<Connection>,
+        conn: Arc<WsConnection>,
         _req: Self::Request,
-    ) {
+    ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         toolbox.spawn_response(ctx, async move {
-            ensure_user_role(&conn, EnumRole::User)?;
+            ensure_user_role(ctx, EnumRole::User)?;
 
             let ret = db
                 .execute(FunUserListRegisteredWalletsReq {
@@ -1078,18 +1054,17 @@ impl RequestHandler for MethodUserListWallets {
 pub struct MethodUserDeregisterWallet;
 impl RequestHandler for MethodUserDeregisterWallet {
     type Request = UserDeregisterWalletRequest;
-    type Response = UserDeregisterWalletResponse;
 
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<Connection>,
+        conn: Arc<WsConnection>,
         req: Self::Request,
-    ) {
+    ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         toolbox.spawn_response(ctx, async move {
-            ensure_user_role(&conn, EnumRole::User)?;
+            ensure_user_role(ctx, EnumRole::User)?;
 
             let _ret = db
                 .execute(FunUserRemoveRegisteredWalletReq {
@@ -1105,18 +1080,17 @@ impl RequestHandler for MethodUserDeregisterWallet {
 pub struct MethodUserApplyBecomeExpert;
 impl RequestHandler for MethodUserApplyBecomeExpert {
     type Request = UserApplyBecomeExpertRequest;
-    type Response = UserApplyBecomeExpertResponse;
 
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<Connection>,
+        conn: Arc<WsConnection>,
         _req: Self::Request,
-    ) {
+    ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         toolbox.spawn_response(ctx, async move {
-            ensure_user_role(&conn, EnumRole::User)?;
+            ensure_user_role(ctx, EnumRole::User)?;
 
             let ret = db
                 .execute(FunUserApplyBecomeExpertReq {
@@ -1141,19 +1115,18 @@ pub struct MethodUserCreateStrategy;
 
 impl RequestHandler for MethodUserCreateStrategy {
     type Request = UserCreateStrategyRequest;
-    type Response = UserCreateStrategyResponse;
 
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<Connection>,
+        conn: Arc<WsConnection>,
         req: Self::Request,
-    ) {
+    ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         toolbox.spawn_response(ctx, async move {
             // TODO: check if user is expert
-            ensure_user_role(&conn, EnumRole::User)?;
+            ensure_user_role(ctx, EnumRole::User)?;
 
             let ret = db
                 .execute(FunUserCreateStrategyReq {
@@ -1175,20 +1148,19 @@ impl RequestHandler for MethodUserCreateStrategy {
 pub struct MethodUserUpdateStrategy;
 impl RequestHandler for MethodUserUpdateStrategy {
     type Request = UserUpdateStrategyRequest;
-    type Response = UserUpdateStrategyResponse;
 
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<Connection>,
+        conn: Arc<WsConnection>,
         req: Self::Request,
-    ) {
+    ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         toolbox.spawn_response(ctx, async move {
             // TODO: check if user is expert
 
-            ensure_user_role(&conn, EnumRole::User)?;
+            ensure_user_role(ctx, EnumRole::User)?;
 
             let ret = db
                 .execute(FunUserUpdateStrategyReq {
@@ -1211,20 +1183,19 @@ impl RequestHandler for MethodUserUpdateStrategy {
 pub struct MethodUserAddStrategyWatchingWallet;
 impl RequestHandler for MethodUserAddStrategyWatchingWallet {
     type Request = UserAddStrategyWatchingWalletRequest;
-    type Response = UserAddStrategyWatchingWalletResponse;
 
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<Connection>,
+        conn: Arc<WsConnection>,
         req: Self::Request,
-    ) {
+    ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         toolbox.spawn_response(ctx, async move {
             // TODO: check if user is expert
 
-            ensure_user_role(&conn, EnumRole::User)?;
+            ensure_user_role(ctx, EnumRole::User)?;
 
             let ret = db
                 .execute(FunUserAddStrategyWatchWalletReq {
@@ -1250,21 +1221,20 @@ impl RequestHandler for MethodUserAddStrategyWatchingWallet {
 pub struct MethodUserRemoveStrategyWatchingWallet;
 impl RequestHandler for MethodUserRemoveStrategyWatchingWallet {
     type Request = UserRemoveStrategyWatchingWalletRequest;
-    type Response = UserRemoveStrategyWatchingWalletResponse;
 
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<Connection>,
+        conn: Arc<WsConnection>,
         req: Self::Request,
-    ) {
+    ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
 
         toolbox.spawn_response(ctx, async move {
             // TODO: check if user is expert
 
-            ensure_user_role(&conn, EnumRole::User)?;
+            ensure_user_role(ctx, EnumRole::User)?;
 
             let ret = db
                 .execute(FunUserRemoveStrategyWatchWalletReq {
@@ -1286,15 +1256,14 @@ pub struct MethodUserListWalletActivityHistory;
 
 impl RequestHandler for MethodUserListWalletActivityHistory {
     type Request = UserListWalletActivityHistoryRequest;
-    type Response = UserListWalletActivityHistoryResponse;
 
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        _conn: Arc<Connection>,
+        _conn: Arc<WsConnection>,
         req: Self::Request,
-    ) {
+    ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
 
         toolbox.spawn_response(ctx, async move {
@@ -1381,19 +1350,18 @@ pub async fn on_user_request_refund(
 pub struct MethodUserAddStrategyInitialTokenRatio;
 impl RequestHandler for MethodUserAddStrategyInitialTokenRatio {
     type Request = UserAddStrategyInitialTokenRatioRequest;
-    type Response = UserAddStrategyInitialTokenRatioResponse;
 
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<Connection>,
+        conn: Arc<WsConnection>,
         req: Self::Request,
-    ) {
+    ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
 
         toolbox.spawn_response(ctx, async move {
-            ensure_user_role(&conn, EnumRole::Expert)?;
+            ensure_user_role(ctx, EnumRole::Expert)?;
             // TODO: verify strategy belongs to user
             let ret = db
                 .execute(FunUserAddStrategyInitialTokenRatioReq {
@@ -1416,19 +1384,18 @@ impl RequestHandler for MethodUserAddStrategyInitialTokenRatio {
 pub struct MethodUserRemoveStrategyInitialTokenRatio;
 impl RequestHandler for MethodUserRemoveStrategyInitialTokenRatio {
     type Request = UserRemoveStrategyInitialTokenRatioRequest;
-    type Response = UserRemoveStrategyInitialTokenRatioResponse;
 
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<Connection>,
+        conn: Arc<WsConnection>,
         req: Self::Request,
-    ) {
+    ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
 
         toolbox.spawn_response(ctx, async move {
-            ensure_user_role(&conn, EnumRole::Expert)?;
+            ensure_user_role(ctx, EnumRole::Expert)?;
 
             let ret = db
                 .execute(FunUserRemoveStrategyInitialTokenRatioReq {
@@ -1446,19 +1413,18 @@ impl RequestHandler for MethodUserRemoveStrategyInitialTokenRatio {
 pub struct MethodUserListStrategyInitialTokenRatio;
 impl RequestHandler for MethodUserListStrategyInitialTokenRatio {
     type Request = UserListStrategyInitialTokenRatioRequest;
-    type Response = UserListStrategyInitialTokenRatioResponse;
 
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<Connection>,
+        conn: Arc<WsConnection>,
         req: Self::Request,
-    ) {
+    ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
 
         toolbox.spawn_response(ctx, async move {
-            ensure_user_role(&conn, EnumRole::Expert)?;
+            ensure_user_role(ctx, EnumRole::Expert)?;
 
             let ret = db
                 .execute(FunUserListStrategyInitialTokenRatiosReq {

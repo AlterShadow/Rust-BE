@@ -19,7 +19,7 @@ pub struct WsRequestGeneric<Req> {
     pub seq: u32,
     pub params: Req,
 }
-pub type WsRequest = WsRequestGeneric<serde_json::Value>;
+pub type WsRequestValue = WsRequestGeneric<Value>;
 
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct WsResponseError {
@@ -31,21 +31,21 @@ pub struct WsResponseError {
 }
 
 #[derive(Debug)]
-pub struct Connection {
+pub struct WsConnection {
     pub connection_id: ConnectionId,
     pub user_id: AtomicI64,
     pub role: AtomicU32,
     pub address: SocketAddr,
     pub log_id: u64,
 }
-impl Connection {
+impl WsConnection {
     pub fn get_user_id(&self) -> i64 {
         self.user_id.load(std::sync::atomic::Ordering::Relaxed)
     }
 }
 
-pub type WsSuccessResponse = WsSuccessResponseGeneric<serde_json::Value>;
-pub type WsStreamResponse = WsStreamResponseGeneric<serde_json::Value>;
+pub type WsSuccessResponse = WsSuccessResponseGeneric<Value>;
+pub type WsStreamResponse = WsStreamResponseGeneric<Value>;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct WsForwardedResponse {
@@ -85,14 +85,18 @@ pub enum WsResponseGeneric<Resp> {
     Close,
 }
 
-pub type WsResponse = WsResponseGeneric<serde_json::Value>;
+pub type WsResponseValue = WsResponseGeneric<Value>;
 
 pub struct WsEndpoint {
     pub schema: EndpointSchema,
     pub handler: Arc<dyn RequestHandlerErased>,
 }
 
-pub fn internal_error_to_resp(ctx: &RequestContext, code: ErrorCode, err0: Error) -> WsResponse {
+pub fn internal_error_to_resp(
+    ctx: &RequestContext,
+    code: ErrorCode,
+    err0: Error,
+) -> WsResponseValue {
     let log_id = ctx.log_id.to_string();
     let err = WsResponseError {
         method: ctx.method,
@@ -102,14 +106,14 @@ pub fn internal_error_to_resp(ctx: &RequestContext, code: ErrorCode, err0: Error
         params: Value::Null,
     };
     error!("Internal error: {:?} {:?}", err, err0);
-    WsResponse::Error(err)
+    WsResponseValue::Error(err)
 }
 
 pub fn request_error_to_resp(
     ctx: &RequestContext,
     code: ErrorCode,
     params: impl Into<Value>,
-) -> WsResponse {
+) -> WsResponseValue {
     let log_id = ctx.log_id.to_string();
     let params = params.into();
     let err = WsResponseError {
@@ -120,5 +124,5 @@ pub fn request_error_to_resp(
         params,
     };
     warn!("Request error: {:?}", err);
-    WsResponse::Error(err)
+    WsResponseValue::Error(err)
 }

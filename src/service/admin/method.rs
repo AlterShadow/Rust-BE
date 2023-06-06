@@ -3,25 +3,24 @@ use eyre::ContextCompat;
 use gen::database::*;
 use gen::model::*;
 use lib::database::DbClient;
-use lib::handler::RequestHandler;
+use lib::handler::{RequestHandler, SpawnedResponse};
 use lib::toolbox::{RequestContext, Toolbox};
-use lib::ws::Connection;
+use lib::ws::WsConnection;
 use std::sync::Arc;
 pub struct MethodAdminListUsers;
 impl RequestHandler for MethodAdminListUsers {
     type Request = AdminListUsersRequest;
-    type Response = AdminListUsersResponse;
 
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<Connection>,
+        conn: Arc<WsConnection>,
         req: Self::Request,
-    ) {
+    ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         toolbox.spawn_response(ctx, async move {
-            ensure_user_role(&conn, EnumRole::Admin)?;
+            ensure_user_role(ctx, EnumRole::Admin)?;
 
             let ret = db
                 .execute(FunAdminListUsersReq {
@@ -59,18 +58,17 @@ impl RequestHandler for MethodAdminListUsers {
 pub struct MethodAdminSetUserRole;
 impl RequestHandler for MethodAdminSetUserRole {
     type Request = AdminSetUserRoleRequest;
-    type Response = AdminSetUserRoleResponse;
 
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<Connection>,
+        conn: Arc<WsConnection>,
         req: Self::Request,
-    ) {
+    ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         toolbox.spawn_response(ctx, async move {
-            ensure_user_role(&conn, EnumRole::Admin)?;
+            ensure_user_role(ctx, EnumRole::Admin)?;
 
             let ret = db
                 .execute(FunAdminSetUserRoleReq {
@@ -86,18 +84,17 @@ impl RequestHandler for MethodAdminSetUserRole {
 pub struct MethodAdminSetBlockUser;
 impl RequestHandler for MethodAdminSetBlockUser {
     type Request = AdminSetBlockUserRequest;
-    type Response = AdminSetBlockUserResponse;
 
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<Connection>,
+        conn: Arc<WsConnection>,
         req: Self::Request,
-    ) {
+    ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         toolbox.spawn_response(ctx, async move {
-            ensure_user_role(&conn, EnumRole::Admin)?;
+            ensure_user_role(ctx, EnumRole::Admin)?;
 
             let ret = db
                 .execute(FunAdminSetBlockUserReq {
@@ -113,18 +110,17 @@ impl RequestHandler for MethodAdminSetBlockUser {
 pub struct MethodAdminApproveUserBecomeExpert;
 impl RequestHandler for MethodAdminApproveUserBecomeExpert {
     type Request = AdminApproveUserBecomeExpertRequest;
-    type Response = AdminApproveUserBecomeExpertResponse;
 
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<Connection>,
+        conn: Arc<WsConnection>,
         req: Self::Request,
-    ) {
+    ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         toolbox.spawn_response(ctx, async move {
-            ensure_user_role(&conn, EnumRole::Admin)?;
+            ensure_user_role(ctx, EnumRole::Admin)?;
 
             let ret = db
                 .execute(FunAdminApproveUserBecomeAdminReq {
@@ -144,18 +140,17 @@ impl RequestHandler for MethodAdminApproveUserBecomeExpert {
 pub struct MethodAdminRejectUserBecomeExpert;
 impl RequestHandler for MethodAdminRejectUserBecomeExpert {
     type Request = AdminRejectUserBecomeExpertRequest;
-    type Response = AdminRejectUserBecomeExpertResponse;
 
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<Connection>,
+        conn: Arc<WsConnection>,
         req: Self::Request,
-    ) {
+    ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         toolbox.spawn_response(ctx, async move {
-            ensure_user_role(&conn, EnumRole::Admin)?;
+            ensure_user_role(ctx, EnumRole::Admin)?;
 
             let ret = db
                 .execute(FunAdminRejectUserBecomeAdminReq {
@@ -176,18 +171,17 @@ impl RequestHandler for MethodAdminRejectUserBecomeExpert {
 pub struct MethodAdminListPendingExpertApplications;
 impl RequestHandler for MethodAdminListPendingExpertApplications {
     type Request = AdminListPendingExpertApplicationsRequest;
-    type Response = AdminListPendingExpertApplicationsResponse;
 
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<Connection>,
+        conn: Arc<WsConnection>,
         _req: Self::Request,
-    ) {
+    ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         toolbox.spawn_response(ctx, async move {
-            ensure_user_role(&conn, EnumRole::Admin)?;
+            ensure_user_role(ctx, EnumRole::Admin)?;
 
             let ret = db
                 .execute(FunAdminListPendingUserExpertApplicationsReq {})

@@ -9,7 +9,7 @@ use std::convert::Infallible;
 use std::future::poll_fn;
 use std::net::{SocketAddr, ToSocketAddrs};
 use std::pin::Pin;
-use std::sync::atomic::AtomicU32;
+use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Arc;
 use std::task::Poll;
 use tokio::io::{AsyncRead, AsyncWrite};
@@ -21,8 +21,8 @@ use crate::handler::*;
 use crate::listener::{ConnectionListener, TcpListener, TlsListener};
 use crate::toolbox::{RequestContext, Toolbox};
 use crate::utils::{get_conn_id, get_log_id};
-use crate::ws::Connection;
-use crate::ws::WsResponse;
+use crate::ws::WsConnection;
+use crate::ws::WsResponseValue;
 use crate::ws::{check_handler, WsEndpoint};
 use model::endpoint::EndpointSchema;
 
@@ -68,7 +68,7 @@ impl HttpServer {
         addr: SocketAddr,
         stream: S,
     ) {
-        let conn = Arc::new(Connection {
+        let conn = Arc::new(WsConnection {
             connection_id: get_conn_id(),
             user_id: Default::default(),
             role: AtomicU32::new(0),
@@ -111,7 +111,7 @@ impl HttpServer {
 
     pub async fn handle_request(
         self: Arc<Self>,
-        conn: Arc<Connection>,
+        conn: Arc<WsConnection>,
         request: Request<Body>,
         seq: u32,
     ) -> Result<Response<String>> {
@@ -131,6 +131,8 @@ impl HttpServer {
             seq,
             method: endpoint.schema.code,
             log_id: conn.log_id,
+            role: conn.role.load(Ordering::Relaxed),
+            ip_addr: conn.address.ip(),
         };
         let mut body = vec![];
         let mut b = request.into_body();
@@ -153,16 +155,14 @@ impl HttpServer {
             futures::executor::block_on(tx.send(resp)).unwrap();
             true
         });
-        endpoint
-            .handler
-            .handle(&toolbox, context, Arc::clone(&conn), req);
+        endpoint.handler.handle(&toolbox, context, req);
         let resp = rx.recv().await?;
         info!("Response: {:?}", resp);
         match resp {
-            WsResponse::Immediate(x) => Ok(Response::builder()
+            WsResponseValue::Immediate(x) => Ok(Response::builder()
                 .status(StatusCode::OK)
                 .body(serde_json::to_string(&x.params)?)?),
-            WsResponse::Error(err) => Ok(Response::builder()
+            WsResponseValue::Error(err) => Ok(Response::builder()
                 .status(StatusCode::BAD_REQUEST)
                 .body(serde_json::to_string(&err)?)?),
 

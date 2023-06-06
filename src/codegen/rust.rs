@@ -4,7 +4,7 @@ use convert_case::{Case, Casing};
 use eyre::bail;
 use itertools::Itertools;
 use model::types::*;
-use std::collections::{BTreeSet, HashMap};
+use std::collections::BTreeSet;
 use std::fs::File;
 use std::io::Write;
 use std::process::Command;
@@ -160,65 +160,6 @@ pub fn pg_func_to_rust_trait_impl(this: &ProceduralFunction) -> String {
     )
 }
 
-pub fn gen_client_rs(dir: &str) -> eyre::Result<()> {
-    let services = services::get_services();
-
-    let rs_filename = format!("{}/client.rs", dir);
-    let mut rs = File::create(&rs_filename)?;
-    write!(
-        &mut rs,
-        "{}",
-        r#"
-use eyre::*;
-use lib::ws::WsClient;
-use crate::model::*;
-    "#
-    )?;
-    for s in services {
-        write!(
-            &mut rs,
-            r#"
-pub struct {srv_name}Client {{
-    pub client: WsClient
-}}
-impl {srv_name}Client {{
-    pub fn new(client: WsClient) -> Self {{
-        Self {{
-            client
-        }}
-    }}
-}}
-impl From<WsClient> for {srv_name}Client {{
-    fn from(client: WsClient) -> Self {{
-        Self::new(client)
-    }}
-}}
-    "#,
-            srv_name = s.name.to_case(Case::Pascal)
-        )?;
-
-        for endpoint in s.endpoints {
-            write!(
-                &mut rs,
-                "
-impl {srv_name}Client {{
-    pub async fn {end_name}(&mut self, req: {end_name2}Request) -> Result<{end_name2}Response> {{
-        self.client.request({code}, req).await
-    }}
-}}",
-                srv_name = s.name.to_case(Case::Pascal),
-                end_name = endpoint.name.to_case(Case::Snake),
-                end_name2 = endpoint.name.to_case(Case::Pascal),
-                code = endpoint.code
-            )?;
-        }
-    }
-    rs.flush()?;
-    drop(rs);
-    rustfmt(&rs_filename)?;
-    Ok(())
-}
-
 pub fn gen_db_rs(dir: &str) -> eyre::Result<()> {
     let funcs = services::get_proc_functions();
 
@@ -273,7 +214,6 @@ pub fn collect_rust_recursive_types(t: Type) -> Vec<Type> {
 pub fn gen_model_rs(root: &str, dir: &str) -> eyre::Result<()> {
     let db_filename = format!("{}/model.rs", dir);
     let mut f = File::create(&db_filename)?;
-
     write!(
         &mut f,
         "{}",
@@ -283,12 +223,14 @@ use serde::*;
 use num_derive::FromPrimitive;
 use strum_macros::{EnumString, Display};
 use lib::error_code::ErrorCode;
+use lib::ws::*;
     "#
     )?;
 
     for e in enums::get_enums() {
         writeln!(&mut f, "{}", e.to_rust_decl())?;
     }
+    check_endpoint_codes(&mut f)?;
 
     let errors = docs::get_error_messages(root)?;
     let rule = regex::Regex::new(r"\{[\w]+}")?;
@@ -361,6 +303,25 @@ impl Into<ErrorCode> for EnumErrorCode {{
             s.to_rust_decl()
         )?;
     }
+
+    for s in services::get_services() {
+        for endpoint in s.endpoints {
+            write!(
+                &mut f,
+                "
+impl WsRequest for {end_name2}Request {{
+    type Response = {end_name2}Response;
+    const METHOD_ID: u32 = {code};
+}}
+impl WsResponse for {end_name2}Response {{
+    type Request = {end_name2}Request;
+}}
+",
+                end_name2 = endpoint.name.to_case(Case::Pascal),
+                code = endpoint.code
+            )?;
+        }
+    }
     f.flush()?;
     drop(f);
     rustfmt(&db_filename)?;
@@ -381,16 +342,15 @@ pub fn rustfmt(f: &str) -> eyre::Result<()> {
     Ok(())
 }
 
-pub fn check_endpoint_codes() -> eyre::Result<()> {
-    let mut codes = HashMap::new();
+pub fn check_endpoint_codes(mut writer: impl Write) -> eyre::Result<()> {
+    let mut variants = vec![];
     for s in services::get_services() {
         for e in s.endpoints {
-            let code = e.code;
-            if codes.contains_key(&code) {
-                bail!("duplicate service code: {} {} {}", s.name, e.name, e.code);
-            }
-            codes.insert(code, e.code);
+            variants.push(EnumVariant::new(e.name, e.code as _));
         }
     }
+    let enum_ = Type::enum_("Endpoint", variants);
+    writeln!(writer, "{}", enum_.to_rust_decl())?;
+    // if it compiles, there're no duplicate codes or names
     Ok(())
 }

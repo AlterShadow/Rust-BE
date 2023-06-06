@@ -1,5 +1,6 @@
 use crate::database::DbClient;
 use crate::error_code::ErrorCode;
+use crate::handler::SpawnedResponse;
 use crate::log::LogLevel;
 use crate::ws::*;
 use crossbeam::queue::SegQueue;
@@ -9,6 +10,7 @@ use serde::*;
 use serde_json::Value;
 use std::fmt::{Debug, Display, Formatter};
 use std::future::Future;
+use std::net::IpAddr;
 use std::sync::Arc;
 use tokio::sync::mpsc;
 use tracing::*;
@@ -66,12 +68,14 @@ pub struct RequestContext {
     pub seq: u32,
     pub method: u32,
     pub log_id: u64,
+    pub role: u32,
+    pub ip_addr: IpAddr,
 }
 
 #[derive(Clone)]
 pub struct Toolbox {
     db: Vec<DbClient>,
-    pub send_msg: Arc<dyn Fn(ConnectionId, WsResponse) -> bool + Send + Sync>,
+    pub send_msg: Arc<dyn Fn(ConnectionId, WsResponseValue) -> bool + Send + Sync>,
 }
 
 impl Toolbox {
@@ -110,10 +114,10 @@ impl Toolbox {
     }
 
     pub fn send_ws_msg(
-        sender: &SegQueue<WsResponse>,
+        sender: &SegQueue<WsResponseValue>,
         trigger: &mpsc::Sender<ConnectionId>,
         connection_id: ConnectionId,
-        resp: WsResponse,
+        resp: WsResponseValue,
         oneshot: bool,
     ) {
         sender.push(resp);
@@ -124,13 +128,13 @@ impl Toolbox {
             .try_send(connection_id)
             .unwrap_or_else(|_| error!("Failed to trigger flush: sender full"));
     }
-    pub fn send(&self, conn_id: ConnectionId, resp: WsResponse) -> bool {
+    pub fn send(&self, conn_id: ConnectionId, resp: WsResponseValue) -> bool {
         (self.send_msg)(conn_id, resp)
     }
     pub fn send_response(&self, ctx: &RequestContext, resp: impl Serialize) {
         self.send(
             ctx.connection_id,
-            WsResponse::Immediate(WsSuccessResponse {
+            WsResponseValue::Immediate(WsSuccessResponse {
                 method: ctx.method,
                 seq: ctx.seq,
                 params: serde_json::to_value(&resp).unwrap(),
@@ -146,7 +150,7 @@ impl Toolbox {
     pub fn send_log(&self, ctx: &RequestContext, level: LogLevel, msg: impl Into<String>) {
         self.send(
             ctx.connection_id,
-            WsResponse::Log(WsLogResponse {
+            WsResponseValue::Log(WsLogResponse {
                 seq: ctx.seq,
                 log_id: ctx.log_id,
                 level,
@@ -166,12 +170,13 @@ impl Toolbox {
             seq,
             method,
             log_id,
+            ..
         } = ctx;
         let send_msg = self.send_msg.clone();
         tokio::spawn(async move {
             let resp = f.await;
             let resp = match resp {
-                Ok(ok) => WsResponse::Immediate(WsSuccessResponse {
+                Ok(ok) => WsResponseValue::Immediate(WsSuccessResponse {
                     method,
                     seq,
                     params: serde_json::to_value(ok).expect("Failed to serialize response"),
@@ -213,11 +218,12 @@ impl Toolbox {
             (send_msg)(connection_id, resp);
         });
     }
-    pub fn spawn_response<Resp: Send + Serialize>(
+    pub fn spawn_response<Resp: WsResponse>(
         &self,
         ctx: RequestContext,
         f: impl Future<Output = Result<Resp>> + Send + 'static,
-    ) {
+    ) -> SpawnedResponse<Resp::Request> {
         self.spawn_ws_response(ctx, f);
+        SpawnedResponse::new()
     }
 }

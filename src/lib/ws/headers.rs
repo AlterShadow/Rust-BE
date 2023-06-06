@@ -2,7 +2,7 @@ use eyre::*;
 
 use crate::handler::RequestHandlerErased;
 use crate::toolbox::{RequestContext, Toolbox};
-use crate::ws::{Connection, WsEndpoint};
+use crate::ws::{WsConnection, WsEndpoint};
 use chrono::Utc;
 use convert_case::Case;
 use convert_case::Casing;
@@ -12,6 +12,7 @@ use model::endpoint::*;
 use model::types::Type;
 use std::collections::HashMap;
 use std::net::SocketAddr;
+use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use tokio_tungstenite::tungstenite::handshake::server::{
     Callback, ErrorResponse, Request, Response,
@@ -70,7 +71,7 @@ pub trait AuthController: Sync + Send {
         self: Arc<Self>,
         toolbox: &Toolbox,
         header: String,
-        conn: Arc<Connection>,
+        conn: Arc<WsConnection>,
     ) -> BoxFuture<'static, Result<()>>;
 }
 pub struct SimpleAuthContoller;
@@ -79,7 +80,7 @@ impl AuthController for SimpleAuthContoller {
         self: Arc<Self>,
         _toolbox: &Toolbox,
         _header: String,
-        _conn: Arc<Connection>,
+        _conn: Arc<WsConnection>,
     ) -> BoxFuture<'static, Result<()>> {
         async move { Ok(()) }.boxed()
     }
@@ -139,7 +140,7 @@ impl AuthController for EndpointAuthController {
         self: Arc<Self>,
         toolbox: &Toolbox,
         header: String,
-        conn: Arc<Connection>,
+        conn: Arc<WsConnection>,
     ) -> BoxFuture<'static, Result<()>> {
         let toolbox = toolbox.clone();
 
@@ -183,8 +184,9 @@ impl AuthController for EndpointAuthController {
                     seq: 0,
                     method: endpoint.schema.code,
                     log_id: conn.log_id,
+                    role: conn.role.load(Ordering::Relaxed),
+                    ip_addr: conn.address.ip(),
                 },
-                conn,
                 serde_json::Value::Object(params),
             );
 

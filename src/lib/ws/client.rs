@@ -1,5 +1,5 @@
 use crate::log::LogLevel;
-use crate::ws::{WsLogResponse, WsRequestGeneric, WsResponse, WsResponseGeneric};
+use crate::ws::{WsLogResponse, WsRequestGeneric, WsResponseGeneric, WsResponseValue};
 use eyre::*;
 use futures::SinkExt;
 use futures::StreamExt;
@@ -14,6 +14,13 @@ use tokio_tungstenite::MaybeTlsStream;
 use tokio_tungstenite::WebSocketStream;
 use tracing::*;
 
+pub trait WsRequest: Serialize + DeserializeOwned + Send + Sync + Clone {
+    type Response: WsResponse;
+    const METHOD_ID: u32;
+}
+pub trait WsResponse: Serialize + DeserializeOwned + Send + Sync + Clone {
+    type Request: WsRequest;
+}
 pub struct WsClient {
     stream: WebSocketStream<MaybeTlsStream<TcpStream>>,
     seq: u32,
@@ -38,18 +45,16 @@ impl WsClient {
             params,
         })?;
         debug!("send req: {}", req);
-        self.stream
-            .send(tokio_tungstenite::tungstenite::Message::Text(req))
-            .await?;
+        self.stream.send(Message::Text(req)).await?;
         Ok(())
     }
-    pub async fn recv_raw(&mut self) -> Result<WsResponse> {
+    pub async fn recv_raw(&mut self) -> Result<WsResponseValue> {
         let msg = self
             .stream
             .next()
             .await
             .ok_or(eyre!("Connection closed"))??;
-        let resp: WsResponse = serde_json::from_str(&msg.to_string())?;
+        let resp: WsResponseValue = serde_json::from_str(&msg.to_string())?;
         Ok(resp)
     }
     pub async fn recv_resp<T: DeserializeOwned>(&mut self) -> Result<T> {
@@ -105,12 +110,8 @@ impl WsClient {
             }
         }
     }
-    pub async fn request<T: DeserializeOwned>(
-        &mut self,
-        method: u32,
-        params: impl Serialize,
-    ) -> Result<T> {
-        self.send_req(method, params).await?;
+    pub async fn request<T: WsRequest>(&mut self, params: T) -> Result<T::Response> {
+        self.send_req(T::METHOD_ID, params).await?;
         self.recv_resp().await
     }
 }
