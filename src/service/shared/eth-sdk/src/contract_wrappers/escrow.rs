@@ -57,6 +57,16 @@ impl<T: Transport> EscrowContract<T> {
         recipient: Address,
         amount: U256,
     ) -> Result<H256> {
+        let estimated_gas = self
+            .contract
+            .estimate_gas(
+                EscrowFunctions::TransferTokenTo.as_str(),
+                (token_address, recipient, amount),
+                signer.address(),
+                Options::default(),
+            )
+            .await?;
+
         info!(
             "Transferring {:?} amount of token {:?} from escrow contract {:?} to {:?} by {:?}",
             amount,
@@ -65,22 +75,12 @@ impl<T: Transport> EscrowContract<T> {
             recipient,
             signer.address(),
         );
-        let params = (token_address, recipient, amount);
-        let estimated_gas = self
-            .contract
-            .estimate_gas(
-                EscrowFunctions::TransferTokenTo.as_str(),
-                params,
-                signer.address(),
-                Options::default(),
-            )
-            .await?;
 
         Ok(self
             .contract
             .signed_call(
                 EscrowFunctions::TransferTokenTo.as_str(),
-                params,
+                (token_address, recipient, amount),
                 Options::with(|options| options.gas = Some(estimated_gas)),
                 signer,
             )
@@ -93,14 +93,6 @@ impl<T: Transport> EscrowContract<T> {
         by: Address,
         new_owner: Address,
     ) -> Result<H256> {
-        info!(
-            "Transferring escrow contract {:?} ownership from {:?} to {:?} by {:?}",
-            self.address(),
-            self.owner().await?,
-            new_owner,
-            signer.address(),
-        );
-
         let estimated_gas = self
             .contract
             .estimate_gas(
@@ -110,6 +102,14 @@ impl<T: Transport> EscrowContract<T> {
                 Options::default(),
             )
             .await?;
+
+        info!(
+            "Transferring escrow contract {:?} ownership from {:?} to {:?} by {:?}",
+            self.address(),
+            self.owner().await?,
+            new_owner,
+            signer.address(),
+        );
 
         Ok(self
             .contract
