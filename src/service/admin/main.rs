@@ -1,8 +1,4 @@
-mod method;
-
 use eyre::*;
-
-pub mod endpoints;
 
 #[tokio::main]
 async fn main() -> Result<()> {
