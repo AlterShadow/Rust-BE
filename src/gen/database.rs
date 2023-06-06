@@ -884,7 +884,7 @@ pub struct FunUserListFollowedExpertsReq {
 pub struct FunUserListFollowedExpertsRespRow {
     pub expert_id: i64,
     pub name: String,
-    pub follower_count: i32,
+    pub follower_count: i64,
     pub description: String,
     pub social_media: String,
     pub risk_score: f64,

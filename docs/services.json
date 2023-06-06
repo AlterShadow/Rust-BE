@@ -549,6 +549,40 @@
           "json_schema": null
         },
         {
+          "name": "UserGetStrategiesStatistics",
+          "code": 20071,
+          "parameters": [],
+          "returns": [
+            {
+              "name": "tracking_amount_usd",
+              "ty": "Numeric"
+            },
+            {
+              "name": "backing_amount_usd",
+              "ty": "Numeric"
+            },
+            {
+              "name": "difference_amount_usd",
+              "ty": "Numeric"
+            },
+            {
+              "name": "aum_value_usd",
+              "ty": "Numeric"
+            },
+            {
+              "name": "current_value_usd",
+              "ty": "Numeric"
+            },
+            {
+              "name": "withdrawable_value_usd",
+              "ty": "Numeric"
+            }
+          ],
+          "stream_response": [],
+          "description": "User gets statistics of all strategies related to the user",
+          "json_schema": null
+        },
+        {
           "name": "UserBackStrategy",
           "code": 20080,
           "parameters": [

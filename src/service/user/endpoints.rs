@@ -153,6 +153,22 @@ pub fn endpoint_user_get_strategy_statistics() -> EndpointSchema {
     )
     .with_description("User gets a strategy statistics")
 }
+pub fn endpoint_user_get_strategies_statistics() -> EndpointSchema {
+    EndpointSchema::new(
+        "UserGetStrategiesStatistics",
+        20071,
+        vec![],
+        vec![
+            Field::new("tracking_amount_usd", Type::Numeric),
+            Field::new("backing_amount_usd", Type::Numeric),
+            Field::new("difference_amount_usd", Type::Numeric),
+            Field::new("aum_value_usd", Type::Numeric),
+            Field::new("current_value_usd", Type::Numeric),
+            Field::new("withdrawable_value_usd", Type::Numeric),
+        ],
+    )
+    .with_description("User gets statistics of all strategies related to the user")
+}
 pub fn endpoint_user_back_strategy() -> EndpointSchema {
     EndpointSchema::new(
         "UserBackStrategy",
@@ -601,6 +617,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
         endpoint_user_list_strategies(),
         endpoint_user_get_strategy(),
         endpoint_user_get_strategy_statistics(),
+        endpoint_user_get_strategies_statistics(),
         endpoint_user_back_strategy(),
         endpoint_user_request_refund(),
         endpoint_user_list_backed_strategies(),

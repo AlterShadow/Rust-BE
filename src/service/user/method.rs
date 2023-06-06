@@ -271,6 +271,32 @@ impl RequestHandler for MethodUserGetStrategyStatistics {
         })
     }
 }
+pub struct MethodUserGetStrategiesStatistics;
+impl RequestHandler for MethodUserGetStrategiesStatistics {
+    type Request = UserGetStrategiesStatisticsRequest;
+    type Response = UserGetStrategiesStatisticsResponse;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        conn: Arc<Connection>,
+        req: Self::Request,
+    ) {
+        toolbox.spawn_response(ctx, async move {
+            ensure_user_role(&conn, EnumRole::User)?;
+            // TODO: query from database
+            Ok(UserGetStrategiesStatisticsResponse {
+                tracking_amount_usd: 0.0,
+                backing_amount_usd: 0.0,
+                difference_amount_usd: 0.0,
+                aum_value_usd: 0.0,
+                current_value_usd: 0.0,
+                withdrawable_value_usd: 0.0,
+            })
+        })
+    }
+}
 
 pub struct MethodUserListBackedStrategies;
 impl RequestHandler for MethodUserListBackedStrategies {
@@ -741,7 +767,7 @@ impl RequestHandler for MethodUserListFollowedExperts {
                     .map(|x| ListExpertsRow {
                         expert_id: x.expert_id,
                         name: x.name,
-                        follower_count: x.follower_count,
+                        follower_count: x.follower_count as _,
                         description: x.description,
                         social_media: x.social_media,
                         risk_score: x.risk_score,

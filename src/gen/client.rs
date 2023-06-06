@@ -99,6 +99,14 @@ impl UserClient {
     }
 }
 impl UserClient {
+    pub async fn user_get_strategies_statistics(
+        &mut self,
+        req: UserGetStrategiesStatisticsRequest,
+    ) -> Result<UserGetStrategiesStatisticsResponse> {
+        self.client.request(20071, req).await
+    }
+}
+impl UserClient {
     pub async fn user_back_strategy(
         &mut self,
         req: UserBackStrategyRequest,

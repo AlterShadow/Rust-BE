@@ -75,6 +75,10 @@ async fn main() -> Result<()> {
         MethodUserGetStrategyStatistics,
     );
     server.add_handler(
+        endpoint_user_get_strategies_statistics(),
+        MethodUserGetStrategiesStatistics,
+    );
+    server.add_handler(
         endpoint_user_list_backed_strategies(),
         MethodUserListBackedStrategies,
     );

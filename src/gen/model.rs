@@ -925,6 +925,19 @@ pub struct UserGetExpertProfileResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct UserGetStrategiesStatisticsRequest {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserGetStrategiesStatisticsResponse {
+    pub tracking_amount_usd: f64,
+    pub backing_amount_usd: f64,
+    pub difference_amount_usd: f64,
+    pub aum_value_usd: f64,
+    pub current_value_usd: f64,
+    pub withdrawable_value_usd: f64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct UserGetStrategyRequest {
     pub strategy_id: i64,
 }

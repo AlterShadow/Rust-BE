@@ -480,7 +480,7 @@ END
             vec![
                 Field::new("expert_id", Type::BigInt),
                 Field::new("name", Type::String),
-                Field::new("follower_count", Type::Int),
+                Field::new("follower_count", Type::BigInt),
                 Field::new("description", Type::String),
                 Field::new("social_media", Type::String),
                 Field::new("risk_score", Type::Numeric),
