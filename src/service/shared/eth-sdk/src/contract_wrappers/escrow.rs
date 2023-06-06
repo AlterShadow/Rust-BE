@@ -52,17 +52,18 @@ impl<T: Transport> EscrowContract<T> {
 
     pub async fn transfer_token_to(
         &self,
-        caller: impl Key,
+        signer: impl Key,
         token_address: Address,
         recipient: Address,
         amount: U256,
     ) -> Result<H256> {
         info!(
-            "Transferring {:?} token {:?} from {:?} to {:?}",
+            "Transferring {:?} amount of token {:?} from escrow contract {:?} to {:?} by {:?}",
             amount,
             token_address,
-            caller.address(),
-            recipient
+            self.address(),
+            recipient,
+            signer.address(),
         );
         let params = (token_address, recipient, amount);
         let estimated_gas = self
@@ -70,7 +71,7 @@ impl<T: Transport> EscrowContract<T> {
             .estimate_gas(
                 EscrowFunctions::TransferTokenTo.as_str(),
                 params,
-                caller.address(),
+                signer.address(),
                 Options::default(),
             )
             .await?;
@@ -81,17 +82,25 @@ impl<T: Transport> EscrowContract<T> {
                 EscrowFunctions::TransferTokenTo.as_str(),
                 params,
                 Options::with(|options| options.gas = Some(estimated_gas)),
-                caller,
+                signer,
             )
             .await?)
     }
 
     pub async fn transfer_ownership(
         &self,
-        secret: impl Key,
+        signer: impl Key,
         by: Address,
         new_owner: Address,
     ) -> Result<H256> {
+        info!(
+            "Transferring escrow contract {:?} ownership from {:?} to {:?} by {:?}",
+            self.address(),
+            self.owner().await?,
+            new_owner,
+            signer.address(),
+        );
+
         let estimated_gas = self
             .contract
             .estimate_gas(
@@ -108,7 +117,7 @@ impl<T: Transport> EscrowContract<T> {
                 EscrowFunctions::TransferOwnership.as_str(),
                 new_owner,
                 Options::with(|options| options.gas = Some(estimated_gas)),
-                secret,
+                signer,
             )
             .await?)
     }
