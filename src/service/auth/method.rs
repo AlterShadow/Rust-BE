@@ -1,9 +1,10 @@
 use eth_sdk::utils::verify_message_address;
 use eyre::*;
+use futures::future::BoxFuture;
+use futures::FutureExt;
 use gen::database::*;
 use gen::model::*;
 use lib::database::DbClient;
-use lib::handler::{RequestHandler, SpawnedResponse};
 use lib::toolbox::*;
 use lib::utils::hex_decode;
 use lib::ws::*;
@@ -17,19 +18,21 @@ use web3::types::Address;
 
 pub struct MethodAuthSignup;
 
-impl RequestHandler for MethodAuthSignup {
-    type Request = SignupRequest;
-
-    fn handle(
-        &self,
+impl SubAuthController for MethodAuthSignup {
+    fn auth(
+        self: Arc<Self>,
         toolbox: &Toolbox,
+        param: Value,
         ctx: RequestContext,
-        req: Self::Request,
-    ) -> SpawnedResponse<Self::Request> {
-        info!("Signup request: {:?}", req);
+        _conn: Arc<WsConnection>,
+    ) -> BoxFuture<'static, Result<Value>> {
+        info!("Signup request: {:?}", param);
         let db: DbClient = toolbox.get_db();
         let db_auth: DbClient = toolbox.get_nth_db(1);
-        toolbox.spawn_response(ctx, async move {
+        async move {
+            let req: SignupRequest = serde_json::from_value(param).map_err(|x| {
+                CustomError::new(EnumErrorCode::BadRequest, format!("Invalid request: {}", x))
+            })?;
             let address = Address::from_str(&req.address).map_err(|x| {
                 CustomError::new(
                     EnumErrorCode::UnknownUser,
@@ -92,29 +95,30 @@ impl RequestHandler for MethodAuthSignup {
                 })
                 .await?;
             }
-            Ok(SignupResponse {
+            Ok(serde_json::to_value(&SignupResponse {
                 address: address_string,
                 user_id: public_id,
-            })
-        })
+            })?)
+        }
+        .boxed()
     }
 }
-
 pub struct MethodAuthLogin;
 
-impl RequestHandler for MethodAuthLogin {
-    type Request = LoginRequest;
-
-    fn handle(
-        &self,
+impl SubAuthController for MethodAuthLogin {
+    fn auth(
+        self: Arc<Self>,
         toolbox: &Toolbox,
+        param: Value,
         ctx: RequestContext,
-
-        req: Self::Request,
-    ) -> SpawnedResponse<Self::Request> {
-        info!("Login request: {:?}", req);
+        _conn: Arc<WsConnection>,
+    ) -> BoxFuture<'static, Result<Value>> {
+        info!("Login request: {:?}", param);
         let db_auth: DbClient = toolbox.get_nth_db(1);
-        toolbox.spawn_response(ctx, async move {
+        async move {
+            let req: LoginRequest = serde_json::from_value(param).map_err(|x| {
+                CustomError::new(EnumErrorCode::BadRequest, format!("Invalid request: {}", x))
+            })?;
             let address = Address::from_str(&req.address).map_err(|x| {
                 CustomError::new(
                     EnumErrorCode::UnknownUser,
@@ -156,32 +160,35 @@ impl RequestHandler for MethodAuthLogin {
                     service_code: service_code as _,
                 })
                 .await?;
-            Ok(LoginResponse {
+            Ok(serde_json::to_value(&LoginResponse {
                 address: format!("{:?}", address),
                 user_id: row.public_user_id,
                 user_token,
                 admin_token,
-            })
-        })
+            })?)
+        }
+        .boxed()
     }
 }
 
 pub struct MethodAuthAuthorize {
     pub accept_service: EnumService,
 }
-impl RequestHandler for MethodAuthAuthorize {
-    type Request = AuthorizeRequest;
-
-    fn handle(
-        &self,
+impl SubAuthController for MethodAuthAuthorize {
+    fn auth(
+        self: Arc<Self>,
         toolbox: &Toolbox,
+        param: Value,
         ctx: RequestContext,
-        req: Self::Request,
-    ) -> SpawnedResponse<Self::Request> {
-        info!("Authorize request: {:?}", req);
+        conn: Arc<WsConnection>,
+    ) -> BoxFuture<'static, Result<Value>> {
+        info!("Authorize request: {:?}", param);
         let db_auth: DbClient = toolbox.get_nth_db(1);
         let accepted_service = self.accept_service;
-        toolbox.spawn_response(ctx, async move {
+        async move {
+            let req: AuthorizeRequest = serde_json::from_value(param).map_err(|x| {
+                CustomError::new(EnumErrorCode::BadRequest, format!("Invalid request: {}", x))
+            })?;
             let address = Address::from_str(&req.address).map_err(|x| {
                 CustomError::new(
                     EnumErrorCode::UnknownUser,
@@ -218,24 +225,24 @@ impl RequestHandler for MethodAuthAuthorize {
             conn.user_id
                 .store(auth_data.user_id as _, Ordering::Relaxed);
             conn.role.store(auth_data.role as _, Ordering::Relaxed);
-            Ok(AuthorizeResponse { success: true })
-        })
+            Err(NoResponseError.into())
+        }
+        .boxed()
     }
 }
 
 pub struct MethodAuthLogout;
-impl RequestHandler for MethodAuthLogout {
-    type Request = LogoutRequest;
-
-    fn handle(
-        &self,
+impl SubAuthController for MethodAuthLogout {
+    fn auth(
+        self: Arc<Self>,
         toolbox: &Toolbox,
+        _param: Value,
         ctx: RequestContext,
-        _req: Self::Request,
-    ) -> SpawnedResponse<Self::Request> {
+        conn: Arc<WsConnection>,
+    ) -> BoxFuture<'static, Result<Value>> {
         let db_auth: DbClient = toolbox.get_nth_db(1);
 
-        toolbox.spawn_response(ctx, async move {
+        async move {
             db_auth
                 .execute(FunAuthRemoveTokenReq {
                     user_id: ctx.user_id,
@@ -243,8 +250,9 @@ impl RequestHandler for MethodAuthLogout {
                 .await?;
             conn.user_id.store(0, Ordering::Relaxed);
             conn.role.store(EnumRole::Guest as _, Ordering::Relaxed);
-            Ok(LogoutResponse {})
-        })
+            Ok(serde_json::to_value(&LogoutResponse {})?)
+        }
+        .boxed()
     }
 }
 

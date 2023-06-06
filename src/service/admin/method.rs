@@ -15,7 +15,6 @@ impl RequestHandler for MethodAdminListUsers {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<WsConnection>,
         req: Self::Request,
     ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
@@ -63,7 +62,6 @@ impl RequestHandler for MethodAdminSetUserRole {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<WsConnection>,
         req: Self::Request,
     ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
@@ -89,7 +87,6 @@ impl RequestHandler for MethodAdminSetBlockUser {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<WsConnection>,
         req: Self::Request,
     ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
@@ -115,7 +112,6 @@ impl RequestHandler for MethodAdminApproveUserBecomeExpert {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<WsConnection>,
         req: Self::Request,
     ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
@@ -145,7 +141,6 @@ impl RequestHandler for MethodAdminRejectUserBecomeExpert {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<WsConnection>,
         req: Self::Request,
     ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
@@ -176,7 +171,6 @@ impl RequestHandler for MethodAdminListPendingExpertApplications {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<WsConnection>,
         _req: Self::Request,
     ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();

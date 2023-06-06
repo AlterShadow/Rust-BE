@@ -16,15 +16,15 @@ use tokio::sync::mpsc;
 use tracing::*;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct NoResp;
+pub struct NoResponseError;
 
-impl Display for NoResp {
+impl Display for NoResponseError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.write_str("NoResp")
     }
 }
 
-impl std::error::Error for NoResp {}
+impl std::error::Error for NoResponseError {}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CustomError {
@@ -158,11 +158,10 @@ impl Toolbox {
             }),
         );
     }
-    pub fn spawn_ws_response<Resp: Send + Serialize>(
-        &self,
+    pub fn encode_ws_response<Resp: Serialize>(
         ctx: RequestContext,
-        f: impl Future<Output = Result<Resp>> + Send + 'static,
-    ) {
+        resp: Result<Resp>,
+    ) -> Option<WsResponseValue> {
         #[allow(unused_variables)]
         let RequestContext {
             connection_id,
@@ -172,31 +171,21 @@ impl Toolbox {
             log_id,
             ..
         } = ctx;
-        let send_msg = self.send_msg.clone();
-        tokio::spawn(async move {
-            let resp = f.await;
-            let resp = match resp {
-                Ok(ok) => WsResponseValue::Immediate(WsSuccessResponse {
-                    method,
-                    seq,
-                    params: serde_json::to_value(ok).expect("Failed to serialize response"),
-                }),
-                Err(err) if err.is::<NoResp>() => {
-                    return;
-                }
+        let resp = match resp {
+            Ok(ok) => WsResponseValue::Immediate(WsSuccessResponse {
+                method,
+                seq,
+                params: serde_json::to_value(ok).expect("Failed to serialize response"),
+            }),
+            Err(err) if err.is::<NoResponseError>() => {
+                return None;
+            }
 
-                Err(err0) if err0.is::<tokio_postgres::Error>() => {
-                    let err = err0.downcast_ref::<tokio_postgres::Error>().unwrap();
-                    if let Some(code) = err.code() {
-                        if let Ok(err) = CustomError::from_sql_error(code.code(), &err0) {
-                            request_error_to_resp(&ctx, err.code, err.params)
-                        } else {
-                            internal_error_to_resp(
-                                &ctx,
-                                ErrorCode::new(100601), // Database Error,
-                                err0,
-                            )
-                        }
+            Err(err0) if err0.is::<tokio_postgres::Error>() => {
+                let err = err0.downcast_ref::<tokio_postgres::Error>().unwrap();
+                if let Some(code) = err.code() {
+                    if let Ok(err) = CustomError::from_sql_error(code.code(), &err0) {
+                        request_error_to_resp(&ctx, err.code, err.params)
                     } else {
                         internal_error_to_resp(
                             &ctx,
@@ -204,18 +193,37 @@ impl Toolbox {
                             err0,
                         )
                     }
+                } else {
+                    internal_error_to_resp(
+                        &ctx,
+                        ErrorCode::new(100601), // Database Error,
+                        err0,
+                    )
                 }
-                Err(err) if err.is::<CustomError>() => {
-                    let err = err.downcast::<CustomError>().unwrap();
-                    request_error_to_resp(&ctx, err.code, err.params)
-                }
-                Err(err) => internal_error_to_resp(
-                    &ctx,
-                    ErrorCode::new(100500), // Internal Error
-                    err,
-                ),
-            };
-            (send_msg)(connection_id, resp);
+            }
+            Err(err) if err.is::<CustomError>() => {
+                let err = err.downcast::<CustomError>().unwrap();
+                request_error_to_resp(&ctx, err.code, err.params)
+            }
+            Err(err) => internal_error_to_resp(
+                &ctx,
+                ErrorCode::new(100500), // Internal Error
+                err,
+            ),
+        };
+        Some(resp)
+    }
+    pub fn spawn_ws_response<Resp: Send + Serialize>(
+        &self,
+        ctx: RequestContext,
+        f: impl Future<Output = Result<Resp>> + Send + 'static,
+    ) {
+        let send_msg = self.send_msg.clone();
+        tokio::spawn(async move {
+            let resp = f.await;
+            if let Some(resp) = Self::encode_ws_response(ctx, resp) {
+                (send_msg)(ctx.connection_id, resp);
+            }
         });
     }
     pub fn spawn_response<Resp: WsResponse>(

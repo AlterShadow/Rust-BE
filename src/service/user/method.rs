@@ -43,7 +43,6 @@ impl RequestHandler for MethodUserFollowStrategy {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<WsConnection>,
         req: Self::Request,
     ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
@@ -75,7 +74,6 @@ impl RequestHandler for MethodUserListFollowedStrategies {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<WsConnection>,
         _req: Self::Request,
     ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
@@ -116,7 +114,6 @@ impl RequestHandler for MethodUserListStrategies {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<WsConnection>,
         _req: Self::Request,
     ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
@@ -151,7 +148,6 @@ impl RequestHandler for MethodUserGetStrategy {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<WsConnection>,
         req: Self::Request,
     ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
@@ -210,7 +206,6 @@ impl RequestHandler for MethodUserGetStrategyStatistics {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<WsConnection>,
         req: Self::Request,
     ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
@@ -271,7 +266,6 @@ impl RequestHandler for MethodUserGetStrategiesStatistics {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<WsConnection>,
         req: Self::Request,
     ) -> SpawnedResponse<Self::Request> {
         toolbox.spawn_response(ctx, async move {
@@ -297,7 +291,6 @@ impl RequestHandler for MethodUserListBackedStrategies {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<WsConnection>,
         _req: Self::Request,
     ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
@@ -545,7 +538,6 @@ impl RequestHandler for MethodUserBackStrategy {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<WsConnection>,
         req: Self::Request,
     ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
@@ -595,7 +587,6 @@ impl RequestHandler for MethodUserRequestRefund {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<WsConnection>,
         req: Self::Request,
     ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
@@ -634,7 +625,6 @@ impl RequestHandler for MethodUserUnfollowStrategy {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<WsConnection>,
         req: Self::Request,
     ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
@@ -665,7 +655,6 @@ impl RequestHandler for MethodUserListExitStrategyHistory {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<WsConnection>,
         _req: Self::Request,
     ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
@@ -704,7 +693,6 @@ impl RequestHandler for MethodUserFollowExpert {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<WsConnection>,
         req: Self::Request,
     ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
@@ -734,7 +722,6 @@ impl RequestHandler for MethodUserListFollowedExperts {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<WsConnection>,
         _req: Self::Request,
     ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
@@ -772,7 +759,6 @@ impl RequestHandler for MethodUserUnfollowExpert {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<WsConnection>,
         req: Self::Request,
     ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
@@ -802,7 +788,6 @@ impl RequestHandler for MethodUserListExperts {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<WsConnection>,
         _req: Self::Request,
     ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
@@ -836,7 +821,6 @@ impl RequestHandler for MethodUserListTopPerformingExperts {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<WsConnection>,
         _req: Self::Request,
     ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
@@ -870,7 +854,6 @@ impl RequestHandler for MethodUserListFeaturedExperts {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<WsConnection>,
         _req: Self::Request,
     ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
@@ -904,7 +887,6 @@ impl RequestHandler for MethodUserGetExpertProfile {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<WsConnection>,
         req: Self::Request,
     ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
@@ -940,7 +922,6 @@ impl RequestHandler for MethodUserGetUserProfile {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<WsConnection>,
         _req: Self::Request,
     ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
@@ -975,7 +956,6 @@ impl RequestHandler for MethodUserRegisterWallet {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<WsConnection>,
         req: Self::Request,
     ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
@@ -1023,7 +1003,6 @@ impl RequestHandler for MethodUserListWallets {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<WsConnection>,
         _req: Self::Request,
     ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
@@ -1059,7 +1038,6 @@ impl RequestHandler for MethodUserDeregisterWallet {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<WsConnection>,
         req: Self::Request,
     ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
@@ -1085,7 +1063,6 @@ impl RequestHandler for MethodUserApplyBecomeExpert {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<WsConnection>,
         _req: Self::Request,
     ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
@@ -1120,7 +1097,6 @@ impl RequestHandler for MethodUserCreateStrategy {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<WsConnection>,
         req: Self::Request,
     ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
@@ -1153,7 +1129,6 @@ impl RequestHandler for MethodUserUpdateStrategy {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<WsConnection>,
         req: Self::Request,
     ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
@@ -1188,7 +1163,6 @@ impl RequestHandler for MethodUserAddStrategyWatchingWallet {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<WsConnection>,
         req: Self::Request,
     ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
@@ -1226,7 +1200,6 @@ impl RequestHandler for MethodUserRemoveStrategyWatchingWallet {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<WsConnection>,
         req: Self::Request,
     ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
@@ -1261,7 +1234,7 @@ impl RequestHandler for MethodUserListWalletActivityHistory {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        _conn: Arc<WsConnection>,
+
         req: Self::Request,
     ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
@@ -1355,7 +1328,6 @@ impl RequestHandler for MethodUserAddStrategyInitialTokenRatio {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<WsConnection>,
         req: Self::Request,
     ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
@@ -1389,7 +1361,6 @@ impl RequestHandler for MethodUserRemoveStrategyInitialTokenRatio {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<WsConnection>,
         req: Self::Request,
     ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
@@ -1418,7 +1389,6 @@ impl RequestHandler for MethodUserListStrategyInitialTokenRatio {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        conn: Arc<WsConnection>,
         req: Self::Request,
     ) -> SpawnedResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();

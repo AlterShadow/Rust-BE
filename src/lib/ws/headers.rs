@@ -1,11 +1,9 @@
-use eyre::*;
-
-use crate::handler::RequestHandlerErased;
 use crate::toolbox::{RequestContext, Toolbox};
-use crate::ws::{WsConnection, WsEndpoint};
+use crate::ws::WsConnection;
 use chrono::Utc;
 use convert_case::Case;
 use convert_case::Casing;
+use eyre::*;
 use futures::future::BoxFuture;
 use futures::FutureExt;
 use model::endpoint::*;
@@ -85,10 +83,23 @@ impl AuthController for SimpleAuthContoller {
         async move { Ok(()) }.boxed()
     }
 }
-
-pub struct EndpointAuthController {
-    pub auth_endpoints: HashMap<String, WsEndpoint>,
+pub trait SubAuthController: Sync + Send {
+    fn auth(
+        self: Arc<Self>,
+        toolbox: &Toolbox,
+        param: serde_json::Value,
+        ctx: RequestContext,
+        conn: Arc<WsConnection>,
+    ) -> BoxFuture<'static, Result<serde_json::Value>>;
 }
+pub struct EndpointAuthController {
+    pub auth_endpoints: HashMap<String, WsAuthController>,
+}
+pub struct WsAuthController {
+    pub schema: EndpointSchema,
+    pub handler: Arc<dyn SubAuthController>,
+}
+
 impl EndpointAuthController {
     pub fn new() -> Self {
         Self {
@@ -98,11 +109,11 @@ impl EndpointAuthController {
     pub fn add_auth_endpoint(
         &mut self,
         schema: EndpointSchema,
-        handler: impl RequestHandlerErased + 'static,
+        handler: impl SubAuthController + 'static,
     ) {
         self.auth_endpoints.insert(
             schema.name.to_ascii_lowercase(),
-            WsEndpoint {
+            WsAuthController {
                 schema,
                 handler: Arc::new(handler),
             },
@@ -175,21 +186,23 @@ impl AuthController for EndpointAuthController {
                     _ => {}
                 }
             }
-
-            endpoint.handler.handle(
-                &toolbox,
-                RequestContext {
-                    connection_id: conn.connection_id,
-                    user_id: 0,
-                    seq: 0,
-                    method: endpoint.schema.code,
-                    log_id: conn.log_id,
-                    role: conn.role.load(Ordering::Relaxed),
-                    ip_addr: conn.address.ip(),
-                },
-                serde_json::Value::Object(params),
-            );
-
+            let ctx = RequestContext {
+                connection_id: conn.connection_id,
+                user_id: 0,
+                seq: 0,
+                method: endpoint.schema.code,
+                log_id: conn.log_id,
+                role: conn.role.load(Ordering::Relaxed),
+                ip_addr: conn.address.ip(),
+            };
+            let resp = endpoint
+                .handler
+                .clone()
+                .auth(&toolbox, serde_json::Value::Object(params), ctx, conn)
+                .await;
+            if let Some(resp) = Toolbox::encode_ws_response(ctx, resp) {
+                toolbox.send(ctx.connection_id, resp);
+            }
             Ok(())
         }
         .boxed()
