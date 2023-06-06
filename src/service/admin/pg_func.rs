@@ -27,6 +27,7 @@ pub fn get_admin_pg_func() -> Vec<ProceduralFunction> {
                 Field::new("created_at", Type::BigInt),
             ],
             r#"
+BEGIN
     RETURN QUERY
     SELECT
         u.pkey_id,

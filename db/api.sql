@@ -1073,6 +1073,7 @@ RETURNS table (
 LANGUAGE plpgsql
 AS $$
     
+BEGIN
     RETURN QUERY
     SELECT
         u.pkey_id,
