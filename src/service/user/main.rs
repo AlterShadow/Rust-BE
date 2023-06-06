@@ -32,6 +32,8 @@ pub struct Config {
     #[serde(flatten)]
     pub app: WsServerConfig,
     pub ethereum_urls: EthereumConns,
+    #[serde(default)]
+    pub enable_ethereum: bool,
 }
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -140,57 +142,59 @@ async fn main() -> Result<()> {
         endpoint_user_list_strategy_initial_token_ratio(),
         MethodUserListStrategyInitialTokenRatio,
     );
-    let eth_pool = EthereumRpcConnectionPool::from_conns(config.ethereum_urls);
-    let conn = eth_pool.get(EnumBlockChain::LocalNet).await?.clone();
-    let god = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
-    let escrow_signer = Secp256k1SecretKey::new_random();
-    let eth = EthereumToken::new(conn.clone());
-    eth.transfer(
-        &god.key,
-        escrow_signer.address,
-        U256::from(100) * U256::exp10(18),
-    )
-    .await?;
-    // TODO: get escrow_signer from MultiChainAddressTable
-    let escrow_contract = EscrowContract::deploy(conn, &escrow_signer.key)
-        .await
-        .context("Deploy escrow contract")?;
-    let coin_addresses = Arc::new(BlockchainCoinAddresses::new());
-    let strategy_pool_signer = Secp256k1SecretKey::new_random();
-    eth.transfer(
-        &god.key,
-        strategy_pool_signer.address,
-        U256::from(100) * U256::exp10(18),
-    )
-    .await?;
-    let externally_owned_account = Secp256k1SecretKey::new_random();
-    eth.transfer(
-        &god.key,
-        strategy_pool_signer.address,
-        U256::from(100) * U256::exp10(18),
-    )
-    .await?;
-    server.add_handler(
-        endpoint_user_back_strategy(),
-        MethodUserBackStrategy {
-            pool: eth_pool.clone(),
-            stablecoin_addresses: coin_addresses.clone(),
-            strategy_pool_signer,
-            escrow_contract: escrow_contract.clone(),
-            escrow_signer: escrow_signer.clone(),
-            externally_owned_account,
-            dex_addresses: Arc::new(DexAddresses::new()),
-        },
-    );
-    server.add_handler(
-        endpoint_user_request_refund(),
-        MethodUserRequestRefund {
-            pool: eth_pool,
-            stablecoin_addresses: coin_addresses,
-            escrow_contract,
-            escrow_signer,
-        },
-    );
+    if config.enable_ethereum {
+        let eth_pool = EthereumRpcConnectionPool::from_conns(config.ethereum_urls);
+        let conn = eth_pool.get(EnumBlockChain::LocalNet).await?.clone();
+        let god = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
+        let escrow_signer = Secp256k1SecretKey::new_random();
+        let eth = EthereumToken::new(conn.clone());
+        eth.transfer(
+            &god.key,
+            escrow_signer.address,
+            U256::from(100) * U256::exp10(18),
+        )
+        .await?;
+        // TODO: get escrow_signer from MultiChainAddressTable
+        let escrow_contract = EscrowContract::deploy(conn, &escrow_signer.key)
+            .await
+            .context("Deploy escrow contract")?;
+        let coin_addresses = Arc::new(BlockchainCoinAddresses::new());
+        let strategy_pool_signer = Secp256k1SecretKey::new_random();
+        eth.transfer(
+            &god.key,
+            strategy_pool_signer.address,
+            U256::from(100) * U256::exp10(18),
+        )
+        .await?;
+        let externally_owned_account = Secp256k1SecretKey::new_random();
+        eth.transfer(
+            &god.key,
+            strategy_pool_signer.address,
+            U256::from(100) * U256::exp10(18),
+        )
+        .await?;
+        server.add_handler(
+            endpoint_user_back_strategy(),
+            MethodUserBackStrategy {
+                pool: eth_pool.clone(),
+                stablecoin_addresses: coin_addresses.clone(),
+                strategy_pool_signer,
+                escrow_contract: escrow_contract.clone(),
+                escrow_signer: escrow_signer.clone(),
+                externally_owned_account,
+                dex_addresses: Arc::new(DexAddresses::new()),
+            },
+        );
+        server.add_handler(
+            endpoint_user_request_refund(),
+            MethodUserRequestRefund {
+                pool: eth_pool,
+                stablecoin_addresses: coin_addresses,
+                escrow_contract,
+                escrow_signer,
+            },
+        );
+    }
     server.listen().await?;
     Ok(())
 }
