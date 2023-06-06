@@ -45,6 +45,17 @@ impl Erc20Token {
         })
     }
 
+    pub fn new_with_abi(
+        client: Web3<EitherTransport>,
+        address: Address,
+        abi: web3::ethabi::Contract,
+    ) -> Result<Self> {
+        Ok(Self {
+            address,
+            contract: Contract::new(client.eth(), address, abi),
+        })
+    }
+
     pub async fn mint(&self, secret: impl Key, to: Address, amount: U256) -> Result<H256> {
         Ok(self
             .contract

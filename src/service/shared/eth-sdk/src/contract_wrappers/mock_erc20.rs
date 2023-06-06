@@ -3,20 +3,20 @@ use crate::erc20::Erc20Token;
 use crate::utils::get_project_root;
 use crate::EitherTransport;
 use eyre::*;
+use std::fs::read_to_string;
 use web3::contract::Options;
 use web3::signing::Key;
 use web3::Web3;
 
 pub async fn deploy_mock_erc20(conn: Web3<EitherTransport>, key: impl Key) -> Result<Erc20Token> {
     let base = get_project_root().parent().unwrap().to_owned();
-
     let abi_json = read_abi_from_solc_output(
         &base.join("app.mc2.fi-solidity/out/MockToken.sol/MockToken.json"),
     )?;
     let bin =
         std::fs::read_to_string(base.join("app.mc2.fi-solidity/out/MockToken.sol/MockToken.bin"))?;
     // web3::contract::web3 never worked: Abi error: Invalid data for ABI json
-    let deployer = ContractDeployer::new(conn.eth(), abi_json)?
+    let deployer = ContractDeployer::new(conn.eth(), abi_json.clone())?
         .code(bin)
         .options(Options {
             gas: Some(1000000.into()),
@@ -29,9 +29,10 @@ pub async fn deploy_mock_erc20(conn: Web3<EitherTransport>, key: impl Key) -> Re
             max_fee_per_gas: None,
             max_priority_fee_per_gas: None,
         });
-    Ok(Erc20Token::new(
+    Ok(Erc20Token::new_with_abi(
         conn,
         deployer.sign_with_key_and_execute((), key).await?.address(),
+        web3::ethabi::Contract::load(abi_json.to_string().as_bytes())?,
     )?)
 }
 
