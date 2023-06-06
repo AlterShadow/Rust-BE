@@ -47,6 +47,20 @@ jobs:
         with:
           workspaces: ". -> target"
 
+      - name: Install Anvil
+        run: |
+          cargo install --git https://github.com/foundry-rs/foundry --profile local --force foundry-cli anvil chisel
+
+      - name: Run Anvil
+        run: anvil &
+
+      - name: Assert Anvil is Running
+        run: |
+          until [[ "$(curl -s -o /dev/null -w '%{http_code}' -H 'Content-Type: application/json' -X POST --data '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":67}' localhost:8545)" == "200" ]]; do
+            printf '.'
+            sleep 1
+          done
+
       - name: Run auth server
         run: |
           cargo build --bin auth
