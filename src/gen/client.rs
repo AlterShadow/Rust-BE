@@ -179,6 +179,22 @@ impl UserClient {
     }
 }
 impl UserClient {
+    pub async fn user_list_top_performing_experts(
+        &mut self,
+        req: UserListTopPerformingExpertsRequest,
+    ) -> Result<UserListTopPerformingExpertsResponse> {
+        self.client.request(20161, req).await
+    }
+}
+impl UserClient {
+    pub async fn user_list_featured_experts(
+        &mut self,
+        req: UserListFeaturedExpertsRequest,
+    ) -> Result<UserListFeaturedExpertsResponse> {
+        self.client.request(20162, req).await
+    }
+}
+impl UserClient {
     pub async fn user_get_expert_profile(
         &mut self,
         req: UserGetExpertProfileRequest,

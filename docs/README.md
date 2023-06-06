@@ -30,6 +30,8 @@ ID: 2
 |20140|UserListFollowedExperts||experts|User lists followed experts|
 |20150|UserUnfollowExpert|expert_id|success|User unfollows an expert|
 |20160|UserListExperts||experts|User lists experts|
+|20161|UserListTopPerformingExperts||experts|User lists experts|
+|20162|UserListFeaturedExperts||experts|User lists experts|
 |20170|UserGetExpertProfile|expert_id|expert_id, name, follower_count, description, social_media, risk_score, reputation_score, aum, strategies|User gets an expert profile|
 |20180|UserGetUserProfile|user_id|user_id, name, follower_count, description, social_media, followed_experts, followed_strategies, backed_strategies|User gets an user profile|
 |20190|UserRegisterWallet|blockchain, wallet_address, message_to_sign, message_signature|success, wallet_id|User registers a wallet|

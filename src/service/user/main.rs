@@ -97,6 +97,14 @@ async fn main() -> Result<()> {
     server.add_handler(endpoint_user_unfollow_expert(), MethodUserUnfollowExpert);
     server.add_handler(endpoint_user_list_experts(), MethodUserListExperts);
     server.add_handler(
+        endpoint_user_list_top_performing_experts(),
+        MethodUserListTopPerformingExperts,
+    );
+    server.add_handler(
+        endpoint_user_list_featured_experts(),
+        MethodUserListFeaturedExperts,
+    );
+    server.add_handler(
         endpoint_user_get_expert_profile(),
         MethodUserGetExpertProfile,
     );

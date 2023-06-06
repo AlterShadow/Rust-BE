@@ -846,6 +846,76 @@ impl RequestHandler for MethodUserListExperts {
         })
     }
 }
+pub struct MethodUserListTopPerformingExperts;
+impl RequestHandler for MethodUserListTopPerformingExperts {
+    type Request = UserListExpertsRequest;
+    type Response = UserListExpertsResponse;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        conn: Arc<Connection>,
+        _req: Self::Request,
+    ) {
+        let db: DbClient = toolbox.get_db();
+        toolbox.spawn_response(ctx, async move {
+            ensure_user_role(&conn, EnumRole::User)?;
+            let ret = db.execute(FunUserListExpertsReq {}).await?;
+            Ok(UserListExpertsResponse {
+                experts: ret
+                    .into_rows()
+                    .into_iter()
+                    .map(|x| ListExpertsRow {
+                        expert_id: x.expert_id,
+                        name: x.name,
+                        follower_count: x.follower_count as _,
+                        description: x.description,
+                        social_media: x.social_media,
+                        risk_score: x.risk_score,
+                        aum: x.aum,
+                        reputation_score: x.reputation_score,
+                    })
+                    .collect(),
+            })
+        })
+    }
+}
+pub struct MethodUserListFeaturedExperts;
+impl RequestHandler for MethodUserListFeaturedExperts {
+    type Request = UserListExpertsRequest;
+    type Response = UserListExpertsResponse;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        conn: Arc<Connection>,
+        _req: Self::Request,
+    ) {
+        let db: DbClient = toolbox.get_db();
+        toolbox.spawn_response(ctx, async move {
+            ensure_user_role(&conn, EnumRole::User)?;
+            let ret = db.execute(FunUserListExpertsReq {}).await?;
+            Ok(UserListExpertsResponse {
+                experts: ret
+                    .into_rows()
+                    .into_iter()
+                    .map(|x| ListExpertsRow {
+                        expert_id: x.expert_id,
+                        name: x.name,
+                        follower_count: x.follower_count as _,
+                        description: x.description,
+                        social_media: x.social_media,
+                        risk_score: x.risk_score,
+                        aum: x.aum,
+                        reputation_score: x.reputation_score,
+                    })
+                    .collect(),
+            })
+        })
+    }
+}
 pub struct MethodUserGetExpertProfile;
 impl RequestHandler for MethodUserGetExpertProfile {
     type Request = UserGetExpertProfileRequest;

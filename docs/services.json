@@ -946,6 +946,110 @@
           "json_schema": null
         },
         {
+          "name": "UserListTopPerformingExperts",
+          "code": 20161,
+          "parameters": [],
+          "returns": [
+            {
+              "name": "experts",
+              "ty": {
+                "DataTable": {
+                  "name": "ListExpertsRow",
+                  "fields": [
+                    {
+                      "name": "expert_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "follower_count",
+                      "ty": "Int"
+                    },
+                    {
+                      "name": "description",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "social_media",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "risk_score",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "reputation_score",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "aum",
+                      "ty": "Numeric"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "stream_response": [],
+          "description": "User lists experts",
+          "json_schema": null
+        },
+        {
+          "name": "UserListFeaturedExperts",
+          "code": 20162,
+          "parameters": [],
+          "returns": [
+            {
+              "name": "experts",
+              "ty": {
+                "DataTable": {
+                  "name": "ListExpertsRow",
+                  "fields": [
+                    {
+                      "name": "expert_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "follower_count",
+                      "ty": "Int"
+                    },
+                    {
+                      "name": "description",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "social_media",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "risk_score",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "reputation_score",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "aum",
+                      "ty": "Numeric"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "stream_response": [],
+          "description": "User lists experts",
+          "json_schema": null
+        },
+        {
           "name": "UserGetExpertProfile",
           "code": 20170,
           "parameters": [

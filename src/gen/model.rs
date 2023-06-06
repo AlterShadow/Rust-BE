@@ -1029,6 +1029,14 @@ pub struct UserListExpertsResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct UserListFeaturedExpertsRequest {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListFeaturedExpertsResponse {
+    pub experts: Vec<ListExpertsRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct UserListFollowedExpertsRequest {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1070,6 +1078,14 @@ pub struct UserListStrategyWatchingWalletsRequest {
 #[serde(rename_all = "camelCase")]
 pub struct UserListStrategyWatchingWalletsResponse {
     pub wallets: Vec<ListStrategyWatchingWalletsRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListTopPerformingExpertsRequest {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListTopPerformingExpertsResponse {
+    pub experts: Vec<ListExpertsRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]

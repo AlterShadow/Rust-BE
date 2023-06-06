@@ -316,6 +316,24 @@ pub fn endpoint_user_list_experts() -> EndpointSchema {
     .with_description("User lists experts")
 }
 
+pub fn endpoint_user_list_top_performing_experts() -> EndpointSchema {
+    EndpointSchema::new(
+        "UserListTopPerformingExperts",
+        20161,
+        vec![],
+        vec![Field::new("experts", list_experts_datatable())],
+    )
+    .with_description("User lists experts")
+}
+pub fn endpoint_user_list_featured_experts() -> EndpointSchema {
+    EndpointSchema::new(
+        "UserListFeaturedExperts",
+        20162,
+        vec![],
+        vec![Field::new("experts", list_experts_datatable())],
+    )
+    .with_description("User lists experts")
+}
 pub fn endpoint_user_get_expert_profile() -> EndpointSchema {
     EndpointSchema::new(
         "UserGetExpertProfile",
@@ -628,6 +646,8 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
         endpoint_user_list_followed_experts(),
         endpoint_user_unfollow_expert(),
         endpoint_user_list_experts(),
+        endpoint_user_list_top_performing_experts(),
+        endpoint_user_list_featured_experts(),
         endpoint_user_get_expert_profile(),
         endpoint_user_get_user_profile(),
         endpoint_user_register_wallet(),
