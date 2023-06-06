@@ -200,6 +200,7 @@ impl AuthController for EndpointAuthController {
                 .clone()
                 .auth(&toolbox, serde_json::Value::Object(params), ctx, conn)
                 .await;
+            debug!("Auth response: {:?}", resp);
             if let Some(resp) = Toolbox::encode_ws_response(ctx, resp) {
                 toolbox.send(ctx.connection_id, resp);
             }

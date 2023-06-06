@@ -1,15 +1,12 @@
 pub mod tools;
 
-use eth_sdk::signer::{Secp256k1SecretKey};
+use eth_sdk::signer::Secp256k1SecretKey;
 use eth_sdk::utils::encode_signature;
 use eyre::*;
 use gen::database::FunAuthSetRoleReq;
 use gen::model::*;
-use lib::database::{
-    connect_to_database, database_test_config, drop_and_recreate_database,
-};
+use lib::database::{connect_to_database, database_test_config, drop_and_recreate_database};
 use lib::log::{setup_logs, LogLevel};
-
 
 use tools::*;
 use tracing::*;
@@ -30,7 +27,7 @@ async fn test_register_wallet() -> Result<()> {
     let signature = signer.sign_message(hash_message(txt.as_bytes()).as_bytes())?;
 
     let resp = client
-        .user_register_wallet(UserRegisterWalletRequest {
+        .request(UserRegisterWalletRequest {
             blockchain: EnumBlockChain::LocalNet,
             wallet_address: format!("{:?}", signer.address),
             message_to_sign: hex::encode(txt),
@@ -39,7 +36,7 @@ async fn test_register_wallet() -> Result<()> {
         .await?;
     info!("Register wallet {:?}", resp);
     client
-        .user_deregister_wallet(UserDeregisterWalletRequest {
+        .request(UserDeregisterWalletRequest {
             wallet_id: resp.wallet_id,
         })
         .await?;
@@ -57,14 +54,14 @@ async fn test_create_update_strategy() -> Result<()> {
     let mut client = connect_user("user1", &signer.key).await?;
 
     let resp = client
-        .user_create_strategy(UserCreateStrategyRequest {
+        .request(UserCreateStrategyRequest {
             name: "test_strategy".to_string(),
             description: "this is a test strategy".to_string(),
         })
         .await?;
     info!("Register wallet {:?}", resp);
     client
-        .user_update_strategy(UserUpdateStrategyRequest {
+        .request(UserUpdateStrategyRequest {
             strategy_id: resp.strategy_id,
             name: None,
             description: None,
@@ -75,7 +72,7 @@ async fn test_create_update_strategy() -> Result<()> {
         })
         .await?;
     let wallet = client
-        .user_add_strategy_watching_wallet(UserAddStrategyWatchingWalletRequest {
+        .request(UserAddStrategyWatchingWalletRequest {
             strategy_id: resp.strategy_id,
             blockchain: EnumBlockChain::LocalNet,
             wallet_address: "0x000000000001".to_string(),
@@ -84,7 +81,7 @@ async fn test_create_update_strategy() -> Result<()> {
         .await?;
     info!("Add wallet {:?}", wallet);
     let remove_wallet = client
-        .user_remove_strategy_watching_wallet(UserRemoveStrategyWatchingWalletRequest {
+        .request(UserRemoveStrategyWatchingWalletRequest {
             wallet_id: wallet.wallet_id,
         })
         .await?;
@@ -112,17 +109,15 @@ async fn test_user_become_expert() -> Result<()> {
     signup("user1", &user.key).await?;
 
     let mut client = connect_user("user1", &user.key).await?;
-    let resp = client
-        .user_apply_become_expert(UserApplyBecomeExpertRequest {})
-        .await?;
+    let resp = client.request(UserApplyBecomeExpertRequest {}).await?;
     info!("Register wallet {:?}", resp);
 
     let resp = admin_client
-        .admin_list_pending_expert_applications(AdminListPendingExpertApplicationsRequest {})
+        .request(AdminListPendingExpertApplicationsRequest {})
         .await?;
     assert_eq!(resp.users.len(), 1);
     let resp = admin_client
-        .admin_approve_user_become_expert(AdminApproveUserBecomeExpertRequest {
+        .request(AdminApproveUserBecomeExpertRequest {
             user_id: resp.users[0].user_id,
         })
         .await?;

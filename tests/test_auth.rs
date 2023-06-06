@@ -23,9 +23,8 @@ async fn test_signup() -> Result<()> {
     let _ = setup_logs(LogLevel::Trace);
     drop_and_recreate_database()?;
 
-    let key = Secp256k1SecretKey::new_random();
-    let signer = EthereumSigner::new(Arc::new(key))?;
-    signup("user1", &signer).await?;
+    let signer = Secp256k1SecretKey::new_random();
+    signup("user1", &signer.key).await?;
     Ok(())
 }
 
@@ -35,11 +34,10 @@ async fn test_login() -> Result<()> {
 
     drop_and_recreate_database()?;
 
-    let key = Secp256k1SecretKey::new_random();
-    let signer = EthereumSigner::new(Arc::new(key))?;
-    signup("user1", &signer).await?;
+    let signer = Secp256k1SecretKey::new_random();
+    signup("user1", &signer.key).await?;
 
-    login("user1", &signer).await?;
+    login("user1", &signer.key).await?;
 
     Ok(())
 }

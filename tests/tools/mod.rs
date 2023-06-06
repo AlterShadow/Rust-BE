@@ -1,7 +1,5 @@
-
 use eth_sdk::utils::encode_signature;
 use eyre::*;
-use gen::client::*;
 use gen::model::{
     AuthorizeRequest, AuthorizeResponse, EnumService, LoginRequest, LoginResponse, SignupRequest,
     SignupResponse,
@@ -26,14 +24,14 @@ pub async fn auth_login(req: &LoginRequest) -> Result<LoginResponse> {
     Ok(resp)
 }
 
-pub async fn get_ws_user_client(req: &AuthorizeRequest) -> Result<UserClient> {
+pub async fn get_ws_user_client(req: &AuthorizeRequest) -> Result<WsClient> {
     let header = &encode_header(req, endpoint_auth_authorize())?;
     let connect_addr = "ws://localhost:8889";
     info!("Connecting to {} with header {}", connect_addr, header);
     let mut ws_stream = WsClient::new(connect_addr, header).await?;
     let x: AuthorizeResponse = ws_stream.recv_resp().await?;
     info!("AuthorizeResponse {:?}", x);
-    Ok(ws_stream.into())
+    Ok(ws_stream)
 }
 
 pub async fn signup(username: impl Into<String>, signer: impl Key) -> Result<()> {
@@ -76,7 +74,7 @@ pub async fn login(username: impl Into<String>, signer: impl Key) -> Result<Logi
     info!("{:?}", res);
     Ok(res)
 }
-pub async fn connect_user(username: impl Into<String>, signer: impl Key) -> Result<UserClient> {
+pub async fn connect_user(username: impl Into<String>, signer: impl Key) -> Result<WsClient> {
     let login = login(username, signer).await?;
     let client = get_ws_user_client(&AuthorizeRequest {
         address: login.address,
@@ -91,7 +89,7 @@ pub async fn connect_user(username: impl Into<String>, signer: impl Key) -> Resu
 pub async fn connect_user_ext(
     username: impl Into<String>,
     signer: impl Key,
-) -> Result<(UserClient, LoginResponse)> {
+) -> Result<(WsClient, LoginResponse)> {
     let login = login(username, signer).await?;
     let client = get_ws_user_client(&AuthorizeRequest {
         address: login.address.clone(),
