@@ -12,7 +12,7 @@ pub fn endpoint_admin_list_users() -> EndpointSchema {
             Field::new("address", Type::optional(Type::String)),
             Field::new("username", Type::optional(Type::String)),
             Field::new("email", Type::optional(Type::String)),
-            Field::new("role", Type::enum_ref("role")),
+            Field::new("role", Type::optional(Type::enum_ref("role"))),
         ],
         vec![Field::new(
             "users",

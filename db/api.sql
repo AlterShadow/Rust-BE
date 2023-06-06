@@ -1056,7 +1056,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_admin_list_users(a_limit bigint, a_offset bigint, a_user_id bigint DEFAULT NULL, a_address varchar DEFAULT NULL, a_username varchar DEFAULT NULL, a_email varchar DEFAULT NULL, a_role enum_role)
+CREATE OR REPLACE FUNCTION api.fun_admin_list_users(a_limit bigint, a_offset bigint, a_user_id bigint DEFAULT NULL, a_address varchar DEFAULT NULL, a_username varchar DEFAULT NULL, a_email varchar DEFAULT NULL, a_role enum_role DEFAULT NULL)
 RETURNS table (
     "user_id" bigint,
     "public_user_id" bigint,
@@ -1073,14 +1073,13 @@ RETURNS table (
 LANGUAGE plpgsql
 AS $$
     
-BEGIN
     RETURN QUERY
     SELECT
-        u.user_id,
+        u.pkey_id,
         u.public_id,
         u.username,
         u.address,
-        u.login_ip,
+        u.last_ip,
         u.last_login_at,
         u.login_count,
         u.role,
@@ -1088,7 +1087,7 @@ BEGIN
         u.updated_at,
         u.created_at
     FROM
-        tbl.users u
+        tbl.user u
     WHERE
         (a_user_id ISNULL OR u.pkey_id = a_user_id) AND
         (a_address ISNULL OR u.address ILIKE a_address || '%') AND
@@ -1096,12 +1095,13 @@ BEGIN
         (a_email ISNULL OR u.email ILIKE a_email || '%') AND
         (a_role ISNULL OR u.role = a_role)
     ORDER BY
-        u.user_id
+        u.pkey_id
     LIMIT
         a_limit
     OFFSET
         a_offset;
 END;
+
         
 $$;
         

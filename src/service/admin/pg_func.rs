@@ -11,7 +11,7 @@ pub fn get_admin_pg_func() -> Vec<ProceduralFunction> {
                 Field::new("address", Type::optional(Type::String)),
                 Field::new("username", Type::optional(Type::String)),
                 Field::new("email", Type::optional(Type::String)),
-                Field::new("role", Type::enum_ref("role")),
+                Field::new("role", Type::optional(Type::enum_ref("role"))),
             ],
             vec![
                 Field::new("user_id", Type::BigInt),
@@ -27,14 +27,13 @@ pub fn get_admin_pg_func() -> Vec<ProceduralFunction> {
                 Field::new("created_at", Type::BigInt),
             ],
             r#"
-BEGIN
     RETURN QUERY
     SELECT
-        u.user_id,
+        u.pkey_id,
         u.public_id,
         u.username,
         u.address,
-        u.login_ip,
+        u.last_ip,
         u.last_login_at,
         u.login_count,
         u.role,
@@ -42,7 +41,7 @@ BEGIN
         u.updated_at,
         u.created_at
     FROM
-        tbl.users u
+        tbl.user u
     WHERE
         (a_user_id ISNULL OR u.pkey_id = a_user_id) AND
         (a_address ISNULL OR u.address ILIKE a_address || '%') AND
@@ -50,12 +49,13 @@ BEGIN
         (a_email ISNULL OR u.email ILIKE a_email || '%') AND
         (a_role ISNULL OR u.role = a_role)
     ORDER BY
-        u.user_id
+        u.pkey_id
     LIMIT
         a_limit
     OFFSET
         a_offset;
 END;
+
         "#,
         ),
         ProceduralFunction::new(

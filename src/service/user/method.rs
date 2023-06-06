@@ -12,7 +12,6 @@ use lib::database::DbClient;
 use lib::handler::{RequestHandler, SpawnedResponse};
 use lib::toolbox::*;
 use lib::utils::hex_decode;
-use lib::ws::*;
 use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Duration;

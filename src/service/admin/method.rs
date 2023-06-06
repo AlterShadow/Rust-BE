@@ -5,8 +5,6 @@ use gen::model::*;
 use lib::database::DbClient;
 use lib::handler::{RequestHandler, SpawnedResponse};
 use lib::toolbox::{RequestContext, Toolbox};
-use lib::ws::WsConnection;
-use std::sync::Arc;
 
 pub struct MethodAdminListUsers;
 impl RequestHandler for MethodAdminListUsers {
