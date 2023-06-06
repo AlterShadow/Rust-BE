@@ -848,8 +848,8 @@ impl RequestHandler for MethodUserListExperts {
 }
 pub struct MethodUserListTopPerformingExperts;
 impl RequestHandler for MethodUserListTopPerformingExperts {
-    type Request = UserListExpertsRequest;
-    type Response = UserListExpertsResponse;
+    type Request = UserListTopPerformingExpertsRequest;
+    type Response = UserListTopPerformingExpertsResponse;
 
     fn handle(
         &self,
@@ -883,8 +883,8 @@ impl RequestHandler for MethodUserListTopPerformingExperts {
 }
 pub struct MethodUserListFeaturedExperts;
 impl RequestHandler for MethodUserListFeaturedExperts {
-    type Request = UserListExpertsRequest;
-    type Response = UserListExpertsResponse;
+    type Request = UserListFeaturedExpertsRequest;
+    type Response = UserListFeaturedExpertsResponse;
 
     fn handle(
         &self,
