@@ -1481,7 +1481,8 @@ pub struct FunAdminListUsersReq {
     pub username: Option<String>,
     #[serde(default)]
     pub email: Option<String>,
-    pub role: EnumRole,
+    #[serde(default)]
+    pub role: Option<EnumRole>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAdminListUsersRespRow {

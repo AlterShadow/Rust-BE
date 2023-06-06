@@ -1833,7 +1833,9 @@
             {
               "name": "role",
               "ty": {
-                "EnumRef": "role"
+                "Optional": {
+                  "EnumRef": "role"
+                }
               }
             }
           ],
