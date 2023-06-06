@@ -66,7 +66,6 @@ impl Manager for EthereumRpcConnectionManager {
 }
 #[derive(Clone, Debug)]
 pub struct EthereumRpcConnectionPoolInner {
-    conns: EthereumConns,
     pools: HashMap<EnumBlockChain, deadpool::managed::Pool<EthereumRpcConnectionManager>>,
 }
 #[derive(Clone, Debug)]
@@ -83,7 +82,7 @@ impl EthereumRpcConnectionPool {
             .unwrap();
             pools.insert(key.clone(), pool);
         }
-        Self(Arc::new(EthereumRpcConnectionPoolInner { conns, pools }))
+        Self(Arc::new(EthereumRpcConnectionPoolInner { pools }))
     }
     pub fn new() -> Self {
         let conns = EthereumConns::new();

@@ -1,4 +1,5 @@
 use crate::contract::{read_abi_from_solc_output, ContractDeployer};
+use crate::utils::get_project_root;
 use eyre::*;
 use tracing::info;
 use web3::contract::tokens::Tokenize;
@@ -19,10 +20,7 @@ pub async fn deploy_contract<T: Transport>(
     params: impl Tokenize,
     contract_name: &str,
 ) -> Result<Contract<T>> {
-    let base = crate::contract::get_project_root()
-        .parent()
-        .unwrap()
-        .to_owned();
+    let base = get_project_root().parent().unwrap().to_owned();
     let abi_json_path = &base.join(format!(
         "app.mc2.fi-solidity/out/{}.sol/{}.json",
         contract_name, contract_name

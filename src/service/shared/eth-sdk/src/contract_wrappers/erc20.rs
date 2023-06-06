@@ -1,6 +1,9 @@
-use crate::EitherTransport;
+use crate::contract::AbstractContract;
+use crate::{EitherTransport, EthereumRpcConnectionPool, MultiChainAddressTable};
 use eyre::*;
+use gen::model::EnumBlockChain;
 use std::fmt::{Debug, Formatter};
+
 use web3::api::Web3;
 use web3::contract::{Contract, Options};
 use web3::signing::Key;
@@ -8,8 +11,28 @@ use web3::types::{Address, H256, U256};
 
 pub const ERC20_ABI: &'static str = include_str!("erc20.abi.json");
 
+pub struct AbstractErc20Token(AbstractContract<()>);
+impl AbstractErc20Token {
+    pub fn new(name: String, table: MultiChainAddressTable<()>) -> Self {
+        Self(AbstractContract {
+            name,
+            abi: build_erc_20().unwrap(),
+            contract_addresses: table,
+        })
+    }
+    pub async fn get(
+        &self,
+        pool: &EthereumRpcConnectionPool,
+        blockchain: EnumBlockChain,
+    ) -> Result<Erc20Token> {
+        let contract = self.0.get(pool, blockchain, ()).await?;
+        Ok(Erc20Token {
+            address: contract.address(),
+            contract,
+        })
+    }
+}
 pub struct Erc20Token {
-    client: Web3<EitherTransport>,
     pub address: Address,
     pub contract: Contract<EitherTransport>,
 }
@@ -17,7 +40,6 @@ pub struct Erc20Token {
 impl Erc20Token {
     pub fn new(client: Web3<EitherTransport>, address: Address) -> Result<Self> {
         Ok(Self {
-            client: client.clone(),
             address,
             contract: Contract::new(client.eth(), address, build_erc_20()?),
         })

@@ -1,13 +1,37 @@
-use crate::deploy_contract;
+use crate::contract::AbstractContract;
+use crate::{deploy_contract, EitherTransport, EthereumRpcConnectionPool, MultiChainAddressTable};
 use eyre::*;
+use gen::model::EnumBlockChain;
 use tracing::info;
 use web3::api::Eth;
 use web3::contract::{Contract, Options};
 use web3::signing::Key;
 use web3::types::{Address, H256, U256};
-use web3::{Transport, Web3};
+use web3::{ethabi, Transport, Web3};
 
 const ESCROW_ABI_JSON: &str = include_str!("escrow.json");
+
+pub struct AbstractEscrowContract(AbstractContract<()>);
+impl AbstractEscrowContract {
+    pub fn new(table: MultiChainAddressTable<()>) -> Self {
+        let abi = ethabi::Contract::load(ESCROW_ABI_JSON.as_bytes()).unwrap();
+
+        Self(AbstractContract {
+            name: "Escrow".to_string(),
+            abi,
+            contract_addresses: table,
+        })
+    }
+
+    pub async fn get(
+        &self,
+        pool: &EthereumRpcConnectionPool,
+        blockchain: EnumBlockChain,
+    ) -> Result<EscrowContract<EitherTransport>> {
+        let contract = self.0.get(pool, blockchain, ()).await?;
+        Ok(EscrowContract { contract })
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct EscrowContract<T: Transport> {

@@ -1,8 +1,13 @@
+use crate::{
+    EitherTransport, EthereumRpcConnectionGuard, EthereumRpcConnectionPool, MultiChainAddressTable,
+};
 use eyre::ContextCompat;
-use serde::{Deserialize, Serialize};
+use gen::model::EnumBlockChain;
 use serde_json::Value;
+use std::fmt::{Debug, Formatter};
 use std::future::Future;
-use std::path::{Path, PathBuf};
+use std::hash::Hash;
+use std::path::Path;
 use std::{collections::HashMap, time};
 use web3::api::{Accounts, Eth, Namespace};
 use web3::contract::deploy::Error;
@@ -13,19 +18,7 @@ use web3::types::{Address, TransactionParameters, TransactionReceipt, Transactio
 use web3::{ethabi, Transport};
 
 use crate::utils::wait_for_confirmations_simple;
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct ForgeJsonOutputCode {
-    pub object: String,
-    pub source_map: String,
-    pub link_references: Value,
-}
-#[derive(Serialize, Deserialize, Debug)]
-pub struct ForgeJsonOutput {
-    pub abi: Vec<Value>,
-    pub bytecode: ForgeJsonOutputCode,
-    pub deployed_bytecode: ForgeJsonOutputCode,
-}
+
 /// A configuration builder for contract deployment.
 #[derive(Debug)]
 pub struct ContractDeployer<T: Transport> {
@@ -209,28 +202,59 @@ impl<T: Transport> ContractDeployer<T> {
     }
 }
 
-#[cfg(test)]
-pub fn get_project_root() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .unwrap()
-        .parent()
-        .unwrap()
-        .parent()
-        .unwrap()
-        .parent()
-        .unwrap()
-        .to_owned()
-}
-
-#[cfg(not(test))]
-pub fn get_project_root() -> PathBuf {
-    std::fs::canonicalize(".").unwrap()
-}
-
 pub fn read_abi_from_solc_output(path: &Path) -> eyre::Result<Value> {
     let json = std::fs::read(path)?;
     let json: Value = serde_json::from_slice(&json)?;
     let abi = json.get("abi").context("No abi")?;
     Ok(abi.to_owned())
+}
+
+pub struct AbstractContract<ENUM = ()> {
+    pub name: String,
+    pub abi: ethabi::Contract,
+    pub contract_addresses: MultiChainAddressTable<ENUM>,
+}
+impl<ENUM> Debug for AbstractContract<ENUM> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AbstractContract")
+            .field("name", &self.name)
+            .finish_non_exhaustive()
+    }
+}
+impl<ENUM: Copy + Eq + Hash> AbstractContract<ENUM> {
+    pub fn to_concrete_contract(
+        &self,
+        eth: Eth<EitherTransport>,
+        address: Address,
+    ) -> Contract<EitherTransport> {
+        Contract::new(eth, address, self.abi.clone())
+    }
+    pub async fn get_with_web3(
+        &self,
+        pool: &EthereumRpcConnectionPool,
+        blockchain: EnumBlockChain,
+        enum_: ENUM,
+    ) -> eyre::Result<(Contract<EitherTransport>, EthereumRpcConnectionGuard)> {
+        let web3 = pool.get(blockchain).await?;
+        let address = self
+            .contract_addresses
+            .get(blockchain, enum_)
+            .with_context(|| {
+                format!(
+                    "Could not find contract address for {} on {}",
+                    self.name, blockchain
+                )
+            })?;
+        let contract = self.to_concrete_contract(web3.eth(), address);
+        Ok((contract, web3))
+    }
+    pub async fn get(
+        &self,
+        pool: &EthereumRpcConnectionPool,
+        blockchain: EnumBlockChain,
+        enum_: ENUM,
+    ) -> eyre::Result<Contract<EitherTransport>> {
+        let (contract, _guard) = self.get_with_web3(pool, blockchain, enum_).await?;
+        Ok(contract)
+    }
 }

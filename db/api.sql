@@ -746,7 +746,7 @@ CREATE OR REPLACE FUNCTION api.fun_user_list_experts()
 RETURNS table (
     "expert_id" bigint,
     "name" varchar,
-    "follower_count" int,
+    "follower_count" bigint,
     "description" varchar,
     "social_media" varchar,
     "risk_score" double precision,

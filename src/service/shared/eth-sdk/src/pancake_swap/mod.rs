@@ -180,7 +180,7 @@ impl PancakeSwap {
         ensure!(swap_infos.len() > 0, "no suitable method found");
 
         let mut func_names_and_paths: Vec<(String, DexPath)> = Vec::new();
-        for (swap, version, call) in &swap_infos {
+        for (swap, _version, call) in &swap_infos {
             func_names_and_paths.push((call.get_name(), swap.path.clone()));
         }
         Ok(PancakePairPathSet {

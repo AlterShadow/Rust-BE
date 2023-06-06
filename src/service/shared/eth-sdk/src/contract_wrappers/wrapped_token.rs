@@ -10,13 +10,12 @@ const WRAPPED_ABI_JSON: &str = include_str!("weth.json");
 #[derive(Debug, Clone)]
 pub struct WrappedTokenContract<T: Transport> {
     contract: Contract<T>,
-    w3: Web3<T>,
 }
 
 impl<T: Transport> WrappedTokenContract<T> {
     pub fn new(w3: Web3<T>, address: Address) -> Result<Self> {
         let contract = Contract::from_json(w3.eth(), address, WRAPPED_ABI_JSON.as_bytes())?;
-        Ok(Self { contract, w3 })
+        Ok(Self { contract })
     }
 
     pub fn address(&self) -> Address {

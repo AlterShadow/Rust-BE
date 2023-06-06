@@ -1,5 +1,5 @@
 use eth_sdk::erc20::Erc20Token;
-use eth_sdk::escrow::EscrowContract;
+use eth_sdk::escrow::{AbstractEscrowContract, EscrowContract};
 use eth_sdk::signer::Secp256k1SecretKey;
 use eth_sdk::strategy_pool::StrategyPoolContract;
 use eth_sdk::utils::{verify_message_address, wait_for_confirmations_simple};
@@ -543,7 +543,7 @@ pub struct MethodUserBackStrategy {
     pub pool: EthereumRpcConnectionPool,
     pub stablecoin_addresses: Arc<BlockchainCoinAddresses>,
     pub strategy_pool_signer: Secp256k1SecretKey,
-    pub escrow_contract: EscrowContract<EitherTransport>,
+    pub escrow_contract: Arc<AbstractEscrowContract>,
     pub escrow_signer: Secp256k1SecretKey,
     pub externally_owned_account: Secp256k1SecretKey,
     pub dex_addresses: Arc<DexAddresses>,
@@ -568,7 +568,7 @@ impl RequestHandler for MethodUserBackStrategy {
         let externally_owned_account = self.externally_owned_account.clone();
         let dex_addresses = self.dex_addresses.clone();
         toolbox.spawn_response(ctx.clone(), async move {
-            // TODO: support multi chains
+            let escrow_contract = escrow_contract.get(&pool, req.blockchain).await?;
             let eth_conn = pool.get(EnumBlockChain::LocalNet).await?;
             ensure_user_role(&conn, EnumRole::User)?;
 
@@ -595,7 +595,7 @@ impl RequestHandler for MethodUserBackStrategy {
 pub struct MethodUserRequestRefund {
     pub pool: EthereumRpcConnectionPool,
     pub stablecoin_addresses: Arc<BlockchainCoinAddresses>,
-    pub escrow_contract: EscrowContract<EitherTransport>,
+    pub escrow_contract: Arc<AbstractEscrowContract>,
     pub escrow_signer: Secp256k1SecretKey,
 }
 
@@ -616,7 +616,8 @@ impl RequestHandler for MethodUserRequestRefund {
         let escrow_signer = self.escrow_signer.clone();
         let escrow_contract = self.escrow_contract.clone();
         toolbox.spawn_response(ctx.clone(), async move {
-            let eth_conn = pool.get(EnumBlockChain::LocalNet).await?;
+            let escrow_contract = escrow_contract.get(&pool, req.blockchain).await?;
+            let eth_conn = pool.get(req.blockchain).await?;
 
             ensure_user_role(&conn, EnumRole::User)?;
 
@@ -833,7 +834,7 @@ impl RequestHandler for MethodUserListExperts {
                     .map(|x| ListExpertsRow {
                         expert_id: x.expert_id,
                         name: x.name,
-                        follower_count: x.follower_count,
+                        follower_count: x.follower_count as _,
                         description: x.description,
                         social_media: x.social_media,
                         risk_score: x.risk_score,

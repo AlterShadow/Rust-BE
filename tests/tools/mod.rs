@@ -1,4 +1,4 @@
-use eth_sdk::signer::EthereumSigner;
+
 use eth_sdk::utils::encode_signature;
 use eyre::*;
 use gen::client::*;

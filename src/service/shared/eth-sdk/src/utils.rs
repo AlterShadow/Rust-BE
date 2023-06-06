@@ -2,12 +2,12 @@ use eyre::*;
 use secp256k1::PublicKey;
 use std::time::Duration;
 
-
-
+use std::path::PathBuf;
 use web3::api::Eth;
 use web3::signing::{hash_message, keccak256, recover, RecoveryError, Signature};
 use web3::types::{Address, TransactionReceipt, H256, U256};
 use web3::Transport;
+
 pub fn eth_public_exponent_to_address(public_exponent: &crypto::PublicExponent) -> Result<Address> {
     let public_key = PublicKey::from_slice(&public_exponent.content).map_err(|_| {
         eyre!(
@@ -98,4 +98,23 @@ mod tests {
         println!("address: {}", address);
         Ok(())
     }
+}
+
+#[cfg(test)]
+pub fn get_project_root() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .to_owned()
+}
+
+#[cfg(not(test))]
+pub fn get_project_root() -> PathBuf {
+    std::fs::canonicalize(".").unwrap()
 }

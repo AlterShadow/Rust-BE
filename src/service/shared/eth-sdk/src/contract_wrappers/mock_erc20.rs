@@ -1,5 +1,6 @@
-use crate::contract::{get_project_root, read_abi_from_solc_output, ContractDeployer};
+use crate::contract::{read_abi_from_solc_output, ContractDeployer};
 use crate::erc20::Erc20Token;
+use crate::utils::get_project_root;
 use crate::EitherTransport;
 use eyre::*;
 use web3::contract::Options;

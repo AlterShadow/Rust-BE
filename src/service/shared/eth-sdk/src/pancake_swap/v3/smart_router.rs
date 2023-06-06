@@ -22,7 +22,6 @@ pub const SMART_ROUTER_ABI_JSON: &str = include_str!("smart_router_v3.json");
 #[derive(Debug, Clone)]
 pub struct PancakeSmartRouterV3Contract<T: Transport> {
     contract: Contract<T>,
-    w3: Web3<T>,
     refer_to_self_flag: Address,
 }
 
@@ -32,7 +31,6 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
         let refer_to_self_flag = Address::from_str("0x0000000000000000000000000000000000000002")?;
         Ok(Self {
             contract,
-            w3,
             refer_to_self_flag,
         })
     }
