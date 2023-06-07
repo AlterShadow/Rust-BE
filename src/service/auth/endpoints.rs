@@ -35,6 +35,7 @@ pub fn endpoint_auth_login() -> EndpointSchema {
         ],
         vec![
             Field::new("address", Type::String),
+            Field::new("role", Type::enum_ref("role")),
             Field::new("user_id", Type::BigInt),
             Field::new("user_token", Type::UUID),
             Field::new("admin_token", Type::UUID),

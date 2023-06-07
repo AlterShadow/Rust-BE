@@ -63,6 +63,7 @@ pub struct FunAuthAuthenticateReq {
 pub struct FunAuthAuthenticateRespRow {
     pub user_id: i64,
     pub public_user_id: i64,
+    pub role: EnumRole,
 }
 
 #[allow(unused_variables)]
@@ -84,6 +85,7 @@ impl DatabaseRequest for FunAuthAuthenticateReq {
         let r = FunAuthAuthenticateRespRow {
             user_id: row.try_get(0)?,
             public_user_id: row.try_get(1)?,
+            role: row.try_get(2)?,
         };
         Ok(r)
     }

@@ -1005,6 +1005,7 @@ pub struct LoginRequest {
 #[serde(rename_all = "camelCase")]
 pub struct LoginResponse {
     pub address: String,
+    pub role: EnumRole,
     pub user_id: i64,
     pub user_token: uuid::Uuid,
     pub admin_token: uuid::Uuid,

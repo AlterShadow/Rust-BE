@@ -162,6 +162,7 @@ impl SubAuthController for MethodAuthLogin {
                 .await?;
             Ok(serde_json::to_value(&LoginResponse {
                 address: format!("{:?}", address),
+                role: row.role,
                 user_id: row.public_user_id,
                 user_token,
                 admin_token,

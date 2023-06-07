@@ -73,6 +73,7 @@ END
             vec![
                 Field::new("user_id", Type::BigInt),
                 Field::new("public_user_id", Type::BigInt),
+                Field::new("role", Type::enum_ref("role")),
             ],
             r#"
 DECLARE
@@ -119,7 +120,7 @@ BEGIN
     IF a_service_code = api.ADMIN_SERVICE() THEN
         UPDATE tbl.user SET admin_device_id = a_device_id WHERE pkey_id = _user_id;
     END IF;
-    RETURN QUERY SELECT _user_id, _public_user_id;
+    RETURN QUERY SELECT _user_id, _public_user_id, _role;
 END
         "#,
         ),
