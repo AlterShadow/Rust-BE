@@ -291,8 +291,8 @@ pub enum EnumEndpoint {
     #[postgres(name = "UserRegisterWallet")]
     UserRegisterWallet = 20190,
     ///
-    #[postgres(name = "UserListWallets")]
-    UserListWallets = 20200,
+    #[postgres(name = "UserListRegisteredWallets")]
+    UserListRegisteredWallets = 20200,
     ///
     #[postgres(name = "UserDeregisterWallet")]
     UserDeregisterWallet = 20210,
@@ -1259,6 +1259,14 @@ pub struct UserListFollowedStrategiesResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct UserListRegisteredWalletsRequest {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListRegisteredWalletsResponse {
+    pub wallets: Vec<ListWalletsRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct UserListStrategiesRequest {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1303,14 +1311,6 @@ pub struct UserListWalletActivityHistoryRequest {
 #[serde(rename_all = "camelCase")]
 pub struct UserListWalletActivityHistoryResponse {
     pub wallet_activities: Vec<ListWalletActivityHistoryRow>,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserListWalletsRequest {}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserListWalletsResponse {
-    pub wallets: Vec<ListWalletsRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1610,12 +1610,12 @@ impl WsResponse for UserRegisterWalletResponse {
     type Request = UserRegisterWalletRequest;
 }
 
-impl WsRequest for UserListWalletsRequest {
-    type Response = UserListWalletsResponse;
+impl WsRequest for UserListRegisteredWalletsRequest {
+    type Response = UserListRegisteredWalletsResponse;
     const METHOD_ID: u32 = 20200;
 }
-impl WsResponse for UserListWalletsResponse {
-    type Request = UserListWalletsRequest;
+impl WsResponse for UserListRegisteredWalletsResponse {
+    type Request = UserListRegisteredWalletsRequest;
 }
 
 impl WsRequest for UserDeregisterWalletRequest {

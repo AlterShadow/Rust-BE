@@ -1337,7 +1337,7 @@
           "json_schema": null
         },
         {
-          "name": "UserListWallets",
+          "name": "UserListRegisteredWallets",
           "code": 20200,
           "parameters": [],
           "returns": [

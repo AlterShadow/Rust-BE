@@ -247,7 +247,7 @@ CREATE TABLE tbl.user_follow_strategy (
 CREATE TABLE tbl.user_registered_wallet (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_user_registered_wallet_id'),
     fkey_user_id bigint  NOT NULL,
-    blockchain varchar(20)  NOT NULL,
+    blockchain enum_block_chain  NOT NULL,
     address varchar(64)  NOT NULL,
     created_at bigint  NOT NULL,
     CONSTRAINT user_registered_wallet_ak_1 UNIQUE (address, blockchain) NOT DEFERRABLE  INITIALLY IMMEDIATE,

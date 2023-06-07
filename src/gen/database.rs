@@ -315,8 +315,8 @@ pub struct FunUserListStrategiesRespRow {
     pub strategy_name: String,
     pub strategy_description: String,
     pub net_value: f64,
-    pub followers: i32,
-    pub backers: i32,
+    pub followers: i64,
+    pub backers: i64,
     pub risk_score: f64,
     pub aum: f64,
 }

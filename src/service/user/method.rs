@@ -129,8 +129,8 @@ impl RequestHandler for MethodUserListStrategies {
                         strategy_name: x.strategy_name,
                         strategy_description: x.strategy_description,
                         net_value: x.net_value,
-                        followers: x.followers,
-                        backers: x.backers,
+                        followers: x.followers as _,
+                        backers: x.backers as _,
                         risk_score: x.risk_score,
                         aum: x.aum,
                     })
@@ -994,9 +994,9 @@ impl RequestHandler for MethodUserRegisterWallet {
     }
 }
 
-pub struct MethodUserListWallets;
-impl RequestHandler for MethodUserListWallets {
-    type Request = UserListWalletsRequest;
+pub struct MethodUserListRegisteredWallets;
+impl RequestHandler for MethodUserListRegisteredWallets {
+    type Request = UserListRegisteredWalletsRequest;
 
     fn handle(
         &self,
@@ -1014,7 +1014,7 @@ impl RequestHandler for MethodUserListWallets {
                 })
                 .await?;
 
-            Ok(UserListWalletsResponse {
+            Ok(UserListRegisteredWalletsResponse {
                 wallets: ret
                     .into_rows()
                     .into_iter()

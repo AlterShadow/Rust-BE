@@ -389,9 +389,9 @@ pub fn endpoint_user_register_wallet() -> EndpointSchema {
     )
     .with_description("User registers a wallet")
 }
-pub fn endpoint_user_list_wallets() -> EndpointSchema {
+pub fn endpoint_user_list_registered_wallets() -> EndpointSchema {
     EndpointSchema::new(
-        "UserListWallets",
+        "UserListRegisteredWallets",
         20200,
         vec![],
         vec![Field::new(
@@ -610,7 +610,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
         endpoint_user_get_expert_profile(),
         endpoint_user_get_user_profile(),
         endpoint_user_register_wallet(),
-        endpoint_user_list_wallets(),
+        endpoint_user_list_registered_wallets(),
         endpoint_user_deregister_wallet(),
         endpoint_user_apply_become_expert(),
         endpoint_user_create_strategy(),
