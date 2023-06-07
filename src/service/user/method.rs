@@ -139,6 +139,42 @@ impl RequestHandler for MethodUserListStrategies {
         })
     }
 }
+
+pub struct MethodUserListTopPerformingStrategies;
+
+impl RequestHandler for MethodUserListTopPerformingStrategies {
+    type Request = UserListTopPerformingStrategiesRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        _req: Self::Request,
+    ) -> SpawnedResponse<Self::Request> {
+        let db: DbClient = toolbox.get_db();
+        toolbox.spawn_response(ctx, async move {
+            ensure_user_role(ctx, EnumRole::User)?;
+
+            let ret = db.execute(FunUserListStrategiesReq {}).await?;
+            Ok(UserListTopPerformingStrategiesResponse {
+                strategies: ret
+                    .into_rows()
+                    .into_iter()
+                    .map(|x| ListStrategiesRow {
+                        strategy_id: x.strategy_id,
+                        strategy_name: x.strategy_name,
+                        strategy_description: x.strategy_description,
+                        net_value: x.net_value,
+                        followers: x.followers as _,
+                        backers: x.backers as _,
+                        risk_score: x.risk_score,
+                        aum: x.aum,
+                    })
+                    .collect(),
+            })
+        })
+    }
+}
 pub struct MethodUserGetStrategy;
 impl RequestHandler for MethodUserGetStrategy {
     type Request = UserGetStrategyRequest;

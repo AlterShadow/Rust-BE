@@ -109,6 +109,37 @@ END
             "#,
         ),
         ProceduralFunction::new(
+            "fun_user_list_top_performing_strategies",
+            vec![],
+            vec![
+                Field::new("strategy_id", Type::BigInt),
+                Field::new("strategy_name", Type::String),
+                Field::new("strategy_description", Type::String),
+                Field::new("net_value", Type::Numeric),
+                Field::new("followers", Type::BigInt),
+                Field::new("backers", Type::BigInt),
+                Field::new("risk_score", Type::Numeric),
+                Field::new("aum", Type::Numeric),
+            ],
+            r#"
+BEGIN
+
+    RETURN QUERY SELECT a.pkey_id AS strategy_id,
+                          a.name AS strategy_name,
+                          a.description AS strategy_description,
+                          0.0::double precision AS net_value,
+                          (SELECT COUNT(*) FROM tbl.user_follow_strategy WHERE fkey_strategy_id = a.pkey_id AND unfollowed = FALSE) AS followers,
+                          (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_strategy_history AS h WHERE fkey_strategy_id = a.pkey_id) AS backers,
+                          a.risk_score as risk_score,
+                          a.aum as aum
+                 FROM tbl.strategy AS a 
+                 ORDER BY a.aum
+                 LIMIT 10
+                    ;
+END
+            "#,
+        ),
+        ProceduralFunction::new(
             "fun_user_get_strategy",
             // TODO search options
             vec![Field::new("strategy_id", Type::BigInt)],

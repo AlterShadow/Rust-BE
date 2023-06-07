@@ -17,7 +17,8 @@ ID: 2
 |20040|UserFollowStrategy|strategy_id|success|User follows a strategy|
 |20050|UserListFollowedStrategies||strategies|User lists followed strategies|
 |20060|UserUnfollowStrategy|strategy_id|success||
-|20061|UserListStrategies||strategies|User lists followed strategies|
+|20061|UserListStrategies||strategies|User lists strategies|
+|20063|UserListTopPerformingStrategies||strategies|User lists top performing strategies|
 |20062|UserGetStrategy|strategy_id|strategy_id, strategy_name, strategy_description, creator_user_id, social_media, historical_return, inception_time, total_amount, token_allocation, reputation, risk_score, aum, net_value, followers, backers, watching_wallets, aum_history|User gets a strategy|
 |20070|UserGetStrategyStatistics|strategy_id|strategy_id, net_value, follow_history, back_history|User gets a strategy statistics|
 |20071|UserGetStrategiesStatistics||tracking_amount_usd, backing_amount_usd, difference_amount_usd, aum_value_usd, current_value_usd, withdrawable_value_usd|User gets statistics of all strategies related to the user|

@@ -50,7 +50,17 @@ pub fn endpoint_user_list_strategies() -> EndpointSchema {
         vec![],
         vec![Field::new("strategies", list_strategies_datatable())],
     )
-    .with_description("User lists followed strategies")
+    .with_description("User lists strategies")
+}
+
+pub fn endpoint_user_list_top_performing_strategies() -> EndpointSchema {
+    EndpointSchema::new(
+        "UserListTopPerformingStrategies",
+        20063,
+        vec![],
+        vec![Field::new("strategies", list_strategies_datatable())],
+    )
+    .with_description("User lists top performing strategies")
 }
 
 pub fn endpoint_user_get_strategy() -> EndpointSchema {
@@ -592,6 +602,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
         endpoint_user_list_followed_strategies(),
         endpoint_user_unfollow_strategy(),
         endpoint_user_list_strategies(),
+        endpoint_user_list_top_performing_strategies(),
         endpoint_user_get_strategy(),
         endpoint_user_get_strategy_statistics(),
         endpoint_user_get_strategies_statistics(),

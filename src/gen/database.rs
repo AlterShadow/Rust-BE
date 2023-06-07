@@ -346,6 +346,44 @@ impl DatabaseRequest for FunUserListStrategiesReq {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserListTopPerformingStrategiesReq {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserListTopPerformingStrategiesRespRow {
+    pub strategy_id: i64,
+    pub strategy_name: String,
+    pub strategy_description: String,
+    pub net_value: f64,
+    pub followers: i64,
+    pub backers: i64,
+    pub risk_score: f64,
+    pub aum: f64,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunUserListTopPerformingStrategiesReq {
+    type ResponseRow = FunUserListTopPerformingStrategiesRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_list_top_performing_strategies();"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserListTopPerformingStrategiesRespRow> {
+        let r = FunUserListTopPerformingStrategiesRespRow {
+            strategy_id: row.try_get(0)?,
+            strategy_name: row.try_get(1)?,
+            strategy_description: row.try_get(2)?,
+            net_value: row.try_get(3)?,
+            followers: row.try_get(4)?,
+            backers: row.try_get(5)?,
+            risk_score: row.try_get(6)?,
+            aum: row.try_get(7)?,
+        };
+        Ok(r)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserGetStrategyReq {
     pub strategy_id: i64,
 }

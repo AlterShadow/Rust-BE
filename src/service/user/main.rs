@@ -77,6 +77,10 @@ async fn main() -> Result<()> {
         MethodUserDeregisterWallet,
     );
     server.add_handler(endpoint_user_list_strategies(), MethodUserListStrategies);
+    server.add_handler(
+        endpoint_user_list_top_performing_strategies(),
+        MethodUserListTopPerformingStrategies,
+    );
     server.add_handler(endpoint_user_get_strategy(), MethodUserGetStrategy);
     server.add_handler(
         endpoint_user_get_strategy_statistics(),

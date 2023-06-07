@@ -240,6 +240,9 @@ pub enum EnumEndpoint {
     #[postgres(name = "UserListStrategies")]
     UserListStrategies = 20061,
     ///
+    #[postgres(name = "UserListTopPerformingStrategies")]
+    UserListTopPerformingStrategies = 20063,
+    ///
     #[postgres(name = "UserGetStrategy")]
     UserGetStrategy = 20062,
     ///
@@ -1303,6 +1306,14 @@ pub struct UserListTopPerformingExpertsResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct UserListTopPerformingStrategiesRequest {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListTopPerformingStrategiesResponse {
+    pub strategies: Vec<ListStrategiesRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct UserListWalletActivityHistoryRequest {
     pub wallet_address: String,
     pub blockchain: EnumBlockChain,
@@ -1472,6 +1483,14 @@ impl WsRequest for UserListStrategiesRequest {
 }
 impl WsResponse for UserListStrategiesResponse {
     type Request = UserListStrategiesRequest;
+}
+
+impl WsRequest for UserListTopPerformingStrategiesRequest {
+    type Response = UserListTopPerformingStrategiesResponse;
+    const METHOD_ID: u32 = 20063;
+}
+impl WsResponse for UserListTopPerformingStrategiesResponse {
+    type Request = UserListTopPerformingStrategiesRequest;
 }
 
 impl WsRequest for UserGetStrategyRequest {
