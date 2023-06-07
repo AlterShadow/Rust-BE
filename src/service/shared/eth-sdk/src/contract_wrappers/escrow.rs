@@ -45,9 +45,14 @@ impl<T: Transport> EscrowContract<T> {
         let contract = deploy_contract(w3, key, address, "Escrow").await?;
         Ok(Self { contract })
     }
+
     pub fn new(eth: Eth<T>, address: Address) -> Result<Self> {
         let contract = Contract::from_json(eth, address, ESCROW_ABI_JSON.as_bytes())?;
         Ok(Self { contract })
+    }
+
+    pub fn address(&self) -> Address {
+        self.contract.address()
     }
 
     pub async fn transfer_token_to(
@@ -68,11 +73,11 @@ impl<T: Transport> EscrowContract<T> {
             .await?;
 
         info!(
-            "Transferring {:?} amount of token {:?} from escrow contract {:?} to {:?} by {:?}",
+            "Transferring {:?} amount of token {:?} to recipient {:?} from escrow contract {:?} by {:?}",
             amount,
             token_address,
+						recipient,
             self.address(),
-            recipient,
             signer.address(),
         );
 
@@ -104,10 +109,10 @@ impl<T: Transport> EscrowContract<T> {
             .await?;
 
         info!(
-            "Transferring escrow contract {:?} ownership from {:?} to {:?} by {:?}",
-            self.address(),
+            "Transferring ownership from {:?} to {:?} of escrow contract {:?} by {:?}",
             self.owner().await?,
             new_owner,
+            self.address(),
             signer.address(),
         );
 
@@ -134,9 +139,6 @@ impl<T: Transport> EscrowContract<T> {
             )
             .await?)
     }
-    pub fn address(&self) -> Address {
-        self.contract.address()
-    }
 }
 
 enum EscrowFunctions {
@@ -152,5 +154,142 @@ impl EscrowFunctions {
             Self::TransferOwnership => "transferOwnership",
             Self::Owner => "owner",
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+    use std::time::Duration;
+
+    use once_cell::sync::Lazy;
+    use tokio::sync::Mutex;
+
+    use super::*;
+    use crate::contract_wrappers::mock_erc20::deploy_mock_erc20;
+    use crate::signer::Secp256k1SecretKey;
+    use crate::{
+        wait_for_confirmations_simple, EthereumRpcConnectionGuard, EthereumRpcConnectionPool,
+        ANVIL_PRIV_KEY_1, ANVIL_PRIV_KEY_2,
+    };
+    use gen::model::EnumBlockChain;
+
+    static TX_CONN: Lazy<Arc<Mutex<Option<EthereumRpcConnectionGuard>>>> =
+        Lazy::new(|| Arc::new(Mutex::new(None)));
+
+    async fn get_tx_conn() -> Result<Arc<Mutex<Option<EthereumRpcConnectionGuard>>>> {
+        /* since tests are parallel and use a single key, ensure only one test publishes transactions at a time */
+        /* to avoid "nonce too low" errors */
+        let tx_conn_arc = TX_CONN.clone();
+        let mut tx_conn = tx_conn_arc.lock().await;
+        if tx_conn.is_none() {
+            *tx_conn = Some(
+                EthereumRpcConnectionPool::new()
+                    .get(EnumBlockChain::LocalNet)
+                    .await?,
+            );
+        }
+        Ok(tx_conn_arc.clone())
+    }
+
+    #[tokio::test]
+    async fn test_transfer_token_to() -> Result<()> {
+        let tx_conn_wrapper = get_tx_conn().await?;
+        let mut tx_conn_guard = tx_conn_wrapper.lock().await;
+        let tx_conn = tx_conn_guard.as_mut().unwrap();
+
+        let god_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
+
+        let mock_erc20_a = deploy_mock_erc20(tx_conn.clone(), god_key.clone()).await?;
+        let alice = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_2)?;
+
+        let escrow = EscrowContract::deploy(tx_conn.clone(), god_key.clone()).await?;
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            mock_erc20_a
+                .mint(god_key.clone(), escrow.address(), U256::from(100))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        assert_eq!(
+            mock_erc20_a.balance_of(escrow.address()).await?,
+            U256::from(100)
+        );
+        assert_eq!(
+            mock_erc20_a.balance_of(alice.address()).await?,
+            U256::from(0)
+        );
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            escrow
+                .transfer_token_to(
+                    god_key.clone(),
+                    mock_erc20_a.address,
+                    alice.address(),
+                    U256::from(100),
+                )
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        assert_eq!(
+            mock_erc20_a.balance_of(escrow.address()).await?,
+            U256::from(0)
+        );
+        assert_eq!(
+            mock_erc20_a.balance_of(alice.address()).await?,
+            U256::from(100)
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_owner() -> Result<()> {
+        let tx_conn_wrapper = get_tx_conn().await?;
+        let mut tx_conn_guard = tx_conn_wrapper.lock().await;
+        let tx_conn = tx_conn_guard.as_mut().unwrap();
+
+        let god_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
+
+        let escrow = EscrowContract::deploy(tx_conn.clone(), god_key.clone()).await?;
+
+        assert_eq!(escrow.owner().await?, god_key.address());
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_transfer_ownership() -> Result<()> {
+        let tx_conn_wrapper = get_tx_conn().await?;
+        let mut tx_conn_guard = tx_conn_wrapper.lock().await;
+        let tx_conn = tx_conn_guard.as_mut().unwrap();
+
+        let god_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
+
+        let alice = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_2)?;
+
+        let escrow = EscrowContract::deploy(tx_conn.clone(), god_key.clone()).await?;
+
+        assert_eq!(escrow.owner().await?, god_key.address());
+
+        wait_for_confirmations_simple(
+            &tx_conn.eth(),
+            escrow
+                .transfer_ownership(god_key.clone(), god_key.address(), alice.address())
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        assert_eq!(escrow.owner().await?, alice.address());
+        Ok(())
     }
 }
