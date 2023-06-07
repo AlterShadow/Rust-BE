@@ -508,7 +508,10 @@ END
         ),
         ProceduralFunction::new(
             "fun_user_get_expert_profile",
-            vec![Field::new("expert_id", Type::BigInt)],
+            vec![
+                Field::new("expert_id", Type::optional(Type::BigInt)),
+                Field::new("user_id", Type::optional(Type::BigInt)),
+            ],
             vec![
                 Field::new("expert_id", Type::BigInt),
                 Field::new("name", Type::String),
@@ -521,6 +524,10 @@ END
             ],
             r#"
 BEGIN
+    -- assert that either expert_id or user_id is provided
+    IF a_expert_id IS NULL AND a_user_id IS NULL THEN
+        RAISE EXCEPTION 'Either expert_id or user_id must be provided';
+    END IF;
     RETURN QUERY SELECT a.pkey_id AS expert_id,
                           a.name AS name,
                           (SELECT COUNT(*) FROM tbl.user_follow_expert WHERE fkey_expert_id = a.pkey_id AND unfollowed = FALSE) AS follower_count,
@@ -530,38 +537,44 @@ BEGIN
                           a.reputation_score AS reputation_score,
                           a.aum AS aum
                  FROM tbl.expert_profile AS a 
-                 WHERE a.pkey_id = a_expert_id;
+                 WHERE a.pkey_id = a_expert_id 
+                 OR a.fkey_user_id = a_user_id;
+
 END
 "#,
         ),
         ProceduralFunction::new(
-            "fun_user_get_user_profile",
-            vec![Field::new("user_id", Type::BigInt)],
+            "fun_user_create_expert_profile",
             vec![
-                Field::new("user_id", Type::BigInt),
-                Field::new("name", Type::String),
-                Field::new("follower_count", Type::Int),
-                Field::new("description", Type::String),
-                Field::new("social_media", Type::String),
-                Field::new("risk_score", Type::Numeric),
-                Field::new("reputation_score", Type::Numeric),
-                Field::new("aum", Type::Numeric),
+                Field::new("name", Type::optional(Type::String)),
+                Field::new("description", Type::optional(Type::String)),
+                Field::new("social_media", Type::optional(Type::String)),
             ],
+            vec![Field::new("expert_id", Type::BigInt)],
             r#"
 BEGIN
-    RETURN QUERY SELECT a.pkey_id                  AS expert_id,
-                        a.name                     AS name,
-                        (SELECT COUNT(*)
-                         FROM tbl.user_follow_expert
-                         WHERE fkey_expert_id = a.pkey_id
-                           AND unfollowed = FALSE) AS follower_count,
-                        ''                         AS description,
-                        ''                         AS social_media,
-                        0.0                        AS risk_score,
-                        0.0                        AS reputation_score,
-                        0.0                        AS aum
-                 FROM tbl.user AS a
-                 WHERE a.pkey_id = a_user_id;
+    INSERT INTO tbl.expert_profile(name, description, social_media)
+    VALUES(a_name, a_description, a_social_media) RETURNING pkey_id
+    INTO a_expert_id;
+END
+"#,
+        ),
+        ProceduralFunction::new(
+            "fun_user_update_expert_profile",
+            vec![
+                Field::new("expert_id", Type::BigInt),
+                Field::new("name", Type::optional(Type::String)),
+                Field::new("description", Type::optional(Type::String)),
+                Field::new("social_media", Type::optional(Type::String)),
+            ],
+            vec![],
+            r#"
+BEGIN
+    UPDATE tbl.expert_profile
+    SET name = COALESCE(a_name, name),
+        description = COALESCE(a_description, description),
+        social_media = COALESCE(a_social_media, social_media)
+     WHERE a.pkey_id = a_expert_id;
 END
 "#,
         ),

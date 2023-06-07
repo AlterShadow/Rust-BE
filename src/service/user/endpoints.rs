@@ -363,6 +363,20 @@ pub fn endpoint_user_get_expert_profile() -> EndpointSchema {
     )
     .with_description("User gets an expert profile")
 }
+pub fn endpoint_user_update_expert_profile() -> EndpointSchema {
+    EndpointSchema::new(
+        "UserUpdateExpertProfile",
+        20171,
+        vec![
+            Field::new("name", Type::optional(Type::String)),
+            Field::new("follower_count", Type::optional(Type::Int)),
+            Field::new("description", Type::optional(Type::String)),
+            Field::new("social_media", Type::optional(Type::String)),
+        ],
+        vec![],
+    )
+    .with_description("User update its expert profile")
+}
 
 pub fn endpoint_user_get_user_profile() -> EndpointSchema {
     EndpointSchema::new(
@@ -606,6 +620,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
         endpoint_user_get_strategy(),
         endpoint_user_get_strategy_statistics(),
         endpoint_user_get_strategies_statistics(),
+        endpoint_user_update_expert_profile(),
         endpoint_user_back_strategy(),
         endpoint_user_request_refund(),
         endpoint_user_list_backed_strategies(),

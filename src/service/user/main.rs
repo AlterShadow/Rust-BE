@@ -122,6 +122,10 @@ async fn main() -> Result<()> {
 
     server.add_handler(endpoint_user_get_user_profile(), MethodUserGetUserProfile);
     server.add_handler(
+        endpoint_user_update_expert_profile(),
+        MethodUserUpdateExpertProfile,
+    );
+    server.add_handler(
         endpoint_user_apply_become_expert(),
         MethodUserApplyBecomeExpert,
     );

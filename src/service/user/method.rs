@@ -929,7 +929,8 @@ impl RequestHandler for MethodUserGetExpertProfile {
             ensure_user_role(ctx, EnumRole::User)?;
             let ret = db
                 .execute(FunUserGetExpertProfileReq {
-                    expert_id: req.expert_id,
+                    expert_id: Some(req.expert_id),
+                    user_id: None,
                 })
                 .await?
                 .into_result()
@@ -949,6 +950,55 @@ impl RequestHandler for MethodUserGetExpertProfile {
         })
     }
 }
+pub struct MethodUserUpdateExpertProfile;
+impl RequestHandler for MethodUserUpdateExpertProfile {
+    type Request = UserUpdateExpertProfileRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> SpawnedResponse<Self::Request> {
+        let db: DbClient = toolbox.get_db();
+        toolbox.spawn_response(ctx, async move {
+            ensure_user_role(ctx, EnumRole::User)?;
+            let expert = db
+                .execute(FunUserGetExpertProfileReq {
+                    expert_id: None,
+                    user_id: Some(ctx.user_id),
+                })
+                .await?
+                .into_result();
+            match expert {
+                Some(expert_id) => {
+                    let ret = db
+                        .execute(FunUserUpdateExpertProfileReq {
+                            expert_id: expert_id.expert_id,
+                            name: req.name,
+                            description: req.description,
+                            social_media: req.social_media,
+                        })
+                        .await?
+                        .into_result()
+                        .context("failed to get expert profile")?;
+                }
+                None => {
+                    let ret = db
+                        .execute(FunUserCreateExpertProfileReq {
+                            name: req.name,
+                            description: req.description,
+                            social_media: req.social_media,
+                        })
+                        .await?
+                        .into_result()
+                        .context("failed to get expert profile")?;
+                }
+            }
+            Ok(UserUpdateExpertProfileResponse {})
+        })
+    }
+}
 pub struct MethodUserGetUserProfile;
 impl RequestHandler for MethodUserGetUserProfile {
     type Request = UserGetUserProfileRequest;
@@ -963,15 +1013,16 @@ impl RequestHandler for MethodUserGetUserProfile {
         toolbox.spawn_response(ctx, async move {
             ensure_user_role(ctx, EnumRole::User)?;
             let ret = db
-                .execute(FunUserGetUserProfileReq {
-                    user_id: ctx.user_id,
+                .execute(FunUserGetExpertProfileReq {
+                    expert_id: None,
+                    user_id: Some(ctx.user_id),
                 })
                 .await?
                 .into_result()
                 .context("failed to get user profile")?;
             // TODO: get followed experts, followed strategies, backed strategies
             Ok(UserGetUserProfileResponse {
-                user_id: ret.user_id,
+                user_id: ctx.user_id,
                 name: ret.name,
                 follower_count: ret.follower_count,
                 description: ret.description,

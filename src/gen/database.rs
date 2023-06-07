@@ -942,7 +942,10 @@ impl DatabaseRequest for FunUserListExpertsReq {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserGetExpertProfileReq {
-    pub expert_id: i64,
+    #[serde(default)]
+    pub expert_id: Option<i64>,
+    #[serde(default)]
+    pub user_id: Option<i64>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserGetExpertProfileRespRow {
@@ -960,10 +963,13 @@ pub struct FunUserGetExpertProfileRespRow {
 impl DatabaseRequest for FunUserGetExpertProfileReq {
     type ResponseRow = FunUserGetExpertProfileRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_get_expert_profile(a_expert_id => $1::bigint);"
+        "SELECT * FROM api.fun_user_get_expert_profile(a_expert_id => $1::bigint, a_user_id => $2::bigint);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
-        vec![&self.expert_id as &(dyn ToSql + Sync)]
+        vec![
+            &self.expert_id as &(dyn ToSql + Sync),
+            &self.user_id as &(dyn ToSql + Sync),
+        ]
     }
     fn parse_row(&self, row: Row) -> Result<FunUserGetExpertProfileRespRow> {
         let r = FunUserGetExpertProfileRespRow {
@@ -981,41 +987,69 @@ impl DatabaseRequest for FunUserGetExpertProfileReq {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunUserGetUserProfileReq {
-    pub user_id: i64,
+pub struct FunUserCreateExpertProfileReq {
+    #[serde(default)]
+    pub name: Option<String>,
+    #[serde(default)]
+    pub description: Option<String>,
+    #[serde(default)]
+    pub social_media: Option<String>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunUserGetUserProfileRespRow {
-    pub user_id: i64,
-    pub name: String,
-    pub follower_count: i32,
-    pub description: String,
-    pub social_media: String,
-    pub risk_score: f64,
-    pub reputation_score: f64,
-    pub aum: f64,
+pub struct FunUserCreateExpertProfileRespRow {
+    pub expert_id: i64,
 }
 
 #[allow(unused_variables)]
-impl DatabaseRequest for FunUserGetUserProfileReq {
-    type ResponseRow = FunUserGetUserProfileRespRow;
+impl DatabaseRequest for FunUserCreateExpertProfileReq {
+    type ResponseRow = FunUserCreateExpertProfileRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_get_user_profile(a_user_id => $1::bigint);"
+        "SELECT * FROM api.fun_user_create_expert_profile(a_name => $1::varchar, a_description => $2::varchar, a_social_media => $3::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
-        vec![&self.user_id as &(dyn ToSql + Sync)]
+        vec![
+            &self.name as &(dyn ToSql + Sync),
+            &self.description as &(dyn ToSql + Sync),
+            &self.social_media as &(dyn ToSql + Sync),
+        ]
     }
-    fn parse_row(&self, row: Row) -> Result<FunUserGetUserProfileRespRow> {
-        let r = FunUserGetUserProfileRespRow {
-            user_id: row.try_get(0)?,
-            name: row.try_get(1)?,
-            follower_count: row.try_get(2)?,
-            description: row.try_get(3)?,
-            social_media: row.try_get(4)?,
-            risk_score: row.try_get(5)?,
-            reputation_score: row.try_get(6)?,
-            aum: row.try_get(7)?,
+    fn parse_row(&self, row: Row) -> Result<FunUserCreateExpertProfileRespRow> {
+        let r = FunUserCreateExpertProfileRespRow {
+            expert_id: row.try_get(0)?,
         };
+        Ok(r)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserUpdateExpertProfileReq {
+    pub expert_id: i64,
+    #[serde(default)]
+    pub name: Option<String>,
+    #[serde(default)]
+    pub description: Option<String>,
+    #[serde(default)]
+    pub social_media: Option<String>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserUpdateExpertProfileRespRow {}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunUserUpdateExpertProfileReq {
+    type ResponseRow = FunUserUpdateExpertProfileRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_update_expert_profile(a_expert_id => $1::bigint, a_name => $2::varchar, a_description => $3::varchar, a_social_media => $4::varchar);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.expert_id as &(dyn ToSql + Sync),
+            &self.name as &(dyn ToSql + Sync),
+            &self.description as &(dyn ToSql + Sync),
+            &self.social_media as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserUpdateExpertProfileRespRow> {
+        let r = FunUserUpdateExpertProfileRespRow {};
         Ok(r)
     }
 }

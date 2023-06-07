@@ -769,7 +769,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_get_expert_profile(a_expert_id bigint)
+CREATE OR REPLACE FUNCTION api.fun_user_get_expert_profile(a_expert_id bigint DEFAULT NULL, a_user_id bigint DEFAULT NULL)
 RETURNS table (
     "expert_id" bigint,
     "name" varchar,
@@ -784,6 +784,10 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
+    -- assert that either expert_id or user_id is provided
+    IF a_expert_id IS NULL AND a_user_id IS NULL THEN
+        RAISE EXCEPTION 'Either expert_id or user_id must be provided';
+    END IF;
     RETURN QUERY SELECT a.pkey_id AS expert_id,
                           a.name AS name,
                           (SELECT COUNT(*) FROM tbl.user_follow_expert WHERE fkey_expert_id = a.pkey_id AND unfollowed = FALSE) AS follower_count,
@@ -793,40 +797,41 @@ BEGIN
                           a.reputation_score AS reputation_score,
                           a.aum AS aum
                  FROM tbl.expert_profile AS a 
-                 WHERE a.pkey_id = a_expert_id;
+                 WHERE a.pkey_id = a_expert_id 
+                 OR a.fkey_user_id = a_user_id;
+
 END
 
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_get_user_profile(a_user_id bigint)
+CREATE OR REPLACE FUNCTION api.fun_user_create_expert_profile(a_name varchar DEFAULT NULL, a_description varchar DEFAULT NULL, a_social_media varchar DEFAULT NULL)
 RETURNS table (
-    "user_id" bigint,
-    "name" varchar,
-    "follower_count" int,
-    "description" varchar,
-    "social_media" varchar,
-    "risk_score" double precision,
-    "reputation_score" double precision,
-    "aum" double precision
+    "expert_id" bigint
 )
 LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY SELECT a.pkey_id                  AS expert_id,
-                        a.name                     AS name,
-                        (SELECT COUNT(*)
-                         FROM tbl.user_follow_expert
-                         WHERE fkey_expert_id = a.pkey_id
-                           AND unfollowed = FALSE) AS follower_count,
-                        ''                         AS description,
-                        ''                         AS social_media,
-                        0.0                        AS risk_score,
-                        0.0                        AS reputation_score,
-                        0.0                        AS aum
-                 FROM tbl.user AS a
-                 WHERE a.pkey_id = a_user_id;
+    INSERT INTO tbl.expert_profile(name, description, social_media)
+    VALUES(a_name, a_description, a_social_media) RETURNING pkey_id
+    INTO a_expert_id;
+END
+
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_update_expert_profile(a_expert_id bigint, a_name varchar DEFAULT NULL, a_description varchar DEFAULT NULL, a_social_media varchar DEFAULT NULL)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    UPDATE tbl.expert_profile
+    SET name = COALESCE(a_name, name),
+        description = COALESCE(a_description, description),
+        social_media = COALESCE(a_social_media, social_media)
+     WHERE a.pkey_id = a_expert_id;
 END
 
 $$;

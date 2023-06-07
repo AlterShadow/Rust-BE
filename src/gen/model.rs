@@ -255,6 +255,9 @@ pub enum EnumEndpoint {
     #[postgres(name = "UserGetStrategiesStatistics")]
     UserGetStrategiesStatistics = 20071,
     ///
+    #[postgres(name = "UserUpdateExpertProfile")]
+    UserUpdateExpertProfile = 20171,
+    ///
     #[postgres(name = "UserBackStrategy")]
     UserBackStrategy = 20080,
     ///
@@ -1408,6 +1411,21 @@ pub struct UserUnfollowStrategyResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct UserUpdateExpertProfileRequest {
+    #[serde(default)]
+    pub name: Option<String>,
+    #[serde(default)]
+    pub follower_count: Option<i32>,
+    #[serde(default)]
+    pub description: Option<String>,
+    #[serde(default)]
+    pub social_media: Option<String>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserUpdateExpertProfileResponse {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct UserUpdateStrategyRequest {
     pub strategy_id: i64,
     #[serde(default)]
@@ -1539,6 +1557,14 @@ impl WsRequest for UserGetStrategiesStatisticsRequest {
 }
 impl WsResponse for UserGetStrategiesStatisticsResponse {
     type Request = UserGetStrategiesStatisticsRequest;
+}
+
+impl WsRequest for UserUpdateExpertProfileRequest {
+    type Response = UserUpdateExpertProfileResponse;
+    const METHOD_ID: u32 = 20171;
+}
+impl WsResponse for UserUpdateExpertProfileResponse {
+    type Request = UserUpdateExpertProfileRequest;
 }
 
 impl WsRequest for UserBackStrategyRequest {

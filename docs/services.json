@@ -673,6 +673,40 @@
           "json_schema": null
         },
         {
+          "name": "UserUpdateExpertProfile",
+          "code": 20171,
+          "parameters": [
+            {
+              "name": "name",
+              "ty": {
+                "Optional": "String"
+              }
+            },
+            {
+              "name": "follower_count",
+              "ty": {
+                "Optional": "Int"
+              }
+            },
+            {
+              "name": "description",
+              "ty": {
+                "Optional": "String"
+              }
+            },
+            {
+              "name": "social_media",
+              "ty": {
+                "Optional": "String"
+              }
+            }
+          ],
+          "returns": [],
+          "stream_response": [],
+          "description": "User update its expert profile",
+          "json_schema": null
+        },
+        {
           "name": "UserBackStrategy",
           "code": 20080,
           "parameters": [
