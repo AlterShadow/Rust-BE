@@ -2,6 +2,7 @@ use eyre::*;
 use futures::stream::SplitStream;
 use futures::SinkExt;
 use futures::StreamExt;
+use itertools::Itertools;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::fs::File;
@@ -364,6 +365,7 @@ impl WebsocketServer {
             .handlers
             .values()
             .map(|x| x.schema.name.clone())
+            .sorted()
             .collect();
         info!(
             "Dumping {} endpoint names to {}",
