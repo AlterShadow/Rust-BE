@@ -55,7 +55,8 @@ $$;
 CREATE OR REPLACE FUNCTION api.fun_auth_authenticate(a_address varchar, a_service_code int, a_device_id varchar, a_device_os varchar, a_ip_address inet)
 RETURNS table (
     "user_id" bigint,
-    "public_user_id" bigint
+    "public_user_id" bigint,
+    "role" enum_role
 )
 LANGUAGE plpgsql
 AS $$
@@ -104,7 +105,7 @@ BEGIN
     IF a_service_code = api.ADMIN_SERVICE() THEN
         UPDATE tbl.user SET admin_device_id = a_device_id WHERE pkey_id = _user_id;
     END IF;
-    RETURN QUERY SELECT _user_id, _public_user_id;
+    RETURN QUERY SELECT _user_id, _public_user_id, _role;
 END
         
 $$;

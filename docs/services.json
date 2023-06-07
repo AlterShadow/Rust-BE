@@ -41,6 +41,12 @@
               "ty": "String"
             },
             {
+              "name": "role",
+              "ty": {
+                "EnumRef": "role"
+              }
+            },
+            {
               "name": "user_id",
               "ty": "BigInt"
             },
