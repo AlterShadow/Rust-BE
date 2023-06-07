@@ -93,8 +93,8 @@ impl RequestHandler for MethodUserListFollowedStrategies {
                         strategy_name: x.strategy_name,
                         strategy_description: x.strategy_description,
                         net_value: x.net_value,
-                        followers: x.followers,
-                        backers: x.backers,
+                        followers: x.followers as _,
+                        backers: x.backers as _,
                         risk_score: x.risk_score,
                         aum: x.aum,
                     })

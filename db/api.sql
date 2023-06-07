@@ -301,8 +301,8 @@ RETURNS table (
     "strategy_name" varchar,
     "strategy_description" varchar,
     "net_value" double precision,
-    "followers" int,
-    "backers" int,
+    "followers" bigint,
+    "backers" bigint,
     "risk_score" double precision,
     "aum" double precision
 )
@@ -313,9 +313,9 @@ BEGIN
     RETURN QUERY SELECT a.pkey_id AS strategy_id,
                           a.name AS strategy_name,
                           a.description AS strategy_description,
-                          0.0 AS net_value,
+                          0.0::double precision AS net_value,
                           (SELECT COUNT(*) FROM tbl.user_follow_strategy WHERE fkey_strategy_id = a.pkey_id AND unfollowed = FALSE) AS followers,
-                          (SELECT COUNT(DISTINCT user_back_strategy_history.fkey_user_id) FROM tbl.user_back_strategy_history WHERE fkey_strategy_id = a.pkey_id) AS followers,
+                          (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_strategy_history AS h WHERE fkey_strategy_id = a.pkey_id) AS backers,
                           a.risk_score as risk_score,
                           a.aum as aum
                  FROM tbl.strategy AS a 
@@ -347,7 +347,7 @@ BEGIN
                           a.description AS strategy_description,
                           0.0::double precision AS net_value,
                           (SELECT COUNT(*) FROM tbl.user_follow_strategy WHERE fkey_strategy_id = a.pkey_id AND unfollowed = FALSE) AS followers,
-                          (SELECT COUNT(DISTINCT user_back_strategy_history.fkey_user_id) FROM tbl.user_back_strategy_history WHERE fkey_strategy_id = a.pkey_id) AS followers,
+                          (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_strategy_history AS h WHERE fkey_strategy_id = a.pkey_id) AS backers,
                           a.risk_score as risk_score,
                           a.aum as aum
                  FROM tbl.strategy AS a 
