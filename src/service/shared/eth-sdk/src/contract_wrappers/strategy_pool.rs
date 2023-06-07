@@ -462,3 +462,1540 @@ impl StrategyPoolFunctions {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+    use std::time::Duration;
+
+    use once_cell::sync::Lazy;
+    use tokio::sync::Mutex;
+
+    use super::*;
+    use crate::contract_wrappers::mock_erc20::deploy_mock_erc20;
+    use crate::signer::Secp256k1SecretKey;
+    use crate::{
+        wait_for_confirmations_simple, EthereumRpcConnectionGuard, EthereumRpcConnectionPool,
+        ANVIL_PRIV_KEY_1, ANVIL_PRIV_KEY_2,
+    };
+    use gen::model::EnumBlockChain;
+
+    static TX_CONN: Lazy<Arc<Mutex<Option<EthereumRpcConnectionGuard>>>> =
+        Lazy::new(|| Arc::new(Mutex::new(None)));
+
+    async fn get_tx_conn() -> Result<Arc<Mutex<Option<EthereumRpcConnectionGuard>>>> {
+        /* since tests are parallel and use a single key, ensure only one test publishes transactions at a time */
+        /* to avoid "nonce too low" errors */
+        let tx_conn_arc = TX_CONN.clone();
+        let mut tx_conn = tx_conn_arc.lock().await;
+        if tx_conn.is_none() {
+            *tx_conn = Some(
+                EthereumRpcConnectionPool::new()
+                    .get(EnumBlockChain::LocalNet)
+                    .await?,
+            );
+        }
+        Ok(tx_conn_arc.clone())
+    }
+
+    #[tokio::test]
+    async fn test_total_supply() -> Result<()> {
+        let tx_conn_wrapper = get_tx_conn().await?;
+        let mut tx_conn_guard = tx_conn_wrapper.lock().await;
+        let tx_conn = tx_conn_guard.as_mut().unwrap();
+
+        let god_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
+
+        let mock_erc20_a = deploy_mock_erc20(tx_conn.clone(), god_key.clone()).await?;
+        let alice = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_2)?;
+
+        let strategy_pool = StrategyPoolContract::deploy(
+            tx_conn.clone(),
+            god_key.clone(),
+            "MockShare".to_string(),
+            "MOCK".to_string(),
+        )
+        .await?;
+
+        assert_eq!(strategy_pool.total_supply().await?, U256::zero());
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            mock_erc20_a
+                .mint(god_key.clone(), god_key.address(), U256::from(100))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            mock_erc20_a
+                .approve(god_key.clone(), strategy_pool.address(), U256::from(200))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        let assets = vec![mock_erc20_a.address];
+        let amounts = vec![U256::from(100)];
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            strategy_pool
+                .deposit(
+                    god_key,
+                    assets.clone(),
+                    amounts.clone(),
+                    U256::from(1),
+                    alice.address(),
+                )
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        assert_eq!(strategy_pool.total_supply().await?, U256::from(1));
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_balance_of() -> Result<()> {
+        let tx_conn_wrapper = get_tx_conn().await?;
+        let mut tx_conn_guard = tx_conn_wrapper.lock().await;
+        let tx_conn = tx_conn_guard.as_mut().unwrap();
+
+        let god_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
+
+        let mock_erc20_a = deploy_mock_erc20(tx_conn.clone(), god_key.clone()).await?;
+        let alice = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_2)?;
+
+        let strategy_pool = StrategyPoolContract::deploy(
+            tx_conn.clone(),
+            god_key.clone(),
+            "MockShare".to_string(),
+            "MOCK".to_string(),
+        )
+        .await?;
+
+        assert_eq!(strategy_pool.balance_of(alice.address).await?, U256::zero());
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            mock_erc20_a
+                .mint(god_key.clone(), god_key.address(), U256::from(100))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            mock_erc20_a
+                .approve(god_key.clone(), strategy_pool.address(), U256::from(200))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        let assets = vec![mock_erc20_a.address];
+        let amounts = vec![U256::from(100)];
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            strategy_pool
+                .deposit(
+                    god_key,
+                    assets.clone(),
+                    amounts.clone(),
+                    U256::from(1),
+                    alice.address(),
+                )
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        assert_eq!(
+            strategy_pool.balance_of(alice.address).await?,
+            U256::from(1)
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_owner() -> Result<()> {
+        let tx_conn_wrapper = get_tx_conn().await?;
+        let mut tx_conn_guard = tx_conn_wrapper.lock().await;
+        let tx_conn = tx_conn_guard.as_mut().unwrap();
+
+        let god_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
+
+        let strategy_pool = StrategyPoolContract::deploy(
+            tx_conn.clone(),
+            god_key.clone(),
+            "MockShare".to_string(),
+            "MOCK".to_string(),
+        )
+        .await?;
+
+        assert_eq!(strategy_pool.owner().await?, god_key.address());
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_transfer_ownership() -> Result<()> {
+        let tx_conn_wrapper = get_tx_conn().await?;
+        let mut tx_conn_guard = tx_conn_wrapper.lock().await;
+        let tx_conn = tx_conn_guard.as_mut().unwrap();
+
+        let god_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
+
+        let alice = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_2)?;
+
+        let strategy_pool = StrategyPoolContract::deploy(
+            tx_conn.clone(),
+            god_key.clone(),
+            "MockShare".to_string(),
+            "MOCK".to_string(),
+        )
+        .await?;
+
+        assert_eq!(strategy_pool.owner().await?, god_key.address());
+
+        wait_for_confirmations_simple(
+            &tx_conn.eth(),
+            strategy_pool
+                .transfer_ownership(god_key.clone(), god_key.address(), alice.address())
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        assert_eq!(strategy_pool.owner().await?, alice.address());
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_assets() -> Result<()> {
+        let tx_conn_wrapper = get_tx_conn().await?;
+        let mut tx_conn_guard = tx_conn_wrapper.lock().await;
+        let tx_conn = tx_conn_guard.as_mut().unwrap();
+
+        let god_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
+
+        let mock_erc20_a = deploy_mock_erc20(tx_conn.clone(), god_key.clone()).await?;
+        let alice = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_2)?;
+
+        let strategy_pool = StrategyPoolContract::deploy(
+            tx_conn.clone(),
+            god_key.clone(),
+            "MockShare".to_string(),
+            "MOCK".to_string(),
+        )
+        .await?;
+
+        assert_eq!(strategy_pool.assets().await?, vec![]);
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            mock_erc20_a
+                .mint(god_key.clone(), god_key.address(), U256::from(100))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            mock_erc20_a
+                .approve(god_key.clone(), strategy_pool.address(), U256::from(200))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        let assets = vec![mock_erc20_a.address];
+        let amounts = vec![U256::from(100)];
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            strategy_pool
+                .deposit(
+                    god_key,
+                    assets.clone(),
+                    amounts.clone(),
+                    U256::from(1),
+                    alice.address(),
+                )
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        assert_eq!(strategy_pool.assets().await?, assets);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_asset_balance() -> Result<()> {
+        let tx_conn_wrapper = get_tx_conn().await?;
+        let mut tx_conn_guard = tx_conn_wrapper.lock().await;
+        let tx_conn = tx_conn_guard.as_mut().unwrap();
+
+        let god_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
+
+        let mock_erc20_a = deploy_mock_erc20(tx_conn.clone(), god_key.clone()).await?;
+        let alice = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_2)?;
+
+        let strategy_pool = StrategyPoolContract::deploy(
+            tx_conn.clone(),
+            god_key.clone(),
+            "MockShare".to_string(),
+            "MOCK".to_string(),
+        )
+        .await?;
+
+        assert_eq!(
+            strategy_pool.asset_balance(mock_erc20_a.address).await?,
+            U256::zero()
+        );
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            mock_erc20_a
+                .mint(god_key.clone(), god_key.address(), U256::from(100))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            mock_erc20_a
+                .approve(god_key.clone(), strategy_pool.address(), U256::from(200))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        let assets = vec![mock_erc20_a.address];
+        let amounts = vec![U256::from(100)];
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            strategy_pool
+                .deposit(
+                    god_key,
+                    assets.clone(),
+                    amounts.clone(),
+                    U256::from(1),
+                    alice.address(),
+                )
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        assert_eq!(
+            strategy_pool.asset_balance(mock_erc20_a.address).await?,
+            U256::from(100)
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_assets_and_balances() -> Result<()> {
+        let tx_conn_wrapper = get_tx_conn().await?;
+        let mut tx_conn_guard = tx_conn_wrapper.lock().await;
+        let tx_conn = tx_conn_guard.as_mut().unwrap();
+
+        let god_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
+
+        let mock_erc20_a = deploy_mock_erc20(tx_conn.clone(), god_key.clone()).await?;
+        let alice = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_2)?;
+
+        let strategy_pool = StrategyPoolContract::deploy(
+            tx_conn.clone(),
+            god_key.clone(),
+            "MockShare".to_string(),
+            "MOCK".to_string(),
+        )
+        .await?;
+
+        assert_eq!(strategy_pool.assets_and_balances().await?, (vec![], vec![]));
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            mock_erc20_a
+                .mint(god_key.clone(), god_key.address(), U256::from(100))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            mock_erc20_a
+                .approve(god_key.clone(), strategy_pool.address(), U256::from(200))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        let assets = vec![mock_erc20_a.address];
+        let amounts = vec![U256::from(100)];
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            strategy_pool
+                .deposit(
+                    god_key,
+                    assets.clone(),
+                    amounts.clone(),
+                    U256::from(1),
+                    alice.address(),
+                )
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        assert_eq!(
+            strategy_pool.assets_and_balances().await?,
+            (vec![mock_erc20_a.address], vec![U256::from(100)])
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_max_mint() -> Result<()> {
+        let tx_conn_wrapper = get_tx_conn().await?;
+        let mut tx_conn_guard = tx_conn_wrapper.lock().await;
+        let tx_conn = tx_conn_guard.as_mut().unwrap();
+
+        let god_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
+
+        let mock_erc20_a = deploy_mock_erc20(tx_conn.clone(), god_key.clone()).await?;
+        let alice = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_2)?;
+
+        let strategy_pool = StrategyPoolContract::deploy(
+            tx_conn.clone(),
+            god_key.clone(),
+            "MockShare".to_string(),
+            "MOCK".to_string(),
+        )
+        .await?;
+
+        assert_eq!(strategy_pool.max_mint().await?, U256::max_value());
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            mock_erc20_a
+                .mint(god_key.clone(), god_key.address(), U256::from(100))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            mock_erc20_a
+                .approve(god_key.clone(), strategy_pool.address(), U256::from(200))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        let assets = vec![mock_erc20_a.address];
+        let amounts = vec![U256::from(100)];
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            strategy_pool
+                .deposit(
+                    god_key,
+                    assets.clone(),
+                    amounts.clone(),
+                    U256::from(1),
+                    alice.address(),
+                )
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        assert_eq!(
+            strategy_pool.max_mint().await?,
+            U256::max_value() - U256::from(1)
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_max_withdraw() -> Result<()> {
+        let tx_conn_wrapper = get_tx_conn().await?;
+        let mut tx_conn_guard = tx_conn_wrapper.lock().await;
+        let tx_conn = tx_conn_guard.as_mut().unwrap();
+
+        let god_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
+
+        let mock_erc20_a = deploy_mock_erc20(tx_conn.clone(), god_key.clone()).await?;
+        let alice = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_2)?;
+
+        let strategy_pool = StrategyPoolContract::deploy(
+            tx_conn.clone(),
+            god_key.clone(),
+            "MockShare".to_string(),
+            "MOCK".to_string(),
+        )
+        .await?;
+
+        assert_eq!(
+            strategy_pool.max_withdraw(alice.address).await?,
+            (vec![], vec![])
+        );
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            mock_erc20_a
+                .mint(god_key.clone(), god_key.address(), U256::from(100))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            mock_erc20_a
+                .approve(god_key.clone(), strategy_pool.address(), U256::from(200))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        let assets = vec![mock_erc20_a.address];
+        let amounts = vec![U256::from(100)];
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            strategy_pool
+                .deposit(
+                    god_key,
+                    assets.clone(),
+                    amounts.clone(),
+                    U256::from(1),
+                    alice.address(),
+                )
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        assert_eq!(
+            strategy_pool.max_withdraw(alice.address).await?,
+            (vec![mock_erc20_a.address], vec![U256::from(100)])
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_max_deposit() -> Result<()> {
+        let tx_conn_wrapper = get_tx_conn().await?;
+        let mut tx_conn_guard = tx_conn_wrapper.lock().await;
+        let tx_conn = tx_conn_guard.as_mut().unwrap();
+
+        let god_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
+
+        let mock_erc20_a = deploy_mock_erc20(tx_conn.clone(), god_key.clone()).await?;
+        let alice = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_2)?;
+
+        let strategy_pool = StrategyPoolContract::deploy(
+            tx_conn.clone(),
+            god_key.clone(),
+            "MockShare".to_string(),
+            "MOCK".to_string(),
+        )
+        .await?;
+
+        assert_eq!(strategy_pool.max_deposit().await?, (vec![], vec![]));
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            mock_erc20_a
+                .mint(god_key.clone(), god_key.address(), U256::from(100))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            mock_erc20_a
+                .approve(god_key.clone(), strategy_pool.address(), U256::from(200))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        let assets = vec![mock_erc20_a.address];
+        let amounts = vec![U256::from(1)];
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            strategy_pool
+                .deposit(
+                    god_key,
+                    assets.clone(),
+                    amounts.clone(),
+                    U256::from(1),
+                    alice.address(),
+                )
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        assert_eq!(
+            strategy_pool.max_deposit().await?,
+            (
+                vec![mock_erc20_a.address],
+                vec![U256::max_value() - U256::from(1)]
+            )
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_min_deposit() -> Result<()> {
+        let tx_conn_wrapper = get_tx_conn().await?;
+        let mut tx_conn_guard = tx_conn_wrapper.lock().await;
+        let tx_conn = tx_conn_guard.as_mut().unwrap();
+
+        let god_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
+
+        let mock_erc20_a = deploy_mock_erc20(tx_conn.clone(), god_key.clone()).await?;
+        let alice = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_2)?;
+
+        let strategy_pool = StrategyPoolContract::deploy(
+            tx_conn.clone(),
+            god_key.clone(),
+            "MockShare".to_string(),
+            "MOCK".to_string(),
+        )
+        .await?;
+
+        assert_eq!(strategy_pool.min_deposit().await?, (vec![], vec![]));
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            mock_erc20_a
+                .mint(god_key.clone(), god_key.address(), U256::from(100))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            mock_erc20_a
+                .approve(god_key.clone(), strategy_pool.address(), U256::from(200))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        let assets = vec![mock_erc20_a.address];
+        let amounts = vec![U256::from(100)];
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            strategy_pool
+                .deposit(
+                    god_key,
+                    assets.clone(),
+                    amounts.clone(),
+                    U256::from(1),
+                    alice.address(),
+                )
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        assert_eq!(
+            strategy_pool.min_deposit().await?,
+            (vec![mock_erc20_a.address], vec![U256::from(100)])
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_deposit() -> Result<()> {
+        let tx_conn_wrapper = get_tx_conn().await?;
+        let mut tx_conn_guard = tx_conn_wrapper.lock().await;
+        let tx_conn = tx_conn_guard.as_mut().unwrap();
+
+        let god_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
+
+        let mock_erc20_a = deploy_mock_erc20(tx_conn.clone(), god_key.clone()).await?;
+        let mock_erc20_b = deploy_mock_erc20(tx_conn.clone(), god_key.clone()).await?;
+
+        let alice = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_2)?;
+
+        let strategy_pool = StrategyPoolContract::deploy(
+            tx_conn.clone(),
+            god_key.clone(),
+            "MockShare".to_string(),
+            "MOCK".to_string(),
+        )
+        .await?;
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            mock_erc20_a
+                .mint(god_key.clone(), god_key.address(), U256::from(100))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            mock_erc20_b
+                .mint(god_key.clone(), god_key.address(), U256::from(200))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            mock_erc20_a
+                .approve(god_key.clone(), strategy_pool.address(), U256::from(100))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            mock_erc20_b
+                .approve(god_key.clone(), strategy_pool.address(), U256::from(200))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        assert_eq!(
+            mock_erc20_a.balance_of(god_key.address()).await?,
+            U256::from(100)
+        );
+        assert_eq!(
+            mock_erc20_b.balance_of(god_key.address()).await?,
+            U256::from(200)
+        );
+        assert_eq!(strategy_pool.balance_of(alice.address).await?, U256::zero());
+
+        let assets = vec![mock_erc20_a.address, mock_erc20_b.address];
+        let amounts = vec![U256::from(100), U256::from(200)];
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            strategy_pool
+                .deposit(
+                    god_key.clone(),
+                    assets.clone(),
+                    amounts.clone(),
+                    U256::from(1),
+                    alice.address(),
+                )
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        assert_eq!(
+            mock_erc20_a.balance_of(god_key.address()).await?,
+            U256::zero()
+        );
+        assert_eq!(
+            mock_erc20_b.balance_of(god_key.address()).await?,
+            U256::zero()
+        );
+        assert_eq!(strategy_pool.assets().await?, assets.clone());
+        assert_eq!(
+            strategy_pool.asset_balance(mock_erc20_a.address).await?,
+            U256::from(100)
+        );
+        assert_eq!(
+            strategy_pool.asset_balance(mock_erc20_b.address).await?,
+            U256::from(200)
+        );
+        assert_eq!(
+            strategy_pool.assets_and_balances().await?,
+            (assets.clone(), amounts.clone())
+        );
+        assert_eq!(
+            strategy_pool.balance_of(alice.address).await?,
+            U256::from(1)
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_max_redeem() -> Result<()> {
+        let tx_conn_wrapper = get_tx_conn().await?;
+        let mut tx_conn_guard = tx_conn_wrapper.lock().await;
+        let tx_conn = tx_conn_guard.as_mut().unwrap();
+
+        let god_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
+
+        let mock_erc20_a = deploy_mock_erc20(tx_conn.clone(), god_key.clone()).await?;
+        let alice = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_2)?;
+
+        let strategy_pool = StrategyPoolContract::deploy(
+            tx_conn.clone(),
+            god_key.clone(),
+            "MockShare".to_string(),
+            "MOCK".to_string(),
+        )
+        .await?;
+
+        assert_eq!(strategy_pool.max_redeem(alice.address).await?, U256::zero());
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            mock_erc20_a
+                .mint(god_key.clone(), god_key.address(), U256::from(100))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            mock_erc20_a
+                .approve(god_key.clone(), strategy_pool.address(), U256::from(200))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        let assets = vec![mock_erc20_a.address];
+        let amounts = vec![U256::from(100)];
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            strategy_pool
+                .deposit(
+                    god_key,
+                    assets.clone(),
+                    amounts.clone(),
+                    U256::from(1),
+                    alice.address(),
+                )
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        assert_eq!(
+            strategy_pool.max_redeem(alice.address).await?,
+            U256::from(1)
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_min_redeem() -> Result<()> {
+        let tx_conn_wrapper = get_tx_conn().await?;
+        let mut tx_conn_guard = tx_conn_wrapper.lock().await;
+        let tx_conn = tx_conn_guard.as_mut().unwrap();
+
+        let god_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
+
+        let mock_erc20_a = deploy_mock_erc20(tx_conn.clone(), god_key.clone()).await?;
+        let alice = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_2)?;
+
+        let strategy_pool = StrategyPoolContract::deploy(
+            tx_conn.clone(),
+            god_key.clone(),
+            "MockShare".to_string(),
+            "MOCK".to_string(),
+        )
+        .await?;
+
+        assert_eq!(strategy_pool.min_redeem().await?, U256::zero());
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            mock_erc20_a
+                .mint(god_key.clone(), god_key.address(), U256::from(100))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            mock_erc20_a
+                .approve(god_key.clone(), strategy_pool.address(), U256::from(200))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        let assets = vec![mock_erc20_a.address];
+        let amounts = vec![U256::from(1)];
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            strategy_pool
+                .deposit(
+                    god_key,
+                    assets.clone(),
+                    amounts.clone(),
+                    U256::from(100),
+                    alice.address(),
+                )
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        assert_eq!(strategy_pool.min_redeem().await?, U256::from(100));
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_preview_redeem() -> Result<()> {
+        let tx_conn_wrapper = get_tx_conn().await?;
+        let mut tx_conn_guard = tx_conn_wrapper.lock().await;
+        let tx_conn = tx_conn_guard.as_mut().unwrap();
+
+        let god_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
+
+        let mock_erc20_a = deploy_mock_erc20(tx_conn.clone(), god_key.clone()).await?;
+        let alice = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_2)?;
+
+        let strategy_pool = StrategyPoolContract::deploy(
+            tx_conn.clone(),
+            god_key.clone(),
+            "MockShare".to_string(),
+            "MOCK".to_string(),
+        )
+        .await?;
+
+        assert_eq!(
+            strategy_pool.preview_redeem(U256::zero()).await?,
+            (vec![], vec![])
+        );
+        assert!(matches!(
+            strategy_pool.preview_redeem(U256::from(1)).await,
+            Err(_)
+        ));
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            mock_erc20_a
+                .mint(god_key.clone(), god_key.address(), U256::from(100))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            mock_erc20_a
+                .approve(god_key.clone(), strategy_pool.address(), U256::from(200))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        let assets = vec![mock_erc20_a.address];
+        let amounts = vec![U256::from(100)];
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            strategy_pool
+                .deposit(
+                    god_key,
+                    assets.clone(),
+                    amounts.clone(),
+                    U256::from(1),
+                    alice.address(),
+                )
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        assert_eq!(
+            strategy_pool.preview_redeem(U256::from(1)).await?,
+            (vec![mock_erc20_a.address], vec![U256::from(100)])
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_redeem() -> Result<()> {
+        let tx_conn_wrapper = get_tx_conn().await?;
+        let mut tx_conn_guard = tx_conn_wrapper.lock().await;
+        let tx_conn = tx_conn_guard.as_mut().unwrap();
+
+        let god_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
+
+        let mock_erc20_a = deploy_mock_erc20(tx_conn.clone(), god_key.clone()).await?;
+        let alice = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_2)?;
+
+        let strategy_pool = StrategyPoolContract::deploy(
+            tx_conn.clone(),
+            god_key.clone(),
+            "MockShare".to_string(),
+            "MOCK".to_string(),
+        )
+        .await?;
+
+        assert!(matches!(
+            strategy_pool
+                .redeem(alice.clone(), U256::zero(), alice.address, alice.address)
+                .await,
+            Err(_)
+        ));
+        assert!(matches!(
+            strategy_pool
+                .redeem(alice.clone(), U256::from(1), alice.address, alice.address)
+                .await,
+            Err(_)
+        ));
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            mock_erc20_a
+                .mint(god_key.clone(), god_key.address(), U256::from(100))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            mock_erc20_a
+                .approve(god_key.clone(), strategy_pool.address(), U256::from(200))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        assert_eq!(
+            mock_erc20_a.balance_of(god_key.address()).await?,
+            U256::from(100)
+        );
+        assert_eq!(
+            strategy_pool.asset_balance(mock_erc20_a.address).await?,
+            U256::zero()
+        );
+        assert_eq!(strategy_pool.balance_of(alice.address).await?, U256::zero());
+        assert_eq!(strategy_pool.total_supply().await?, U256::zero());
+
+        let assets = vec![mock_erc20_a.address];
+        let amounts = vec![U256::from(100)];
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            strategy_pool
+                .deposit(
+                    god_key.clone(),
+                    assets.clone(),
+                    amounts.clone(),
+                    U256::from(1),
+                    alice.address(),
+                )
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        assert_eq!(
+            mock_erc20_a.balance_of(god_key.address()).await?,
+            U256::zero()
+        );
+        assert_eq!(
+            strategy_pool.asset_balance(mock_erc20_a.address).await?,
+            U256::from(100)
+        );
+        assert_eq!(
+            strategy_pool.balance_of(alice.address).await?,
+            U256::from(1)
+        );
+        assert_eq!(strategy_pool.total_supply().await?, U256::from(1));
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            strategy_pool
+                .redeem(alice.clone(), U256::from(1), alice.address, alice.address)
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        assert_eq!(
+            mock_erc20_a.balance_of(god_key.address()).await?,
+            U256::zero()
+        );
+        assert_eq!(
+            strategy_pool.asset_balance(mock_erc20_a.address).await?,
+            U256::zero()
+        );
+        assert_eq!(strategy_pool.balance_of(alice.address).await?, U256::zero());
+        assert_eq!(strategy_pool.total_supply().await?, U256::zero());
+        assert_eq!(
+            mock_erc20_a.balance_of(alice.address()).await?,
+            U256::from(100)
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_acquire_asset_before_trade() -> Result<()> {
+        let tx_conn_wrapper = get_tx_conn().await?;
+        let mut tx_conn_guard = tx_conn_wrapper.lock().await;
+        let tx_conn = tx_conn_guard.as_mut().unwrap();
+
+        let god_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
+
+        let mock_erc20_a = deploy_mock_erc20(tx_conn.clone(), god_key.clone()).await?;
+        let alice = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_2)?;
+
+        let strategy_pool = StrategyPoolContract::deploy(
+            tx_conn.clone(),
+            god_key.clone(),
+            "MockShare".to_string(),
+            "MOCK".to_string(),
+        )
+        .await?;
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            mock_erc20_a
+                .mint(god_key.clone(), god_key.address(), U256::from(100))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            mock_erc20_a
+                .approve(god_key.clone(), strategy_pool.address(), U256::from(100))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        assert_eq!(
+            mock_erc20_a.balance_of(god_key.address()).await?,
+            U256::from(100)
+        );
+        assert_eq!(
+            strategy_pool.asset_balance(mock_erc20_a.address).await?,
+            U256::zero()
+        );
+        assert_eq!(strategy_pool.balance_of(alice.address).await?, U256::zero());
+        assert_eq!(strategy_pool.total_supply().await?, U256::zero());
+
+        let assets = vec![mock_erc20_a.address];
+        let amounts = vec![U256::from(100)];
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            strategy_pool
+                .deposit(
+                    god_key.clone(),
+                    assets.clone(),
+                    amounts.clone(),
+                    U256::from(1),
+                    alice.address(),
+                )
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        assert_eq!(
+            mock_erc20_a.balance_of(god_key.address()).await?,
+            U256::zero()
+        );
+        assert_eq!(
+            strategy_pool.asset_balance(mock_erc20_a.address).await?,
+            U256::from(100)
+        );
+        assert_eq!(
+            strategy_pool.balance_of(alice.address).await?,
+            U256::from(1)
+        );
+        assert_eq!(strategy_pool.total_supply().await?, U256::from(1));
+        assert_eq!(
+            mock_erc20_a.balance_of(alice.address()).await?,
+            U256::zero()
+        );
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            strategy_pool
+                .acquire_asset_before_trade(god_key.clone(), mock_erc20_a.address, U256::from(100))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        assert_eq!(
+            mock_erc20_a.balance_of(god_key.address()).await?,
+            U256::from(100)
+        );
+        assert_eq!(
+            strategy_pool.asset_balance(mock_erc20_a.address).await?,
+            U256::zero()
+        );
+        assert_eq!(
+            strategy_pool.balance_of(alice.address).await?,
+            U256::from(1)
+        );
+        assert_eq!(strategy_pool.total_supply().await?, U256::from(1));
+        assert_eq!(
+            mock_erc20_a.balance_of(alice.address()).await?,
+            U256::zero()
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_give_back_assets_after_trade() -> Result<()> {
+        let tx_conn_wrapper = get_tx_conn().await?;
+        let mut tx_conn_guard = tx_conn_wrapper.lock().await;
+        let tx_conn = tx_conn_guard.as_mut().unwrap();
+
+        let god_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
+
+        let mock_erc20_a = deploy_mock_erc20(tx_conn.clone(), god_key.clone()).await?;
+        let alice = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_2)?;
+
+        let strategy_pool = StrategyPoolContract::deploy(
+            tx_conn.clone(),
+            god_key.clone(),
+            "MockShare".to_string(),
+            "MOCK".to_string(),
+        )
+        .await?;
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            mock_erc20_a
+                .mint(god_key.clone(), god_key.address(), U256::from(100))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            mock_erc20_a
+                .approve(god_key.clone(), strategy_pool.address(), U256::from(100))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        assert_eq!(
+            mock_erc20_a.balance_of(god_key.address()).await?,
+            U256::from(100)
+        );
+        assert_eq!(
+            strategy_pool.asset_balance(mock_erc20_a.address).await?,
+            U256::zero()
+        );
+        assert_eq!(strategy_pool.balance_of(alice.address).await?, U256::zero());
+        assert_eq!(strategy_pool.total_supply().await?, U256::zero());
+
+        let assets = vec![mock_erc20_a.address];
+        let amounts = vec![U256::from(100)];
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            strategy_pool
+                .deposit(
+                    god_key.clone(),
+                    assets.clone(),
+                    amounts.clone(),
+                    U256::from(1),
+                    alice.address(),
+                )
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        assert_eq!(
+            mock_erc20_a.balance_of(god_key.address()).await?,
+            U256::zero()
+        );
+        assert_eq!(
+            strategy_pool.asset_balance(mock_erc20_a.address).await?,
+            U256::from(100)
+        );
+        assert_eq!(
+            strategy_pool.balance_of(alice.address).await?,
+            U256::from(1)
+        );
+        assert_eq!(strategy_pool.total_supply().await?, U256::from(1));
+        assert_eq!(
+            mock_erc20_a.balance_of(alice.address()).await?,
+            U256::zero()
+        );
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            strategy_pool
+                .acquire_asset_before_trade(god_key.clone(), mock_erc20_a.address, U256::from(100))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        assert_eq!(
+            mock_erc20_a.balance_of(god_key.address()).await?,
+            U256::from(100)
+        );
+        assert_eq!(
+            strategy_pool.asset_balance(mock_erc20_a.address).await?,
+            U256::zero()
+        );
+        assert_eq!(
+            strategy_pool.balance_of(alice.address).await?,
+            U256::from(1)
+        );
+        assert_eq!(strategy_pool.total_supply().await?, U256::from(1));
+        assert_eq!(
+            mock_erc20_a.balance_of(alice.address()).await?,
+            U256::zero()
+        );
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            mock_erc20_a
+                .approve(god_key.clone(), strategy_pool.address(), U256::from(100))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            strategy_pool
+                .give_back_assets_after_trade(
+                    god_key.clone(),
+                    vec![mock_erc20_a.address],
+                    vec![U256::from(100)],
+                )
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        assert_eq!(
+            mock_erc20_a.balance_of(god_key.address()).await?,
+            U256::zero()
+        );
+        assert_eq!(
+            strategy_pool.asset_balance(mock_erc20_a.address).await?,
+            U256::from(100)
+        );
+        assert_eq!(
+            strategy_pool.balance_of(alice.address).await?,
+            U256::from(1)
+        );
+        assert_eq!(strategy_pool.total_supply().await?, U256::from(1));
+        assert_eq!(
+            mock_erc20_a.balance_of(alice.address()).await?,
+            U256::zero()
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_is_paused() -> Result<()> {
+        let tx_conn_wrapper = get_tx_conn().await?;
+        let mut tx_conn_guard = tx_conn_wrapper.lock().await;
+        let tx_conn = tx_conn_guard.as_mut().unwrap();
+
+        let god_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
+
+        let mock_erc20_a = deploy_mock_erc20(tx_conn.clone(), god_key.clone()).await?;
+        let alice = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_2)?;
+
+        let strategy_pool = StrategyPoolContract::deploy(
+            tx_conn.clone(),
+            god_key.clone(),
+            "MockShare".to_string(),
+            "MOCK".to_string(),
+        )
+        .await?;
+
+        assert_eq!(strategy_pool.is_paused().await?, false);
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            mock_erc20_a
+                .mint(god_key.clone(), god_key.address(), U256::from(100))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            mock_erc20_a
+                .approve(god_key.clone(), strategy_pool.address(), U256::from(100))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        let assets = vec![mock_erc20_a.address];
+        let amounts = vec![U256::from(100)];
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            strategy_pool
+                .deposit(
+                    god_key.clone(),
+                    assets.clone(),
+                    amounts.clone(),
+                    U256::from(1),
+                    alice.address(),
+                )
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        assert_eq!(strategy_pool.is_paused().await?, false);
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            strategy_pool
+                .acquire_asset_before_trade(god_key.clone(), mock_erc20_a.address, U256::from(100))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        assert_eq!(strategy_pool.is_paused().await?, true);
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            mock_erc20_a
+                .approve(god_key.clone(), strategy_pool.address(), U256::from(100))
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            strategy_pool
+                .give_back_assets_after_trade(
+                    god_key.clone(),
+                    vec![mock_erc20_a.address],
+                    vec![U256::from(100)],
+                )
+                .await?,
+            Duration::from_millis(1),
+            10,
+        )
+        .await?;
+
+        assert_eq!(strategy_pool.is_paused().await?, false);
+
+        Ok(())
+    }
+}
