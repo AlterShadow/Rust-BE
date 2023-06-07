@@ -44,7 +44,6 @@ pub struct Config {
 async fn main() -> Result<()> {
     let config: Config = load_config("user".to_owned())?;
     setup_logs(config.log_level)?;
-
     let mut server = WebsocketServer::new(config.app.clone());
     server.add_database(connect_to_database(config.app_db).await?);
     server.add_database(connect_to_database(config.auth_db).await?);
@@ -227,6 +226,7 @@ async fn main() -> Result<()> {
             escrow_signer,
         },
     );
+    server.dump_schemas()?;
     server.listen().await?;
     Ok(())
 }

@@ -4,6 +4,7 @@ use futures::SinkExt;
 use futures::StreamExt;
 use serde_json::Value;
 use std::collections::HashMap;
+use std::fs::File;
 use std::net::{SocketAddr, ToSocketAddrs};
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Arc;
@@ -355,6 +356,22 @@ impl WebsocketServer {
                 error!("Error while accepting stream: {:?}", err);
             }
         }
+    }
+    pub fn dump_schemas(&self) -> Result<()> {
+        let _ = std::fs::create_dir_all("docs");
+        let file = format!("docs/{}_alive_endpoints.json", self.config.name);
+        let available_schemas: Vec<String> = self
+            .handlers
+            .values()
+            .map(|x| x.schema.name.clone())
+            .collect();
+        info!(
+            "Dumping {} endpoint names to {}",
+            available_schemas.len(),
+            file
+        );
+        serde_json::to_writer_pretty(File::create(file)?, &available_schemas)?;
+        Ok(())
     }
 }
 
