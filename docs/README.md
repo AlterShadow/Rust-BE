@@ -8,6 +8,7 @@ ID: 1
 |10010|Signup|address, signature_text, signature, email, phone, agreed_tos, agreed_privacy, username|address, user_id||
 |10030|Authorize|address, token, service, device_id, device_os|success||
 |10040|Logout||||
+|10050|ChangeLoginWallet|old_address, old_signature_text, old_signature, new_address, new_signature_text, new_signature|||
 
 # user Server
 ID: 2

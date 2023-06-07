@@ -13,7 +13,7 @@ pub fn endpoint_auth_signup() -> EndpointSchema {
             Field::new("phone", Type::String),
             Field::new("agreed_tos", Type::Boolean),
             Field::new("agreed_privacy", Type::Boolean),
-            Field::new("username", Type::optional(Type::String)),
+            Field::new("username", Type::String),
         ],
         vec![
             Field::new("address", Type::String),
@@ -58,6 +58,21 @@ pub fn endpoint_auth_authorize() -> EndpointSchema {
 pub fn endpoint_auth_logout() -> EndpointSchema {
     EndpointSchema::new("Logout", 10040, vec![], vec![])
 }
+pub fn endpoint_auth_change_login_wallet() -> EndpointSchema {
+    EndpointSchema::new(
+        "ChangeLoginWallet",
+        10050,
+        vec![
+            Field::new("old_address", Type::String),
+            Field::new("old_signature_text", Type::String),
+            Field::new("old_signature", Type::String),
+            Field::new("new_address", Type::String),
+            Field::new("new_signature_text", Type::String),
+            Field::new("new_signature", Type::String),
+        ],
+        vec![],
+    )
+}
 
 pub fn get_auth_endpoints() -> Vec<EndpointSchema> {
     vec![
@@ -65,5 +80,6 @@ pub fn get_auth_endpoints() -> Vec<EndpointSchema> {
         endpoint_auth_signup(),
         endpoint_auth_authorize(),
         endpoint_auth_logout(),
+        endpoint_auth_change_login_wallet(),
     ]
 }

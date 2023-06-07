@@ -91,9 +91,7 @@
             },
             {
               "name": "username",
-              "ty": {
-                "Optional": "String"
-              }
+              "ty": "String"
             }
           ],
           "returns": [
@@ -151,6 +149,40 @@
           "name": "Logout",
           "code": 10040,
           "parameters": [],
+          "returns": [],
+          "stream_response": [],
+          "description": "",
+          "json_schema": null
+        },
+        {
+          "name": "ChangeLoginWallet",
+          "code": 10050,
+          "parameters": [
+            {
+              "name": "old_address",
+              "ty": "String"
+            },
+            {
+              "name": "old_signature_text",
+              "ty": "String"
+            },
+            {
+              "name": "old_signature",
+              "ty": "String"
+            },
+            {
+              "name": "new_address",
+              "ty": "String"
+            },
+            {
+              "name": "new_signature_text",
+              "ty": "String"
+            },
+            {
+              "name": "new_signature",
+              "ty": "String"
+            }
+          ],
           "returns": [],
           "stream_response": [],
           "description": "",

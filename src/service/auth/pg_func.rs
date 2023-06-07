@@ -265,5 +265,21 @@ BEGIN
 END
             "#,
         ),
+        ProceduralFunction::new(
+            "fun_auth_change_login_wallet_address",
+            vec![
+                Field::new("old_wallet_address", Type::String),
+                Field::new("new_wallet_address", Type::String),
+            ],
+            vec![],
+            r#"
+BEGIN
+    UPDATE tbl.user SET address = a_new_wallet_address,
+                updated_at = EXTRACT(EPOCH FROM NOW())::bigint
+     WHERE address = a_old_wallet_address;
+    
+END
+            "#,
+        ),
     ]
 }

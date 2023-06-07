@@ -228,6 +228,9 @@ pub enum EnumEndpoint {
     #[postgres(name = "Logout")]
     Logout = 10040,
     ///
+    #[postgres(name = "ChangeLoginWallet")]
+    ChangeLoginWallet = 10050,
+    ///
     #[postgres(name = "UserFollowStrategy")]
     UserFollowStrategy = 20040,
     ///
@@ -861,6 +864,19 @@ pub struct BackStrategyHistoryRow {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct ChangeLoginWalletRequest {
+    pub old_address: String,
+    pub old_signature_text: String,
+    pub old_signature: String,
+    pub new_address: String,
+    pub new_signature_text: String,
+    pub new_signature: String,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ChangeLoginWalletResponse {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct ExitStrategyHistoryRow {
     pub exit_history_id: i64,
     pub strategy_id: i64,
@@ -1015,8 +1031,7 @@ pub struct SignupRequest {
     pub phone: String,
     pub agreed_tos: bool,
     pub agreed_privacy: bool,
-    #[serde(default)]
-    pub username: Option<String>,
+    pub username: String,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1451,6 +1466,14 @@ impl WsRequest for LogoutRequest {
 }
 impl WsResponse for LogoutResponse {
     type Request = LogoutRequest;
+}
+
+impl WsRequest for ChangeLoginWalletRequest {
+    type Response = ChangeLoginWalletResponse;
+    const METHOD_ID: u32 = 10050;
+}
+impl WsResponse for ChangeLoginWalletResponse {
+    type Request = ChangeLoginWalletRequest;
 }
 
 impl WsRequest for UserFollowStrategyRequest {

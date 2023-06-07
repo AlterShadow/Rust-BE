@@ -245,6 +245,21 @@ END
 $$;
         
 
+CREATE OR REPLACE FUNCTION api.fun_auth_change_login_wallet_address(a_old_wallet_address varchar, a_new_wallet_address varchar)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    UPDATE tbl.user SET address = a_new_wallet_address,
+                updated_at = EXTRACT(EPOCH FROM NOW())::bigint
+     WHERE address = a_old_wallet_address;
+    
+END
+            
+$$;
+        
+
 CREATE OR REPLACE FUNCTION api.fun_user_follow_strategy(a_user_id bigint, a_strategy_id bigint)
 RETURNS table (
     "success" boolean

@@ -75,7 +75,7 @@ impl SubAuthController for MethodAuthSignup {
                     agreed_tos,
                     agreed_privacy,
                     ip_address: ctx.ip_addr,
-                    username: req.username.clone(),
+                    username: Some(req.username.clone()),
                     age: None,
                     public_id,
                 })
@@ -89,7 +89,7 @@ impl SubAuthController for MethodAuthSignup {
                     agreed_tos,
                     agreed_privacy,
                     ip_address: ctx.ip_addr,
-                    username: req.username,
+                    username: Some(req.username),
                     age: None,
                     public_id,
                 })
@@ -256,6 +256,72 @@ impl SubAuthController for MethodAuthLogout {
     }
 }
 
+pub struct MethodAuthChangeLoginWallet;
+
+impl SubAuthController for MethodAuthChangeLoginWallet {
+    fn auth(
+        self: Arc<Self>,
+        toolbox: &Toolbox,
+        param: Value,
+        _ctx: RequestContext,
+        _conn: Arc<WsConnection>,
+    ) -> BoxFuture<'static, Result<Value>> {
+        info!("Login request: {:?}", param);
+        let db_auth: DbClient = toolbox.get_nth_db(1);
+        async move {
+            let req: ChangeLoginWalletRequest = serde_json::from_value(param).map_err(|x| {
+                CustomError::new(EnumErrorCode::BadRequest, format!("Invalid request: {}", x))
+            })?;
+            let old_address = Address::from_str(&req.old_address).map_err(|x| {
+                CustomError::new(
+                    EnumErrorCode::UnknownUser,
+                    format!("Invalid address: {}", x),
+                )
+            })?;
+
+            let old_signature_text = hex_decode(req.old_signature_text.as_bytes())?;
+
+            let old_signature = hex_decode(req.old_signature.as_bytes())?;
+
+            let old_verified =
+                verify_message_address(&old_signature_text, &old_signature, old_address)?;
+
+            ensure!(
+                old_verified,
+                CustomError::new(EnumErrorCode::InvalidPassword, "Old signature is not valid")
+            );
+
+            let new_address = Address::from_str(&req.new_address).map_err(|x| {
+                CustomError::new(
+                    EnumErrorCode::UnknownUser,
+                    format!("Invalid address: {}", x),
+                )
+            })?;
+
+            let new_signature_text = hex_decode(req.new_signature_text.as_bytes())?;
+
+            let new_signature = hex_decode(req.new_signature.as_bytes())?;
+
+            let new_verified =
+                verify_message_address(&new_signature_text, &new_signature, new_address)?;
+
+            ensure!(
+                new_verified,
+                CustomError::new(EnumErrorCode::InvalidPassword, "New signature is not valid")
+            );
+
+            let _data = db_auth
+                .execute(FunAuthChangeLoginWalletAddressReq {
+                    old_wallet_address: format!("{:?}", old_address),
+                    new_wallet_address: format!("{:?}", new_address),
+                })
+                .await?;
+
+            Ok(serde_json::to_value(&ChangeLoginWalletResponse {})?)
+        }
+        .boxed()
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;

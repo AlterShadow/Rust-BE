@@ -208,6 +208,32 @@ impl DatabaseRequest for FunAuthSetRoleReq {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAuthChangeLoginWalletAddressReq {
+    pub old_wallet_address: String,
+    pub new_wallet_address: String,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAuthChangeLoginWalletAddressRespRow {}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunAuthChangeLoginWalletAddressReq {
+    type ResponseRow = FunAuthChangeLoginWalletAddressRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_auth_change_login_wallet_address(a_old_wallet_address => $1::varchar, a_new_wallet_address => $2::varchar);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.old_wallet_address as &(dyn ToSql + Sync),
+            &self.new_wallet_address as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunAuthChangeLoginWalletAddressRespRow> {
+        let r = FunAuthChangeLoginWalletAddressRespRow {};
+        Ok(r)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserFollowStrategyReq {
     pub user_id: i64,
     pub strategy_id: i64,
