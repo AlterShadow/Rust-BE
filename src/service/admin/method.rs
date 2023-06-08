@@ -1,9 +1,10 @@
 use crate::method::ensure_user_role;
 use eyre::ContextCompat;
+use futures::FutureExt;
 use gen::database::*;
 use gen::model::*;
 use lib::database::DbClient;
-use lib::handler::{RequestHandler, SpawnedResponse};
+use lib::handler::{FutureResponse, RequestHandler};
 use lib::toolbox::{RequestContext, Toolbox};
 
 pub struct MethodAdminListUsers;
@@ -15,9 +16,9 @@ impl RequestHandler for MethodAdminListUsers {
         toolbox: &Toolbox,
         ctx: RequestContext,
         req: Self::Request,
-    ) -> SpawnedResponse<Self::Request> {
+    ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
-        toolbox.spawn_response(ctx, async move {
+        async move {
             ensure_user_role(ctx, EnumRole::Admin)?;
 
             let ret = db
@@ -50,7 +51,8 @@ impl RequestHandler for MethodAdminListUsers {
                     })
                     .collect(),
             })
-        })
+        }
+        .boxed()
     }
 }
 pub struct MethodAdminSetUserRole;
@@ -62,9 +64,9 @@ impl RequestHandler for MethodAdminSetUserRole {
         toolbox: &Toolbox,
         ctx: RequestContext,
         req: Self::Request,
-    ) -> SpawnedResponse<Self::Request> {
+    ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
-        toolbox.spawn_response(ctx, async move {
+        async move {
             ensure_user_role(ctx, EnumRole::Admin)?;
 
             let ret = db
@@ -75,7 +77,8 @@ impl RequestHandler for MethodAdminSetUserRole {
                 .await?;
 
             Ok(AdminSetUserRoleResponse {})
-        })
+        }
+        .boxed()
     }
 }
 pub struct MethodAdminSetBlockUser;
@@ -87,9 +90,9 @@ impl RequestHandler for MethodAdminSetBlockUser {
         toolbox: &Toolbox,
         ctx: RequestContext,
         req: Self::Request,
-    ) -> SpawnedResponse<Self::Request> {
+    ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
-        toolbox.spawn_response(ctx, async move {
+        async move {
             ensure_user_role(ctx, EnumRole::Admin)?;
 
             let ret = db
@@ -100,7 +103,8 @@ impl RequestHandler for MethodAdminSetBlockUser {
                 .await?;
 
             Ok(AdminSetBlockUserResponse {})
-        })
+        }
+        .boxed()
     }
 }
 pub struct MethodAdminApproveUserBecomeExpert;
@@ -112,9 +116,9 @@ impl RequestHandler for MethodAdminApproveUserBecomeExpert {
         toolbox: &Toolbox,
         ctx: RequestContext,
         req: Self::Request,
-    ) -> SpawnedResponse<Self::Request> {
+    ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
-        toolbox.spawn_response(ctx, async move {
+        async move {
             ensure_user_role(ctx, EnumRole::Admin)?;
 
             let ret = db
@@ -129,7 +133,8 @@ impl RequestHandler for MethodAdminApproveUserBecomeExpert {
                     .context("failed to approve user become expert")?
                     .success,
             })
-        })
+        }
+        .boxed()
     }
 }
 pub struct MethodAdminRejectUserBecomeExpert;
@@ -141,9 +146,9 @@ impl RequestHandler for MethodAdminRejectUserBecomeExpert {
         toolbox: &Toolbox,
         ctx: RequestContext,
         req: Self::Request,
-    ) -> SpawnedResponse<Self::Request> {
+    ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
-        toolbox.spawn_response(ctx, async move {
+        async move {
             ensure_user_role(ctx, EnumRole::Admin)?;
 
             let ret = db
@@ -158,7 +163,8 @@ impl RequestHandler for MethodAdminRejectUserBecomeExpert {
                     .context("failed to reject user become expert")?
                     .success,
             })
-        })
+        }
+        .boxed()
     }
 }
 pub struct MethodAdminListPendingExpertApplications;
@@ -170,9 +176,9 @@ impl RequestHandler for MethodAdminListPendingExpertApplications {
         toolbox: &Toolbox,
         ctx: RequestContext,
         _req: Self::Request,
-    ) -> SpawnedResponse<Self::Request> {
+    ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
-        toolbox.spawn_response(ctx, async move {
+        async move {
             ensure_user_role(ctx, EnumRole::Admin)?;
 
             let ret = db
@@ -195,6 +201,7 @@ impl RequestHandler for MethodAdminListPendingExpertApplications {
                     })
                     .collect(),
             })
-        })
+        }
+        .boxed()
     }
 }

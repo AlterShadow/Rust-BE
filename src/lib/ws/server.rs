@@ -217,9 +217,7 @@ impl WebsocketServer {
                             continue;
                         }
                     };
-                    handler
-                        .handler
-                        .handle(&self.toolbox, context.clone(), req.params);
+                    tokio::spawn(handler.handler.handle(&self.toolbox, context, req.params));
                 }
                 Err(WsError::Protocol(ProtocolError::ResetWithoutClosingHandshake)) => {
                     debug!(?addr, "Receive side terminated");

@@ -1,6 +1,5 @@
 use crate::database::DbClient;
 use crate::error_code::ErrorCode;
-use crate::handler::SpawnedResponse;
 use crate::log::LogLevel;
 use crate::ws::*;
 use crossbeam::queue::SegQueue;
@@ -9,7 +8,6 @@ use eyre::*;
 use serde::*;
 use serde_json::Value;
 use std::fmt::{Debug, Display, Formatter};
-use std::future::Future;
 use std::net::IpAddr;
 use std::sync::Arc;
 use tokio::sync::mpsc;
@@ -212,26 +210,5 @@ impl Toolbox {
             ),
         };
         Some(resp)
-    }
-    pub fn spawn_ws_response<Resp: Send + Serialize>(
-        &self,
-        ctx: RequestContext,
-        f: impl Future<Output = Result<Resp>> + Send + 'static,
-    ) {
-        let send_msg = self.send_msg.clone();
-        tokio::spawn(async move {
-            let resp = f.await;
-            if let Some(resp) = Self::encode_ws_response(ctx, resp) {
-                (send_msg)(ctx.connection_id, resp);
-            }
-        });
-    }
-    pub fn spawn_response<Resp: WsResponse>(
-        &self,
-        ctx: RequestContext,
-        f: impl Future<Output = Result<Resp>> + Send + 'static,
-    ) -> SpawnedResponse<Resp::Request> {
-        self.spawn_ws_response(ctx, f);
-        SpawnedResponse::new()
     }
 }

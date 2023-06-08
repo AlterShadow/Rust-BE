@@ -155,7 +155,7 @@ impl HttpServer {
             futures::executor::block_on(tx.send(resp)).unwrap();
             true
         });
-        endpoint.handler.handle(&toolbox, context, req);
+        endpoint.handler.handle(&toolbox, context, req).await;
         let resp = rx.recv().await?;
         info!("Response: {:?}", resp);
         match resp {

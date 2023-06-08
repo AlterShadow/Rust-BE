@@ -1,35 +1,29 @@
 use crate::error_code::ErrorCode;
 use crate::toolbox::{RequestContext, Toolbox};
 use crate::ws::*;
-use core::marker::{Send, Sync};
+use eyre::*;
+use futures::future::BoxFuture;
+use futures::FutureExt;
 use serde_json::Value;
-use std::marker::PhantomData;
-pub struct SpawnedResponse<T> {
-    _phantom: PhantomData<T>,
-}
-impl<T> SpawnedResponse<T> {
-    pub fn new() -> Self {
-        Self {
-            _phantom: Default::default(),
-        }
-    }
-}
+#[allow(type_alias_bounds)]
+pub type FutureResponse<T: WsRequest> = BoxFuture<'static, Result<T::Response>>;
+
 pub trait RequestHandler: Send + Sync {
-    type Request: WsRequest;
+    type Request: WsRequest + 'static;
     fn handle(
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
         req: Self::Request,
-    ) -> SpawnedResponse<Self::Request>;
+    ) -> FutureResponse<Self::Request>;
 }
 
 pub trait RequestHandlerErased: Send + Sync {
-    fn handle(&self, toolbox: &Toolbox, ctx: RequestContext, req: Value);
+    fn handle(&self, toolbox: &Toolbox, ctx: RequestContext, req: Value) -> BoxFuture<'static, ()>;
 }
 
 impl<T: RequestHandler> RequestHandlerErased for T {
-    fn handle(&self, toolbox: &Toolbox, ctx: RequestContext, req: Value) {
+    fn handle(&self, toolbox: &Toolbox, ctx: RequestContext, req: Value) -> BoxFuture<'static, ()> {
         let data: T::Request = match serde_json::from_value(req) {
             Ok(data) => data,
             Err(err) => {
@@ -41,10 +35,17 @@ impl<T: RequestHandler> RequestHandlerErased for T {
                         err.to_string(),
                     ),
                 );
-                return;
+                return async { () }.boxed();
             }
         };
-
-        RequestHandler::handle(self, toolbox, ctx, data);
+        let send_msg = toolbox.send_msg.clone();
+        let fut = RequestHandler::handle(self, toolbox, ctx, data);
+        async move {
+            let resp = fut.await;
+            if let Some(resp) = Toolbox::encode_ws_response(ctx, resp) {
+                (send_msg)(ctx.connection_id, resp);
+            }
+        }
+        .boxed()
     }
 }
