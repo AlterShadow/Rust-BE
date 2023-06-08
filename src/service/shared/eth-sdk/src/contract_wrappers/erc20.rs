@@ -56,6 +56,13 @@ impl Erc20Token {
         })
     }
 
+    pub async fn symbol(&self) -> Result<String> {
+        Ok(self
+            .contract
+            .query("symbol", (), None, Options::default(), None)
+            .await?)
+    }
+
     pub async fn mint(&self, secret: impl Key, to: Address, amount: U256) -> Result<H256> {
         Ok(self
             .contract
