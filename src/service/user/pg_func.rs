@@ -913,6 +913,7 @@ END
             vec![Field::new("strategy_id", Type::BigInt)],
             vec![
                 Field::new("strategy_initial_token_ratio_id", Type::BigInt),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("token_name", Type::String),
                 Field::new("token_address", Type::String),
                 Field::new("quantity", Type::String),
@@ -922,7 +923,7 @@ END
             ],
             r#"
 BEGIN
-    RETURN QUERY SELECT pkey_id, token_name, token_address, quantity, fkey_strategy_id, updated_at, created_at FROM tbl.strategy_initial_token_ratio WHERE fkey_strategy_id = a_strategy_id;
+    RETURN QUERY SELECT pkey_id, blockchain, token_name, token_address, quantity, fkey_strategy_id, updated_at, created_at FROM tbl.strategy_initial_token_ratio WHERE fkey_strategy_id = a_strategy_id;
 END
 "#,
         ),

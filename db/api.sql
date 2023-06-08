@@ -1183,6 +1183,7 @@ $$;
 CREATE OR REPLACE FUNCTION api.fun_user_list_strategy_initial_token_ratios(a_strategy_id bigint)
 RETURNS table (
     "strategy_initial_token_ratio_id" bigint,
+    "blockchain" enum_block_chain,
     "token_name" varchar,
     "token_address" varchar,
     "quantity" varchar,
@@ -1194,7 +1195,7 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY SELECT pkey_id, token_name, token_address, quantity, fkey_strategy_id, updated_at, created_at FROM tbl.strategy_initial_token_ratio WHERE fkey_strategy_id = a_strategy_id;
+    RETURN QUERY SELECT pkey_id, blockchain, token_name, token_address, quantity, fkey_strategy_id, updated_at, created_at FROM tbl.strategy_initial_token_ratio WHERE fkey_strategy_id = a_strategy_id;
 END
 
 $$;

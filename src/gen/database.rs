@@ -1634,6 +1634,7 @@ pub struct FunUserListStrategyInitialTokenRatiosReq {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserListStrategyInitialTokenRatiosRespRow {
     pub strategy_initial_token_ratio_id: i64,
+    pub blockchain: EnumBlockChain,
     pub token_name: String,
     pub token_address: String,
     pub quantity: String,
@@ -1654,12 +1655,13 @@ impl DatabaseRequest for FunUserListStrategyInitialTokenRatiosReq {
     fn parse_row(&self, row: Row) -> Result<FunUserListStrategyInitialTokenRatiosRespRow> {
         let r = FunUserListStrategyInitialTokenRatiosRespRow {
             strategy_initial_token_ratio_id: row.try_get(0)?,
-            token_name: row.try_get(1)?,
-            token_address: row.try_get(2)?,
-            quantity: row.try_get(3)?,
-            strategy_id: row.try_get(4)?,
-            created_at: row.try_get(5)?,
-            updated_at: row.try_get(6)?,
+            blockchain: row.try_get(1)?,
+            token_name: row.try_get(2)?,
+            token_address: row.try_get(3)?,
+            quantity: row.try_get(4)?,
+            strategy_id: row.try_get(5)?,
+            created_at: row.try_get(6)?,
+            updated_at: row.try_get(7)?,
         };
         Ok(r)
     }
