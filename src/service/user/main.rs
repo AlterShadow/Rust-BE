@@ -83,6 +83,7 @@ async fn main() -> Result<()> {
 
     server.add_handler(MethodUserGetUserProfile);
     server.add_handler(MethodUserUpdateExpertProfile);
+    server.add_handler(MethodUserUpdateUserProfile);
     server.add_handler(MethodUserApplyBecomeExpert);
 
     server.add_handler(MethodUserCreateStrategy);

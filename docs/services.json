@@ -793,6 +793,28 @@
           "json_schema": null
         },
         {
+          "name": "UserUpdateUserProfile",
+          "code": 20172,
+          "parameters": [
+            {
+              "name": "description",
+              "ty": {
+                "Optional": "String"
+              }
+            },
+            {
+              "name": "social_media",
+              "ty": {
+                "Optional": "String"
+              }
+            }
+          ],
+          "returns": [],
+          "stream_response": [],
+          "description": "User update its expert profile",
+          "json_schema": null
+        },
+        {
           "name": "UserBackStrategy",
           "code": 20080,
           "parameters": [

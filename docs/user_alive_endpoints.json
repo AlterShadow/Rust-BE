@@ -39,5 +39,6 @@
   "UserUnfollowExpert",
   "UserUnfollowStrategy",
   "UserUpdateExpertProfile",
-  "UserUpdateStrategy"
+  "UserUpdateStrategy",
+  "UserUpdateUserProfile"
 ]

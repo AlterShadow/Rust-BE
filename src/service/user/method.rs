@@ -1079,6 +1079,54 @@ impl RequestHandler for MethodUserUpdateExpertProfile {
         })
     }
 }
+pub struct MethodUserUpdateUserProfile;
+impl RequestHandler for MethodUserUpdateUserProfile {
+    type Request = UserUpdateUserProfileRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> SpawnedResponse<Self::Request> {
+        let db: DbClient = toolbox.get_db();
+        toolbox.spawn_response(ctx, async move {
+            ensure_user_role(ctx, EnumRole::User)?;
+            let expert = db
+                .execute(FunUserGetExpertProfileReq {
+                    expert_id: None,
+                    user_id: Some(ctx.user_id),
+                })
+                .await?
+                .into_result();
+            match expert {
+                Some(expert_id) => {
+                    let ret = db
+                        .execute(FunUserUpdateExpertProfileReq {
+                            expert_id: expert_id.expert_id,
+                            description: req.description,
+                            social_media: req.social_media,
+                        })
+                        .await?
+                        .into_result()
+                        .context("failed to get expert profile")?;
+                }
+                None => {
+                    let ret = db
+                        .execute(FunUserCreateExpertProfileReq {
+                            user_id: ctx.user_id,
+                            description: req.description,
+                            social_media: req.social_media,
+                        })
+                        .await?
+                        .into_result()
+                        .context("failed to get expert profile")?;
+                }
+            }
+            Ok(UserUpdateUserProfileResponse {})
+        })
+    }
+}
 pub struct MethodUserGetUserProfile;
 impl RequestHandler for MethodUserGetUserProfile {
     type Request = UserGetUserProfileRequest;

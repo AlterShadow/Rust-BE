@@ -264,6 +264,9 @@ pub enum EnumEndpoint {
     #[postgres(name = "UserUpdateExpertProfile")]
     UserUpdateExpertProfile = 20171,
     ///
+    #[postgres(name = "UserUpdateUserProfile")]
+    UserUpdateUserProfile = 20172,
+    ///
     #[postgres(name = "UserBackStrategy")]
     UserBackStrategy = 20080,
     ///
@@ -1496,6 +1499,17 @@ pub struct UserUpdateStrategyResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct UserUpdateUserProfileRequest {
+    #[serde(default)]
+    pub description: Option<String>,
+    #[serde(default)]
+    pub social_media: Option<String>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserUpdateUserProfileResponse {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct WatchingWalletRow {
     pub watching_wallet_id: i64,
     pub wallet_address: String,
@@ -2411,6 +2425,36 @@ impl WsRequest for UserUpdateExpertProfileRequest {
 }
 impl WsResponse for UserUpdateExpertProfileResponse {
     type Request = UserUpdateExpertProfileRequest;
+}
+
+impl WsRequest for UserUpdateUserProfileRequest {
+    type Response = UserUpdateUserProfileResponse;
+    const METHOD_ID: u32 = 20172;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserUpdateUserProfile",
+  "code": 20172,
+  "parameters": [
+    {
+      "name": "description",
+      "ty": {
+        "Optional": "String"
+      }
+    },
+    {
+      "name": "social_media",
+      "ty": {
+        "Optional": "String"
+      }
+    }
+  ],
+  "returns": [],
+  "stream_response": [],
+  "description": "User update its expert profile",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for UserUpdateUserProfileResponse {
+    type Request = UserUpdateUserProfileRequest;
 }
 
 impl WsRequest for UserBackStrategyRequest {
