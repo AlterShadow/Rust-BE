@@ -438,7 +438,8 @@ pub async fn user_back_strategy(
         escrow_signer,
         EscrowTransfer {
             token: stablecoin,
-            amount: sp_tokens,
+            // TODO: reduce fees from back_usdc_amount
+            amount: back_usdc_amount,
             // recipient: strategy_address,
             recipient: externally_owned_account.address(),
             owner: escrow_signer_address,
