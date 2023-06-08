@@ -1,5 +1,24 @@
 use model::types::*;
 
+pub fn expert_columns() -> Vec<Field> {
+    vec![
+        Field::new("expert_id", Type::BigInt),
+        Field::new("user_id", Type::BigInt),
+        Field::new("user_public_id", Type::BigInt),
+        Field::new("listening_wallet", Type::String),
+        Field::new("username", Type::String),
+        Field::new("family_name", Type::optional(Type::String)),
+        Field::new("given_name", Type::optional(Type::String)),
+        Field::new("follower_count", Type::BigInt),
+        Field::new("description", Type::String),
+        Field::new("social_media", Type::String),
+        Field::new("risk_score", Type::Numeric),
+        Field::new("reputation_score", Type::Numeric),
+        Field::new("aum", Type::Numeric),
+        Field::new("joined_at", Type::BigInt),
+        Field::new("requested_at", Type::BigInt),
+    ]
+}
 pub fn get_user_pg_func() -> Vec<ProceduralFunction> {
     vec![
         ProceduralFunction::new(
@@ -450,20 +469,16 @@ END
         ProceduralFunction::new(
             "fun_user_list_followed_experts",
             vec![Field::new("user_id", Type::BigInt)],
-            vec![
-                Field::new("expert_id", Type::BigInt),
-                Field::new("name", Type::String),
-                Field::new("follower_count", Type::BigInt),
-                Field::new("description", Type::String),
-                Field::new("social_media", Type::String),
-                Field::new("risk_score", Type::Numeric),
-                Field::new("reputation_score", Type::Numeric),
-                Field::new("aum", Type::Numeric),
-            ],
+            expert_columns(),
             r#"
 BEGIN
     RETURN QUERY SELECT a.pkey_id                                                 AS expert_id,
-                        a.name                                                    AS name,
+                        a.fkey_user_id                                            AS user_id,
+                        c.public_id                                               AS user_public_id,
+                        c.address                                                 AS listening_wallet,
+                        c.username                                                AS username,
+                        c.family_name                                             AS family_name,
+                        c.given_name                                               AS given_name,
                         (SELECT COUNT(*)
                          FROM tbl.user_follow_expert
                          WHERE fkey_expert_id = a.pkey_id AND unfollowed = FALSE) AS follower_count,
@@ -471,9 +486,12 @@ BEGIN
                         a.social_media                                            AS social_media,
                         a.risk_score                                              AS risk_score,
                         a.reputation_score                                        AS reputation_score,
-                        a.aum                                                     AS aum
+                        a.aum                                                     AS aum,
+                        c.created_at                                              AS joined_at,
+                        a.
                  FROM tbl.expert_profile AS a
                           JOIN tbl.user_follow_expert AS b ON b.fkey_expert_id = a.pkey_id
+                          JOIN tbl.user AS c ON c.pkey_id = a.fkey_user_id
                  WHERE b.fkey_user_id = a_user_id
                    AND unfollowed = FALSE;
 END
@@ -482,27 +500,25 @@ END
         ProceduralFunction::new(
             "fun_user_list_experts",
             vec![],
-            vec![
-                Field::new("expert_id", Type::BigInt),
-                Field::new("name", Type::String),
-                Field::new("follower_count", Type::BigInt),
-                Field::new("description", Type::String),
-                Field::new("social_media", Type::String),
-                Field::new("risk_score", Type::Numeric),
-                Field::new("reputation_score", Type::Numeric),
-                Field::new("aum", Type::Numeric),
-            ],
+            expert_columns(),
             r#"
 BEGIN
     RETURN QUERY SELECT a.pkey_id AS expert_id,
-                          a.name AS name,
-                          (SELECT COUNT(*) FROM tbl.user_follow_expert WHERE fkey_expert_id = a.pkey_id AND unfollowed = FALSE) AS follower_count,
-                          a.description AS description,
-                          a.social_media AS social_media,
-                          a.risk_score AS risk_score,
-                          a.reputation_score AS reputation_score,
-                          a.aum AS aum
-                 FROM tbl.expert_profile AS a;
+                        a.fkey_user_id   AS user_id,
+                        c.public_id      AS user_public_id,
+                        c.address        AS listening_wallet,
+                        c.username                                                AS username,
+                        c.family_name                                             AS family_name,
+                        c.given_name                                               AS given_name,
+                        (SELECT COUNT(*) FROM tbl.user_follow_expert WHERE fkey_expert_id = a.pkey_id AND unfollowed = FALSE) AS follower_count,
+                        a.description AS description,
+                        a.social_media AS social_media,
+                        a.risk_score AS risk_score,
+                        a.reputation_score AS reputation_score,
+                        a.aum AS aum
+                 FROM tbl.expert_profile AS a
+                          JOIN tbl.user AS c ON c.pkey_id = a.fkey_user_id
+                 ;
 END
 "#,
         ),

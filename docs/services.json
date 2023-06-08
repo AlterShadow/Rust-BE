@@ -974,11 +974,11 @@
                       "ty": "String"
                     },
                     {
-                      "name": "first_name",
+                      "name": "family_name",
                       "ty": "String"
                     },
                     {
-                      "name": "last_name",
+                      "name": "given_name",
                       "ty": "String"
                     },
                     {
@@ -1006,11 +1006,11 @@
                       "ty": "Numeric"
                     },
                     {
-                      "name": "join_date",
+                      "name": "joined_at",
                       "ty": "BigInt"
                     },
                     {
-                      "name": "request_date",
+                      "name": "requested_at",
                       "ty": "BigInt"
                     }
                   ]
@@ -1069,11 +1069,11 @@
                       "ty": "String"
                     },
                     {
-                      "name": "first_name",
+                      "name": "family_name",
                       "ty": "String"
                     },
                     {
-                      "name": "last_name",
+                      "name": "given_name",
                       "ty": "String"
                     },
                     {
@@ -1101,11 +1101,11 @@
                       "ty": "Numeric"
                     },
                     {
-                      "name": "join_date",
+                      "name": "joined_at",
                       "ty": "BigInt"
                     },
                     {
-                      "name": "request_date",
+                      "name": "requested_at",
                       "ty": "BigInt"
                     }
                   ]
@@ -1145,11 +1145,11 @@
                       "ty": "String"
                     },
                     {
-                      "name": "first_name",
+                      "name": "family_name",
                       "ty": "String"
                     },
                     {
-                      "name": "last_name",
+                      "name": "given_name",
                       "ty": "String"
                     },
                     {
@@ -1177,11 +1177,11 @@
                       "ty": "Numeric"
                     },
                     {
-                      "name": "join_date",
+                      "name": "joined_at",
                       "ty": "BigInt"
                     },
                     {
-                      "name": "request_date",
+                      "name": "requested_at",
                       "ty": "BigInt"
                     }
                   ]
@@ -1221,11 +1221,11 @@
                       "ty": "String"
                     },
                     {
-                      "name": "first_name",
+                      "name": "family_name",
                       "ty": "String"
                     },
                     {
-                      "name": "last_name",
+                      "name": "given_name",
                       "ty": "String"
                     },
                     {
@@ -1253,11 +1253,11 @@
                       "ty": "Numeric"
                     },
                     {
-                      "name": "join_date",
+                      "name": "joined_at",
                       "ty": "BigInt"
                     },
                     {
-                      "name": "request_date",
+                      "name": "requested_at",
                       "ty": "BigInt"
                     }
                   ]
@@ -1411,11 +1411,11 @@
                       "ty": "String"
                     },
                     {
-                      "name": "first_name",
+                      "name": "family_name",
                       "ty": "String"
                     },
                     {
-                      "name": "last_name",
+                      "name": "given_name",
                       "ty": "String"
                     },
                     {
@@ -1443,11 +1443,11 @@
                       "ty": "Numeric"
                     },
                     {
-                      "name": "join_date",
+                      "name": "joined_at",
                       "ty": "BigInt"
                     },
                     {
-                      "name": "request_date",
+                      "name": "requested_at",
                       "ty": "BigInt"
                     }
                   ]

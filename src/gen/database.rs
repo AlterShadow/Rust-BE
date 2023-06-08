@@ -869,13 +869,22 @@ pub struct FunUserListFollowedExpertsReq {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserListFollowedExpertsRespRow {
     pub expert_id: i64,
-    pub name: String,
+    pub user_id: i64,
+    pub user_public_id: i64,
+    pub listening_wallet: String,
+    pub username: String,
+    #[serde(default)]
+    pub family_name: Option<String>,
+    #[serde(default)]
+    pub given_name: Option<String>,
     pub follower_count: i64,
     pub description: String,
     pub social_media: String,
     pub risk_score: f64,
     pub reputation_score: f64,
     pub aum: f64,
+    pub joined_at: i64,
+    pub requested_at: i64,
 }
 
 #[allow(unused_variables)]
@@ -890,13 +899,20 @@ impl DatabaseRequest for FunUserListFollowedExpertsReq {
     fn parse_row(&self, row: Row) -> Result<FunUserListFollowedExpertsRespRow> {
         let r = FunUserListFollowedExpertsRespRow {
             expert_id: row.try_get(0)?,
-            name: row.try_get(1)?,
-            follower_count: row.try_get(2)?,
-            description: row.try_get(3)?,
-            social_media: row.try_get(4)?,
-            risk_score: row.try_get(5)?,
-            reputation_score: row.try_get(6)?,
-            aum: row.try_get(7)?,
+            user_id: row.try_get(1)?,
+            user_public_id: row.try_get(2)?,
+            listening_wallet: row.try_get(3)?,
+            username: row.try_get(4)?,
+            family_name: row.try_get(5)?,
+            given_name: row.try_get(6)?,
+            follower_count: row.try_get(7)?,
+            description: row.try_get(8)?,
+            social_media: row.try_get(9)?,
+            risk_score: row.try_get(10)?,
+            reputation_score: row.try_get(11)?,
+            aum: row.try_get(12)?,
+            joined_at: row.try_get(13)?,
+            requested_at: row.try_get(14)?,
         };
         Ok(r)
     }
@@ -907,13 +923,22 @@ pub struct FunUserListExpertsReq {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserListExpertsRespRow {
     pub expert_id: i64,
-    pub name: String,
+    pub user_id: i64,
+    pub user_public_id: i64,
+    pub listening_wallet: String,
+    pub username: String,
+    #[serde(default)]
+    pub family_name: Option<String>,
+    #[serde(default)]
+    pub given_name: Option<String>,
     pub follower_count: i64,
     pub description: String,
     pub social_media: String,
     pub risk_score: f64,
     pub reputation_score: f64,
     pub aum: f64,
+    pub joined_at: i64,
+    pub requested_at: i64,
 }
 
 #[allow(unused_variables)]
@@ -928,13 +953,20 @@ impl DatabaseRequest for FunUserListExpertsReq {
     fn parse_row(&self, row: Row) -> Result<FunUserListExpertsRespRow> {
         let r = FunUserListExpertsRespRow {
             expert_id: row.try_get(0)?,
-            name: row.try_get(1)?,
-            follower_count: row.try_get(2)?,
-            description: row.try_get(3)?,
-            social_media: row.try_get(4)?,
-            risk_score: row.try_get(5)?,
-            reputation_score: row.try_get(6)?,
-            aum: row.try_get(7)?,
+            user_id: row.try_get(1)?,
+            user_public_id: row.try_get(2)?,
+            listening_wallet: row.try_get(3)?,
+            username: row.try_get(4)?,
+            family_name: row.try_get(5)?,
+            given_name: row.try_get(6)?,
+            follower_count: row.try_get(7)?,
+            description: row.try_get(8)?,
+            social_media: row.try_get(9)?,
+            risk_score: row.try_get(10)?,
+            reputation_score: row.try_get(11)?,
+            aum: row.try_get(12)?,
+            joined_at: row.try_get(13)?,
+            requested_at: row.try_get(14)?,
         };
         Ok(r)
     }

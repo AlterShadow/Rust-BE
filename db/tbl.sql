@@ -1,5 +1,5 @@
 -- Created by Vertabelo (http://vertabelo.com)
--- Last modification date: 2023-06-05 14:05:27.265
+-- Last modification date: 2023-06-08 13:08:31.957
 
 CREATE SCHEMA IF NOT EXISTS tbl;;
 
@@ -62,8 +62,7 @@ CREATE TABLE tbl.blockchain_address_lookup_cache (
 CREATE TABLE tbl.expert_profile (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_expert_profile_id'),
     fkey_user_id bigint  NOT NULL,
-    name varchar  NOT NULL,
-    description varchar  NOT NULL,
+    description varchar  NULL,
     social_media varchar  NULL,
     consistent_score double precision  NULL,
     followers int  NULL,
@@ -71,6 +70,11 @@ CREATE TABLE tbl.expert_profile (
     risk_score double precision  NULL,
     reputation_score double precision  NULL,
     aum double precision  NULL,
+    pending_expert boolean  NOT NULL DEFAULT TRUE,
+    approved_expert boolean  NOT NULL DEFAULT FALSE,
+    updated_at bigint  NOT NULL,
+    created_at bigint  NOT NULL,
+    approved_at bigint  NULL,
     CONSTRAINT expert_profile_pk PRIMARY KEY (pkey_id)
 );
 
@@ -150,6 +154,8 @@ CREATE TABLE tbl.transaction_cache (
 -- Table: user
 CREATE TABLE tbl."user" (
     pkey_id bigint  NOT NULL DEFAULT nextval( 'tbl.seq_user_id' ),
+    public_id bigint  NOT NULL,
+    username varchar(32)  NOT NULL,
     role enum_role  NOT NULL,
     address varchar(64)  NOT NULL,
     age int  NULL,
@@ -170,9 +176,6 @@ CREATE TABLE tbl."user" (
     user_token uuid  NULL,
     admin_token uuid  NULL,
     is_blocked boolean  NOT NULL DEFAULT FALSE,
-    pending_expert boolean  NOT NULL DEFAULT FALSE,
-    username varchar(32)  NULL,
-    public_id bigint  NOT NULL,
     CONSTRAINT uidx_public_id UNIQUE (public_id) NOT DEFERRABLE  INITIALLY IMMEDIATE,
     CONSTRAINT uidx_address UNIQUE (address) NOT DEFERRABLE  INITIALLY IMMEDIATE,
     CONSTRAINT user_pk PRIMARY KEY (pkey_id)

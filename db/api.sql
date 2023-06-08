@@ -709,20 +709,32 @@ $$;
 CREATE OR REPLACE FUNCTION api.fun_user_list_followed_experts(a_user_id bigint)
 RETURNS table (
     "expert_id" bigint,
-    "name" varchar,
+    "user_id" bigint,
+    "user_public_id" bigint,
+    "listening_wallet" varchar,
+    "username" varchar,
+    "family_name" varchar,
+    "given_name" varchar,
     "follower_count" bigint,
     "description" varchar,
     "social_media" varchar,
     "risk_score" double precision,
     "reputation_score" double precision,
-    "aum" double precision
+    "aum" double precision,
+    "joined_at" bigint,
+    "requested_at" bigint
 )
 LANGUAGE plpgsql
 AS $$
     
 BEGIN
     RETURN QUERY SELECT a.pkey_id                                                 AS expert_id,
-                        a.name                                                    AS name,
+                        a.fkey_user_id                                            AS user_id,
+                        c.public_id                                               AS user_public_id,
+                        c.address                                                 AS listening_wallet,
+                        c.username                                                AS username,
+                        c.family_name                                             AS family_name,
+                        c.given_name                                               AS given_name,
                         (SELECT COUNT(*)
                          FROM tbl.user_follow_expert
                          WHERE fkey_expert_id = a.pkey_id AND unfollowed = FALSE) AS follower_count,
@@ -730,9 +742,12 @@ BEGIN
                         a.social_media                                            AS social_media,
                         a.risk_score                                              AS risk_score,
                         a.reputation_score                                        AS reputation_score,
-                        a.aum                                                     AS aum
+                        a.aum                                                     AS aum,
+                        c.created_at                                              AS joined_at,
+                        a.
                  FROM tbl.expert_profile AS a
                           JOIN tbl.user_follow_expert AS b ON b.fkey_expert_id = a.pkey_id
+                          JOIN tbl.user AS c ON c.pkey_id = a.fkey_user_id
                  WHERE b.fkey_user_id = a_user_id
                    AND unfollowed = FALSE;
 END
@@ -743,27 +758,41 @@ $$;
 CREATE OR REPLACE FUNCTION api.fun_user_list_experts()
 RETURNS table (
     "expert_id" bigint,
-    "name" varchar,
+    "user_id" bigint,
+    "user_public_id" bigint,
+    "listening_wallet" varchar,
+    "username" varchar,
+    "family_name" varchar,
+    "given_name" varchar,
     "follower_count" bigint,
     "description" varchar,
     "social_media" varchar,
     "risk_score" double precision,
     "reputation_score" double precision,
-    "aum" double precision
+    "aum" double precision,
+    "joined_at" bigint,
+    "requested_at" bigint
 )
 LANGUAGE plpgsql
 AS $$
     
 BEGIN
     RETURN QUERY SELECT a.pkey_id AS expert_id,
-                          a.name AS name,
-                          (SELECT COUNT(*) FROM tbl.user_follow_expert WHERE fkey_expert_id = a.pkey_id AND unfollowed = FALSE) AS follower_count,
-                          a.description AS description,
-                          a.social_media AS social_media,
-                          a.risk_score AS risk_score,
-                          a.reputation_score AS reputation_score,
-                          a.aum AS aum
-                 FROM tbl.expert_profile AS a;
+                        a.fkey_user_id   AS user_id,
+                        c.public_id      AS user_public_id,
+                        c.address        AS listening_wallet,
+                        c.username                                                AS username,
+                        c.family_name                                             AS family_name,
+                        c.given_name                                               AS given_name,
+                        (SELECT COUNT(*) FROM tbl.user_follow_expert WHERE fkey_expert_id = a.pkey_id AND unfollowed = FALSE) AS follower_count,
+                        a.description AS description,
+                        a.social_media AS social_media,
+                        a.risk_score AS risk_score,
+                        a.reputation_score AS reputation_score,
+                        a.aum AS aum
+                 FROM tbl.expert_profile AS a
+                          JOIN tbl.user AS c ON c.pkey_id = a.fkey_user_id
+                 ;
 END
 
 $$;

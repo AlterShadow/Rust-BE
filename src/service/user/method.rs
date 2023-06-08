@@ -88,7 +88,6 @@ impl RequestHandler for MethodUserListFollowedStrategies {
                 .await?;
             Ok(UserListFollowedStrategiesResponse {
                 strategies: ret
-                    .into_rows()
                     .into_iter()
                     .map(|x| ListStrategiesRow {
                         strategy_id: x.strategy_id,
@@ -124,7 +123,6 @@ impl RequestHandler for MethodUserListStrategies {
             let ret = db.execute(FunUserListStrategiesReq {}).await?;
             Ok(UserListStrategiesResponse {
                 strategies: ret
-                    .into_rows()
                     .into_iter()
                     .map(|x| ListStrategiesRow {
                         strategy_id: x.strategy_id,
@@ -160,7 +158,6 @@ impl RequestHandler for MethodUserListTopPerformingStrategies {
             let ret = db.execute(FunUserListStrategiesReq {}).await?;
             Ok(UserListTopPerformingStrategiesResponse {
                 strategies: ret
-                    .into_rows()
                     .into_iter()
                     .map(|x| ListStrategiesRow {
                         strategy_id: x.strategy_id,
@@ -217,7 +214,6 @@ impl RequestHandler for MethodUserGetStrategy {
                 followers: ret.followers as _,
                 backers: ret.backers as _,
                 watching_wallets: watching_wallets
-                    .into_rows()
                     .into_iter()
                     .map(|x| WatchingWalletRow {
                         watching_wallet_id: x.watch_wallet_id,
@@ -267,7 +263,6 @@ impl RequestHandler for MethodUserGetStrategyStatistics {
             Ok(UserGetStrategyStatisticsResponse {
                 strategy_id: req.strategy_id,
                 net_value: net_value
-                    .into_rows()
                     .into_iter()
                     .map(|x| NetValuePoint {
                         time: x.time,
@@ -275,7 +270,6 @@ impl RequestHandler for MethodUserGetStrategyStatistics {
                     })
                     .collect(),
                 follow_history: follow_hist
-                    .into_rows()
                     .into_iter()
                     .map(|x| FollowHistoryPoint {
                         time: x.time,
@@ -283,7 +277,6 @@ impl RequestHandler for MethodUserGetStrategyStatistics {
                     })
                     .collect(),
                 back_history: back_hist
-                    .into_rows()
                     .into_iter()
                     .map(|x| BackHistoryPoint {
                         time: x.time,
@@ -340,7 +333,6 @@ impl RequestHandler for MethodUserListBackedStrategies {
                 .await?;
             Ok(UserListBackedStrategiesResponse {
                 strategies: ret
-                    .into_rows()
                     .into_iter()
                     .map(|x| ListStrategiesRow {
                         strategy_id: x.strategy_id,
@@ -705,7 +697,6 @@ impl RequestHandler for MethodUserListExitStrategyHistory {
                 .await?;
             Ok(UserListExitStrategyHistoryResponse {
                 exit_history: ret
-                    .into_rows()
                     .into_iter()
                     .map(|x| ExitStrategyHistoryRow {
                         exit_history_id: x.exit_history_id,
@@ -751,6 +742,7 @@ impl RequestHandler for MethodUserFollowExpert {
         })
     }
 }
+
 pub struct MethodUserListFollowedExperts;
 impl RequestHandler for MethodUserListFollowedExperts {
     type Request = UserListFollowedExpertsRequest;
@@ -771,23 +763,22 @@ impl RequestHandler for MethodUserListFollowedExperts {
                 .await?;
             Ok(UserListFollowedExpertsResponse {
                 experts: ret
-                    .into_rows()
                     .into_iter()
                     .map(|x| ListExpertsRow {
                         expert_id: x.expert_id,
                         user_public_id: x.user_public_id,
-                        name: x.name,
-                        linked_wallet: "".to_string(),
-                        first_name: "".to_string(),
-                        last_name: "".to_string(),
+                        name: x.username,
+                        linked_wallet: x.listening_wallet,
+                        family_name: x.family_name.unwrap_or_default(),
+                        given_name: x.given_name.unwrap_or_default(),
                         follower_count: x.follower_count as _,
                         description: x.description,
                         social_media: x.social_media,
                         risk_score: x.risk_score,
                         reputation_score: x.reputation_score,
                         aum: x.aum,
-                        join_date: 0,
-                        request_date: 0,
+                        joined_at: x.joined_at,
+                        requested_at: x.requested_at,
                     })
                     .collect(),
             })
@@ -839,17 +830,22 @@ impl RequestHandler for MethodUserListExperts {
             let ret = db.execute(FunUserListExpertsReq {}).await?;
             Ok(UserListExpertsResponse {
                 experts: ret
-                    .into_rows()
                     .into_iter()
                     .map(|x| ListExpertsRow {
                         expert_id: x.expert_id,
-                        name: x.name,
+                        user_public_id: x.user_public_id,
+                        name: x.username,
+                        linked_wallet: x.listening_wallet,
+                        family_name: x.family_name.unwrap_or_default(),
+                        given_name: x.given_name.unwrap_or_default(),
                         follower_count: x.follower_count as _,
                         description: x.description,
                         social_media: x.social_media,
                         risk_score: x.risk_score,
                         aum: x.aum,
+                        joined_at: x.joined_at,
                         reputation_score: x.reputation_score,
+                        requested_at: x.requested_at,
                     })
                     .collect(),
             })
@@ -872,17 +868,22 @@ impl RequestHandler for MethodUserListTopPerformingExperts {
             let ret = db.execute(FunUserListExpertsReq {}).await?;
             Ok(UserListTopPerformingExpertsResponse {
                 experts: ret
-                    .into_rows()
                     .into_iter()
                     .map(|x| ListExpertsRow {
                         expert_id: x.expert_id,
-                        name: x.name,
+                        user_public_id: x.user_public_id,
+                        name: x.username,
+                        linked_wallet: x.listening_wallet,
+                        family_name: x.family_name.unwrap_or_default(),
+                        given_name: x.given_name.unwrap_or_default(),
                         follower_count: x.follower_count as _,
                         description: x.description,
                         social_media: x.social_media,
                         risk_score: x.risk_score,
                         aum: x.aum,
+                        joined_at: x.joined_at,
                         reputation_score: x.reputation_score,
+                        requested_at: x.requested_at,
                     })
                     .collect(),
             })
@@ -905,17 +906,22 @@ impl RequestHandler for MethodUserListFeaturedExperts {
             let ret = db.execute(FunUserListExpertsReq {}).await?;
             Ok(UserListFeaturedExpertsResponse {
                 experts: ret
-                    .into_rows()
                     .into_iter()
                     .map(|x| ListExpertsRow {
                         expert_id: x.expert_id,
-                        name: x.name,
+                        user_public_id: x.user_public_id,
+                        name: x.username,
+                        linked_wallet: x.listening_wallet,
+                        family_name: x.family_name.unwrap_or_default(),
+                        given_name: x.given_name.unwrap_or_default(),
                         follower_count: x.follower_count as _,
                         description: x.description,
                         social_media: x.social_media,
                         risk_score: x.risk_score,
                         aum: x.aum,
+                        joined_at: x.joined_at,
                         reputation_score: x.reputation_score,
+                        requested_at: x.requested_at,
                     })
                     .collect(),
             })
@@ -1111,7 +1117,6 @@ impl RequestHandler for MethodUserListRegisteredWallets {
 
             Ok(UserListRegisteredWalletsResponse {
                 wallets: ret
-                    .into_rows()
                     .into_iter()
                     .map(|x| ListWalletsRow {
                         wallet_id: x.registered_wallet_id,
@@ -1343,7 +1348,6 @@ impl RequestHandler for MethodUserListWalletActivityHistory {
 
             Ok(UserListWalletActivityHistoryResponse {
                 wallet_activities: ret
-                    .into_rows()
                     .into_iter()
                     .map(|x| ListWalletActivityHistoryRow {
                         record_id: x.wallet_activity_history_id,
@@ -1498,7 +1502,6 @@ impl RequestHandler for MethodUserListStrategyInitialTokenRatio {
 
             Ok(UserListStrategyInitialTokenRatioResponse {
                 token_ratios: ret
-                    .into_rows()
                     .into_iter()
                     .map(|x| ListStrategyInitialTokenRatioRow {
                         token_id: x.strategy_initial_token_ratio_id,
