@@ -84,6 +84,7 @@ path = "src/service/watcher/main.rs"
 members = [
 	"src/service/shared/eth-sdk",
 	"src/service/shared/crypto",
+	"src/service/shared/api",
 	"src/lib",
 	"src/gen",
 ]
