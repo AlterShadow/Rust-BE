@@ -105,6 +105,12 @@ pub enum EnumBlockchainCoin {
     ///
     #[postgres(name = "BUSD")]
     BUSD = 2,
+    ///
+    #[postgres(name = "WETH")]
+    WETH = 4,
+    ///
+    #[postgres(name = "WBNB")]
+    WBNB = 5,
 }
 #[derive(
     Debug,

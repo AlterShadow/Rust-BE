@@ -39,6 +39,8 @@ pub fn get_enums() -> Vec<Type> {
                 EnumVariant::new("USDC", 0),
                 EnumVariant::new("USDT", 1),
                 EnumVariant::new("BUSD", 2),
+                EnumVariant::new("WETH", 4),
+                EnumVariant::new("WBNB", 5),
             ],
         ),
         Type::enum_(

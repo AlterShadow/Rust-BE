@@ -2481,6 +2481,16 @@
             "name": "BUSD",
             "value": 2,
             "comment": ""
+          },
+          {
+            "name": "WETH",
+            "value": 4,
+            "comment": ""
+          },
+          {
+            "name": "WBNB",
+            "value": 5,
+            "comment": ""
           }
         ]
       }

@@ -30,11 +30,24 @@ impl BlockchainCoinAddresses {
                 .parse()
                 .unwrap(),
         );
-
+        this.insert(
+            EnumBlockChain::EthereumMainnet,
+            EnumBlockchainCoin::WETH,
+            "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+                .parse()
+                .unwrap(),
+        );
         this.insert(
             EnumBlockChain::EthereumGoerli,
             EnumBlockchainCoin::USDC,
             "0x07865c6E87B9F70255377e024ace6630C1Eaa37F"
+                .parse()
+                .unwrap(),
+        );
+        this.insert(
+            EnumBlockChain::EthereumGoerli,
+            EnumBlockchainCoin::WETH,
+            "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6"
                 .parse()
                 .unwrap(),
         );
@@ -60,9 +73,23 @@ impl BlockchainCoinAddresses {
                 .unwrap(),
         );
         this.insert(
+            EnumBlockChain::BscMainnet,
+            EnumBlockchainCoin::WBNB,
+            "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"
+                .parse()
+                .unwrap(),
+        );
+        this.insert(
             EnumBlockChain::BscTestnet,
             EnumBlockchainCoin::BUSD,
             "0xaB1a4d4f1D656d2450692D237fdD6C7f9146e814"
+                .parse()
+                .unwrap(),
+        );
+        this.insert(
+            EnumBlockChain::BscTestnet,
+            EnumBlockchainCoin::WBNB,
+            "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd"
                 .parse()
                 .unwrap(),
         );
