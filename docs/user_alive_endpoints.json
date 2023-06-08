@@ -26,6 +26,8 @@
   "UserListFollowedStrategies",
   "UserListRegisteredWallets",
   "UserListStrategies",
+  "UserListStrategyBackers",
+  "UserListStrategyFollowers",
   "UserListStrategyInitialTokenRatio",
   "UserListTopPerformingExperts",
   "UserListTopPerformingStrategies",
@@ -36,5 +38,6 @@
   "UserRequestRefund",
   "UserUnfollowExpert",
   "UserUnfollowStrategy",
+  "UserUpdateExpertProfile",
   "UserUpdateStrategy"
 ]

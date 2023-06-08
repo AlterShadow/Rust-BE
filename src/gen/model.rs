@@ -950,7 +950,7 @@ pub struct ListStrategyBackersRow {
     pub user_id: i64,
     pub name: String,
     pub linked_wallet: String,
-    pub followed_date: i64,
+    pub backed_date: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1333,7 +1333,7 @@ pub struct UserListStrategyBackersRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserListStrategyBackersResponse {
-    pub bakers: Vec<ListStrategyBackersRow>,
+    pub backers: Vec<ListStrategyBackersRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1345,7 +1345,7 @@ pub struct UserListStrategyFollowersRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserListStrategyFollowersResponse {
-    pub bakers: Vec<ListStrategyFollowersRow>,
+    pub followers: Vec<ListStrategyFollowersRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1993,7 +1993,7 @@ impl WsRequest for UserListStrategyBackersRequest {
   ],
   "returns": [
     {
-      "name": "bakers",
+      "name": "backers",
       "ty": {
         "DataTable": {
           "name": "ListStrategyBackersRow",
@@ -2011,7 +2011,7 @@ impl WsRequest for UserListStrategyBackersRequest {
               "ty": "String"
             },
             {
-              "name": "followed_date",
+              "name": "backed_date",
               "ty": "BigInt"
             }
           ]
@@ -2050,7 +2050,7 @@ impl WsRequest for UserListStrategyFollowersRequest {
   ],
   "returns": [
     {
-      "name": "bakers",
+      "name": "followers",
       "ty": {
         "DataTable": {
           "name": "ListStrategyFollowersRow",

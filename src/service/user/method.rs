@@ -174,6 +174,72 @@ impl RequestHandler for MethodUserListTopPerformingStrategies {
         })
     }
 }
+pub struct MethodUserListStrategyFollowers;
+impl RequestHandler for MethodUserListStrategyFollowers {
+    type Request = UserListStrategyFollowersRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> SpawnedResponse<Self::Request> {
+        let db: DbClient = toolbox.get_db();
+        toolbox.spawn_response(ctx, async move {
+            ensure_user_role(ctx, EnumRole::User)?;
+
+            let ret = db
+                .execute(FunUserListStrategyFollowersReq {
+                    strategy_id: req.strategy_id,
+                })
+                .await?;
+            Ok(UserListStrategyFollowersResponse {
+                followers: ret
+                    .into_iter()
+                    .map(|x| ListStrategyFollowersRow {
+                        user_id: x.user_public_id,
+                        name: x.username,
+                        linked_wallet: x.wallet_address,
+                        followed_date: x.followed_at,
+                    })
+                    .collect(),
+            })
+        })
+    }
+}
+pub struct MethodUserListStrategyBackers;
+impl RequestHandler for MethodUserListStrategyBackers {
+    type Request = UserListStrategyBackersRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> SpawnedResponse<Self::Request> {
+        let db: DbClient = toolbox.get_db();
+        toolbox.spawn_response(ctx, async move {
+            ensure_user_role(ctx, EnumRole::User)?;
+
+            let ret = db
+                .execute(FunUserListStrategyBackersReq {
+                    strategy_id: req.strategy_id,
+                })
+                .await?;
+            Ok(UserListStrategyBackersResponse {
+                backers: ret
+                    .into_iter()
+                    .map(|x| ListStrategyBackersRow {
+                        user_id: x.user_public_id,
+                        name: x.username,
+                        linked_wallet: x.wallet_address,
+                        backed_date: x.backed_at,
+                    })
+                    .collect(),
+            })
+        })
+    }
+}
 pub struct MethodUserGetStrategy;
 impl RequestHandler for MethodUserGetStrategy {
     type Request = UserGetStrategyRequest;

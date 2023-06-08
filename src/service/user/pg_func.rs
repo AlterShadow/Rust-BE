@@ -5,6 +5,7 @@ pub fn expert_columns() -> Vec<Field> {
         Field::new("expert_id", Type::BigInt),
         Field::new("user_id", Type::BigInt),
         Field::new("user_public_id", Type::BigInt),
+        // FIXME: right now listening_wallet is the wallet the expert uses to login. Should be multiple wallets
         Field::new("listening_wallet", Type::String),
         Field::new("username", Type::String),
         Field::new("family_name", Type::optional(Type::String)),
@@ -729,6 +730,54 @@ BEGIN
                         a.ratio_distribution AS ratio
                  FROM tbl.strategy_watching_wallet AS a
                  WHERE a.fkey_strategy_id = a_strategy_id;
+END
+"#,
+        ),
+        ProceduralFunction::new(
+            "fun_user_list_strategy_followers",
+            vec![Field::new("strategy_id", Type::BigInt)],
+            vec![
+                Field::new("user_id", Type::BigInt),
+                Field::new("user_public_id", Type::BigInt),
+                Field::new("username", Type::String),
+                Field::new("wallet_address", Type::String),
+                Field::new("followed_at", Type::BigInt),
+            ],
+            r#"
+BEGIN
+    RETURN QUERY SELECT a.fkey_user_id AS user_id,
+                        b.public_id    AS user_public_id,
+                        b.username     AS username,
+                        b.address      AS wallet_address,
+                        a.created_at   AS followed_at
+                 FROM tbl.user_follow_strategy AS a
+                          INNER JOIN tbl.user AS b ON a.fkey_user_id = b.pkey_id
+                 WHERE a.fkey_strategy_id = a_strategy_id
+                   AND a.unfollowed = FALSE;
+END
+"#,
+        ),
+        ProceduralFunction::new(
+            "fun_user_list_strategy_backers",
+            vec![Field::new("strategy_id", Type::BigInt)],
+            vec![
+                Field::new("user_id", Type::BigInt),
+                Field::new("user_public_id", Type::BigInt),
+                Field::new("username", Type::String),
+                Field::new("wallet_address", Type::String),
+                Field::new("backed_at", Type::BigInt),
+            ],
+            r#"
+BEGIN
+    RETURN QUERY SELECT a.fkey_user_id AS user_id,
+                        b.public_id    AS user_public_id,
+                        b.address      AS wallet_address,
+                        b.username     AS username,
+                        a.created_at  AS followed_at
+                 FROM tbl.user_back_strategy_history AS a
+                          INNER JOIN tbl.user AS b ON a.fkey_user_id = b.pkey_id
+                 WHERE a.fkey_strategy_id = a_strategy_id
+                   AND a.unfollowed = FALSE;
 END
 "#,
         ),

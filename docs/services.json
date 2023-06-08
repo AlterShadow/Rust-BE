@@ -395,6 +395,104 @@
           "json_schema": null
         },
         {
+          "name": "UserListStrategyBackers",
+          "code": 20064,
+          "parameters": [
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "page",
+              "ty": "Int"
+            },
+            {
+              "name": "page_size",
+              "ty": "Int"
+            }
+          ],
+          "returns": [
+            {
+              "name": "backers",
+              "ty": {
+                "DataTable": {
+                  "name": "ListStrategyBackersRow",
+                  "fields": [
+                    {
+                      "name": "user_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "linked_wallet",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "backed_date",
+                      "ty": "BigInt"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "stream_response": [],
+          "description": "",
+          "json_schema": null
+        },
+        {
+          "name": "UserListStrategyFollowers",
+          "code": 20065,
+          "parameters": [
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "page",
+              "ty": "Int"
+            },
+            {
+              "name": "page_size",
+              "ty": "Int"
+            }
+          ],
+          "returns": [
+            {
+              "name": "followers",
+              "ty": {
+                "DataTable": {
+                  "name": "ListStrategyFollowersRow",
+                  "fields": [
+                    {
+                      "name": "user_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "linked_wallet",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "followed_date",
+                      "ty": "BigInt"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "stream_response": [],
+          "description": "",
+          "json_schema": null
+        },
+        {
           "name": "UserGetStrategy",
           "code": 20062,
           "parameters": [

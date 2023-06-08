@@ -62,7 +62,52 @@ pub fn endpoint_user_list_top_performing_strategies() -> EndpointSchema {
     )
     .with_description("User lists top performing strategies")
 }
-
+pub fn endpoint_user_list_strategy_backers() -> EndpointSchema {
+    EndpointSchema::new(
+        "UserListStrategyBackers",
+        20064,
+        vec![
+            Field::new("strategy_id", Type::BigInt),
+            Field::new("page", Type::Int),
+            Field::new("page_size", Type::Int),
+        ],
+        vec![Field::new(
+            "backers",
+            Type::datatable(
+                "ListStrategyBackersRow",
+                vec![
+                    Field::new("user_id", Type::BigInt),
+                    Field::new("name", Type::String),
+                    Field::new("linked_wallet", Type::String),
+                    Field::new("backed_date", Type::BigInt),
+                ],
+            ),
+        )],
+    )
+}
+pub fn endpoint_user_list_strategy_followers() -> EndpointSchema {
+    EndpointSchema::new(
+        "UserListStrategyFollowers",
+        20065,
+        vec![
+            Field::new("strategy_id", Type::BigInt),
+            Field::new("page", Type::Int),
+            Field::new("page_size", Type::Int),
+        ],
+        vec![Field::new(
+            "followers",
+            Type::datatable(
+                "ListStrategyFollowersRow",
+                vec![
+                    Field::new("user_id", Type::BigInt),
+                    Field::new("name", Type::String),
+                    Field::new("linked_wallet", Type::String),
+                    Field::new("followed_date", Type::BigInt),
+                ],
+            ),
+        )],
+    )
+}
 pub fn endpoint_user_get_strategy() -> EndpointSchema {
     EndpointSchema::new(
         "UserGetStrategy",
@@ -623,6 +668,8 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
         endpoint_user_unfollow_strategy(),
         endpoint_user_list_strategies(),
         endpoint_user_list_top_performing_strategies(),
+        endpoint_user_list_strategy_backers(),
+        endpoint_user_list_strategy_followers(),
         endpoint_user_get_strategy(),
         endpoint_user_get_strategy_statistics(),
         endpoint_user_get_strategies_statistics(),

@@ -1324,6 +1324,74 @@ impl DatabaseRequest for FunUserListStrategyWatchWalletsReq {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserListStrategyFollowersReq {
+    pub strategy_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserListStrategyFollowersRespRow {
+    pub user_id: i64,
+    pub user_public_id: i64,
+    pub username: String,
+    pub wallet_address: String,
+    pub followed_at: i64,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunUserListStrategyFollowersReq {
+    type ResponseRow = FunUserListStrategyFollowersRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_list_strategy_followers(a_strategy_id => $1::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![&self.strategy_id as &(dyn ToSql + Sync)]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserListStrategyFollowersRespRow> {
+        let r = FunUserListStrategyFollowersRespRow {
+            user_id: row.try_get(0)?,
+            user_public_id: row.try_get(1)?,
+            username: row.try_get(2)?,
+            wallet_address: row.try_get(3)?,
+            followed_at: row.try_get(4)?,
+        };
+        Ok(r)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserListStrategyBackersReq {
+    pub strategy_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserListStrategyBackersRespRow {
+    pub user_id: i64,
+    pub user_public_id: i64,
+    pub username: String,
+    pub wallet_address: String,
+    pub backed_at: i64,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunUserListStrategyBackersReq {
+    type ResponseRow = FunUserListStrategyBackersRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_list_strategy_backers(a_strategy_id => $1::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![&self.strategy_id as &(dyn ToSql + Sync)]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserListStrategyBackersRespRow> {
+        let r = FunUserListStrategyBackersRespRow {
+            user_id: row.try_get(0)?,
+            user_public_id: row.try_get(1)?,
+            username: row.try_get(2)?,
+            wallet_address: row.try_get(3)?,
+            backed_at: row.try_get(4)?,
+        };
+        Ok(r)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserAddRegisteredWalletReq {
     pub user_id: i64,
     pub blockchain: EnumBlockChain,

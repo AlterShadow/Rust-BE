@@ -63,6 +63,8 @@ async fn main() -> Result<()> {
     server.add_handler(MethodUserDeregisterWallet);
     server.add_handler(MethodUserListStrategies);
     server.add_handler(MethodUserListTopPerformingStrategies);
+    server.add_handler(MethodUserListStrategyFollowers);
+    server.add_handler(MethodUserListStrategyBackers);
     server.add_handler(MethodUserGetStrategy);
     server.add_handler(MethodUserGetStrategyStatistics);
     server.add_handler(MethodUserGetStrategiesStatistics);
