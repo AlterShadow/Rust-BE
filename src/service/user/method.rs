@@ -775,13 +775,19 @@ impl RequestHandler for MethodUserListFollowedExperts {
                     .into_iter()
                     .map(|x| ListExpertsRow {
                         expert_id: x.expert_id,
+                        user_public_id: x.user_public_id,
                         name: x.name,
+                        linked_wallet: "".to_string(),
+                        first_name: "".to_string(),
+                        last_name: "".to_string(),
                         follower_count: x.follower_count as _,
                         description: x.description,
                         social_media: x.social_media,
                         risk_score: x.risk_score,
                         reputation_score: x.reputation_score,
                         aum: x.aum,
+                        join_date: 0,
+                        request_date: 0,
                     })
                     .collect(),
             })

@@ -900,13 +900,19 @@ pub struct FollowHistoryPoint {
 #[serde(rename_all = "camelCase")]
 pub struct ListExpertsRow {
     pub expert_id: i64,
+    pub user_public_id: i64,
     pub name: String,
+    pub linked_wallet: String,
+    pub first_name: String,
+    pub last_name: String,
     pub follower_count: i32,
     pub description: String,
     pub social_media: String,
     pub risk_score: f64,
     pub reputation_score: f64,
     pub aum: f64,
+    pub join_date: i64,
+    pub request_date: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]

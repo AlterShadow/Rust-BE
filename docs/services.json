@@ -962,7 +962,23 @@
                       "ty": "BigInt"
                     },
                     {
+                      "name": "user_public_id",
+                      "ty": "BigInt"
+                    },
+                    {
                       "name": "name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "linked_wallet",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "first_name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "last_name",
                       "ty": "String"
                     },
                     {
@@ -988,6 +1004,14 @@
                     {
                       "name": "aum",
                       "ty": "Numeric"
+                    },
+                    {
+                      "name": "join_date",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "request_date",
+                      "ty": "BigInt"
                     }
                   ]
                 }
@@ -1033,7 +1057,23 @@
                       "ty": "BigInt"
                     },
                     {
+                      "name": "user_public_id",
+                      "ty": "BigInt"
+                    },
+                    {
                       "name": "name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "linked_wallet",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "first_name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "last_name",
                       "ty": "String"
                     },
                     {
@@ -1059,6 +1099,14 @@
                     {
                       "name": "aum",
                       "ty": "Numeric"
+                    },
+                    {
+                      "name": "join_date",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "request_date",
+                      "ty": "BigInt"
                     }
                   ]
                 }
@@ -1085,7 +1133,23 @@
                       "ty": "BigInt"
                     },
                     {
+                      "name": "user_public_id",
+                      "ty": "BigInt"
+                    },
+                    {
                       "name": "name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "linked_wallet",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "first_name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "last_name",
                       "ty": "String"
                     },
                     {
@@ -1111,6 +1175,14 @@
                     {
                       "name": "aum",
                       "ty": "Numeric"
+                    },
+                    {
+                      "name": "join_date",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "request_date",
+                      "ty": "BigInt"
                     }
                   ]
                 }
@@ -1137,7 +1209,23 @@
                       "ty": "BigInt"
                     },
                     {
+                      "name": "user_public_id",
+                      "ty": "BigInt"
+                    },
+                    {
                       "name": "name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "linked_wallet",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "first_name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "last_name",
                       "ty": "String"
                     },
                     {
@@ -1163,6 +1251,14 @@
                     {
                       "name": "aum",
                       "ty": "Numeric"
+                    },
+                    {
+                      "name": "join_date",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "request_date",
+                      "ty": "BigInt"
                     }
                   ]
                 }
@@ -1303,7 +1399,23 @@
                       "ty": "BigInt"
                     },
                     {
+                      "name": "user_public_id",
+                      "ty": "BigInt"
+                    },
+                    {
                       "name": "name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "linked_wallet",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "first_name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "last_name",
                       "ty": "String"
                     },
                     {
@@ -1329,6 +1441,14 @@
                     {
                       "name": "aum",
                       "ty": "Numeric"
+                    },
+                    {
+                      "name": "join_date",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "request_date",
+                      "ty": "BigInt"
                     }
                   ]
                 }

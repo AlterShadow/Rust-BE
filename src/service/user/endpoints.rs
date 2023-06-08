@@ -288,13 +288,19 @@ fn list_experts_datatable() -> Type {
         "ListExpertsRow",
         vec![
             Field::new("expert_id", Type::BigInt),
+            Field::new("user_public_id", Type::BigInt),
             Field::new("name", Type::String),
+            Field::new("linked_wallet", Type::String),
+            Field::new("first_name", Type::String),
+            Field::new("last_name", Type::String),
             Field::new("follower_count", Type::Int),
             Field::new("description", Type::String),
             Field::new("social_media", Type::String),
             Field::new("risk_score", Type::Numeric),
             Field::new("reputation_score", Type::Numeric),
             Field::new("aum", Type::Numeric),
+            Field::new("join_date", Type::BigInt),
+            Field::new("request_date", Type::BigInt),
         ],
     )
 }
