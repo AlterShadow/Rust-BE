@@ -12,6 +12,7 @@ use lib::database::DbClient;
 use lib::handler::{RequestHandler, SpawnedResponse};
 use lib::toolbox::*;
 use lib::utils::hex_decode;
+use num_traits::cast::FromPrimitive;
 use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Duration;
@@ -24,11 +25,12 @@ pub fn initial_sp_token_supply() -> U256 {
 }
 
 pub fn ensure_user_role(ctx: RequestContext, role: EnumRole) -> Result<()> {
+    let ctx_role = EnumRole::from_u32(ctx.role).context("Invalid role")?;
     ensure!(
-        ctx.role >= (role as u32),
+        ctx_role >= role,
         CustomError::new(
             EnumErrorCode::InvalidRole,
-            format!("Requires {} Actual {}", (role as u32), ctx.role)
+            format!("Requires {} Actual {}", role, ctx_role)
         )
     );
     Ok(())

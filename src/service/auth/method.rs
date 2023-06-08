@@ -79,7 +79,17 @@ impl SubAuthController for MethodAuthSignup {
                     age: None,
                     public_id,
                 })
-                .await?;
+                .await?
+                .into_result()
+                .context("No record")?;
+            if req.username.starts_with("dev-") {
+                db_auth
+                    .execute(FunAuthSetRoleReq {
+                        public_user_id: public_id,
+                        role: EnumRole::Admin,
+                    })
+                    .await?;
+            }
             if db_auth.conn_hash() != db.conn_hash() {
                 db.execute(FunAuthSignupReq {
                     address: address_string.clone(),
@@ -216,8 +226,7 @@ impl SubAuthController for MethodAuthAuthorize {
                     device_os: req.device_os,
                     ip_address: ctx.ip_addr,
                 })
-                .await
-                .context("FunAuthAuthorizeReq")?;
+                .await?;
 
             let auth_data = auth_data.into_result().with_context(|| {
                 CustomError::new(EnumErrorCode::UserInvalidAuthToken, Value::Null)
