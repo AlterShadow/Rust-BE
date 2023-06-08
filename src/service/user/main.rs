@@ -5,9 +5,7 @@ mod admin_method;
 pub mod endpoints;
 mod method;
 
-use crate::admin_endpoints::*;
 use crate::admin_method::*;
-use crate::endpoints::*;
 use crate::method::*;
 use eth_sdk::escrow::{AbstractEscrowContract, EscrowContract};
 use eth_sdk::signer::Secp256k1SecretKey;
@@ -56,122 +54,50 @@ async fn main() -> Result<()> {
         },
     );
     server.add_auth_controller(auth_controller);
-    server.add_handler(endpoint_user_follow_strategy(), MethodUserFollowStrategy);
-    server.add_handler(
-        endpoint_user_list_followed_strategies(),
-        MethodUserListFollowedStrategies,
-    );
-    server.add_handler(
-        endpoint_user_unfollow_strategy(),
-        MethodUserUnfollowStrategy,
-    );
+    server.add_handler(MethodUserFollowStrategy);
+    server.add_handler(MethodUserListFollowedStrategies);
+    server.add_handler(MethodUserUnfollowStrategy);
 
-    server.add_handler(endpoint_user_register_wallet(), MethodUserRegisterWallet);
-    server.add_handler(
-        endpoint_user_list_registered_wallets(),
-        MethodUserListRegisteredWallets,
-    );
-    server.add_handler(
-        endpoint_user_deregister_wallet(),
-        MethodUserDeregisterWallet,
-    );
-    server.add_handler(endpoint_user_list_strategies(), MethodUserListStrategies);
-    server.add_handler(
-        endpoint_user_list_top_performing_strategies(),
-        MethodUserListTopPerformingStrategies,
-    );
-    server.add_handler(endpoint_user_get_strategy(), MethodUserGetStrategy);
-    server.add_handler(
-        endpoint_user_get_strategy_statistics(),
-        MethodUserGetStrategyStatistics,
-    );
-    server.add_handler(
-        endpoint_user_get_strategies_statistics(),
-        MethodUserGetStrategiesStatistics,
-    );
-    server.add_handler(
-        endpoint_user_list_backed_strategies(),
-        MethodUserListBackedStrategies,
-    );
-    server.add_handler(
-        endpoint_user_list_exit_strategy_history(),
-        MethodUserListExitStrategyHistory,
-    );
+    server.add_handler(MethodUserRegisterWallet);
+    server.add_handler(MethodUserListRegisteredWallets);
+    server.add_handler(MethodUserDeregisterWallet);
+    server.add_handler(MethodUserListStrategies);
+    server.add_handler(MethodUserListTopPerformingStrategies);
+    server.add_handler(MethodUserGetStrategy);
+    server.add_handler(MethodUserGetStrategyStatistics);
+    server.add_handler(MethodUserGetStrategiesStatistics);
+    server.add_handler(MethodUserListBackedStrategies);
+    server.add_handler(MethodUserListExitStrategyHistory);
 
-    server.add_handler(endpoint_user_follow_expert(), MethodUserFollowExpert);
+    server.add_handler(MethodUserFollowExpert);
 
-    server.add_handler(
-        endpoint_user_list_followed_experts(),
-        MethodUserListFollowedExperts,
-    );
+    server.add_handler(MethodUserListFollowedExperts);
 
-    server.add_handler(endpoint_user_unfollow_expert(), MethodUserUnfollowExpert);
-    server.add_handler(endpoint_user_list_experts(), MethodUserListExperts);
-    server.add_handler(
-        endpoint_user_list_top_performing_experts(),
-        MethodUserListTopPerformingExperts,
-    );
-    server.add_handler(
-        endpoint_user_list_featured_experts(),
-        MethodUserListFeaturedExperts,
-    );
-    server.add_handler(
-        endpoint_user_get_expert_profile(),
-        MethodUserGetExpertProfile,
-    );
+    server.add_handler(MethodUserUnfollowExpert);
+    server.add_handler(MethodUserListExperts);
+    server.add_handler(MethodUserListTopPerformingExperts);
+    server.add_handler(MethodUserListFeaturedExperts);
+    server.add_handler(MethodUserGetExpertProfile);
 
-    server.add_handler(endpoint_user_get_user_profile(), MethodUserGetUserProfile);
-    server.add_handler(
-        endpoint_user_update_expert_profile(),
-        MethodUserUpdateExpertProfile,
-    );
-    server.add_handler(
-        endpoint_user_apply_become_expert(),
-        MethodUserApplyBecomeExpert,
-    );
+    server.add_handler(MethodUserGetUserProfile);
+    server.add_handler(MethodUserUpdateExpertProfile);
+    server.add_handler(MethodUserApplyBecomeExpert);
 
-    server.add_handler(endpoint_user_create_strategy(), MethodUserCreateStrategy);
-    server.add_handler(endpoint_user_update_strategy(), MethodUserUpdateStrategy);
+    server.add_handler(MethodUserCreateStrategy);
+    server.add_handler(MethodUserUpdateStrategy);
 
-    server.add_handler(
-        endpoint_user_add_strategy_watching_wallet(),
-        MethodUserAddStrategyWatchingWallet,
-    );
-    server.add_handler(
-        endpoint_user_remove_strategy_watching_wallet(),
-        MethodUserRemoveStrategyWatchingWallet,
-    );
-    server.add_handler(
-        endpoint_user_list_wallet_activity_history(),
-        MethodUserListWalletActivityHistory,
-    );
-    server.add_handler(
-        endpoint_user_add_strategy_initial_token_ratio(),
-        MethodUserAddStrategyInitialTokenRatio,
-    );
-    server.add_handler(
-        endpoint_user_remove_strategy_initial_token_ratio(),
-        MethodUserRemoveStrategyInitialTokenRatio,
-    );
-    server.add_handler(
-        endpoint_user_list_strategy_initial_token_ratio(),
-        MethodUserListStrategyInitialTokenRatio,
-    );
-    server.add_handler(endpoint_admin_list_users(), MethodAdminListUsers);
-    server.add_handler(endpoint_admin_set_user_role(), MethodAdminSetUserRole);
-    server.add_handler(endpoint_admin_set_block_user(), MethodAdminSetBlockUser);
-    server.add_handler(
-        endpoint_admin_approve_user_become_expert(),
-        MethodAdminApproveUserBecomeExpert,
-    );
-    server.add_handler(
-        endpoint_admin_reject_user_become_expert(),
-        MethodAdminRejectUserBecomeExpert,
-    );
-    server.add_handler(
-        endpoint_admin_list_pending_expert_applications(),
-        MethodAdminListPendingExpertApplications,
-    );
+    server.add_handler(MethodUserAddStrategyWatchingWallet);
+    server.add_handler(MethodUserRemoveStrategyWatchingWallet);
+    server.add_handler(MethodUserListWalletActivityHistory);
+    server.add_handler(MethodUserAddStrategyInitialTokenRatio);
+    server.add_handler(MethodUserRemoveStrategyInitialTokenRatio);
+    server.add_handler(MethodUserListStrategyInitialTokenRatio);
+    server.add_handler(MethodAdminListUsers);
+    server.add_handler(MethodAdminSetUserRole);
+    server.add_handler(MethodAdminSetBlockUser);
+    server.add_handler(MethodAdminApproveUserBecomeExpert);
+    server.add_handler(MethodAdminRejectUserBecomeExpert);
+    server.add_handler(MethodAdminListPendingExpertApplications);
     let eth_pool = EthereumRpcConnectionPool::from_conns(config.ethereum_urls);
     let escrow_signer = Secp256k1SecretKey::new_random();
     let externally_owned_account = Secp256k1SecretKey::new_random();
@@ -209,27 +135,21 @@ async fn main() -> Result<()> {
     }
     let escrow_contract = Arc::new(AbstractEscrowContract::new(escrow_contract_addresses));
 
-    server.add_handler(
-        endpoint_user_back_strategy(),
-        MethodUserBackStrategy {
-            pool: eth_pool.clone(),
-            stablecoin_addresses: coin_addresses.clone(),
-            strategy_pool_signer,
-            escrow_contract: escrow_contract.clone(),
-            escrow_signer: escrow_signer.clone(),
-            externally_owned_account,
-            dex_addresses: Arc::new(DexAddresses::new()),
-        },
-    );
-    server.add_handler(
-        endpoint_user_request_refund(),
-        MethodUserRequestRefund {
-            pool: eth_pool,
-            stablecoin_addresses: coin_addresses,
-            escrow_contract: escrow_contract.clone(),
-            escrow_signer,
-        },
-    );
+    server.add_handler(MethodUserBackStrategy {
+        pool: eth_pool.clone(),
+        stablecoin_addresses: coin_addresses.clone(),
+        strategy_pool_signer,
+        escrow_contract: escrow_contract.clone(),
+        escrow_signer: escrow_signer.clone(),
+        externally_owned_account,
+        dex_addresses: Arc::new(DexAddresses::new()),
+    });
+    server.add_handler(MethodUserRequestRefund {
+        pool: eth_pool,
+        stablecoin_addresses: coin_addresses,
+        escrow_contract: escrow_contract.clone(),
+        escrow_signer,
+    });
     server.dump_schemas()?;
     server.listen().await?;
     Ok(())

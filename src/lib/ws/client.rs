@@ -17,6 +17,7 @@ use tracing::*;
 pub trait WsRequest: Serialize + DeserializeOwned + Send + Sync + Clone {
     type Response: WsResponse;
     const METHOD_ID: u32;
+    const SCHEMA: &'static str;
 }
 pub trait WsResponse: Serialize + DeserializeOwned + Send + Sync + Clone {
     type Request: WsRequest;

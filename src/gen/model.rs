@@ -246,6 +246,12 @@ pub enum EnumEndpoint {
     #[postgres(name = "UserListTopPerformingStrategies")]
     UserListTopPerformingStrategies = 20063,
     ///
+    #[postgres(name = "UserListStrategyBackers")]
+    UserListStrategyBackers = 20064,
+    ///
+    #[postgres(name = "UserListStrategyFollowers")]
+    UserListStrategyFollowers = 20065,
+    ///
     #[postgres(name = "UserGetStrategy")]
     UserGetStrategy = 20062,
     ///
@@ -940,6 +946,22 @@ pub struct ListStrategiesRow {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct ListStrategyBackersRow {
+    pub user_id: i64,
+    pub name: String,
+    pub linked_wallet: String,
+    pub followed_date: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ListStrategyFollowersRow {
+    pub user_id: i64,
+    pub name: String,
+    pub linked_wallet: String,
+    pub followed_date: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct ListStrategyInitialTokenRatioRow {
     pub token_id: i64,
     pub token_name: String,
@@ -1303,6 +1325,30 @@ pub struct UserListStrategiesResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct UserListStrategyBackersRequest {
+    pub strategy_id: i64,
+    pub page: i32,
+    pub page_size: i32,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListStrategyBackersResponse {
+    pub bakers: Vec<ListStrategyBackersRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListStrategyFollowersRequest {
+    pub strategy_id: i64,
+    pub page: i32,
+    pub page_size: i32,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListStrategyFollowersResponse {
+    pub bakers: Vec<ListStrategyFollowersRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct UserListStrategyInitialTokenRatioRequest {
     pub strategy_id: i64,
 }
@@ -1464,6 +1510,65 @@ pub struct WatchingWalletRow {
 impl WsRequest for LoginRequest {
     type Response = LoginResponse;
     const METHOD_ID: u32 = 10020;
+    const SCHEMA: &'static str = r#"{
+  "name": "Login",
+  "code": 10020,
+  "parameters": [
+    {
+      "name": "address",
+      "ty": "String"
+    },
+    {
+      "name": "signature_text",
+      "ty": "String"
+    },
+    {
+      "name": "signature",
+      "ty": "String"
+    },
+    {
+      "name": "service",
+      "ty": {
+        "EnumRef": "service"
+      }
+    },
+    {
+      "name": "device_id",
+      "ty": "String"
+    },
+    {
+      "name": "device_os",
+      "ty": "String"
+    }
+  ],
+  "returns": [
+    {
+      "name": "address",
+      "ty": "String"
+    },
+    {
+      "name": "role",
+      "ty": {
+        "EnumRef": "role"
+      }
+    },
+    {
+      "name": "user_id",
+      "ty": "BigInt"
+    },
+    {
+      "name": "user_token",
+      "ty": "UUID"
+    },
+    {
+      "name": "admin_token",
+      "ty": "UUID"
+    }
+  ],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for LoginResponse {
     type Request = LoginRequest;
@@ -1472,6 +1577,57 @@ impl WsResponse for LoginResponse {
 impl WsRequest for SignupRequest {
     type Response = SignupResponse;
     const METHOD_ID: u32 = 10010;
+    const SCHEMA: &'static str = r#"{
+  "name": "Signup",
+  "code": 10010,
+  "parameters": [
+    {
+      "name": "address",
+      "ty": "String"
+    },
+    {
+      "name": "signature_text",
+      "ty": "String"
+    },
+    {
+      "name": "signature",
+      "ty": "String"
+    },
+    {
+      "name": "email",
+      "ty": "String"
+    },
+    {
+      "name": "phone",
+      "ty": "String"
+    },
+    {
+      "name": "agreed_tos",
+      "ty": "Boolean"
+    },
+    {
+      "name": "agreed_privacy",
+      "ty": "Boolean"
+    },
+    {
+      "name": "username",
+      "ty": "String"
+    }
+  ],
+  "returns": [
+    {
+      "name": "address",
+      "ty": "String"
+    },
+    {
+      "name": "user_id",
+      "ty": "BigInt"
+    }
+  ],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for SignupResponse {
     type Request = SignupRequest;
@@ -1480,6 +1636,43 @@ impl WsResponse for SignupResponse {
 impl WsRequest for AuthorizeRequest {
     type Response = AuthorizeResponse;
     const METHOD_ID: u32 = 10030;
+    const SCHEMA: &'static str = r#"{
+  "name": "Authorize",
+  "code": 10030,
+  "parameters": [
+    {
+      "name": "address",
+      "ty": "String"
+    },
+    {
+      "name": "token",
+      "ty": "UUID"
+    },
+    {
+      "name": "service",
+      "ty": {
+        "EnumRef": "service"
+      }
+    },
+    {
+      "name": "device_id",
+      "ty": "String"
+    },
+    {
+      "name": "device_os",
+      "ty": "String"
+    }
+  ],
+  "returns": [
+    {
+      "name": "success",
+      "ty": "Boolean"
+    }
+  ],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for AuthorizeResponse {
     type Request = AuthorizeRequest;
@@ -1488,6 +1681,15 @@ impl WsResponse for AuthorizeResponse {
 impl WsRequest for LogoutRequest {
     type Response = LogoutResponse;
     const METHOD_ID: u32 = 10040;
+    const SCHEMA: &'static str = r#"{
+  "name": "Logout",
+  "code": 10040,
+  "parameters": [],
+  "returns": [],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for LogoutResponse {
     type Request = LogoutRequest;
@@ -1496,6 +1698,40 @@ impl WsResponse for LogoutResponse {
 impl WsRequest for ChangeLoginWalletRequest {
     type Response = ChangeLoginWalletResponse;
     const METHOD_ID: u32 = 10050;
+    const SCHEMA: &'static str = r#"{
+  "name": "ChangeLoginWallet",
+  "code": 10050,
+  "parameters": [
+    {
+      "name": "old_address",
+      "ty": "String"
+    },
+    {
+      "name": "old_signature_text",
+      "ty": "String"
+    },
+    {
+      "name": "old_signature",
+      "ty": "String"
+    },
+    {
+      "name": "new_address",
+      "ty": "String"
+    },
+    {
+      "name": "new_signature_text",
+      "ty": "String"
+    },
+    {
+      "name": "new_signature",
+      "ty": "String"
+    }
+  ],
+  "returns": [],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for ChangeLoginWalletResponse {
     type Request = ChangeLoginWalletRequest;
@@ -1504,6 +1740,25 @@ impl WsResponse for ChangeLoginWalletResponse {
 impl WsRequest for UserFollowStrategyRequest {
     type Response = UserFollowStrategyResponse;
     const METHOD_ID: u32 = 20040;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserFollowStrategy",
+  "code": 20040,
+  "parameters": [
+    {
+      "name": "strategy_id",
+      "ty": "BigInt"
+    }
+  ],
+  "returns": [
+    {
+      "name": "success",
+      "ty": "Boolean"
+    }
+  ],
+  "stream_response": [],
+  "description": "User follows a strategy",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for UserFollowStrategyResponse {
     type Request = UserFollowStrategyRequest;
@@ -1512,6 +1767,58 @@ impl WsResponse for UserFollowStrategyResponse {
 impl WsRequest for UserListFollowedStrategiesRequest {
     type Response = UserListFollowedStrategiesResponse;
     const METHOD_ID: u32 = 20050;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserListFollowedStrategies",
+  "code": 20050,
+  "parameters": [],
+  "returns": [
+    {
+      "name": "strategies",
+      "ty": {
+        "DataTable": {
+          "name": "ListStrategiesRow",
+          "fields": [
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "strategy_name",
+              "ty": "String"
+            },
+            {
+              "name": "strategy_description",
+              "ty": "String"
+            },
+            {
+              "name": "net_value",
+              "ty": "Numeric"
+            },
+            {
+              "name": "followers",
+              "ty": "Int"
+            },
+            {
+              "name": "backers",
+              "ty": "Int"
+            },
+            {
+              "name": "risk_score",
+              "ty": "Numeric"
+            },
+            {
+              "name": "aum",
+              "ty": "Numeric"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": [],
+  "description": "User lists followed strategies",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for UserListFollowedStrategiesResponse {
     type Request = UserListFollowedStrategiesRequest;
@@ -1520,6 +1827,25 @@ impl WsResponse for UserListFollowedStrategiesResponse {
 impl WsRequest for UserUnfollowStrategyRequest {
     type Response = UserUnfollowStrategyResponse;
     const METHOD_ID: u32 = 20060;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserUnfollowStrategy",
+  "code": 20060,
+  "parameters": [
+    {
+      "name": "strategy_id",
+      "ty": "BigInt"
+    }
+  ],
+  "returns": [
+    {
+      "name": "success",
+      "ty": "Boolean"
+    }
+  ],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for UserUnfollowStrategyResponse {
     type Request = UserUnfollowStrategyRequest;
@@ -1528,6 +1854,58 @@ impl WsResponse for UserUnfollowStrategyResponse {
 impl WsRequest for UserListStrategiesRequest {
     type Response = UserListStrategiesResponse;
     const METHOD_ID: u32 = 20061;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserListStrategies",
+  "code": 20061,
+  "parameters": [],
+  "returns": [
+    {
+      "name": "strategies",
+      "ty": {
+        "DataTable": {
+          "name": "ListStrategiesRow",
+          "fields": [
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "strategy_name",
+              "ty": "String"
+            },
+            {
+              "name": "strategy_description",
+              "ty": "String"
+            },
+            {
+              "name": "net_value",
+              "ty": "Numeric"
+            },
+            {
+              "name": "followers",
+              "ty": "Int"
+            },
+            {
+              "name": "backers",
+              "ty": "Int"
+            },
+            {
+              "name": "risk_score",
+              "ty": "Numeric"
+            },
+            {
+              "name": "aum",
+              "ty": "Numeric"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": [],
+  "description": "User lists strategies",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for UserListStrategiesResponse {
     type Request = UserListStrategiesRequest;
@@ -1536,14 +1914,347 @@ impl WsResponse for UserListStrategiesResponse {
 impl WsRequest for UserListTopPerformingStrategiesRequest {
     type Response = UserListTopPerformingStrategiesResponse;
     const METHOD_ID: u32 = 20063;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserListTopPerformingStrategies",
+  "code": 20063,
+  "parameters": [],
+  "returns": [
+    {
+      "name": "strategies",
+      "ty": {
+        "DataTable": {
+          "name": "ListStrategiesRow",
+          "fields": [
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "strategy_name",
+              "ty": "String"
+            },
+            {
+              "name": "strategy_description",
+              "ty": "String"
+            },
+            {
+              "name": "net_value",
+              "ty": "Numeric"
+            },
+            {
+              "name": "followers",
+              "ty": "Int"
+            },
+            {
+              "name": "backers",
+              "ty": "Int"
+            },
+            {
+              "name": "risk_score",
+              "ty": "Numeric"
+            },
+            {
+              "name": "aum",
+              "ty": "Numeric"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": [],
+  "description": "User lists top performing strategies",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for UserListTopPerformingStrategiesResponse {
     type Request = UserListTopPerformingStrategiesRequest;
 }
 
+impl WsRequest for UserListStrategyBackersRequest {
+    type Response = UserListStrategyBackersResponse;
+    const METHOD_ID: u32 = 20064;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserListStrategyBackers",
+  "code": 20064,
+  "parameters": [
+    {
+      "name": "strategy_id",
+      "ty": "BigInt"
+    },
+    {
+      "name": "page",
+      "ty": "Int"
+    },
+    {
+      "name": "page_size",
+      "ty": "Int"
+    }
+  ],
+  "returns": [
+    {
+      "name": "bakers",
+      "ty": {
+        "DataTable": {
+          "name": "ListStrategyBackersRow",
+          "fields": [
+            {
+              "name": "user_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "name",
+              "ty": "String"
+            },
+            {
+              "name": "linked_wallet",
+              "ty": "String"
+            },
+            {
+              "name": "followed_date",
+              "ty": "BigInt"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for UserListStrategyBackersResponse {
+    type Request = UserListStrategyBackersRequest;
+}
+
+impl WsRequest for UserListStrategyFollowersRequest {
+    type Response = UserListStrategyFollowersResponse;
+    const METHOD_ID: u32 = 20065;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserListStrategyFollowers",
+  "code": 20065,
+  "parameters": [
+    {
+      "name": "strategy_id",
+      "ty": "BigInt"
+    },
+    {
+      "name": "page",
+      "ty": "Int"
+    },
+    {
+      "name": "page_size",
+      "ty": "Int"
+    }
+  ],
+  "returns": [
+    {
+      "name": "bakers",
+      "ty": {
+        "DataTable": {
+          "name": "ListStrategyFollowersRow",
+          "fields": [
+            {
+              "name": "user_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "name",
+              "ty": "String"
+            },
+            {
+              "name": "linked_wallet",
+              "ty": "String"
+            },
+            {
+              "name": "followed_date",
+              "ty": "BigInt"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for UserListStrategyFollowersResponse {
+    type Request = UserListStrategyFollowersRequest;
+}
+
 impl WsRequest for UserGetStrategyRequest {
     type Response = UserGetStrategyResponse;
     const METHOD_ID: u32 = 20062;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserGetStrategy",
+  "code": 20062,
+  "parameters": [
+    {
+      "name": "strategy_id",
+      "ty": "BigInt"
+    }
+  ],
+  "returns": [
+    {
+      "name": "strategy_id",
+      "ty": "BigInt"
+    },
+    {
+      "name": "strategy_name",
+      "ty": "String"
+    },
+    {
+      "name": "strategy_description",
+      "ty": "String"
+    },
+    {
+      "name": "creator_user_id",
+      "ty": "BigInt"
+    },
+    {
+      "name": "social_media",
+      "ty": "String"
+    },
+    {
+      "name": "historical_return",
+      "ty": "Numeric"
+    },
+    {
+      "name": "inception_time",
+      "ty": "BigInt"
+    },
+    {
+      "name": "total_amount",
+      "ty": "Numeric"
+    },
+    {
+      "name": "token_allocation",
+      "ty": "BigInt"
+    },
+    {
+      "name": "reputation",
+      "ty": "Int"
+    },
+    {
+      "name": "risk_score",
+      "ty": "Numeric"
+    },
+    {
+      "name": "aum",
+      "ty": "Numeric"
+    },
+    {
+      "name": "net_value",
+      "ty": "Numeric"
+    },
+    {
+      "name": "followers",
+      "ty": "Int"
+    },
+    {
+      "name": "backers",
+      "ty": "Int"
+    },
+    {
+      "name": "watching_wallets",
+      "ty": {
+        "DataTable": {
+          "name": "WatchingWalletRow",
+          "fields": [
+            {
+              "name": "watching_wallet_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "wallet_address",
+              "ty": "String"
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
+            },
+            {
+              "name": "dex",
+              "ty": "String"
+            },
+            {
+              "name": "ratio_distribution",
+              "ty": "Numeric"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "aum_history",
+      "ty": {
+        "DataTable": {
+          "name": "AumHistoryRow",
+          "fields": [
+            {
+              "name": "aum_history_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "base_token",
+              "ty": "String"
+            },
+            {
+              "name": "quote_token",
+              "ty": "String"
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
+            },
+            {
+              "name": "dex",
+              "ty": "String"
+            },
+            {
+              "name": "action",
+              "ty": "String"
+            },
+            {
+              "name": "wallet_address",
+              "ty": "String"
+            },
+            {
+              "name": "price",
+              "ty": "Numeric"
+            },
+            {
+              "name": "current_price",
+              "ty": "Numeric"
+            },
+            {
+              "name": "quantity",
+              "ty": "Numeric"
+            },
+            {
+              "name": "yield_7d",
+              "ty": "Numeric"
+            },
+            {
+              "name": "yield_30d",
+              "ty": "Numeric"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": [],
+  "description": "User gets a strategy",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for UserGetStrategyResponse {
     type Request = UserGetStrategyRequest;
@@ -1552,6 +2263,83 @@ impl WsResponse for UserGetStrategyResponse {
 impl WsRequest for UserGetStrategyStatisticsRequest {
     type Response = UserGetStrategyStatisticsResponse;
     const METHOD_ID: u32 = 20070;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserGetStrategyStatistics",
+  "code": 20070,
+  "parameters": [
+    {
+      "name": "strategy_id",
+      "ty": "BigInt"
+    }
+  ],
+  "returns": [
+    {
+      "name": "strategy_id",
+      "ty": "BigInt"
+    },
+    {
+      "name": "net_value",
+      "ty": {
+        "DataTable": {
+          "name": "NetValuePoint",
+          "fields": [
+            {
+              "name": "time",
+              "ty": "BigInt"
+            },
+            {
+              "name": "net_value",
+              "ty": "Numeric"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "follow_history",
+      "ty": {
+        "DataTable": {
+          "name": "FollowHistoryPoint",
+          "fields": [
+            {
+              "name": "time",
+              "ty": "BigInt"
+            },
+            {
+              "name": "follower_count",
+              "ty": "Numeric"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "back_history",
+      "ty": {
+        "DataTable": {
+          "name": "BackHistoryPoint",
+          "fields": [
+            {
+              "name": "time",
+              "ty": "BigInt"
+            },
+            {
+              "name": "backer_count",
+              "ty": "Numeric"
+            },
+            {
+              "name": "backer_quantity_usd",
+              "ty": "Numeric"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": [],
+  "description": "User gets a strategy statistics",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for UserGetStrategyStatisticsResponse {
     type Request = UserGetStrategyStatisticsRequest;
@@ -1560,6 +2348,40 @@ impl WsResponse for UserGetStrategyStatisticsResponse {
 impl WsRequest for UserGetStrategiesStatisticsRequest {
     type Response = UserGetStrategiesStatisticsResponse;
     const METHOD_ID: u32 = 20071;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserGetStrategiesStatistics",
+  "code": 20071,
+  "parameters": [],
+  "returns": [
+    {
+      "name": "tracking_amount_usd",
+      "ty": "Numeric"
+    },
+    {
+      "name": "backing_amount_usd",
+      "ty": "Numeric"
+    },
+    {
+      "name": "difference_amount_usd",
+      "ty": "Numeric"
+    },
+    {
+      "name": "aum_value_usd",
+      "ty": "Numeric"
+    },
+    {
+      "name": "current_value_usd",
+      "ty": "Numeric"
+    },
+    {
+      "name": "withdrawable_value_usd",
+      "ty": "Numeric"
+    }
+  ],
+  "stream_response": [],
+  "description": "User gets statistics of all strategies related to the user",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for UserGetStrategiesStatisticsResponse {
     type Request = UserGetStrategiesStatisticsRequest;
@@ -1568,6 +2390,40 @@ impl WsResponse for UserGetStrategiesStatisticsResponse {
 impl WsRequest for UserUpdateExpertProfileRequest {
     type Response = UserUpdateExpertProfileResponse;
     const METHOD_ID: u32 = 20171;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserUpdateExpertProfile",
+  "code": 20171,
+  "parameters": [
+    {
+      "name": "name",
+      "ty": {
+        "Optional": "String"
+      }
+    },
+    {
+      "name": "follower_count",
+      "ty": {
+        "Optional": "Int"
+      }
+    },
+    {
+      "name": "description",
+      "ty": {
+        "Optional": "String"
+      }
+    },
+    {
+      "name": "social_media",
+      "ty": {
+        "Optional": "String"
+      }
+    }
+  ],
+  "returns": [],
+  "stream_response": [],
+  "description": "User update its expert profile",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for UserUpdateExpertProfileResponse {
     type Request = UserUpdateExpertProfileRequest;
@@ -1576,6 +2432,35 @@ impl WsResponse for UserUpdateExpertProfileResponse {
 impl WsRequest for UserBackStrategyRequest {
     type Response = UserBackStrategyResponse;
     const METHOD_ID: u32 = 20080;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserBackStrategy",
+  "code": 20080,
+  "parameters": [
+    {
+      "name": "strategy_id",
+      "ty": "BigInt"
+    },
+    {
+      "name": "quantity",
+      "ty": "String"
+    },
+    {
+      "name": "blockchain",
+      "ty": {
+        "EnumRef": "block_chain"
+      }
+    }
+  ],
+  "returns": [
+    {
+      "name": "success",
+      "ty": "Boolean"
+    }
+  ],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for UserBackStrategyResponse {
     type Request = UserBackStrategyRequest;
@@ -1584,6 +2469,35 @@ impl WsResponse for UserBackStrategyResponse {
 impl WsRequest for UserRequestRefundRequest {
     type Response = UserRequestRefundResponse;
     const METHOD_ID: u32 = 20081;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserRequestRefund",
+  "code": 20081,
+  "parameters": [
+    {
+      "name": "quantity",
+      "ty": "String"
+    },
+    {
+      "name": "wallet_address",
+      "ty": "String"
+    },
+    {
+      "name": "blockchain",
+      "ty": {
+        "EnumRef": "block_chain"
+      }
+    }
+  ],
+  "returns": [
+    {
+      "name": "success",
+      "ty": "Boolean"
+    }
+  ],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for UserRequestRefundResponse {
     type Request = UserRequestRefundRequest;
@@ -1592,6 +2506,58 @@ impl WsResponse for UserRequestRefundResponse {
 impl WsRequest for UserListBackedStrategiesRequest {
     type Response = UserListBackedStrategiesResponse;
     const METHOD_ID: u32 = 20090;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserListBackedStrategies",
+  "code": 20090,
+  "parameters": [],
+  "returns": [
+    {
+      "name": "strategies",
+      "ty": {
+        "DataTable": {
+          "name": "ListStrategiesRow",
+          "fields": [
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "strategy_name",
+              "ty": "String"
+            },
+            {
+              "name": "strategy_description",
+              "ty": "String"
+            },
+            {
+              "name": "net_value",
+              "ty": "Numeric"
+            },
+            {
+              "name": "followers",
+              "ty": "Int"
+            },
+            {
+              "name": "backers",
+              "ty": "Int"
+            },
+            {
+              "name": "risk_score",
+              "ty": "Numeric"
+            },
+            {
+              "name": "aum",
+              "ty": "Numeric"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for UserListBackedStrategiesResponse {
     type Request = UserListBackedStrategiesRequest;
@@ -1600,6 +2566,56 @@ impl WsResponse for UserListBackedStrategiesResponse {
 impl WsRequest for UserListBackStrategyHistoryRequest {
     type Response = UserListBackStrategyHistoryResponse;
     const METHOD_ID: u32 = 20100;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserListBackStrategyHistory",
+  "code": 20100,
+  "parameters": [],
+  "returns": [
+    {
+      "name": "back_history",
+      "ty": {
+        "DataTable": {
+          "name": "BackStrategyHistoryRow",
+          "fields": [
+            {
+              "name": "back_history_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "quantity",
+              "ty": "String"
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
+            },
+            {
+              "name": "dex",
+              "ty": "String"
+            },
+            {
+              "name": "transaction_hash",
+              "ty": "String"
+            },
+            {
+              "name": "time",
+              "ty": "BigInt"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for UserListBackStrategyHistoryResponse {
     type Request = UserListBackStrategyHistoryRequest;
@@ -1608,6 +2624,67 @@ impl WsResponse for UserListBackStrategyHistoryResponse {
 impl WsRequest for UserListExitStrategyHistoryRequest {
     type Response = UserListExitStrategyHistoryResponse;
     const METHOD_ID: u32 = 20120;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserListExitStrategyHistory",
+  "code": 20120,
+  "parameters": [
+    {
+      "name": "strategy_id",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    }
+  ],
+  "returns": [
+    {
+      "name": "exit_history",
+      "ty": {
+        "DataTable": {
+          "name": "ExitStrategyHistoryRow",
+          "fields": [
+            {
+              "name": "exit_history_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "exit_quantity",
+              "ty": "String"
+            },
+            {
+              "name": "purchase_wallet_address",
+              "ty": "String"
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
+            },
+            {
+              "name": "dex",
+              "ty": "String"
+            },
+            {
+              "name": "back_time",
+              "ty": "BigInt"
+            },
+            {
+              "name": "exit_time",
+              "ty": "BigInt"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for UserListExitStrategyHistoryResponse {
     type Request = UserListExitStrategyHistoryRequest;
@@ -1616,6 +2693,25 @@ impl WsResponse for UserListExitStrategyHistoryResponse {
 impl WsRequest for UserFollowExpertRequest {
     type Response = UserFollowExpertResponse;
     const METHOD_ID: u32 = 20130;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserFollowExpert",
+  "code": 20130,
+  "parameters": [
+    {
+      "name": "expert_id",
+      "ty": "BigInt"
+    }
+  ],
+  "returns": [
+    {
+      "name": "success",
+      "ty": "Boolean"
+    }
+  ],
+  "stream_response": [],
+  "description": "User follows an expert",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for UserFollowExpertResponse {
     type Request = UserFollowExpertRequest;
@@ -1624,6 +2720,82 @@ impl WsResponse for UserFollowExpertResponse {
 impl WsRequest for UserListFollowedExpertsRequest {
     type Response = UserListFollowedExpertsResponse;
     const METHOD_ID: u32 = 20140;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserListFollowedExperts",
+  "code": 20140,
+  "parameters": [],
+  "returns": [
+    {
+      "name": "experts",
+      "ty": {
+        "DataTable": {
+          "name": "ListExpertsRow",
+          "fields": [
+            {
+              "name": "expert_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "user_public_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "name",
+              "ty": "String"
+            },
+            {
+              "name": "linked_wallet",
+              "ty": "String"
+            },
+            {
+              "name": "family_name",
+              "ty": "String"
+            },
+            {
+              "name": "given_name",
+              "ty": "String"
+            },
+            {
+              "name": "follower_count",
+              "ty": "Int"
+            },
+            {
+              "name": "description",
+              "ty": "String"
+            },
+            {
+              "name": "social_media",
+              "ty": "String"
+            },
+            {
+              "name": "risk_score",
+              "ty": "Numeric"
+            },
+            {
+              "name": "reputation_score",
+              "ty": "Numeric"
+            },
+            {
+              "name": "aum",
+              "ty": "Numeric"
+            },
+            {
+              "name": "joined_at",
+              "ty": "BigInt"
+            },
+            {
+              "name": "requested_at",
+              "ty": "BigInt"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": [],
+  "description": "User lists followed experts",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for UserListFollowedExpertsResponse {
     type Request = UserListFollowedExpertsRequest;
@@ -1632,6 +2804,25 @@ impl WsResponse for UserListFollowedExpertsResponse {
 impl WsRequest for UserUnfollowExpertRequest {
     type Response = UserUnfollowExpertResponse;
     const METHOD_ID: u32 = 20150;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserUnfollowExpert",
+  "code": 20150,
+  "parameters": [
+    {
+      "name": "expert_id",
+      "ty": "BigInt"
+    }
+  ],
+  "returns": [
+    {
+      "name": "success",
+      "ty": "Boolean"
+    }
+  ],
+  "stream_response": [],
+  "description": "User unfollows an expert",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for UserUnfollowExpertResponse {
     type Request = UserUnfollowExpertRequest;
@@ -1640,6 +2831,82 @@ impl WsResponse for UserUnfollowExpertResponse {
 impl WsRequest for UserListExpertsRequest {
     type Response = UserListExpertsResponse;
     const METHOD_ID: u32 = 20160;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserListExperts",
+  "code": 20160,
+  "parameters": [],
+  "returns": [
+    {
+      "name": "experts",
+      "ty": {
+        "DataTable": {
+          "name": "ListExpertsRow",
+          "fields": [
+            {
+              "name": "expert_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "user_public_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "name",
+              "ty": "String"
+            },
+            {
+              "name": "linked_wallet",
+              "ty": "String"
+            },
+            {
+              "name": "family_name",
+              "ty": "String"
+            },
+            {
+              "name": "given_name",
+              "ty": "String"
+            },
+            {
+              "name": "follower_count",
+              "ty": "Int"
+            },
+            {
+              "name": "description",
+              "ty": "String"
+            },
+            {
+              "name": "social_media",
+              "ty": "String"
+            },
+            {
+              "name": "risk_score",
+              "ty": "Numeric"
+            },
+            {
+              "name": "reputation_score",
+              "ty": "Numeric"
+            },
+            {
+              "name": "aum",
+              "ty": "Numeric"
+            },
+            {
+              "name": "joined_at",
+              "ty": "BigInt"
+            },
+            {
+              "name": "requested_at",
+              "ty": "BigInt"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": [],
+  "description": "User lists experts",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for UserListExpertsResponse {
     type Request = UserListExpertsRequest;
@@ -1648,6 +2915,82 @@ impl WsResponse for UserListExpertsResponse {
 impl WsRequest for UserListTopPerformingExpertsRequest {
     type Response = UserListTopPerformingExpertsResponse;
     const METHOD_ID: u32 = 20161;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserListTopPerformingExperts",
+  "code": 20161,
+  "parameters": [],
+  "returns": [
+    {
+      "name": "experts",
+      "ty": {
+        "DataTable": {
+          "name": "ListExpertsRow",
+          "fields": [
+            {
+              "name": "expert_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "user_public_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "name",
+              "ty": "String"
+            },
+            {
+              "name": "linked_wallet",
+              "ty": "String"
+            },
+            {
+              "name": "family_name",
+              "ty": "String"
+            },
+            {
+              "name": "given_name",
+              "ty": "String"
+            },
+            {
+              "name": "follower_count",
+              "ty": "Int"
+            },
+            {
+              "name": "description",
+              "ty": "String"
+            },
+            {
+              "name": "social_media",
+              "ty": "String"
+            },
+            {
+              "name": "risk_score",
+              "ty": "Numeric"
+            },
+            {
+              "name": "reputation_score",
+              "ty": "Numeric"
+            },
+            {
+              "name": "aum",
+              "ty": "Numeric"
+            },
+            {
+              "name": "joined_at",
+              "ty": "BigInt"
+            },
+            {
+              "name": "requested_at",
+              "ty": "BigInt"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": [],
+  "description": "User lists experts",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for UserListTopPerformingExpertsResponse {
     type Request = UserListTopPerformingExpertsRequest;
@@ -1656,6 +2999,82 @@ impl WsResponse for UserListTopPerformingExpertsResponse {
 impl WsRequest for UserListFeaturedExpertsRequest {
     type Response = UserListFeaturedExpertsResponse;
     const METHOD_ID: u32 = 20162;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserListFeaturedExperts",
+  "code": 20162,
+  "parameters": [],
+  "returns": [
+    {
+      "name": "experts",
+      "ty": {
+        "DataTable": {
+          "name": "ListExpertsRow",
+          "fields": [
+            {
+              "name": "expert_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "user_public_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "name",
+              "ty": "String"
+            },
+            {
+              "name": "linked_wallet",
+              "ty": "String"
+            },
+            {
+              "name": "family_name",
+              "ty": "String"
+            },
+            {
+              "name": "given_name",
+              "ty": "String"
+            },
+            {
+              "name": "follower_count",
+              "ty": "Int"
+            },
+            {
+              "name": "description",
+              "ty": "String"
+            },
+            {
+              "name": "social_media",
+              "ty": "String"
+            },
+            {
+              "name": "risk_score",
+              "ty": "Numeric"
+            },
+            {
+              "name": "reputation_score",
+              "ty": "Numeric"
+            },
+            {
+              "name": "aum",
+              "ty": "Numeric"
+            },
+            {
+              "name": "joined_at",
+              "ty": "BigInt"
+            },
+            {
+              "name": "requested_at",
+              "ty": "BigInt"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": [],
+  "description": "User lists experts",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for UserListFeaturedExpertsResponse {
     type Request = UserListFeaturedExpertsRequest;
@@ -1664,6 +3083,95 @@ impl WsResponse for UserListFeaturedExpertsResponse {
 impl WsRequest for UserGetExpertProfileRequest {
     type Response = UserGetExpertProfileResponse;
     const METHOD_ID: u32 = 20170;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserGetExpertProfile",
+  "code": 20170,
+  "parameters": [
+    {
+      "name": "expert_id",
+      "ty": "BigInt"
+    }
+  ],
+  "returns": [
+    {
+      "name": "expert_id",
+      "ty": "BigInt"
+    },
+    {
+      "name": "name",
+      "ty": "String"
+    },
+    {
+      "name": "follower_count",
+      "ty": "Int"
+    },
+    {
+      "name": "description",
+      "ty": "String"
+    },
+    {
+      "name": "social_media",
+      "ty": "String"
+    },
+    {
+      "name": "risk_score",
+      "ty": "Numeric"
+    },
+    {
+      "name": "reputation_score",
+      "ty": "Numeric"
+    },
+    {
+      "name": "aum",
+      "ty": "Numeric"
+    },
+    {
+      "name": "strategies",
+      "ty": {
+        "DataTable": {
+          "name": "ListStrategiesRow",
+          "fields": [
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "strategy_name",
+              "ty": "String"
+            },
+            {
+              "name": "strategy_description",
+              "ty": "String"
+            },
+            {
+              "name": "net_value",
+              "ty": "Numeric"
+            },
+            {
+              "name": "followers",
+              "ty": "Int"
+            },
+            {
+              "name": "backers",
+              "ty": "Int"
+            },
+            {
+              "name": "risk_score",
+              "ty": "Numeric"
+            },
+            {
+              "name": "aum",
+              "ty": "Numeric"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": [],
+  "description": "User gets an expert profile",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for UserGetExpertProfileResponse {
     type Request = UserGetExpertProfileRequest;
@@ -1672,6 +3180,191 @@ impl WsResponse for UserGetExpertProfileResponse {
 impl WsRequest for UserGetUserProfileRequest {
     type Response = UserGetUserProfileResponse;
     const METHOD_ID: u32 = 20180;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserGetUserProfile",
+  "code": 20180,
+  "parameters": [
+    {
+      "name": "user_id",
+      "ty": "BigInt"
+    }
+  ],
+  "returns": [
+    {
+      "name": "user_id",
+      "ty": "BigInt"
+    },
+    {
+      "name": "name",
+      "ty": "String"
+    },
+    {
+      "name": "follower_count",
+      "ty": "Int"
+    },
+    {
+      "name": "description",
+      "ty": "String"
+    },
+    {
+      "name": "social_media",
+      "ty": "String"
+    },
+    {
+      "name": "followed_experts",
+      "ty": {
+        "DataTable": {
+          "name": "ListExpertsRow",
+          "fields": [
+            {
+              "name": "expert_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "user_public_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "name",
+              "ty": "String"
+            },
+            {
+              "name": "linked_wallet",
+              "ty": "String"
+            },
+            {
+              "name": "family_name",
+              "ty": "String"
+            },
+            {
+              "name": "given_name",
+              "ty": "String"
+            },
+            {
+              "name": "follower_count",
+              "ty": "Int"
+            },
+            {
+              "name": "description",
+              "ty": "String"
+            },
+            {
+              "name": "social_media",
+              "ty": "String"
+            },
+            {
+              "name": "risk_score",
+              "ty": "Numeric"
+            },
+            {
+              "name": "reputation_score",
+              "ty": "Numeric"
+            },
+            {
+              "name": "aum",
+              "ty": "Numeric"
+            },
+            {
+              "name": "joined_at",
+              "ty": "BigInt"
+            },
+            {
+              "name": "requested_at",
+              "ty": "BigInt"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "followed_strategies",
+      "ty": {
+        "DataTable": {
+          "name": "ListStrategiesRow",
+          "fields": [
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "strategy_name",
+              "ty": "String"
+            },
+            {
+              "name": "strategy_description",
+              "ty": "String"
+            },
+            {
+              "name": "net_value",
+              "ty": "Numeric"
+            },
+            {
+              "name": "followers",
+              "ty": "Int"
+            },
+            {
+              "name": "backers",
+              "ty": "Int"
+            },
+            {
+              "name": "risk_score",
+              "ty": "Numeric"
+            },
+            {
+              "name": "aum",
+              "ty": "Numeric"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "backed_strategies",
+      "ty": {
+        "DataTable": {
+          "name": "ListStrategiesRow",
+          "fields": [
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "strategy_name",
+              "ty": "String"
+            },
+            {
+              "name": "strategy_description",
+              "ty": "String"
+            },
+            {
+              "name": "net_value",
+              "ty": "Numeric"
+            },
+            {
+              "name": "followers",
+              "ty": "Int"
+            },
+            {
+              "name": "backers",
+              "ty": "Int"
+            },
+            {
+              "name": "risk_score",
+              "ty": "Numeric"
+            },
+            {
+              "name": "aum",
+              "ty": "Numeric"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": [],
+  "description": "User gets an user profile",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for UserGetUserProfileResponse {
     type Request = UserGetUserProfileRequest;
@@ -1680,6 +3373,43 @@ impl WsResponse for UserGetUserProfileResponse {
 impl WsRequest for UserRegisterWalletRequest {
     type Response = UserRegisterWalletResponse;
     const METHOD_ID: u32 = 20190;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserRegisterWallet",
+  "code": 20190,
+  "parameters": [
+    {
+      "name": "blockchain",
+      "ty": {
+        "EnumRef": "block_chain"
+      }
+    },
+    {
+      "name": "wallet_address",
+      "ty": "String"
+    },
+    {
+      "name": "message_to_sign",
+      "ty": "String"
+    },
+    {
+      "name": "message_signature",
+      "ty": "String"
+    }
+  ],
+  "returns": [
+    {
+      "name": "success",
+      "ty": "Boolean"
+    },
+    {
+      "name": "wallet_id",
+      "ty": "BigInt"
+    }
+  ],
+  "stream_response": [],
+  "description": "User registers a wallet",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for UserRegisterWalletResponse {
     type Request = UserRegisterWalletRequest;
@@ -1688,6 +3418,44 @@ impl WsResponse for UserRegisterWalletResponse {
 impl WsRequest for UserListRegisteredWalletsRequest {
     type Response = UserListRegisteredWalletsResponse;
     const METHOD_ID: u32 = 20200;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserListRegisteredWallets",
+  "code": 20200,
+  "parameters": [],
+  "returns": [
+    {
+      "name": "wallets",
+      "ty": {
+        "DataTable": {
+          "name": "ListWalletsRow",
+          "fields": [
+            {
+              "name": "wallet_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
+            },
+            {
+              "name": "wallet_address",
+              "ty": "String"
+            },
+            {
+              "name": "is_default",
+              "ty": "Boolean"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": [],
+  "description": "User lists wallets",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for UserListRegisteredWalletsResponse {
     type Request = UserListRegisteredWalletsRequest;
@@ -1696,6 +3464,25 @@ impl WsResponse for UserListRegisteredWalletsResponse {
 impl WsRequest for UserDeregisterWalletRequest {
     type Response = UserDeregisterWalletResponse;
     const METHOD_ID: u32 = 20210;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserDeregisterWallet",
+  "code": 20210,
+  "parameters": [
+    {
+      "name": "wallet_id",
+      "ty": "BigInt"
+    }
+  ],
+  "returns": [
+    {
+      "name": "success",
+      "ty": "Boolean"
+    }
+  ],
+  "stream_response": [],
+  "description": "User deregisters a wallet",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for UserDeregisterWalletResponse {
     type Request = UserDeregisterWalletRequest;
@@ -1704,6 +3491,20 @@ impl WsResponse for UserDeregisterWalletResponse {
 impl WsRequest for UserApplyBecomeExpertRequest {
     type Response = UserApplyBecomeExpertResponse;
     const METHOD_ID: u32 = 20220;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserApplyBecomeExpert",
+  "code": 20220,
+  "parameters": [],
+  "returns": [
+    {
+      "name": "success",
+      "ty": "Boolean"
+    }
+  ],
+  "stream_response": [],
+  "description": "User applies to become an expert",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for UserApplyBecomeExpertResponse {
     type Request = UserApplyBecomeExpertRequest;
@@ -1712,6 +3513,33 @@ impl WsResponse for UserApplyBecomeExpertResponse {
 impl WsRequest for UserCreateStrategyRequest {
     type Response = UserCreateStrategyResponse;
     const METHOD_ID: u32 = 20250;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserCreateStrategy",
+  "code": 20250,
+  "parameters": [
+    {
+      "name": "name",
+      "ty": "String"
+    },
+    {
+      "name": "description",
+      "ty": "String"
+    }
+  ],
+  "returns": [
+    {
+      "name": "success",
+      "ty": "Boolean"
+    },
+    {
+      "name": "strategy_id",
+      "ty": "BigInt"
+    }
+  ],
+  "stream_response": [],
+  "description": "User makes a strategy",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for UserCreateStrategyResponse {
     type Request = UserCreateStrategyRequest;
@@ -1720,6 +3548,61 @@ impl WsResponse for UserCreateStrategyResponse {
 impl WsRequest for UserUpdateStrategyRequest {
     type Response = UserUpdateStrategyResponse;
     const METHOD_ID: u32 = 20260;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserUpdateStrategy",
+  "code": 20260,
+  "parameters": [
+    {
+      "name": "strategy_id",
+      "ty": "BigInt"
+    },
+    {
+      "name": "name",
+      "ty": {
+        "Optional": "String"
+      }
+    },
+    {
+      "name": "description",
+      "ty": {
+        "Optional": "String"
+      }
+    },
+    {
+      "name": "social_media",
+      "ty": {
+        "Optional": "String"
+      }
+    },
+    {
+      "name": "risk_score",
+      "ty": {
+        "Optional": "Numeric"
+      }
+    },
+    {
+      "name": "reputation_score",
+      "ty": {
+        "Optional": "Numeric"
+      }
+    },
+    {
+      "name": "aum",
+      "ty": {
+        "Optional": "Numeric"
+      }
+    }
+  ],
+  "returns": [
+    {
+      "name": "success",
+      "ty": "Boolean"
+    }
+  ],
+  "stream_response": [],
+  "description": "User updates a strategy",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for UserUpdateStrategyResponse {
     type Request = UserUpdateStrategyRequest;
@@ -1728,6 +3611,43 @@ impl WsResponse for UserUpdateStrategyResponse {
 impl WsRequest for UserAddStrategyWatchingWalletRequest {
     type Response = UserAddStrategyWatchingWalletResponse;
     const METHOD_ID: u32 = 20270;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserAddStrategyWatchingWallet",
+  "code": 20270,
+  "parameters": [
+    {
+      "name": "strategy_id",
+      "ty": "BigInt"
+    },
+    {
+      "name": "blockchain",
+      "ty": {
+        "EnumRef": "block_chain"
+      }
+    },
+    {
+      "name": "wallet_address",
+      "ty": "String"
+    },
+    {
+      "name": "ratio",
+      "ty": "Numeric"
+    }
+  ],
+  "returns": [
+    {
+      "name": "success",
+      "ty": "Boolean"
+    },
+    {
+      "name": "wallet_id",
+      "ty": "BigInt"
+    }
+  ],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for UserAddStrategyWatchingWalletResponse {
     type Request = UserAddStrategyWatchingWalletRequest;
@@ -1736,6 +3656,25 @@ impl WsResponse for UserAddStrategyWatchingWalletResponse {
 impl WsRequest for UserRemoveStrategyWatchingWalletRequest {
     type Response = UserRemoveStrategyWatchingWalletResponse;
     const METHOD_ID: u32 = 20280;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserRemoveStrategyWatchingWallet",
+  "code": 20280,
+  "parameters": [
+    {
+      "name": "wallet_id",
+      "ty": "BigInt"
+    }
+  ],
+  "returns": [
+    {
+      "name": "success",
+      "ty": "Boolean"
+    }
+  ],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for UserRemoveStrategyWatchingWalletResponse {
     type Request = UserRemoveStrategyWatchingWalletRequest;
@@ -1744,6 +3683,49 @@ impl WsResponse for UserRemoveStrategyWatchingWalletResponse {
 impl WsRequest for UserListStrategyWatchingWalletsRequest {
     type Response = UserListStrategyWatchingWalletsResponse;
     const METHOD_ID: u32 = 20290;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserListStrategyWatchingWallets",
+  "code": 20290,
+  "parameters": [
+    {
+      "name": "strategy_id",
+      "ty": "BigInt"
+    }
+  ],
+  "returns": [
+    {
+      "name": "wallets",
+      "ty": {
+        "DataTable": {
+          "name": "ListStrategyWatchingWalletsRow",
+          "fields": [
+            {
+              "name": "wallet_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
+            },
+            {
+              "name": "wallet_address",
+              "ty": "String"
+            },
+            {
+              "name": "ratio",
+              "ty": "Numeric"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for UserListStrategyWatchingWalletsResponse {
     type Request = UserListStrategyWatchingWalletsRequest;
@@ -1752,6 +3734,99 @@ impl WsResponse for UserListStrategyWatchingWalletsResponse {
 impl WsRequest for UserListWalletActivityHistoryRequest {
     type Response = UserListWalletActivityHistoryResponse;
     const METHOD_ID: u32 = 20300;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserListWalletActivityHistory",
+  "code": 20300,
+  "parameters": [
+    {
+      "name": "wallet_address",
+      "ty": "String"
+    },
+    {
+      "name": "blockchain",
+      "ty": {
+        "EnumRef": "block_chain"
+      }
+    }
+  ],
+  "returns": [
+    {
+      "name": "wallet_activities",
+      "ty": {
+        "DataTable": {
+          "name": "ListWalletActivityHistoryRow",
+          "fields": [
+            {
+              "name": "record_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "wallet_address",
+              "ty": "String"
+            },
+            {
+              "name": "transaction_hash",
+              "ty": "String"
+            },
+            {
+              "name": "dex",
+              "ty": "String"
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
+            },
+            {
+              "name": "contract_address",
+              "ty": "String"
+            },
+            {
+              "name": "token_in_address",
+              "ty": "String"
+            },
+            {
+              "name": "token_out_address",
+              "ty": "String"
+            },
+            {
+              "name": "caller_address",
+              "ty": "String"
+            },
+            {
+              "name": "amount_in",
+              "ty": "String"
+            },
+            {
+              "name": "amount_out",
+              "ty": "String"
+            },
+            {
+              "name": "swap_calls",
+              "ty": "Object"
+            },
+            {
+              "name": "paths",
+              "ty": "Object"
+            },
+            {
+              "name": "dex_versions",
+              "ty": "Object"
+            },
+            {
+              "name": "created_at",
+              "ty": "BigInt"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for UserListWalletActivityHistoryResponse {
     type Request = UserListWalletActivityHistoryRequest;
@@ -1760,6 +3835,41 @@ impl WsResponse for UserListWalletActivityHistoryResponse {
 impl WsRequest for UserAddStrategyInitialTokenRatioRequest {
     type Response = UserAddStrategyInitialTokenRatioResponse;
     const METHOD_ID: u32 = 20310;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserAddStrategyInitialTokenRatio",
+  "code": 20310,
+  "parameters": [
+    {
+      "name": "strategy_id",
+      "ty": "BigInt"
+    },
+    {
+      "name": "token_name",
+      "ty": "String"
+    },
+    {
+      "name": "token_address",
+      "ty": "String"
+    },
+    {
+      "name": "quantity",
+      "ty": "String"
+    }
+  ],
+  "returns": [
+    {
+      "name": "success",
+      "ty": "Boolean"
+    },
+    {
+      "name": "token_id",
+      "ty": "BigInt"
+    }
+  ],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for UserAddStrategyInitialTokenRatioResponse {
     type Request = UserAddStrategyInitialTokenRatioRequest;
@@ -1768,6 +3878,29 @@ impl WsResponse for UserAddStrategyInitialTokenRatioResponse {
 impl WsRequest for UserRemoveStrategyInitialTokenRatioRequest {
     type Response = UserRemoveStrategyInitialTokenRatioResponse;
     const METHOD_ID: u32 = 20320;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserRemoveStrategyInitialTokenRatio",
+  "code": 20320,
+  "parameters": [
+    {
+      "name": "strategy_id",
+      "ty": "BigInt"
+    },
+    {
+      "name": "token_id",
+      "ty": "BigInt"
+    }
+  ],
+  "returns": [
+    {
+      "name": "success",
+      "ty": "Boolean"
+    }
+  ],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for UserRemoveStrategyInitialTokenRatioResponse {
     type Request = UserRemoveStrategyInitialTokenRatioRequest;
@@ -1776,6 +3909,55 @@ impl WsResponse for UserRemoveStrategyInitialTokenRatioResponse {
 impl WsRequest for UserListStrategyInitialTokenRatioRequest {
     type Response = UserListStrategyInitialTokenRatioResponse;
     const METHOD_ID: u32 = 20330;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserListStrategyInitialTokenRatio",
+  "code": 20330,
+  "parameters": [
+    {
+      "name": "strategy_id",
+      "ty": "BigInt"
+    }
+  ],
+  "returns": [
+    {
+      "name": "token_ratios",
+      "ty": {
+        "DataTable": {
+          "name": "ListStrategyInitialTokenRatioRow",
+          "fields": [
+            {
+              "name": "token_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "token_name",
+              "ty": "String"
+            },
+            {
+              "name": "token_address",
+              "ty": "String"
+            },
+            {
+              "name": "quantity",
+              "ty": "String"
+            },
+            {
+              "name": "updated_at",
+              "ty": "BigInt"
+            },
+            {
+              "name": "created_at",
+              "ty": "BigInt"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for UserListStrategyInitialTokenRatioResponse {
     type Request = UserListStrategyInitialTokenRatioRequest;
@@ -1784,6 +3966,117 @@ impl WsResponse for UserListStrategyInitialTokenRatioResponse {
 impl WsRequest for AdminListUsersRequest {
     type Response = AdminListUsersResponse;
     const METHOD_ID: u32 = 30010;
+    const SCHEMA: &'static str = r#"{
+  "name": "AdminListUsers",
+  "code": 30010,
+  "parameters": [
+    {
+      "name": "limit",
+      "ty": "BigInt"
+    },
+    {
+      "name": "offset",
+      "ty": "BigInt"
+    },
+    {
+      "name": "user_id",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "address",
+      "ty": {
+        "Optional": "String"
+      }
+    },
+    {
+      "name": "username",
+      "ty": {
+        "Optional": "String"
+      }
+    },
+    {
+      "name": "email",
+      "ty": {
+        "Optional": "String"
+      }
+    },
+    {
+      "name": "role",
+      "ty": {
+        "Optional": {
+          "EnumRef": "role"
+        }
+      }
+    }
+  ],
+  "returns": [
+    {
+      "name": "users",
+      "ty": {
+        "DataTable": {
+          "name": "ListUserRow",
+          "fields": [
+            {
+              "name": "user_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "public_user_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "username",
+              "ty": {
+                "Optional": "String"
+              }
+            },
+            {
+              "name": "address",
+              "ty": "String"
+            },
+            {
+              "name": "last_ip",
+              "ty": "Inet"
+            },
+            {
+              "name": "last_login_at",
+              "ty": "BigInt"
+            },
+            {
+              "name": "login_count",
+              "ty": "Int"
+            },
+            {
+              "name": "role",
+              "ty": {
+                "EnumRef": "role"
+              }
+            },
+            {
+              "name": "email",
+              "ty": {
+                "Optional": "String"
+              }
+            },
+            {
+              "name": "updated_at",
+              "ty": "BigInt"
+            },
+            {
+              "name": "created_at",
+              "ty": "BigInt"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for AdminListUsersResponse {
     type Request = AdminListUsersRequest;
@@ -1792,6 +4085,26 @@ impl WsResponse for AdminListUsersResponse {
 impl WsRequest for AdminSetUserRoleRequest {
     type Response = AdminSetUserRoleResponse;
     const METHOD_ID: u32 = 30020;
+    const SCHEMA: &'static str = r#"{
+  "name": "AdminSetUserRole",
+  "code": 30020,
+  "parameters": [
+    {
+      "name": "user_id",
+      "ty": "BigInt"
+    },
+    {
+      "name": "role",
+      "ty": {
+        "EnumRef": "role"
+      }
+    }
+  ],
+  "returns": [],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for AdminSetUserRoleResponse {
     type Request = AdminSetUserRoleRequest;
@@ -1800,6 +4113,24 @@ impl WsResponse for AdminSetUserRoleResponse {
 impl WsRequest for AdminSetBlockUserRequest {
     type Response = AdminSetBlockUserResponse;
     const METHOD_ID: u32 = 30030;
+    const SCHEMA: &'static str = r#"{
+  "name": "AdminSetBlockUser",
+  "code": 30030,
+  "parameters": [
+    {
+      "name": "user_id",
+      "ty": "BigInt"
+    },
+    {
+      "name": "blocked",
+      "ty": "Boolean"
+    }
+  ],
+  "returns": [],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for AdminSetBlockUserResponse {
     type Request = AdminSetBlockUserRequest;
@@ -1808,6 +4139,58 @@ impl WsResponse for AdminSetBlockUserResponse {
 impl WsRequest for AdminListPendingExpertApplicationsRequest {
     type Response = AdminListPendingExpertApplicationsResponse;
     const METHOD_ID: u32 = 20240;
+    const SCHEMA: &'static str = r#"{
+  "name": "AdminListPendingExpertApplications",
+  "code": 20240,
+  "parameters": [],
+  "returns": [
+    {
+      "name": "users",
+      "ty": {
+        "DataTable": {
+          "name": "ListPendingExpertApplicationsRow",
+          "fields": [
+            {
+              "name": "user_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "name",
+              "ty": "String"
+            },
+            {
+              "name": "follower_count",
+              "ty": "Int"
+            },
+            {
+              "name": "description",
+              "ty": "String"
+            },
+            {
+              "name": "social_media",
+              "ty": "String"
+            },
+            {
+              "name": "risk_score",
+              "ty": "Numeric"
+            },
+            {
+              "name": "reputation_score",
+              "ty": "Numeric"
+            },
+            {
+              "name": "aum",
+              "ty": "Numeric"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": [],
+  "description": "Admin approves a user to become an expert",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for AdminListPendingExpertApplicationsResponse {
     type Request = AdminListPendingExpertApplicationsRequest;
@@ -1816,6 +4199,25 @@ impl WsResponse for AdminListPendingExpertApplicationsResponse {
 impl WsRequest for AdminApproveUserBecomeExpertRequest {
     type Response = AdminApproveUserBecomeExpertResponse;
     const METHOD_ID: u32 = 20230;
+    const SCHEMA: &'static str = r#"{
+  "name": "AdminApproveUserBecomeExpert",
+  "code": 20230,
+  "parameters": [
+    {
+      "name": "user_id",
+      "ty": "BigInt"
+    }
+  ],
+  "returns": [
+    {
+      "name": "success",
+      "ty": "Boolean"
+    }
+  ],
+  "stream_response": [],
+  "description": "Admin approves a user to become an expert",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for AdminApproveUserBecomeExpertResponse {
     type Request = AdminApproveUserBecomeExpertRequest;
@@ -1824,6 +4226,25 @@ impl WsResponse for AdminApproveUserBecomeExpertResponse {
 impl WsRequest for AdminRejectUserBecomeExpertRequest {
     type Response = AdminRejectUserBecomeExpertResponse;
     const METHOD_ID: u32 = 20231;
+    const SCHEMA: &'static str = r#"{
+  "name": "AdminRejectUserBecomeExpert",
+  "code": 20231,
+  "parameters": [
+    {
+      "name": "user_id",
+      "ty": "BigInt"
+    }
+  ],
+  "returns": [
+    {
+      "name": "success",
+      "ty": "Boolean"
+    }
+  ],
+  "stream_response": [],
+  "description": "Admin approves a user to become an expert",
+  "json_schema": null
+}"#;
 }
 impl WsResponse for AdminRejectUserBecomeExpertResponse {
     type Request = AdminRejectUserBecomeExpertRequest;

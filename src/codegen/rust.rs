@@ -312,13 +312,15 @@ impl Into<ErrorCode> for EnumErrorCode {{
 impl WsRequest for {end_name2}Request {{
     type Response = {end_name2}Response;
     const METHOD_ID: u32 = {code};
+    const SCHEMA: &'static str = r#\"{schema}\"#;
 }}
 impl WsResponse for {end_name2}Response {{
     type Request = {end_name2}Request;
 }}
 ",
                 end_name2 = endpoint.name.to_case(Case::Pascal),
-                code = endpoint.code
+                code = endpoint.code,
+                schema = serde_json::to_string_pretty(&endpoint).unwrap()
             )?;
         }
     }
