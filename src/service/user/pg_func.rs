@@ -489,7 +489,7 @@ BEGIN
                         a.reputation_score                                        AS reputation_score,
                         a.aum                                                     AS aum,
                         c.created_at                                              AS joined_at,
-                        a.
+                        b.created_at                                              AS requested_at
                  FROM tbl.expert_profile AS a
                           JOIN tbl.user_follow_expert AS b ON b.fkey_expert_id = a.pkey_id
                           JOIN tbl.user AS c ON c.pkey_id = a.fkey_user_id
@@ -563,16 +563,16 @@ END
         ProceduralFunction::new(
             "fun_user_create_expert_profile",
             vec![
-                Field::new("name", Type::optional(Type::String)),
+                Field::new("user_id", Type::BigInt),
                 Field::new("description", Type::optional(Type::String)),
                 Field::new("social_media", Type::optional(Type::String)),
             ],
             vec![Field::new("expert_id", Type::BigInt)],
             r#"
 BEGIN
-    INSERT INTO tbl.expert_profile(name, description, social_media)
-    VALUES(a_name, a_description, a_social_media) RETURNING pkey_id
-    INTO a_expert_id;
+    RETURN QUERY INSERT INTO tbl.expert_profile(fkey_user_id, description, social_media, updated_at, created_at)
+    VALUES(a_user_id, a_description, a_social_media, extract(epoch from now())::bigint, extract(epoch from now)::bigint) 
+    RETURNING pkey_id;
 END
 "#,
         ),
@@ -580,7 +580,6 @@ END
             "fun_user_update_expert_profile",
             vec![
                 Field::new("expert_id", Type::BigInt),
-                Field::new("name", Type::optional(Type::String)),
                 Field::new("description", Type::optional(Type::String)),
                 Field::new("social_media", Type::optional(Type::String)),
             ],
@@ -588,10 +587,11 @@ END
             r#"
 BEGIN
     UPDATE tbl.expert_profile
-    SET name = COALESCE(a_name, name),
+    SET
         description = COALESCE(a_description, description),
-        social_media = COALESCE(a_social_media, social_media)
-     WHERE a.pkey_id = a_expert_id;
+        social_media = COALESCE(a_social_media, social_media),
+        updated_at = extract(epoch from now())::bigint
+     WHERE pkey_id = a_expert_id;
 END
 "#,
         ),
@@ -601,7 +601,15 @@ END
             vec![Field::new("success", Type::Boolean)],
             r#"
 BEGIN
-    UPDATE tbl.user SET pending_expert = TRUE WHERE pkey_id = a_user_id AND role = 'user';
+    IF EXISTS(SELECT * FROM tbl.expert_profile WHERE fkey_user_id = a_user_id) THEN
+        INSERT INTO tbl.expert_profile(fkey_user_id, updated_at, created_at)
+        VALUES(a_user_id, extract(epoch from now())::bigint, extract(epoch from now())::bigint);
+    ELSE
+        UPDATE tbl.expert_profile SET 
+            pending_expert = TRUE,
+            updated_at = extract(epoch from now())::bigint
+        WHERE fkey_user_id = a_user_id;
+    END IF;
     RETURN QUERY SELECT TRUE;
 END
 "#,

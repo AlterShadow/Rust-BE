@@ -419,8 +419,6 @@ pub fn endpoint_user_update_expert_profile() -> EndpointSchema {
         "UserUpdateExpertProfile",
         20171,
         vec![
-            Field::new("name", Type::optional(Type::String)),
-            Field::new("follower_count", Type::optional(Type::Int)),
             Field::new("description", Type::optional(Type::String)),
             Field::new("social_media", Type::optional(Type::String)),
         ],

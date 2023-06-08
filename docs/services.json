@@ -775,18 +775,6 @@
           "code": 20171,
           "parameters": [
             {
-              "name": "name",
-              "ty": {
-                "Optional": "String"
-              }
-            },
-            {
-              "name": "follower_count",
-              "ty": {
-                "Optional": "Int"
-              }
-            },
-            {
               "name": "description",
               "ty": {
                 "Optional": "String"

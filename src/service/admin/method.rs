@@ -118,7 +118,7 @@ impl RequestHandler for MethodAdminApproveUserBecomeExpert {
             ensure_user_role(ctx, EnumRole::Admin)?;
 
             let ret = db
-                .execute(FunAdminApproveUserBecomeAdminReq {
+                .execute(FunAdminApproveUserBecomeExpertReq {
                     user_id: req.user_id,
                 })
                 .await?;
@@ -147,8 +147,7 @@ impl RequestHandler for MethodAdminRejectUserBecomeExpert {
             ensure_user_role(ctx, EnumRole::Admin)?;
 
             let ret = db
-                .execute(FunAdminRejectUserBecomeAdminReq {
-                    admin_user_id: ctx.user_id,
+                .execute(FunAdminRejectUserBecomeExpertReq {
                     user_id: req.user_id,
                 })
                 .await?;

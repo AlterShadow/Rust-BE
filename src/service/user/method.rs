@@ -1056,7 +1056,6 @@ impl RequestHandler for MethodUserUpdateExpertProfile {
                     let ret = db
                         .execute(FunUserUpdateExpertProfileReq {
                             expert_id: expert_id.expert_id,
-                            name: req.name,
                             description: req.description,
                             social_media: req.social_media,
                         })
@@ -1067,7 +1066,7 @@ impl RequestHandler for MethodUserUpdateExpertProfile {
                 None => {
                     let ret = db
                         .execute(FunUserCreateExpertProfileReq {
-                            name: req.name,
+                            user_id: ctx.user_id,
                             description: req.description,
                             social_media: req.social_media,
                         })

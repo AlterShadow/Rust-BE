@@ -86,26 +86,25 @@ END;
         "#,
         ),
         ProceduralFunction::new(
-            "fun_admin_approve_user_become_admin",
+            "fun_admin_approve_user_become_expert",
             vec![Field::new("user_id", Type::BigInt)],
             vec![Field::new("success", Type::Boolean)],
             r#"
 BEGIN
-    UPDATE tbl.user SET pending_expert = FALSE AND role = 'expert' WHERE pkey_id = a_user_id AND role = 'user';
+    UPDATE tbl.expert_profile SET pending_expert = FALSE, approved_expert = TRUE WHERE pkey_id = a_user_id;
+    UPDATE tbl.user SET role = 'expert' WHERE role = 'user';
     RETURN QUERY SELECT TRUE;
+
 END
 "#,
         ),
         ProceduralFunction::new(
-            "fun_admin_reject_user_become_admin",
-            vec![
-                Field::new("admin_user_id", Type::BigInt),
-                Field::new("user_id", Type::BigInt),
-            ],
+            "fun_admin_reject_user_become_expert",
+            vec![Field::new("user_id", Type::BigInt)],
             vec![Field::new("success", Type::Boolean)],
             r#"
 BEGIN
-    UPDATE tbl.user SET pending_expert = FALSE WHERE pkey_id = a_user_id;
+    UPDATE tbl.expert_profile SET pending_expert = FALSE, approved_expert = FALSE WHERE pkey_id = a_user_id;
     RETURN QUERY SELECT TRUE;
 END
 "#,
@@ -131,13 +130,14 @@ BEGIN
                          FROM tbl.user_follow_expert
                          WHERE fkey_expert_id = a.pkey_id
                            AND unfollowed = FALSE) AS follower_count,
-                        ''::varchar                AS description,
-                        ''::varchar                AS social_media,
-                        0.0::double precision      AS risk_score,
-                        0.0::double precision      AS reputation_score,
-                        0.0::double precision      AS aum
+                        b.description                AS description,
+                        b.social_media                AS social_media,
+                        b.risk_score      AS risk_score,
+                        b.reputation_score      AS reputation_score,
+                        b.aum      AS aum
                  FROM tbl."user" AS a
-                 WHERE a.pending_expert = TRUE;
+                    JOIN tbl.expert_profile AS b ON b.fkey_user_id = a.pkey_id
+                 WHERE b.pending_expert = TRUE;
 END
 "#,
         ),

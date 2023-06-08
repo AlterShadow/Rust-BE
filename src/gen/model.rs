@@ -1465,10 +1465,6 @@ pub struct UserUnfollowStrategyResponse {
 #[serde(rename_all = "camelCase")]
 pub struct UserUpdateExpertProfileRequest {
     #[serde(default)]
-    pub name: Option<String>,
-    #[serde(default)]
-    pub follower_count: Option<i32>,
-    #[serde(default)]
     pub description: Option<String>,
     #[serde(default)]
     pub social_media: Option<String>,
@@ -2394,18 +2390,6 @@ impl WsRequest for UserUpdateExpertProfileRequest {
   "name": "UserUpdateExpertProfile",
   "code": 20171,
   "parameters": [
-    {
-      "name": "name",
-      "ty": {
-        "Optional": "String"
-      }
-    },
-    {
-      "name": "follower_count",
-      "ty": {
-        "Optional": "Int"
-      }
-    },
     {
       "name": "description",
       "ty": {

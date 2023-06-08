@@ -744,7 +744,7 @@ BEGIN
                         a.reputation_score                                        AS reputation_score,
                         a.aum                                                     AS aum,
                         c.created_at                                              AS joined_at,
-                        a.
+                        b.created_at                                              AS requested_at
                  FROM tbl.expert_profile AS a
                           JOIN tbl.user_follow_expert AS b ON b.fkey_expert_id = a.pkey_id
                           JOIN tbl.user AS c ON c.pkey_id = a.fkey_user_id
@@ -834,7 +834,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_create_expert_profile(a_name varchar DEFAULT NULL, a_description varchar DEFAULT NULL, a_social_media varchar DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_user_create_expert_profile(a_user_id bigint, a_description varchar DEFAULT NULL, a_social_media varchar DEFAULT NULL)
 RETURNS table (
     "expert_id" bigint
 )
@@ -842,25 +842,26 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    INSERT INTO tbl.expert_profile(name, description, social_media)
-    VALUES(a_name, a_description, a_social_media) RETURNING pkey_id
-    INTO a_expert_id;
+    RETURN QUERY INSERT INTO tbl.expert_profile(fkey_user_id, description, social_media, updated_at, created_at)
+    VALUES(a_user_id, a_description, a_social_media, extract(epoch from now())::bigint, extract(epoch from now)::bigint) 
+    RETURNING pkey_id;
 END
 
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_update_expert_profile(a_expert_id bigint, a_name varchar DEFAULT NULL, a_description varchar DEFAULT NULL, a_social_media varchar DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_user_update_expert_profile(a_expert_id bigint, a_description varchar DEFAULT NULL, a_social_media varchar DEFAULT NULL)
 RETURNS void
 LANGUAGE plpgsql
 AS $$
     
 BEGIN
     UPDATE tbl.expert_profile
-    SET name = COALESCE(a_name, name),
+    SET
         description = COALESCE(a_description, description),
-        social_media = COALESCE(a_social_media, social_media)
-     WHERE a.pkey_id = a_expert_id;
+        social_media = COALESCE(a_social_media, social_media),
+        updated_at = extract(epoch from now())::bigint
+     WHERE pkey_id = a_expert_id;
 END
 
 $$;
@@ -874,7 +875,15 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    UPDATE tbl.user SET pending_expert = TRUE WHERE pkey_id = a_user_id AND role = 'user';
+    IF EXISTS(SELECT * FROM tbl.expert_profile WHERE fkey_user_id = a_user_id) THEN
+        INSERT INTO tbl.expert_profile(fkey_user_id, updated_at, created_at)
+        VALUES(a_user_id, extract(epoch from now())::bigint, extract(epoch from now())::bigint);
+    ELSE
+        UPDATE tbl.expert_profile SET 
+            pending_expert = TRUE,
+            updated_at = extract(epoch from now())::bigint
+        WHERE fkey_user_id = a_user_id;
+    END IF;
     RETURN QUERY SELECT TRUE;
 END
 
@@ -1266,7 +1275,7 @@ END;
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_admin_approve_user_become_admin(a_user_id bigint)
+CREATE OR REPLACE FUNCTION api.fun_admin_approve_user_become_expert(a_user_id bigint)
 RETURNS table (
     "success" boolean
 )
@@ -1274,14 +1283,16 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    UPDATE tbl.user SET pending_expert = FALSE AND role = 'expert' WHERE pkey_id = a_user_id AND role = 'user';
+    UPDATE tbl.expert_profile SET pending_expert = FALSE, approved_expert = TRUE WHERE pkey_id = a_user_id;
+    UPDATE tbl.user SET role = 'expert' WHERE role = 'user';
     RETURN QUERY SELECT TRUE;
+
 END
 
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_admin_reject_user_become_admin(a_admin_user_id bigint, a_user_id bigint)
+CREATE OR REPLACE FUNCTION api.fun_admin_reject_user_become_expert(a_user_id bigint)
 RETURNS table (
     "success" boolean
 )
@@ -1289,7 +1300,7 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    UPDATE tbl.user SET pending_expert = FALSE WHERE pkey_id = a_user_id;
+    UPDATE tbl.expert_profile SET pending_expert = FALSE, approved_expert = FALSE WHERE pkey_id = a_user_id;
     RETURN QUERY SELECT TRUE;
 END
 
@@ -1317,13 +1328,14 @@ BEGIN
                          FROM tbl.user_follow_expert
                          WHERE fkey_expert_id = a.pkey_id
                            AND unfollowed = FALSE) AS follower_count,
-                        ''::varchar                AS description,
-                        ''::varchar                AS social_media,
-                        0.0::double precision      AS risk_score,
-                        0.0::double precision      AS reputation_score,
-                        0.0::double precision      AS aum
+                        b.description                AS description,
+                        b.social_media                AS social_media,
+                        b.risk_score      AS risk_score,
+                        b.reputation_score      AS reputation_score,
+                        b.aum      AS aum
                  FROM tbl."user" AS a
-                 WHERE a.pending_expert = TRUE;
+                    JOIN tbl.expert_profile AS b ON b.fkey_user_id = a.pkey_id
+                 WHERE b.pending_expert = TRUE;
 END
 
 $$;

@@ -1020,8 +1020,7 @@ impl DatabaseRequest for FunUserGetExpertProfileReq {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserCreateExpertProfileReq {
-    #[serde(default)]
-    pub name: Option<String>,
+    pub user_id: i64,
     #[serde(default)]
     pub description: Option<String>,
     #[serde(default)]
@@ -1036,11 +1035,11 @@ pub struct FunUserCreateExpertProfileRespRow {
 impl DatabaseRequest for FunUserCreateExpertProfileReq {
     type ResponseRow = FunUserCreateExpertProfileRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_create_expert_profile(a_name => $1::varchar, a_description => $2::varchar, a_social_media => $3::varchar);"
+        "SELECT * FROM api.fun_user_create_expert_profile(a_user_id => $1::bigint, a_description => $2::varchar, a_social_media => $3::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
-            &self.name as &(dyn ToSql + Sync),
+            &self.user_id as &(dyn ToSql + Sync),
             &self.description as &(dyn ToSql + Sync),
             &self.social_media as &(dyn ToSql + Sync),
         ]
@@ -1057,8 +1056,6 @@ impl DatabaseRequest for FunUserCreateExpertProfileReq {
 pub struct FunUserUpdateExpertProfileReq {
     pub expert_id: i64,
     #[serde(default)]
-    pub name: Option<String>,
-    #[serde(default)]
     pub description: Option<String>,
     #[serde(default)]
     pub social_media: Option<String>,
@@ -1070,12 +1067,11 @@ pub struct FunUserUpdateExpertProfileRespRow {}
 impl DatabaseRequest for FunUserUpdateExpertProfileReq {
     type ResponseRow = FunUserUpdateExpertProfileRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_update_expert_profile(a_expert_id => $1::bigint, a_name => $2::varchar, a_description => $3::varchar, a_social_media => $4::varchar);"
+        "SELECT * FROM api.fun_user_update_expert_profile(a_expert_id => $1::bigint, a_description => $2::varchar, a_social_media => $3::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
             &self.expert_id as &(dyn ToSql + Sync),
-            &self.name as &(dyn ToSql + Sync),
             &self.description as &(dyn ToSql + Sync),
             &self.social_media as &(dyn ToSql + Sync),
         ]
@@ -1789,25 +1785,25 @@ impl DatabaseRequest for FunAdminSetBlockUserReq {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunAdminApproveUserBecomeAdminReq {
+pub struct FunAdminApproveUserBecomeExpertReq {
     pub user_id: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunAdminApproveUserBecomeAdminRespRow {
+pub struct FunAdminApproveUserBecomeExpertRespRow {
     pub success: bool,
 }
 
 #[allow(unused_variables)]
-impl DatabaseRequest for FunAdminApproveUserBecomeAdminReq {
-    type ResponseRow = FunAdminApproveUserBecomeAdminRespRow;
+impl DatabaseRequest for FunAdminApproveUserBecomeExpertReq {
+    type ResponseRow = FunAdminApproveUserBecomeExpertRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_admin_approve_user_become_admin(a_user_id => $1::bigint);"
+        "SELECT * FROM api.fun_admin_approve_user_become_expert(a_user_id => $1::bigint);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![&self.user_id as &(dyn ToSql + Sync)]
     }
-    fn parse_row(&self, row: Row) -> Result<FunAdminApproveUserBecomeAdminRespRow> {
-        let r = FunAdminApproveUserBecomeAdminRespRow {
+    fn parse_row(&self, row: Row) -> Result<FunAdminApproveUserBecomeExpertRespRow> {
+        let r = FunAdminApproveUserBecomeExpertRespRow {
             success: row.try_get(0)?,
         };
         Ok(r)
@@ -1815,29 +1811,25 @@ impl DatabaseRequest for FunAdminApproveUserBecomeAdminReq {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunAdminRejectUserBecomeAdminReq {
-    pub admin_user_id: i64,
+pub struct FunAdminRejectUserBecomeExpertReq {
     pub user_id: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunAdminRejectUserBecomeAdminRespRow {
+pub struct FunAdminRejectUserBecomeExpertRespRow {
     pub success: bool,
 }
 
 #[allow(unused_variables)]
-impl DatabaseRequest for FunAdminRejectUserBecomeAdminReq {
-    type ResponseRow = FunAdminRejectUserBecomeAdminRespRow;
+impl DatabaseRequest for FunAdminRejectUserBecomeExpertReq {
+    type ResponseRow = FunAdminRejectUserBecomeExpertRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_admin_reject_user_become_admin(a_admin_user_id => $1::bigint, a_user_id => $2::bigint);"
+        "SELECT * FROM api.fun_admin_reject_user_become_expert(a_user_id => $1::bigint);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
-        vec![
-            &self.admin_user_id as &(dyn ToSql + Sync),
-            &self.user_id as &(dyn ToSql + Sync),
-        ]
+        vec![&self.user_id as &(dyn ToSql + Sync)]
     }
-    fn parse_row(&self, row: Row) -> Result<FunAdminRejectUserBecomeAdminRespRow> {
-        let r = FunAdminRejectUserBecomeAdminRespRow {
+    fn parse_row(&self, row: Row) -> Result<FunAdminRejectUserBecomeExpertRespRow> {
+        let r = FunAdminRejectUserBecomeExpertRespRow {
             success: row.try_get(0)?,
         };
         Ok(r)
