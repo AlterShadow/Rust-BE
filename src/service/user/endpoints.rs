@@ -282,20 +282,20 @@ pub fn endpoint_user_list_back_strategy_history() -> EndpointSchema {
     )
 }
 
-// pub fn endpoint_user_exit_strategy() -> EndpointSchema {
-//     EndpointSchema::new(
-//         "UserExitStrategy",
-//         20110,
-//         vec![
-//             Field::new("strategy_id", Type::BigInt),
-//             Field::new("quantity", Type::String),
-//         ],
-//         vec![
-//             Field::new("success", Type::Boolean),
-//             Field::new("transaction_hash", Type::String),
-//         ],
-//     )
-// }
+pub fn endpoint_user_exit_strategy() -> EndpointSchema {
+    EndpointSchema::new(
+        "UserExitStrategy",
+        20110,
+        vec![
+            Field::new("strategy_id", Type::BigInt),
+            Field::new("quantity", Type::String),
+        ],
+        vec![
+            Field::new("success", Type::Boolean),
+            Field::new("transaction_hash", Type::String),
+        ],
+    )
+}
 
 pub fn endpoint_user_list_exit_strategy_history() -> EndpointSchema {
     EndpointSchema::new(
@@ -687,6 +687,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
         endpoint_user_update_expert_profile(),
         endpoint_user_update_user_profile(),
         endpoint_user_back_strategy(),
+        endpoint_user_exit_strategy(),
         endpoint_user_request_refund(),
         endpoint_user_list_backed_strategies(),
         endpoint_user_list_back_strategy_history(),
