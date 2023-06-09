@@ -2478,7 +2478,7 @@
         },
         {
           "name": "AdminListPendingExpertApplications",
-          "code": 20240,
+          "code": 30060,
           "parameters": [],
           "returns": [
             {
@@ -2530,7 +2530,7 @@
         },
         {
           "name": "AdminApproveUserBecomeExpert",
-          "code": 20230,
+          "code": 30040,
           "parameters": [
             {
               "name": "user_id",
@@ -2549,7 +2549,7 @@
         },
         {
           "name": "AdminRejectUserBecomeExpert",
-          "code": 20231,
+          "code": 30050,
           "parameters": [
             {
               "name": "user_id",

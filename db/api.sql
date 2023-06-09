@@ -369,9 +369,8 @@ BEGIN
                           (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_strategy_history AS h WHERE fkey_strategy_id = a.pkey_id) AS backers,
                           a.risk_score as risk_score,
                           a.aum as aum,
-                          EXISTS(b.pkey_id) as followed
-                 FROM tbl.strategy AS a 
-                    LEFT JOIN tbl.user_follow_strategy AS b ON fkey_strategy_id = a.pkey_id AND fkey_user_id = a_user_id
+                          EXISTS(SELECT * FROM tbl.user_follow_strategy AS b ON b.fkey_strategy_id = a.pkey_id AND b.fkey_user_id = a_user_id) as followed
+                 FROM tbl.strategy AS a
                     ;
 END
             

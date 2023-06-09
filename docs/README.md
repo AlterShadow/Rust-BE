@@ -63,9 +63,9 @@ ID: 3
 |30010|AdminListUsers|limit, offset, user_id, address, username, email, role|users||
 |30020|AdminSetUserRole|user_id, role|||
 |30030|AdminSetBlockUser|user_id, blocked|||
-|20240|AdminListPendingExpertApplications||users|Admin approves a user to become an expert|
-|20230|AdminApproveUserBecomeExpert|user_id|success|Admin approves a user to become an expert|
-|20231|AdminRejectUserBecomeExpert|user_id|success|Admin approves a user to become an expert|
+|30060|AdminListPendingExpertApplications||users|Admin approves a user to become an expert|
+|30040|AdminApproveUserBecomeExpert|user_id|success|Admin approves a user to become an expert|
+|30050|AdminRejectUserBecomeExpert|user_id|success|Admin approves a user to become an expert|
 
 # watcher Server
 ID: 4

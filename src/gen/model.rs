@@ -364,13 +364,13 @@ pub enum EnumEndpoint {
     AdminSetBlockUser = 30030,
     ///
     #[postgres(name = "AdminListPendingExpertApplications")]
-    AdminListPendingExpertApplications = 20240,
+    AdminListPendingExpertApplications = 30060,
     ///
     #[postgres(name = "AdminApproveUserBecomeExpert")]
-    AdminApproveUserBecomeExpert = 20230,
+    AdminApproveUserBecomeExpert = 30040,
     ///
     #[postgres(name = "AdminRejectUserBecomeExpert")]
-    AdminRejectUserBecomeExpert = 20231,
+    AdminRejectUserBecomeExpert = 30050,
 }
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -4381,10 +4381,10 @@ impl WsResponse for AdminSetBlockUserResponse {
 
 impl WsRequest for AdminListPendingExpertApplicationsRequest {
     type Response = AdminListPendingExpertApplicationsResponse;
-    const METHOD_ID: u32 = 20240;
+    const METHOD_ID: u32 = 30060;
     const SCHEMA: &'static str = r#"{
   "name": "AdminListPendingExpertApplications",
-  "code": 20240,
+  "code": 30060,
   "parameters": [],
   "returns": [
     {
@@ -4441,10 +4441,10 @@ impl WsResponse for AdminListPendingExpertApplicationsResponse {
 
 impl WsRequest for AdminApproveUserBecomeExpertRequest {
     type Response = AdminApproveUserBecomeExpertResponse;
-    const METHOD_ID: u32 = 20230;
+    const METHOD_ID: u32 = 30040;
     const SCHEMA: &'static str = r#"{
   "name": "AdminApproveUserBecomeExpert",
-  "code": 20230,
+  "code": 30040,
   "parameters": [
     {
       "name": "user_id",
@@ -4468,10 +4468,10 @@ impl WsResponse for AdminApproveUserBecomeExpertResponse {
 
 impl WsRequest for AdminRejectUserBecomeExpertRequest {
     type Response = AdminRejectUserBecomeExpertResponse;
-    const METHOD_ID: u32 = 20231;
+    const METHOD_ID: u32 = 30050;
     const SCHEMA: &'static str = r#"{
   "name": "AdminRejectUserBecomeExpert",
-  "code": 20231,
+  "code": 30050,
   "parameters": [
     {
       "name": "user_id",
