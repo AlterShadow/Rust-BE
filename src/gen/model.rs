@@ -952,6 +952,7 @@ pub struct ListStrategiesRow {
     pub backers: i32,
     pub risk_score: f64,
     pub aum: f64,
+    pub followed: bool,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1825,6 +1826,10 @@ impl WsRequest for UserListFollowedStrategiesRequest {
             {
               "name": "aum",
               "ty": "Numeric"
+            },
+            {
+              "name": "followed",
+              "ty": "Boolean"
             }
           ]
         }
@@ -1912,6 +1917,10 @@ impl WsRequest for UserListStrategiesRequest {
             {
               "name": "aum",
               "ty": "Numeric"
+            },
+            {
+              "name": "followed",
+              "ty": "Boolean"
             }
           ]
         }
@@ -1972,6 +1981,10 @@ impl WsRequest for UserListTopPerformingStrategiesRequest {
             {
               "name": "aum",
               "ty": "Numeric"
+            },
+            {
+              "name": "followed",
+              "ty": "Boolean"
             }
           ]
         }
@@ -2582,6 +2595,10 @@ impl WsRequest for UserListBackedStrategiesRequest {
             {
               "name": "aum",
               "ty": "Numeric"
+            },
+            {
+              "name": "followed",
+              "ty": "Boolean"
             }
           ]
         }
@@ -3196,6 +3213,10 @@ impl WsRequest for UserGetExpertProfileRequest {
             {
               "name": "aum",
               "ty": "Numeric"
+            },
+            {
+              "name": "followed",
+              "ty": "Boolean"
             }
           ]
         }
@@ -3347,6 +3368,10 @@ impl WsRequest for UserGetUserProfileRequest {
             {
               "name": "aum",
               "ty": "Numeric"
+            },
+            {
+              "name": "followed",
+              "ty": "Boolean"
             }
           ]
         }
@@ -3389,6 +3414,10 @@ impl WsRequest for UserGetUserProfileRequest {
             {
               "name": "aum",
               "ty": "Numeric"
+            },
+            {
+              "name": "followed",
+              "ty": "Boolean"
             }
           ]
         }

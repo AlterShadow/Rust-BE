@@ -101,6 +101,7 @@ impl RequestHandler for MethodUserListFollowedStrategies {
                         backers: x.backers as _,
                         risk_score: x.risk_score,
                         aum: x.aum,
+                        followed: x.followed,
                     })
                     .collect(),
             })
@@ -137,6 +138,7 @@ impl RequestHandler for MethodUserListStrategies {
                         backers: x.backers as _,
                         risk_score: x.risk_score,
                         aum: x.aum,
+                        followed: x.followed,
                     })
                     .collect(),
             })
@@ -173,6 +175,7 @@ impl RequestHandler for MethodUserListTopPerformingStrategies {
                         backers: x.backers as _,
                         risk_score: x.risk_score,
                         aum: x.aum,
+                        followed: x.followed,
                     })
                     .collect(),
             })
@@ -420,6 +423,7 @@ impl RequestHandler for MethodUserListBackedStrategies {
                         backers: x.backers,
                         risk_score: x.risk_score,
                         aum: x.aum,
+                        followed: true,
                     })
                     .collect(),
             })

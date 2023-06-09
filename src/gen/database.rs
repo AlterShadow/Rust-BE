@@ -309,6 +309,7 @@ pub struct FunUserListFollowedStrategiesRespRow {
     pub backers: i64,
     pub risk_score: f64,
     pub aum: f64,
+    pub followed: bool,
 }
 
 #[allow(unused_variables)]
@@ -330,6 +331,7 @@ impl DatabaseRequest for FunUserListFollowedStrategiesReq {
             backers: row.try_get(5)?,
             risk_score: row.try_get(6)?,
             aum: row.try_get(7)?,
+            followed: row.try_get(8)?,
         };
         Ok(r)
     }
@@ -347,6 +349,7 @@ pub struct FunUserListStrategiesRespRow {
     pub backers: i64,
     pub risk_score: f64,
     pub aum: f64,
+    pub followed: bool,
 }
 
 #[allow(unused_variables)]
@@ -368,6 +371,7 @@ impl DatabaseRequest for FunUserListStrategiesReq {
             backers: row.try_get(5)?,
             risk_score: row.try_get(6)?,
             aum: row.try_get(7)?,
+            followed: row.try_get(8)?,
         };
         Ok(r)
     }

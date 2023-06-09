@@ -22,6 +22,7 @@ fn list_strategies_datatable() -> Type {
             Field::new("backers", Type::Int),
             Field::new("risk_score", Type::Numeric),
             Field::new("aum", Type::Numeric),
+            Field::new("followed", Type::Boolean),
         ],
     )
 }

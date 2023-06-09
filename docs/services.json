@@ -261,6 +261,10 @@
                     {
                       "name": "aum",
                       "ty": "Numeric"
+                    },
+                    {
+                      "name": "followed",
+                      "ty": "Boolean"
                     }
                   ]
                 }
@@ -332,6 +336,10 @@
                     {
                       "name": "aum",
                       "ty": "Numeric"
+                    },
+                    {
+                      "name": "followed",
+                      "ty": "Boolean"
                     }
                   ]
                 }
@@ -384,6 +392,10 @@
                     {
                       "name": "aum",
                       "ty": "Numeric"
+                    },
+                    {
+                      "name": "followed",
+                      "ty": "Boolean"
                     }
                   ]
                 }
@@ -914,6 +926,10 @@
                     {
                       "name": "aum",
                       "ty": "Numeric"
+                    },
+                    {
+                      "name": "followed",
+                      "ty": "Boolean"
                     }
                   ]
                 }
@@ -1456,6 +1472,10 @@
                     {
                       "name": "aum",
                       "ty": "Numeric"
+                    },
+                    {
+                      "name": "followed",
+                      "ty": "Boolean"
                     }
                   ]
                 }
@@ -1599,6 +1619,10 @@
                     {
                       "name": "aum",
                       "ty": "Numeric"
+                    },
+                    {
+                      "name": "followed",
+                      "ty": "Boolean"
                     }
                   ]
                 }
@@ -1641,6 +1665,10 @@
                     {
                       "name": "aum",
                       "ty": "Numeric"
+                    },
+                    {
+                      "name": "followed",
+                      "ty": "Boolean"
                     }
                   ]
                 }

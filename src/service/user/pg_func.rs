@@ -82,6 +82,7 @@ END
                 Field::new("backers", Type::BigInt),
                 Field::new("risk_score", Type::Numeric),
                 Field::new("aum", Type::Numeric),
+                Field::new("followed", Type::Boolean),
             ],
             r#"
 BEGIN
@@ -92,7 +93,8 @@ BEGIN
                           (SELECT COUNT(*) FROM tbl.user_follow_strategy WHERE fkey_strategy_id = a.pkey_id AND unfollowed = FALSE) AS followers,
                           (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_strategy_history AS h WHERE fkey_strategy_id = a.pkey_id) AS backers,
                           a.risk_score as risk_score,
-                          a.aum as aum
+                          a.aum as aum,
+                          TRUE as followed
                  FROM tbl.strategy AS a 
                      JOIN tbl.user_follow_strategy ON fkey_strategy_id = a.pkey_id WHERE fkey_user_id = a_user_id AND unfollowed = FALSE
                     ;
@@ -111,6 +113,7 @@ END
                 Field::new("backers", Type::BigInt),
                 Field::new("risk_score", Type::Numeric),
                 Field::new("aum", Type::Numeric),
+                Field::new("followed", Type::Boolean),
             ],
             r#"
 BEGIN
@@ -122,8 +125,10 @@ BEGIN
                           (SELECT COUNT(*) FROM tbl.user_follow_strategy WHERE fkey_strategy_id = a.pkey_id AND unfollowed = FALSE) AS followers,
                           (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_strategy_history AS h WHERE fkey_strategy_id = a.pkey_id) AS backers,
                           a.risk_score as risk_score,
-                          a.aum as aum
+                          a.aum as aum,
+                          EXISTS(b.pkey_id) as followed
                  FROM tbl.strategy AS a 
+                    LEFT JOIN tbl.user_follow_strategy AS b ON fkey_strategy_id = a.pkey_id AND fkey_user_id = a_user_id
                     ;
 END
             "#,
