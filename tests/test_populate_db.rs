@@ -6,14 +6,16 @@ use eyre::*;
 use gen::model::*;
 use lib::database::drop_and_recreate_database;
 use lib::log::{setup_logs, LogLevel};
+use tokio_tungstenite::tungstenite::client;
 use tools::*;
 use tracing::*;
 
+const ADMIN_KEY: (&str, &str) = (
+    "d34ffbe32eea1de01e30f5cccb3f9863b07c1ac600c09bae80370fc14c899913",
+    "0xDE17763e1F8785331720C419a159267780018a8A",
+);
+
 const KEYS: &[(&str, &str)] = &[
-    (
-        "d34ffbe32eea1de01e30f5cccb3f9863b07c1ac600c09bae80370fc14c899913",
-        "0xDE17763e1F8785331720C419a159267780018a8A",
-    ),
     (
         "cdfacb4a0e4798afde43ec61101ea15d23eda595dde504cec6b411f51b864168",
         "0x3feb82EbA5c8eFdF435A1f5066972056568b447e",
@@ -192,6 +194,9 @@ pub fn get_user_key(i: usize) -> Option<Secp256k1SecretKey> {
     KEYS.get(i)
         .map(|(privkey, _)| Secp256k1SecretKey::from_str(privkey).unwrap())
 }
+pub fn get_admin_key() -> Secp256k1SecretKey {
+    Secp256k1SecretKey::from_str(ADMIN_KEY.0).unwrap()
+}
 #[tokio::test]
 async fn test_drop_and_recreate_database() -> Result<()> {
     let _ = setup_logs(LogLevel::Info);
@@ -202,12 +207,14 @@ async fn test_drop_and_recreate_database() -> Result<()> {
 #[tokio::test]
 async fn test_populate_users() -> Result<()> {
     let _ = setup_logs(LogLevel::Info);
+    let admin_signer = get_admin_key();
+    signup(format!("dev-{}", 0), &admin_signer.key).await?;
+
     for i in 0..KEYS.len() {
         let signer = get_user_key(i).unwrap();
 
         signup(format!("user-{}", i), &signer.key).await?;
     }
-
     Ok(())
 }
 #[tokio::test]
@@ -227,6 +234,37 @@ async fn test_populate_user_registered_wallets() -> Result<()> {
                 message_signature: sig,
             })
             .await?;
+    }
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_populate_user_apply_become_admins() -> Result<()> {
+    let _ = setup_logs(LogLevel::Info);
+    let admin_signer = get_admin_key();
+    let mut admin_client = connect_user("dev-0", &admin_signer.key).await?;
+    for i in 0..KEYS.len() / 2 {
+        let signer = get_user_key(i).unwrap();
+
+        let (mut client, login_info) = connect_user_ext(format!("user-{}", i), &signer.key).await?;
+        let (txt, sig) =
+            get_signed_text(format!("User register wallet request {}", i), &signer.key)?;
+        let resp = client
+            .request(UserRegisterWalletRequest {
+                blockchain: EnumBlockChain::LocalNet,
+                wallet_address: format!("{:?}", signer.address),
+                message_to_sign: txt,
+                message_signature: sig,
+            })
+            .await?;
+        if i % 2 == 0 {
+            admin_client
+                .request(AdminApproveUserBecomeExpertRequest {
+                    user_id: login_info.user_id,
+                })
+                .await?;
+        }
     }
 
     Ok(())

@@ -87,11 +87,11 @@ END;
         ),
         ProceduralFunction::new(
             "fun_admin_approve_user_become_expert",
-            vec![Field::new("user_id", Type::BigInt)],
+            vec![Field::new("user_public_id", Type::BigInt)],
             vec![Field::new("success", Type::Boolean)],
             r#"
 BEGIN
-    UPDATE tbl.expert_profile SET pending_expert = FALSE, approved_expert = TRUE WHERE pkey_id = a_user_id;
+    UPDATE tbl.expert_profile SET pending_expert = FALSE, approved_expert = TRUE WHERE public_id = a_user_public_id;
     UPDATE tbl.user SET role = 'expert' WHERE role = 'user';
     RETURN QUERY SELECT TRUE;
 
@@ -100,11 +100,11 @@ END
         ),
         ProceduralFunction::new(
             "fun_admin_reject_user_become_expert",
-            vec![Field::new("user_id", Type::BigInt)],
+            vec![Field::new("user_public_id", Type::BigInt)],
             vec![Field::new("success", Type::Boolean)],
             r#"
 BEGIN
-    UPDATE tbl.expert_profile SET pending_expert = FALSE, approved_expert = FALSE WHERE pkey_id = a_user_id;
+    UPDATE tbl.expert_profile SET pending_expert = FALSE, approved_expert = FALSE WHERE public_id = a_user_public_id;
     RETURN QUERY SELECT TRUE;
 END
 "#,
@@ -113,7 +113,7 @@ END
             "fun_admin_list_pending_user_expert_applications",
             vec![],
             vec![
-                Field::new("user_id", Type::BigInt),
+                Field::new("user_public_id", Type::BigInt),
                 Field::new("name", Type::optional(Type::String)),
                 Field::new("follower_count", Type::BigInt),
                 Field::new("description", Type::String),
@@ -121,10 +121,14 @@ END
                 Field::new("risk_score", Type::Numeric),
                 Field::new("reputation_score", Type::Numeric),
                 Field::new("aum", Type::Numeric),
+                Field::new("pending_expert", Type::Boolean),
+                Field::new("approved_expert", Type::Boolean),
+                Field::new("joined_at", Type::BigInt),
+                Field::new("request_at", Type::BigInt),
             ],
             r#"
 BEGIN
-    RETURN QUERY SELECT a.pkey_id                  AS expert_id,
+    RETURN QUERY SELECT a.public_id                AS user_public_id,
                         a.username                 AS name,
                         (SELECT COUNT(*)
                          FROM tbl.user_follow_expert
@@ -134,7 +138,11 @@ BEGIN
                         b.social_media                AS social_media,
                         b.risk_score      AS risk_score,
                         b.reputation_score      AS reputation_score,
-                        b.aum      AS aum
+                        b.aum      AS aum,
+                        b.pending_expert            AS pending_expert,
+                        b.approved_expert           AS approved_expert,
+                        a.created_at                AS joined_at,
+                        b.request_at                AS request_at
                  FROM tbl."user" AS a
                     JOIN tbl.expert_profile AS b ON b.fkey_user_id = a.pkey_id
                  WHERE b.pending_expert = TRUE;

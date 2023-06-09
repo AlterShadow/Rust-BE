@@ -1792,7 +1792,7 @@ impl DatabaseRequest for FunAdminSetBlockUserReq {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAdminApproveUserBecomeExpertReq {
-    pub user_id: i64,
+    pub user_public_id: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAdminApproveUserBecomeExpertRespRow {
@@ -1803,10 +1803,10 @@ pub struct FunAdminApproveUserBecomeExpertRespRow {
 impl DatabaseRequest for FunAdminApproveUserBecomeExpertReq {
     type ResponseRow = FunAdminApproveUserBecomeExpertRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_admin_approve_user_become_expert(a_user_id => $1::bigint);"
+        "SELECT * FROM api.fun_admin_approve_user_become_expert(a_user_public_id => $1::bigint);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
-        vec![&self.user_id as &(dyn ToSql + Sync)]
+        vec![&self.user_public_id as &(dyn ToSql + Sync)]
     }
     fn parse_row(&self, row: Row) -> Result<FunAdminApproveUserBecomeExpertRespRow> {
         let r = FunAdminApproveUserBecomeExpertRespRow {
@@ -1818,7 +1818,7 @@ impl DatabaseRequest for FunAdminApproveUserBecomeExpertReq {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAdminRejectUserBecomeExpertReq {
-    pub user_id: i64,
+    pub user_public_id: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAdminRejectUserBecomeExpertRespRow {
@@ -1829,10 +1829,10 @@ pub struct FunAdminRejectUserBecomeExpertRespRow {
 impl DatabaseRequest for FunAdminRejectUserBecomeExpertReq {
     type ResponseRow = FunAdminRejectUserBecomeExpertRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_admin_reject_user_become_expert(a_user_id => $1::bigint);"
+        "SELECT * FROM api.fun_admin_reject_user_become_expert(a_user_public_id => $1::bigint);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
-        vec![&self.user_id as &(dyn ToSql + Sync)]
+        vec![&self.user_public_id as &(dyn ToSql + Sync)]
     }
     fn parse_row(&self, row: Row) -> Result<FunAdminRejectUserBecomeExpertRespRow> {
         let r = FunAdminRejectUserBecomeExpertRespRow {
@@ -1846,7 +1846,7 @@ impl DatabaseRequest for FunAdminRejectUserBecomeExpertReq {
 pub struct FunAdminListPendingUserExpertApplicationsReq {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAdminListPendingUserExpertApplicationsRespRow {
-    pub user_id: i64,
+    pub user_public_id: i64,
     #[serde(default)]
     pub name: Option<String>,
     pub follower_count: i64,
@@ -1855,6 +1855,10 @@ pub struct FunAdminListPendingUserExpertApplicationsRespRow {
     pub risk_score: f64,
     pub reputation_score: f64,
     pub aum: f64,
+    pub pending_expert: bool,
+    pub approved_expert: bool,
+    pub joined_at: i64,
+    pub request_at: i64,
 }
 
 #[allow(unused_variables)]
@@ -1868,7 +1872,7 @@ impl DatabaseRequest for FunAdminListPendingUserExpertApplicationsReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunAdminListPendingUserExpertApplicationsRespRow> {
         let r = FunAdminListPendingUserExpertApplicationsRespRow {
-            user_id: row.try_get(0)?,
+            user_public_id: row.try_get(0)?,
             name: row.try_get(1)?,
             follower_count: row.try_get(2)?,
             description: row.try_get(3)?,
@@ -1876,6 +1880,10 @@ impl DatabaseRequest for FunAdminListPendingUserExpertApplicationsReq {
             risk_score: row.try_get(5)?,
             reputation_score: row.try_get(6)?,
             aum: row.try_get(7)?,
+            pending_expert: row.try_get(8)?,
+            approved_expert: row.try_get(9)?,
+            joined_at: row.try_get(10)?,
+            request_at: row.try_get(11)?,
         };
         Ok(r)
     }

@@ -123,7 +123,7 @@ impl RequestHandler for MethodAdminApproveUserBecomeExpert {
 
             let ret = db
                 .execute(FunAdminApproveUserBecomeExpertReq {
-                    user_id: req.user_id,
+                    user_public_id: req.user_id,
                 })
                 .await?;
 
@@ -153,7 +153,7 @@ impl RequestHandler for MethodAdminRejectUserBecomeExpert {
 
             let ret = db
                 .execute(FunAdminRejectUserBecomeExpertReq {
-                    user_id: req.user_id,
+                    user_public_id: req.user_id,
                 })
                 .await?;
 
@@ -190,7 +190,7 @@ impl RequestHandler for MethodAdminListPendingExpertApplications {
                     .into_rows()
                     .into_iter()
                     .map(|x| ListPendingExpertApplicationsRow {
-                        user_id: x.user_id,
+                        user_id: x.user_public_id,
                         name: x.name.unwrap_or_default(),
                         follower_count: x.follower_count as _,
                         description: x.description,

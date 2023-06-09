@@ -1283,7 +1283,7 @@ END;
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_admin_approve_user_become_expert(a_user_id bigint)
+CREATE OR REPLACE FUNCTION api.fun_admin_approve_user_become_expert(a_user_public_id bigint)
 RETURNS table (
     "success" boolean
 )
@@ -1291,7 +1291,7 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    UPDATE tbl.expert_profile SET pending_expert = FALSE, approved_expert = TRUE WHERE pkey_id = a_user_id;
+    UPDATE tbl.expert_profile SET pending_expert = FALSE, approved_expert = TRUE WHERE public_id = a_user_public_id;
     UPDATE tbl.user SET role = 'expert' WHERE role = 'user';
     RETURN QUERY SELECT TRUE;
 
@@ -1300,7 +1300,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_admin_reject_user_become_expert(a_user_id bigint)
+CREATE OR REPLACE FUNCTION api.fun_admin_reject_user_become_expert(a_user_public_id bigint)
 RETURNS table (
     "success" boolean
 )
@@ -1308,7 +1308,7 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    UPDATE tbl.expert_profile SET pending_expert = FALSE, approved_expert = FALSE WHERE pkey_id = a_user_id;
+    UPDATE tbl.expert_profile SET pending_expert = FALSE, approved_expert = FALSE WHERE public_id = a_user_public_id;
     RETURN QUERY SELECT TRUE;
 END
 
@@ -1317,20 +1317,24 @@ $$;
 
 CREATE OR REPLACE FUNCTION api.fun_admin_list_pending_user_expert_applications()
 RETURNS table (
-    "user_id" bigint,
+    "user_public_id" bigint,
     "name" varchar,
     "follower_count" bigint,
     "description" varchar,
     "social_media" varchar,
     "risk_score" double precision,
     "reputation_score" double precision,
-    "aum" double precision
+    "aum" double precision,
+    "pending_expert" boolean,
+    "approved_expert" boolean,
+    "joined_at" bigint,
+    "request_at" bigint
 )
 LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY SELECT a.pkey_id                  AS expert_id,
+    RETURN QUERY SELECT a.public_id                AS user_public_id,
                         a.username                 AS name,
                         (SELECT COUNT(*)
                          FROM tbl.user_follow_expert
@@ -1340,7 +1344,11 @@ BEGIN
                         b.social_media                AS social_media,
                         b.risk_score      AS risk_score,
                         b.reputation_score      AS reputation_score,
-                        b.aum      AS aum
+                        b.aum      AS aum,
+                        b.pending_expert            AS pending_expert,
+                        b.approved_expert           AS approved_expert,
+                        a.created_at                AS joined_at,
+                        b.request_at                AS request_at
                  FROM tbl."user" AS a
                     JOIN tbl.expert_profile AS b ON b.fkey_user_id = a.pkey_id
                  WHERE b.pending_expert = TRUE;
