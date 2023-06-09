@@ -60,7 +60,7 @@ pub fn endpoint_admin_set_block_user() -> EndpointSchema {
 pub fn endpoint_admin_approve_user_become_expert() -> EndpointSchema {
     EndpointSchema::new(
         "AdminApproveUserBecomeExpert",
-        20230,
+        30040,
         vec![Field::new("user_id", Type::BigInt)],
         vec![Field::new("success", Type::Boolean)],
     )
@@ -69,7 +69,7 @@ pub fn endpoint_admin_approve_user_become_expert() -> EndpointSchema {
 pub fn endpoint_admin_reject_user_become_expert() -> EndpointSchema {
     EndpointSchema::new(
         "AdminRejectUserBecomeExpert",
-        20231,
+        30050,
         vec![Field::new("user_id", Type::BigInt)],
         vec![Field::new("success", Type::Boolean)],
     )
@@ -78,7 +78,7 @@ pub fn endpoint_admin_reject_user_become_expert() -> EndpointSchema {
 pub fn endpoint_admin_list_pending_expert_applications() -> EndpointSchema {
     EndpointSchema::new(
         "AdminListPendingExpertApplications",
-        20240,
+        30060,
         vec![],
         vec![Field::new(
             "users",
