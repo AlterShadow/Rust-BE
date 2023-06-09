@@ -830,7 +830,7 @@ END
             ],
             r#"
 BEGIN
-    RETURN QUERY SELECT pkey_id, blockchain, address FROM tbl.user_registered_wallet WHERE fkey_user_id = a_user_id;
+    RETURN QUERY SELECT a.pkey_id, a.blockchain, a.address FROM tbl.user_registered_wallet AS a WHERE fkey_user_id = a_user_id;
 END
 "#,
         ),
