@@ -337,14 +337,14 @@ BEGIN
                           a.aum as aum,
                           TRUE as followed
                  FROM tbl.strategy AS a 
-                     JOIN tbl.user_follow_strategy ON fkey_strategy_id = a.pkey_id WHERE fkey_user_id = a_user_id AND unfollowed = FALSE
+                     JOIN tbl.user_follow_strategy AS b ON b.fkey_strategy_id = a.pkey_id WHERE b.fkey_user_id = a_user_id AND unfollowed = FALSE
                     ;
 END
             
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_list_strategies()
+CREATE OR REPLACE FUNCTION api.fun_user_list_strategies(a_user_id bigint)
 RETURNS table (
     "strategy_id" bigint,
     "strategy_name" varchar,
@@ -360,7 +360,6 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-
     RETURN QUERY SELECT a.pkey_id AS strategy_id,
                           a.name AS strategy_name,
                           a.description AS strategy_description,
@@ -369,9 +368,10 @@ BEGIN
                           (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_strategy_history AS h WHERE fkey_strategy_id = a.pkey_id) AS backers,
                           a.risk_score as risk_score,
                           a.aum as aum,
-                          EXISTS(SELECT * FROM tbl.user_follow_strategy AS b ON b.fkey_strategy_id = a.pkey_id AND b.fkey_user_id = a_user_id) as followed
+                          EXISTS(SELECT * FROM tbl.user_follow_strategy AS b WHERE b.fkey_strategy_id = a.pkey_id AND b.fkey_user_id = a_user_id) as followed
                  FROM tbl.strategy AS a
                     ;
+
 END
             
 $$;
@@ -804,7 +804,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_get_expert_profile(a_expert_id bigint DEFAULT NULL, a_user_id bigint DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_user_get_expert_profile(a_expert_id bigint)
 RETURNS table (
     "expert_id" bigint,
     "name" varchar,
@@ -819,10 +819,6 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    -- assert that either expert_id or user_id is provided
-    IF a_expert_id IS NULL AND a_user_id IS NULL THEN
-        RAISE EXCEPTION 'Either expert_id or user_id must be provided';
-    END IF;
     RETURN QUERY SELECT a.pkey_id AS expert_id,
                           b.username AS name,
                           (SELECT COUNT(*) FROM tbl.user_follow_expert WHERE fkey_expert_id = a.pkey_id AND unfollowed = FALSE) AS follower_count,
@@ -833,8 +829,39 @@ BEGIN
                           a.aum AS aum
                  FROM tbl.expert_profile AS a 
                  JOIN tbl.user AS b ON b.pkey_id = a.fkey_user_id
-                 WHERE a.pkey_id = a_expert_id 
-                 OR a.fkey_user_id = a_user_id;
+                 WHERE a.pkey_id = a_expert_id
+                 ;
+
+END
+
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_get_user_profile(a_user_id bigint)
+RETURNS table (
+    "expert_id" bigint,
+    "name" varchar,
+    "follower_count" bigint,
+    "description" varchar,
+    "social_media" varchar,
+    "risk_score" double precision,
+    "reputation_score" double precision,
+    "aum" double precision
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY SELECT   b.username AS name,
+                          (SELECT COUNT(*) FROM tbl.user_follow_expert WHERE fkey_expert_id = a.pkey_id AND unfollowed = FALSE) AS follower_count,
+                          a.description AS description,
+                          a.social_media AS social_media,
+                          a.risk_score AS risk_score,
+                          a.reputation_score AS reputation_score,
+                          a.aum AS aum
+                 FROM tbl.expert_profile AS a 
+                 RIGHT JOIN tbl.user AS b ON b.pkey_id = a.fkey_user_id
+                 WHERE a.fkey_user_id = a_user_id;
 
 END
 
@@ -1291,11 +1318,14 @@ RETURNS table (
 LANGUAGE plpgsql
 AS $$
     
-BEGIN
-    UPDATE tbl.expert_profile SET pending_expert = FALSE, approved_expert = TRUE WHERE public_id = a_user_public_id;
-    UPDATE tbl.user SET role = 'expert' WHERE role = 'user';
-    RETURN QUERY SELECT TRUE;
 
+DECLARE
+    _user_id bigint;
+BEGIN
+    SELECT pkey_id INTO _user_id FROM tbl.user WHERE public_id = a_user_public_id;
+    UPDATE tbl.expert_profile SET pending_expert = FALSE, approved_expert = TRUE WHERE fkey_user_id = _user_id;
+    UPDATE tbl.user SET role = 'expert' WHERE role = 'user' AND pkey_id = _user_id;
+    RETURN QUERY SELECT TRUE;
 END
 
 $$;
@@ -1308,8 +1338,12 @@ RETURNS table (
 LANGUAGE plpgsql
 AS $$
     
+
+DECLARE
+    _user_id bigint;
 BEGIN
-    UPDATE tbl.expert_profile SET pending_expert = FALSE, approved_expert = FALSE WHERE public_id = a_user_public_id;
+    SELECT pkey_id INTO _user_id FROM tbl.user WHERE public_id = a_user_public_id;
+    UPDATE tbl.expert_profile SET pending_expert = FALSE, approved_expert = FALSE WHERE fkey_user_id = _user_id;
     RETURN QUERY SELECT TRUE;
 END
 
@@ -1329,7 +1363,7 @@ RETURNS table (
     "pending_expert" boolean,
     "approved_expert" boolean,
     "joined_at" bigint,
-    "request_at" bigint
+    "requested_at" bigint
 )
 LANGUAGE plpgsql
 AS $$
@@ -1349,7 +1383,7 @@ BEGIN
                         b.pending_expert            AS pending_expert,
                         b.approved_expert           AS approved_expert,
                         a.created_at                AS joined_at,
-                        b.request_at                AS request_at
+                        b.requested_at                AS request_at
                  FROM tbl."user" AS a
                     JOIN tbl.expert_profile AS b ON b.fkey_user_id = a.pkey_id
                  WHERE b.pending_expert = TRUE;

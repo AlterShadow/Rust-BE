@@ -6,7 +6,6 @@ use eyre::*;
 use gen::model::*;
 use lib::database::drop_and_recreate_database;
 use lib::log::{setup_logs, LogLevel};
-use tokio_tungstenite::tungstenite::client;
 use tools::*;
 use tracing::*;
 

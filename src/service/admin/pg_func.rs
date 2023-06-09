@@ -90,11 +90,14 @@ END;
             vec![Field::new("user_public_id", Type::BigInt)],
             vec![Field::new("success", Type::Boolean)],
             r#"
-BEGIN
-    UPDATE tbl.expert_profile SET pending_expert = FALSE, approved_expert = TRUE WHERE public_id = a_user_public_id;
-    UPDATE tbl.user SET role = 'expert' WHERE role = 'user';
-    RETURN QUERY SELECT TRUE;
 
+DECLARE
+    _user_id bigint;
+BEGIN
+    SELECT pkey_id INTO _user_id FROM tbl.user WHERE public_id = a_user_public_id;
+    UPDATE tbl.expert_profile SET pending_expert = FALSE, approved_expert = TRUE WHERE fkey_user_id = _user_id;
+    UPDATE tbl.user SET role = 'expert' WHERE role = 'user' AND pkey_id = _user_id;
+    RETURN QUERY SELECT TRUE;
 END
 "#,
         ),
@@ -103,8 +106,12 @@ END
             vec![Field::new("user_public_id", Type::BigInt)],
             vec![Field::new("success", Type::Boolean)],
             r#"
+
+DECLARE
+    _user_id bigint;
 BEGIN
-    UPDATE tbl.expert_profile SET pending_expert = FALSE, approved_expert = FALSE WHERE public_id = a_user_public_id;
+    SELECT pkey_id INTO _user_id FROM tbl.user WHERE public_id = a_user_public_id;
+    UPDATE tbl.expert_profile SET pending_expert = FALSE, approved_expert = FALSE WHERE fkey_user_id = _user_id;
     RETURN QUERY SELECT TRUE;
 END
 "#,
@@ -123,8 +130,8 @@ END
                 Field::new("aum", Type::Numeric),
                 Field::new("pending_expert", Type::Boolean),
                 Field::new("approved_expert", Type::Boolean),
-                Field::new("joined_at", Type::BigInt),
-                Field::new("request_at", Type::BigInt),
+                Field::new("joined_at", Type::optional(Type::BigInt)),
+                Field::new("requested_at", Type::optional(Type::BigInt)),
             ],
             r#"
 BEGIN
@@ -142,7 +149,7 @@ BEGIN
                         b.pending_expert            AS pending_expert,
                         b.approved_expert           AS approved_expert,
                         a.created_at                AS joined_at,
-                        b.request_at                AS request_at
+                        b.requested_at                AS request_at
                  FROM tbl."user" AS a
                     JOIN tbl.expert_profile AS b ON b.fkey_user_id = a.pkey_id
                  WHERE b.pending_expert = TRUE;

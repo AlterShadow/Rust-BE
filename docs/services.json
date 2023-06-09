@@ -1614,10 +1614,6 @@
           ],
           "returns": [
             {
-              "name": "user_id",
-              "ty": "BigInt"
-            },
-            {
               "name": "name",
               "ty": "String"
             },

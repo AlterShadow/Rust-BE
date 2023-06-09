@@ -338,7 +338,9 @@ impl DatabaseRequest for FunUserListFollowedStrategiesReq {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunUserListStrategiesReq {}
+pub struct FunUserListStrategiesReq {
+    pub user_id: i64,
+}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserListStrategiesRespRow {
     pub strategy_id: i64,
@@ -356,10 +358,10 @@ pub struct FunUserListStrategiesRespRow {
 impl DatabaseRequest for FunUserListStrategiesReq {
     type ResponseRow = FunUserListStrategiesRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_list_strategies();"
+        "SELECT * FROM api.fun_user_list_strategies(a_user_id => $1::bigint);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
-        vec![]
+        vec![&self.user_id as &(dyn ToSql + Sync)]
     }
     fn parse_row(&self, row: Row) -> Result<FunUserListStrategiesRespRow> {
         let r = FunUserListStrategiesRespRow {
@@ -978,10 +980,7 @@ impl DatabaseRequest for FunUserListExpertsReq {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserGetExpertProfileReq {
-    #[serde(default)]
-    pub expert_id: Option<i64>,
-    #[serde(default)]
-    pub user_id: Option<i64>,
+    pub expert_id: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserGetExpertProfileRespRow {
@@ -999,16 +998,59 @@ pub struct FunUserGetExpertProfileRespRow {
 impl DatabaseRequest for FunUserGetExpertProfileReq {
     type ResponseRow = FunUserGetExpertProfileRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_get_expert_profile(a_expert_id => $1::bigint, a_user_id => $2::bigint);"
+        "SELECT * FROM api.fun_user_get_expert_profile(a_expert_id => $1::bigint);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
-        vec![
-            &self.expert_id as &(dyn ToSql + Sync),
-            &self.user_id as &(dyn ToSql + Sync),
-        ]
+        vec![&self.expert_id as &(dyn ToSql + Sync)]
     }
     fn parse_row(&self, row: Row) -> Result<FunUserGetExpertProfileRespRow> {
         let r = FunUserGetExpertProfileRespRow {
+            expert_id: row.try_get(0)?,
+            name: row.try_get(1)?,
+            follower_count: row.try_get(2)?,
+            description: row.try_get(3)?,
+            social_media: row.try_get(4)?,
+            risk_score: row.try_get(5)?,
+            reputation_score: row.try_get(6)?,
+            aum: row.try_get(7)?,
+        };
+        Ok(r)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserGetUserProfileReq {
+    pub user_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserGetUserProfileRespRow {
+    pub expert_id: i64,
+    pub name: String,
+    #[serde(default)]
+    pub follower_count: Option<i64>,
+    #[serde(default)]
+    pub description: Option<String>,
+    #[serde(default)]
+    pub social_media: Option<String>,
+    #[serde(default)]
+    pub risk_score: Option<f64>,
+    #[serde(default)]
+    pub reputation_score: Option<f64>,
+    #[serde(default)]
+    pub aum: Option<f64>,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunUserGetUserProfileReq {
+    type ResponseRow = FunUserGetUserProfileRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_get_user_profile(a_user_id => $1::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![&self.user_id as &(dyn ToSql + Sync)]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserGetUserProfileRespRow> {
+        let r = FunUserGetUserProfileRespRow {
             expert_id: row.try_get(0)?,
             name: row.try_get(1)?,
             follower_count: row.try_get(2)?,
@@ -1857,8 +1899,10 @@ pub struct FunAdminListPendingUserExpertApplicationsRespRow {
     pub aum: f64,
     pub pending_expert: bool,
     pub approved_expert: bool,
-    pub joined_at: i64,
-    pub request_at: i64,
+    #[serde(default)]
+    pub joined_at: Option<i64>,
+    #[serde(default)]
+    pub requested_at: Option<i64>,
 }
 
 #[allow(unused_variables)]
@@ -1883,7 +1927,7 @@ impl DatabaseRequest for FunAdminListPendingUserExpertApplicationsReq {
             pending_expert: row.try_get(8)?,
             approved_expert: row.try_get(9)?,
             joined_at: row.try_get(10)?,
-            request_at: row.try_get(11)?,
+            requested_at: row.try_get(11)?,
         };
         Ok(r)
     }

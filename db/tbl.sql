@@ -1,5 +1,5 @@
 -- Created by Vertabelo (http://vertabelo.com)
--- Last modification date: 2023-06-08 13:08:31.957
+-- Last modification date: 2023-06-09 16:04:56.145
 
 CREATE SCHEMA IF NOT EXISTS tbl;;
 
@@ -75,6 +75,7 @@ CREATE TABLE tbl.expert_profile (
     updated_at bigint  NOT NULL,
     created_at bigint  NOT NULL,
     approved_at bigint  NULL,
+    requested_at bigint  NULL,
     CONSTRAINT expert_profile_pk PRIMARY KEY (pkey_id)
 );
 

@@ -129,7 +129,11 @@ impl RequestHandler for MethodUserListStrategies {
         async move {
             ensure_user_role(ctx, EnumRole::User)?;
 
-            let ret = db.execute(FunUserListStrategiesReq {}).await?;
+            let ret = db
+                .execute(FunUserListStrategiesReq {
+                    user_id: ctx.user_id,
+                })
+                .await?;
             Ok(UserListStrategiesResponse {
                 strategies: ret
                     .into_iter()
@@ -170,7 +174,11 @@ impl RequestHandler for MethodUserListTopPerformingStrategies {
         async move {
             ensure_user_role(ctx, EnumRole::User)?;
 
-            let ret = db.execute(FunUserListStrategiesReq {}).await?;
+            let ret = db
+                .execute(FunUserListStrategiesReq {
+                    user_id: ctx.user_id,
+                })
+                .await?;
             Ok(UserListTopPerformingStrategiesResponse {
                 strategies: ret
                     .into_iter()
@@ -1052,8 +1060,7 @@ impl RequestHandler for MethodUserGetExpertProfile {
             ensure_user_role(ctx, EnumRole::User)?;
             let ret = db
                 .execute(FunUserGetExpertProfileReq {
-                    expert_id: Some(req.expert_id),
-                    user_id: None,
+                    expert_id: req.expert_id,
                 })
                 .await?
                 .into_result()
@@ -1088,9 +1095,8 @@ impl RequestHandler for MethodUserUpdateExpertProfile {
         async move {
             ensure_user_role(ctx, EnumRole::User)?;
             let expert = db
-                .execute(FunUserGetExpertProfileReq {
-                    expert_id: None,
-                    user_id: Some(ctx.user_id),
+                .execute(FunUserGetUserProfileReq {
+                    user_id: ctx.user_id,
                 })
                 .await?
                 .into_result();
@@ -1137,17 +1143,16 @@ impl RequestHandler for MethodUserUpdateUserProfile {
         async move {
             ensure_user_role(ctx, EnumRole::User)?;
             let expert = db
-                .execute(FunUserGetExpertProfileReq {
-                    expert_id: None,
-                    user_id: Some(ctx.user_id),
+                .execute(FunUserGetUserProfileReq {
+                    user_id: ctx.user_id,
                 })
                 .await?
                 .into_result();
             match expert {
-                Some(expert_id) => {
+                Some(resp) => {
                     let ret = db
                         .execute(FunUserUpdateExpertProfileReq {
-                            expert_id: expert_id.expert_id,
+                            expert_id: resp.expert_id,
                             description: req.description,
                             social_media: req.social_media,
                         })
@@ -1186,20 +1191,19 @@ impl RequestHandler for MethodUserGetUserProfile {
         async move {
             ensure_user_role(ctx, EnumRole::User)?;
             let ret = db
-                .execute(FunUserGetExpertProfileReq {
-                    expert_id: None,
-                    user_id: Some(ctx.user_id),
+                .execute(FunUserGetUserProfileReq {
+                    user_id: ctx.user_id,
                 })
                 .await?
                 .into_result()
-                .context("failed to get user profile")?;
+                .context("failed to get expert profile")?;
+
             // TODO: get followed experts, followed strategies, backed strategies
             Ok(UserGetUserProfileResponse {
-                user_id: ctx.user_id,
                 name: ret.name,
-                follower_count: ret.follower_count as _,
-                description: ret.description,
-                social_media: ret.social_media,
+                follower_count: ret.follower_count.unwrap_or_default() as _,
+                description: ret.description.unwrap_or_default(),
+                social_media: ret.social_media.unwrap_or_default(),
                 followed_experts: vec![],
                 followed_strategies: vec![],
                 backed_strategies: vec![],

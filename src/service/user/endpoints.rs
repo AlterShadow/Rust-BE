@@ -450,7 +450,6 @@ pub fn endpoint_user_get_user_profile() -> EndpointSchema {
         20180,
         vec![Field::new("user_id", Type::BigInt)],
         vec![
-            Field::new("user_id", Type::BigInt),
             Field::new("name", Type::String),
             Field::new("follower_count", Type::Int),
             Field::new("description", Type::String),

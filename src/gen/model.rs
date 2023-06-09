@@ -1268,7 +1268,6 @@ pub struct UserGetUserProfileRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserGetUserProfileResponse {
-    pub user_id: i64,
     pub name: String,
     pub follower_count: i32,
     pub description: String,
@@ -3389,10 +3388,6 @@ impl WsRequest for UserGetUserProfileRequest {
     }
   ],
   "returns": [
-    {
-      "name": "user_id",
-      "ty": "BigInt"
-    },
     {
       "name": "name",
       "ty": "String"

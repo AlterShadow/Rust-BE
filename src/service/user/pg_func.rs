@@ -96,14 +96,14 @@ BEGIN
                           a.aum as aum,
                           TRUE as followed
                  FROM tbl.strategy AS a 
-                     JOIN tbl.user_follow_strategy ON fkey_strategy_id = a.pkey_id WHERE fkey_user_id = a_user_id AND unfollowed = FALSE
+                     JOIN tbl.user_follow_strategy AS b ON b.fkey_strategy_id = a.pkey_id WHERE b.fkey_user_id = a_user_id AND unfollowed = FALSE
                     ;
 END
             "#,
         ),
         ProceduralFunction::new(
             "fun_user_list_strategies",
-            vec![],
+            vec![Field::new("user_id", Type::BigInt)],
             vec![
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("strategy_name", Type::String),
@@ -117,7 +117,6 @@ END
             ],
             r#"
 BEGIN
-
     RETURN QUERY SELECT a.pkey_id AS strategy_id,
                           a.name AS strategy_name,
                           a.description AS strategy_description,
@@ -126,9 +125,10 @@ BEGIN
                           (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_strategy_history AS h WHERE fkey_strategy_id = a.pkey_id) AS backers,
                           a.risk_score as risk_score,
                           a.aum as aum,
-                          EXISTS(SELECT * FROM tbl.user_follow_strategy AS b ON b.fkey_strategy_id = a.pkey_id AND b.fkey_user_id = a_user_id) as followed
+                          EXISTS(SELECT * FROM tbl.user_follow_strategy AS b WHERE b.fkey_strategy_id = a.pkey_id AND b.fkey_user_id = a_user_id) as followed
                  FROM tbl.strategy AS a
                     ;
+
 END
             "#,
         ),
@@ -531,10 +531,7 @@ END
         ),
         ProceduralFunction::new(
             "fun_user_get_expert_profile",
-            vec![
-                Field::new("expert_id", Type::optional(Type::BigInt)),
-                Field::new("user_id", Type::optional(Type::BigInt)),
-            ],
+            vec![Field::new("expert_id", Type::BigInt)],
             vec![
                 Field::new("expert_id", Type::BigInt),
                 Field::new("name", Type::String),
@@ -547,10 +544,6 @@ END
             ],
             r#"
 BEGIN
-    -- assert that either expert_id or user_id is provided
-    IF a_expert_id IS NULL AND a_user_id IS NULL THEN
-        RAISE EXCEPTION 'Either expert_id or user_id must be provided';
-    END IF;
     RETURN QUERY SELECT a.pkey_id AS expert_id,
                           b.username AS name,
                           (SELECT COUNT(*) FROM tbl.user_follow_expert WHERE fkey_expert_id = a.pkey_id AND unfollowed = FALSE) AS follower_count,
@@ -561,8 +554,37 @@ BEGIN
                           a.aum AS aum
                  FROM tbl.expert_profile AS a 
                  JOIN tbl.user AS b ON b.pkey_id = a.fkey_user_id
-                 WHERE a.pkey_id = a_expert_id 
-                 OR a.fkey_user_id = a_user_id;
+                 WHERE a.pkey_id = a_expert_id
+                 ;
+
+END
+"#,
+        ),
+        ProceduralFunction::new(
+            "fun_user_get_user_profile",
+            vec![Field::new("user_id", Type::BigInt)],
+            vec![
+                Field::new("expert_id", Type::BigInt),
+                Field::new("name", Type::String),
+                Field::new("follower_count", Type::optional(Type::BigInt)),
+                Field::new("description", Type::optional(Type::String)),
+                Field::new("social_media", Type::optional(Type::String)),
+                Field::new("risk_score", Type::optional(Type::Numeric)),
+                Field::new("reputation_score", Type::optional(Type::Numeric)),
+                Field::new("aum", Type::optional(Type::Numeric)),
+            ],
+            r#"
+BEGIN
+    RETURN QUERY SELECT   b.username AS name,
+                          (SELECT COUNT(*) FROM tbl.user_follow_expert WHERE fkey_expert_id = a.pkey_id AND unfollowed = FALSE) AS follower_count,
+                          a.description AS description,
+                          a.social_media AS social_media,
+                          a.risk_score AS risk_score,
+                          a.reputation_score AS reputation_score,
+                          a.aum AS aum
+                 FROM tbl.expert_profile AS a 
+                 RIGHT JOIN tbl.user AS b ON b.pkey_id = a.fkey_user_id
+                 WHERE a.fkey_user_id = a_user_id;
 
 END
 "#,
