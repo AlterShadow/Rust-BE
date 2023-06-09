@@ -744,7 +744,7 @@ BEGIN
                         a.reputation_score                                        AS reputation_score,
                         a.aum                                                     AS aum,
                         c.created_at                                              AS joined_at,
-                        b.created_at                                              AS requested_at
+                        a.approved_at                                             AS requested_at
                  FROM tbl.expert_profile AS a
                           JOIN tbl.user_follow_expert AS b ON b.fkey_expert_id = a.pkey_id
                           JOIN tbl.user AS c ON c.pkey_id = a.fkey_user_id
@@ -789,7 +789,9 @@ BEGIN
                         a.social_media AS social_media,
                         a.risk_score AS risk_score,
                         a.reputation_score AS reputation_score,
-                        a.aum AS aum
+                        a.aum AS aum,
+                        c.created_at AS joined_at,
+                        a.approved_at AS created_at
                  FROM tbl.expert_profile AS a
                           JOIN tbl.user AS c ON c.pkey_id = a.fkey_user_id
                  ;
@@ -843,7 +845,7 @@ AS $$
     
 BEGIN
     RETURN QUERY INSERT INTO tbl.expert_profile(fkey_user_id, description, social_media, updated_at, created_at)
-    VALUES(a_user_id, a_description, a_social_media, extract(epoch from now())::bigint, extract(epoch from now)::bigint) 
+    VALUES(a_user_id, a_description, a_social_media, extract(epoch from now())::bigint, extract(epoch from now())::bigint) 
     RETURNING pkey_id;
 END
 
@@ -1048,15 +1050,16 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
+    -- TODO: need to group by user_id
     RETURN QUERY SELECT a.fkey_user_id AS user_id,
                         b.public_id    AS user_public_id,
                         b.address      AS wallet_address,
                         b.username     AS username,
-                        a.created_at  AS followed_at
+                        a.back_time  AS followed_at
                  FROM tbl.user_back_strategy_history AS a
                           INNER JOIN tbl.user AS b ON a.fkey_user_id = b.pkey_id
                  WHERE a.fkey_strategy_id = a_strategy_id
-                   AND a.unfollowed = FALSE;
+                 ;
 END
 
 $$;
