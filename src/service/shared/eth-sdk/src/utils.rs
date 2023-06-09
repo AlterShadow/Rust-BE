@@ -1,10 +1,9 @@
 use eyre::*;
 use secp256k1::PublicKey;
-use std::time::Duration;
-
 use std::path::PathBuf;
+use std::time::Duration;
 use web3::api::Eth;
-use web3::signing::{hash_message, keccak256, recover, RecoveryError, Signature};
+use web3::signing::{hash_message, keccak256, recover, Key, RecoveryError, Signature};
 use web3::types::{Address, TransactionReceipt, H256, U256};
 use web3::Transport;
 
@@ -61,6 +60,12 @@ pub fn encode_signature(sig: &Signature) -> String {
     hex::encode(sig_bytes)
 }
 
+pub fn get_signed_text(txt: String, signer: impl Key) -> Result<(String, String)> {
+    let signature = signer.sign_message(hash_message(txt.as_bytes()).as_bytes())?;
+
+    Ok((hex::encode(&txt), encode_signature(&signature)))
+}
+
 pub fn verify_message_address(
     message: &[u8],
     signature: &[u8],
@@ -85,10 +90,10 @@ pub fn verify_message_address(
 }
 #[cfg(test)]
 mod tests {
-
     use crate::signer::Secp256k1SecretKey;
     use crypto::PublicKey;
     use eyre::*;
+    use std::println;
 
     #[test]
     fn test_eth_public_exponent_to_address() -> Result<()> {

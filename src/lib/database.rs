@@ -33,7 +33,13 @@ impl DbClient {
     where
         T: ?Sized + Sync + Send + ToStatement,
     {
-        Ok(self.pool.get().await?.query(statement, params).await?)
+        Ok(self
+            .pool
+            .get()
+            .await
+            .context("Failed to connect to database")?
+            .query(statement, params)
+            .await?)
     }
     pub async fn execute<T: DatabaseRequest>(&self, req: T) -> Result<DbResponse<T::ResponseRow>> {
         let rows = self.query(req.statement(), &req.params()).await?;
