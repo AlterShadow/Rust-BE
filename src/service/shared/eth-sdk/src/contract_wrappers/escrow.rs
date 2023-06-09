@@ -92,18 +92,13 @@ impl<T: Transport> EscrowContract<T> {
             .await?)
     }
 
-    pub async fn transfer_ownership(
-        &self,
-        signer: impl Key,
-        by: Address,
-        new_owner: Address,
-    ) -> Result<H256> {
+    pub async fn transfer_ownership(&self, signer: impl Key, new_owner: Address) -> Result<H256> {
         let estimated_gas = self
             .contract
             .estimate_gas(
                 EscrowFunctions::TransferOwnership.as_str(),
                 new_owner,
-                by,
+                signer.address(),
                 Options::default(),
             )
             .await?;
@@ -282,7 +277,7 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.eth(),
             escrow
-                .transfer_ownership(god_key.clone(), god_key.address(), alice.address())
+                .transfer_ownership(god_key.clone(), alice.address())
                 .await?,
             Duration::from_millis(1),
             10,
