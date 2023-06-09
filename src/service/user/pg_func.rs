@@ -538,7 +538,7 @@ END
             vec![
                 Field::new("expert_id", Type::BigInt),
                 Field::new("name", Type::String),
-                Field::new("follower_count", Type::Int),
+                Field::new("follower_count", Type::BigInt),
                 Field::new("description", Type::String),
                 Field::new("social_media", Type::String),
                 Field::new("risk_score", Type::Numeric),
@@ -552,7 +552,7 @@ BEGIN
         RAISE EXCEPTION 'Either expert_id or user_id must be provided';
     END IF;
     RETURN QUERY SELECT a.pkey_id AS expert_id,
-                          a.name AS name,
+                          b.username AS name,
                           (SELECT COUNT(*) FROM tbl.user_follow_expert WHERE fkey_expert_id = a.pkey_id AND unfollowed = FALSE) AS follower_count,
                           a.description AS description,
                           a.social_media AS social_media,
@@ -560,6 +560,7 @@ BEGIN
                           a.reputation_score AS reputation_score,
                           a.aum AS aum
                  FROM tbl.expert_profile AS a 
+                 JOIN tbl.user AS b ON b.pkey_id = a.fkey_user_id
                  WHERE a.pkey_id = a_expert_id 
                  OR a.fkey_user_id = a_user_id;
 

@@ -1061,7 +1061,7 @@ impl RequestHandler for MethodUserGetExpertProfile {
             Ok(UserGetExpertProfileResponse {
                 expert_id: ret.expert_id,
                 name: ret.name,
-                follower_count: ret.follower_count,
+                follower_count: ret.follower_count as _,
                 description: ret.description,
                 social_media: ret.social_media,
                 risk_score: ret.risk_score,
@@ -1197,7 +1197,7 @@ impl RequestHandler for MethodUserGetUserProfile {
             Ok(UserGetUserProfileResponse {
                 user_id: ctx.user_id,
                 name: ret.name,
-                follower_count: ret.follower_count,
+                follower_count: ret.follower_count as _,
                 description: ret.description,
                 social_media: ret.social_media,
                 followed_experts: vec![],

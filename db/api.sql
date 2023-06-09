@@ -808,7 +808,7 @@ CREATE OR REPLACE FUNCTION api.fun_user_get_expert_profile(a_expert_id bigint DE
 RETURNS table (
     "expert_id" bigint,
     "name" varchar,
-    "follower_count" int,
+    "follower_count" bigint,
     "description" varchar,
     "social_media" varchar,
     "risk_score" double precision,
@@ -824,7 +824,7 @@ BEGIN
         RAISE EXCEPTION 'Either expert_id or user_id must be provided';
     END IF;
     RETURN QUERY SELECT a.pkey_id AS expert_id,
-                          a.name AS name,
+                          b.username AS name,
                           (SELECT COUNT(*) FROM tbl.user_follow_expert WHERE fkey_expert_id = a.pkey_id AND unfollowed = FALSE) AS follower_count,
                           a.description AS description,
                           a.social_media AS social_media,
@@ -832,6 +832,7 @@ BEGIN
                           a.reputation_score AS reputation_score,
                           a.aum AS aum
                  FROM tbl.expert_profile AS a 
+                 JOIN tbl.user AS b ON b.pkey_id = a.fkey_user_id
                  WHERE a.pkey_id = a_expert_id 
                  OR a.fkey_user_id = a_user_id;
 
