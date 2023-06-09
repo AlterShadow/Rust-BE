@@ -276,6 +276,9 @@ pub enum EnumEndpoint {
     #[postgres(name = "UserBackStrategy")]
     UserBackStrategy = 20080,
     ///
+    #[postgres(name = "UserExitStrategy")]
+    UserExitStrategy = 20110,
+    ///
     #[postgres(name = "UserRequestRefund")]
     UserRequestRefund = 20081,
     ///
@@ -953,6 +956,10 @@ pub struct ListStrategiesRow {
     pub risk_score: f64,
     pub aum: f64,
     pub followed: bool,
+    pub swap_price: f64,
+    pub price_change: f64,
+    pub wallet_address: String,
+    pub blockchain: EnumBlockChain,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1150,6 +1157,18 @@ pub struct UserDeregisterWalletRequest {
 #[serde(rename_all = "camelCase")]
 pub struct UserDeregisterWalletResponse {
     pub success: bool,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserExitStrategyRequest {
+    pub strategy_id: i64,
+    pub quantity: String,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserExitStrategyResponse {
+    pub success: bool,
+    pub transaction_hash: String,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1830,6 +1849,24 @@ impl WsRequest for UserListFollowedStrategiesRequest {
             {
               "name": "followed",
               "ty": "Boolean"
+            },
+            {
+              "name": "swap_price",
+              "ty": "Numeric"
+            },
+            {
+              "name": "price_change",
+              "ty": "Numeric"
+            },
+            {
+              "name": "wallet_address",
+              "ty": "String"
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
             }
           ]
         }
@@ -1921,6 +1958,24 @@ impl WsRequest for UserListStrategiesRequest {
             {
               "name": "followed",
               "ty": "Boolean"
+            },
+            {
+              "name": "swap_price",
+              "ty": "Numeric"
+            },
+            {
+              "name": "price_change",
+              "ty": "Numeric"
+            },
+            {
+              "name": "wallet_address",
+              "ty": "String"
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
             }
           ]
         }
@@ -1985,6 +2040,24 @@ impl WsRequest for UserListTopPerformingStrategiesRequest {
             {
               "name": "followed",
               "ty": "Boolean"
+            },
+            {
+              "name": "swap_price",
+              "ty": "Numeric"
+            },
+            {
+              "name": "price_change",
+              "ty": "Numeric"
+            },
+            {
+              "name": "wallet_address",
+              "ty": "String"
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
             }
           ]
         }
@@ -2513,6 +2586,41 @@ impl WsResponse for UserBackStrategyResponse {
     type Request = UserBackStrategyRequest;
 }
 
+impl WsRequest for UserExitStrategyRequest {
+    type Response = UserExitStrategyResponse;
+    const METHOD_ID: u32 = 20110;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserExitStrategy",
+  "code": 20110,
+  "parameters": [
+    {
+      "name": "strategy_id",
+      "ty": "BigInt"
+    },
+    {
+      "name": "quantity",
+      "ty": "String"
+    }
+  ],
+  "returns": [
+    {
+      "name": "success",
+      "ty": "Boolean"
+    },
+    {
+      "name": "transaction_hash",
+      "ty": "String"
+    }
+  ],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for UserExitStrategyResponse {
+    type Request = UserExitStrategyRequest;
+}
+
 impl WsRequest for UserRequestRefundRequest {
     type Response = UserRequestRefundResponse;
     const METHOD_ID: u32 = 20081;
@@ -2599,6 +2707,24 @@ impl WsRequest for UserListBackedStrategiesRequest {
             {
               "name": "followed",
               "ty": "Boolean"
+            },
+            {
+              "name": "swap_price",
+              "ty": "Numeric"
+            },
+            {
+              "name": "price_change",
+              "ty": "Numeric"
+            },
+            {
+              "name": "wallet_address",
+              "ty": "String"
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
             }
           ]
         }
@@ -3217,6 +3343,24 @@ impl WsRequest for UserGetExpertProfileRequest {
             {
               "name": "followed",
               "ty": "Boolean"
+            },
+            {
+              "name": "swap_price",
+              "ty": "Numeric"
+            },
+            {
+              "name": "price_change",
+              "ty": "Numeric"
+            },
+            {
+              "name": "wallet_address",
+              "ty": "String"
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
             }
           ]
         }
@@ -3372,6 +3516,24 @@ impl WsRequest for UserGetUserProfileRequest {
             {
               "name": "followed",
               "ty": "Boolean"
+            },
+            {
+              "name": "swap_price",
+              "ty": "Numeric"
+            },
+            {
+              "name": "price_change",
+              "ty": "Numeric"
+            },
+            {
+              "name": "wallet_address",
+              "ty": "String"
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
             }
           ]
         }
@@ -3418,6 +3580,24 @@ impl WsRequest for UserGetUserProfileRequest {
             {
               "name": "followed",
               "ty": "Boolean"
+            },
+            {
+              "name": "swap_price",
+              "ty": "Numeric"
+            },
+            {
+              "name": "price_change",
+              "ty": "Numeric"
+            },
+            {
+              "name": "wallet_address",
+              "ty": "String"
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
             }
           ]
         }

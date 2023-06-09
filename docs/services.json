@@ -265,6 +265,24 @@
                     {
                       "name": "followed",
                       "ty": "Boolean"
+                    },
+                    {
+                      "name": "swap_price",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "price_change",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "wallet_address",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "blockchain",
+                      "ty": {
+                        "EnumRef": "block_chain"
+                      }
                     }
                   ]
                 }
@@ -340,6 +358,24 @@
                     {
                       "name": "followed",
                       "ty": "Boolean"
+                    },
+                    {
+                      "name": "swap_price",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "price_change",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "wallet_address",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "blockchain",
+                      "ty": {
+                        "EnumRef": "block_chain"
+                      }
                     }
                   ]
                 }
@@ -396,6 +432,24 @@
                     {
                       "name": "followed",
                       "ty": "Boolean"
+                    },
+                    {
+                      "name": "swap_price",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "price_change",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "wallet_address",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "blockchain",
+                      "ty": {
+                        "EnumRef": "block_chain"
+                      }
                     }
                   ]
                 }
@@ -856,6 +910,33 @@
           "json_schema": null
         },
         {
+          "name": "UserExitStrategy",
+          "code": 20110,
+          "parameters": [
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "quantity",
+              "ty": "String"
+            }
+          ],
+          "returns": [
+            {
+              "name": "success",
+              "ty": "Boolean"
+            },
+            {
+              "name": "transaction_hash",
+              "ty": "String"
+            }
+          ],
+          "stream_response": [],
+          "description": "",
+          "json_schema": null
+        },
+        {
           "name": "UserRequestRefund",
           "code": 20081,
           "parameters": [
@@ -930,6 +1011,24 @@
                     {
                       "name": "followed",
                       "ty": "Boolean"
+                    },
+                    {
+                      "name": "swap_price",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "price_change",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "wallet_address",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "blockchain",
+                      "ty": {
+                        "EnumRef": "block_chain"
+                      }
                     }
                   ]
                 }
@@ -1476,6 +1575,24 @@
                     {
                       "name": "followed",
                       "ty": "Boolean"
+                    },
+                    {
+                      "name": "swap_price",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "price_change",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "wallet_address",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "blockchain",
+                      "ty": {
+                        "EnumRef": "block_chain"
+                      }
                     }
                   ]
                 }
@@ -1623,6 +1740,24 @@
                     {
                       "name": "followed",
                       "ty": "Boolean"
+                    },
+                    {
+                      "name": "swap_price",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "price_change",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "wallet_address",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "blockchain",
+                      "ty": {
+                        "EnumRef": "block_chain"
+                      }
                     }
                   ]
                 }
@@ -1669,6 +1804,24 @@
                     {
                       "name": "followed",
                       "ty": "Boolean"
+                    },
+                    {
+                      "name": "swap_price",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "price_change",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "wallet_address",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "blockchain",
+                      "ty": {
+                        "EnumRef": "block_chain"
+                      }
                     }
                   ]
                 }

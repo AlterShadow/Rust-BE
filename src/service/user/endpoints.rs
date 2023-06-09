@@ -23,6 +23,10 @@ fn list_strategies_datatable() -> Type {
             Field::new("risk_score", Type::Numeric),
             Field::new("aum", Type::Numeric),
             Field::new("followed", Type::Boolean),
+            Field::new("swap_price", Type::Numeric),
+            Field::new("price_change", Type::Numeric),
+            Field::new("wallet_address", Type::String),
+            Field::new("blockchain", Type::enum_ref("block_chain")),
         ],
     )
 }

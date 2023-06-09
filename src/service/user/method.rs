@@ -102,6 +102,10 @@ impl RequestHandler for MethodUserListFollowedStrategies {
                         risk_score: x.risk_score,
                         aum: x.aum,
                         followed: x.followed,
+                        swap_price: 233.0,
+                        price_change: 0.97,
+                        wallet_address: "0x000000000".to_owned(),
+                        blockchain: EnumBlockChain::EthereumMainnet,
                     })
                     .collect(),
             })
@@ -139,6 +143,10 @@ impl RequestHandler for MethodUserListStrategies {
                         risk_score: x.risk_score,
                         aum: x.aum,
                         followed: x.followed,
+                        swap_price: 233.0,
+                        price_change: 0.97,
+                        wallet_address: "0x000000000".to_owned(),
+                        blockchain: EnumBlockChain::EthereumMainnet,
                     })
                     .collect(),
             })
@@ -176,6 +184,10 @@ impl RequestHandler for MethodUserListTopPerformingStrategies {
                         risk_score: x.risk_score,
                         aum: x.aum,
                         followed: x.followed,
+                        swap_price: 233.0,
+                        price_change: 0.97,
+                        wallet_address: "0x000000000".to_owned(),
+                        blockchain: EnumBlockChain::EthereumMainnet,
                     })
                     .collect(),
             })
@@ -424,6 +436,10 @@ impl RequestHandler for MethodUserListBackedStrategies {
                         risk_score: x.risk_score,
                         aum: x.aum,
                         followed: true,
+                        swap_price: 233.0,
+                        price_change: 0.97,
+                        wallet_address: "0x000000000".to_owned(),
+                        blockchain: EnumBlockChain::EthereumMainnet,
                     })
                     .collect(),
             })

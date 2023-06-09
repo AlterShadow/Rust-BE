@@ -28,6 +28,7 @@ ID: 2
 |20171|UserUpdateExpertProfile|description, social_media||User update its expert profile|
 |20172|UserUpdateUserProfile|description, social_media||User update its expert profile|
 |20080|UserBackStrategy|strategy_id, quantity, blockchain|success||
+|20110|UserExitStrategy|strategy_id, quantity|success, transaction_hash||
 |20081|UserRequestRefund|quantity, wallet_address, blockchain|success||
 |20090|UserListBackedStrategies||strategies||
 |20100|UserListBackStrategyHistory||back_history||
