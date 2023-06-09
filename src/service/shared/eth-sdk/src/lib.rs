@@ -13,6 +13,7 @@ mod contract_wrappers;
 mod pancake_swap;
 // #[cfg(test)]
 mod address_table;
+mod calc;
 mod coins;
 mod dex;
 pub mod dex_tracker;
@@ -23,6 +24,7 @@ pub mod signer;
 mod tx;
 pub mod utils;
 pub use address_table::*;
+pub use calc::*;
 pub use calldata::*;
 pub use coins::*;
 pub use conn::*;
