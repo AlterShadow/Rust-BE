@@ -53,6 +53,19 @@ impl<T: Transport> StrategyPoolContract<T> {
         self.contract.address()
     }
 
+    pub async fn decimals(&self) -> Result<U256> {
+        Ok(self
+            .contract
+            .query(
+                StrategyPoolFunctions::Decimals.as_str(),
+                (),
+                None,
+                Options::default(),
+                None,
+            )
+            .await?)
+    }
+
     pub async fn total_supply(&self) -> Result<U256> {
         Ok(self
             .contract
@@ -416,6 +429,7 @@ impl<T: Transport> StrategyPoolContract<T> {
 }
 
 enum StrategyPoolFunctions {
+    Decimals,
     TotalSupply,
     BalanceOf,
     Assets,
@@ -440,6 +454,7 @@ enum StrategyPoolFunctions {
 impl StrategyPoolFunctions {
     fn as_str(&self) -> &'static str {
         match self {
+            Self::Decimals => "decimals",
             Self::TotalSupply => "totalSupply",
             Self::BalanceOf => "balanceOf",
             Self::Assets => "assets",
@@ -496,6 +511,26 @@ mod tests {
             );
         }
         Ok(tx_conn_arc.clone())
+    }
+
+    #[tokio::test]
+    async fn test_decimals() -> Result<()> {
+        let tx_conn_wrapper = get_tx_conn().await?;
+        let mut tx_conn_guard = tx_conn_wrapper.lock().await;
+        let tx_conn = tx_conn_guard.as_mut().unwrap();
+
+        let god_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
+
+        let strategy_pool = StrategyPoolContract::deploy(
+            tx_conn.clone(),
+            god_key.clone(),
+            "MockShare".to_string(),
+            "MOCK".to_string(),
+        )
+        .await?;
+
+        assert_eq!(strategy_pool.decimals().await?, U256::from(18));
+        Ok(())
     }
 
     #[tokio::test]
