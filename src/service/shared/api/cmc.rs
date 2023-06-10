@@ -60,11 +60,11 @@ impl CoinMarketCap {
 
     pub async fn get_cmc_token_infos_by_symbol(
         &self,
-        symbols: &[&str],
+        symbols: &Vec<String>,
     ) -> Result<Vec<CoinMarketCapTokenInfo>> {
         let mut url = self.metadata_url()?;
         self.append_url_params(&mut url, "symbol", symbols);
-        self.append_url_params(&mut url, "aux", &vec!["status"]);
+        self.append_url_params(&mut url, "aux", &vec!["status".to_string()]);
         let payload = &self
             .parse_response(self.client.get(url).send().await?)
             .await?["data"];
@@ -122,7 +122,7 @@ impl CoinMarketCap {
         Ok(token_infos)
     }
 
-    pub async fn get_usd_prices_by_symbol(&self, symbols: &[&str]) -> Result<Vec<f64>> {
+    pub async fn get_usd_prices_by_symbol(&self, symbols: &Vec<String>) -> Result<Vec<f64>> {
         let mut url = self.price_url()?;
         self.append_url_params(&mut url, "symbol", symbols);
         let payload = &self
@@ -161,7 +161,7 @@ impl CoinMarketCap {
         ))?)
     }
 
-    fn append_url_params(&self, url: &mut Url, param_key: &str, param_values: &[&str]) -> () {
+    fn append_url_params(&self, url: &mut Url, param_key: &str, param_values: &Vec<String>) -> () {
         let mut params = url.query_pairs_mut();
         params.append_pair(param_key, &param_values.join(","));
     }
@@ -186,7 +186,9 @@ mod tests {
     #[tokio::test]
     async fn test_get_usd_price_by_symbol() -> Result<()> {
         let cmc = CoinMarketCap::new().unwrap();
-        let prices = cmc.get_usd_prices_by_symbol(&vec!["ETH"]).await?;
+        let prices = cmc
+            .get_usd_prices_by_symbol(&vec!["ETH".to_string()])
+            .await?;
         assert_eq!(prices.len(), 1);
         assert!(prices[0] > 0.0);
         Ok(())
@@ -195,7 +197,9 @@ mod tests {
     #[tokio::test]
     async fn test_get_cmc_id_by_symbol() -> Result<()> {
         let cmc = CoinMarketCap::new().unwrap();
-        let infos = cmc.get_cmc_token_infos_by_symbol(&vec!["ETH"]).await?;
+        let infos = cmc
+            .get_cmc_token_infos_by_symbol(&vec!["ETH".to_string()])
+            .await?;
         assert_eq!(infos.len(), 1);
         assert_eq!(infos[0].cmc_id, 1027);
         assert_eq!(infos[0].name, "Ethereum");
