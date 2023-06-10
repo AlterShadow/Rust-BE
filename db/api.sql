@@ -925,7 +925,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_create_strategy(a_user_id bigint, a_name varchar, a_description varchar)
+CREATE OR REPLACE FUNCTION api.fun_user_create_strategy(a_user_id bigint, a_name varchar, a_description varchar, a_strategy_thesis_url varchar, a_minimum_backing_amount_usd double precision, a_strategy_fee double precision, a_expert_fee double precision, a_agreed_tos boolean)
 RETURNS table (
     "success" boolean,
     "strategy_id" bigint
@@ -936,8 +936,36 @@ AS $$
 DECLARE
     a_strategy_id BIGINT;
 BEGIN
-    INSERT INTO tbl.strategy (fkey_user_id, name, description, current_usdc, total_backed_usdc, total_exited_usdc)
-    VALUES (a_user_id, a_name, a_description, '0', '0', '0') RETURNING pkey_id INTO a_strategy_id;
+    INSERT INTO tbl.strategy (
+        fkey_user_id, 
+        name, 
+        description,
+        current_usdc, 
+        total_backed_usdc, 
+        total_exited_usdc, 
+        strategy_thesis_url,
+        minimum_backing_amount_usd,
+        strategy_fee,
+        expert_fee,
+        agreed_tos,
+        updated_at, 
+        created_at
+    )
+    VALUES (
+        a_user_id, 
+        a_name, 
+        a_description, 
+        '0', 
+        '0', 
+        '0', 
+        a_strategy_thesis_url,
+        a_minimum_backing_amount_usd,
+        a_strategy_fee,
+        a_expert_fee,
+        a_agreed_tos,
+        EXTRACT(EPOCH FROM NOW())::bigint, 
+        EXTRACT(EPOCH FROM NOW())::bigint
+    ) RETURNING pkey_id INTO a_strategy_id;
     RETURN QUERY SELECT TRUE, a_strategy_id;
 END
 

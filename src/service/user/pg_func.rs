@@ -650,6 +650,11 @@ END
                 Field::new("user_id", Type::BigInt),
                 Field::new("name", Type::String),
                 Field::new("description", Type::String),
+                Field::new("strategy_thesis_url", Type::String),
+                Field::new("minimum_backing_amount_usd", Type::Numeric),
+                Field::new("strategy_fee", Type::Numeric),
+                Field::new("expert_fee", Type::Numeric),
+                Field::new("agreed_tos", Type::Boolean),
             ],
             vec![
                 Field::new("success", Type::Boolean),
@@ -659,8 +664,36 @@ END
 DECLARE
     a_strategy_id BIGINT;
 BEGIN
-    INSERT INTO tbl.strategy (fkey_user_id, name, description, current_usdc, total_backed_usdc, total_exited_usdc)
-    VALUES (a_user_id, a_name, a_description, '0', '0', '0') RETURNING pkey_id INTO a_strategy_id;
+    INSERT INTO tbl.strategy (
+        fkey_user_id, 
+        name, 
+        description,
+        current_usdc, 
+        total_backed_usdc, 
+        total_exited_usdc, 
+        strategy_thesis_url,
+        minimum_backing_amount_usd,
+        strategy_fee,
+        expert_fee,
+        agreed_tos,
+        updated_at, 
+        created_at
+    )
+    VALUES (
+        a_user_id, 
+        a_name, 
+        a_description, 
+        '0', 
+        '0', 
+        '0', 
+        a_strategy_thesis_url,
+        a_minimum_backing_amount_usd,
+        a_strategy_fee,
+        a_expert_fee,
+        a_agreed_tos,
+        EXTRACT(EPOCH FROM NOW())::bigint, 
+        EXTRACT(EPOCH FROM NOW())::bigint
+    ) RETURNING pkey_id INTO a_strategy_id;
     RETURN QUERY SELECT TRUE, a_strategy_id;
 END
 "#,

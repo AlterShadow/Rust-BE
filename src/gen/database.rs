@@ -1160,6 +1160,11 @@ pub struct FunUserCreateStrategyReq {
     pub user_id: i64,
     pub name: String,
     pub description: String,
+    pub strategy_thesis_url: String,
+    pub minimum_backing_amount_usd: f64,
+    pub strategy_fee: f64,
+    pub expert_fee: f64,
+    pub agreed_tos: bool,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserCreateStrategyRespRow {
@@ -1171,13 +1176,18 @@ pub struct FunUserCreateStrategyRespRow {
 impl DatabaseRequest for FunUserCreateStrategyReq {
     type ResponseRow = FunUserCreateStrategyRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_create_strategy(a_user_id => $1::bigint, a_name => $2::varchar, a_description => $3::varchar);"
+        "SELECT * FROM api.fun_user_create_strategy(a_user_id => $1::bigint, a_name => $2::varchar, a_description => $3::varchar, a_strategy_thesis_url => $4::varchar, a_minimum_backing_amount_usd => $5::double precision, a_strategy_fee => $6::double precision, a_expert_fee => $7::double precision, a_agreed_tos => $8::boolean);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
             &self.user_id as &(dyn ToSql + Sync),
             &self.name as &(dyn ToSql + Sync),
             &self.description as &(dyn ToSql + Sync),
+            &self.strategy_thesis_url as &(dyn ToSql + Sync),
+            &self.minimum_backing_amount_usd as &(dyn ToSql + Sync),
+            &self.strategy_fee as &(dyn ToSql + Sync),
+            &self.expert_fee as &(dyn ToSql + Sync),
+            &self.agreed_tos as &(dyn ToSql + Sync),
         ]
     }
     fn parse_row(&self, row: Row) -> Result<FunUserCreateStrategyRespRow> {

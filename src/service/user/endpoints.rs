@@ -513,6 +513,21 @@ pub fn endpoint_user_create_strategy() -> EndpointSchema {
         vec![
             Field::new("name", Type::String),
             Field::new("description", Type::String),
+            Field::new("strategy_thesis_url", Type::String),
+            Field::new("minimum_backing_amount_usd", Type::Numeric),
+            Field::new("strategy_fee", Type::Numeric),
+            Field::new("expert_fee", Type::Numeric),
+            Field::new("agreed_tos", Type::Boolean),
+            Field::new(
+                "linked_wallets",
+                Type::datatable(
+                    "LinkedWallet",
+                    vec![
+                        Field::new("wallet_address", Type::String),
+                        // TODO: verify ownership of the wallet by requiring signature
+                    ],
+                ),
+            ),
         ],
         vec![
             Field::new("success", Type::Boolean),

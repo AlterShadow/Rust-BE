@@ -913,6 +913,11 @@ pub struct FollowHistoryPoint {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct LinkedWallet {
+    pub wallet_address: String,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct ListExpertsRow {
     pub expert_id: i64,
     pub user_public_id: i64,
@@ -1138,6 +1143,12 @@ pub struct UserBackStrategyResponse {
 pub struct UserCreateStrategyRequest {
     pub name: String,
     pub description: String,
+    pub strategy_thesis_url: String,
+    pub minimum_backing_amount_usd: f64,
+    pub strategy_fee: f64,
+    pub expert_fee: f64,
+    pub agreed_tos: bool,
+    pub linked_wallets: Vec<LinkedWallet>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -3718,6 +3729,40 @@ impl WsRequest for UserCreateStrategyRequest {
     {
       "name": "description",
       "ty": "String"
+    },
+    {
+      "name": "strategy_thesis_url",
+      "ty": "String"
+    },
+    {
+      "name": "minimum_backing_amount_usd",
+      "ty": "Numeric"
+    },
+    {
+      "name": "strategy_fee",
+      "ty": "Numeric"
+    },
+    {
+      "name": "expert_fee",
+      "ty": "Numeric"
+    },
+    {
+      "name": "agreed_tos",
+      "ty": "Boolean"
+    },
+    {
+      "name": "linked_wallets",
+      "ty": {
+        "DataTable": {
+          "name": "LinkedWallet",
+          "fields": [
+            {
+              "name": "wallet_address",
+              "ty": "String"
+            }
+          ]
+        }
+      }
     }
   ],
   "returns": [

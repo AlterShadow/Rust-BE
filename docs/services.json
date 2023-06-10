@@ -1925,6 +1925,40 @@
             {
               "name": "description",
               "ty": "String"
+            },
+            {
+              "name": "strategy_thesis_url",
+              "ty": "String"
+            },
+            {
+              "name": "minimum_backing_amount_usd",
+              "ty": "Numeric"
+            },
+            {
+              "name": "strategy_fee",
+              "ty": "Numeric"
+            },
+            {
+              "name": "expert_fee",
+              "ty": "Numeric"
+            },
+            {
+              "name": "agreed_tos",
+              "ty": "Boolean"
+            },
+            {
+              "name": "linked_wallets",
+              "ty": {
+                "DataTable": {
+                  "name": "LinkedWallet",
+                  "fields": [
+                    {
+                      "name": "wallet_address",
+                      "ty": "String"
+                    }
+                  ]
+                }
+              }
             }
           ],
           "returns": [

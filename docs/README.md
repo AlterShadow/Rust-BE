@@ -44,7 +44,7 @@ ID: 2
 |20200|UserListRegisteredWallets||wallets|User lists wallets|
 |20210|UserDeregisterWallet|wallet_id|success|User deregisters a wallet|
 |20220|UserApplyBecomeExpert||success|User applies to become an expert|
-|20250|UserCreateStrategy|name, description|success, strategy_id|User makes a strategy|
+|20250|UserCreateStrategy|name, description, strategy_thesis_url, minimum_backing_amount_usd, strategy_fee, expert_fee, agreed_tos, linked_wallets|success, strategy_id|User makes a strategy|
 |20260|UserUpdateStrategy|strategy_id, name, description, social_media, risk_score, reputation_score, aum|success|User updates a strategy|
 |20270|UserAddStrategyWatchingWallet|strategy_id, blockchain, wallet_address, ratio|success, wallet_id||
 |20280|UserRemoveStrategyWatchingWallet|wallet_id|success||

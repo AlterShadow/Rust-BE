@@ -1328,6 +1328,11 @@ impl RequestHandler for MethodUserCreateStrategy {
                     user_id: ctx.user_id,
                     name: req.name,
                     description: req.description,
+                    strategy_thesis_url: req.strategy_thesis_url,
+                    minimum_backing_amount_usd: req.minimum_backing_amount_usd,
+                    strategy_fee: req.strategy_fee,
+                    expert_fee: req.expert_fee,
+                    agreed_tos: req.agreed_tos,
                 })
                 .await?
                 .into_result()

@@ -1,5 +1,5 @@
 -- Created by Vertabelo (http://vertabelo.com)
--- Last modification date: 2023-06-09 16:04:56.145
+-- Last modification date: 2023-06-10 08:07:28.604
 
 CREATE SCHEMA IF NOT EXISTS tbl;;
 
@@ -110,6 +110,13 @@ CREATE TABLE tbl.strategy (
     apy double precision  NULL,
     swap_fee double precision  NULL,
     evm_contract_address varchar(64)  NULL,
+    strategy_thesis_url varchar(256)  NULL,
+    agreed_tos boolean  NOT NULL DEFAULT FALSE,
+    minimum_backing_amount_usd double precision  NULL,
+    expert_fee double precision  NOT NULL,
+    strategy_fee double precision  NULL,
+    updated_at bigint  NOT NULL,
+    created_at bigint  NOT NULL,
     CONSTRAINT strategy_pk PRIMARY KEY (pkey_id)
 );
 
