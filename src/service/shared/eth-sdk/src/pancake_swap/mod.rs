@@ -1,3 +1,4 @@
+pub mod pair_paths;
 pub mod v2;
 pub mod v3;
 
