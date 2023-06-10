@@ -30,11 +30,6 @@ impl ScaledMath for U256 {
             .checked_mul(f_as_u256)
             .ok_or_else(|| eyre!("scaled multiplication would overflow"))?;
 
-        /* scale the result back down, ensuring it doesn't underflow */
-        if result_u256 < multiplier {
-            bail!("underflow occurred while scaling down");
-        }
-
         Ok(result_u256 / multiplier)
     }
 
@@ -60,19 +55,8 @@ mod tests {
     #[test]
     fn mul_f64_with_overflow() {
         let large_value = U256::max_value();
-        let x = large_value;
-        match x.mul_f64(2.0) {
+        match large_value.mul_f64(2.0) {
             Err(_) => assert!(true), // expected to overflow
-            _ => assert!(false),
-        }
-    }
-
-    #[test]
-    fn mul_f64_with_underflow() {
-        let small_value = U256::from(1);
-        let x = small_value;
-        match x.mul_f64(0.0000000000000000000000000000001) {
-            Err(_) => assert!(true), // expected to underflow
             _ => assert!(false),
         }
     }
@@ -80,8 +64,7 @@ mod tests {
     #[test]
     fn mul_div_with_overflow() {
         let large_value = U256::max_value();
-        let x = large_value;
-        match x.mul_div(large_value, U256::from(1)) {
+        match large_value.mul_div(large_value, U256::from(1)) {
             Err(_) => assert!(true), // expected to overflow
             _ => assert!(false),
         }
