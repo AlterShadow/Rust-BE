@@ -1,13 +1,22 @@
-use crate::evm::DexPath;
-use crate::v3::multi_hop::MultiHopPath;
-use crate::PancakePairPathSet;
-use eyre::*;
 use std::str::FromStr;
+use std::time::Duration;
+
+use eyre::*;
+use tokio::time::sleep;
 use web3::contract::{Contract, Options};
 use web3::ethabi::Token;
 use web3::signing::Key;
 use web3::types::{Address, H256, U256};
 use web3::{Transport, Web3};
+
+use crate::evm::DexPath;
+use crate::v3::multi_hop::MultiHopPath;
+use crate::PancakePairPathSet;
+
+use crate::{
+    wait_for_confirmations_simple, EitherTransport, EthereumRpcConnection, TransactionFetcher,
+    TxStatus,
+};
 
 pub const SMART_ROUTER_ABI_JSON: &str = include_str!("smart_router_v3.json");
 
@@ -656,6 +665,71 @@ impl PancakeSmartRouterV3Functions {
             _ => bail!("invalid function name"),
         }
     }
+}
+
+pub async fn copy_trade_and_ensure_success(
+    contract: PancakeSmartRouterV3Contract<EitherTransport>,
+    conn: &EthereumRpcConnection,
+    confirmations: u64,
+    max_retry: usize,
+    wait_timeout: Duration,
+    signer: impl Key + Clone,
+    paths: PancakePairPathSet,
+    amount_in: U256,
+    amount_out_minimum: U256,
+) -> Result<H256> {
+    /* publish transaction */
+    let mut tx_hash = contract
+        .copy_trade(signer.clone(), paths.clone(), amount_in, amount_out_minimum)
+        .await?;
+    let mut retries: usize = 0;
+    while retries < max_retry {
+        /* wait for transaction receipt */
+        /* after it has a receipt, it was included in a block */
+        let tx_receipt =
+            wait_for_confirmations_simple(&conn.eth(), tx_hash, wait_timeout, max_retry).await?;
+
+        /* get receipt block number */
+        let tx_block_number = tx_receipt
+            .block_number
+            .ok_or_else(|| eyre!("transaction has receipt but was not included in a block"))?
+            .as_u64();
+        let mut current_block_number = conn.eth().block_number().await?.as_u64();
+
+        while current_block_number - tx_block_number < confirmations {
+            /* wait for confirmations */
+            /* more confirmations = greater probability that the transaction status is canonical */
+            current_block_number = conn.eth().block_number().await?.as_u64();
+            sleep(wait_timeout).await;
+        }
+
+        /* after confirmations, find out transaction status */
+        let mut tx = TransactionFetcher::new(tx_hash);
+        tx.update(&conn).await?;
+
+        match tx.get_status() {
+            TxStatus::Successful => {
+                /* transaction is successful after confirmations, consider it canonical*/
+                break;
+            }
+            TxStatus::Pending => {
+                /* TODO: check if this is even possible */
+                /* transaction had a receipt (was included in a block) but has somehow returned to the mempool */
+                /* wait for the new receipt */
+                retries += 1;
+                continue;
+            }
+            TxStatus::Reverted | TxStatus::NotFound => {
+                /* transaction is reverted or doesn't exist after confirmations, try again */
+                retries += 1;
+                tx_hash = contract
+                    .copy_trade(signer.clone(), paths.clone(), amount_in, amount_out_minimum)
+                    .await?;
+            }
+            _ => continue,
+        }
+    }
+    Ok(tx_hash)
 }
 
 #[cfg(test)]
