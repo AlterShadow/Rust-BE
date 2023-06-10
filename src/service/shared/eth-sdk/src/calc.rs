@@ -5,6 +5,10 @@ use web3::types::U256;
 pub trait ScaledMath {
     fn mul_f64(&self, factor: f64) -> Result<U256>;
     fn mul_div(&self, factor: U256, divisor: U256) -> Result<U256>;
+    fn try_checked_add(&self, term: U256) -> Result<U256>;
+    fn try_checked_sub(&self, term: U256) -> Result<U256>;
+    fn try_checked_mul(&self, factor: U256) -> Result<U256>;
+    fn try_checked_div(&self, divisor: U256) -> Result<U256>;
 }
 
 impl ScaledMath for U256 {
@@ -45,6 +49,26 @@ impl ScaledMath for U256 {
             .ok_or_else(|| eyre!("division by zero"))?;
 
         Ok(div_result)
+    }
+
+    fn try_checked_add(&self, term: U256) -> Result<U256> {
+        self.checked_add(term)
+            .ok_or_else(|| eyre!("addition would cause overflow"))
+    }
+
+    fn try_checked_sub(&self, term: U256) -> Result<U256> {
+        self.checked_sub(term)
+            .ok_or_else(|| eyre!("subtraction would cause underflow"))
+    }
+
+    fn try_checked_mul(&self, factor: U256) -> Result<U256> {
+        self.checked_mul(factor)
+            .ok_or_else(|| eyre!("multiplication would cause overflow"))
+    }
+
+    fn try_checked_div(&self, divisor: U256) -> Result<U256> {
+        self.checked_div(divisor)
+            .ok_or_else(|| eyre!("division by zero"))
     }
 }
 
