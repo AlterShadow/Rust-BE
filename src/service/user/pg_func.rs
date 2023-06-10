@@ -575,7 +575,8 @@ END
             ],
             r#"
 BEGIN
-    RETURN QUERY SELECT   b.username AS name,
+    RETURN QUERY SELECT   a.pkey_id AS expert_id,
+                          b.username AS name,
                           (SELECT COUNT(*) FROM tbl.user_follow_expert WHERE fkey_expert_id = a.pkey_id AND unfollowed = FALSE) AS follower_count,
                           a.description AS description,
                           a.social_media AS social_media,
