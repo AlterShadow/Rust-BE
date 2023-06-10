@@ -860,9 +860,9 @@ BEGIN
                           a.risk_score AS risk_score,
                           a.reputation_score AS reputation_score,
                           a.aum AS aum
-                 FROM tbl.expert_profile AS a 
+                 FROM tbl.expert_profile AS a
                  RIGHT JOIN tbl.user AS b ON b.pkey_id = a.fkey_user_id
-                 WHERE a.fkey_user_id = a_user_id;
+                 WHERE b.pkey_id = a_user_id;
 
 END
 

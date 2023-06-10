@@ -564,7 +564,7 @@ END
             "fun_user_get_user_profile",
             vec![Field::new("user_id", Type::BigInt)],
             vec![
-                Field::new("expert_id", Type::BigInt),
+                Field::new("expert_id", Type::optional(Type::BigInt)),
                 Field::new("name", Type::String),
                 Field::new("follower_count", Type::optional(Type::BigInt)),
                 Field::new("description", Type::optional(Type::String)),
@@ -583,9 +583,9 @@ BEGIN
                           a.risk_score AS risk_score,
                           a.reputation_score AS reputation_score,
                           a.aum AS aum
-                 FROM tbl.expert_profile AS a 
+                 FROM tbl.expert_profile AS a
                  RIGHT JOIN tbl.user AS b ON b.pkey_id = a.fkey_user_id
-                 WHERE a.fkey_user_id = a_user_id;
+                 WHERE b.pkey_id = a_user_id;
 
 END
 "#,

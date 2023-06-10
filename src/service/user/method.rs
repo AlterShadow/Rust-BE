@@ -1081,54 +1081,7 @@ impl RequestHandler for MethodUserGetExpertProfile {
         .boxed()
     }
 }
-pub struct MethodUserUpdateExpertProfile;
-impl RequestHandler for MethodUserUpdateExpertProfile {
-    type Request = UserUpdateExpertProfileRequest;
 
-    fn handle(
-        &self,
-        toolbox: &Toolbox,
-        ctx: RequestContext,
-        req: Self::Request,
-    ) -> FutureResponse<Self::Request> {
-        let db: DbClient = toolbox.get_db();
-        async move {
-            ensure_user_role(ctx, EnumRole::User)?;
-            let expert = db
-                .execute(FunUserGetUserProfileReq {
-                    user_id: ctx.user_id,
-                })
-                .await?
-                .into_result();
-            match expert {
-                Some(expert_id) => {
-                    let ret = db
-                        .execute(FunUserUpdateExpertProfileReq {
-                            expert_id: expert_id.expert_id,
-                            description: req.description,
-                            social_media: req.social_media,
-                        })
-                        .await?
-                        .into_result()
-                        .context("failed to get expert profile")?;
-                }
-                None => {
-                    let ret = db
-                        .execute(FunUserCreateExpertProfileReq {
-                            user_id: ctx.user_id,
-                            description: req.description,
-                            social_media: req.social_media,
-                        })
-                        .await?
-                        .into_result()
-                        .context("failed to get expert profile")?;
-                }
-            }
-            Ok(UserUpdateExpertProfileResponse {})
-        }
-        .boxed()
-    }
-}
 pub struct MethodUserUpdateUserProfile;
 impl RequestHandler for MethodUserUpdateUserProfile {
     type Request = UserUpdateUserProfileRequest;
@@ -1147,31 +1100,30 @@ impl RequestHandler for MethodUserUpdateUserProfile {
                     user_id: ctx.user_id,
                 })
                 .await?
-                .into_result();
-            match expert {
-                Some(resp) => {
-                    let ret = db
-                        .execute(FunUserUpdateExpertProfileReq {
-                            expert_id: resp.expert_id,
-                            description: req.description,
-                            social_media: req.social_media,
-                        })
-                        .await?
-                        .into_result()
-                        .context("failed to get expert profile")?;
-                }
-                None => {
-                    let ret = db
-                        .execute(FunUserCreateExpertProfileReq {
-                            user_id: ctx.user_id,
-                            description: req.description,
-                            social_media: req.social_media,
-                        })
-                        .await?
-                        .into_result()
-                        .context("failed to get expert profile")?;
-                }
+                .into_result()
+                .context("Failed to get user profile")?;
+            if let Some(expert_id) = expert.expert_id {
+                let ret = db
+                    .execute(FunUserUpdateExpertProfileReq {
+                        expert_id,
+                        description: req.description,
+                        social_media: req.social_media,
+                    })
+                    .await?
+                    .into_result()
+                    .context("failed to update expert profile")?;
+            } else {
+                let ret = db
+                    .execute(FunUserCreateExpertProfileReq {
+                        user_id: ctx.user_id,
+                        description: req.description,
+                        social_media: req.social_media,
+                    })
+                    .await?
+                    .into_result()
+                    .context("failed to update expert profile")?;
             }
+
             Ok(UserUpdateUserProfileResponse {})
         }
         .boxed()

@@ -1024,7 +1024,8 @@ pub struct FunUserGetUserProfileReq {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserGetUserProfileRespRow {
-    pub expert_id: i64,
+    #[serde(default)]
+    pub expert_id: Option<i64>,
     pub name: String,
     #[serde(default)]
     pub follower_count: Option<i64>,

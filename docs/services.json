@@ -837,28 +837,6 @@
           "json_schema": null
         },
         {
-          "name": "UserUpdateExpertProfile",
-          "code": 20171,
-          "parameters": [
-            {
-              "name": "description",
-              "ty": {
-                "Optional": "String"
-              }
-            },
-            {
-              "name": "social_media",
-              "ty": {
-                "Optional": "String"
-              }
-            }
-          ],
-          "returns": [],
-          "stream_response": [],
-          "description": "User update its expert profile",
-          "json_schema": null
-        },
-        {
           "name": "UserUpdateUserProfile",
           "code": 20172,
           "parameters": [

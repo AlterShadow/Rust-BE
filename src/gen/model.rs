@@ -267,9 +267,6 @@ pub enum EnumEndpoint {
     #[postgres(name = "UserGetStrategiesStatistics")]
     UserGetStrategiesStatistics = 20071,
     ///
-    #[postgres(name = "UserUpdateExpertProfile")]
-    UserUpdateExpertProfile = 20171,
-    ///
     #[postgres(name = "UserUpdateUserProfile")]
     UserUpdateUserProfile = 20172,
     ///
@@ -1491,17 +1488,6 @@ pub struct UserUnfollowStrategyResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserUpdateExpertProfileRequest {
-    #[serde(default)]
-    pub description: Option<String>,
-    #[serde(default)]
-    pub social_media: Option<String>,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserUpdateExpertProfileResponse {}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
 pub struct UserUpdateStrategyRequest {
     pub strategy_id: i64,
     #[serde(default)]
@@ -2486,36 +2472,6 @@ impl WsRequest for UserGetStrategiesStatisticsRequest {
 }
 impl WsResponse for UserGetStrategiesStatisticsResponse {
     type Request = UserGetStrategiesStatisticsRequest;
-}
-
-impl WsRequest for UserUpdateExpertProfileRequest {
-    type Response = UserUpdateExpertProfileResponse;
-    const METHOD_ID: u32 = 20171;
-    const SCHEMA: &'static str = r#"{
-  "name": "UserUpdateExpertProfile",
-  "code": 20171,
-  "parameters": [
-    {
-      "name": "description",
-      "ty": {
-        "Optional": "String"
-      }
-    },
-    {
-      "name": "social_media",
-      "ty": {
-        "Optional": "String"
-      }
-    }
-  ],
-  "returns": [],
-  "stream_response": [],
-  "description": "User update its expert profile",
-  "json_schema": null
-}"#;
-}
-impl WsResponse for UserUpdateExpertProfileResponse {
-    type Request = UserUpdateExpertProfileRequest;
 }
 
 impl WsRequest for UserUpdateUserProfileRequest {
