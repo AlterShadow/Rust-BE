@@ -368,6 +368,12 @@ pub enum EnumEndpoint {
     ///
     #[postgres(name = "AdminRejectUserBecomeExpert")]
     AdminRejectUserBecomeExpert = 30050,
+    ///
+    #[postgres(name = "AdminGetSystemConfig")]
+    AdminGetSystemConfig = 30070,
+    ///
+    #[postgres(name = "AdminUpdateSystemConfig")]
+    AdminUpdateSystemConfig = 30080,
 }
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -777,6 +783,15 @@ pub struct AdminApproveUserBecomeExpertResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct AdminGetSystemConfigRequest {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminGetSystemConfigResponse {
+    pub config_placeholder_1: i64,
+    pub config_placeholder_2: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct AdminListPendingExpertApplicationsRequest {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -832,6 +847,19 @@ pub struct AdminSetUserRoleRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminSetUserRoleResponse {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminUpdateSystemConfigRequest {
+    #[serde(default)]
+    pub config_placeholder_1: Option<i64>,
+    #[serde(default)]
+    pub config_placeholder_2: Option<i64>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminUpdateSystemConfigResponse {
+    pub success: bool,
+}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AumHistoryRow {
@@ -4487,4 +4515,65 @@ impl WsRequest for AdminRejectUserBecomeExpertRequest {
 }
 impl WsResponse for AdminRejectUserBecomeExpertResponse {
     type Request = AdminRejectUserBecomeExpertRequest;
+}
+
+impl WsRequest for AdminGetSystemConfigRequest {
+    type Response = AdminGetSystemConfigResponse;
+    const METHOD_ID: u32 = 30070;
+    const SCHEMA: &'static str = r#"{
+  "name": "AdminGetSystemConfig",
+  "code": 30070,
+  "parameters": [],
+  "returns": [
+    {
+      "name": "config_placeholder_1",
+      "ty": "BigInt"
+    },
+    {
+      "name": "config_placeholder_2",
+      "ty": "BigInt"
+    }
+  ],
+  "stream_response": [],
+  "description": "Admin get system config",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for AdminGetSystemConfigResponse {
+    type Request = AdminGetSystemConfigRequest;
+}
+
+impl WsRequest for AdminUpdateSystemConfigRequest {
+    type Response = AdminUpdateSystemConfigResponse;
+    const METHOD_ID: u32 = 30080;
+    const SCHEMA: &'static str = r#"{
+  "name": "AdminUpdateSystemConfig",
+  "code": 30080,
+  "parameters": [
+    {
+      "name": "config_placeholder_1",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "config_placeholder_2",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    }
+  ],
+  "returns": [
+    {
+      "name": "success",
+      "ty": "Boolean"
+    }
+  ],
+  "stream_response": [],
+  "description": "Admin updates system config",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for AdminUpdateSystemConfigResponse {
+    type Request = AdminUpdateSystemConfigRequest;
 }

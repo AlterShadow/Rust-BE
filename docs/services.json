@@ -2573,6 +2573,51 @@
           "stream_response": [],
           "description": "Admin approves a user to become an expert",
           "json_schema": null
+        },
+        {
+          "name": "AdminGetSystemConfig",
+          "code": 30070,
+          "parameters": [],
+          "returns": [
+            {
+              "name": "config_placeholder_1",
+              "ty": "BigInt"
+            },
+            {
+              "name": "config_placeholder_2",
+              "ty": "BigInt"
+            }
+          ],
+          "stream_response": [],
+          "description": "Admin get system config",
+          "json_schema": null
+        },
+        {
+          "name": "AdminUpdateSystemConfig",
+          "code": 30080,
+          "parameters": [
+            {
+              "name": "config_placeholder_1",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "config_placeholder_2",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "name": "success",
+              "ty": "Boolean"
+            }
+          ],
+          "stream_response": [],
+          "description": "Admin updates system config",
+          "json_schema": null
         }
       ]
     },

@@ -99,6 +99,30 @@ pub fn endpoint_admin_list_pending_expert_applications() -> EndpointSchema {
     )
     .with_description("Admin approves a user to become an expert")
 }
+pub fn endpoint_admin_get_system_config() -> EndpointSchema {
+    EndpointSchema::new(
+        "AdminGetSystemConfig",
+        30070,
+        vec![],
+        vec![
+            Field::new("config_placeholder_1", Type::BigInt),
+            Field::new("config_placeholder_2", Type::BigInt),
+        ],
+    )
+    .with_description("Admin get system config")
+}
+pub fn endpoint_admin_update_system_config() -> EndpointSchema {
+    EndpointSchema::new(
+        "AdminUpdateSystemConfig",
+        30080,
+        vec![
+            Field::new("config_placeholder_1", Type::optional(Type::BigInt)),
+            Field::new("config_placeholder_2", Type::optional(Type::BigInt)),
+        ],
+        vec![Field::new("success", Type::Boolean)],
+    )
+    .with_description("Admin updates system config")
+}
 pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
     vec![
         endpoint_admin_list_users(),
@@ -107,5 +131,7 @@ pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
         endpoint_admin_list_pending_expert_applications(),
         endpoint_admin_approve_user_become_expert(),
         endpoint_admin_reject_user_become_expert(),
+        endpoint_admin_get_system_config(),
+        endpoint_admin_update_system_config(),
     ]
 }

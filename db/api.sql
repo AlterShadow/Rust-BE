@@ -1421,6 +1421,48 @@ END
 $$;
         
 
+CREATE OR REPLACE FUNCTION api.fun_admin_get_system_config(a_config_id bigint)
+RETURNS table (
+    "config_placeholder_1" bigint,
+    "config_placeholder_2" bigint
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY SELECT
+        a.config_placeholder_1,
+        a.config_placeholder_2
+    FROM
+        tbl.system_config a
+    WHERE
+        a.pkey_id = a_config_id;
+END            
+
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_admin_update_system_config(a_config_id bigint, a_config_placeholder_1 bigint DEFAULT NULL, a_config_placeholder_2 bigint DEFAULT NULL)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    IF NOT EXISTS (SELECT * FROM tbl.system_config WHERE pkey_id = a_config_id) THEN
+        INSERT INTO tbl.system_config (pkey_id, config_placeholder_1, config_placeholder_2)
+        VALUES (a_config_id, a_config_placeholder_1, a_config_placeholder_2);
+    ELSE
+        UPDATE tbl.system_config SET
+            config_placeholder_1 = coalesce(a_config_placeholder_1, config_placeholder_1),
+            config_placeholder_2 = coalesce(a_config_placeholder_2, config_placeholder_2)
+        WHERE
+            pkey_id = a_config_id;
+    END IF;
+END
+
+$$;
+        
+
 CREATE OR REPLACE FUNCTION api.fun_watcher_save_raw_transaction(a_transaction_hash varchar, a_chain varchar, a_raw_transaction varchar, a_dex varchar DEFAULT NULL)
 RETURNS table (
     "transaction_cache_id" bigint

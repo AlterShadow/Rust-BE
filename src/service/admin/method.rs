@@ -205,3 +205,63 @@ impl RequestHandler for MethodAdminListPendingExpertApplications {
         .boxed()
     }
 }
+pub struct MethodAdminGetSystemConfig;
+impl RequestHandler for MethodAdminGetSystemConfig {
+    type Request = AdminGetSystemConfigRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        _req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db: DbClient = toolbox.get_db();
+        async move {
+            ensure_user_role(ctx, EnumRole::Admin)?;
+
+            if let Some(ret) = db
+                .execute(FunAdminGetSystemConfigReq { config_id: 0 })
+                .await?
+                .into_result()
+            {
+                Ok(AdminGetSystemConfigResponse {
+                    config_placeholder_1: ret.config_placeholder_1.unwrap_or_default(),
+                    config_placeholder_2: ret.config_placeholder_2.unwrap_or_default(),
+                })
+            } else {
+                Ok(AdminGetSystemConfigResponse {
+                    config_placeholder_1: 0,
+                    config_placeholder_2: 0,
+                })
+            }
+        }
+        .boxed()
+    }
+}
+pub struct MethodAdminUpdateSystemConfig;
+impl RequestHandler for MethodAdminUpdateSystemConfig {
+    type Request = AdminUpdateSystemConfigRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db: DbClient = toolbox.get_db();
+        async move {
+            ensure_user_role(ctx, EnumRole::Admin)?;
+
+            let ret = db
+                .execute(FunAdminUpdateSystemConfigReq {
+                    config_id: 0,
+                    config_placeholder_1: req.config_placeholder_1,
+                    config_placeholder_2: req.config_placeholder_2,
+                })
+                .await?;
+
+            Ok(AdminUpdateSystemConfigResponse { success: true })
+        }
+        .boxed()
+    }
+}

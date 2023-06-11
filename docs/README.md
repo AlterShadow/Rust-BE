@@ -65,6 +65,8 @@ ID: 3
 |30060|AdminListPendingExpertApplications||users|Admin approves a user to become an expert|
 |30040|AdminApproveUserBecomeExpert|user_id|success|Admin approves a user to become an expert|
 |30050|AdminRejectUserBecomeExpert|user_id|success|Admin approves a user to become an expert|
+|30070|AdminGetSystemConfig||config_placeholder_1, config_placeholder_2|Admin get system config|
+|30080|AdminUpdateSystemConfig|config_placeholder_1, config_placeholder_2|success|Admin updates system config|
 
 # watcher Server
 ID: 4

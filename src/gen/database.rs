@@ -1945,6 +1945,66 @@ impl DatabaseRequest for FunAdminListPendingUserExpertApplicationsReq {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAdminGetSystemConfigReq {
+    pub config_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAdminGetSystemConfigRespRow {
+    #[serde(default)]
+    pub config_placeholder_1: Option<i64>,
+    #[serde(default)]
+    pub config_placeholder_2: Option<i64>,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunAdminGetSystemConfigReq {
+    type ResponseRow = FunAdminGetSystemConfigRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_admin_get_system_config(a_config_id => $1::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![&self.config_id as &(dyn ToSql + Sync)]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunAdminGetSystemConfigRespRow> {
+        let r = FunAdminGetSystemConfigRespRow {
+            config_placeholder_1: row.try_get(0)?,
+            config_placeholder_2: row.try_get(1)?,
+        };
+        Ok(r)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAdminUpdateSystemConfigReq {
+    pub config_id: i64,
+    #[serde(default)]
+    pub config_placeholder_1: Option<i64>,
+    #[serde(default)]
+    pub config_placeholder_2: Option<i64>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAdminUpdateSystemConfigRespRow {}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunAdminUpdateSystemConfigReq {
+    type ResponseRow = FunAdminUpdateSystemConfigRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_admin_update_system_config(a_config_id => $1::bigint, a_config_placeholder_1 => $2::bigint, a_config_placeholder_2 => $3::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.config_id as &(dyn ToSql + Sync),
+            &self.config_placeholder_1 as &(dyn ToSql + Sync),
+            &self.config_placeholder_2 as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunAdminUpdateSystemConfigRespRow> {
+        let r = FunAdminUpdateSystemConfigRespRow {};
+        Ok(r)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunWatcherSaveRawTransactionReq {
     pub transaction_hash: String,
     pub chain: String,

@@ -1,5 +1,5 @@
 -- Created by Vertabelo (http://vertabelo.com)
--- Last modification date: 2023-06-10 08:07:28.604
+-- Last modification date: 2023-06-11 01:58:48.932
 
 CREATE SCHEMA IF NOT EXISTS tbl;;
 
@@ -113,7 +113,7 @@ CREATE TABLE tbl.strategy (
     strategy_thesis_url varchar(256)  NULL,
     agreed_tos boolean  NOT NULL DEFAULT FALSE,
     minimum_backing_amount_usd double precision  NULL,
-    expert_fee double precision  NOT NULL,
+    expert_fee double precision  NULL,
     strategy_fee double precision  NULL,
     updated_at bigint  NOT NULL,
     created_at bigint  NOT NULL,
@@ -145,6 +145,14 @@ CREATE TABLE tbl.strategy_watching_wallet (
     created_at bigint  NOT NULL,
     updated_at bigint  NOT NULL,
     CONSTRAINT strategy_watching_wallet_pk PRIMARY KEY (pkey_id)
+);
+
+-- Table: system_config
+CREATE TABLE system_config (
+    pkey_id bigint  NOT NULL,
+    config_placeholder_1 bigint  NULL,
+    config_placeholder_2 int  NULL,
+    CONSTRAINT system_config_pk PRIMARY KEY (pkey_id)
 );
 
 -- Table: transaction_cache
