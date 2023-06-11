@@ -60,8 +60,8 @@ END
                 Field::new("net_value", Type::Numeric),
                 Field::new("followers", Type::BigInt),
                 Field::new("backers", Type::BigInt),
-                Field::new("risk_score", Type::Numeric),
-                Field::new("aum", Type::Numeric),
+                Field::new("risk_score", Type::optional(Type::Numeric)),
+                Field::new("aum", Type::optional(Type::Numeric)),
                 Field::new("followed", Type::Boolean),
             ],
             r#"
