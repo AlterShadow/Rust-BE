@@ -963,13 +963,14 @@ DECLARE
     _expert_id bigint;
 BEGIN
     IF NOT EXISTS(SELECT * FROM tbl.expert_profile WHERE fkey_user_id = a_user_id) THEN
-        INSERT INTO tbl.expert_profile(fkey_user_id, pending_expert, updated_at, created_at)
-        VALUES(a_user_id, TRUE, extract(epoch from now())::bigint, extract(epoch from now())::bigint)
+        INSERT INTO tbl.expert_profile(fkey_user_id, pending_expert, requested_at, updated_at, created_at)
+        VALUES(a_user_id, TRUE, extract(epoch from now())::bigint, extract(epoch from now())::bigint, extract(epoch from now())::bigint)
         RETURNING pkey_id INTO _expert_id;
     ELSE
         UPDATE tbl.expert_profile SET 
             pending_expert = TRUE,
-            updated_at = extract(epoch from now())::bigint
+            updated_at = extract(epoch from now())::bigint,
+            requested_at = extract(epoch from now())::bigint
         WHERE fkey_user_id = a_user_id;
         SELECT pkey_id INTO _expert_id FROM tbl.expert_profile WHERE fkey_user_id = a_user_id;
     END IF;
@@ -1386,7 +1387,12 @@ DECLARE
     _user_id bigint;
 BEGIN
     SELECT pkey_id INTO _user_id FROM tbl.user WHERE public_id = a_user_public_id;
-    UPDATE tbl.expert_profile SET pending_expert = FALSE, approved_expert = TRUE WHERE fkey_user_id = _user_id;
+    UPDATE tbl.expert_profile 
+    SET pending_expert = FALSE,
+        approved_expert = TRUE,
+        approved_at = EXTRACT(EPOCH FROM NOW()),
+        updated_at = EXTRACT(EPOCH FROM NOW())
+    WHERE fkey_user_id = _user_id;
     UPDATE tbl.user SET role = 'expert' WHERE role = 'user' AND pkey_id = _user_id;
     RETURN QUERY SELECT TRUE;
 END

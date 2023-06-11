@@ -3,9 +3,8 @@ pub mod tools;
 use eth_sdk::signer::Secp256k1SecretKey;
 use eth_sdk::utils::encode_signature;
 use eyre::*;
-use gen::database::FunAuthSetRoleReq;
 use gen::model::*;
-use lib::database::{connect_to_database, database_test_config, drop_and_recreate_database};
+use lib::database::drop_and_recreate_database;
 use lib::log::{setup_logs, LogLevel};
 use tools::*;
 use tracing::*;
@@ -260,5 +259,63 @@ async fn test_user_follow_expert() -> Result<()> {
         .await?;
     info!("List followed experts {:?}", resp);
     assert_eq!(resp.experts.len(), 0);
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_user_list_experts() -> Result<()> {
+    let _ = setup_logs(LogLevel::Info);
+    drop_and_recreate_database()?;
+
+    let admin = Secp256k1SecretKey::new_random();
+    signup("dev-admin", &admin.key).await?;
+    let mut admin_client = connect_user("dev-admin", &admin.key).await?;
+
+    let user = Secp256k1SecretKey::new_random();
+    signup("user1", &user.key).await?;
+
+    let mut client = connect_user("user1", &user.key).await?;
+    let apply_become_expert_resp = client.request(UserApplyBecomeExpertRequest {}).await?;
+    info!("User Apply Become Expert {:?}", apply_become_expert_resp);
+
+    let resp = admin_client
+        .request(AdminListPendingExpertApplicationsRequest {
+            offset: None,
+            limit: None,
+        })
+        .await?;
+    assert_eq!(resp.users.len(), 1);
+
+    let resp = admin_client
+        .request(AdminApproveUserBecomeExpertRequest {
+            user_id: resp.users[0].user_id,
+        })
+        .await?;
+    info!("Approve {:?}", resp);
+    let user = Secp256k1SecretKey::new_random();
+    signup("user2", &user.key).await?;
+
+    let mut client = connect_user("user2", &user.key).await?;
+    let resp = client
+        .request(UserListExpertsRequest {
+            limit: None,
+            offset: None,
+        })
+        .await?;
+    info!("Experts {:?}", resp);
+    let resp = client
+        .request(UserListFeaturedExpertsRequest {
+            limit: None,
+            offset: None,
+        })
+        .await?;
+    info!("Featured {:?}", resp);
+    let resp = client
+        .request(UserListTopPerformingExpertsRequest {
+            limit: None,
+            offset: None,
+        })
+        .await?;
+    info!("Top performing {:?}", resp);
     Ok(())
 }

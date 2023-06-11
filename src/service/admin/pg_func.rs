@@ -95,7 +95,12 @@ DECLARE
     _user_id bigint;
 BEGIN
     SELECT pkey_id INTO _user_id FROM tbl.user WHERE public_id = a_user_public_id;
-    UPDATE tbl.expert_profile SET pending_expert = FALSE, approved_expert = TRUE WHERE fkey_user_id = _user_id;
+    UPDATE tbl.expert_profile 
+    SET pending_expert = FALSE,
+        approved_expert = TRUE,
+        approved_at = EXTRACT(EPOCH FROM NOW()),
+        updated_at = EXTRACT(EPOCH FROM NOW())
+    WHERE fkey_user_id = _user_id;
     UPDATE tbl.user SET role = 'expert' WHERE role = 'user' AND pkey_id = _user_id;
     RETURN QUERY SELECT TRUE;
 END

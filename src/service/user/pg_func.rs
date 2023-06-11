@@ -523,19 +523,18 @@ END
                 Field::new("expert_id", Type::BigInt),
                 Field::new("user_id", Type::BigInt),
                 Field::new("user_public_id", Type::BigInt),
-                // FIXME: right now listening_wallet is the wallet the expert uses to login. Should be multiple wallets
                 Field::new("listening_wallet", Type::String),
                 Field::new("username", Type::String),
                 Field::new("family_name", Type::optional(Type::String)),
                 Field::new("given_name", Type::optional(Type::String)),
                 Field::new("follower_count", Type::BigInt),
-                Field::new("description", Type::String),
-                Field::new("social_media", Type::String),
-                Field::new("risk_score", Type::Numeric),
-                Field::new("reputation_score", Type::Numeric),
-                Field::new("aum", Type::Numeric),
+                Field::new("description", Type::optional(Type::String)),
+                Field::new("social_media", Type::optional(Type::String)),
+                Field::new("risk_score", Type::optional(Type::Numeric)),
+                Field::new("reputation_score", Type::optional(Type::Numeric)),
+                Field::new("aum", Type::optional(Type::Numeric)),
                 Field::new("joined_at", Type::BigInt),
-                Field::new("requested_at", Type::BigInt),
+                Field::new("requested_at", Type::optional(Type::BigInt)),
                 Field::new("approved_at", Type::optional(Type::BigInt)),
                 Field::new("pending_expert", Type::Boolean),
                 Field::new("approved_expert", Type::Boolean),
@@ -711,13 +710,14 @@ DECLARE
     _expert_id bigint;
 BEGIN
     IF NOT EXISTS(SELECT * FROM tbl.expert_profile WHERE fkey_user_id = a_user_id) THEN
-        INSERT INTO tbl.expert_profile(fkey_user_id, pending_expert, updated_at, created_at)
-        VALUES(a_user_id, TRUE, extract(epoch from now())::bigint, extract(epoch from now())::bigint)
+        INSERT INTO tbl.expert_profile(fkey_user_id, pending_expert, requested_at, updated_at, created_at)
+        VALUES(a_user_id, TRUE, extract(epoch from now())::bigint, extract(epoch from now())::bigint, extract(epoch from now())::bigint)
         RETURNING pkey_id INTO _expert_id;
     ELSE
         UPDATE tbl.expert_profile SET 
             pending_expert = TRUE,
-            updated_at = extract(epoch from now())::bigint
+            updated_at = extract(epoch from now())::bigint,
+            requested_at = extract(epoch from now())::bigint
         WHERE fkey_user_id = a_user_id;
         SELECT pkey_id INTO _expert_id FROM tbl.expert_profile WHERE fkey_user_id = a_user_id;
     END IF;
