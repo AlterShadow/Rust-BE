@@ -69,6 +69,13 @@ impl Erc20Token {
             .await?)
     }
 
+    pub async fn decimals(&self) -> Result<U256> {
+        Ok(self
+            .contract
+            .query("decimals", (), None, Options::default(), None)
+            .await?)
+    }
+
     pub async fn mint(&self, secret: impl Key, to: Address, amount: U256) -> Result<H256> {
         Ok(self
             .contract
