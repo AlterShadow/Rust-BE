@@ -6,6 +6,7 @@ use eyre::*;
 use gen::model::*;
 use lib::database::drop_and_recreate_database;
 use lib::log::{setup_logs, LogLevel};
+use rand::random;
 use tools::*;
 use tracing::*;
 
@@ -196,16 +197,8 @@ pub fn get_user_key(i: usize) -> Option<Secp256k1SecretKey> {
 pub fn get_admin_key() -> Secp256k1SecretKey {
     Secp256k1SecretKey::from_str(ADMIN_KEY.0).unwrap()
 }
-#[tokio::test]
-async fn test_drop_and_recreate_database() -> Result<()> {
-    let _ = setup_logs(LogLevel::Info);
-    drop_and_recreate_database()?;
-    Ok(())
-}
 
-#[tokio::test]
-async fn test_populate_users() -> Result<()> {
-    let _ = setup_logs(LogLevel::Info);
+async fn populate_users() -> Result<()> {
     let admin_signer = get_admin_key();
     signup(format!("dev-{}", 0), &admin_signer.key).await?;
 
@@ -216,9 +209,8 @@ async fn test_populate_users() -> Result<()> {
     }
     Ok(())
 }
-#[tokio::test]
-async fn test_populate_user_registered_wallets() -> Result<()> {
-    let _ = setup_logs(LogLevel::Info);
+
+async fn populate_user_registered_wallets() -> Result<()> {
     for i in 0..KEYS.len() {
         let signer = get_user_key(i).unwrap();
 
@@ -238,9 +230,7 @@ async fn test_populate_user_registered_wallets() -> Result<()> {
     Ok(())
 }
 
-#[tokio::test]
-async fn test_populate_user_apply_become_admins() -> Result<()> {
-    let _ = setup_logs(LogLevel::Info);
+async fn populate_user_apply_become_experts() -> Result<()> {
     let admin_signer = get_admin_key();
     let mut admin_client = connect_user("dev-0", &admin_signer.key).await?;
     for i in 0..KEYS.len() / 2 {
@@ -263,8 +253,40 @@ async fn test_populate_user_apply_become_admins() -> Result<()> {
                     user_id: login_info.user_id,
                 })
                 .await?;
+
+            let create_strategy_resp = client
+                .request(UserCreateStrategyRequest {
+                    name: format!("test strategy {}", i),
+                    description: "this is a test strategy".to_string(),
+                    strategy_thesis_url: "".to_string(),
+                    minimum_backing_amount_usd: 0.0,
+                    strategy_fee: random(),
+                    expert_fee: random(),
+                    agreed_tos: true,
+                    linked_wallets: vec![],
+                })
+                .await?;
+            info!("User Create Strategy {:?}", create_strategy_resp);
+
+            let resp = client
+                .request(UserFollowStrategyRequest {
+                    strategy_id: create_strategy_resp.strategy_id,
+                })
+                .await?;
+            client
+                .request(UserFollowExpertRequest { expert_id: i as _ })
+                .await?;
         }
     }
 
+    Ok(())
+}
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    setup_logs(LogLevel::Debug)?;
+    populate_users().await?;
+    populate_user_registered_wallets().await?;
+    populate_user_apply_become_experts().await?;
     Ok(())
 }

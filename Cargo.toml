@@ -18,7 +18,7 @@ reqwest = { version = "*", default-features = false, features = [
 	"serde_json",
 	"json",
 ] }
-tokio-tungstenite = { version = "*", features = [] }
+tokio-tungstenite = { version = "*", features = ["rustls-tls-webpki-roots"] }
 itertools = "0.10.3"
 futures = "*"
 serde_json = "*"
