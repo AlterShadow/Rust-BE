@@ -393,8 +393,10 @@ pub struct FunUserListTopPerformingStrategiesRespRow {
     pub net_value: f64,
     pub followers: i64,
     pub backers: i64,
-    pub risk_score: f64,
-    pub aum: f64,
+    #[serde(default)]
+    pub risk_score: Option<f64>,
+    #[serde(default)]
+    pub aum: Option<f64>,
 }
 
 #[allow(unused_variables)]

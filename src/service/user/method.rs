@@ -174,6 +174,7 @@ impl RequestHandler for MethodUserListTopPerformingStrategies {
         let db: DbClient = toolbox.get_db();
         async move {
             ensure_user_role(ctx, EnumRole::User)?;
+            // TODO: use FunUserListTopPerformingStrategiesReq
 
             let ret = db
                 .execute(FunUserListStrategiesReq {
