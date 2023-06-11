@@ -1,5 +1,5 @@
 -- Created by Vertabelo (http://vertabelo.com)
--- Last modification date: 2023-06-11 01:58:48.932
+-- Last modification date: 2023-06-11 01:58:58.4
 
 CREATE SCHEMA IF NOT EXISTS tbl;;
 
@@ -148,7 +148,7 @@ CREATE TABLE tbl.strategy_watching_wallet (
 );
 
 -- Table: system_config
-CREATE TABLE system_config (
+CREATE TABLE tbl.system_config (
     pkey_id bigint  NOT NULL,
     config_placeholder_1 bigint  NULL,
     config_placeholder_2 int  NULL,
