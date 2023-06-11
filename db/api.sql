@@ -669,7 +669,7 @@ BEGIN
                           a.blockchain AS blockchain,
                           a.dex AS dex,
                           a.back_time AS back_time,
-                          a.time AS exit_time
+                          a.exit_time AS exit_time
                  FROM tbl.user_exit_strategy_history AS a
                  WHERE a.fkey_user_id = a_user_id AND (a.fkey_strategy_id = a_strategy_id OR a_strategy_id IS NULL);
 END
