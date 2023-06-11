@@ -186,9 +186,9 @@ BEGIN
     RETURN QUERY SELECT a.pkey_id AS strategy_id,
                           a.name AS strategy_name,
                           a.description AS strategy_description,
-                          current_usdc,
-                          total_backed_usdc,
-                          total_exited_usdc,
+                          a.current_usdc,
+                          a.total_backed_usdc,
+                          a.total_exited_usdc,
                           (SELECT COUNT(*) FROM tbl.user_follow_strategy WHERE fkey_strategy_id = a.pkey_id AND unfollowed = FALSE) AS followers,
                           (SELECT COUNT(DISTINCT user_back_strategy_history.fkey_user_id) FROM tbl.user_back_strategy_history WHERE fkey_strategy_id = a.pkey_id) AS followers,
                           a.risk_score as risk_score,
@@ -987,7 +987,7 @@ END
             ],
             r#"
 BEGIN
-    RETURN QUERY SELECT pkey_id, blockchain, token_name, token_address, quantity, fkey_strategy_id, updated_at, created_at FROM tbl.strategy_initial_token_ratio WHERE fkey_strategy_id = a_strategy_id;
+    RETURN QUERY SELECT a.pkey_id, a.blockchain, a.token_name, a.token_address, a.quantity, a.fkey_strategy_id, a.updated_at, a.created_at FROM tbl.strategy_initial_token_ratio AS a WHERE fkey_strategy_id = a_strategy_id;
 END
 "#,
         ),
