@@ -265,3 +265,61 @@ impl RequestHandler for MethodAdminUpdateSystemConfig {
         .boxed()
     }
 }
+pub struct MethodAdminListExperts;
+impl RequestHandler for MethodAdminListExperts {
+    type Request = AdminListExpertsRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db: DbClient = toolbox.get_db();
+        async move {
+            ensure_user_role(ctx, EnumRole::Admin)?;
+
+            let ret = db
+                .execute(FunAdminListExpertsReq {
+                    limit: req.limit,
+                    offset: req.offset,
+                    expert_id: req.expert_id,
+                    user_id: req.user_id,
+                    user_public_id: req.user_public_id,
+                    username: req.username,
+                    family_name: req.family_name,
+                    given_name: req.given_name,
+                    description: req.description,
+                    social_media: req.social_media,
+                })
+                .await?;
+
+            Ok(AdminListExpertsResponse {
+                experts: ret
+                    .into_rows()
+                    .into_iter()
+                    .map(|x| AdminListExpertsRow {
+                        expert_id: x.expert_id,
+                        user_public_id: x.user_public_id,
+                        name: x.name,
+                        family_name: x.family_name,
+                        given_name: x.given_name,
+                        follower_count: x.follower_count as _,
+                        description: x.description,
+                        social_media: x.social_media,
+                        risk_score: x.risk_score,
+                        reputation_score: x.reputation_score,
+                        aum: x.aum,
+                        joined_at: x.joined_at,
+                        requested_at: x.requested_at,
+                        approved_at: x.approved_at,
+                        pending_expert: x.pending_expert,
+                        linked_wallet: x.linked_wallet,
+                        approved_expert: x.approved_expert,
+                    })
+                    .collect(),
+            })
+        }
+        .boxed()
+    }
+}

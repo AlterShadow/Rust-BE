@@ -22,6 +22,8 @@ use tracing::info;
 use web3::signing::Key;
 use web3::types::{Address, H256, U256};
 
+const DEFAULT_LIMIT: i64 = 20;
+const DEFAULT_OFFSET: i64 = 0;
 pub fn initial_sp_token_supply() -> U256 {
     U256::from(1000000000u64) * U256::exp10(18)
 }
@@ -863,7 +865,7 @@ impl RequestHandler for MethodUserListFollowedExperts {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        _req: Self::Request,
+        req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         async move {
@@ -871,6 +873,8 @@ impl RequestHandler for MethodUserListFollowedExperts {
             let ret = db
                 .execute(FunUserListFollowedExpertsReq {
                     user_id: ctx.user_id,
+                    offset: req.offset.unwrap_or(DEFAULT_OFFSET),
+                    limit: req.limit.unwrap_or(DEFAULT_LIMIT),
                 })
                 .await?;
             Ok(UserListFollowedExpertsResponse {
@@ -881,8 +885,8 @@ impl RequestHandler for MethodUserListFollowedExperts {
                         user_public_id: x.user_public_id,
                         name: x.username,
                         linked_wallet: x.listening_wallet,
-                        family_name: x.family_name.unwrap_or_default(),
-                        given_name: x.given_name.unwrap_or_default(),
+                        family_name: x.family_name,
+                        given_name: x.given_name,
                         follower_count: x.follower_count as _,
                         description: x.description,
                         social_media: x.social_media,
@@ -891,6 +895,9 @@ impl RequestHandler for MethodUserListFollowedExperts {
                         aum: x.aum,
                         joined_at: x.joined_at,
                         requested_at: x.requested_at,
+                        approved_at: x.approved_at,
+                        pending_expert: x.pending_expert,
+                        approved_expert: x.approved_expert,
                     })
                     .collect(),
             })
@@ -936,12 +943,18 @@ impl RequestHandler for MethodUserListExperts {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        _req: Self::Request,
+        req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         async move {
             ensure_user_role(ctx, EnumRole::User)?;
-            let ret = db.execute(FunUserListExpertsReq {}).await?;
+            let ret = db
+                .execute(FunUserListExpertsReq {
+                    offset: req.offset.unwrap_or(DEFAULT_OFFSET),
+                    limit: req.limit.unwrap_or(DEFAULT_LIMIT),
+                    user_id: ctx.user_id,
+                })
+                .await?;
             Ok(UserListExpertsResponse {
                 experts: ret
                     .into_iter()
@@ -950,8 +963,8 @@ impl RequestHandler for MethodUserListExperts {
                         user_public_id: x.user_public_id,
                         name: x.username,
                         linked_wallet: x.listening_wallet,
-                        family_name: x.family_name.unwrap_or_default(),
-                        given_name: x.given_name.unwrap_or_default(),
+                        family_name: x.family_name,
+                        given_name: x.given_name,
                         follower_count: x.follower_count as _,
                         description: x.description,
                         social_media: x.social_media,
@@ -960,6 +973,9 @@ impl RequestHandler for MethodUserListExperts {
                         joined_at: x.joined_at,
                         reputation_score: x.reputation_score,
                         requested_at: x.requested_at,
+                        approved_at: x.approved_at,
+                        pending_expert: x.pending_expert,
+                        approved_expert: x.approved_expert,
                     })
                     .collect(),
             })
@@ -975,12 +991,18 @@ impl RequestHandler for MethodUserListTopPerformingExperts {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        _req: Self::Request,
+        req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         async move {
             ensure_user_role(ctx, EnumRole::User)?;
-            let ret = db.execute(FunUserListExpertsReq {}).await?;
+            let ret = db
+                .execute(FunUserListExpertsReq {
+                    user_id: ctx.user_id,
+                    offset: req.offset.unwrap_or(DEFAULT_OFFSET),
+                    limit: req.limit.unwrap_or(DEFAULT_LIMIT),
+                })
+                .await?;
             Ok(UserListTopPerformingExpertsResponse {
                 experts: ret
                     .into_iter()
@@ -989,8 +1011,8 @@ impl RequestHandler for MethodUserListTopPerformingExperts {
                         user_public_id: x.user_public_id,
                         name: x.username,
                         linked_wallet: x.listening_wallet,
-                        family_name: x.family_name.unwrap_or_default(),
-                        given_name: x.given_name.unwrap_or_default(),
+                        family_name: x.family_name,
+                        given_name: x.given_name,
                         follower_count: x.follower_count as _,
                         description: x.description,
                         social_media: x.social_media,
@@ -999,6 +1021,9 @@ impl RequestHandler for MethodUserListTopPerformingExperts {
                         joined_at: x.joined_at,
                         reputation_score: x.reputation_score,
                         requested_at: x.requested_at,
+                        approved_at: x.approved_at,
+                        pending_expert: x.pending_expert,
+                        approved_expert: x.approved_expert,
                     })
                     .collect(),
             })
@@ -1014,12 +1039,18 @@ impl RequestHandler for MethodUserListFeaturedExperts {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        _req: Self::Request,
+        req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         async move {
             ensure_user_role(ctx, EnumRole::User)?;
-            let ret = db.execute(FunUserListExpertsReq {}).await?;
+            let ret = db
+                .execute(FunUserListExpertsReq {
+                    offset: req.offset.unwrap_or(DEFAULT_OFFSET),
+                    limit: req.limit.unwrap_or(DEFAULT_LIMIT),
+                    user_id: ctx.user_id,
+                })
+                .await?;
             Ok(UserListFeaturedExpertsResponse {
                 experts: ret
                     .into_iter()
@@ -1028,8 +1059,8 @@ impl RequestHandler for MethodUserListFeaturedExperts {
                         user_public_id: x.user_public_id,
                         name: x.username,
                         linked_wallet: x.listening_wallet,
-                        family_name: x.family_name.unwrap_or_default(),
-                        given_name: x.given_name.unwrap_or_default(),
+                        family_name: x.family_name,
+                        given_name: x.given_name,
                         follower_count: x.follower_count as _,
                         description: x.description,
                         social_media: x.social_media,
@@ -1038,6 +1069,9 @@ impl RequestHandler for MethodUserListFeaturedExperts {
                         joined_at: x.joined_at,
                         reputation_score: x.reputation_score,
                         requested_at: x.requested_at,
+                        approved_at: x.approved_at,
+                        pending_expert: x.pending_expert,
+                        approved_expert: x.approved_expert,
                     })
                     .collect(),
             })
@@ -1061,13 +1095,14 @@ impl RequestHandler for MethodUserGetExpertProfile {
             let ret = db
                 .execute(FunUserGetExpertProfileReq {
                     expert_id: req.expert_id,
+                    user_id: ctx.user_id,
                 })
                 .await?
                 .into_result()
                 .context("failed to get expert profile")?;
             Ok(UserGetExpertProfileResponse {
                 expert_id: ret.expert_id,
-                name: ret.name,
+                name: ret.username,
                 follower_count: ret.follower_count as _,
                 description: ret.description,
                 social_media: ret.social_media,

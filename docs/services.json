@@ -222,7 +222,20 @@
         {
           "name": "UserListFollowedStrategies",
           "code": 20050,
-          "parameters": [],
+          "parameters": [
+            {
+              "name": "limit",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "offset",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            }
+          ],
           "returns": [
             {
               "name": "strategies",
@@ -315,7 +328,20 @@
         {
           "name": "UserListStrategies",
           "code": 20061,
-          "parameters": [],
+          "parameters": [
+            {
+              "name": "limit",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "offset",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            }
+          ],
           "returns": [
             {
               "name": "strategies",
@@ -389,7 +415,20 @@
         {
           "name": "UserListTopPerformingStrategies",
           "code": 20063,
-          "parameters": [],
+          "parameters": [
+            {
+              "name": "limit",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "offset",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            }
+          ],
           "returns": [
             {
               "name": "strategies",
@@ -469,12 +508,16 @@
               "ty": "BigInt"
             },
             {
-              "name": "page",
-              "ty": "Int"
+              "name": "limit",
+              "ty": {
+                "Optional": "BigInt"
+              }
             },
             {
-              "name": "page_size",
-              "ty": "Int"
+              "name": "offset",
+              "ty": {
+                "Optional": "BigInt"
+              }
             }
           ],
           "returns": [
@@ -518,12 +561,16 @@
               "ty": "BigInt"
             },
             {
-              "name": "page",
-              "ty": "Int"
+              "name": "limit",
+              "ty": {
+                "Optional": "BigInt"
+              }
             },
             {
-              "name": "page_size",
-              "ty": "Int"
+              "name": "offset",
+              "ty": {
+                "Optional": "BigInt"
+              }
             }
           ],
           "returns": [
@@ -946,7 +993,20 @@
         {
           "name": "UserListBackedStrategies",
           "code": 20090,
-          "parameters": [],
+          "parameters": [
+            {
+              "name": "limit",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "offset",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            }
+          ],
           "returns": [
             {
               "name": "strategies",
@@ -1020,7 +1080,20 @@
         {
           "name": "UserListBackStrategyHistory",
           "code": 20100,
-          "parameters": [],
+          "parameters": [
+            {
+              "name": "limit",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "offset",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            }
+          ],
           "returns": [
             {
               "name": "back_history",
@@ -1073,6 +1146,18 @@
           "parameters": [
             {
               "name": "strategy_id",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "limit",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "offset",
               "ty": {
                 "Optional": "BigInt"
               }
@@ -1150,7 +1235,20 @@
         {
           "name": "UserListFollowedExperts",
           "code": 20140,
-          "parameters": [],
+          "parameters": [
+            {
+              "name": "limit",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "offset",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            }
+          ],
           "returns": [
             {
               "name": "experts",
@@ -1167,24 +1265,28 @@
                       "ty": "BigInt"
                     },
                     {
-                      "name": "name",
-                      "ty": "String"
-                    },
-                    {
                       "name": "linked_wallet",
                       "ty": "String"
                     },
                     {
-                      "name": "family_name",
+                      "name": "name",
                       "ty": "String"
+                    },
+                    {
+                      "name": "family_name",
+                      "ty": {
+                        "Optional": "String"
+                      }
                     },
                     {
                       "name": "given_name",
-                      "ty": "String"
+                      "ty": {
+                        "Optional": "String"
+                      }
                     },
                     {
                       "name": "follower_count",
-                      "ty": "Int"
+                      "ty": "BigInt"
                     },
                     {
                       "name": "description",
@@ -1213,6 +1315,20 @@
                     {
                       "name": "requested_at",
                       "ty": "BigInt"
+                    },
+                    {
+                      "name": "approved_at",
+                      "ty": {
+                        "Optional": "BigInt"
+                      }
+                    },
+                    {
+                      "name": "pending_expert",
+                      "ty": "Boolean"
+                    },
+                    {
+                      "name": "approved_expert",
+                      "ty": "Boolean"
                     }
                   ]
                 }
@@ -1245,7 +1361,20 @@
         {
           "name": "UserListExperts",
           "code": 20160,
-          "parameters": [],
+          "parameters": [
+            {
+              "name": "limit",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "offset",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            }
+          ],
           "returns": [
             {
               "name": "experts",
@@ -1262,24 +1391,28 @@
                       "ty": "BigInt"
                     },
                     {
-                      "name": "name",
-                      "ty": "String"
-                    },
-                    {
                       "name": "linked_wallet",
                       "ty": "String"
                     },
                     {
-                      "name": "family_name",
+                      "name": "name",
                       "ty": "String"
+                    },
+                    {
+                      "name": "family_name",
+                      "ty": {
+                        "Optional": "String"
+                      }
                     },
                     {
                       "name": "given_name",
-                      "ty": "String"
+                      "ty": {
+                        "Optional": "String"
+                      }
                     },
                     {
                       "name": "follower_count",
-                      "ty": "Int"
+                      "ty": "BigInt"
                     },
                     {
                       "name": "description",
@@ -1308,6 +1441,20 @@
                     {
                       "name": "requested_at",
                       "ty": "BigInt"
+                    },
+                    {
+                      "name": "approved_at",
+                      "ty": {
+                        "Optional": "BigInt"
+                      }
+                    },
+                    {
+                      "name": "pending_expert",
+                      "ty": "Boolean"
+                    },
+                    {
+                      "name": "approved_expert",
+                      "ty": "Boolean"
                     }
                   ]
                 }
@@ -1321,7 +1468,20 @@
         {
           "name": "UserListTopPerformingExperts",
           "code": 20161,
-          "parameters": [],
+          "parameters": [
+            {
+              "name": "limit",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "offset",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            }
+          ],
           "returns": [
             {
               "name": "experts",
@@ -1338,24 +1498,28 @@
                       "ty": "BigInt"
                     },
                     {
-                      "name": "name",
-                      "ty": "String"
-                    },
-                    {
                       "name": "linked_wallet",
                       "ty": "String"
                     },
                     {
-                      "name": "family_name",
+                      "name": "name",
                       "ty": "String"
+                    },
+                    {
+                      "name": "family_name",
+                      "ty": {
+                        "Optional": "String"
+                      }
                     },
                     {
                       "name": "given_name",
-                      "ty": "String"
+                      "ty": {
+                        "Optional": "String"
+                      }
                     },
                     {
                       "name": "follower_count",
-                      "ty": "Int"
+                      "ty": "BigInt"
                     },
                     {
                       "name": "description",
@@ -1384,6 +1548,20 @@
                     {
                       "name": "requested_at",
                       "ty": "BigInt"
+                    },
+                    {
+                      "name": "approved_at",
+                      "ty": {
+                        "Optional": "BigInt"
+                      }
+                    },
+                    {
+                      "name": "pending_expert",
+                      "ty": "Boolean"
+                    },
+                    {
+                      "name": "approved_expert",
+                      "ty": "Boolean"
                     }
                   ]
                 }
@@ -1397,7 +1575,20 @@
         {
           "name": "UserListFeaturedExperts",
           "code": 20162,
-          "parameters": [],
+          "parameters": [
+            {
+              "name": "limit",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "offset",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            }
+          ],
           "returns": [
             {
               "name": "experts",
@@ -1414,24 +1605,28 @@
                       "ty": "BigInt"
                     },
                     {
-                      "name": "name",
-                      "ty": "String"
-                    },
-                    {
                       "name": "linked_wallet",
                       "ty": "String"
                     },
                     {
-                      "name": "family_name",
+                      "name": "name",
                       "ty": "String"
+                    },
+                    {
+                      "name": "family_name",
+                      "ty": {
+                        "Optional": "String"
+                      }
                     },
                     {
                       "name": "given_name",
-                      "ty": "String"
+                      "ty": {
+                        "Optional": "String"
+                      }
                     },
                     {
                       "name": "follower_count",
-                      "ty": "Int"
+                      "ty": "BigInt"
                     },
                     {
                       "name": "description",
@@ -1460,6 +1655,20 @@
                     {
                       "name": "requested_at",
                       "ty": "BigInt"
+                    },
+                    {
+                      "name": "approved_at",
+                      "ty": {
+                        "Optional": "BigInt"
+                      }
+                    },
+                    {
+                      "name": "pending_expert",
+                      "ty": "Boolean"
+                    },
+                    {
+                      "name": "approved_expert",
+                      "ty": "Boolean"
                     }
                   ]
                 }
@@ -1622,24 +1831,28 @@
                       "ty": "BigInt"
                     },
                     {
-                      "name": "name",
-                      "ty": "String"
-                    },
-                    {
                       "name": "linked_wallet",
                       "ty": "String"
                     },
                     {
-                      "name": "family_name",
+                      "name": "name",
                       "ty": "String"
+                    },
+                    {
+                      "name": "family_name",
+                      "ty": {
+                        "Optional": "String"
+                      }
                     },
                     {
                       "name": "given_name",
-                      "ty": "String"
+                      "ty": {
+                        "Optional": "String"
+                      }
                     },
                     {
                       "name": "follower_count",
-                      "ty": "Int"
+                      "ty": "BigInt"
                     },
                     {
                       "name": "description",
@@ -1668,6 +1881,20 @@
                     {
                       "name": "requested_at",
                       "ty": "BigInt"
+                    },
+                    {
+                      "name": "approved_at",
+                      "ty": {
+                        "Optional": "BigInt"
+                      }
+                    },
+                    {
+                      "name": "pending_expert",
+                      "ty": "Boolean"
+                    },
+                    {
+                      "name": "approved_expert",
+                      "ty": "Boolean"
                     }
                   ]
                 }
@@ -2617,6 +2844,157 @@
           ],
           "stream_response": [],
           "description": "Admin updates system config",
+          "json_schema": null
+        },
+        {
+          "name": "AdminListExperts",
+          "code": 30090,
+          "parameters": [
+            {
+              "name": "limit",
+              "ty": "BigInt"
+            },
+            {
+              "name": "offset",
+              "ty": "BigInt"
+            },
+            {
+              "name": "expert_id",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "user_id",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "user_public_id",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "username",
+              "ty": {
+                "Optional": "String"
+              }
+            },
+            {
+              "name": "family_name",
+              "ty": {
+                "Optional": "String"
+              }
+            },
+            {
+              "name": "given_name",
+              "ty": {
+                "Optional": "String"
+              }
+            },
+            {
+              "name": "description",
+              "ty": {
+                "Optional": "String"
+              }
+            },
+            {
+              "name": "social_media",
+              "ty": {
+                "Optional": "String"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "name": "experts",
+              "ty": {
+                "DataTable": {
+                  "name": "AdminListExpertsRow",
+                  "fields": [
+                    {
+                      "name": "expert_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "user_public_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "linked_wallet",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "family_name",
+                      "ty": {
+                        "Optional": "String"
+                      }
+                    },
+                    {
+                      "name": "given_name",
+                      "ty": {
+                        "Optional": "String"
+                      }
+                    },
+                    {
+                      "name": "follower_count",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "description",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "social_media",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "risk_score",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "reputation_score",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "aum",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "joined_at",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "requested_at",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "approved_at",
+                      "ty": {
+                        "Optional": "BigInt"
+                      }
+                    },
+                    {
+                      "name": "pending_expert",
+                      "ty": "Boolean"
+                    },
+                    {
+                      "name": "approved_expert",
+                      "ty": "Boolean"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "stream_response": [],
+          "description": "Admin lists experts",
           "json_schema": null
         }
       ]

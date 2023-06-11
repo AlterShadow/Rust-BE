@@ -198,5 +198,75 @@ BEGIN
 END
 "#,
         ),
+        ProceduralFunction::new(
+            "fun_admin_list_experts",
+            vec![
+                Field::new("limit", Type::BigInt),
+                Field::new("offset", Type::BigInt),
+                Field::new("expert_id", Type::optional(Type::BigInt)),
+                Field::new("user_id", Type::optional(Type::BigInt)),
+                Field::new("user_public_id", Type::optional(Type::BigInt)),
+                Field::new("username", Type::optional(Type::String)),
+                Field::new("family_name", Type::optional(Type::String)),
+                Field::new("given_name", Type::optional(Type::String)),
+                Field::new("description", Type::optional(Type::String)),
+                Field::new("social_media", Type::optional(Type::String)),
+            ],
+            vec![
+                Field::new("expert_id", Type::BigInt),
+                Field::new("user_public_id", Type::BigInt),
+                // FIXME: right now listening_wallet is the wallet the expert uses to login. Should be multiple wallets
+                Field::new("linked_wallet", Type::String),
+                Field::new("name", Type::String),
+                Field::new("family_name", Type::optional(Type::String)),
+                Field::new("given_name", Type::optional(Type::String)),
+                Field::new("follower_count", Type::BigInt),
+                Field::new("description", Type::String),
+                Field::new("social_media", Type::String),
+                Field::new("risk_score", Type::Numeric),
+                Field::new("reputation_score", Type::Numeric),
+                Field::new("aum", Type::Numeric),
+                Field::new("joined_at", Type::BigInt),
+                Field::new("requested_at", Type::BigInt),
+                Field::new("approved_at", Type::optional(Type::BigInt)),
+                Field::new("pending_expert", Type::Boolean),
+                Field::new("approved_expert", Type::Boolean),
+            ],
+            r#"
+BEGIN
+    RETURN QUERY SELECT a.pkey_id AS expert_id,
+                        a.fkey_user_id   AS user_id,
+                        c.public_id      AS user_public_id,
+                        c.address        AS listening_wallet,
+                        c.username                                                AS username,
+                        c.family_name                                             AS family_name,
+                        c.given_name                                               AS given_name,
+                        (SELECT COUNT(*) FROM tbl.user_follow_expert WHERE fkey_expert_id = a.pkey_id AND unfollowed = FALSE) AS follower_count,
+                        a.description AS description,
+                        a.social_media AS social_media,
+                        a.risk_score AS risk_score,
+                        a.reputation_score AS reputation_score,
+                        a.aum AS aum,
+                        c.created_at AS joined_at,
+                        a.requested_at AS request_at,
+                        a.approved_at AS created_at,
+                        a.pending_expert AS pending_expert,
+                        a.approved_expert AS approved_expert
+                 FROM tbl.expert_profile AS a
+                          JOIN tbl.user AS c ON c.pkey_id = a.fkey_user_id
+                 WHERE (a_expert_id NOTNULL OR a.pkey_id = a_expert_id)
+                        AND (a_user_id NOTNULL OR c.pkey_id = a_user_id)
+                        AND (a_user_public_id NOTNULL OR c.public_id = a_user_public_id)
+                        AND (a_username NOTNULL OR c.username ILIKE a_username || '%')
+                        AND (a_family_name NOTNULL OR c.family_name ILIKE a_family_name || '%')
+                        AND (a_given_name NOTNULL OR c.given_name ILIKE a_given_name || '%')
+                        AND (a_description NOTNULL OR a.description ILIKE a_description || '%')
+                        AND (a_social_media NOTNULL OR a.social_media ILIKE a_social_media || '%')
+                 ORDER BY a.pkey_id
+                 OFFSET a_offset
+                 LIMIT a_limit;
+END
+"#,
+        ),
     ]
 }

@@ -1,25 +1,5 @@
 use model::types::*;
 
-pub fn expert_columns() -> Vec<Field> {
-    vec![
-        Field::new("expert_id", Type::BigInt),
-        Field::new("user_id", Type::BigInt),
-        Field::new("user_public_id", Type::BigInt),
-        // FIXME: right now listening_wallet is the wallet the expert uses to login. Should be multiple wallets
-        Field::new("listening_wallet", Type::String),
-        Field::new("username", Type::String),
-        Field::new("family_name", Type::optional(Type::String)),
-        Field::new("given_name", Type::optional(Type::String)),
-        Field::new("follower_count", Type::BigInt),
-        Field::new("description", Type::String),
-        Field::new("social_media", Type::String),
-        Field::new("risk_score", Type::Numeric),
-        Field::new("reputation_score", Type::Numeric),
-        Field::new("aum", Type::Numeric),
-        Field::new("joined_at", Type::BigInt),
-        Field::new("requested_at", Type::BigInt),
-    ]
-}
 pub fn get_user_pg_func() -> Vec<ProceduralFunction> {
     vec![
         ProceduralFunction::new(
@@ -473,8 +453,32 @@ END
         ),
         ProceduralFunction::new(
             "fun_user_list_followed_experts",
-            vec![Field::new("user_id", Type::BigInt)],
-            expert_columns(),
+            vec![
+                Field::new("user_id", Type::BigInt),
+                Field::new("offset", Type::BigInt),
+                Field::new("limit", Type::BigInt),
+            ],
+            vec![
+                Field::new("expert_id", Type::BigInt),
+                Field::new("user_id", Type::BigInt),
+                Field::new("user_public_id", Type::BigInt),
+                // FIXME: right now listening_wallet is the wallet the expert uses to login. Should be multiple wallets
+                Field::new("listening_wallet", Type::String),
+                Field::new("username", Type::String),
+                Field::new("family_name", Type::optional(Type::String)),
+                Field::new("given_name", Type::optional(Type::String)),
+                Field::new("follower_count", Type::BigInt),
+                Field::new("description", Type::String),
+                Field::new("social_media", Type::String),
+                Field::new("risk_score", Type::Numeric),
+                Field::new("reputation_score", Type::Numeric),
+                Field::new("aum", Type::Numeric),
+                Field::new("joined_at", Type::BigInt),
+                Field::new("requested_at", Type::BigInt),
+                Field::new("approved_at", Type::optional(Type::BigInt)),
+                Field::new("pending_expert", Type::Boolean),
+                Field::new("approved_expert", Type::Boolean),
+            ],
             r#"
 BEGIN
     RETURN QUERY SELECT a.pkey_id                                                 AS expert_id,
@@ -493,65 +497,136 @@ BEGIN
                         a.reputation_score                                        AS reputation_score,
                         a.aum                                                     AS aum,
                         c.created_at                                              AS joined_at,
-                        a.approved_at                                             AS requested_at
-                 FROM tbl.expert_profile AS a
+                        a.requested_at                                            AS requested_at,
+                        a.approved_at                                             AS approved_at,
+                        a.pending_expert                                          AS pending_expert,
+                        a.approved_expert                                         AS approved_expert
+                FROM tbl.expert_profile AS a
                           JOIN tbl.user_follow_expert AS b ON b.fkey_expert_id = a.pkey_id
                           JOIN tbl.user AS c ON c.pkey_id = a.fkey_user_id
-                 WHERE b.fkey_user_id = a_user_id
-                   AND unfollowed = FALSE;
+                WHERE b.fkey_user_id = a_user_id
+                    AND unfollowed = FALSE
+                ORDER BY a.pkey_id
+                OFFSET a_offset
+                LIMIT a_limit
+                ;
 END
 "#,
         ),
         ProceduralFunction::new(
             "fun_user_list_experts",
-            vec![],
-            expert_columns(),
-            r#"
-BEGIN
-    RETURN QUERY SELECT a.pkey_id AS expert_id,
-                        a.fkey_user_id   AS user_id,
-                        c.public_id      AS user_public_id,
-                        c.address        AS listening_wallet,
-                        c.username                                                AS username,
-                        c.family_name                                             AS family_name,
-                        c.given_name                                               AS given_name,
-                        (SELECT COUNT(*) FROM tbl.user_follow_expert WHERE fkey_expert_id = a.pkey_id AND unfollowed = FALSE) AS follower_count,
-                        a.description AS description,
-                        a.social_media AS social_media,
-                        a.risk_score AS risk_score,
-                        a.reputation_score AS reputation_score,
-                        a.aum AS aum,
-                        c.created_at AS joined_at,
-                        a.approved_at AS created_at
-                 FROM tbl.expert_profile AS a
-                          JOIN tbl.user AS c ON c.pkey_id = a.fkey_user_id
-                 ;
-END
-"#,
-        ),
-        ProceduralFunction::new(
-            "fun_user_get_expert_profile",
-            vec![Field::new("expert_id", Type::BigInt)],
+            vec![
+                Field::new("limit", Type::BigInt),
+                Field::new("offset", Type::BigInt),
+                Field::new("user_id", Type::BigInt),
+            ],
             vec![
                 Field::new("expert_id", Type::BigInt),
-                Field::new("name", Type::String),
+                Field::new("user_id", Type::BigInt),
+                Field::new("user_public_id", Type::BigInt),
+                // FIXME: right now listening_wallet is the wallet the expert uses to login. Should be multiple wallets
+                Field::new("listening_wallet", Type::String),
+                Field::new("username", Type::String),
+                Field::new("family_name", Type::optional(Type::String)),
+                Field::new("given_name", Type::optional(Type::String)),
                 Field::new("follower_count", Type::BigInt),
                 Field::new("description", Type::String),
                 Field::new("social_media", Type::String),
                 Field::new("risk_score", Type::Numeric),
                 Field::new("reputation_score", Type::Numeric),
                 Field::new("aum", Type::Numeric),
+                Field::new("joined_at", Type::BigInt),
+                Field::new("requested_at", Type::BigInt),
+                Field::new("approved_at", Type::optional(Type::BigInt)),
+                Field::new("pending_expert", Type::Boolean),
+                Field::new("approved_expert", Type::Boolean),
+                Field::new("followed", Type::Boolean),
             ],
             r#"
 BEGIN
-    RETURN QUERY SELECT a.pkey_id AS expert_id,
-                          b.username AS name,
-                          (SELECT COUNT(*) FROM tbl.user_follow_expert WHERE fkey_expert_id = a.pkey_id AND unfollowed = FALSE) AS follower_count,
-                          a.description AS description,
-                          a.social_media AS social_media,
-                          a.risk_score AS risk_score,
-                          a.reputation_score AS reputation_score,
-                          a.aum AS aum
+    RETURN QUERY SELECT a.pkey_id                                                 AS expert_id,
+                        a.fkey_user_id                                            AS user_id,
+                        c.public_id                                               AS user_public_id,
+                        c.address                                                 AS listening_wallet,
+                        c.username                                                AS username,
+                        c.family_name                                             AS family_name,
+                        c.given_name                                               AS given_name,
+                        (SELECT COUNT(*)
+                         FROM tbl.user_follow_expert
+                         WHERE fkey_expert_id = a.pkey_id AND unfollowed = FALSE) AS follower_count,
+                        a.description                                             AS description,
+                        a.social_media                                            AS social_media,
+                        a.risk_score                                              AS risk_score,
+                        a.reputation_score                                        AS reputation_score,
+                        a.aum                                                     AS aum,
+                        c.created_at                                              AS joined_at,
+                        a.requested_at                                            AS requested_at,
+                        a.approved_at                                             AS approved_at,
+                        a.pending_expert                                          AS pending_expert,
+                        a.approved_expert                                         AS approved_expert,
+                        EXISTS(SELECT COUNT(*) FROM tbl.user_follow_expert WHERE fkey_expert_id = a.pkey_id AND fkey_user_id = a_user_id AND unfollowed = FALSE) AS follower_count
+                 FROM tbl.expert_profile AS a
+                          JOIN tbl.user AS c ON c.pkey_id = a.fkey_user_id
+                 ORDER BY a.pkey_id
+                 OFFSET a_offset
+                 LIMIT a_limit
+                 ;
+END
+"#,
+        ),
+        ProceduralFunction::new(
+            "fun_user_get_expert_profile",
+            vec![
+                Field::new("expert_id", Type::BigInt),
+                Field::new("user_id", Type::BigInt),
+            ],
+            vec![
+                Field::new("expert_id", Type::BigInt),
+                Field::new("user_id", Type::BigInt),
+                Field::new("user_public_id", Type::BigInt),
+                // FIXME: right now listening_wallet is the wallet the expert uses to login. Should be multiple wallets
+                Field::new("listening_wallet", Type::String),
+                Field::new("username", Type::String),
+                Field::new("family_name", Type::optional(Type::String)),
+                Field::new("given_name", Type::optional(Type::String)),
+                Field::new("follower_count", Type::BigInt),
+                Field::new("description", Type::String),
+                Field::new("social_media", Type::String),
+                Field::new("risk_score", Type::Numeric),
+                Field::new("reputation_score", Type::Numeric),
+                Field::new("aum", Type::Numeric),
+                Field::new("joined_at", Type::BigInt),
+                Field::new("requested_at", Type::BigInt),
+                Field::new("approved_at", Type::optional(Type::BigInt)),
+                Field::new("pending_expert", Type::Boolean),
+                Field::new("approved_expert", Type::Boolean),
+                Field::new("followed", Type::Boolean),
+            ],
+            r#"
+BEGIN
+
+    RETURN QUERY SELECT a.pkey_id                                                 AS expert_id,
+                        a.fkey_user_id                                            AS user_id,
+                        b.public_id                                               AS user_public_id,
+                        b.address                                                 AS listening_wallet,
+                        b.username                                                AS username,
+                        b.family_name                                             AS family_name,
+                        b.given_name                                              AS given_name,
+                        (SELECT COUNT(*)
+                         FROM tbl.user_follow_expert
+                         WHERE fkey_expert_id = a.pkey_id AND unfollowed = FALSE) AS follower_count,
+                        a.description                                             AS description,
+                        a.social_media                                            AS social_media,
+                        a.risk_score                                              AS risk_score,
+                        a.reputation_score                                        AS reputation_score,
+                        a.aum                                                     AS aum,
+                        b.created_at                                              AS joined_at,
+                        a.requested_at                                            AS requested_at,
+                        a.approved_at                                             AS approved_at,
+                        a.pending_expert                                          AS pending_expert,
+                        a.approved_expert                                         AS approved_expert,
+                        EXISTS(SELECT COUNT(*) FROM tbl.user_follow_expert WHERE fkey_expert_id = a.pkey_id AND fkey_user_id = a_user_id AND unfollowed = FALSE) AS follower_count
+
                  FROM tbl.expert_profile AS a 
                  JOIN tbl.user AS b ON b.pkey_id = a.fkey_user_id
                  WHERE a.pkey_id = a_expert_id
@@ -713,28 +788,6 @@ BEGIN
     UPDATE tbl.strategy
     SET name = COALESCE(a_name, name),
         description = COALESCE(a_description, description)
-    WHERE pkey_id = a_strategy_id
-      AND fkey_user_id = a_user_id;
-    RETURN QUERY SELECT TRUE;
-END
-"#,
-        ),
-        ProceduralFunction::new(
-            "fun_admin_update_strategy",
-            vec![
-                Field::new("user_id", Type::BigInt),
-                Field::new("strategy_id", Type::BigInt),
-                Field::new("name", Type::optional(Type::String)),
-                Field::new("description", Type::optional(Type::String)),
-                Field::new("evm_contract_address", Type::optional(Type::String)),
-            ],
-            vec![Field::new("success", Type::Boolean)],
-            r#"
-BEGIN
-    UPDATE tbl.strategy
-    SET name = COALESCE(a_name, name),
-        description = COALESCE(a_description, description),
-        evm_contract_address = COALESCE(a_evm_contract_address, evm_contract_address)
     WHERE pkey_id = a_strategy_id
       AND fkey_user_id = a_user_id;
     RETURN QUERY SELECT TRUE;

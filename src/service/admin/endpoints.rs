@@ -123,6 +123,50 @@ pub fn endpoint_admin_update_system_config() -> EndpointSchema {
     )
     .with_description("Admin updates system config")
 }
+pub fn endpoint_admin_list_experts() -> EndpointSchema {
+    EndpointSchema::new(
+        "AdminListExperts",
+        30090,
+        vec![
+            Field::new("limit", Type::BigInt),
+            Field::new("offset", Type::BigInt),
+            Field::new("expert_id", Type::optional(Type::BigInt)),
+            Field::new("user_id", Type::optional(Type::BigInt)),
+            Field::new("user_public_id", Type::optional(Type::BigInt)),
+            Field::new("username", Type::optional(Type::String)),
+            Field::new("family_name", Type::optional(Type::String)),
+            Field::new("given_name", Type::optional(Type::String)),
+            Field::new("description", Type::optional(Type::String)),
+            Field::new("social_media", Type::optional(Type::String)),
+        ],
+        vec![Field::new(
+            "experts",
+            Type::datatable(
+                "AdminListExpertsRow",
+                vec![
+                    Field::new("expert_id", Type::BigInt),
+                    Field::new("user_public_id", Type::BigInt),
+                    Field::new("linked_wallet", Type::String),
+                    Field::new("name", Type::String),
+                    Field::new("family_name", Type::optional(Type::String)),
+                    Field::new("given_name", Type::optional(Type::String)),
+                    Field::new("follower_count", Type::BigInt),
+                    Field::new("description", Type::String),
+                    Field::new("social_media", Type::String),
+                    Field::new("risk_score", Type::Numeric),
+                    Field::new("reputation_score", Type::Numeric),
+                    Field::new("aum", Type::Numeric),
+                    Field::new("joined_at", Type::BigInt),
+                    Field::new("requested_at", Type::BigInt),
+                    Field::new("approved_at", Type::optional(Type::BigInt)),
+                    Field::new("pending_expert", Type::Boolean),
+                    Field::new("approved_expert", Type::Boolean),
+                ],
+            ),
+        )],
+    )
+    .with_description("Admin lists experts")
+}
 pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
     vec![
         endpoint_admin_list_users(),
@@ -133,5 +177,6 @@ pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
         endpoint_admin_reject_user_become_expert(),
         endpoint_admin_get_system_config(),
         endpoint_admin_update_system_config(),
+        endpoint_admin_list_experts(),
     ]
 }

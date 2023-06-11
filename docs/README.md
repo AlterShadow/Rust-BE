@@ -16,12 +16,12 @@ ID: 2
 |Method Code|Method Name|Parameters|Response|Description|
 |-----------|-----------|----------|--------|-----------|
 |20040|UserFollowStrategy|strategy_id|success|User follows a strategy|
-|20050|UserListFollowedStrategies||strategies|User lists followed strategies|
+|20050|UserListFollowedStrategies|limit, offset|strategies|User lists followed strategies|
 |20060|UserUnfollowStrategy|strategy_id|success||
-|20061|UserListStrategies||strategies|User lists strategies|
-|20063|UserListTopPerformingStrategies||strategies|User lists top performing strategies|
-|20064|UserListStrategyBackers|strategy_id, page, page_size|backers||
-|20065|UserListStrategyFollowers|strategy_id, page, page_size|followers||
+|20061|UserListStrategies|limit, offset|strategies|User lists strategies|
+|20063|UserListTopPerformingStrategies|limit, offset|strategies|User lists top performing strategies|
+|20064|UserListStrategyBackers|strategy_id, limit, offset|backers||
+|20065|UserListStrategyFollowers|strategy_id, limit, offset|followers||
 |20062|UserGetStrategy|strategy_id|strategy_id, strategy_name, strategy_description, creator_user_id, social_media, historical_return, inception_time, total_amount, token_allocation, reputation, risk_score, aum, net_value, followers, backers, watching_wallets, aum_history|User gets a strategy|
 |20070|UserGetStrategyStatistics|strategy_id|strategy_id, net_value, follow_history, back_history|User gets a strategy statistics|
 |20071|UserGetStrategiesStatistics||tracking_amount_usd, backing_amount_usd, difference_amount_usd, aum_value_usd, current_value_usd, withdrawable_value_usd|User gets statistics of all strategies related to the user|
@@ -29,15 +29,15 @@ ID: 2
 |20080|UserBackStrategy|strategy_id, quantity, blockchain|success||
 |20110|UserExitStrategy|strategy_id, quantity|success, transaction_hash||
 |20081|UserRequestRefund|quantity, wallet_address, blockchain|success||
-|20090|UserListBackedStrategies||strategies||
-|20100|UserListBackStrategyHistory||back_history||
-|20120|UserListExitStrategyHistory|strategy_id|exit_history||
+|20090|UserListBackedStrategies|limit, offset|strategies||
+|20100|UserListBackStrategyHistory|limit, offset|back_history||
+|20120|UserListExitStrategyHistory|strategy_id, limit, offset|exit_history||
 |20130|UserFollowExpert|expert_id|success|User follows an expert|
-|20140|UserListFollowedExperts||experts|User lists followed experts|
+|20140|UserListFollowedExperts|limit, offset|experts|User lists followed experts|
 |20150|UserUnfollowExpert|expert_id|success|User unfollows an expert|
-|20160|UserListExperts||experts|User lists experts|
-|20161|UserListTopPerformingExperts||experts|User lists experts|
-|20162|UserListFeaturedExperts||experts|User lists experts|
+|20160|UserListExperts|limit, offset|experts|User lists experts|
+|20161|UserListTopPerformingExperts|limit, offset|experts|User lists experts|
+|20162|UserListFeaturedExperts|limit, offset|experts|User lists experts|
 |20170|UserGetExpertProfile|expert_id|expert_id, name, follower_count, description, social_media, risk_score, reputation_score, aum, strategies|User gets an expert profile|
 |20180|UserGetUserProfile|user_id|name, follower_count, description, social_media, followed_experts, followed_strategies, backed_strategies|User gets an user profile|
 |20190|UserRegisterWallet|blockchain, wallet_address, message_to_sign, message_signature|success, wallet_id|User registers a wallet|
@@ -67,6 +67,7 @@ ID: 3
 |30050|AdminRejectUserBecomeExpert|user_id|success|Admin approves a user to become an expert|
 |30070|AdminGetSystemConfig||config_placeholder_1, config_placeholder_2|Admin get system config|
 |30080|AdminUpdateSystemConfig|config_placeholder_1, config_placeholder_2|success|Admin updates system config|
+|30090|AdminListExperts|limit, offset, expert_id, user_id, user_public_id, username, family_name, given_name, description, social_media|experts|Admin lists experts|
 
 # watcher Server
 ID: 4

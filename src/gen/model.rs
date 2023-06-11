@@ -374,6 +374,9 @@ pub enum EnumEndpoint {
     ///
     #[postgres(name = "AdminUpdateSystemConfig")]
     AdminUpdateSystemConfig = 30080,
+    ///
+    #[postgres(name = "AdminListExperts")]
+    AdminListExperts = 30090,
 }
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -792,6 +795,57 @@ pub struct AdminGetSystemConfigResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct AdminListExpertsRequest {
+    pub limit: i64,
+    pub offset: i64,
+    #[serde(default)]
+    pub expert_id: Option<i64>,
+    #[serde(default)]
+    pub user_id: Option<i64>,
+    #[serde(default)]
+    pub user_public_id: Option<i64>,
+    #[serde(default)]
+    pub username: Option<String>,
+    #[serde(default)]
+    pub family_name: Option<String>,
+    #[serde(default)]
+    pub given_name: Option<String>,
+    #[serde(default)]
+    pub description: Option<String>,
+    #[serde(default)]
+    pub social_media: Option<String>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminListExpertsResponse {
+    pub experts: Vec<AdminListExpertsRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminListExpertsRow {
+    pub expert_id: i64,
+    pub user_public_id: i64,
+    pub linked_wallet: String,
+    pub name: String,
+    #[serde(default)]
+    pub family_name: Option<String>,
+    #[serde(default)]
+    pub given_name: Option<String>,
+    pub follower_count: i64,
+    pub description: String,
+    pub social_media: String,
+    pub risk_score: f64,
+    pub reputation_score: f64,
+    pub aum: f64,
+    pub joined_at: i64,
+    pub requested_at: i64,
+    #[serde(default)]
+    pub approved_at: Option<i64>,
+    pub pending_expert: bool,
+    pub approved_expert: bool,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct AdminListPendingExpertApplicationsRequest {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -949,11 +1003,13 @@ pub struct LinkedWallet {
 pub struct ListExpertsRow {
     pub expert_id: i64,
     pub user_public_id: i64,
-    pub name: String,
     pub linked_wallet: String,
-    pub family_name: String,
-    pub given_name: String,
-    pub follower_count: i32,
+    pub name: String,
+    #[serde(default)]
+    pub family_name: Option<String>,
+    #[serde(default)]
+    pub given_name: Option<String>,
+    pub follower_count: i64,
     pub description: String,
     pub social_media: String,
     pub risk_score: f64,
@@ -961,6 +1017,10 @@ pub struct ListExpertsRow {
     pub aum: f64,
     pub joined_at: i64,
     pub requested_at: i64,
+    #[serde(default)]
+    pub approved_at: Option<i64>,
+    pub pending_expert: bool,
+    pub approved_expert: bool,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1314,7 +1374,12 @@ pub struct UserGetUserProfileResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserListBackStrategyHistoryRequest {}
+pub struct UserListBackStrategyHistoryRequest {
+    #[serde(default)]
+    pub limit: Option<i64>,
+    #[serde(default)]
+    pub offset: Option<i64>,
+}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserListBackStrategyHistoryResponse {
@@ -1322,7 +1387,12 @@ pub struct UserListBackStrategyHistoryResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserListBackedStrategiesRequest {}
+pub struct UserListBackedStrategiesRequest {
+    #[serde(default)]
+    pub limit: Option<i64>,
+    #[serde(default)]
+    pub offset: Option<i64>,
+}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserListBackedStrategiesResponse {
@@ -1333,6 +1403,10 @@ pub struct UserListBackedStrategiesResponse {
 pub struct UserListExitStrategyHistoryRequest {
     #[serde(default)]
     pub strategy_id: Option<i64>,
+    #[serde(default)]
+    pub limit: Option<i64>,
+    #[serde(default)]
+    pub offset: Option<i64>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1341,7 +1415,12 @@ pub struct UserListExitStrategyHistoryResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserListExpertsRequest {}
+pub struct UserListExpertsRequest {
+    #[serde(default)]
+    pub limit: Option<i64>,
+    #[serde(default)]
+    pub offset: Option<i64>,
+}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserListExpertsResponse {
@@ -1349,7 +1428,12 @@ pub struct UserListExpertsResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserListFeaturedExpertsRequest {}
+pub struct UserListFeaturedExpertsRequest {
+    #[serde(default)]
+    pub limit: Option<i64>,
+    #[serde(default)]
+    pub offset: Option<i64>,
+}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserListFeaturedExpertsResponse {
@@ -1357,7 +1441,12 @@ pub struct UserListFeaturedExpertsResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserListFollowedExpertsRequest {}
+pub struct UserListFollowedExpertsRequest {
+    #[serde(default)]
+    pub limit: Option<i64>,
+    #[serde(default)]
+    pub offset: Option<i64>,
+}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserListFollowedExpertsResponse {
@@ -1365,7 +1454,12 @@ pub struct UserListFollowedExpertsResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserListFollowedStrategiesRequest {}
+pub struct UserListFollowedStrategiesRequest {
+    #[serde(default)]
+    pub limit: Option<i64>,
+    #[serde(default)]
+    pub offset: Option<i64>,
+}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserListFollowedStrategiesResponse {
@@ -1381,7 +1475,12 @@ pub struct UserListRegisteredWalletsResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserListStrategiesRequest {}
+pub struct UserListStrategiesRequest {
+    #[serde(default)]
+    pub limit: Option<i64>,
+    #[serde(default)]
+    pub offset: Option<i64>,
+}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserListStrategiesResponse {
@@ -1391,8 +1490,10 @@ pub struct UserListStrategiesResponse {
 #[serde(rename_all = "camelCase")]
 pub struct UserListStrategyBackersRequest {
     pub strategy_id: i64,
-    pub page: i32,
-    pub page_size: i32,
+    #[serde(default)]
+    pub limit: Option<i64>,
+    #[serde(default)]
+    pub offset: Option<i64>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1403,8 +1504,10 @@ pub struct UserListStrategyBackersResponse {
 #[serde(rename_all = "camelCase")]
 pub struct UserListStrategyFollowersRequest {
     pub strategy_id: i64,
-    pub page: i32,
-    pub page_size: i32,
+    #[serde(default)]
+    pub limit: Option<i64>,
+    #[serde(default)]
+    pub offset: Option<i64>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1433,7 +1536,12 @@ pub struct UserListStrategyWatchingWalletsResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserListTopPerformingExpertsRequest {}
+pub struct UserListTopPerformingExpertsRequest {
+    #[serde(default)]
+    pub limit: Option<i64>,
+    #[serde(default)]
+    pub offset: Option<i64>,
+}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserListTopPerformingExpertsResponse {
@@ -1441,7 +1549,12 @@ pub struct UserListTopPerformingExpertsResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserListTopPerformingStrategiesRequest {}
+pub struct UserListTopPerformingStrategiesRequest {
+    #[serde(default)]
+    pub limit: Option<i64>,
+    #[serde(default)]
+    pub offset: Option<i64>,
+}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserListTopPerformingStrategiesResponse {
@@ -1830,7 +1943,20 @@ impl WsRequest for UserListFollowedStrategiesRequest {
     const SCHEMA: &'static str = r#"{
   "name": "UserListFollowedStrategies",
   "code": 20050,
-  "parameters": [],
+  "parameters": [
+    {
+      "name": "limit",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "offset",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    }
+  ],
   "returns": [
     {
       "name": "strategies",
@@ -1939,7 +2065,20 @@ impl WsRequest for UserListStrategiesRequest {
     const SCHEMA: &'static str = r#"{
   "name": "UserListStrategies",
   "code": 20061,
-  "parameters": [],
+  "parameters": [
+    {
+      "name": "limit",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "offset",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    }
+  ],
   "returns": [
     {
       "name": "strategies",
@@ -2021,7 +2160,20 @@ impl WsRequest for UserListTopPerformingStrategiesRequest {
     const SCHEMA: &'static str = r#"{
   "name": "UserListTopPerformingStrategies",
   "code": 20063,
-  "parameters": [],
+  "parameters": [
+    {
+      "name": "limit",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "offset",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    }
+  ],
   "returns": [
     {
       "name": "strategies",
@@ -2109,12 +2261,16 @@ impl WsRequest for UserListStrategyBackersRequest {
       "ty": "BigInt"
     },
     {
-      "name": "page",
-      "ty": "Int"
+      "name": "limit",
+      "ty": {
+        "Optional": "BigInt"
+      }
     },
     {
-      "name": "page_size",
-      "ty": "Int"
+      "name": "offset",
+      "ty": {
+        "Optional": "BigInt"
+      }
     }
   ],
   "returns": [
@@ -2166,12 +2322,16 @@ impl WsRequest for UserListStrategyFollowersRequest {
       "ty": "BigInt"
     },
     {
-      "name": "page",
-      "ty": "Int"
+      "name": "limit",
+      "ty": {
+        "Optional": "BigInt"
+      }
     },
     {
-      "name": "page_size",
-      "ty": "Int"
+      "name": "offset",
+      "ty": {
+        "Optional": "BigInt"
+      }
     }
   ],
   "returns": [
@@ -2658,7 +2818,20 @@ impl WsRequest for UserListBackedStrategiesRequest {
     const SCHEMA: &'static str = r#"{
   "name": "UserListBackedStrategies",
   "code": 20090,
-  "parameters": [],
+  "parameters": [
+    {
+      "name": "limit",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "offset",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    }
+  ],
   "returns": [
     {
       "name": "strategies",
@@ -2740,7 +2913,20 @@ impl WsRequest for UserListBackStrategyHistoryRequest {
     const SCHEMA: &'static str = r#"{
   "name": "UserListBackStrategyHistory",
   "code": 20100,
-  "parameters": [],
+  "parameters": [
+    {
+      "name": "limit",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "offset",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    }
+  ],
   "returns": [
     {
       "name": "back_history",
@@ -2801,6 +2987,18 @@ impl WsRequest for UserListExitStrategyHistoryRequest {
   "parameters": [
     {
       "name": "strategy_id",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "limit",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "offset",
       "ty": {
         "Optional": "BigInt"
       }
@@ -2894,7 +3092,20 @@ impl WsRequest for UserListFollowedExpertsRequest {
     const SCHEMA: &'static str = r#"{
   "name": "UserListFollowedExperts",
   "code": 20140,
-  "parameters": [],
+  "parameters": [
+    {
+      "name": "limit",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "offset",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    }
+  ],
   "returns": [
     {
       "name": "experts",
@@ -2911,24 +3122,28 @@ impl WsRequest for UserListFollowedExpertsRequest {
               "ty": "BigInt"
             },
             {
-              "name": "name",
-              "ty": "String"
-            },
-            {
               "name": "linked_wallet",
               "ty": "String"
             },
             {
-              "name": "family_name",
+              "name": "name",
               "ty": "String"
+            },
+            {
+              "name": "family_name",
+              "ty": {
+                "Optional": "String"
+              }
             },
             {
               "name": "given_name",
-              "ty": "String"
+              "ty": {
+                "Optional": "String"
+              }
             },
             {
               "name": "follower_count",
-              "ty": "Int"
+              "ty": "BigInt"
             },
             {
               "name": "description",
@@ -2957,6 +3172,20 @@ impl WsRequest for UserListFollowedExpertsRequest {
             {
               "name": "requested_at",
               "ty": "BigInt"
+            },
+            {
+              "name": "approved_at",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "pending_expert",
+              "ty": "Boolean"
+            },
+            {
+              "name": "approved_expert",
+              "ty": "Boolean"
             }
           ]
         }
@@ -3005,7 +3234,20 @@ impl WsRequest for UserListExpertsRequest {
     const SCHEMA: &'static str = r#"{
   "name": "UserListExperts",
   "code": 20160,
-  "parameters": [],
+  "parameters": [
+    {
+      "name": "limit",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "offset",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    }
+  ],
   "returns": [
     {
       "name": "experts",
@@ -3022,24 +3264,28 @@ impl WsRequest for UserListExpertsRequest {
               "ty": "BigInt"
             },
             {
-              "name": "name",
-              "ty": "String"
-            },
-            {
               "name": "linked_wallet",
               "ty": "String"
             },
             {
-              "name": "family_name",
+              "name": "name",
               "ty": "String"
+            },
+            {
+              "name": "family_name",
+              "ty": {
+                "Optional": "String"
+              }
             },
             {
               "name": "given_name",
-              "ty": "String"
+              "ty": {
+                "Optional": "String"
+              }
             },
             {
               "name": "follower_count",
-              "ty": "Int"
+              "ty": "BigInt"
             },
             {
               "name": "description",
@@ -3068,6 +3314,20 @@ impl WsRequest for UserListExpertsRequest {
             {
               "name": "requested_at",
               "ty": "BigInt"
+            },
+            {
+              "name": "approved_at",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "pending_expert",
+              "ty": "Boolean"
+            },
+            {
+              "name": "approved_expert",
+              "ty": "Boolean"
             }
           ]
         }
@@ -3089,7 +3349,20 @@ impl WsRequest for UserListTopPerformingExpertsRequest {
     const SCHEMA: &'static str = r#"{
   "name": "UserListTopPerformingExperts",
   "code": 20161,
-  "parameters": [],
+  "parameters": [
+    {
+      "name": "limit",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "offset",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    }
+  ],
   "returns": [
     {
       "name": "experts",
@@ -3106,24 +3379,28 @@ impl WsRequest for UserListTopPerformingExpertsRequest {
               "ty": "BigInt"
             },
             {
-              "name": "name",
-              "ty": "String"
-            },
-            {
               "name": "linked_wallet",
               "ty": "String"
             },
             {
-              "name": "family_name",
+              "name": "name",
               "ty": "String"
+            },
+            {
+              "name": "family_name",
+              "ty": {
+                "Optional": "String"
+              }
             },
             {
               "name": "given_name",
-              "ty": "String"
+              "ty": {
+                "Optional": "String"
+              }
             },
             {
               "name": "follower_count",
-              "ty": "Int"
+              "ty": "BigInt"
             },
             {
               "name": "description",
@@ -3152,6 +3429,20 @@ impl WsRequest for UserListTopPerformingExpertsRequest {
             {
               "name": "requested_at",
               "ty": "BigInt"
+            },
+            {
+              "name": "approved_at",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "pending_expert",
+              "ty": "Boolean"
+            },
+            {
+              "name": "approved_expert",
+              "ty": "Boolean"
             }
           ]
         }
@@ -3173,7 +3464,20 @@ impl WsRequest for UserListFeaturedExpertsRequest {
     const SCHEMA: &'static str = r#"{
   "name": "UserListFeaturedExperts",
   "code": 20162,
-  "parameters": [],
+  "parameters": [
+    {
+      "name": "limit",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "offset",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    }
+  ],
   "returns": [
     {
       "name": "experts",
@@ -3190,24 +3494,28 @@ impl WsRequest for UserListFeaturedExpertsRequest {
               "ty": "BigInt"
             },
             {
-              "name": "name",
-              "ty": "String"
-            },
-            {
               "name": "linked_wallet",
               "ty": "String"
             },
             {
-              "name": "family_name",
+              "name": "name",
               "ty": "String"
+            },
+            {
+              "name": "family_name",
+              "ty": {
+                "Optional": "String"
+              }
             },
             {
               "name": "given_name",
-              "ty": "String"
+              "ty": {
+                "Optional": "String"
+              }
             },
             {
               "name": "follower_count",
-              "ty": "Int"
+              "ty": "BigInt"
             },
             {
               "name": "description",
@@ -3236,6 +3544,20 @@ impl WsRequest for UserListFeaturedExpertsRequest {
             {
               "name": "requested_at",
               "ty": "BigInt"
+            },
+            {
+              "name": "approved_at",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "pending_expert",
+              "ty": "Boolean"
+            },
+            {
+              "name": "approved_expert",
+              "ty": "Boolean"
             }
           ]
         }
@@ -3414,24 +3736,28 @@ impl WsRequest for UserGetUserProfileRequest {
               "ty": "BigInt"
             },
             {
-              "name": "name",
-              "ty": "String"
-            },
-            {
               "name": "linked_wallet",
               "ty": "String"
             },
             {
-              "name": "family_name",
+              "name": "name",
               "ty": "String"
+            },
+            {
+              "name": "family_name",
+              "ty": {
+                "Optional": "String"
+              }
             },
             {
               "name": "given_name",
-              "ty": "String"
+              "ty": {
+                "Optional": "String"
+              }
             },
             {
               "name": "follower_count",
-              "ty": "Int"
+              "ty": "BigInt"
             },
             {
               "name": "description",
@@ -3460,6 +3786,20 @@ impl WsRequest for UserGetUserProfileRequest {
             {
               "name": "requested_at",
               "ty": "BigInt"
+            },
+            {
+              "name": "approved_at",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "pending_expert",
+              "ty": "Boolean"
+            },
+            {
+              "name": "approved_expert",
+              "ty": "Boolean"
             }
           ]
         }
@@ -4576,4 +4916,163 @@ impl WsRequest for AdminUpdateSystemConfigRequest {
 }
 impl WsResponse for AdminUpdateSystemConfigResponse {
     type Request = AdminUpdateSystemConfigRequest;
+}
+
+impl WsRequest for AdminListExpertsRequest {
+    type Response = AdminListExpertsResponse;
+    const METHOD_ID: u32 = 30090;
+    const SCHEMA: &'static str = r#"{
+  "name": "AdminListExperts",
+  "code": 30090,
+  "parameters": [
+    {
+      "name": "limit",
+      "ty": "BigInt"
+    },
+    {
+      "name": "offset",
+      "ty": "BigInt"
+    },
+    {
+      "name": "expert_id",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "user_id",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "user_public_id",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "username",
+      "ty": {
+        "Optional": "String"
+      }
+    },
+    {
+      "name": "family_name",
+      "ty": {
+        "Optional": "String"
+      }
+    },
+    {
+      "name": "given_name",
+      "ty": {
+        "Optional": "String"
+      }
+    },
+    {
+      "name": "description",
+      "ty": {
+        "Optional": "String"
+      }
+    },
+    {
+      "name": "social_media",
+      "ty": {
+        "Optional": "String"
+      }
+    }
+  ],
+  "returns": [
+    {
+      "name": "experts",
+      "ty": {
+        "DataTable": {
+          "name": "AdminListExpertsRow",
+          "fields": [
+            {
+              "name": "expert_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "user_public_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "linked_wallet",
+              "ty": "String"
+            },
+            {
+              "name": "name",
+              "ty": "String"
+            },
+            {
+              "name": "family_name",
+              "ty": {
+                "Optional": "String"
+              }
+            },
+            {
+              "name": "given_name",
+              "ty": {
+                "Optional": "String"
+              }
+            },
+            {
+              "name": "follower_count",
+              "ty": "BigInt"
+            },
+            {
+              "name": "description",
+              "ty": "String"
+            },
+            {
+              "name": "social_media",
+              "ty": "String"
+            },
+            {
+              "name": "risk_score",
+              "ty": "Numeric"
+            },
+            {
+              "name": "reputation_score",
+              "ty": "Numeric"
+            },
+            {
+              "name": "aum",
+              "ty": "Numeric"
+            },
+            {
+              "name": "joined_at",
+              "ty": "BigInt"
+            },
+            {
+              "name": "requested_at",
+              "ty": "BigInt"
+            },
+            {
+              "name": "approved_at",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "pending_expert",
+              "ty": "Boolean"
+            },
+            {
+              "name": "approved_expert",
+              "ty": "Boolean"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": [],
+  "description": "Admin lists experts",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for AdminListExpertsResponse {
+    type Request = AdminListExpertsRequest;
 }
