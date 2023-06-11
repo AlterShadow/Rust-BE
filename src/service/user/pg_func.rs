@@ -91,8 +91,8 @@ END
                 Field::new("net_value", Type::Numeric),
                 Field::new("followers", Type::BigInt),
                 Field::new("backers", Type::BigInt),
-                Field::new("risk_score", Type::Numeric),
-                Field::new("aum", Type::Numeric),
+                Field::new("risk_score", Type::optional(Type::Numeric)),
+                Field::new("aum", Type::optional(Type::Numeric)),
                 Field::new("followed", Type::Boolean),
             ],
             r#"
@@ -308,17 +308,17 @@ END
                 Field::new("strategy_name", Type::String),
                 Field::new("strategy_description", Type::String),
                 Field::new("net_value", Type::Numeric),
-                Field::new("followers", Type::Int),
-                Field::new("backers", Type::Int),
-                Field::new("risk_score", Type::Numeric),
-                Field::new("aum", Type::Numeric),
+                Field::new("followers", Type::BigInt),
+                Field::new("backers", Type::BigInt),
+                Field::new("risk_score", Type::optional(Type::Numeric)),
+                Field::new("aum", Type::optional(Type::Numeric)),
             ],
             r#"
 BEGIN
     RETURN QUERY SELECT a.pkey_id                            AS strategy_id,
                         a.name                               AS strategy_name,
                         a.description                        AS strategy_description,
-                        NULL                                 AS net_value,
+                        0.0::double precision                AS net_value,
                         (SELECT COUNT(*)
                          FROM tbl.user_follow_strategy
                          WHERE fkey_strategy_id = a.pkey_id

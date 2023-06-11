@@ -568,8 +568,8 @@ RETURNS table (
     "strategy_name" varchar,
     "strategy_description" varchar,
     "net_value" double precision,
-    "followers" int,
-    "backers" int,
+    "followers" bigint,
+    "backers" bigint,
     "risk_score" double precision,
     "aum" double precision
 )
@@ -580,7 +580,7 @@ BEGIN
     RETURN QUERY SELECT a.pkey_id                            AS strategy_id,
                         a.name                               AS strategy_name,
                         a.description                        AS strategy_description,
-                        NULL                                 AS net_value,
+                        0.0::double precision                AS net_value,
                         (SELECT COUNT(*)
                          FROM tbl.user_follow_strategy
                          WHERE fkey_strategy_id = a.pkey_id

@@ -351,8 +351,10 @@ pub struct FunUserListStrategiesRespRow {
     pub net_value: f64,
     pub followers: i64,
     pub backers: i64,
-    pub risk_score: f64,
-    pub aum: f64,
+    #[serde(default)]
+    pub risk_score: Option<f64>,
+    #[serde(default)]
+    pub aum: Option<f64>,
     pub followed: bool,
 }
 
@@ -650,10 +652,12 @@ pub struct FunUserListBackedStrategiesRespRow {
     pub strategy_name: String,
     pub strategy_description: String,
     pub net_value: f64,
-    pub followers: i32,
-    pub backers: i32,
-    pub risk_score: f64,
-    pub aum: f64,
+    pub followers: i64,
+    pub backers: i64,
+    #[serde(default)]
+    pub risk_score: Option<f64>,
+    #[serde(default)]
+    pub aum: Option<f64>,
 }
 
 #[allow(unused_variables)]
