@@ -3013,6 +3013,63 @@
           "stream_response": [],
           "description": "Admin lists experts",
           "json_schema": null
+        },
+        {
+          "name": "AdminListBackers",
+          "code": 30100,
+          "parameters": [
+            {
+              "name": "offset",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "limit",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "name": "backers",
+              "ty": {
+                "DataTable": {
+                  "name": "AdminListBackersRow",
+                  "fields": [
+                    {
+                      "name": "username",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "login_wallet_address",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "joined_at",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "total_platform_fee_paid",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "total_strategy_fee_paid",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "total_backing_amount",
+                      "ty": "Numeric"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "stream_response": [],
+          "description": "",
+          "json_schema": null
         }
       ]
     },

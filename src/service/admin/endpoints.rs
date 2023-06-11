@@ -170,6 +170,31 @@ pub fn endpoint_admin_list_experts() -> EndpointSchema {
     )
     .with_description("Admin lists experts")
 }
+pub fn endpoint_admin_list_backers() -> EndpointSchema {
+    EndpointSchema::new(
+        "AdminListBackers",
+        30100,
+        vec![
+            Field::new("offset", Type::optional(Type::BigInt)),
+            Field::new("limit", Type::optional(Type::BigInt)),
+        ],
+        vec![Field::new(
+            "backers",
+            Type::datatable(
+                "AdminListBackersRow",
+                vec![
+                    Field::new("username", Type::String),
+                    Field::new("login_wallet_address", Type::String),
+                    Field::new("joined_at", Type::BigInt),
+                    Field::new("total_platform_fee_paid", Type::Numeric),
+                    Field::new("total_strategy_fee_paid", Type::Numeric),
+                    Field::new("total_backing_amount", Type::Numeric),
+                ],
+            ),
+        )],
+    )
+}
+
 pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
     vec![
         endpoint_admin_list_users(),
@@ -181,5 +206,6 @@ pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
         endpoint_admin_get_system_config(),
         endpoint_admin_update_system_config(),
         endpoint_admin_list_experts(),
+        endpoint_admin_list_backers(),
     ]
 }

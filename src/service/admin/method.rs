@@ -327,3 +327,42 @@ impl RequestHandler for MethodAdminListExperts {
         .boxed()
     }
 }
+pub struct MethodAdminListBackers;
+impl RequestHandler for MethodAdminListBackers {
+    type Request = AdminListBackersRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db: DbClient = toolbox.get_db();
+        async move {
+            ensure_user_role(ctx, EnumRole::Admin)?;
+
+            let ret = db
+                .execute(FunAdminListBackersReq {
+                    limit: req.limit.unwrap_or(DEFAULT_LIMIT),
+                    offset: req.offset.unwrap_or(DEFAULT_OFFSET),
+                })
+                .await?;
+
+            Ok(AdminListBackersResponse {
+                backers: ret
+                    .into_iter()
+                    .map(|x| AdminListBackersRow {
+                        username: x.username,
+                        joined_at: x.joined_at,
+                        login_wallet_address: x.login_wallet_address,
+                        // TODO: calculate these fees and total backing amount
+                        total_platform_fee_paid: 0.0,
+                        total_strategy_fee_paid: 0.0,
+                        total_backing_amount: 0.0,
+                    })
+                    .collect(),
+            })
+        }
+        .boxed()
+    }
+}

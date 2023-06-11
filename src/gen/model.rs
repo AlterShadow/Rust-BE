@@ -377,6 +377,9 @@ pub enum EnumEndpoint {
     ///
     #[postgres(name = "AdminListExperts")]
     AdminListExperts = 30090,
+    ///
+    #[postgres(name = "AdminListBackers")]
+    AdminListBackers = 30100,
 }
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -792,6 +795,29 @@ pub struct AdminGetSystemConfigRequest {}
 pub struct AdminGetSystemConfigResponse {
     pub config_placeholder_1: i64,
     pub config_placeholder_2: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminListBackersRequest {
+    #[serde(default)]
+    pub offset: Option<i64>,
+    #[serde(default)]
+    pub limit: Option<i64>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminListBackersResponse {
+    pub backers: Vec<AdminListBackersRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminListBackersRow {
+    pub username: String,
+    pub login_wallet_address: String,
+    pub joined_at: i64,
+    pub total_platform_fee_paid: f64,
+    pub total_strategy_fee_paid: f64,
+    pub total_backing_amount: f64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -5098,4 +5124,69 @@ impl WsRequest for AdminListExpertsRequest {
 }
 impl WsResponse for AdminListExpertsResponse {
     type Request = AdminListExpertsRequest;
+}
+
+impl WsRequest for AdminListBackersRequest {
+    type Response = AdminListBackersResponse;
+    const METHOD_ID: u32 = 30100;
+    const SCHEMA: &'static str = r#"{
+  "name": "AdminListBackers",
+  "code": 30100,
+  "parameters": [
+    {
+      "name": "offset",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "limit",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    }
+  ],
+  "returns": [
+    {
+      "name": "backers",
+      "ty": {
+        "DataTable": {
+          "name": "AdminListBackersRow",
+          "fields": [
+            {
+              "name": "username",
+              "ty": "String"
+            },
+            {
+              "name": "login_wallet_address",
+              "ty": "String"
+            },
+            {
+              "name": "joined_at",
+              "ty": "BigInt"
+            },
+            {
+              "name": "total_platform_fee_paid",
+              "ty": "Numeric"
+            },
+            {
+              "name": "total_strategy_fee_paid",
+              "ty": "Numeric"
+            },
+            {
+              "name": "total_backing_amount",
+              "ty": "Numeric"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for AdminListBackersResponse {
+    type Request = AdminListBackersRequest;
 }

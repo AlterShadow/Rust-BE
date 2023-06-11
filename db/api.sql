@@ -1566,6 +1566,30 @@ END
 $$;
         
 
+CREATE OR REPLACE FUNCTION api.fun_admin_list_backers(a_offset bigint, a_limit bigint)
+RETURNS table (
+    "user_id" bigint,
+    "username" varchar,
+    "login_wallet_address" varchar,
+    "joined_at" bigint
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY SELECT a.pkey_id AS user_id,
+                        a.username AS username,
+                        a.address AS login_wallet_address,
+                        a.created_at AS joined_at
+                 FROM tbl.user AS a
+                 ORDER BY a.pkey_id
+                 OFFSET a_offset
+                 LIMIT a_limit;
+END
+            
+$$;
+        
+
 CREATE OR REPLACE FUNCTION api.fun_watcher_save_raw_transaction(a_transaction_hash varchar, a_chain varchar, a_raw_transaction varchar, a_dex varchar DEFAULT NULL)
 RETURNS table (
     "transaction_cache_id" bigint

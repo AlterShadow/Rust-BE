@@ -2146,6 +2146,42 @@ impl DatabaseRequest for FunAdminListExpertsReq {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAdminListBackersReq {
+    pub offset: i64,
+    pub limit: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAdminListBackersRespRow {
+    pub user_id: i64,
+    pub username: String,
+    pub login_wallet_address: String,
+    pub joined_at: i64,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunAdminListBackersReq {
+    type ResponseRow = FunAdminListBackersRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_admin_list_backers(a_offset => $1::bigint, a_limit => $2::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.offset as &(dyn ToSql + Sync),
+            &self.limit as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunAdminListBackersRespRow> {
+        let r = FunAdminListBackersRespRow {
+            user_id: row.try_get(0)?,
+            username: row.try_get(1)?,
+            login_wallet_address: row.try_get(2)?,
+            joined_at: row.try_get(3)?,
+        };
+        Ok(r)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunWatcherSaveRawTransactionReq {
     pub transaction_hash: String,
     pub chain: String,

@@ -103,6 +103,7 @@ async fn main() -> Result<()> {
     server.add_handler(MethodAdminListPendingExpertApplications);
     server.add_handler(MethodAdminGetSystemConfig);
     server.add_handler(MethodAdminUpdateSystemConfig);
+    server.add_handler(MethodAdminListBackers);
     let eth_pool = EthereumRpcConnectionPool::from_conns(config.ethereum_urls);
     let escrow_signer = Secp256k1SecretKey::new_random();
     let externally_owned_account = Secp256k1SecretKey::new_random();

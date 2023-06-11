@@ -279,5 +279,30 @@ BEGIN
 END
 "#,
         ),
+        ProceduralFunction::new(
+            "fun_admin_list_backers",
+            vec![
+                Field::new("offset", Type::BigInt),
+                Field::new("limit", Type::BigInt),
+            ],
+            vec![
+                Field::new("user_id", Type::BigInt),
+                Field::new("username", Type::String),
+                Field::new("login_wallet_address", Type::String),
+                Field::new("joined_at", Type::BigInt),
+            ],
+            r#"
+BEGIN
+    RETURN QUERY SELECT a.pkey_id AS user_id,
+                        a.username AS username,
+                        a.address AS login_wallet_address,
+                        a.created_at AS joined_at
+                 FROM tbl.user AS a
+                 ORDER BY a.pkey_id
+                 OFFSET a_offset
+                 LIMIT a_limit;
+END
+            "#,
+        ),
     ]
 }
