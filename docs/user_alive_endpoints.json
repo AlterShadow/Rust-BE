@@ -1,7 +1,9 @@
 [
   "AdminApproveUserBecomeExpert",
   "AdminGetSystemConfig",
+  "AdminListBackers",
   "AdminListPendingExpertApplications",
+  "AdminListStrategies",
   "AdminListUsers",
   "AdminRejectUserBecomeExpert",
   "AdminSetBlockUser",

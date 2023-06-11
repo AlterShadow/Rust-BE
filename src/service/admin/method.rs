@@ -366,3 +366,45 @@ impl RequestHandler for MethodAdminListBackers {
         .boxed()
     }
 }
+pub struct MethodAdminListStrategies;
+impl RequestHandler for MethodAdminListStrategies {
+    type Request = AdminListStrategiesRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db: DbClient = toolbox.get_db();
+        async move {
+            ensure_user_role(ctx, EnumRole::Admin)?;
+
+            let ret = db
+                .execute(FunAdminListStrategiesReq {
+                    limit: req.limit.unwrap_or(DEFAULT_LIMIT),
+                    offset: req.offset.unwrap_or(DEFAULT_OFFSET),
+                })
+                .await?;
+
+            Ok(AdminListStrategiesResponse {
+                strategies: ret
+                    .into_iter()
+                    .map(|x| AdminListStrategiesRow {
+                        strategy_id: x.strategy_id,
+                        strategy_name: x.strategy_name,
+                        // expert_id: x.expert_id,
+                        expert_public_id: x.expert_public_id,
+                        expert_name: x.expert_name,
+                        description: x.description,
+                        created_at: x.created_at,
+                        approved_at: x.approved_at,
+                        pending_strategy: x.pending_strategy,
+                        approved_strategy: x.approved_strategy,
+                    })
+                    .collect(),
+            })
+        }
+        .boxed()
+    }
+}

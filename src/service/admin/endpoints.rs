@@ -194,6 +194,34 @@ pub fn endpoint_admin_list_backers() -> EndpointSchema {
         )],
     )
 }
+pub fn endpoint_admin_list_strategies() -> EndpointSchema {
+    EndpointSchema::new(
+        "AdminListStrategies",
+        30110,
+        vec![
+            Field::new("offset", Type::optional(Type::BigInt)),
+            Field::new("limit", Type::optional(Type::BigInt)),
+        ],
+        vec![Field::new(
+            "strategies",
+            Type::datatable(
+                "AdminListStrategiesRow",
+                vec![
+                    Field::new("strategy_id", Type::BigInt),
+                    Field::new("strategy_name", Type::String),
+                    // Field::new("expert_id", Type::BigInt),
+                    Field::new("expert_public_id", Type::BigInt),
+                    Field::new("expert_name", Type::String),
+                    Field::new("description", Type::optional(Type::String)),
+                    Field::new("created_at", Type::BigInt),
+                    Field::new("approved_at", Type::optional(Type::BigInt)),
+                    Field::new("pending_strategy", Type::Boolean),
+                    Field::new("approved_strategy", Type::Boolean),
+                ],
+            ),
+        )],
+    )
+}
 
 pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
     vec![
@@ -207,5 +235,6 @@ pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
         endpoint_admin_update_system_config(),
         endpoint_admin_list_experts(),
         endpoint_admin_list_backers(),
+        endpoint_admin_list_strategies(),
     ]
 }

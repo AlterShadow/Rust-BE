@@ -3070,6 +3070,79 @@
           "stream_response": [],
           "description": "",
           "json_schema": null
+        },
+        {
+          "name": "AdminListStrategies",
+          "code": 30110,
+          "parameters": [
+            {
+              "name": "offset",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "limit",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "name": "strategies",
+              "ty": {
+                "DataTable": {
+                  "name": "AdminListStrategiesRow",
+                  "fields": [
+                    {
+                      "name": "strategy_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "strategy_name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "expert_public_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "expert_name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "description",
+                      "ty": {
+                        "Optional": "String"
+                      }
+                    },
+                    {
+                      "name": "created_at",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "approved_at",
+                      "ty": {
+                        "Optional": "BigInt"
+                      }
+                    },
+                    {
+                      "name": "pending_strategy",
+                      "ty": "Boolean"
+                    },
+                    {
+                      "name": "approved_strategy",
+                      "ty": "Boolean"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "stream_response": [],
+          "description": "",
+          "json_schema": null
         }
       ]
     },

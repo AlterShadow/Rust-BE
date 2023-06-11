@@ -69,6 +69,7 @@ ID: 3
 |30080|AdminUpdateSystemConfig|config_placeholder_1, config_placeholder_2|success|Admin updates system config|
 |30090|AdminListExperts|limit, offset, expert_id, user_id, user_public_id, username, family_name, given_name, description, social_media|experts|Admin lists experts|
 |30100|AdminListBackers|offset, limit|backers||
+|30110|AdminListStrategies|offset, limit|strategies||
 
 # watcher Server
 ID: 4

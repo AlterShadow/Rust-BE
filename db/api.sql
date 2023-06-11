@@ -1590,6 +1590,42 @@ END
 $$;
         
 
+CREATE OR REPLACE FUNCTION api.fun_admin_list_strategies(a_limit bigint, a_offset bigint)
+RETURNS table (
+    "strategy_id" bigint,
+    "strategy_name" varchar,
+    "expert_id" bigint,
+    "expert_public_id" bigint,
+    "expert_name" varchar,
+    "description" varchar,
+    "created_at" bigint,
+    "approved_at" bigint,
+    "pending_strategy" boolean,
+    "approved_strategy" boolean
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY SELECT a.pkey_id AS strategy_id,
+                        b.pkey_id AS expert_id,
+                        b.public_id AS expert_public_id,
+                        b.username AS expert_name,
+                        a.description AS description,
+                        a.created_at AS created_at,
+                        0 AS approved_at,
+                        FALSE AS pending_strategy,
+                        TRUE AS approved_strategy
+                 FROM tbl.strategy AS a
+                          JOIN tbl.user AS b ON b.pkey_id = a.fkey_user_id
+                 ORDER BY a.pkey_id
+                 OFFSET a_offset
+                 LIMIT a_limit;
+END
+            
+$$;
+        
+
 CREATE OR REPLACE FUNCTION api.fun_watcher_save_raw_transaction(a_transaction_hash varchar, a_chain varchar, a_raw_transaction varchar, a_dex varchar DEFAULT NULL)
 RETURNS table (
     "transaction_cache_id" bigint

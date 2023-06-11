@@ -380,6 +380,9 @@ pub enum EnumEndpoint {
     ///
     #[postgres(name = "AdminListBackers")]
     AdminListBackers = 30100,
+    ///
+    #[postgres(name = "AdminListStrategies")]
+    AdminListStrategies = 30110,
 }
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -882,6 +885,34 @@ pub struct AdminListPendingExpertApplicationsRequest {
 #[serde(rename_all = "camelCase")]
 pub struct AdminListPendingExpertApplicationsResponse {
     pub users: Vec<ListPendingExpertApplicationsRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminListStrategiesRequest {
+    #[serde(default)]
+    pub offset: Option<i64>,
+    #[serde(default)]
+    pub limit: Option<i64>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminListStrategiesResponse {
+    pub strategies: Vec<AdminListStrategiesRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminListStrategiesRow {
+    pub strategy_id: i64,
+    pub strategy_name: String,
+    pub expert_public_id: i64,
+    pub expert_name: String,
+    #[serde(default)]
+    pub description: Option<String>,
+    pub created_at: i64,
+    #[serde(default)]
+    pub approved_at: Option<i64>,
+    pub pending_strategy: bool,
+    pub approved_strategy: bool,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -5189,4 +5220,85 @@ impl WsRequest for AdminListBackersRequest {
 }
 impl WsResponse for AdminListBackersResponse {
     type Request = AdminListBackersRequest;
+}
+
+impl WsRequest for AdminListStrategiesRequest {
+    type Response = AdminListStrategiesResponse;
+    const METHOD_ID: u32 = 30110;
+    const SCHEMA: &'static str = r#"{
+  "name": "AdminListStrategies",
+  "code": 30110,
+  "parameters": [
+    {
+      "name": "offset",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "limit",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    }
+  ],
+  "returns": [
+    {
+      "name": "strategies",
+      "ty": {
+        "DataTable": {
+          "name": "AdminListStrategiesRow",
+          "fields": [
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "strategy_name",
+              "ty": "String"
+            },
+            {
+              "name": "expert_public_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "expert_name",
+              "ty": "String"
+            },
+            {
+              "name": "description",
+              "ty": {
+                "Optional": "String"
+              }
+            },
+            {
+              "name": "created_at",
+              "ty": "BigInt"
+            },
+            {
+              "name": "approved_at",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "pending_strategy",
+              "ty": "Boolean"
+            },
+            {
+              "name": "approved_strategy",
+              "ty": "Boolean"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for AdminListStrategiesResponse {
+    type Request = AdminListStrategiesRequest;
 }

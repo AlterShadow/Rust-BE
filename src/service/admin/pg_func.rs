@@ -304,5 +304,42 @@ BEGIN
 END
             "#,
         ),
+        ProceduralFunction::new(
+            "fun_admin_list_strategies",
+            vec![
+                Field::new("limit", Type::BigInt),
+                Field::new("offset", Type::BigInt),
+            ],
+            vec![
+                Field::new("strategy_id", Type::BigInt),
+                Field::new("strategy_name", Type::String),
+                Field::new("expert_id", Type::BigInt),
+                Field::new("expert_public_id", Type::BigInt),
+                Field::new("expert_name", Type::String),
+                Field::new("description", Type::optional(Type::String)),
+                Field::new("created_at", Type::BigInt),
+                Field::new("approved_at", Type::optional(Type::BigInt)),
+                Field::new("pending_strategy", Type::Boolean),
+                Field::new("approved_strategy", Type::Boolean),
+            ],
+            r#"
+BEGIN
+    RETURN QUERY SELECT a.pkey_id AS strategy_id,
+                        b.pkey_id AS expert_id,
+                        b.public_id AS expert_public_id,
+                        b.username AS expert_name,
+                        a.description AS description,
+                        a.created_at AS created_at,
+                        0 AS approved_at,
+                        FALSE AS pending_strategy,
+                        TRUE AS approved_strategy
+                 FROM tbl.strategy AS a
+                          JOIN tbl.user AS b ON b.pkey_id = a.fkey_user_id
+                 ORDER BY a.pkey_id
+                 OFFSET a_offset
+                 LIMIT a_limit;
+END
+            "#,
+        ),
     ]
 }

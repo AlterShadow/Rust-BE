@@ -2182,6 +2182,56 @@ impl DatabaseRequest for FunAdminListBackersReq {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAdminListStrategiesReq {
+    pub limit: i64,
+    pub offset: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAdminListStrategiesRespRow {
+    pub strategy_id: i64,
+    pub strategy_name: String,
+    pub expert_id: i64,
+    pub expert_public_id: i64,
+    pub expert_name: String,
+    #[serde(default)]
+    pub description: Option<String>,
+    pub created_at: i64,
+    #[serde(default)]
+    pub approved_at: Option<i64>,
+    pub pending_strategy: bool,
+    pub approved_strategy: bool,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunAdminListStrategiesReq {
+    type ResponseRow = FunAdminListStrategiesRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_admin_list_strategies(a_limit => $1::bigint, a_offset => $2::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.limit as &(dyn ToSql + Sync),
+            &self.offset as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunAdminListStrategiesRespRow> {
+        let r = FunAdminListStrategiesRespRow {
+            strategy_id: row.try_get(0)?,
+            strategy_name: row.try_get(1)?,
+            expert_id: row.try_get(2)?,
+            expert_public_id: row.try_get(3)?,
+            expert_name: row.try_get(4)?,
+            description: row.try_get(5)?,
+            created_at: row.try_get(6)?,
+            approved_at: row.try_get(7)?,
+            pending_strategy: row.try_get(8)?,
+            approved_strategy: row.try_get(9)?,
+        };
+        Ok(r)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunWatcherSaveRawTransactionReq {
     pub transaction_hash: String,
     pub chain: String,
