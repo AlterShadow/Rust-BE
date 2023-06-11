@@ -1,13 +1,12 @@
 pub mod tools;
 
 use eth_sdk::signer::Secp256k1SecretKey;
+use eth_sdk::utils::encode_signature;
 use eyre::*;
 use gen::database::FunAuthSetRoleReq;
 use gen::model::*;
 use lib::database::{connect_to_database, database_test_config, drop_and_recreate_database};
 use lib::log::{setup_logs, LogLevel};
-
-use eth_sdk::utils::encode_signature;
 use tools::*;
 use tracing::*;
 use web3::signing::{hash_message, Key};
@@ -57,6 +56,12 @@ async fn test_create_update_strategy() -> Result<()> {
         .request(UserCreateStrategyRequest {
             name: "test_strategy".to_string(),
             description: "this is a test strategy".to_string(),
+            strategy_thesis_url: "".to_string(),
+            minimum_backing_amount_usd: 0.0,
+            strategy_fee: 0.0,
+            expert_fee: 0.0,
+            agreed_tos: true,
+            linked_wallets: vec![],
         })
         .await?;
     info!("Register wallet {:?}", resp);
@@ -95,25 +100,21 @@ async fn test_user_become_expert() -> Result<()> {
     drop_and_recreate_database()?;
 
     let admin = Secp256k1SecretKey::new_random();
-    signup("admin", &admin.key).await?;
-    let (_admin_client, admin_login) = connect_user_ext("admin", &admin.key).await?;
-    let db = connect_to_database(database_test_config()).await?;
-    db.execute(FunAuthSetRoleReq {
-        public_user_id: admin_login.user_id,
-        role: EnumRole::Admin,
-    })
-    .await?;
-    let mut admin_client = connect_user("admin", &admin.key).await?;
+    signup("dev-admin", &admin.key).await?;
+    let mut admin_client = connect_user("dev-admin", &admin.key).await?;
 
     let user = Secp256k1SecretKey::new_random();
     signup("user1", &user.key).await?;
 
     let mut client = connect_user("user1", &user.key).await?;
     let resp = client.request(UserApplyBecomeExpertRequest {}).await?;
-    info!("Register wallet {:?}", resp);
+    info!("User Apply Become Expert {:?}", resp);
 
     let resp = admin_client
-        .request(AdminListPendingExpertApplicationsRequest {})
+        .request(AdminListPendingExpertApplicationsRequest {
+            offset: None,
+            limit: None,
+        })
         .await?;
     assert_eq!(resp.users.len(), 1);
     let resp = admin_client

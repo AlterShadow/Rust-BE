@@ -632,7 +632,10 @@ pub fn endpoint_user_apply_become_expert() -> EndpointSchema {
         "UserApplyBecomeExpert",
         20220,
         vec![],
-        vec![Field::new("success", Type::Boolean)],
+        vec![
+            Field::new("success", Type::Boolean),
+            Field::new("expert_id", Type::BigInt),
+        ],
     )
     .with_description("User applies to become an expert")
 }

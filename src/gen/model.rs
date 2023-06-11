@@ -846,7 +846,12 @@ pub struct AdminListExpertsRow {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct AdminListPendingExpertApplicationsRequest {}
+pub struct AdminListPendingExpertApplicationsRequest {
+    #[serde(default)]
+    pub offset: Option<i64>,
+    #[serde(default)]
+    pub limit: Option<i64>,
+}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminListPendingExpertApplicationsResponse {
@@ -1213,6 +1218,7 @@ pub struct UserApplyBecomeExpertRequest {}
 #[serde(rename_all = "camelCase")]
 pub struct UserApplyBecomeExpertResponse {
     pub success: bool,
+    pub expert_id: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -4072,6 +4078,10 @@ impl WsRequest for UserApplyBecomeExpertRequest {
     {
       "name": "success",
       "ty": "Boolean"
+    },
+    {
+      "name": "expert_id",
+      "ty": "BigInt"
     }
   ],
   "stream_response": [],
@@ -4749,7 +4759,20 @@ impl WsRequest for AdminListPendingExpertApplicationsRequest {
     const SCHEMA: &'static str = r#"{
   "name": "AdminListPendingExpertApplications",
   "code": 30060,
-  "parameters": [],
+  "parameters": [
+    {
+      "name": "offset",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "limit",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    }
+  ],
   "returns": [
     {
       "name": "users",

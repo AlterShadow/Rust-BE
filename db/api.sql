@@ -953,22 +953,27 @@ $$;
 
 CREATE OR REPLACE FUNCTION api.fun_user_apply_become_expert(a_user_id bigint)
 RETURNS table (
-    "success" boolean
+    "success" boolean,
+    "expert_id" bigint
 )
 LANGUAGE plpgsql
 AS $$
     
+DECLARE
+    _expert_id bigint;
 BEGIN
-    IF EXISTS(SELECT * FROM tbl.expert_profile WHERE fkey_user_id = a_user_id) THEN
-        INSERT INTO tbl.expert_profile(fkey_user_id, updated_at, created_at)
-        VALUES(a_user_id, extract(epoch from now())::bigint, extract(epoch from now())::bigint);
+    IF NOT EXISTS(SELECT * FROM tbl.expert_profile WHERE fkey_user_id = a_user_id) THEN
+        INSERT INTO tbl.expert_profile(fkey_user_id, pending_expert, updated_at, created_at)
+        VALUES(a_user_id, TRUE, extract(epoch from now())::bigint, extract(epoch from now())::bigint)
+        RETURNING pkey_id INTO _expert_id;
     ELSE
         UPDATE tbl.expert_profile SET 
             pending_expert = TRUE,
             updated_at = extract(epoch from now())::bigint
         WHERE fkey_user_id = a_user_id;
+        SELECT pkey_id INTO _expert_id FROM tbl.expert_profile WHERE fkey_user_id = a_user_id;
     END IF;
-    RETURN QUERY SELECT TRUE;
+    RETURN QUERY SELECT TRUE, _expert_id;
 END
 
 $$;
@@ -1408,7 +1413,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_admin_list_pending_user_expert_applications()
+CREATE OR REPLACE FUNCTION api.fun_admin_list_pending_user_expert_applications(a_limit bigint, a_offset bigint)
 RETURNS table (
     "user_public_id" bigint,
     "name" varchar,
@@ -1444,7 +1449,10 @@ BEGIN
                         b.requested_at                AS request_at
                  FROM tbl."user" AS a
                     JOIN tbl.expert_profile AS b ON b.fkey_user_id = a.pkey_id
-                 WHERE b.pending_expert = TRUE;
+                 WHERE b.pending_expert = TRUE
+                 ORDER BY b.pkey_id
+                LIMIT a_limit
+                OFFSET a_offset;
 END
 
 $$;

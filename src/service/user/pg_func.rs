@@ -703,19 +703,26 @@ END
         ProceduralFunction::new(
             "fun_user_apply_become_expert",
             vec![Field::new("user_id", Type::BigInt)],
-            vec![Field::new("success", Type::Boolean)],
+            vec![
+                Field::new("success", Type::Boolean),
+                Field::new("expert_id", Type::BigInt),
+            ],
             r#"
+DECLARE
+    _expert_id bigint;
 BEGIN
-    IF EXISTS(SELECT * FROM tbl.expert_profile WHERE fkey_user_id = a_user_id) THEN
-        INSERT INTO tbl.expert_profile(fkey_user_id, updated_at, created_at)
-        VALUES(a_user_id, extract(epoch from now())::bigint, extract(epoch from now())::bigint);
+    IF NOT EXISTS(SELECT * FROM tbl.expert_profile WHERE fkey_user_id = a_user_id) THEN
+        INSERT INTO tbl.expert_profile(fkey_user_id, pending_expert, updated_at, created_at)
+        VALUES(a_user_id, TRUE, extract(epoch from now())::bigint, extract(epoch from now())::bigint)
+        RETURNING pkey_id INTO _expert_id;
     ELSE
         UPDATE tbl.expert_profile SET 
             pending_expert = TRUE,
             updated_at = extract(epoch from now())::bigint
         WHERE fkey_user_id = a_user_id;
+        SELECT pkey_id INTO _expert_id FROM tbl.expert_profile WHERE fkey_user_id = a_user_id;
     END IF;
-    RETURN QUERY SELECT TRUE;
+    RETURN QUERY SELECT TRUE, _expert_id;
 END
 "#,
         ),

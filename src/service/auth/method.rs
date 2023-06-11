@@ -235,7 +235,7 @@ impl SubAuthController for MethodAuthAuthorize {
             conn.user_id
                 .store(auth_data.user_id as _, Ordering::Relaxed);
             conn.role.store(auth_data.role as _, Ordering::Relaxed);
-            Ok(serde_json::to_value(&AuthorizeResponse { success: false })?)
+            Ok(serde_json::to_value(&AuthorizeResponse { success: true })?)
         }
         .boxed()
     }

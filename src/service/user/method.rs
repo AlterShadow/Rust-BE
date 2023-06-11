@@ -14,6 +14,7 @@ use lib::database::DbClient;
 use lib::handler::{FutureResponse, RequestHandler};
 use lib::toolbox::*;
 use lib::utils::hex_decode;
+use lib::{DEFAULT_LIMIT, DEFAULT_OFFSET};
 use num_traits::cast::FromPrimitive;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -22,8 +23,6 @@ use tracing::info;
 use web3::signing::Key;
 use web3::types::{Address, H256, U256};
 
-const DEFAULT_LIMIT: i64 = 20;
-const DEFAULT_OFFSET: i64 = 0;
 pub fn initial_sp_token_supply() -> U256 {
     U256::from(1000000000u64) * U256::exp10(18)
 }
@@ -1325,18 +1324,14 @@ impl RequestHandler for MethodUserApplyBecomeExpert {
             let ret = db
                 .execute(FunUserApplyBecomeExpertReq {
                     user_id: ctx.user_id,
-                    // TODO: add fields from request
-                    // name: req.name,
-                    // description: req.description,
-                    // social_media: req.social_media,
                 })
-                .await?;
+                .await?
+                .into_result()
+                .context("failed to apply become expert")?;
 
             Ok(UserApplyBecomeExpertResponse {
-                success: ret
-                    .into_result()
-                    .context("failed to apply become expert")?
-                    .success,
+                success: ret.success,
+                expert_id: ret.expert_id,
             })
         }
         .boxed()

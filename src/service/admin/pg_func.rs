@@ -118,16 +118,19 @@ END
         ),
         ProceduralFunction::new(
             "fun_admin_list_pending_user_expert_applications",
-            vec![],
+            vec![
+                Field::new("limit", Type::BigInt),
+                Field::new("offset", Type::BigInt),
+            ],
             vec![
                 Field::new("user_public_id", Type::BigInt),
-                Field::new("name", Type::optional(Type::String)),
+                Field::new("name", Type::String),
                 Field::new("follower_count", Type::BigInt),
-                Field::new("description", Type::String),
-                Field::new("social_media", Type::String),
-                Field::new("risk_score", Type::Numeric),
-                Field::new("reputation_score", Type::Numeric),
-                Field::new("aum", Type::Numeric),
+                Field::new("description", Type::optional(Type::String)),
+                Field::new("social_media", Type::optional(Type::String)),
+                Field::new("risk_score", Type::optional(Type::Numeric)),
+                Field::new("reputation_score", Type::optional(Type::Numeric)),
+                Field::new("aum", Type::optional(Type::Numeric)),
                 Field::new("pending_expert", Type::Boolean),
                 Field::new("approved_expert", Type::Boolean),
                 Field::new("joined_at", Type::optional(Type::BigInt)),
@@ -152,7 +155,10 @@ BEGIN
                         b.requested_at                AS request_at
                  FROM tbl."user" AS a
                     JOIN tbl.expert_profile AS b ON b.fkey_user_id = a.pkey_id
-                 WHERE b.pending_expert = TRUE;
+                 WHERE b.pending_expert = TRUE
+                 ORDER BY b.pkey_id
+                LIMIT a_limit
+                OFFSET a_offset;
 END
 "#,
         ),

@@ -6,6 +6,7 @@ use gen::model::*;
 use lib::database::DbClient;
 use lib::handler::{FutureResponse, RequestHandler};
 use lib::toolbox::{RequestContext, Toolbox};
+use lib::{DEFAULT_LIMIT, DEFAULT_OFFSET};
 
 pub struct MethodAdminListUsers;
 impl RequestHandler for MethodAdminListUsers {
@@ -175,14 +176,17 @@ impl RequestHandler for MethodAdminListPendingExpertApplications {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        _req: Self::Request,
+        req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         async move {
             ensure_user_role(ctx, EnumRole::Admin)?;
 
             let ret = db
-                .execute(FunAdminListPendingUserExpertApplicationsReq {})
+                .execute(FunAdminListPendingUserExpertApplicationsReq {
+                    limit: req.limit.unwrap_or(DEFAULT_LIMIT),
+                    offset: req.offset.unwrap_or(DEFAULT_OFFSET),
+                })
                 .await?;
 
             Ok(AdminListPendingExpertApplicationsResponse {
@@ -191,13 +195,13 @@ impl RequestHandler for MethodAdminListPendingExpertApplications {
                     .into_iter()
                     .map(|x| ListPendingExpertApplicationsRow {
                         user_id: x.user_public_id,
-                        name: x.name.unwrap_or_default(),
+                        name: x.name,
                         follower_count: x.follower_count as _,
-                        description: x.description,
-                        social_media: x.social_media,
-                        risk_score: x.risk_score,
-                        reputation_score: x.reputation_score,
-                        aum: x.aum,
+                        description: x.description.unwrap_or_default(),
+                        social_media: x.social_media.unwrap_or_default(),
+                        risk_score: x.risk_score.unwrap_or_default(),
+                        reputation_score: x.reputation_score.unwrap_or_default(),
+                        aum: x.aum.unwrap_or_default(),
                     })
                     .collect(),
             })

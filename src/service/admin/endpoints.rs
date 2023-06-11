@@ -79,7 +79,10 @@ pub fn endpoint_admin_list_pending_expert_applications() -> EndpointSchema {
     EndpointSchema::new(
         "AdminListPendingExpertApplications",
         30060,
-        vec![],
+        vec![
+            Field::new("offset", Type::optional(Type::BigInt)),
+            Field::new("limit", Type::optional(Type::BigInt)),
+        ],
         vec![Field::new(
             "users",
             Type::datatable(

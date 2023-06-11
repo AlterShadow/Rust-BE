@@ -2135,6 +2135,10 @@
             {
               "name": "success",
               "ty": "Boolean"
+            },
+            {
+              "name": "expert_id",
+              "ty": "BigInt"
             }
           ],
           "stream_response": [],
@@ -2714,7 +2718,20 @@
         {
           "name": "AdminListPendingExpertApplications",
           "code": 30060,
-          "parameters": [],
+          "parameters": [
+            {
+              "name": "offset",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "limit",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            }
+          ],
           "returns": [
             {
               "name": "users",

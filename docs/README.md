@@ -43,7 +43,7 @@ ID: 2
 |20190|UserRegisterWallet|blockchain, wallet_address, message_to_sign, message_signature|success, wallet_id|User registers a wallet|
 |20200|UserListRegisteredWallets||wallets|User lists wallets|
 |20210|UserDeregisterWallet|wallet_id|success|User deregisters a wallet|
-|20220|UserApplyBecomeExpert||success|User applies to become an expert|
+|20220|UserApplyBecomeExpert||success, expert_id|User applies to become an expert|
 |20250|UserCreateStrategy|name, description, strategy_thesis_url, minimum_backing_amount_usd, strategy_fee, expert_fee, agreed_tos, linked_wallets|success, strategy_id|User makes a strategy|
 |20260|UserUpdateStrategy|strategy_id, name, description, social_media, risk_score, reputation_score, aum|success|User updates a strategy|
 |20270|UserAddStrategyWatchingWallet|strategy_id, blockchain, wallet_address, ratio|success, wallet_id||
@@ -62,7 +62,7 @@ ID: 3
 |30010|AdminListUsers|limit, offset, user_id, address, username, email, role|users||
 |30020|AdminSetUserRole|user_id, role|||
 |30030|AdminSetBlockUser|user_id, blocked|||
-|30060|AdminListPendingExpertApplications||users|Admin approves a user to become an expert|
+|30060|AdminListPendingExpertApplications|offset, limit|users|Admin approves a user to become an expert|
 |30040|AdminApproveUserBecomeExpert|user_id|success|Admin approves a user to become an expert|
 |30050|AdminRejectUserBecomeExpert|user_id|success|Admin approves a user to become an expert|
 |30070|AdminGetSystemConfig||config_placeholder_1, config_placeholder_2|Admin get system config|

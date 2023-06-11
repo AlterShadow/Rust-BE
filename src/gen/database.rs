@@ -1195,6 +1195,7 @@ pub struct FunUserApplyBecomeExpertReq {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserApplyBecomeExpertRespRow {
     pub success: bool,
+    pub expert_id: i64,
 }
 
 #[allow(unused_variables)]
@@ -1209,6 +1210,7 @@ impl DatabaseRequest for FunUserApplyBecomeExpertReq {
     fn parse_row(&self, row: Row) -> Result<FunUserApplyBecomeExpertRespRow> {
         let r = FunUserApplyBecomeExpertRespRow {
             success: row.try_get(0)?,
+            expert_id: row.try_get(1)?,
         };
         Ok(r)
     }
@@ -1916,18 +1918,25 @@ impl DatabaseRequest for FunAdminRejectUserBecomeExpertReq {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunAdminListPendingUserExpertApplicationsReq {}
+pub struct FunAdminListPendingUserExpertApplicationsReq {
+    pub limit: i64,
+    pub offset: i64,
+}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAdminListPendingUserExpertApplicationsRespRow {
     pub user_public_id: i64,
-    #[serde(default)]
-    pub name: Option<String>,
+    pub name: String,
     pub follower_count: i64,
-    pub description: String,
-    pub social_media: String,
-    pub risk_score: f64,
-    pub reputation_score: f64,
-    pub aum: f64,
+    #[serde(default)]
+    pub description: Option<String>,
+    #[serde(default)]
+    pub social_media: Option<String>,
+    #[serde(default)]
+    pub risk_score: Option<f64>,
+    #[serde(default)]
+    pub reputation_score: Option<f64>,
+    #[serde(default)]
+    pub aum: Option<f64>,
     pub pending_expert: bool,
     pub approved_expert: bool,
     #[serde(default)]
@@ -1940,10 +1949,13 @@ pub struct FunAdminListPendingUserExpertApplicationsRespRow {
 impl DatabaseRequest for FunAdminListPendingUserExpertApplicationsReq {
     type ResponseRow = FunAdminListPendingUserExpertApplicationsRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_admin_list_pending_user_expert_applications();"
+        "SELECT * FROM api.fun_admin_list_pending_user_expert_applications(a_limit => $1::bigint, a_offset => $2::bigint);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
-        vec![]
+        vec![
+            &self.limit as &(dyn ToSql + Sync),
+            &self.offset as &(dyn ToSql + Sync),
+        ]
     }
     fn parse_row(&self, row: Row) -> Result<FunAdminListPendingUserExpertApplicationsRespRow> {
         let r = FunAdminListPendingUserExpertApplicationsRespRow {
