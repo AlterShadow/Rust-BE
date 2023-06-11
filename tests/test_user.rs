@@ -125,3 +125,74 @@ async fn test_user_become_expert() -> Result<()> {
     info!("Approve {:?}", resp);
     Ok(())
 }
+
+#[tokio::test]
+async fn test_user_follow_expert() -> Result<()> {
+    let _ = setup_logs(LogLevel::Info);
+    drop_and_recreate_database()?;
+
+    let admin = Secp256k1SecretKey::new_random();
+    signup("dev-admin", &admin.key).await?;
+    let mut admin_client = connect_user("dev-admin", &admin.key).await?;
+
+    let user = Secp256k1SecretKey::new_random();
+    signup("user1", &user.key).await?;
+
+    let mut client = connect_user("user1", &user.key).await?;
+    let apply_become_expert_resp = client.request(UserApplyBecomeExpertRequest {}).await?;
+    info!("User Apply Become Expert {:?}", apply_become_expert_resp);
+
+    let resp = admin_client
+        .request(AdminListPendingExpertApplicationsRequest {
+            offset: None,
+            limit: None,
+        })
+        .await?;
+    assert_eq!(resp.users.len(), 1);
+
+    let resp = admin_client
+        .request(AdminApproveUserBecomeExpertRequest {
+            user_id: resp.users[0].user_id,
+        })
+        .await?;
+    info!("Approve {:?}", resp);
+    let user = Secp256k1SecretKey::new_random();
+    signup("user2", &user.key).await?;
+
+    let mut client = connect_user("user2", &user.key).await?;
+    let resp = client
+        .request(UserFollowExpertRequest {
+            expert_id: apply_become_expert_resp.expert_id,
+        })
+        .await?;
+    info!("Follow {:?}", resp);
+    assert!(resp.success);
+    let resp = client
+        .request(UserListFollowedExpertsRequest {
+            limit: None,
+            offset: None,
+        })
+        .await?;
+    info!("List followed experts {:?}", resp);
+    assert_eq!(resp.experts.len(), 1);
+    assert_eq!(
+        resp.experts[0].expert_id,
+        apply_become_expert_resp.expert_id
+    );
+    let resp = client
+        .request(UserUnfollowExpertRequest {
+            expert_id: apply_become_expert_resp.expert_id,
+        })
+        .await?;
+    info!("Unfollow {:?}", resp);
+    assert!(resp.success);
+    let resp = client
+        .request(UserListFollowedExpertsRequest {
+            limit: None,
+            offset: None,
+        })
+        .await?;
+    info!("List followed experts {:?}", resp);
+    assert_eq!(resp.experts.len(), 0);
+    Ok(())
+}
