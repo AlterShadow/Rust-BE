@@ -473,7 +473,7 @@ impl WorkingPancakePairPaths {
                     DexPath::PancakeV3SingleHop(PancakeV3SingleHopPath {
                         token_in: Address::from_str("0xab1a4d4f1d656d2450692d237fdd6c7f9146e814")?,
                         token_out: Address::from_str("0xae13d989dac2f0debff460ac112a837c89baa7cd")?,
-                        fee: U256::from(500),
+                        fee: U256::from(10000),
                     }),
                 )],
             )?,
