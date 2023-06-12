@@ -1104,14 +1104,14 @@ impl RequestHandler for MethodUserGetExpertProfile {
                 .into_result()
                 .context("failed to get expert profile")?;
             Ok(UserGetExpertProfileResponse {
-                expert_id: ret.expert_id,
+                expert_id: ret.expert_id.unwrap_or_default(),
                 name: ret.username,
                 follower_count: ret.follower_count as _,
-                description: ret.description,
-                social_media: ret.social_media,
-                risk_score: ret.risk_score,
-                aum: ret.aum,
-                reputation_score: ret.reputation_score,
+                description: ret.description.unwrap_or_default(),
+                social_media: ret.social_media.unwrap_or_default(),
+                risk_score: ret.risk_score.unwrap_or_default(),
+                aum: ret.aum.unwrap_or_default(),
+                reputation_score: ret.reputation_score.unwrap_or_default(),
                 // TODO: get strategies by expert
                 strategies: vec![],
             })

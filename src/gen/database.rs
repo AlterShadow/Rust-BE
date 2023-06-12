@@ -1037,7 +1037,8 @@ pub struct FunUserGetExpertProfileReq {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserGetExpertProfileRespRow {
-    pub expert_id: i64,
+    #[serde(default)]
+    pub expert_id: Option<i64>,
     pub user_id: i64,
     pub user_public_id: i64,
     pub listening_wallet: String,
@@ -1047,13 +1048,19 @@ pub struct FunUserGetExpertProfileRespRow {
     #[serde(default)]
     pub given_name: Option<String>,
     pub follower_count: i64,
-    pub description: String,
-    pub social_media: String,
-    pub risk_score: f64,
-    pub reputation_score: f64,
-    pub aum: f64,
+    #[serde(default)]
+    pub description: Option<String>,
+    #[serde(default)]
+    pub social_media: Option<String>,
+    #[serde(default)]
+    pub risk_score: Option<f64>,
+    #[serde(default)]
+    pub reputation_score: Option<f64>,
+    #[serde(default)]
+    pub aum: Option<f64>,
     pub joined_at: i64,
-    pub requested_at: i64,
+    #[serde(default)]
+    pub requested_at: Option<i64>,
     #[serde(default)]
     pub approved_at: Option<i64>,
     pub pending_expert: bool,
