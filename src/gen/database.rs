@@ -968,7 +968,6 @@ pub struct FunUserListExpertsRespRow {
     pub family_name: Option<String>,
     #[serde(default)]
     pub given_name: Option<String>,
-    pub follower_count: i64,
     #[serde(default)]
     pub description: Option<String>,
     #[serde(default)]
@@ -987,6 +986,8 @@ pub struct FunUserListExpertsRespRow {
     pub pending_expert: bool,
     pub approved_expert: bool,
     pub followed: bool,
+    pub follower_count: i64,
+    pub backer_count: i64,
 }
 
 #[allow(unused_variables)]
@@ -1011,18 +1012,19 @@ impl DatabaseRequest for FunUserListExpertsReq {
             username: row.try_get(4)?,
             family_name: row.try_get(5)?,
             given_name: row.try_get(6)?,
-            follower_count: row.try_get(7)?,
-            description: row.try_get(8)?,
-            social_media: row.try_get(9)?,
-            risk_score: row.try_get(10)?,
-            reputation_score: row.try_get(11)?,
-            aum: row.try_get(12)?,
-            joined_at: row.try_get(13)?,
-            requested_at: row.try_get(14)?,
-            approved_at: row.try_get(15)?,
-            pending_expert: row.try_get(16)?,
-            approved_expert: row.try_get(17)?,
-            followed: row.try_get(18)?,
+            description: row.try_get(7)?,
+            social_media: row.try_get(8)?,
+            risk_score: row.try_get(9)?,
+            reputation_score: row.try_get(10)?,
+            aum: row.try_get(11)?,
+            joined_at: row.try_get(12)?,
+            requested_at: row.try_get(13)?,
+            approved_at: row.try_get(14)?,
+            pending_expert: row.try_get(15)?,
+            approved_expert: row.try_get(16)?,
+            followed: row.try_get(17)?,
+            follower_count: row.try_get(18)?,
+            backer_count: row.try_get(19)?,
         };
         Ok(r)
     }

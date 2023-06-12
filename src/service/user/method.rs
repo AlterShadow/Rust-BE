@@ -1055,7 +1055,7 @@ impl RequestHandler for MethodUserListFeaturedExperts {
             Ok(UserListFeaturedExpertsResponse {
                 experts: ret
                     .into_iter()
-                    .map(|x| ListExpertsRow {
+                    .map(|x| ListFeaturedExpertsRow {
                         expert_id: x.expert_id,
                         user_public_id: x.user_public_id,
                         name: x.username,
@@ -1073,6 +1073,8 @@ impl RequestHandler for MethodUserListFeaturedExperts {
                         approved_at: x.approved_at,
                         pending_expert: x.pending_expert,
                         approved_expert: x.approved_expert,
+                        backer_count: x.backer_count,
+                        consistent_score: 0.0,
                     })
                     .collect(),
             })

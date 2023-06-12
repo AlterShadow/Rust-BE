@@ -778,7 +778,6 @@ RETURNS table (
     "username" varchar,
     "family_name" varchar,
     "given_name" varchar,
-    "follower_count" bigint,
     "description" varchar,
     "social_media" varchar,
     "risk_score" double precision,
@@ -789,7 +788,9 @@ RETURNS table (
     "approved_at" bigint,
     "pending_expert" boolean,
     "approved_expert" boolean,
-    "followed" boolean
+    "followed" boolean,
+    "follower_count" bigint,
+    "backer_count" bigint
 )
 LANGUAGE plpgsql
 AS $$
@@ -802,9 +803,6 @@ BEGIN
                         c.username                                                AS username,
                         c.family_name                                             AS family_name,
                         c.given_name                                               AS given_name,
-                        (SELECT COUNT(*)
-                         FROM tbl.user_follow_expert
-                         WHERE fkey_expert_id = a.pkey_id AND unfollowed = FALSE) AS follower_count,
                         a.description                                             AS description,
                         a.social_media                                            AS social_media,
                         a.risk_score                                              AS risk_score,
@@ -815,7 +813,9 @@ BEGIN
                         a.approved_at                                             AS approved_at,
                         a.pending_expert                                          AS pending_expert,
                         a.approved_expert                                         AS approved_expert,
-                        EXISTS(SELECT COUNT(*) FROM tbl.user_follow_expert WHERE fkey_expert_id = a.pkey_id AND fkey_user_id = a_user_id AND unfollowed = FALSE) AS follower_count
+                        EXISTS(SELECT COUNT(*) FROM tbl.user_follow_expert WHERE fkey_expert_id = a.pkey_id AND fkey_user_id = a_user_id AND unfollowed = FALSE) AS followed,
+                        (SELECT COUNT(DISTINCT d.fkey_user_id) FROM tbl.user_follow_expert AS d WHERE d.fkey_expert_id = a.pkey_id AND unfollowed = FALSE) AS follower_count,
+                        (SELECT COUNT(DISTINCT d.fkey_user_id) FROM tbl.user_back_strategy_history AS d JOIN tbl.strategy AS e ON e.pkey_id = d.fkey_strategy_id WHERE e.fkey_user_id = c.pkey_id) AS backer_count
                  FROM tbl.expert_profile AS a
                           JOIN tbl.user AS c ON c.pkey_id = a.fkey_user_id
                  ORDER BY a.pkey_id

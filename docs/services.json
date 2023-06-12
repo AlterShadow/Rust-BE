@@ -1598,7 +1598,7 @@
               "name": "experts",
               "ty": {
                 "DataTable": {
-                  "name": "ListExpertsRow",
+                  "name": "ListFeaturedExpertsRow",
                   "fields": [
                     {
                       "name": "expert_id",
@@ -1673,6 +1673,14 @@
                     {
                       "name": "approved_expert",
                       "ty": "Boolean"
+                    },
+                    {
+                      "name": "backer_count",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "consistent_score",
+                      "ty": "Numeric"
                     }
                   ]
                 }
