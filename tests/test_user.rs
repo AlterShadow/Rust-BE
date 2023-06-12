@@ -52,7 +52,7 @@ async fn test_create_update_strategy() -> Result<()> {
     let mut client = connect_user("user1", &signer.key).await?;
 
     let resp = client
-        .request(UserCreateStrategyRequest {
+        .request(ExpertCreateStrategyRequest {
             name: "test_strategy".to_string(),
             description: "this is a test strategy".to_string(),
             strategy_thesis_url: "".to_string(),
@@ -65,7 +65,7 @@ async fn test_create_update_strategy() -> Result<()> {
         .await?;
     info!("Register wallet {:?}", resp);
     client
-        .request(UserUpdateStrategyRequest {
+        .request(ExpertUpdateStrategyRequest {
             strategy_id: resp.strategy_id,
             name: None,
             description: None,
@@ -76,7 +76,7 @@ async fn test_create_update_strategy() -> Result<()> {
         })
         .await?;
     let wallet = client
-        .request(UserAddStrategyWatchingWalletRequest {
+        .request(ExpertAddStrategyWatchingWalletRequest {
             strategy_id: resp.strategy_id,
             blockchain: EnumBlockChain::LocalNet,
             wallet_address: "0x000000000001".to_string(),
@@ -85,7 +85,7 @@ async fn test_create_update_strategy() -> Result<()> {
         .await?;
     info!("Add wallet {:?}", wallet);
     let remove_wallet = client
-        .request(UserRemoveStrategyWatchingWalletRequest {
+        .request(ExpertRemoveStrategyWatchingWalletRequest {
             wallet_id: wallet.wallet_id,
         })
         .await?;
@@ -123,7 +123,7 @@ async fn test_user_follow_strategy() -> Result<()> {
     info!("Approve {:?}", resp);
 
     let create_strategy_resp = client
-        .request(UserCreateStrategyRequest {
+        .request(ExpertCreateStrategyRequest {
             name: "test_strategy".to_string(),
             description: "this is a test strategy".to_string(),
             strategy_thesis_url: "".to_string(),
@@ -189,7 +189,7 @@ async fn test_user_list_strategies() -> Result<()> {
     info!("Approve {:?}", resp);
 
     let create_strategy_resp = client
-        .request(UserCreateStrategyRequest {
+        .request(ExpertCreateStrategyRequest {
             name: "test_strategy".to_string(),
             description: "this is a test strategy".to_string(),
             strategy_thesis_url: "".to_string(),

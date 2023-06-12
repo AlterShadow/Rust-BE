@@ -324,17 +324,17 @@ pub enum EnumEndpoint {
     #[postgres(name = "UserApplyBecomeExpert")]
     UserApplyBecomeExpert = 20220,
     ///
-    #[postgres(name = "UserCreateStrategy")]
-    UserCreateStrategy = 20250,
+    #[postgres(name = "ExpertCreateStrategy")]
+    ExpertCreateStrategy = 20250,
     ///
-    #[postgres(name = "UserUpdateStrategy")]
-    UserUpdateStrategy = 20260,
+    #[postgres(name = "ExpertUpdateStrategy")]
+    ExpertUpdateStrategy = 20260,
     ///
-    #[postgres(name = "UserAddStrategyWatchingWallet")]
-    UserAddStrategyWatchingWallet = 20270,
+    #[postgres(name = "ExpertAddStrategyWatchingWallet")]
+    ExpertAddStrategyWatchingWallet = 20270,
     ///
-    #[postgres(name = "UserRemoveStrategyWatchingWallet")]
-    UserRemoveStrategyWatchingWallet = 20280,
+    #[postgres(name = "ExpertRemoveStrategyWatchingWallet")]
+    ExpertRemoveStrategyWatchingWallet = 20280,
     ///
     #[postgres(name = "UserListStrategyWatchingWallets")]
     UserListStrategyWatchingWallets = 20290,
@@ -342,20 +342,20 @@ pub enum EnumEndpoint {
     #[postgres(name = "UserListWalletActivityHistory")]
     UserListWalletActivityHistory = 20300,
     ///
-    #[postgres(name = "UserAddStrategyInitialTokenRatio")]
-    UserAddStrategyInitialTokenRatio = 20310,
+    #[postgres(name = "ExpertAddStrategyInitialTokenRatio")]
+    ExpertAddStrategyInitialTokenRatio = 20310,
     ///
-    #[postgres(name = "UserRemoveStrategyInitialTokenRatio")]
-    UserRemoveStrategyInitialTokenRatio = 20320,
+    #[postgres(name = "ExpertRemoveStrategyInitialTokenRatio")]
+    ExpertRemoveStrategyInitialTokenRatio = 20320,
     ///
     #[postgres(name = "UserListStrategyInitialTokenRatio")]
     UserListStrategyInitialTokenRatio = 20330,
     ///
-    #[postgres(name = "UserListFollowers")]
-    UserListFollowers = 20340,
+    #[postgres(name = "ExpertListFollowers")]
+    ExpertListFollowers = 20340,
     ///
-    #[postgres(name = "UserListBackers")]
-    UserListBackers = 20350,
+    #[postgres(name = "ExpertListBackers")]
+    ExpertListBackers = 20350,
     ///
     #[postgres(name = "AdminListUsers")]
     AdminListUsers = 30010,
@@ -1057,6 +1057,135 @@ pub struct ExitStrategyHistoryRow {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct ExpertAddStrategyInitialTokenRatioRequest {
+    pub strategy_id: i64,
+    pub token_name: String,
+    pub token_address: String,
+    pub quantity: String,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ExpertAddStrategyInitialTokenRatioResponse {
+    pub success: bool,
+    pub token_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ExpertAddStrategyWatchingWalletRequest {
+    pub strategy_id: i64,
+    pub blockchain: EnumBlockChain,
+    pub wallet_address: String,
+    pub ratio: f64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ExpertAddStrategyWatchingWalletResponse {
+    pub success: bool,
+    pub wallet_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ExpertCreateStrategyRequest {
+    pub name: String,
+    pub description: String,
+    pub strategy_thesis_url: String,
+    pub minimum_backing_amount_usd: f64,
+    pub strategy_fee: f64,
+    pub expert_fee: f64,
+    pub agreed_tos: bool,
+    pub linked_wallets: Vec<LinkedWallet>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ExpertCreateStrategyResponse {
+    pub success: bool,
+    pub strategy_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ExpertListBackersRequest {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ExpertListBackersResponse {
+    pub backers: Vec<ExpertListBackersRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ExpertListBackersRow {
+    pub public_id: i64,
+    pub username: String,
+    #[serde(default)]
+    pub family_name: Option<String>,
+    #[serde(default)]
+    pub given_name: Option<String>,
+    pub backed_at: i64,
+    pub joined_at: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ExpertListFollowersRequest {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ExpertListFollowersResponse {
+    pub followers: Vec<ExpertListFollowersRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ExpertListFollowersRow {
+    pub public_id: i64,
+    pub username: String,
+    #[serde(default)]
+    pub family_name: Option<String>,
+    #[serde(default)]
+    pub given_name: Option<String>,
+    pub followed_at: i64,
+    pub joined_at: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ExpertRemoveStrategyInitialTokenRatioRequest {
+    pub strategy_id: i64,
+    pub token_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ExpertRemoveStrategyInitialTokenRatioResponse {
+    pub success: bool,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ExpertRemoveStrategyWatchingWalletRequest {
+    pub wallet_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ExpertRemoveStrategyWatchingWalletResponse {
+    pub success: bool,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ExpertUpdateStrategyRequest {
+    pub strategy_id: i64,
+    #[serde(default)]
+    pub name: Option<String>,
+    #[serde(default)]
+    pub description: Option<String>,
+    #[serde(default)]
+    pub social_media: Option<String>,
+    #[serde(default)]
+    pub risk_score: Option<f64>,
+    #[serde(default)]
+    pub reputation_score: Option<f64>,
+    #[serde(default)]
+    pub aum: Option<f64>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ExpertUpdateStrategyResponse {
+    pub success: bool,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct FollowHistoryPoint {
     pub time: i64,
     pub follower_count: f64,
@@ -1248,34 +1377,6 @@ pub struct SignupResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserAddStrategyInitialTokenRatioRequest {
-    pub strategy_id: i64,
-    pub token_name: String,
-    pub token_address: String,
-    pub quantity: String,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserAddStrategyInitialTokenRatioResponse {
-    pub success: bool,
-    pub token_id: i64,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserAddStrategyWatchingWalletRequest {
-    pub strategy_id: i64,
-    pub blockchain: EnumBlockChain,
-    pub wallet_address: String,
-    pub ratio: f64,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserAddStrategyWatchingWalletResponse {
-    pub success: bool,
-    pub wallet_id: i64,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
 pub struct UserApplyBecomeExpertRequest {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1294,24 +1395,6 @@ pub struct UserBackStrategyRequest {
 #[serde(rename_all = "camelCase")]
 pub struct UserBackStrategyResponse {
     pub success: bool,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserCreateStrategyRequest {
-    pub name: String,
-    pub description: String,
-    pub strategy_thesis_url: String,
-    pub minimum_backing_amount_usd: f64,
-    pub strategy_fee: f64,
-    pub expert_fee: f64,
-    pub agreed_tos: bool,
-    pub linked_wallets: Vec<LinkedWallet>,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserCreateStrategyResponse {
-    pub success: bool,
-    pub strategy_id: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1469,26 +1552,6 @@ pub struct UserListBackedStrategiesResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserListBackersRequest {}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserListBackersResponse {
-    pub backers: Vec<UserListBackersRow>,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserListBackersRow {
-    pub public_id: i64,
-    pub username: String,
-    #[serde(default)]
-    pub family_name: Option<String>,
-    #[serde(default)]
-    pub given_name: Option<String>,
-    pub backed_at: i64,
-    pub joined_at: i64,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
 pub struct UserListExitStrategyHistoryRequest {
     #[serde(default)]
     pub strategy_id: Option<i64>,
@@ -1553,26 +1616,6 @@ pub struct UserListFollowedStrategiesRequest {
 #[serde(rename_all = "camelCase")]
 pub struct UserListFollowedStrategiesResponse {
     pub strategies: Vec<ListStrategiesRow>,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserListFollowersRequest {}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserListFollowersResponse {
-    pub followers: Vec<UserListFollowersRow>,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserListFollowersRow {
-    pub public_id: i64,
-    pub username: String,
-    #[serde(default)]
-    pub family_name: Option<String>,
-    #[serde(default)]
-    pub given_name: Option<String>,
-    pub followed_at: i64,
-    pub joined_at: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1696,27 +1739,6 @@ pub struct UserRegisterWalletResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserRemoveStrategyInitialTokenRatioRequest {
-    pub strategy_id: i64,
-    pub token_id: i64,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserRemoveStrategyInitialTokenRatioResponse {
-    pub success: bool,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserRemoveStrategyWatchingWalletRequest {
-    pub wallet_id: i64,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserRemoveStrategyWatchingWalletResponse {
-    pub success: bool,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
 pub struct UserRequestRefundRequest {
     pub quantity: String,
     pub wallet_address: String,
@@ -1745,28 +1767,6 @@ pub struct UserUnfollowStrategyRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserUnfollowStrategyResponse {
-    pub success: bool,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserUpdateStrategyRequest {
-    pub strategy_id: i64,
-    #[serde(default)]
-    pub name: Option<String>,
-    #[serde(default)]
-    pub description: Option<String>,
-    #[serde(default)]
-    pub social_media: Option<String>,
-    #[serde(default)]
-    pub risk_score: Option<f64>,
-    #[serde(default)]
-    pub reputation_score: Option<f64>,
-    #[serde(default)]
-    pub aum: Option<f64>,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserUpdateStrategyResponse {
     pub success: bool,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -4196,11 +4196,11 @@ impl WsResponse for UserApplyBecomeExpertResponse {
     type Request = UserApplyBecomeExpertRequest;
 }
 
-impl WsRequest for UserCreateStrategyRequest {
-    type Response = UserCreateStrategyResponse;
+impl WsRequest for ExpertCreateStrategyRequest {
+    type Response = ExpertCreateStrategyResponse;
     const METHOD_ID: u32 = 20250;
     const SCHEMA: &'static str = r#"{
-  "name": "UserCreateStrategy",
+  "name": "ExpertCreateStrategy",
   "code": 20250,
   "parameters": [
     {
@@ -4261,15 +4261,15 @@ impl WsRequest for UserCreateStrategyRequest {
   "json_schema": null
 }"#;
 }
-impl WsResponse for UserCreateStrategyResponse {
-    type Request = UserCreateStrategyRequest;
+impl WsResponse for ExpertCreateStrategyResponse {
+    type Request = ExpertCreateStrategyRequest;
 }
 
-impl WsRequest for UserUpdateStrategyRequest {
-    type Response = UserUpdateStrategyResponse;
+impl WsRequest for ExpertUpdateStrategyRequest {
+    type Response = ExpertUpdateStrategyResponse;
     const METHOD_ID: u32 = 20260;
     const SCHEMA: &'static str = r#"{
-  "name": "UserUpdateStrategy",
+  "name": "ExpertUpdateStrategy",
   "code": 20260,
   "parameters": [
     {
@@ -4324,15 +4324,15 @@ impl WsRequest for UserUpdateStrategyRequest {
   "json_schema": null
 }"#;
 }
-impl WsResponse for UserUpdateStrategyResponse {
-    type Request = UserUpdateStrategyRequest;
+impl WsResponse for ExpertUpdateStrategyResponse {
+    type Request = ExpertUpdateStrategyRequest;
 }
 
-impl WsRequest for UserAddStrategyWatchingWalletRequest {
-    type Response = UserAddStrategyWatchingWalletResponse;
+impl WsRequest for ExpertAddStrategyWatchingWalletRequest {
+    type Response = ExpertAddStrategyWatchingWalletResponse;
     const METHOD_ID: u32 = 20270;
     const SCHEMA: &'static str = r#"{
-  "name": "UserAddStrategyWatchingWallet",
+  "name": "ExpertAddStrategyWatchingWallet",
   "code": 20270,
   "parameters": [
     {
@@ -4369,15 +4369,15 @@ impl WsRequest for UserAddStrategyWatchingWalletRequest {
   "json_schema": null
 }"#;
 }
-impl WsResponse for UserAddStrategyWatchingWalletResponse {
-    type Request = UserAddStrategyWatchingWalletRequest;
+impl WsResponse for ExpertAddStrategyWatchingWalletResponse {
+    type Request = ExpertAddStrategyWatchingWalletRequest;
 }
 
-impl WsRequest for UserRemoveStrategyWatchingWalletRequest {
-    type Response = UserRemoveStrategyWatchingWalletResponse;
+impl WsRequest for ExpertRemoveStrategyWatchingWalletRequest {
+    type Response = ExpertRemoveStrategyWatchingWalletResponse;
     const METHOD_ID: u32 = 20280;
     const SCHEMA: &'static str = r#"{
-  "name": "UserRemoveStrategyWatchingWallet",
+  "name": "ExpertRemoveStrategyWatchingWallet",
   "code": 20280,
   "parameters": [
     {
@@ -4396,8 +4396,8 @@ impl WsRequest for UserRemoveStrategyWatchingWalletRequest {
   "json_schema": null
 }"#;
 }
-impl WsResponse for UserRemoveStrategyWatchingWalletResponse {
-    type Request = UserRemoveStrategyWatchingWalletRequest;
+impl WsResponse for ExpertRemoveStrategyWatchingWalletResponse {
+    type Request = ExpertRemoveStrategyWatchingWalletRequest;
 }
 
 impl WsRequest for UserListStrategyWatchingWalletsRequest {
@@ -4552,11 +4552,11 @@ impl WsResponse for UserListWalletActivityHistoryResponse {
     type Request = UserListWalletActivityHistoryRequest;
 }
 
-impl WsRequest for UserAddStrategyInitialTokenRatioRequest {
-    type Response = UserAddStrategyInitialTokenRatioResponse;
+impl WsRequest for ExpertAddStrategyInitialTokenRatioRequest {
+    type Response = ExpertAddStrategyInitialTokenRatioResponse;
     const METHOD_ID: u32 = 20310;
     const SCHEMA: &'static str = r#"{
-  "name": "UserAddStrategyInitialTokenRatio",
+  "name": "ExpertAddStrategyInitialTokenRatio",
   "code": 20310,
   "parameters": [
     {
@@ -4591,15 +4591,15 @@ impl WsRequest for UserAddStrategyInitialTokenRatioRequest {
   "json_schema": null
 }"#;
 }
-impl WsResponse for UserAddStrategyInitialTokenRatioResponse {
-    type Request = UserAddStrategyInitialTokenRatioRequest;
+impl WsResponse for ExpertAddStrategyInitialTokenRatioResponse {
+    type Request = ExpertAddStrategyInitialTokenRatioRequest;
 }
 
-impl WsRequest for UserRemoveStrategyInitialTokenRatioRequest {
-    type Response = UserRemoveStrategyInitialTokenRatioResponse;
+impl WsRequest for ExpertRemoveStrategyInitialTokenRatioRequest {
+    type Response = ExpertRemoveStrategyInitialTokenRatioResponse;
     const METHOD_ID: u32 = 20320;
     const SCHEMA: &'static str = r#"{
-  "name": "UserRemoveStrategyInitialTokenRatio",
+  "name": "ExpertRemoveStrategyInitialTokenRatio",
   "code": 20320,
   "parameters": [
     {
@@ -4622,8 +4622,8 @@ impl WsRequest for UserRemoveStrategyInitialTokenRatioRequest {
   "json_schema": null
 }"#;
 }
-impl WsResponse for UserRemoveStrategyInitialTokenRatioResponse {
-    type Request = UserRemoveStrategyInitialTokenRatioRequest;
+impl WsResponse for ExpertRemoveStrategyInitialTokenRatioResponse {
+    type Request = ExpertRemoveStrategyInitialTokenRatioRequest;
 }
 
 impl WsRequest for UserListStrategyInitialTokenRatioRequest {
@@ -4683,11 +4683,11 @@ impl WsResponse for UserListStrategyInitialTokenRatioResponse {
     type Request = UserListStrategyInitialTokenRatioRequest;
 }
 
-impl WsRequest for UserListFollowersRequest {
-    type Response = UserListFollowersResponse;
+impl WsRequest for ExpertListFollowersRequest {
+    type Response = ExpertListFollowersResponse;
     const METHOD_ID: u32 = 20340;
     const SCHEMA: &'static str = r#"{
-  "name": "UserListFollowers",
+  "name": "ExpertListFollowers",
   "code": 20340,
   "parameters": [],
   "returns": [
@@ -4695,7 +4695,7 @@ impl WsRequest for UserListFollowersRequest {
       "name": "followers",
       "ty": {
         "DataTable": {
-          "name": "UserListFollowersRow",
+          "name": "ExpertListFollowersRow",
           "fields": [
             {
               "name": "public_id",
@@ -4735,15 +4735,15 @@ impl WsRequest for UserListFollowersRequest {
   "json_schema": null
 }"#;
 }
-impl WsResponse for UserListFollowersResponse {
-    type Request = UserListFollowersRequest;
+impl WsResponse for ExpertListFollowersResponse {
+    type Request = ExpertListFollowersRequest;
 }
 
-impl WsRequest for UserListBackersRequest {
-    type Response = UserListBackersResponse;
+impl WsRequest for ExpertListBackersRequest {
+    type Response = ExpertListBackersResponse;
     const METHOD_ID: u32 = 20350;
     const SCHEMA: &'static str = r#"{
-  "name": "UserListBackers",
+  "name": "ExpertListBackers",
   "code": 20350,
   "parameters": [],
   "returns": [
@@ -4751,7 +4751,7 @@ impl WsRequest for UserListBackersRequest {
       "name": "backers",
       "ty": {
         "DataTable": {
-          "name": "UserListBackersRow",
+          "name": "ExpertListBackersRow",
           "fields": [
             {
               "name": "public_id",
@@ -4791,8 +4791,8 @@ impl WsRequest for UserListBackersRequest {
   "json_schema": null
 }"#;
 }
-impl WsResponse for UserListBackersResponse {
-    type Request = UserListBackersRequest;
+impl WsResponse for ExpertListBackersResponse {
+    type Request = ExpertListBackersRequest;
 }
 
 impl WsRequest for AdminListUsersRequest {

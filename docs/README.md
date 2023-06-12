@@ -44,17 +44,17 @@ ID: 2
 |20200|UserListRegisteredWallets||wallets|User lists wallets|
 |20210|UserDeregisterWallet|wallet_id|success|User deregisters a wallet|
 |20220|UserApplyBecomeExpert||success, expert_id|User applies to become an expert|
-|20250|UserCreateStrategy|name, description, strategy_thesis_url, minimum_backing_amount_usd, strategy_fee, expert_fee, agreed_tos, linked_wallets|success, strategy_id|User makes a strategy|
-|20260|UserUpdateStrategy|strategy_id, name, description, social_media, risk_score, reputation_score, aum|success|User updates a strategy|
-|20270|UserAddStrategyWatchingWallet|strategy_id, blockchain, wallet_address, ratio|success, wallet_id||
-|20280|UserRemoveStrategyWatchingWallet|wallet_id|success||
+|20250|ExpertCreateStrategy|name, description, strategy_thesis_url, minimum_backing_amount_usd, strategy_fee, expert_fee, agreed_tos, linked_wallets|success, strategy_id|User makes a strategy|
+|20260|ExpertUpdateStrategy|strategy_id, name, description, social_media, risk_score, reputation_score, aum|success|User updates a strategy|
+|20270|ExpertAddStrategyWatchingWallet|strategy_id, blockchain, wallet_address, ratio|success, wallet_id||
+|20280|ExpertRemoveStrategyWatchingWallet|wallet_id|success||
 |20290|UserListStrategyWatchingWallets|strategy_id|wallets||
 |20300|UserListWalletActivityHistory|wallet_address, blockchain|wallet_activities||
-|20310|UserAddStrategyInitialTokenRatio|strategy_id, token_name, token_address, quantity|success, token_id||
-|20320|UserRemoveStrategyInitialTokenRatio|strategy_id, token_id|success||
+|20310|ExpertAddStrategyInitialTokenRatio|strategy_id, token_name, token_address, quantity|success, token_id||
+|20320|ExpertRemoveStrategyInitialTokenRatio|strategy_id, token_id|success||
 |20330|UserListStrategyInitialTokenRatio|strategy_id|token_ratios||
-|20340|UserListFollowers||followers||
-|20350|UserListBackers||backers||
+|20340|ExpertListFollowers||followers||
+|20350|ExpertListBackers||backers||
 
 # admin Server
 ID: 3

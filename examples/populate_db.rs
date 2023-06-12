@@ -268,7 +268,7 @@ async fn populate_user_apply_become_experts() -> Result<()> {
                     .await?;
 
                 let create_strategy_resp = client
-                    .request(UserCreateStrategyRequest {
+                    .request(ExpertCreateStrategyRequest {
                         name: format!("test strategy {}", i),
                         description: "this is a test strategy".to_string(),
                         strategy_thesis_url: "".to_string(),

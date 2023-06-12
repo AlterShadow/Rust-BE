@@ -1338,10 +1338,10 @@ impl RequestHandler for MethodUserApplyBecomeExpert {
         .boxed()
     }
 }
-pub struct MethodUserCreateStrategy;
+pub struct MethodExpertCreateStrategy;
 
-impl RequestHandler for MethodUserCreateStrategy {
-    type Request = UserCreateStrategyRequest;
+impl RequestHandler for MethodExpertCreateStrategy {
+    type Request = ExpertCreateStrategyRequest;
 
     fn handle(
         &self,
@@ -1369,7 +1369,7 @@ impl RequestHandler for MethodUserCreateStrategy {
                 .into_result()
                 .context("failed to create strategy")?;
 
-            Ok(UserCreateStrategyResponse {
+            Ok(ExpertCreateStrategyResponse {
                 success: ret.success,
                 strategy_id: ret.strategy_id,
             })
@@ -1377,9 +1377,9 @@ impl RequestHandler for MethodUserCreateStrategy {
         .boxed()
     }
 }
-pub struct MethodUserUpdateStrategy;
-impl RequestHandler for MethodUserUpdateStrategy {
-    type Request = UserUpdateStrategyRequest;
+pub struct MethodExpertUpdateStrategy;
+impl RequestHandler for MethodExpertUpdateStrategy {
+    type Request = ExpertUpdateStrategyRequest;
 
     fn handle(
         &self,
@@ -1404,7 +1404,7 @@ impl RequestHandler for MethodUserUpdateStrategy {
                 .into_result()
                 .context("failed to update strategy")?;
 
-            Ok(UserUpdateStrategyResponse {
+            Ok(ExpertUpdateStrategyResponse {
                 success: ret.success,
             })
         }
@@ -1412,9 +1412,9 @@ impl RequestHandler for MethodUserUpdateStrategy {
     }
 }
 // pub struct MethodUserDeleteStrategy;
-pub struct MethodUserAddStrategyWatchingWallet;
-impl RequestHandler for MethodUserAddStrategyWatchingWallet {
-    type Request = UserAddStrategyWatchingWalletRequest;
+pub struct MethodExpertAddStrategyWatchingWallet;
+impl RequestHandler for MethodExpertAddStrategyWatchingWallet {
+    type Request = ExpertAddStrategyWatchingWalletRequest;
 
     fn handle(
         &self,
@@ -1442,7 +1442,7 @@ impl RequestHandler for MethodUserAddStrategyWatchingWallet {
                 .into_result()
                 .context("failed to add strategy watching wallet")?;
 
-            Ok(UserAddStrategyWatchingWalletResponse {
+            Ok(ExpertAddStrategyWatchingWalletResponse {
                 success: ret.success,
                 wallet_id: ret.watch_wallet_id,
             })
@@ -1450,9 +1450,9 @@ impl RequestHandler for MethodUserAddStrategyWatchingWallet {
         .boxed()
     }
 }
-pub struct MethodUserRemoveStrategyWatchingWallet;
-impl RequestHandler for MethodUserRemoveStrategyWatchingWallet {
-    type Request = UserRemoveStrategyWatchingWalletRequest;
+pub struct MethodExpertRemoveStrategyWatchingWallet;
+impl RequestHandler for MethodExpertRemoveStrategyWatchingWallet {
+    type Request = ExpertRemoveStrategyWatchingWalletRequest;
 
     fn handle(
         &self,
@@ -1476,7 +1476,7 @@ impl RequestHandler for MethodUserRemoveStrategyWatchingWallet {
                 .into_result()
                 .context("failed to remove strategy watching wallet")?;
 
-            Ok(UserRemoveStrategyWatchingWalletResponse {
+            Ok(ExpertRemoveStrategyWatchingWalletResponse {
                 success: ret.success,
             })
         }
@@ -1579,9 +1579,9 @@ pub async fn on_user_request_refund(
     Ok(hash)
 }
 
-pub struct MethodUserAddStrategyInitialTokenRatio;
-impl RequestHandler for MethodUserAddStrategyInitialTokenRatio {
-    type Request = UserAddStrategyInitialTokenRatioRequest;
+pub struct MethodExpertAddStrategyInitialTokenRatio;
+impl RequestHandler for MethodExpertAddStrategyInitialTokenRatio {
+    type Request = ExpertAddStrategyInitialTokenRatioRequest;
 
     fn handle(
         &self,
@@ -1605,7 +1605,7 @@ impl RequestHandler for MethodUserAddStrategyInitialTokenRatio {
                 .into_result()
                 .context("failed to add strategy initial token ratio")?;
 
-            Ok(UserAddStrategyInitialTokenRatioResponse {
+            Ok(ExpertAddStrategyInitialTokenRatioResponse {
                 success: true,
                 token_id: ret.strategy_initial_token_ratio_id,
             })
@@ -1613,9 +1613,9 @@ impl RequestHandler for MethodUserAddStrategyInitialTokenRatio {
         .boxed()
     }
 }
-pub struct MethodUserRemoveStrategyInitialTokenRatio;
-impl RequestHandler for MethodUserRemoveStrategyInitialTokenRatio {
-    type Request = UserRemoveStrategyInitialTokenRatioRequest;
+pub struct MethodExpertRemoveStrategyInitialTokenRatio;
+impl RequestHandler for MethodExpertRemoveStrategyInitialTokenRatio {
+    type Request = ExpertRemoveStrategyInitialTokenRatioRequest;
 
     fn handle(
         &self,
@@ -1637,7 +1637,7 @@ impl RequestHandler for MethodUserRemoveStrategyInitialTokenRatio {
                 .into_result()
                 .context("failed to remove strategy initial token ratio")?;
 
-            Ok(UserRemoveStrategyInitialTokenRatioResponse { success: true })
+            Ok(ExpertRemoveStrategyInitialTokenRatioResponse { success: true })
         }
         .boxed()
     }
@@ -1681,9 +1681,9 @@ impl RequestHandler for MethodUserListStrategyInitialTokenRatio {
     }
 }
 
-pub struct MethodUserListFollowers;
-impl RequestHandler for MethodUserListFollowers {
-    type Request = UserListFollowersRequest;
+pub struct MethodExpertListFollowers;
+impl RequestHandler for MethodExpertListFollowers {
+    type Request = ExpertListFollowersRequest;
 
     fn handle(
         &self,
@@ -1702,10 +1702,10 @@ impl RequestHandler for MethodUserListFollowers {
                 })
                 .await?;
 
-            Ok(UserListFollowersResponse {
+            Ok(ExpertListFollowersResponse {
                 followers: ret
                     .into_iter()
-                    .map(|x| UserListFollowersRow {
+                    .map(|x| ExpertListFollowersRow {
                         public_id: x.public_id,
                         username: x.username,
                         family_name: x.family_name,
@@ -1720,9 +1720,9 @@ impl RequestHandler for MethodUserListFollowers {
     }
 }
 
-pub struct MethodUserListBackers;
-impl RequestHandler for MethodUserListBackers {
-    type Request = UserListBackersRequest;
+pub struct MethodExpertListBackers;
+impl RequestHandler for MethodExpertListBackers {
+    type Request = ExpertListBackersRequest;
 
     fn handle(
         &self,
@@ -1733,7 +1733,7 @@ impl RequestHandler for MethodUserListBackers {
         let db: DbClient = toolbox.get_db();
 
         async move {
-            ensure_user_role(ctx, EnumRole::User)?;
+            ensure_user_role(ctx, EnumRole::Expert)?;
 
             let ret = db
                 .execute(FunUserListBackersReq {
@@ -1741,10 +1741,10 @@ impl RequestHandler for MethodUserListBackers {
                 })
                 .await?;
 
-            Ok(UserListBackersResponse {
+            Ok(ExpertListBackersResponse {
                 backers: ret
                     .into_iter()
-                    .map(|x| UserListBackersRow {
+                    .map(|x| ExpertListBackersRow {
                         public_id: x.public_id,
                         username: x.username,
                         family_name: x.family_name,

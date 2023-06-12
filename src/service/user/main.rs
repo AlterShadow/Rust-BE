@@ -72,8 +72,8 @@ async fn main() -> Result<()> {
     server.add_handler(MethodUserListExitStrategyHistory);
 
     server.add_handler(MethodUserFollowExpert);
-    server.add_handler(MethodUserListFollowers);
-    server.add_handler(MethodUserListBackers);
+    server.add_handler(MethodExpertListFollowers);
+    server.add_handler(MethodExpertListBackers);
     server.add_handler(MethodUserListFollowedExperts);
 
     server.add_handler(MethodUserUnfollowExpert);
@@ -86,14 +86,14 @@ async fn main() -> Result<()> {
     server.add_handler(MethodUserUpdateUserProfile);
     server.add_handler(MethodUserApplyBecomeExpert);
 
-    server.add_handler(MethodUserCreateStrategy);
-    server.add_handler(MethodUserUpdateStrategy);
+    server.add_handler(MethodExpertCreateStrategy);
+    server.add_handler(MethodExpertUpdateStrategy);
+    server.add_handler(MethodExpertAddStrategyInitialTokenRatio);
+    server.add_handler(MethodExpertRemoveStrategyInitialTokenRatio);
 
-    server.add_handler(MethodUserAddStrategyWatchingWallet);
-    server.add_handler(MethodUserRemoveStrategyWatchingWallet);
+    server.add_handler(MethodExpertAddStrategyWatchingWallet);
+    server.add_handler(MethodExpertRemoveStrategyWatchingWallet);
     server.add_handler(MethodUserListWalletActivityHistory);
-    server.add_handler(MethodUserAddStrategyInitialTokenRatio);
-    server.add_handler(MethodUserRemoveStrategyInitialTokenRatio);
     server.add_handler(MethodUserListStrategyInitialTokenRatio);
 
     server.add_handler(MethodAdminListUsers);

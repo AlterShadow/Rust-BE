@@ -2146,7 +2146,7 @@
           "json_schema": null
         },
         {
-          "name": "UserCreateStrategy",
+          "name": "ExpertCreateStrategy",
           "code": 20250,
           "parameters": [
             {
@@ -2207,7 +2207,7 @@
           "json_schema": null
         },
         {
-          "name": "UserUpdateStrategy",
+          "name": "ExpertUpdateStrategy",
           "code": 20260,
           "parameters": [
             {
@@ -2262,7 +2262,7 @@
           "json_schema": null
         },
         {
-          "name": "UserAddStrategyWatchingWallet",
+          "name": "ExpertAddStrategyWatchingWallet",
           "code": 20270,
           "parameters": [
             {
@@ -2299,7 +2299,7 @@
           "json_schema": null
         },
         {
-          "name": "UserRemoveStrategyWatchingWallet",
+          "name": "ExpertRemoveStrategyWatchingWallet",
           "code": 20280,
           "parameters": [
             {
@@ -2454,7 +2454,7 @@
           "json_schema": null
         },
         {
-          "name": "UserAddStrategyInitialTokenRatio",
+          "name": "ExpertAddStrategyInitialTokenRatio",
           "code": 20310,
           "parameters": [
             {
@@ -2489,7 +2489,7 @@
           "json_schema": null
         },
         {
-          "name": "UserRemoveStrategyInitialTokenRatio",
+          "name": "ExpertRemoveStrategyInitialTokenRatio",
           "code": 20320,
           "parameters": [
             {
@@ -2561,7 +2561,7 @@
           "json_schema": null
         },
         {
-          "name": "UserListFollowers",
+          "name": "ExpertListFollowers",
           "code": 20340,
           "parameters": [],
           "returns": [
@@ -2569,7 +2569,7 @@
               "name": "followers",
               "ty": {
                 "DataTable": {
-                  "name": "UserListFollowersRow",
+                  "name": "ExpertListFollowersRow",
                   "fields": [
                     {
                       "name": "public_id",
@@ -2609,7 +2609,7 @@
           "json_schema": null
         },
         {
-          "name": "UserListBackers",
+          "name": "ExpertListBackers",
           "code": 20350,
           "parameters": [],
           "returns": [
@@ -2617,7 +2617,7 @@
               "name": "backers",
               "ty": {
                 "DataTable": {
-                  "name": "UserListBackersRow",
+                  "name": "ExpertListBackersRow",
                   "fields": [
                     {
                       "name": "public_id",
