@@ -3,10 +3,14 @@ pub mod tools;
 use eth_sdk::signer::Secp256k1SecretKey;
 use eth_sdk::utils::get_signed_text;
 use eyre::*;
+use futures::future::join_all;
 use gen::model::*;
-use lib::database::drop_and_recreate_database;
 use lib::log::{setup_logs, LogLevel};
 use rand::random;
+use std::future::Future;
+use std::sync::Arc;
+use tokio::sync::Mutex;
+use tokio::task::JoinHandle;
 use tools::*;
 use tracing::*;
 
@@ -197,7 +201,13 @@ pub fn get_user_key(i: usize) -> Option<Secp256k1SecretKey> {
 pub fn get_admin_key() -> Secp256k1SecretKey {
     Secp256k1SecretKey::from_str(ADMIN_KEY.0).unwrap()
 }
-
+fn spawn_task(f: impl Future<Output = Result<()>> + Send + 'static) -> JoinHandle<()> {
+    tokio::spawn(async move {
+        if let Err(e) = f.await {
+            println!("Error: {:?}", e);
+        }
+    })
+}
 async fn populate_users() -> Result<()> {
     let admin_signer = get_admin_key();
     signup(format!("dev-{}", 0), &admin_signer.key).await?;
@@ -211,82 +221,90 @@ async fn populate_users() -> Result<()> {
 }
 
 async fn populate_user_registered_wallets() -> Result<()> {
+    let mut tasks = vec![];
     for i in 0..KEYS.len() {
-        let signer = get_user_key(i).unwrap();
+        tasks.push(spawn_task(async move {
+            let signer = get_user_key(i).unwrap();
 
-        let mut client = connect_user(format!("user-{}", i), &signer.key).await?;
-        let (txt, sig) =
-            get_signed_text(format!("User register wallet request {}", i), &signer.key)?;
-        let resp = client
-            .request(UserRegisterWalletRequest {
-                blockchain: EnumBlockChain::LocalNet,
-                wallet_address: format!("{:?}", signer.address),
-                message_to_sign: txt,
-                message_signature: sig,
-            })
-            .await?;
+            let mut client = connect_user(format!("user-{}", i), &signer.key).await?;
+            let (txt, sig) =
+                get_signed_text(format!("User register wallet request {}", i), &signer.key)?;
+            let resp = client
+                .request(UserRegisterWalletRequest {
+                    blockchain: EnumBlockChain::LocalNet,
+                    wallet_address: format!("{:?}", signer.address),
+                    message_to_sign: txt,
+                    message_signature: sig,
+                })
+                .await?;
+            Ok(())
+        }))
     }
+    join_all(tasks).await;
 
     Ok(())
 }
 
 async fn populate_user_apply_become_experts() -> Result<()> {
+    let mut tasks = vec![];
     let admin_signer = get_admin_key();
-    let mut admin_client = connect_user("dev-0", &admin_signer.key).await?;
+    let admin_client = Arc::new(Mutex::new(connect_user("dev-0", &admin_signer.key).await?));
     for i in 0..KEYS.len() / 2 {
-        let signer = get_user_key(i).unwrap();
+        let admin_client = admin_client.clone();
+        tasks.push(spawn_task(async move {
+            let signer = get_user_key(i).unwrap();
 
-        let (mut client, login_info) = connect_user_ext(format!("user-{}", i), &signer.key).await?;
-        let (txt, sig) =
-            get_signed_text(format!("User register wallet request {}", i), &signer.key)?;
-        let resp = client
-            .request(UserRegisterWalletRequest {
-                blockchain: EnumBlockChain::LocalNet,
-                wallet_address: format!("{:?}", signer.address),
-                message_to_sign: txt,
-                message_signature: sig,
-            })
-            .await?;
-        if i % 2 == 0 {
-            admin_client
-                .request(AdminApproveUserBecomeExpertRequest {
-                    user_id: login_info.user_id,
-                })
-                .await?;
+            let (mut client, login_info) =
+                connect_user_ext(format!("user-{}", i), &signer.key).await?;
 
-            let create_strategy_resp = client
-                .request(UserCreateStrategyRequest {
-                    name: format!("test strategy {}", i),
-                    description: "this is a test strategy".to_string(),
-                    strategy_thesis_url: "".to_string(),
-                    minimum_backing_amount_usd: 0.0,
-                    strategy_fee: random(),
-                    expert_fee: random(),
-                    agreed_tos: true,
-                    linked_wallets: vec![],
-                })
-                .await?;
-            info!("User Create Strategy {:?}", create_strategy_resp);
+            let become_expert_resp = client.request(UserApplyBecomeExpertRequest {}).await?;
+            if i % 2 == 0 {
+                admin_client
+                    .lock()
+                    .await
+                    .request(AdminApproveUserBecomeExpertRequest {
+                        user_id: login_info.user_id,
+                    })
+                    .await?;
 
-            let resp = client
-                .request(UserFollowStrategyRequest {
-                    strategy_id: create_strategy_resp.strategy_id,
-                })
-                .await?;
-            client
-                .request(UserFollowExpertRequest { expert_id: i as _ })
-                .await?;
-        }
+                let create_strategy_resp = client
+                    .request(UserCreateStrategyRequest {
+                        name: format!("test strategy {}", i),
+                        description: "this is a test strategy".to_string(),
+                        strategy_thesis_url: "".to_string(),
+                        minimum_backing_amount_usd: 0.0,
+                        strategy_fee: random(),
+                        expert_fee: random(),
+                        agreed_tos: true,
+                        linked_wallets: vec![],
+                    })
+                    .await?;
+                info!("User Create Strategy {:?}", create_strategy_resp);
+
+                let resp = client
+                    .request(UserFollowStrategyRequest {
+                        strategy_id: create_strategy_resp.strategy_id,
+                    })
+                    .await?;
+                client
+                    .request(UserFollowExpertRequest {
+                        expert_id: become_expert_resp.expert_id,
+                    })
+                    .await?;
+            }
+            Ok(())
+        }))
     }
-
+    join_all(tasks).await;
     Ok(())
 }
 
-#[tokio::main]
+#[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<()> {
     setup_logs(LogLevel::Debug)?;
     populate_users().await?;
     populate_user_registered_wallets().await?;
     populate_user_apply_become_experts().await?;
+
     Ok(())
 }
