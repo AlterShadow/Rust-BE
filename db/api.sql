@@ -89,7 +89,7 @@ BEGIN
         RAISE SQLSTATE 'R0008'; -- BlockedUser
     ELSEIF (_role NOT IN ('admin', 'developer') AND
             a_service_code = (SELECT code FROM api.ADMIN_SERVICE())) OR
-           (_role NOT IN ('user', 'admin', 'developer') AND
+           (_role NOT IN ('user', 'expert', 'admin', 'developer') AND
             a_service_code = (SELECT code FROM api.USER_SERVICE())) THEN
         RAISE SQLSTATE 'R000S'; -- InvalidRole
     END IF;
@@ -1297,6 +1297,48 @@ BEGIN
     RETURN QUERY SELECT a.pkey_id, a.blockchain, a.token_name, a.token_address, a.quantity, a.fkey_strategy_id, a.updated_at, a.created_at FROM tbl.strategy_initial_token_ratio AS a WHERE fkey_strategy_id = a_strategy_id;
 END
 
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_list_followers(a_user_id bigint)
+RETURNS table (
+    "public_id" bigint,
+    "username" varchar,
+    "family_name" varchar,
+    "given_name" varchar,
+    "followed_at" bigint,
+    "joined_at" bigint
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY SELECT b.pkey_id, b.username, b.family_name, b.given_name, a.created_at, b.created_at FROM tbl.user_follow_expert AS a
+            INNER JOIN tbl.user AS b ON a.fkey_user_id = b.pkey_id
+            WHERE a.fkey_user_id = a_user_id;
+END            
+            
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_list_backers(a_user_id bigint)
+RETURNS table (
+    "public_id" bigint,
+    "username" varchar,
+    "family_name" varchar,
+    "given_name" varchar,
+    "backed_at" bigint,
+    "joined_at" bigint
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY SELECT b.pkey_id, b.username, b.family_name, b.given_name, a.back_time, b.created_at FROM tbl.user_back_strategy_history AS a
+            INNER JOIN tbl.user AS b ON a.fkey_user_id = b.pkey_id
+            WHERE a.fkey_user_id = a_user_id;
+END
+            
 $$;
         
 

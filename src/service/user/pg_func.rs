@@ -1050,5 +1050,43 @@ BEGIN
 END
 "#,
         ),
+        ProceduralFunction::new(
+            "fun_user_list_followers",
+            vec![Field::new("user_id", Type::BigInt)],
+            vec![
+                Field::new("public_id", Type::BigInt),
+                Field::new("username", Type::String),
+                Field::new("family_name", Type::optional(Type::String)),
+                Field::new("given_name", Type::optional(Type::String)),
+                Field::new("followed_at", Type::BigInt),
+                Field::new("joined_at", Type::BigInt),
+            ],
+            r#"
+BEGIN
+    RETURN QUERY SELECT b.pkey_id, b.username, b.family_name, b.given_name, a.created_at, b.created_at FROM tbl.user_follow_expert AS a
+            INNER JOIN tbl.user AS b ON a.fkey_user_id = b.pkey_id
+            WHERE a.fkey_user_id = a_user_id;
+END            
+            "#,
+        ),
+        ProceduralFunction::new(
+            "fun_user_list_backers",
+            vec![Field::new("user_id", Type::BigInt)],
+            vec![
+                Field::new("public_id", Type::BigInt),
+                Field::new("username", Type::String),
+                Field::new("family_name", Type::optional(Type::String)),
+                Field::new("given_name", Type::optional(Type::String)),
+                Field::new("backed_at", Type::BigInt),
+                Field::new("joined_at", Type::BigInt),
+            ],
+            r#"
+BEGIN
+    RETURN QUERY SELECT b.pkey_id, b.username, b.family_name, b.given_name, a.back_time, b.created_at FROM tbl.user_back_strategy_history AS a
+            INNER JOIN tbl.user AS b ON a.fkey_user_id = b.pkey_id
+            WHERE a.fkey_user_id = a_user_id;
+END
+            "#,
+        ),
     ]
 }

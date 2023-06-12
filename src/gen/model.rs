@@ -351,6 +351,12 @@ pub enum EnumEndpoint {
     #[postgres(name = "UserListStrategyInitialTokenRatio")]
     UserListStrategyInitialTokenRatio = 20330,
     ///
+    #[postgres(name = "UserListFollowers")]
+    UserListFollowers = 20340,
+    ///
+    #[postgres(name = "UserListBackers")]
+    UserListBackers = 20350,
+    ///
     #[postgres(name = "AdminListUsers")]
     AdminListUsers = 30010,
     ///
@@ -1463,6 +1469,26 @@ pub struct UserListBackedStrategiesResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct UserListBackersRequest {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListBackersResponse {
+    pub backers: Vec<UserListBackersRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListBackersRow {
+    pub public_id: i64,
+    pub username: String,
+    #[serde(default)]
+    pub family_name: Option<String>,
+    #[serde(default)]
+    pub given_name: Option<String>,
+    pub backed_at: i64,
+    pub joined_at: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct UserListExitStrategyHistoryRequest {
     #[serde(default)]
     pub strategy_id: Option<i64>,
@@ -1527,6 +1553,26 @@ pub struct UserListFollowedStrategiesRequest {
 #[serde(rename_all = "camelCase")]
 pub struct UserListFollowedStrategiesResponse {
     pub strategies: Vec<ListStrategiesRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListFollowersRequest {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListFollowersResponse {
+    pub followers: Vec<UserListFollowersRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListFollowersRow {
+    pub public_id: i64,
+    pub username: String,
+    #[serde(default)]
+    pub family_name: Option<String>,
+    #[serde(default)]
+    pub given_name: Option<String>,
+    pub followed_at: i64,
+    pub joined_at: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -4635,6 +4681,118 @@ impl WsRequest for UserListStrategyInitialTokenRatioRequest {
 }
 impl WsResponse for UserListStrategyInitialTokenRatioResponse {
     type Request = UserListStrategyInitialTokenRatioRequest;
+}
+
+impl WsRequest for UserListFollowersRequest {
+    type Response = UserListFollowersResponse;
+    const METHOD_ID: u32 = 20340;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserListFollowers",
+  "code": 20340,
+  "parameters": [],
+  "returns": [
+    {
+      "name": "followers",
+      "ty": {
+        "DataTable": {
+          "name": "UserListFollowersRow",
+          "fields": [
+            {
+              "name": "public_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "username",
+              "ty": "String"
+            },
+            {
+              "name": "family_name",
+              "ty": {
+                "Optional": "String"
+              }
+            },
+            {
+              "name": "given_name",
+              "ty": {
+                "Optional": "String"
+              }
+            },
+            {
+              "name": "followed_at",
+              "ty": "BigInt"
+            },
+            {
+              "name": "joined_at",
+              "ty": "BigInt"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for UserListFollowersResponse {
+    type Request = UserListFollowersRequest;
+}
+
+impl WsRequest for UserListBackersRequest {
+    type Response = UserListBackersResponse;
+    const METHOD_ID: u32 = 20350;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserListBackers",
+  "code": 20350,
+  "parameters": [],
+  "returns": [
+    {
+      "name": "backers",
+      "ty": {
+        "DataTable": {
+          "name": "UserListBackersRow",
+          "fields": [
+            {
+              "name": "public_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "username",
+              "ty": "String"
+            },
+            {
+              "name": "family_name",
+              "ty": {
+                "Optional": "String"
+              }
+            },
+            {
+              "name": "given_name",
+              "ty": {
+                "Optional": "String"
+              }
+            },
+            {
+              "name": "backed_at",
+              "ty": "BigInt"
+            },
+            {
+              "name": "joined_at",
+              "ty": "BigInt"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for UserListBackersResponse {
+    type Request = UserListBackersRequest;
 }
 
 impl WsRequest for AdminListUsersRequest {

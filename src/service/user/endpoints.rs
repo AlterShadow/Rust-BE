@@ -812,7 +812,48 @@ pub fn endpoint_user_list_strategy_initial_token_ratio() -> EndpointSchema {
         )],
     )
 }
-
+pub fn endpoint_user_list_followers() -> EndpointSchema {
+    EndpointSchema::new(
+        "UserListFollowers",
+        20340,
+        vec![],
+        vec![Field::new(
+            "followers",
+            Type::datatable(
+                "UserListFollowersRow",
+                vec![
+                    Field::new("public_id", Type::BigInt),
+                    Field::new("username", Type::String),
+                    Field::new("family_name", Type::optional(Type::String)),
+                    Field::new("given_name", Type::optional(Type::String)),
+                    Field::new("followed_at", Type::BigInt),
+                    Field::new("joined_at", Type::BigInt),
+                ],
+            ),
+        )],
+    )
+}
+pub fn endpoint_user_list_backers() -> EndpointSchema {
+    EndpointSchema::new(
+        "UserListBackers",
+        20350,
+        vec![],
+        vec![Field::new(
+            "backers",
+            Type::datatable(
+                "UserListBackersRow",
+                vec![
+                    Field::new("public_id", Type::BigInt),
+                    Field::new("username", Type::String),
+                    Field::new("family_name", Type::optional(Type::String)),
+                    Field::new("given_name", Type::optional(Type::String)),
+                    Field::new("backed_at", Type::BigInt),
+                    Field::new("joined_at", Type::BigInt),
+                ],
+            ),
+        )],
+    )
+}
 pub fn get_user_endpoints() -> Vec<EndpointSchema> {
     vec![
         endpoint_user_follow_strategy(),
@@ -854,5 +895,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
         endpoint_user_add_strategy_initial_token_ratio(),
         endpoint_user_remove_strategy_initial_token_ratio(),
         endpoint_user_list_strategy_initial_token_ratio(),
+        endpoint_user_list_followers(),
+        endpoint_user_list_backers(),
     ]
 }

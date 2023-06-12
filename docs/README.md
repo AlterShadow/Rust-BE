@@ -53,6 +53,8 @@ ID: 2
 |20310|UserAddStrategyInitialTokenRatio|strategy_id, token_name, token_address, quantity|success, token_id||
 |20320|UserRemoveStrategyInitialTokenRatio|strategy_id, token_id|success||
 |20330|UserListStrategyInitialTokenRatio|strategy_id|token_ratios||
+|20340|UserListFollowers||followers||
+|20350|UserListBackers||backers||
 
 # admin Server
 ID: 3

@@ -1680,6 +1680,84 @@ impl RequestHandler for MethodUserListStrategyInitialTokenRatio {
         .boxed()
     }
 }
+
+pub struct MethodUserListFollowers;
+impl RequestHandler for MethodUserListFollowers {
+    type Request = UserListFollowersRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db: DbClient = toolbox.get_db();
+
+        async move {
+            ensure_user_role(ctx, EnumRole::User)?;
+
+            let ret = db
+                .execute(FunUserListFollowersReq {
+                    user_id: ctx.user_id,
+                })
+                .await?;
+
+            Ok(UserListFollowersResponse {
+                followers: ret
+                    .into_iter()
+                    .map(|x| UserListFollowersRow {
+                        public_id: x.public_id,
+                        username: x.username,
+                        family_name: x.family_name,
+                        given_name: x.given_name,
+                        followed_at: x.followed_at,
+                        joined_at: x.joined_at,
+                    })
+                    .collect(),
+            })
+        }
+        .boxed()
+    }
+}
+
+pub struct MethodUserListBackers;
+impl RequestHandler for MethodUserListBackers {
+    type Request = UserListBackersRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db: DbClient = toolbox.get_db();
+
+        async move {
+            ensure_user_role(ctx, EnumRole::User)?;
+
+            let ret = db
+                .execute(FunUserListBackersReq {
+                    user_id: ctx.user_id,
+                })
+                .await?;
+
+            Ok(UserListBackersResponse {
+                backers: ret
+                    .into_iter()
+                    .map(|x| UserListBackersRow {
+                        public_id: x.public_id,
+                        username: x.username,
+                        family_name: x.family_name,
+                        given_name: x.given_name,
+                        backed_at: x.backed_at,
+                        joined_at: x.joined_at,
+                    })
+                    .collect(),
+            })
+        }
+        .boxed()
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;

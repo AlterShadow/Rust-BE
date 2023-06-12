@@ -32,7 +32,9 @@ impl WsClient {
         req.headers_mut()
             .insert("Sec-WebSocket-Protocol", HeaderValue::from_str(header)?);
 
-        let (ws_stream, _) = connect_async(req).await?;
+        let (ws_stream, _) = connect_async(req)
+            .await
+            .context("Failed to connect to endpoint")?;
         Ok(Self {
             stream: ws_stream,
             seq: 0,

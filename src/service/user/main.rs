@@ -72,7 +72,8 @@ async fn main() -> Result<()> {
     server.add_handler(MethodUserListExitStrategyHistory);
 
     server.add_handler(MethodUserFollowExpert);
-
+    server.add_handler(MethodUserListFollowers);
+    server.add_handler(MethodUserListBackers);
     server.add_handler(MethodUserListFollowedExperts);
 
     server.add_handler(MethodUserUnfollowExpert);
