@@ -1,31 +1,38 @@
-use eth_sdk::erc20::Erc20Token;
-use eth_sdk::escrow::{AbstractEscrowContract, EscrowContract};
-use eth_sdk::signer::Secp256k1SecretKey;
-use eth_sdk::strategy_pool::StrategyPoolContract;
-use eth_sdk::utils::{verify_message_address, wait_for_confirmations_simple};
-use eth_sdk::v3::smart_router::PancakeSmartRouterV3Contract;
-use eth_sdk::*;
-use eyre::*;
-use futures::FutureExt;
-use futures::StreamExt;
-use gen::database::*;
-use gen::model::*;
-use lib::database::DbClient;
-use lib::handler::{FutureResponse, RequestHandler};
-use lib::toolbox::*;
-use lib::utils::hex_decode;
-use lib::{DEFAULT_LIMIT, DEFAULT_OFFSET};
-use num_traits::cast::FromPrimitive;
+use std::collections::hash_map::Entry;
+use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Duration;
+
+use eyre::*;
+use futures::FutureExt;
+use futures::StreamExt;
+use num_traits::cast::FromPrimitive;
+use tokio::time::sleep;
 use tracing::info;
 use web3::signing::Key;
 use web3::types::{Address, H256, U256};
 
-pub fn initial_sp_token_supply() -> U256 {
-    U256::from(1000000000u64) * U256::exp10(18)
-}
+use api::cmc::CoinMarketCap;
+use eth_sdk::erc20::approve_and_ensure_success;
+use eth_sdk::erc20::Erc20Token;
+use eth_sdk::escrow::transfer_token_to_and_ensure_success;
+use eth_sdk::escrow::{AbstractEscrowContract, EscrowContract};
+use eth_sdk::pair_paths::WorkingPancakePairPaths;
+use eth_sdk::signer::Secp256k1SecretKey;
+use eth_sdk::strategy_pool::{deposit_and_ensure_success, StrategyPoolContract};
+use eth_sdk::utils::verify_message_address;
+use eth_sdk::v3::smart_router::copy_trade_and_ensure_success;
+use eth_sdk::v3::smart_router::PancakeSmartRouterV3Contract;
+use eth_sdk::*;
+use gen::database::*;
+use gen::model::*;
+use lib::database::{DbClient, ToSql};
+use lib::handler::{FutureResponse, RequestHandler};
+use lib::toolbox::*;
+use lib::utils::hex_decode;
+use lib::{DEFAULT_LIMIT, DEFAULT_OFFSET};
+
 
 pub fn ensure_user_role(ctx: RequestContext, role: EnumRole) -> Result<()> {
     let ctx_role = EnumRole::from_u32(ctx.role).context("Invalid role")?;
@@ -457,10 +464,6 @@ impl RequestHandler for MethodUserListBackedStrategies {
         .boxed()
     }
 }
-pub async fn calculate_sp_tokens(back_usdc: U256, total_usdc: U256) -> U256 {
-    let sp_tokens = back_usdc * initial_sp_token_supply() / total_usdc;
-    sp_tokens
-}
 
 pub async fn deploy_strategy_contract(
     conn: &EthereumRpcConnection,
@@ -481,95 +484,236 @@ pub async fn deploy_strategy_contract(
     info!("Deploy strategy contract success");
     Ok(strategy)
 }
-/*
-1. User will decides which strategy S to back with his wallet address A
-2. Backend will save his backing decision in database, and transfer his USDC to strategy for copy trading(in this step it may involve auto token conversion)
 
- */
-
-pub async fn transfer_token_to_strategy_contract(
-    conn: &EthereumRpcConnection,
-    signer: impl Key,
-    escrow: EscrowTransfer,
-    chain: EnumBlockChain,
-    stablecoin_addresses: &BlockchainCoinAddresses,
-    escrow_contract: &EscrowContract<EitherTransport>,
-) -> Result<TransactionFetcher> {
-    let token_address = stablecoin_addresses
-        .get(chain, escrow.token)
-        .context("Could not find stablecoin address")?;
-
-    let tx_hash = escrow_contract
-        .transfer_token_to(signer, token_address, escrow.recipient, escrow.amount)
-        .await?;
-
-    let tx = TransactionFetcher::new(tx_hash);
-    Ok(tx)
-}
 pub async fn user_back_strategy(
     conn: &EthereumRpcConnection,
     ctx: &RequestContext,
     db: &DbClient,
     chain: EnumBlockChain,
     back_usdc_amount: U256,
-    stablecoin_addresses: &BlockchainCoinAddresses,
+    token_addresses: &BlockchainCoinAddresses,
     strategy_id: i64,
-    strategy_pool_signer: impl Key,
-    escrow_signer: impl Key,
-    stablecoin: EnumBlockchainCoin,
+    escrow_coin: EnumBlockchainCoin,
     escrow_contract: EscrowContract<EitherTransport>,
-    externally_owned_account: impl Key + Clone,
     dex_addresses: &DexAddresses,
+    secure_eoa_key: impl Key + Clone,
 ) -> Result<()> {
-    let mut strategy = db
+    if back_usdc_amount == U256::zero() {
+        bail!("back zero amount");
+    }
+
+    /* check if user has enough balance */
+    // TODO: add user balance to the database
+    let user_balance = U256::max_value();
+    if user_balance < back_usdc_amount {
+        bail!("insuficient balance");
+    }
+
+    /* fetch user address to receive shares */
+    // TODO: fetch the correct address where user desires to receive shares on this chain
+    // since users can have multiple addresses, this information is critical
+    // for now, we fetch the "address" field from the user table
+    let user_wallet_address_to_receive_shares_on_this_chain = Address::from_str(
+        db.query(
+            "SELECT address FROM tbl.user WHERE pkey_id = $1",
+            &[&ctx.user_id],
+        )
+        .await?[0]
+            .try_get("address")?,
+    )?;
+
+    /* fetch strategy */
+    let strategy = db
         .execute(FunUserGetStrategyReq { strategy_id })
         .await?
         .into_result()
         .context("user_registered_strategy")?;
-    if strategy.evm_contract_address.is_none() {
-        let contract = deploy_strategy_contract(
-            &conn,
-            strategy_pool_signer,
-            strategy.strategy_name.clone(),
-            strategy.strategy_name, // strategy symbol
-        )
-        .await?;
-        strategy.evm_contract_address = Some(format!("{:?}", contract.address()));
-    }
-    let sp_tokens = calculate_sp_tokens(back_usdc_amount, strategy.current_usdc.parse()?).await;
-    let strategy_address: Address = strategy.evm_contract_address.unwrap().parse()?;
 
-    let escrow_signer_address = escrow_signer.address();
-    // we need to trade, not transfer, and then we need to call deposit on the strategy contract
-    let transaction = transfer_token_to_strategy_contract(
-        conn,
-        escrow_signer,
-        EscrowTransfer {
-            token: stablecoin,
-            // TODO: reduce fees from back_usdc_amount
-            amount: back_usdc_amount,
-            // recipient: strategy_address,
-            recipient: externally_owned_account.address(),
-            owner: escrow_signer_address,
-        },
-        chain,
-        stablecoin_addresses,
-        &escrow_contract,
+    /* fetch strategy's tokens */
+    let strategy_token_rows = db
+        .execute(FunUserListStrategyInitialTokenRatiosReq { strategy_id })
+        .await?
+        .into_rows();
+    let mut total_strategy_tokens = U256::zero();
+    let mut all_strategy_tokens: Vec<(EnumBlockChain, Address, U256)> = Vec::new();
+    for row in strategy_token_rows {
+        let token_address = Address::from_str(&row.token_address)?;
+        let token_amount = U256::from_dec_str(&row.quantity)?;
+        total_strategy_tokens = total_strategy_tokens.try_checked_add(token_amount)?;
+        all_strategy_tokens.push((row.blockchain, token_address, token_amount));
+    }
+
+    /* merge all token amounts to this chain's tokens */
+    /* this step will fail if any token address is from an unknown token from any chain */
+    // TODO: replace this when we have non-hardcoded known tokens and a "tokens" table
+    // TODO: fetch each token amount accross chains and address on this chain directly from database
+    let strategy_tokens_and_amounts_on_this_chain: HashMap<Address, U256> =
+        merge_multichain_strategy_tokens(chain, token_addresses, all_strategy_tokens)?;
+
+    /* deduce fees from back amount */
+    // TODO: fetch fees from strategy
+    // TODO: deduce fees from back amount
+    // TODO: use (back amount - fees) to calculate trade spenditure and SP shares
+    // TODO: register appropriate fees for the treasury and the strategy creator
+    let back_usdc_amount_minus_fees = back_usdc_amount;
+
+    /* calculate how much of back amount to spend on each strategy token */
+    let escrow_allocations_for_tokens = calculate_escrow_allocation_for_strategy_tokens(
+        back_usdc_amount_minus_fees,
+        total_strategy_tokens,
+        strategy_tokens_and_amounts_on_this_chain,
+    )?;
+
+    /* instanciate strategy contract wrapper */
+    // TODO: add addresses for strategy contract on multiple chains to database
+    let sp_contract: StrategyPoolContract<EitherTransport>;
+    match strategy.evm_contract_address {
+        Some(addr) => {
+            let address = Address::from_str(&addr)?;
+            sp_contract = StrategyPoolContract::new(conn.clone(), address)?;
+        }
+        None => {
+            /* if strategy pool doesn't exist in this chain, create it */
+            let contract = deploy_strategy_contract(
+                &conn,
+                secure_eoa_key.clone(),
+                strategy.strategy_name.clone(),
+                strategy.strategy_name, // strategy symbol
+            )
+            .await?;
+            /* insert strategy contract address in the database */
+            db.query(
+                "
+						UPDATE tbl.strategy
+						SET evm_contract_address = $1
+						WHERE pkey_id = $2;
+						",
+                &[
+                    &format!("{:?}", contract.address()) as &(dyn ToSql + Sync),
+                    &strategy_id as &(dyn ToSql + Sync),
+                ],
+            )
+            .await?;
+            sp_contract = contract;
+        }
+    };
+
+    /* calculate shares to mint for backer */
+    // TODO: find out if we use back amount with or without fees for share calculation
+    // currently calculating with back amount minus fees
+    let sp_total_shares = sp_contract.total_supply().await?;
+    let mut maybe_sp_assets_and_amounts: Option<(Vec<Address>, Vec<U256>)> = None;
+    let mut max_retries = 10;
+    while maybe_sp_assets_and_amounts.is_none() && max_retries > 0 {
+        match sp_contract.assets_and_balances().await {
+            Ok(assets_and_amounts) => {
+                maybe_sp_assets_and_amounts = Some(assets_and_amounts);
+            }
+            Err(_) => {
+                /* if we can't query the contract's assets, it's because it is currently trading */
+                /* wait a bit and try again */
+                sleep(Duration::from_secs(10)).await;
+                max_retries -= 1;
+            }
+        }
+    }
+    let sp_assets_and_amounts = maybe_sp_assets_and_amounts
+        .ok_or_else(|| eyre!("failed to query strategy pool assets and amounts"))?;
+
+    let escrow_token_address = token_addresses
+        .get(chain, escrow_coin)
+        .ok_or_else(|| eyre!("usdc address not available on this chain"))?;
+    let escrow_token_contract = Erc20Token::new(conn.clone(), escrow_token_address)?;
+    let shares_to_mint = calculate_shares(
+        &conn,
+        &CoinMarketCap::new()?,
+        sp_total_shares,
+        sp_assets_and_amounts,
+        sp_contract.decimals().await?,
+        back_usdc_amount_minus_fees,
+        escrow_coin,
+        escrow_token_contract.decimals().await?,
     )
     .await?;
-    let erc20_address = stablecoin_addresses
-        .get(chain, stablecoin)
-        .context("Could not find stablecoin address")?;
-    let erc20 = Erc20Token::new(conn.clone(), erc20_address)?;
-    let hash = erc20
-        .transfer(
-            externally_owned_account.clone(),
-            strategy_address,
-            sp_tokens,
+
+    /* instanciate pancake contract */
+    let pancake_contract = PancakeSmartRouterV3Contract::new(
+        conn.clone(),
+        dex_addresses
+            .get(chain, EnumDex::PancakeSwap)
+            .ok_or_else(|| eyre!("pancake swap not available on this chain"))?,
+    )?;
+
+    //TODO: make some way of replaying the correct transactions in case of failure in the middle of the backing process
+
+    /* transfer escrow to our EOA */
+    transfer_token_to_and_ensure_success(
+        escrow_contract,
+        &conn,
+        12,
+        10,
+        Duration::from_secs(10),
+        secure_eoa_key.clone(),
+        escrow_token_address,
+        secure_eoa_key.address(),
+        back_usdc_amount,
+    )
+    .await?;
+
+    /* approve pancakeswap to trade escrow token */
+    approve_and_ensure_success(
+        escrow_token_contract,
+        &conn,
+        12,
+        10,
+        Duration::from_secs(10),
+        secure_eoa_key.clone(),
+        pancake_contract.address(),
+        back_usdc_amount,
+    )
+    .await?;
+
+    /* trade escrow token for strategy's tokens */
+    let (tokens_to_deposit, amounts_to_deposit) = trade_escrow_for_strategy_tokens(
+        &conn,
+        secure_eoa_key.clone(),
+        chain,
+        escrow_token_address,
+        &pancake_contract,
+        escrow_allocations_for_tokens,
+    )
+    .await?;
+
+    /* approve tokens and amounts to SP contract */
+    for (token, amount) in tokens_to_deposit.iter().zip(amounts_to_deposit.iter()) {
+        approve_and_ensure_success(
+            Erc20Token::new(conn.clone(), token.clone())?,
+            &conn,
+            12,
+            10,
+            Duration::from_secs(10),
+            secure_eoa_key.clone(),
+            sp_contract.address(),
+            amount.clone(),
         )
         .await?;
-    wait_for_confirmations_simple(&conn.eth(), hash, Duration::from_secs(3), 5).await?;
-    // TODO: process retry here or have a lock
+    }
+
+    /* deposit to strategy pool contract */
+    let deposit_transaction_hash = deposit_and_ensure_success(
+        sp_contract,
+        &conn,
+        12,
+        10,
+        Duration::from_secs(10),
+        secure_eoa_key.clone(),
+        tokens_to_deposit,
+        amounts_to_deposit,
+        shares_to_mint,
+        user_wallet_address_to_receive_shares_on_this_chain,
+    )
+    .await?;
+
     let ret = db
         .execute(FunUserBackStrategyReq {
             user_id: ctx.user_id,
@@ -586,8 +730,8 @@ pub async fn user_back_strategy(
             ),
             old_current_quantity: strategy.current_usdc,
             blockchain: chain,
-            transaction_hash: format!("{:?}", transaction.get_hash()),
-            earn_sp_tokens: format!("{:?}", sp_tokens),
+            transaction_hash: format!("{:?}", deposit_transaction_hash),
+            earn_sp_tokens: format!("{:?}", shares_to_mint),
         })
         .await?
         .into_result()
@@ -598,68 +742,188 @@ pub async fn user_back_strategy(
         )
     }
 
-    info!(
-        "Transfer token to strategy contract {:?}",
-        transaction.get_hash()
-    );
-
-    let _tx = TransactionFetcher::new_and_assume_ready(transaction.get_hash(), conn).await?;
-
-    let initial_tokens = db
-        .execute(FunUserListStrategyInitialTokenRatiosReq { strategy_id })
-        .await?
-        .into_rows();
-    trade_usdc_to_tokens_on_pancakeswap(
-        conn,
-        chain,
-        externally_owned_account,
-        &dex_addresses,
-        initial_tokens,
-        // TODO: check if there's overflow or precision loss
-        back_usdc_amount.as_u128() as f64,
-    )
-    .await?;
     Ok(())
 }
-pub async fn trade_usdc_to_tokens_on_pancakeswap(
-    conn: &EthereumRpcConnection,
-    chain: EnumBlockChain,
-    signer: impl Key + Clone,
-    dex_addresses: &DexAddresses,
-    tokens: Vec<FunUserListStrategyInitialTokenRatiosRespRow>,
-    backed_usdc: f64,
-) -> Result<Vec<TransactionFetcher>> {
-    let token_address = dex_addresses
-        .get(chain, EnumDex::PancakeSwap)
-        .context("Could not find stablecoin address")?;
-    let pancake_swap = PancakeSmartRouterV3Contract::new(conn.clone(), token_address)?;
-    let receipt = signer.address();
-    let mut txs = vec![];
-    let mut total_value_usdc = 0.0;
-    for token in &tokens {
-        let market_price: f64 = todo!();
-        total_value_usdc += token.quantity.parse::<f64>()? * market_price;
-    }
-    for token in tokens {
-        let market_price: f64 = todo!();
-        let should_buy =
-            backed_usdc * token.quantity.parse::<f64>()? * market_price / total_value_usdc;
-        let path = todo!();
-        let tx_hash = pancake_swap
-            .swap_exact_tokens_for_tokens(
-                signer.clone(),
-                receipt,
-                (should_buy as u128).into(),
-                ((should_buy * market_price * 0.99) as u128).into(),
-                path,
-            )
-            .await?;
 
-        let tx = TransactionFetcher::new(tx_hash);
-        txs.push(tx);
+fn merge_multichain_strategy_tokens(
+    chain: EnumBlockChain,
+    known_addresses: &BlockchainCoinAddresses,
+    multichain_tokens: Vec<(EnumBlockChain, Address, U256)>,
+) -> Result<HashMap<Address, U256>> {
+    /* merge multichain token addresses and amounts respective addresses on one chain with summed amounts */
+    /* will fail if any token address is from an unknown token */
+    /* TODO: replace this when we can query unified balance from tokens accross chains from db */
+    let mut merged_strategy_token_amounts_by_chain: HashMap<Address, U256> = HashMap::new();
+    for (token_chain, token_address, token_amount) in multichain_tokens {
+        let strategy_token = known_addresses
+            .get_by_address(token_chain, token_address)
+            .ok_or_else(|| eyre!("strategy token is unknown"))?;
+        if token_chain == chain {
+            /* strategy token is on this chain, use token contract address directly */
+            match merged_strategy_token_amounts_by_chain.entry(token_address) {
+                Entry::Vacant(e) => {
+                    e.insert(token_amount);
+                }
+                Entry::Occupied(mut e) => {
+                    let balance = e.get_mut();
+                    *balance = balance.try_checked_add(token_amount)?;
+                }
+            }
+        } else {
+            /* strategy token is not on this chain, use this chain's token contract address */
+            let strategy_token_address_on_this_chain =
+                known_addresses
+                    .get(chain, strategy_token)
+                    .ok_or_else(|| eyre!("strategy token not available on this chain"))?;
+            match merged_strategy_token_amounts_by_chain.entry(strategy_token_address_on_this_chain)
+            {
+                Entry::Vacant(e) => {
+                    e.insert(token_amount);
+                }
+                Entry::Occupied(mut e) => {
+                    let balance = e.get_mut();
+                    *balance = balance.try_checked_add(token_amount)?;
+                }
+            }
+        }
     }
-    Ok(txs)
+    Ok(merged_strategy_token_amounts_by_chain)
 }
+
+fn calculate_escrow_allocation_for_strategy_tokens(
+    escrow_amount: U256,
+    total_strategy_tokens: U256,
+    strategy_tokens_and_amounts: HashMap<Address, U256>,
+) -> Result<HashMap<Address, U256>> {
+    /* calculates how much of escrow to spend on each strategy token */
+    /* allocation = (strategy_token_amount * escrow_amount) / total_strategy_token_amounts */
+    let mut escrow_allocations: HashMap<Address, U256> = HashMap::new();
+    for (token_address, token_amount) in strategy_tokens_and_amounts {
+        let escrow_allocation = token_amount.mul_div(escrow_amount, total_strategy_tokens)?;
+        escrow_allocations.insert(token_address, escrow_allocation);
+    }
+    Ok(escrow_allocations)
+}
+
+async fn calculate_shares(
+    conn: &EthereumRpcConnection,
+    cmc: &CoinMarketCap,
+    sp_total_shares: U256,
+    sp_tokens_and_amounts: (Vec<Address>, Vec<U256>),
+    sp_decimals: U256,
+    escrow_amount: U256,
+    escrow_coin: EnumBlockchainCoin,
+    escrow_decimals: U256,
+) -> Result<U256> {
+    /* calculate shares to mint based on the value of tokens held by strategy pool and the value of escrow */
+    let escrow_symbol = match escrow_coin {
+        EnumBlockchainCoin::USDC => "USDC".to_string(),
+        EnumBlockchainCoin::USDT => "USDT".to_string(),
+        EnumBlockchainCoin::BUSD => "BUSD".to_string(),
+        _ => bail!("unsupported escrow coin"),
+    };
+    /* multiply the escrow amount by the price to get its value with no consideration for decimals */
+    /* if escrow decimals > sp decimals, divide unconsidered value by 10^(escrow decimals - sp decimals) to account for decimal differences */
+    /* if sp decimals > escrow decimals, multiply the unconsidered value by 10^(sp decimals - escrow decimals) to account for decimal differences */
+    /* this is valid for all tokens, not just the escrow */
+    let escrow_value: U256;
+    if escrow_decimals > sp_decimals {
+        escrow_value = escrow_amount
+            .mul_f64(cmc.get_usd_prices_by_symbol(&vec![escrow_symbol]).await?[0])?
+            .try_checked_div(U256::exp10(
+                escrow_decimals.as_usize() - sp_decimals.as_usize(),
+            ))?;
+    } else {
+        escrow_value = escrow_amount
+            .mul_f64(cmc.get_usd_prices_by_symbol(&vec![escrow_symbol]).await?[0])?
+            .try_checked_mul(U256::exp10(
+                sp_decimals.as_usize() - escrow_decimals.as_usize(),
+            ))?;
+    }
+    if sp_total_shares == U256::zero() {
+        /* if strategy pool is empty, shares = escrow value */
+        Ok(escrow_value)
+    } else {
+        /* if strategy pool is active, shares = (escrow_value * total_strategy_shares) / total_strategy_value */
+        let sp_total_value: U256 = {
+            let mut total_value = U256::zero();
+            for (asset, amount) in sp_tokens_and_amounts
+                .0
+                .iter()
+                .zip(sp_tokens_and_amounts.1.iter())
+            {
+                let erc20 = Erc20Token::new(conn.clone(), *asset)?;
+                let price = cmc
+                    .get_usd_prices_by_symbol(&vec![erc20.symbol().await?])
+                    .await?;
+                /* add to total value the value of each token accounting for decimal differences */
+                let token_decimals = erc20.decimals().await?;
+                if token_decimals > sp_decimals {
+                    total_value =
+                        total_value.try_checked_add(amount.mul_f64(price[0])?.try_checked_div(
+                            U256::exp10(token_decimals.as_usize() - sp_decimals.as_usize()),
+                        )?)?;
+                } else {
+                    total_value =
+                        total_value.try_checked_add(amount.mul_f64(price[0])?.try_checked_mul(
+                            U256::exp10(sp_decimals.as_usize() - token_decimals.as_usize()),
+                        )?)?;
+                }
+            }
+            total_value
+        };
+        Ok(escrow_value.mul_div(
+            sp_total_shares,
+            if sp_total_value == U256::zero() {
+                U256::one()
+            } else {
+                sp_total_value
+            },
+        )?)
+    }
+}
+
+pub async fn trade_escrow_for_strategy_tokens(
+    conn: &EthereumRpcConnection,
+    secure_eoa_key: impl Key + Clone,
+    chain: EnumBlockChain,
+    escrow_token_address: Address,
+    dex_contract: &PancakeSmartRouterV3Contract<EitherTransport>,
+    tokens_and_amounts_to_buy: HashMap<Address, U256>,
+) -> Result<(Vec<Address>, Vec<U256>)> {
+    /* buys tokens and amounts and returns a vector or bought tokens and amounts out */
+    // TODO: stop using hardcoded hashmaps and retrieve paths from database
+    let pancake_trade_parser = build_pancake_swap()?;
+    let pancake_paths = WorkingPancakePairPaths::new()?;
+    let mut token_addresses_to_deposit: Vec<Address> = Vec::new();
+    let mut token_amounts_to_deposit: Vec<U256> = Vec::new();
+    for (token_address, amount_to_spend_on_it) in tokens_and_amounts_to_buy {
+        let pancake_path_set =
+            pancake_paths.get_pair_by_address(chain, escrow_token_address, token_address)?;
+        let trade_hash = copy_trade_and_ensure_success(
+            dex_contract.clone(),
+            &conn,
+            12,
+            10,
+            Duration::from_secs(10),
+            secure_eoa_key.clone(),
+            pancake_path_set,
+            amount_to_spend_on_it,
+            U256::one(), // TODO: find a way to estimate amount out
+        )
+        .await?;
+
+        let trade = pancake_trade_parser.parse_trade(
+            &TransactionFetcher::new_and_assume_ready(trade_hash, &conn).await?,
+            chain,
+        )?;
+
+        token_addresses_to_deposit.push(token_address);
+        token_amounts_to_deposit.push(trade.amount_out);
+    }
+    Ok((token_addresses_to_deposit, token_amounts_to_deposit))
+}
+
 pub struct MethodUserBackStrategy {
     pub pool: EthereumRpcConnectionPool,
     pub stablecoin_addresses: Arc<BlockchainCoinAddresses>,
@@ -680,9 +944,10 @@ impl RequestHandler for MethodUserBackStrategy {
     ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         let pool = self.pool.clone();
-        let stablecoin_addresses = self.stablecoin_addresses.clone();
-        let strategy_pool_signer = self.strategy_pool_signer.clone();
-        let escrow_signer = self.escrow_signer.clone();
+        let token_addresses = self.stablecoin_addresses.clone();
+        // why did we have 3 EOA keys? I think we'll use only 1 as the owner of all contracts
+        // let strategy_pool_signer = self.strategy_pool_signer.clone();
+        // let escrow_signer = self.escrow_signer.clone();
         let escrow_contract = self.escrow_contract.clone();
         let externally_owned_account = self.externally_owned_account.clone();
         let dex_addresses = self.dex_addresses.clone();
@@ -697,14 +962,12 @@ impl RequestHandler for MethodUserBackStrategy {
                 &db,
                 req.blockchain,
                 req.quantity.parse()?,
-                &stablecoin_addresses,
+                &token_addresses,
                 req.strategy_id,
-                &*strategy_pool_signer,
-                &*escrow_signer,
                 EnumBlockchainCoin::USDC,
                 escrow_contract,
-                &*externally_owned_account,
                 &dex_addresses,
+								&*externally_owned_account,
             )
             .await?;
             Ok(UserBackStrategyResponse { success: true })
@@ -1770,6 +2033,7 @@ mod tests {
     use lib::database::{
         connect_to_database, database_test_config, drop_and_recreate_database, DatabaseConfig,
     };
+		use eth_sdk::utils::{wait_for_confirmations_simple};
     use lib::log::{setup_logs, LogLevel};
     use std::net::Ipv4Addr;
     use std::{format, vec};
@@ -1810,117 +2074,142 @@ mod tests {
         .await?;
         Ok(())
     }
-    #[tokio::test]
-    async fn test_user_ethereum_deposit_back_strategy() -> Result<()> {
-        let _ = setup_logs(LogLevel::Info);
-        drop_and_recreate_database()?;
-        let user_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
-        let admin_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_2)?;
-        let escrow_key = Secp256k1SecretKey::new_random();
-        let conn_pool = EthereumRpcConnectionPool::localnet();
-        let conn = conn_pool.get_conn().await?;
-        let erc20_mock = deploy_mock_erc20(conn.get_raw().clone(), admin_key.clone()).await?;
-        let eoa = Secp256k1SecretKey::new_random();
-        erc20_mock
-            .mint(
-                &admin_key.key,
-                user_key.address,
-                U256::from(200000000000i64),
-            )
-            .await?;
-        erc20_mock
-            .mint(&admin_key.key, eoa.address, U256::from(200000000000i64))
-            .await?;
-        let eth = EthereumToken::new(conn.get_raw().clone());
-        eth.transfer(
-            admin_key.clone(),
-            escrow_key.address,
-            U256::from(1e18 as i64),
-        )
-        .await?;
-        let escrow_contract =
-            EscrowContract::deploy(conn.get_raw().clone(), &escrow_key.key).await?;
 
-        let tx_hash = erc20_mock
-            .transfer(
-                &user_key.key,
-                escrow_contract.address(),
-                U256::from(20000000000i64),
-            )
-            .await?;
+    #[tokio::test]
+    async fn test_user_back_strategy_testnet() -> Result<()> {
+        drop_and_recreate_database()?;
+        let user_key = Secp256k1SecretKey::new_random();
+        let conn_pool = EthereumRpcConnectionPool::new();
+        let conn = conn_pool.get(EnumBlockChain::BscTestnet).await?;
+        let token_addresses = BlockchainCoinAddresses::new();
         let db = connect_to_database(database_test_config()).await?;
+				use eth_sdk::{DEV_ACCOUNT_PRIV_KEY};
+				let secure_eoa_key = Secp256k1SecretKey::from_str(DEV_ACCOUNT_PRIV_KEY).context("failed to parse dev account private key")?;
+				let wbnb_address_on_bsc_testnet = token_addresses.get(EnumBlockChain::BscTestnet, EnumBlockchainCoin::WBNB).ok_or_else(|| eyre!("could not find WBNB address on BSC Testnet"))?;
+				let busd_address_on_bsc_testnet = token_addresses.get(EnumBlockChain::BscTestnet, EnumBlockchainCoin::BUSD).ok_or_else(|| eyre!("could not find USDC address on BSC Testnet"))?;
+				let busd_decimals = 10u64.pow(Erc20Token::new(conn.clone(), busd_address_on_bsc_testnet)?.decimals().await?.as_u32()) as i64;
+
+        /* create user */
         let ret = db
             .execute(FunAuthSignupReq {
-                address: format!("{:?}", user_key.address),
+                address: format!("{:?}", user_key.address()),
                 email: "".to_string(),
                 phone: "".to_string(),
                 preferred_language: "".to_string(),
                 agreed_tos: true,
                 agreed_privacy: true,
                 ip_address: Ipv4Addr::new(127, 0, 0, 1).into(),
-                username: None,
+                username: Some("TEST".to_string()),
                 age: None,
                 public_id: 1,
             })
             .await?
             .into_result()
-            .context("No user signup resp")?;
-        let ctx = RequestContext {
-            connection_id: 0,
-            user_id: ret.user_id,
-            seq: 0,
-            method: 0,
-            log_id: 0,
-        };
+            .context("no user signup resp")?;
 
-        let mut stablecoins = BlockchainCoinAddresses::new();
-        stablecoins.insert(
-            EnumBlockChain::EthereumGoerli,
-            EnumBlockchainCoin::USDC,
-            erc20_mock.address,
-        );
-
-        // at this step, tx should be passed with quickalert
-        let tx = TransactionFetcher::new_and_assume_ready(tx_hash, &conn).await?;
-        on_user_deposit(
-            &conn,
-            &ctx,
-            &db,
-            EnumBlockChain::EthereumGoerli,
-            &tx,
-            &stablecoins,
-            &erc20_mock.contract.abi(),
-            &escrow_contract,
-        )
-        .await?;
-
+        /* create strategy */
         let strategy = db
             .execute(FunUserCreateStrategyReq {
-                user_id: ctx.user_id,
+                user_id: ret.user_id,
                 name: "TEST".to_string(),
                 description: "TEST".to_string(),
+                strategy_thesis_url: "TEST".to_string(),
+                minimum_backing_amount_usd: 1.0,
+                strategy_fee: 1.0,
+                expert_fee: 1.0,
+                agreed_tos: true,
             })
             .await?
             .into_result()
-            .context("create strategy")?;
+            .context("failed to create strategy")?;
 
-        user_back_strategy(
-            &conn,
-            &ctx,
-            &db,
-            EnumBlockChain::EthereumGoerli,
-            U256::from(1000),
-            &stablecoins,
-            strategy.strategy_id,
-            &admin_key.key,
-            &escrow_key.key,
-            EnumBlockchainCoin::USDC,
-            escrow_contract,
-            eoa,
-            &DexAddresses::new(),
-        )
-        .await?;
-        Ok(())
+        /* insert strategy initial token ratio */
+        use std::time::{SystemTime, UNIX_EPOCH};
+        let now = SystemTime::now();
+        let since_the_epoch = now.duration_since(UNIX_EPOCH).expect("Time went backwards");
+        let timestamp_in_seconds = since_the_epoch.as_secs() as i64;
+        db.query("
+						INSERT INTO tbl.strategy_initial_token_ratio 
+						(fkey_strategy_id, pkey_id, blockchain, token_name, token_address, quantity, updated_at, created_at) 
+						VALUES 
+						($1, $2, $3, $4, $5, $6, $7, $8);
+						", &[
+						&strategy.strategy_id as &(dyn ToSql + Sync), 
+						&(1 as i64) as &(dyn ToSql + Sync), 
+						&EnumBlockChain::BscTestnet as &(dyn ToSql + Sync), 
+						&"WBNB".to_string() as &(dyn ToSql + Sync), 
+						&format!("{:?}", wbnb_address_on_bsc_testnet) as &(dyn ToSql + Sync), 
+						&"100000000".to_string() as &(dyn ToSql + Sync), 
+						&timestamp_in_seconds as &(dyn ToSql + Sync), 
+						&timestamp_in_seconds as &(dyn ToSql + Sync)
+				]).await?;
+
+        let ctx = RequestContext {
+					connection_id: 0,
+					user_id: ret.user_id,
+					seq: 0,
+					method: 0,
+					log_id: 0,
+					ip_addr: Ipv4Addr::new(127, 0, 0, 1).into(),
+					role: EnumRole::Expert as u32,
+			};
+
+			/* deploy escrow contract */
+			let escrow_contract =
+            EscrowContract::deploy(conn.clone(), secure_eoa_key.clone()).await?;
+
+			/* make sure dev account has enough BUSD on BSC Testnet */
+			/* transfer 10 BUSD to escrow contract */
+			let busd_contract = Erc20Token::new(conn.clone(), busd_address_on_bsc_testnet)?;
+			let transfer_tx_hash = busd_contract.transfer(secure_eoa_key.clone(), escrow_contract.address(), U256::from(10).try_checked_mul(U256::from(busd_decimals))?).await?;
+			wait_for_confirmations_simple(&conn.clone().eth(), transfer_tx_hash, Duration::from_secs(10), 10).await?;
+
+			user_back_strategy(
+					&conn,
+					&ctx,
+					&db,
+					EnumBlockChain::BscTestnet,
+					U256::from(10).try_checked_mul(U256::from(busd_decimals))?,
+					&token_addresses,
+					strategy.strategy_id,
+					EnumBlockchainCoin::BUSD,
+					escrow_contract,
+					&DexAddresses::new(),
+					secure_eoa_key,
+			)
+			.await?;
+
+			/* fetch created strategy address */
+			let strategy = db
+			.execute(FunUserGetStrategyReq { strategy_id: strategy.strategy_id })
+			.await?
+			.into_result()
+			.context("could not retrieve strategy")?;
+			let sp_address = Address::from_str(strategy.evm_contract_address.ok_or_else(|| eyre!("could not retrieve strategy address after running back strategy on test!"))?.as_ref())?;
+			let sp_contract = StrategyPoolContract::new(conn.clone(), sp_address)?;
+
+			/* check that SP has positive WBNB balance */
+			let sp_assets = sp_contract.assets().await?;
+			assert_eq!(sp_assets.len(), 1);
+			assert_eq!(sp_assets[0], wbnb_address_on_bsc_testnet);
+			let (sp_assets_from_another_func, sp_balances) = sp_contract.assets_and_balances().await?;
+			assert_eq!(sp_assets_from_another_func.len(), 1);
+			assert_eq!(sp_assets_from_another_func[0], wbnb_address_on_bsc_testnet);
+			assert_eq!(sp_balances.len(), 1);
+			assert!(sp_balances[0] > U256::zero());
+			assert!(sp_contract.asset_balance(wbnb_address_on_bsc_testnet).await? > U256::zero());
+
+			/* check that user has shares > 9 * 1e18 */
+			assert!(
+					sp_contract.balance_of(user_key.address()).await? > U256::from(9).try_checked_mul(U256::from(busd_decimals))?	
+			);
+			/* check that SP has shares > 9 * 1e18 */
+			assert!(
+					sp_contract.total_supply().await? >
+					U256::from(9).try_checked_mul(U256::from(busd_decimals))?	
+			);
+
+			Ok(())
     }
 
     #[tokio::test]
