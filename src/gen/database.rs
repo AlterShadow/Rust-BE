@@ -2400,14 +2400,14 @@ pub struct FunWatcherSaveWalletActivityHistoryReq {
     pub address: String,
     pub transaction_hash: String,
     pub blockchain: EnumBlockChain,
+    pub contract_address: String,
+    pub caller_address: String,
     #[serde(default)]
     pub dex: Option<String>,
-    pub contract_address: String,
     #[serde(default)]
     pub token_in_address: Option<String>,
     #[serde(default)]
     pub token_out_address: Option<String>,
-    pub caller_address: String,
     #[serde(default)]
     pub amount_in: Option<String>,
     #[serde(default)]
@@ -2430,18 +2430,18 @@ pub struct FunWatcherSaveWalletActivityHistoryRespRow {
 impl DatabaseRequest for FunWatcherSaveWalletActivityHistoryReq {
     type ResponseRow = FunWatcherSaveWalletActivityHistoryRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_watcher_save_wallet_activity_history(a_address => $1::varchar, a_transaction_hash => $2::varchar, a_blockchain => $3::enum_block_chain, a_dex => $4::varchar, a_contract_address => $5::varchar, a_token_in_address => $6::varchar, a_token_out_address => $7::varchar, a_caller_address => $8::varchar, a_amount_in => $9::varchar, a_amount_out => $10::varchar, a_swap_calls => $11::jsonb, a_paths => $12::jsonb, a_dex_versions => $13::jsonb, a_created_at => $14::bigint);"
+        "SELECT * FROM api.fun_watcher_save_wallet_activity_history(a_address => $1::varchar, a_transaction_hash => $2::varchar, a_blockchain => $3::enum_block_chain, a_contract_address => $4::varchar, a_caller_address => $5::varchar, a_dex => $6::varchar, a_token_in_address => $7::varchar, a_token_out_address => $8::varchar, a_amount_in => $9::varchar, a_amount_out => $10::varchar, a_swap_calls => $11::jsonb, a_paths => $12::jsonb, a_dex_versions => $13::jsonb, a_created_at => $14::bigint);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
             &self.address as &(dyn ToSql + Sync),
             &self.transaction_hash as &(dyn ToSql + Sync),
             &self.blockchain as &(dyn ToSql + Sync),
-            &self.dex as &(dyn ToSql + Sync),
             &self.contract_address as &(dyn ToSql + Sync),
+            &self.caller_address as &(dyn ToSql + Sync),
+            &self.dex as &(dyn ToSql + Sync),
             &self.token_in_address as &(dyn ToSql + Sync),
             &self.token_out_address as &(dyn ToSql + Sync),
-            &self.caller_address as &(dyn ToSql + Sync),
             &self.amount_in as &(dyn ToSql + Sync),
             &self.amount_out as &(dyn ToSql + Sync),
             &self.swap_calls as &(dyn ToSql + Sync),

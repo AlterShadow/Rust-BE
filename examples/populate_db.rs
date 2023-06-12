@@ -1,5 +1,6 @@
 pub mod tools;
 
+use chrono::Utc;
 use eth_sdk::signer::Secp256k1SecretKey;
 use eth_sdk::utils::get_signed_text;
 use eyre::*;
@@ -13,6 +14,7 @@ use tokio::sync::Mutex;
 use tokio::task::JoinHandle;
 use tools::*;
 use tracing::*;
+use web3::types::U256;
 
 const ADMIN_KEY: (&str, &str) = (
     "d34ffbe32eea1de01e30f5cccb3f9863b07c1ac600c09bae80370fc14c899913",
@@ -298,13 +300,39 @@ async fn populate_user_apply_become_experts() -> Result<()> {
     join_all(tasks).await;
     Ok(())
 }
+async fn populate_wallet_activity_history() -> Result<()> {
+    let admin_signer = get_admin_key();
+    let mut admin_client = connect_user("dev-0", &admin_signer.key).await?;
+    for _ in 0..100 {
+        admin_client
+            .request(AdminAddWalletActivityHistoryRequest {
+                wallet_address: format!("0x0000000{}", random::<u64>()),
+                blockchain: EnumBlockChain::LocalNet,
+                transaction_hash: format!("0x0000000{}", random::<u64>()),
+                dex: None,
+                contract_address: format!("0x0000000{}", random::<u64>()),
+                token_in_address: None,
+                token_out_address: None,
+                caller_address: format!("0x0000000{}", random::<u64>()),
+                amount_in: None,
+                amount_out: None,
+                swap_calls: None,
+                paths: None,
+                dex_versions: None,
+                created_at: Some(Utc::now().timestamp()),
+            })
+            .await?;
+    }
+    Ok(())
+}
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<()> {
     setup_logs(LogLevel::Debug)?;
-    populate_users().await?;
-    populate_user_registered_wallets().await?;
-    populate_user_apply_become_experts().await?;
+    // populate_users().await?;
+    // populate_user_registered_wallets().await?;
+    // populate_user_apply_become_experts().await?;
+    populate_wallet_activity_history().await?;
 
     Ok(())
 }
