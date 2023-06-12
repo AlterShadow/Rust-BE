@@ -1602,7 +1602,32 @@ pub struct UserListFollowedExpertsRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserListFollowedExpertsResponse {
-    pub experts: Vec<ListExpertsRow>,
+    pub experts: Vec<UserListFollowedExpertsRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListFollowedExpertsRow {
+    pub expert_id: i64,
+    pub user_public_id: i64,
+    pub linked_wallet: String,
+    pub name: String,
+    #[serde(default)]
+    pub family_name: Option<String>,
+    #[serde(default)]
+    pub given_name: Option<String>,
+    pub follower_count: i64,
+    pub description: String,
+    pub social_media: String,
+    pub risk_score: f64,
+    pub reputation_score: f64,
+    pub aum: f64,
+    pub joined_at: i64,
+    pub requested_at: i64,
+    #[serde(default)]
+    pub approved_at: Option<i64>,
+    pub pending_expert: bool,
+    pub approved_expert: bool,
+    pub followed: bool,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -3220,7 +3245,7 @@ impl WsRequest for UserListFollowedExpertsRequest {
       "name": "experts",
       "ty": {
         "DataTable": {
-          "name": "ListExpertsRow",
+          "name": "UserListFollowedExpertsRow",
           "fields": [
             {
               "name": "expert_id",
@@ -3294,6 +3319,10 @@ impl WsRequest for UserListFollowedExpertsRequest {
             },
             {
               "name": "approved_expert",
+              "ty": "Boolean"
+            },
+            {
+              "name": "followed",
               "ty": "Boolean"
             }
           ]
