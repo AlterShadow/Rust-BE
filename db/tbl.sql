@@ -1,5 +1,5 @@
 -- Created by Vertabelo (http://vertabelo.com)
--- Last modification date: 2023-06-11 01:58:58.4
+-- Last modification date: 2023-06-12 15:20:05.217
 
 CREATE SCHEMA IF NOT EXISTS tbl;;
 
@@ -289,20 +289,20 @@ CREATE TABLE tbl.user_request_refund_history (
 -- Table: wallet_activity_history
 CREATE TABLE tbl.wallet_activity_history (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_wallet_activity_history_id'),
-    address varchar(64)  NOT NULL,
-    transaction_hash varchar(80)  NOT NULL,
-    blockchain varchar(20)  NOT NULL,
+    address varchar(64)  NULL,
+    transaction_hash varchar(80)  NULL,
+    blockchain varchar(20)  NULL,
     dex varchar(20)  NOT NULL,
-    contract_address varchar(64)  NOT NULL,
+    contract_address varchar(64)  NULL,
     token_in_address varchar(64)  NOT NULL,
     token_out_address varchar(64)  NOT NULL,
-    caller_address varchar(64)  NOT NULL,
+    caller_address varchar(64)  NULL,
     amount_in varchar(64)  NOT NULL,
     amount_out varchar(64)  NOT NULL,
     swap_calls jsonb  NOT NULL,
     paths jsonb  NOT NULL,
     dex_versions jsonb  NOT NULL,
-    created_at bigint  NOT NULL,
+    created_at bigint  NULL,
     CONSTRAINT wallet_activity_history_ak_1 UNIQUE (transaction_hash) NOT DEFERRABLE  INITIALLY IMMEDIATE,
     CONSTRAINT wallet_activity_history_pk PRIMARY KEY (pkey_id)
 );

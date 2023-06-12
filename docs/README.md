@@ -72,6 +72,7 @@ ID: 3
 |30090|AdminListExperts|limit, offset, expert_id, user_id, user_public_id, username, family_name, given_name, description, social_media|experts|Admin lists experts|
 |30100|AdminListBackers|offset, limit|backers||
 |30110|AdminListStrategies|offset, limit|strategies||
+|31001|AdminAddWalletActivityHistory|wallet_address, blockchain, transaction_hash, dex, contract_address, token_in_address, token_out_address, caller_address, amount_in, amount_out, swap_calls, paths, dex_versions, created_at||Admin adds wallet activity history. for mocking purpose|
 
 # watcher Server
 ID: 4

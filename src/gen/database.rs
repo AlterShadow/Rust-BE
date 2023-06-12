@@ -2400,16 +2400,24 @@ pub struct FunWatcherSaveWalletActivityHistoryReq {
     pub address: String,
     pub transaction_hash: String,
     pub blockchain: EnumBlockChain,
-    pub dex: String,
+    #[serde(default)]
+    pub dex: Option<String>,
     pub contract_address: String,
-    pub token_in_address: String,
-    pub token_out_address: String,
+    #[serde(default)]
+    pub token_in_address: Option<String>,
+    #[serde(default)]
+    pub token_out_address: Option<String>,
     pub caller_address: String,
-    pub amount_in: String,
-    pub amount_out: String,
-    pub swap_calls: serde_json::Value,
-    pub paths: serde_json::Value,
-    pub dex_versions: serde_json::Value,
+    #[serde(default)]
+    pub amount_in: Option<String>,
+    #[serde(default)]
+    pub amount_out: Option<String>,
+    #[serde(default)]
+    pub swap_calls: Option<serde_json::Value>,
+    #[serde(default)]
+    pub paths: Option<serde_json::Value>,
+    #[serde(default)]
+    pub dex_versions: Option<serde_json::Value>,
     #[serde(default)]
     pub created_at: Option<i64>,
 }
@@ -2461,17 +2469,26 @@ pub struct FunWatcherListWalletActivityHistoryRespRow {
     pub address: String,
     pub transaction_hash: String,
     pub blockchain: EnumBlockChain,
-    pub dex: String,
+    #[serde(default)]
+    pub dex: Option<String>,
     pub contract_address: String,
-    pub token_in_address: String,
-    pub token_out_address: String,
+    #[serde(default)]
+    pub token_in_address: Option<String>,
+    #[serde(default)]
+    pub token_out_address: Option<String>,
     pub caller_address: String,
-    pub amount_in: String,
-    pub amount_out: String,
-    pub swap_calls: serde_json::Value,
-    pub paths: serde_json::Value,
-    pub dex_versions: serde_json::Value,
-    pub created_at: i64,
+    #[serde(default)]
+    pub amount_in: Option<String>,
+    #[serde(default)]
+    pub amount_out: Option<String>,
+    #[serde(default)]
+    pub swap_calls: Option<serde_json::Value>,
+    #[serde(default)]
+    pub paths: Option<serde_json::Value>,
+    #[serde(default)]
+    pub dex_versions: Option<serde_json::Value>,
+    #[serde(default)]
+    pub created_at: Option<i64>,
 }
 
 #[allow(unused_variables)]

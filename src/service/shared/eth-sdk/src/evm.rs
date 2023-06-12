@@ -9,6 +9,7 @@ use gen::database::{FunWatcherSaveRawTransactionReq, FunWatcherSaveWalletActivit
 use gen::model::{EnumBlockChain, EnumDex, EnumDexVersion};
 use lib::database::DbClient;
 use serde::{Deserialize, Serialize};
+use std::time::SystemTime;
 use tracing::error;
 use web3::ethabi::Contract;
 use web3::types::{Address, H160, H256, U256};
@@ -105,18 +106,22 @@ pub async fn save_trade(
             address: format!("{:?}", trade.caller),
             transaction_hash: format!("{:?}", hash),
             blockchain,
-            dex: trade.dex.to_string(),
+            dex: Some(trade.dex.to_string()),
             contract_address: format!("{:?}", trade.contract),
-            token_in_address: format!("{:?}", trade.token_in),
-            token_out_address: format!("{:?}", trade.token_out),
+            token_in_address: Some(format!("{:?}", trade.token_in)),
+            token_out_address: Some(format!("{:?}", trade.token_out)),
             caller_address: format!("{:?}", trade.caller),
-            amount_in: format!("{:?}", trade.amount_in),
-            amount_out: format!("{:?}", trade.amount_out),
-            swap_calls: serde_json::to_value(&trade.swap_calls)?,
-            paths: serde_json::to_value(&trade.paths)?,
-            dex_versions: serde_json::to_value(&trade.dex_versions)?,
+            amount_in: Some(format!("{:?}", trade.amount_in)),
+            amount_out: Some(format!("{:?}", trade.amount_out)),
+            swap_calls: Some(serde_json::to_value(&trade.swap_calls)?),
+            paths: Some(serde_json::to_value(&trade.paths)?),
+            dex_versions: Some(serde_json::to_value(&trade.dex_versions)?),
             // TODO: fetch block time
-            created_at: None,
+            created_at: Some(
+                SystemTime::now()
+                    .duration_since(SystemTime::UNIX_EPOCH)?
+                    .as_secs() as _,
+            ),
         })
         .await?;
 

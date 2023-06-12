@@ -1720,7 +1720,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_watcher_save_wallet_activity_history(a_address varchar, a_transaction_hash varchar, a_blockchain enum_block_chain, a_dex varchar, a_contract_address varchar, a_token_in_address varchar, a_token_out_address varchar, a_caller_address varchar, a_amount_in varchar, a_amount_out varchar, a_swap_calls jsonb, a_paths jsonb, a_dex_versions jsonb, a_created_at bigint DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_watcher_save_wallet_activity_history(a_address varchar, a_transaction_hash varchar, a_blockchain enum_block_chain, a_dex varchar DEFAULT NULL, a_contract_address varchar, a_token_in_address varchar DEFAULT NULL, a_token_out_address varchar DEFAULT NULL, a_caller_address varchar, a_amount_in varchar DEFAULT NULL, a_amount_out varchar DEFAULT NULL, a_swap_calls jsonb DEFAULT NULL, a_paths jsonb DEFAULT NULL, a_dex_versions jsonb DEFAULT NULL, a_created_at bigint DEFAULT NULL)
 RETURNS table (
     "wallet_activity_history_id" bigint
 )

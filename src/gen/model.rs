@@ -389,6 +389,9 @@ pub enum EnumEndpoint {
     ///
     #[postgres(name = "AdminListStrategies")]
     AdminListStrategies = 30110,
+    ///
+    #[postgres(name = "AdminAddWalletActivityHistory")]
+    AdminAddWalletActivityHistory = 31001,
 }
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -786,6 +789,36 @@ impl Into<ErrorCode> for EnumErrorCode {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminAddWalletActivityHistoryRequest {
+    pub wallet_address: String,
+    pub blockchain: EnumBlockChain,
+    pub transaction_hash: String,
+    #[serde(default)]
+    pub dex: Option<String>,
+    pub contract_address: String,
+    #[serde(default)]
+    pub token_in_address: Option<String>,
+    #[serde(default)]
+    pub token_out_address: Option<String>,
+    pub caller_address: String,
+    #[serde(default)]
+    pub amount_in: Option<String>,
+    #[serde(default)]
+    pub amount_out: Option<String>,
+    #[serde(default)]
+    pub swap_calls: Option<serde_json::Value>,
+    #[serde(default)]
+    pub paths: Option<serde_json::Value>,
+    #[serde(default)]
+    pub dex_versions: Option<serde_json::Value>,
+    #[serde(default)]
+    pub created_at: Option<i64>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminAddWalletActivityHistoryResponse {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminApproveUserBecomeExpertRequest {
@@ -5522,4 +5555,98 @@ impl WsRequest for AdminListStrategiesRequest {
 }
 impl WsResponse for AdminListStrategiesResponse {
     type Request = AdminListStrategiesRequest;
+}
+
+impl WsRequest for AdminAddWalletActivityHistoryRequest {
+    type Response = AdminAddWalletActivityHistoryResponse;
+    const METHOD_ID: u32 = 31001;
+    const SCHEMA: &'static str = r#"{
+  "name": "AdminAddWalletActivityHistory",
+  "code": 31001,
+  "parameters": [
+    {
+      "name": "wallet_address",
+      "ty": "String"
+    },
+    {
+      "name": "blockchain",
+      "ty": {
+        "EnumRef": "block_chain"
+      }
+    },
+    {
+      "name": "transaction_hash",
+      "ty": "String"
+    },
+    {
+      "name": "dex",
+      "ty": {
+        "Optional": "String"
+      }
+    },
+    {
+      "name": "contract_address",
+      "ty": "String"
+    },
+    {
+      "name": "token_in_address",
+      "ty": {
+        "Optional": "String"
+      }
+    },
+    {
+      "name": "token_out_address",
+      "ty": {
+        "Optional": "String"
+      }
+    },
+    {
+      "name": "caller_address",
+      "ty": "String"
+    },
+    {
+      "name": "amount_in",
+      "ty": {
+        "Optional": "String"
+      }
+    },
+    {
+      "name": "amount_out",
+      "ty": {
+        "Optional": "String"
+      }
+    },
+    {
+      "name": "swap_calls",
+      "ty": {
+        "Optional": "Object"
+      }
+    },
+    {
+      "name": "paths",
+      "ty": {
+        "Optional": "Object"
+      }
+    },
+    {
+      "name": "dex_versions",
+      "ty": {
+        "Optional": "Object"
+      }
+    },
+    {
+      "name": "created_at",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    }
+  ],
+  "returns": [],
+  "stream_response": [],
+  "description": "Admin adds wallet activity history. for mocking purpose",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for AdminAddWalletActivityHistoryResponse {
+    type Request = AdminAddWalletActivityHistoryRequest;
 }
