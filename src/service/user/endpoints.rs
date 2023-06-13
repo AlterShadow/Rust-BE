@@ -378,7 +378,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
             vec![Field::new(
                 "experts",
                 Type::datatable(
-                    "ListExpertsRow",
+                    "UserListExpertsRow",
                     vec![
                         Field::new("expert_id", Type::BigInt),
                         Field::new("user_public_id", Type::BigInt),
@@ -397,6 +397,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                         Field::new("approved_at", Type::optional(Type::BigInt)),
                         Field::new("pending_expert", Type::Boolean),
                         Field::new("approved_expert", Type::Boolean),
+                        Field::new("followed", Type::Boolean),
                     ],
                 ),
             )],

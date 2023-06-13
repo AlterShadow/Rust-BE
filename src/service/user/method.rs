@@ -1222,7 +1222,7 @@ impl RequestHandler for MethodUserListExperts {
             Ok(UserListExpertsResponse {
                 experts: ret
                     .into_iter()
-                    .map(|x| ListExpertsRow {
+                    .map(|x| UserListExpertsRow {
                         expert_id: x.expert_id,
                         user_public_id: x.user_public_id,
                         name: x.username,
@@ -1240,6 +1240,7 @@ impl RequestHandler for MethodUserListExperts {
                         approved_at: x.approved_at,
                         pending_expert: x.pending_expert,
                         approved_expert: x.approved_expert,
+                        followed: x.followed,
                     })
                     .collect(),
             })

@@ -1384,7 +1384,7 @@
               "name": "experts",
               "ty": {
                 "DataTable": {
-                  "name": "ListExpertsRow",
+                  "name": "UserListExpertsRow",
                   "fields": [
                     {
                       "name": "expert_id",
@@ -1458,6 +1458,10 @@
                     },
                     {
                       "name": "approved_expert",
+                      "ty": "Boolean"
+                    },
+                    {
+                      "name": "followed",
                       "ty": "Boolean"
                     }
                   ]
