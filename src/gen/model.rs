@@ -855,6 +855,7 @@ pub struct AdminListBackersResponse {
 #[serde(rename_all = "camelCase")]
 pub struct AdminListBackersRow {
     pub username: String,
+    pub user_id: i64,
     pub login_wallet_address: String,
     pub joined_at: i64,
     pub total_platform_fee_paid: f64,
@@ -5470,6 +5471,10 @@ impl WsRequest for AdminListBackersRequest {
             {
               "name": "username",
               "ty": "String"
+            },
+            {
+              "name": "user_id",
+              "ty": "BigInt"
             },
             {
               "name": "login_wallet_address",

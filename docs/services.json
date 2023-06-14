@@ -3155,6 +3155,10 @@
                       "ty": "String"
                     },
                     {
+                      "name": "user_id",
+                      "ty": "BigInt"
+                    },
+                    {
                       "name": "login_wallet_address",
                       "ty": "String"
                     },

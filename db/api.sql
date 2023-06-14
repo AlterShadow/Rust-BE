@@ -1611,6 +1611,7 @@ $$;
 CREATE OR REPLACE FUNCTION api.fun_admin_list_backers(a_offset bigint, a_limit bigint)
 RETURNS table (
     "user_id" bigint,
+    "user_public_id" bigint,
     "username" varchar,
     "login_wallet_address" varchar,
     "joined_at" bigint
@@ -1620,10 +1621,12 @@ AS $$
     
 BEGIN
     RETURN QUERY SELECT a.pkey_id AS user_id,
+                        a.public_id AS user_public_id,
                         a.username AS username,
                         a.address AS login_wallet_address,
                         a.created_at AS joined_at
                  FROM tbl.user AS a
+                 JOIN tbl.user_back_strategy_history AS b ON b.fkey_user_id = a.pkey_id
                  ORDER BY a.pkey_id
                  OFFSET a_offset
                  LIMIT a_limit;

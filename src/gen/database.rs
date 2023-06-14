@@ -2238,6 +2238,7 @@ pub struct FunAdminListBackersReq {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAdminListBackersRespRow {
     pub user_id: i64,
+    pub user_public_id: i64,
     pub username: String,
     pub login_wallet_address: String,
     pub joined_at: i64,
@@ -2258,9 +2259,10 @@ impl DatabaseRequest for FunAdminListBackersReq {
     fn parse_row(&self, row: Row) -> Result<FunAdminListBackersRespRow> {
         let r = FunAdminListBackersRespRow {
             user_id: row.try_get(0)?,
-            username: row.try_get(1)?,
-            login_wallet_address: row.try_get(2)?,
-            joined_at: row.try_get(3)?,
+            user_public_id: row.try_get(1)?,
+            username: row.try_get(2)?,
+            login_wallet_address: row.try_get(3)?,
+            joined_at: row.try_get(4)?,
         };
         Ok(r)
     }

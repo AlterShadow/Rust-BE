@@ -287,6 +287,7 @@ END
             ],
             vec![
                 Field::new("user_id", Type::BigInt),
+                Field::new("user_public_id", Type::BigInt),
                 Field::new("username", Type::String),
                 Field::new("login_wallet_address", Type::String),
                 Field::new("joined_at", Type::BigInt),
@@ -294,10 +295,12 @@ END
             r#"
 BEGIN
     RETURN QUERY SELECT a.pkey_id AS user_id,
+                        a.public_id AS user_public_id,
                         a.username AS username,
                         a.address AS login_wallet_address,
                         a.created_at AS joined_at
                  FROM tbl.user AS a
+                 JOIN tbl.user_back_strategy_history AS b ON b.fkey_user_id = a.pkey_id
                  ORDER BY a.pkey_id
                  OFFSET a_offset
                  LIMIT a_limit;

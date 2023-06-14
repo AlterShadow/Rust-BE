@@ -167,6 +167,7 @@ pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
                     "AdminListBackersRow",
                     vec![
                         Field::new("username", Type::String),
+                        Field::new("user_id", Type::BigInt),
                         Field::new("login_wallet_address", Type::String),
                         Field::new("joined_at", Type::BigInt),
                         Field::new("total_platform_fee_paid", Type::Numeric),

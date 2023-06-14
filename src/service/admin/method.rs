@@ -353,6 +353,7 @@ impl RequestHandler for MethodAdminListBackers {
                     .into_iter()
                     .map(|x| AdminListBackersRow {
                         username: x.username,
+                        user_id: x.user_public_id,
                         joined_at: x.joined_at,
                         login_wallet_address: x.login_wallet_address,
                         // TODO: calculate these fees and total backing amount
