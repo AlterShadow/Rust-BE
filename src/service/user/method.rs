@@ -1012,7 +1012,7 @@ impl RequestHandler for MethodUserRequestRefund {
                 &db,
                 req.blockchain,
                 &stablecoin_addresses,
-                &escrow_contract,
+                escrow_contract,
                 req.quantity.parse()?,
                 req.wallet_address.parse()?,
                 &escrow_signer.key,
@@ -1897,10 +1897,10 @@ pub async fn on_user_request_refund(
     db: &DbClient,
     chain: EnumBlockChain,
     stablecoin_addresses: &BlockchainCoinAddresses,
-    escrow_contract: &EscrowContract<EitherTransport>,
+    escrow_contract: EscrowContract<EitherTransport>,
     quantity: U256,
     wallet_address: Address,
-    escrow_signer: impl Key,
+    escrow_signer: impl Key + Clone,
     token: EnumBlockchainCoin,
 ) -> Result<H256> {
     info!(
@@ -1921,20 +1921,30 @@ pub async fn on_user_request_refund(
         .await?
         .into_result()
         .context("No result")?;
+
     let token_address = stablecoin_addresses
         .get(chain, token)
         .context("no stablecoin address")?;
 
-    let hash = escrow_contract
-        .transfer_token_to(escrow_signer, token_address, wallet_address, quantity)
-        .await?;
+    let hash = transfer_token_to_and_ensure_success(
+        escrow_contract,
+        &_conn,
+        12,
+        10,
+        Duration::from_secs(10),
+        escrow_signer,
+        token_address,
+        wallet_address,
+        quantity,
+    )
+    .await?;
 
     db.execute(FunUserUpdateRequestRefundHistoryReq {
         request_refund_id: row.request_refund_id,
         transaction_hash: format!("{:?}", hash),
     })
     .await?;
-    // TODO: do we wait until confirmation here?
+
     Ok(hash)
 }
 
