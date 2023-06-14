@@ -1281,6 +1281,7 @@ pub struct ListFeaturedExpertsRow {
     pub approved_expert: bool,
     pub backer_count: i64,
     pub consistent_score: f64,
+    pub followed: bool,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1813,7 +1814,7 @@ pub struct UserListTopPerformingExpertsRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserListTopPerformingExpertsResponse {
-    pub experts: Vec<ListExpertsRow>,
+    pub experts: Vec<UserListExpertsRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -3601,7 +3602,7 @@ impl WsRequest for UserListTopPerformingExpertsRequest {
       "name": "experts",
       "ty": {
         "DataTable": {
-          "name": "ListExpertsRow",
+          "name": "UserListExpertsRow",
           "fields": [
             {
               "name": "expert_id",
@@ -3675,6 +3676,10 @@ impl WsRequest for UserListTopPerformingExpertsRequest {
             },
             {
               "name": "approved_expert",
+              "ty": "Boolean"
+            },
+            {
+              "name": "followed",
               "ty": "Boolean"
             }
           ]
@@ -3799,6 +3804,10 @@ impl WsRequest for UserListFeaturedExpertsRequest {
             {
               "name": "consistent_score",
               "ty": "Numeric"
+            },
+            {
+              "name": "followed",
+              "ty": "Boolean"
             }
           ]
         }
