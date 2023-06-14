@@ -2275,6 +2275,7 @@ mod tests {
         let busd_contract = Erc20Token::new(conn.clone(), busd_address_on_bsc_testnet)?;
         let transfer_tx_hash = busd_contract
             .transfer(
+                &conn,
                 secure_eoa_key.clone(),
                 escrow_contract.address(),
                 U256::from(10).try_checked_mul(U256::from(busd_decimals))?,

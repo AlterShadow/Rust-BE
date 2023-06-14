@@ -848,7 +848,7 @@ mod tests {
         info!("Wrapping BNB");
         /* wrap BNB so we can use it to trade tokens */
         /* assert transaction is successful */
-        let wrap_tx_hash = wbnb.wrap(key.clone(), U256::from(1000)).await?;
+        let wrap_tx_hash = wbnb.wrap(&conn, key.clone(), U256::from(1000)).await?;
 
         wait_for_confirmations_simple(&conn.eth(), wrap_tx_hash, Duration::from_secs(3), 5).await?;
 
@@ -868,7 +868,7 @@ mod tests {
         /* approve the pancake swap smart router for wrapped tokens, so it can trade them */
         /* assert transaction is successful */
         let approve_tx_hash = wbnb
-            .approve(key.clone(), pancake_swap.address(), U256::from(1000))
+            .approve(&conn, key.clone(), pancake_swap.address(), U256::from(1000))
             .await?;
         wait_for_confirmations_simple(&conn.eth(), approve_tx_hash, Duration::from_secs(3), 5)
             .await?;

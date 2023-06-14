@@ -5,6 +5,8 @@ use web3::signing::Key;
 use web3::types::{Address, H256, U256};
 use web3::{Transport, Web3};
 
+use crate::EthereumRpcConnection;
+
 const WRAPPED_ABI_JSON: &str = include_str!("weth.json");
 
 #[derive(Debug, Clone)]
@@ -22,7 +24,12 @@ impl<T: Transport> WrappedTokenContract<T> {
         self.contract.address()
     }
 
-    pub async fn wrap(&self, signer: impl Key, amount: U256) -> Result<H256> {
+    pub async fn wrap(
+        &self,
+        conn: &EthereumRpcConnection,
+        signer: impl Key,
+        amount: U256,
+    ) -> Result<H256> {
         let estimated_gas = self
             .contract
             .estimate_gas(
@@ -34,6 +41,8 @@ impl<T: Transport> WrappedTokenContract<T> {
                 }),
             )
             .await?;
+
+        let estimated_gas_price = conn.eth().gas_price().await?;
 
         Ok(self
             .contract
@@ -42,6 +51,7 @@ impl<T: Transport> WrappedTokenContract<T> {
                 (),
                 Options::with(|options| {
                     options.gas = Some(estimated_gas);
+                    options.gas_price = Some(estimated_gas_price);
                     options.value = Some(amount);
                 }),
                 signer,
@@ -49,7 +59,12 @@ impl<T: Transport> WrappedTokenContract<T> {
             .await?)
     }
 
-    pub async fn unwrap(&self, signer: impl Key, amount: U256) -> Result<H256> {
+    pub async fn unwrap(
+        &self,
+        conn: &EthereumRpcConnection,
+        signer: impl Key,
+        amount: U256,
+    ) -> Result<H256> {
         let estimated_gas = self
             .contract
             .estimate_gas(
@@ -60,35 +75,50 @@ impl<T: Transport> WrappedTokenContract<T> {
             )
             .await?;
 
+        let estimated_gas_price = conn.eth().gas_price().await?;
+
         Ok(self
             .contract
             .signed_call(
                 WrappedTokenFunctions::Unwrap.as_str(),
                 amount,
-                Options::with(|options| options.gas = Some(estimated_gas)),
+                Options::with(|options| {
+                    options.gas = Some(estimated_gas);
+                    options.gas_price = Some(estimated_gas_price);
+                }),
                 signer,
             )
             .await?)
     }
 
-    pub async fn approve(&self, signer: impl Key, spender: Address, amount: U256) -> Result<H256> {
-        let params = (spender, amount);
+    pub async fn approve(
+        &self,
+        conn: &EthereumRpcConnection,
+        signer: impl Key,
+        spender: Address,
+        amount: U256,
+    ) -> Result<H256> {
         let estimated_gas = self
             .contract
             .estimate_gas(
                 WrappedTokenFunctions::Approve.as_str(),
-                params,
+                (spender, amount),
                 signer.address(),
                 Options::default(),
             )
             .await?;
 
+        let estimated_gas_price = conn.eth().gas_price().await?;
+
         Ok(self
             .contract
             .signed_call(
                 WrappedTokenFunctions::Approve.as_str(),
-                params,
-                Options::with(|options| options.gas = Some(estimated_gas)),
+                (spender, amount),
+                Options::with(|options| {
+                    options.gas = Some(estimated_gas);
+                    options.gas_price = Some(estimated_gas_price);
+                }),
                 signer,
             )
             .await?)

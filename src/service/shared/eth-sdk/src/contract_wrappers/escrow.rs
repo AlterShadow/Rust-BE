@@ -64,6 +64,7 @@ impl<T: Transport> EscrowContract<T> {
 
     pub async fn transfer_token_to(
         &self,
+        conn: &EthereumRpcConnection,
         signer: impl Key,
         token_address: Address,
         recipient: Address,
@@ -79,6 +80,8 @@ impl<T: Transport> EscrowContract<T> {
             )
             .await?;
 
+        let estimated_gas_price = conn.eth().gas_price().await?;
+
         info!(
             "Transferring {:?} amount of token {:?} to recipient {:?} from escrow contract {:?} by {:?}",
             amount,
@@ -93,13 +96,21 @@ impl<T: Transport> EscrowContract<T> {
             .signed_call(
                 EscrowFunctions::TransferTokenTo.as_str(),
                 (token_address, recipient, amount),
-                Options::with(|options| options.gas = Some(estimated_gas)),
+                Options::with(|options| {
+                    options.gas = Some(estimated_gas);
+                    options.gas_price = Some(estimated_gas_price);
+                }),
                 signer,
             )
             .await?)
     }
 
-    pub async fn transfer_ownership(&self, signer: impl Key, new_owner: Address) -> Result<H256> {
+    pub async fn transfer_ownership(
+        &self,
+        conn: &EthereumRpcConnection,
+        signer: impl Key,
+        new_owner: Address,
+    ) -> Result<H256> {
         let estimated_gas = self
             .contract
             .estimate_gas(
@@ -109,6 +120,8 @@ impl<T: Transport> EscrowContract<T> {
                 Options::default(),
             )
             .await?;
+
+        let estimated_gas_price = conn.eth().gas_price().await?;
 
         info!(
             "Transferring ownership from {:?} to {:?} of escrow contract {:?} by {:?}",
@@ -123,7 +136,10 @@ impl<T: Transport> EscrowContract<T> {
             .signed_call(
                 EscrowFunctions::TransferOwnership.as_str(),
                 new_owner,
-                Options::with(|options| options.gas = Some(estimated_gas)),
+                Options::with(|options| {
+                    options.gas = Some(estimated_gas);
+                    options.gas_price = Some(estimated_gas_price);
+                }),
                 signer,
             )
             .await?)
@@ -172,7 +188,7 @@ pub async fn transfer_token_to_and_ensure_success(
 ) -> Result<H256> {
     /* publish transaction */
     let mut tx_hash = contract
-        .transfer_token_to(signer.clone(), token_address, recipient, amount)
+        .transfer_token_to(&conn, signer.clone(), token_address, recipient, amount)
         .await?;
     let mut retries: usize = 0;
     while retries < max_retry {
@@ -215,7 +231,7 @@ pub async fn transfer_token_to_and_ensure_success(
                 /* transaction is reverted or doesn't exist after confirmations, try again */
                 retries += 1;
                 tx_hash = contract
-                    .transfer_token_to(signer.clone(), token_address, recipient, amount)
+                    .transfer_token_to(&conn, signer.clone(), token_address, recipient, amount)
                     .await?;
             }
             _ => continue,
@@ -235,7 +251,7 @@ pub async fn transfer_ownership_and_ensure_success(
 ) -> Result<H256> {
     /* publish transaction */
     let mut tx_hash = contract
-        .transfer_ownership(signer.clone(), new_owner)
+        .transfer_ownership(&conn, signer.clone(), new_owner)
         .await?;
     let mut retries: usize = 0;
     while retries < max_retry {
@@ -278,7 +294,7 @@ pub async fn transfer_ownership_and_ensure_success(
                 /* transaction is reverted or doesn't exist after confirmations, try again */
                 retries += 1;
                 tx_hash = contract
-                    .transfer_ownership(signer.clone(), new_owner)
+                    .transfer_ownership(&conn, signer.clone(), new_owner)
                     .await?;
             }
             _ => continue,
@@ -338,7 +354,7 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             mock_erc20_a
-                .mint(god_key.clone(), escrow.address(), U256::from(100))
+                .mint(&tx_conn, god_key.clone(), escrow.address(), U256::from(100))
                 .await?,
             Duration::from_millis(1),
             10,
@@ -358,6 +374,7 @@ mod tests {
             &tx_conn.clone().eth(),
             escrow
                 .transfer_token_to(
+                    &tx_conn,
                     god_key.clone(),
                     mock_erc20_a.address,
                     alice.address(),
@@ -412,7 +429,7 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.eth(),
             escrow
-                .transfer_ownership(god_key.clone(), alice.address())
+                .transfer_ownership(&tx_conn, god_key.clone(), alice.address())
                 .await?,
             Duration::from_millis(1),
             10,

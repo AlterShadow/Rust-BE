@@ -190,6 +190,7 @@ impl<T: Transport> StrategyPoolContract<T> {
 
     pub async fn deposit(
         &self,
+        conn: &EthereumRpcConnection,
         signer: impl Key,
         assets: Vec<Address>,
         amounts: Vec<U256>,
@@ -206,6 +207,8 @@ impl<T: Transport> StrategyPoolContract<T> {
             )
             .await?;
 
+        let estimated_gas_price = conn.eth().gas_price().await?;
+
         info!("Depositing amounts {:?} of assets {:?} to mint {:?} shares to receiver {:?} to strategy pool contract {:?} by {:?}",
 							amounts.clone(),
 							assets.clone(),
@@ -220,7 +223,10 @@ impl<T: Transport> StrategyPoolContract<T> {
             .signed_call(
                 StrategyPoolFunctions::Deposit.as_str(),
                 (assets, amounts, shares, receiver),
-                Options::with(|options| options.gas = Some(estimated_gas)),
+                Options::with(|options| {
+                    options.gas = Some(estimated_gas);
+                    options.gas_price = Some(estimated_gas_price);
+                }),
                 signer,
             )
             .await?)
@@ -267,6 +273,7 @@ impl<T: Transport> StrategyPoolContract<T> {
 
     pub async fn redeem(
         &self,
+        conn: &EthereumRpcConnection,
         signer: impl Key,
         shares: U256,
         receiver: Address,
@@ -282,6 +289,8 @@ impl<T: Transport> StrategyPoolContract<T> {
             )
             .await?;
 
+        let estimated_gas_price = conn.eth().gas_price().await?;
+
         info!("Redeeming {:?} shares to receiver {:?} from owner {:?} from strategy pool contract {:?} by {:?}",
 							shares,
 							receiver,
@@ -295,7 +304,10 @@ impl<T: Transport> StrategyPoolContract<T> {
             .signed_call(
                 StrategyPoolFunctions::Redeem.as_str(),
                 (shares, receiver, owner),
-                Options::with(|options| options.gas = Some(estimated_gas)),
+                Options::with(|options| {
+                    options.gas = Some(estimated_gas);
+                    options.gas_price = Some(estimated_gas_price);
+                }),
                 signer,
             )
             .await?)
@@ -303,6 +315,7 @@ impl<T: Transport> StrategyPoolContract<T> {
 
     pub async fn acquire_asset_before_trade(
         &self,
+        conn: &EthereumRpcConnection,
         signer: impl Key,
         asset: Address,
         amount: U256,
@@ -317,6 +330,8 @@ impl<T: Transport> StrategyPoolContract<T> {
             )
             .await?;
 
+        let estimated_gas_price = conn.eth().gas_price().await?;
+
         info!(
             "Acquiring {:?} amount of asset {:?} before trade from strategy pool contract {:?} by {:?}",
 						amount,
@@ -330,7 +345,10 @@ impl<T: Transport> StrategyPoolContract<T> {
             .signed_call(
                 StrategyPoolFunctions::AcquireAssetBeforeTrade.as_str(),
                 (asset, amount),
-                Options::with(|options| options.gas = Some(estimated_gas)),
+                Options::with(|options| {
+                    options.gas = Some(estimated_gas);
+                    options.gas_price = Some(estimated_gas_price);
+                }),
                 signer,
             )
             .await?)
@@ -338,6 +356,7 @@ impl<T: Transport> StrategyPoolContract<T> {
 
     pub async fn give_back_assets_after_trade(
         &self,
+        conn: &EthereumRpcConnection,
         signer: impl Key,
         assets: Vec<Address>,
         amounts: Vec<U256>,
@@ -352,6 +371,8 @@ impl<T: Transport> StrategyPoolContract<T> {
             )
             .await?;
 
+        let estimated_gas_price = conn.eth().gas_price().await?;
+
         info!(
 						"Giving back {:?} amounts of assets {:?} after trade to strategy pool contract {:?} by {:?}",
 						amounts.clone(),
@@ -365,13 +386,21 @@ impl<T: Transport> StrategyPoolContract<T> {
             .signed_call(
                 StrategyPoolFunctions::GiveBackAssetsAfterTrade.as_str(),
                 (assets, amounts),
-                Options::with(|options| options.gas = Some(estimated_gas)),
+                Options::with(|options| {
+                    options.gas = Some(estimated_gas);
+                    options.gas_price = Some(estimated_gas_price);
+                }),
                 signer,
             )
             .await?)
     }
 
-    pub async fn transfer_ownership(&self, signer: impl Key, new_owner: Address) -> Result<H256> {
+    pub async fn transfer_ownership(
+        &self,
+        conn: &EthereumRpcConnection,
+        signer: impl Key,
+        new_owner: Address,
+    ) -> Result<H256> {
         let estimated_gas = self
             .contract
             .estimate_gas(
@@ -381,6 +410,8 @@ impl<T: Transport> StrategyPoolContract<T> {
                 Options::default(),
             )
             .await?;
+
+        let estimated_gas_price = conn.eth().gas_price().await?;
 
         info!(
             "Transferring strategy pool contract {:?} ownership from {:?} to {:?} by {:?}",
@@ -395,7 +426,10 @@ impl<T: Transport> StrategyPoolContract<T> {
             .signed_call(
                 StrategyPoolFunctions::TransferOwnership.as_str(),
                 new_owner,
-                Options::with(|options| options.gas = Some(estimated_gas)),
+                Options::with(|options| {
+                    options.gas = Some(estimated_gas);
+                    options.gas_price = Some(estimated_gas_price);
+                }),
                 signer,
             )
             .await?)
@@ -493,6 +527,7 @@ pub async fn deposit_and_ensure_success(
     /* publish transaction */
     let mut tx_hash = contract
         .deposit(
+            &conn,
             signer.clone(),
             assets.clone(),
             amounts.clone(),
@@ -542,6 +577,7 @@ pub async fn deposit_and_ensure_success(
                 retries += 1;
                 tx_hash = contract
                     .deposit(
+                        &conn,
                         signer.clone(),
                         assets.clone(),
                         amounts.clone(),
@@ -568,7 +604,7 @@ pub async fn acquire_asset_before_trade_and_ensure_success(
 ) -> Result<H256> {
     /* publish transaction */
     let mut tx_hash = contract
-        .acquire_asset_before_trade(signer.clone(), asset, amount)
+        .acquire_asset_before_trade(&conn, signer.clone(), asset, amount)
         .await?;
     let mut retries: usize = 0;
     while retries < max_retry {
@@ -611,7 +647,7 @@ pub async fn acquire_asset_before_trade_and_ensure_success(
                 /* transaction is reverted or doesn't exist after confirmations, try again */
                 retries += 1;
                 tx_hash = contract
-                    .acquire_asset_before_trade(signer.clone(), asset, amount)
+                    .acquire_asset_before_trade(&conn, signer.clone(), asset, amount)
                     .await?;
             }
             _ => continue,
@@ -632,7 +668,7 @@ pub async fn give_back_assets_after_trade_and_ensure_success(
 ) -> Result<H256> {
     /* publish transaction */
     let mut tx_hash = contract
-        .give_back_assets_after_trade(signer.clone(), assets.clone(), amounts.clone())
+        .give_back_assets_after_trade(&conn, signer.clone(), assets.clone(), amounts.clone())
         .await?;
     let mut retries: usize = 0;
     while retries < max_retry {
@@ -675,7 +711,12 @@ pub async fn give_back_assets_after_trade_and_ensure_success(
                 /* transaction is reverted or doesn't exist after confirmations, try again */
                 retries += 1;
                 tx_hash = contract
-                    .give_back_assets_after_trade(signer.clone(), assets.clone(), amounts.clone())
+                    .give_back_assets_after_trade(
+                        &conn,
+                        signer.clone(),
+                        assets.clone(),
+                        amounts.clone(),
+                    )
                     .await?;
             }
             _ => continue,
@@ -695,7 +736,7 @@ pub async fn transfer_ownership_and_ensure_success(
 ) -> Result<H256> {
     /* publish transaction */
     let mut tx_hash = contract
-        .transfer_ownership(signer.clone(), new_owner)
+        .transfer_ownership(&conn, signer.clone(), new_owner)
         .await?;
     let mut retries: usize = 0;
     while retries < max_retry {
@@ -738,7 +779,7 @@ pub async fn transfer_ownership_and_ensure_success(
                 /* transaction is reverted or doesn't exist after confirmations, try again */
                 retries += 1;
                 tx_hash = contract
-                    .transfer_ownership(signer.clone(), new_owner)
+                    .transfer_ownership(&conn, signer.clone(), new_owner)
                     .await?;
             }
             _ => continue,
@@ -826,7 +867,12 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             mock_erc20_a
-                .mint(god_key.clone(), god_key.address(), U256::from(100))
+                .mint(
+                    &tx_conn,
+                    god_key.clone(),
+                    god_key.address(),
+                    U256::from(100),
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -836,7 +882,12 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             mock_erc20_a
-                .approve(god_key.clone(), strategy_pool.address(), U256::from(200))
+                .approve(
+                    &tx_conn,
+                    god_key.clone(),
+                    strategy_pool.address(),
+                    U256::from(200),
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -850,6 +901,7 @@ mod tests {
             &tx_conn.clone().eth(),
             strategy_pool
                 .deposit(
+                    &tx_conn,
                     god_key,
                     assets.clone(),
                     amounts.clone(),
@@ -891,7 +943,12 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             mock_erc20_a
-                .mint(god_key.clone(), god_key.address(), U256::from(100))
+                .mint(
+                    &tx_conn,
+                    god_key.clone(),
+                    god_key.address(),
+                    U256::from(100),
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -901,7 +958,12 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             mock_erc20_a
-                .approve(god_key.clone(), strategy_pool.address(), U256::from(200))
+                .approve(
+                    &tx_conn,
+                    god_key.clone(),
+                    strategy_pool.address(),
+                    U256::from(200),
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -915,6 +977,7 @@ mod tests {
             &tx_conn.clone().eth(),
             strategy_pool
                 .deposit(
+                    &tx_conn,
                     god_key,
                     assets.clone(),
                     amounts.clone(),
@@ -978,7 +1041,7 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.eth(),
             strategy_pool
-                .transfer_ownership(god_key.clone(), alice.address())
+                .transfer_ownership(&tx_conn, god_key.clone(), alice.address())
                 .await?,
             Duration::from_millis(1),
             10,
@@ -1013,7 +1076,12 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             mock_erc20_a
-                .mint(god_key.clone(), god_key.address(), U256::from(100))
+                .mint(
+                    &tx_conn,
+                    god_key.clone(),
+                    god_key.address(),
+                    U256::from(100),
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -1023,7 +1091,12 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             mock_erc20_a
-                .approve(god_key.clone(), strategy_pool.address(), U256::from(200))
+                .approve(
+                    &tx_conn,
+                    god_key.clone(),
+                    strategy_pool.address(),
+                    U256::from(200),
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -1037,6 +1110,7 @@ mod tests {
             &tx_conn.clone().eth(),
             strategy_pool
                 .deposit(
+                    &tx_conn,
                     god_key,
                     assets.clone(),
                     amounts.clone(),
@@ -1081,7 +1155,12 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             mock_erc20_a
-                .mint(god_key.clone(), god_key.address(), U256::from(100))
+                .mint(
+                    &tx_conn,
+                    god_key.clone(),
+                    god_key.address(),
+                    U256::from(100),
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -1091,7 +1170,12 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             mock_erc20_a
-                .approve(god_key.clone(), strategy_pool.address(), U256::from(200))
+                .approve(
+                    &tx_conn,
+                    god_key.clone(),
+                    strategy_pool.address(),
+                    U256::from(200),
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -1105,6 +1189,7 @@ mod tests {
             &tx_conn.clone().eth(),
             strategy_pool
                 .deposit(
+                    &tx_conn,
                     god_key,
                     assets.clone(),
                     amounts.clone(),
@@ -1149,7 +1234,12 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             mock_erc20_a
-                .mint(god_key.clone(), god_key.address(), U256::from(100))
+                .mint(
+                    &tx_conn,
+                    god_key.clone(),
+                    god_key.address(),
+                    U256::from(100),
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -1159,7 +1249,12 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             mock_erc20_a
-                .approve(god_key.clone(), strategy_pool.address(), U256::from(200))
+                .approve(
+                    &tx_conn,
+                    god_key.clone(),
+                    strategy_pool.address(),
+                    U256::from(200),
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -1173,6 +1268,7 @@ mod tests {
             &tx_conn.clone().eth(),
             strategy_pool
                 .deposit(
+                    &tx_conn,
                     god_key,
                     assets.clone(),
                     amounts.clone(),
@@ -1217,7 +1313,12 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             mock_erc20_a
-                .mint(god_key.clone(), god_key.address(), U256::from(100))
+                .mint(
+                    &tx_conn,
+                    god_key.clone(),
+                    god_key.address(),
+                    U256::from(100),
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -1227,7 +1328,12 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             mock_erc20_a
-                .approve(god_key.clone(), strategy_pool.address(), U256::from(200))
+                .approve(
+                    &tx_conn,
+                    god_key.clone(),
+                    strategy_pool.address(),
+                    U256::from(200),
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -1241,6 +1347,7 @@ mod tests {
             &tx_conn.clone().eth(),
             strategy_pool
                 .deposit(
+                    &tx_conn,
                     god_key,
                     assets.clone(),
                     amounts.clone(),
@@ -1288,7 +1395,12 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             mock_erc20_a
-                .mint(god_key.clone(), god_key.address(), U256::from(100))
+                .mint(
+                    &tx_conn,
+                    god_key.clone(),
+                    god_key.address(),
+                    U256::from(100),
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -1298,7 +1410,12 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             mock_erc20_a
-                .approve(god_key.clone(), strategy_pool.address(), U256::from(200))
+                .approve(
+                    &tx_conn,
+                    god_key.clone(),
+                    strategy_pool.address(),
+                    U256::from(200),
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -1312,6 +1429,7 @@ mod tests {
             &tx_conn.clone().eth(),
             strategy_pool
                 .deposit(
+                    &tx_conn,
                     god_key,
                     assets.clone(),
                     amounts.clone(),
@@ -1356,7 +1474,12 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             mock_erc20_a
-                .mint(god_key.clone(), god_key.address(), U256::from(100))
+                .mint(
+                    &tx_conn,
+                    god_key.clone(),
+                    god_key.address(),
+                    U256::from(100),
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -1366,7 +1489,12 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             mock_erc20_a
-                .approve(god_key.clone(), strategy_pool.address(), U256::from(200))
+                .approve(
+                    &tx_conn,
+                    god_key.clone(),
+                    strategy_pool.address(),
+                    U256::from(200),
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -1380,6 +1508,7 @@ mod tests {
             &tx_conn.clone().eth(),
             strategy_pool
                 .deposit(
+                    &tx_conn,
                     god_key,
                     assets.clone(),
                     amounts.clone(),
@@ -1427,7 +1556,12 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             mock_erc20_a
-                .mint(god_key.clone(), god_key.address(), U256::from(100))
+                .mint(
+                    &tx_conn,
+                    god_key.clone(),
+                    god_key.address(),
+                    U256::from(100),
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -1437,7 +1571,12 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             mock_erc20_a
-                .approve(god_key.clone(), strategy_pool.address(), U256::from(200))
+                .approve(
+                    &tx_conn,
+                    god_key.clone(),
+                    strategy_pool.address(),
+                    U256::from(200),
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -1451,6 +1590,7 @@ mod tests {
             &tx_conn.clone().eth(),
             strategy_pool
                 .deposit(
+                    &tx_conn,
                     god_key,
                     assets.clone(),
                     amounts.clone(),
@@ -1495,7 +1635,12 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             mock_erc20_a
-                .mint(god_key.clone(), god_key.address(), U256::from(100))
+                .mint(
+                    &tx_conn,
+                    god_key.clone(),
+                    god_key.address(),
+                    U256::from(100),
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -1505,7 +1650,12 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             mock_erc20_b
-                .mint(god_key.clone(), god_key.address(), U256::from(200))
+                .mint(
+                    &tx_conn,
+                    god_key.clone(),
+                    god_key.address(),
+                    U256::from(200),
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -1515,7 +1665,12 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             mock_erc20_a
-                .approve(god_key.clone(), strategy_pool.address(), U256::from(100))
+                .approve(
+                    &tx_conn,
+                    god_key.clone(),
+                    strategy_pool.address(),
+                    U256::from(100),
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -1525,7 +1680,12 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             mock_erc20_b
-                .approve(god_key.clone(), strategy_pool.address(), U256::from(200))
+                .approve(
+                    &tx_conn,
+                    god_key.clone(),
+                    strategy_pool.address(),
+                    U256::from(200),
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -1549,6 +1709,7 @@ mod tests {
             &tx_conn.clone().eth(),
             strategy_pool
                 .deposit(
+                    &tx_conn,
                     god_key.clone(),
                     assets.clone(),
                     amounts.clone(),
@@ -1614,7 +1775,12 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             mock_erc20_a
-                .mint(god_key.clone(), god_key.address(), U256::from(100))
+                .mint(
+                    &tx_conn,
+                    god_key.clone(),
+                    god_key.address(),
+                    U256::from(100),
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -1624,7 +1790,12 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             mock_erc20_a
-                .approve(god_key.clone(), strategy_pool.address(), U256::from(200))
+                .approve(
+                    &tx_conn,
+                    god_key.clone(),
+                    strategy_pool.address(),
+                    U256::from(200),
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -1638,6 +1809,7 @@ mod tests {
             &tx_conn.clone().eth(),
             strategy_pool
                 .deposit(
+                    &tx_conn,
                     god_key,
                     assets.clone(),
                     amounts.clone(),
@@ -1682,7 +1854,12 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             mock_erc20_a
-                .mint(god_key.clone(), god_key.address(), U256::from(100))
+                .mint(
+                    &tx_conn,
+                    god_key.clone(),
+                    god_key.address(),
+                    U256::from(100),
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -1692,7 +1869,12 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             mock_erc20_a
-                .approve(god_key.clone(), strategy_pool.address(), U256::from(200))
+                .approve(
+                    &tx_conn,
+                    god_key.clone(),
+                    strategy_pool.address(),
+                    U256::from(200),
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -1706,6 +1888,7 @@ mod tests {
             &tx_conn.clone().eth(),
             strategy_pool
                 .deposit(
+                    &tx_conn,
                     god_key,
                     assets.clone(),
                     amounts.clone(),
@@ -1754,7 +1937,12 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             mock_erc20_a
-                .mint(god_key.clone(), god_key.address(), U256::from(100))
+                .mint(
+                    &tx_conn,
+                    god_key.clone(),
+                    god_key.address(),
+                    U256::from(100),
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -1764,7 +1952,12 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             mock_erc20_a
-                .approve(god_key.clone(), strategy_pool.address(), U256::from(200))
+                .approve(
+                    &tx_conn,
+                    god_key.clone(),
+                    strategy_pool.address(),
+                    U256::from(200),
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -1778,6 +1971,7 @@ mod tests {
             &tx_conn.clone().eth(),
             strategy_pool
                 .deposit(
+                    &tx_conn,
                     god_key,
                     assets.clone(),
                     amounts.clone(),
@@ -1819,13 +2013,25 @@ mod tests {
 
         assert!(matches!(
             strategy_pool
-                .redeem(alice.clone(), U256::zero(), alice.address, alice.address)
+                .redeem(
+                    &tx_conn,
+                    alice.clone(),
+                    U256::zero(),
+                    alice.address,
+                    alice.address
+                )
                 .await,
             Err(_)
         ));
         assert!(matches!(
             strategy_pool
-                .redeem(alice.clone(), U256::from(1), alice.address, alice.address)
+                .redeem(
+                    &tx_conn,
+                    alice.clone(),
+                    U256::from(1),
+                    alice.address,
+                    alice.address
+                )
                 .await,
             Err(_)
         ));
@@ -1833,7 +2039,12 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             mock_erc20_a
-                .mint(god_key.clone(), god_key.address(), U256::from(100))
+                .mint(
+                    &tx_conn,
+                    god_key.clone(),
+                    god_key.address(),
+                    U256::from(100),
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -1843,7 +2054,12 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             mock_erc20_a
-                .approve(god_key.clone(), strategy_pool.address(), U256::from(200))
+                .approve(
+                    &tx_conn,
+                    god_key.clone(),
+                    strategy_pool.address(),
+                    U256::from(200),
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -1868,6 +2084,7 @@ mod tests {
             &tx_conn.clone().eth(),
             strategy_pool
                 .deposit(
+                    &tx_conn,
                     god_key.clone(),
                     assets.clone(),
                     amounts.clone(),
@@ -1897,7 +2114,13 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             strategy_pool
-                .redeem(alice.clone(), U256::from(1), alice.address, alice.address)
+                .redeem(
+                    &tx_conn,
+                    alice.clone(),
+                    U256::from(1),
+                    alice.address,
+                    alice.address,
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -1944,7 +2167,12 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             mock_erc20_a
-                .mint(god_key.clone(), god_key.address(), U256::from(100))
+                .mint(
+                    &tx_conn,
+                    god_key.clone(),
+                    god_key.address(),
+                    U256::from(100),
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -1954,7 +2182,12 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             mock_erc20_a
-                .approve(god_key.clone(), strategy_pool.address(), U256::from(100))
+                .approve(
+                    &tx_conn,
+                    god_key.clone(),
+                    strategy_pool.address(),
+                    U256::from(100),
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -1979,6 +2212,7 @@ mod tests {
             &tx_conn.clone().eth(),
             strategy_pool
                 .deposit(
+                    &tx_conn,
                     god_key.clone(),
                     assets.clone(),
                     amounts.clone(),
@@ -2012,7 +2246,12 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             strategy_pool
-                .acquire_asset_before_trade(god_key.clone(), mock_erc20_a.address, U256::from(100))
+                .acquire_asset_before_trade(
+                    &tx_conn,
+                    god_key.clone(),
+                    mock_erc20_a.address,
+                    U256::from(100),
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -2062,7 +2301,12 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             mock_erc20_a
-                .mint(god_key.clone(), god_key.address(), U256::from(100))
+                .mint(
+                    &tx_conn,
+                    god_key.clone(),
+                    god_key.address(),
+                    U256::from(100),
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -2072,7 +2316,12 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             mock_erc20_a
-                .approve(god_key.clone(), strategy_pool.address(), U256::from(100))
+                .approve(
+                    &tx_conn,
+                    god_key.clone(),
+                    strategy_pool.address(),
+                    U256::from(100),
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -2097,6 +2346,7 @@ mod tests {
             &tx_conn.clone().eth(),
             strategy_pool
                 .deposit(
+                    &tx_conn,
                     god_key.clone(),
                     assets.clone(),
                     amounts.clone(),
@@ -2130,7 +2380,12 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             strategy_pool
-                .acquire_asset_before_trade(god_key.clone(), mock_erc20_a.address, U256::from(100))
+                .acquire_asset_before_trade(
+                    &tx_conn,
+                    god_key.clone(),
+                    mock_erc20_a.address,
+                    U256::from(100),
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -2158,7 +2413,12 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             mock_erc20_a
-                .approve(god_key.clone(), strategy_pool.address(), U256::from(100))
+                .approve(
+                    &tx_conn,
+                    god_key.clone(),
+                    strategy_pool.address(),
+                    U256::from(100),
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -2169,6 +2429,7 @@ mod tests {
             &tx_conn.clone().eth(),
             strategy_pool
                 .give_back_assets_after_trade(
+                    &tx_conn,
                     god_key.clone(),
                     vec![mock_erc20_a.address],
                     vec![U256::from(100)],
@@ -2224,7 +2485,12 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             mock_erc20_a
-                .mint(god_key.clone(), god_key.address(), U256::from(100))
+                .mint(
+                    &tx_conn,
+                    god_key.clone(),
+                    god_key.address(),
+                    U256::from(100),
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -2234,7 +2500,12 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             mock_erc20_a
-                .approve(god_key.clone(), strategy_pool.address(), U256::from(100))
+                .approve(
+                    &tx_conn,
+                    god_key.clone(),
+                    strategy_pool.address(),
+                    U256::from(100),
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -2248,6 +2519,7 @@ mod tests {
             &tx_conn.clone().eth(),
             strategy_pool
                 .deposit(
+                    &tx_conn,
                     god_key.clone(),
                     assets.clone(),
                     amounts.clone(),
@@ -2265,7 +2537,12 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             strategy_pool
-                .acquire_asset_before_trade(god_key.clone(), mock_erc20_a.address, U256::from(100))
+                .acquire_asset_before_trade(
+                    &tx_conn,
+                    god_key.clone(),
+                    mock_erc20_a.address,
+                    U256::from(100),
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -2277,7 +2554,12 @@ mod tests {
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             mock_erc20_a
-                .approve(god_key.clone(), strategy_pool.address(), U256::from(100))
+                .approve(
+                    &tx_conn,
+                    god_key.clone(),
+                    strategy_pool.address(),
+                    U256::from(100),
+                )
                 .await?,
             Duration::from_millis(1),
             10,
@@ -2288,6 +2570,7 @@ mod tests {
             &tx_conn.clone().eth(),
             strategy_pool
                 .give_back_assets_after_trade(
+                    &tx_conn,
                     god_key.clone(),
                     vec![mock_erc20_a.address],
                     vec![U256::from(100)],

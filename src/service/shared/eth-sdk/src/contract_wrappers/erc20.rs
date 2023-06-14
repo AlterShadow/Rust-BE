@@ -76,49 +76,159 @@ impl Erc20Token {
             .await?)
     }
 
-    pub async fn mint(&self, secret: impl Key, to: Address, amount: U256) -> Result<H256> {
-        Ok(self
-            .contract
-            .signed_call("mint", (to, amount), Options::default(), secret)
-            .await?)
-    }
-
-    pub async fn burn(&self, secret: impl Key, from: Address, amount: U256) -> Result<H256> {
-        Ok(self
-            .contract
-            .signed_call("burn", (from, amount), Options::default(), secret)
-            .await?)
-    }
-
-    pub async fn transfer(&self, secret: impl Key, to: Address, amount: U256) -> Result<H256> {
-        Ok(self
-            .contract
-            .signed_call("transfer", (to, amount), Options::default(), secret)
-            .await?)
-    }
-
-    pub async fn transfer_from(
+    pub async fn mint(
         &self,
+        conn: &EthereumRpcConnection,
         secret: impl Key,
-        from: Address,
         to: Address,
         amount: U256,
     ) -> Result<H256> {
+        let estimated_gas = self
+            .contract
+            .estimate_gas("mint", (to, amount), secret.address(), Options::default())
+            .await?;
+
+        let estimated_gas_price = conn.eth().gas_price().await?;
+
         Ok(self
             .contract
             .signed_call(
-                "transferFrom",
-                (from, to, amount),
-                Options::default(),
+                "mint",
+                (to, amount),
+                Options::with(|options| {
+                    options.gas = Some(estimated_gas);
+                    options.gas_price = Some(estimated_gas_price);
+                }),
                 secret,
             )
             .await?)
     }
 
-    pub async fn approve(&self, secret: impl Key, spender: Address, amount: U256) -> Result<H256> {
+    pub async fn burn(
+        &self,
+        conn: &EthereumRpcConnection,
+        secret: impl Key,
+        from: Address,
+        amount: U256,
+    ) -> Result<H256> {
+        let estimated_gas = self
+            .contract
+            .estimate_gas("burn", (from, amount), secret.address(), Options::default())
+            .await?;
+
+        let estimated_gas_price = conn.eth().gas_price().await?;
+
         Ok(self
             .contract
-            .signed_call("approve", (spender, amount), Options::default(), secret)
+            .signed_call(
+                "burn",
+                (from, amount),
+                Options::with(|options| {
+                    options.gas = Some(estimated_gas);
+                    options.gas_price = Some(estimated_gas_price);
+                }),
+                secret,
+            )
+            .await?)
+    }
+
+    pub async fn transfer(
+        &self,
+        conn: &EthereumRpcConnection,
+        secret: impl Key,
+        to: Address,
+        amount: U256,
+    ) -> Result<H256> {
+        let estimated_gas = self
+            .contract
+            .estimate_gas(
+                "transfer",
+                (to, amount),
+                secret.address(),
+                Options::default(),
+            )
+            .await?;
+
+        let estimated_gas_price = conn.eth().gas_price().await?;
+
+        Ok(self
+            .contract
+            .signed_call(
+                "transfer",
+                (to, amount),
+                Options::with(|options| {
+                    options.gas = Some(estimated_gas);
+                    options.gas_price = Some(estimated_gas_price);
+                }),
+                secret,
+            )
+            .await?)
+    }
+
+    pub async fn transfer_from(
+        &self,
+        conn: &EthereumRpcConnection,
+        secret: impl Key,
+        from: Address,
+        to: Address,
+        amount: U256,
+    ) -> Result<H256> {
+        let estimated_gas = self
+            .contract
+            .estimate_gas(
+                "transferFrom",
+                (from, to, amount),
+                secret.address(),
+                Options::default(),
+            )
+            .await?;
+
+        let estimated_gas_price = conn.eth().gas_price().await?;
+
+        Ok(self
+            .contract
+            .signed_call(
+                "transferFrom",
+                (from, to, amount),
+                Options::with(|options| {
+                    options.gas = Some(estimated_gas);
+                    options.gas_price = Some(estimated_gas_price);
+                }),
+                secret,
+            )
+            .await?)
+    }
+
+    pub async fn approve(
+        &self,
+        conn: &EthereumRpcConnection,
+        secret: impl Key,
+        spender: Address,
+        amount: U256,
+    ) -> Result<H256> {
+        let estimated_gas = self
+            .contract
+            .estimate_gas(
+                "approve",
+                (spender, amount),
+                secret.address(),
+                Options::default(),
+            )
+            .await?;
+
+        let estimated_gas_price = conn.eth().gas_price().await?;
+
+        Ok(self
+            .contract
+            .signed_call(
+                "approve",
+                (spender, amount),
+                Options::with(|options| {
+                    options.gas = Some(estimated_gas);
+                    options.gas_price = Some(estimated_gas_price);
+                }),
+                secret,
+            )
             .await?)
     }
 
@@ -174,7 +284,9 @@ pub async fn approve_and_ensure_success(
     amount: U256,
 ) -> Result<H256> {
     /* publish transaction */
-    let mut tx_hash = contract.approve(signer.clone(), spender, amount).await?;
+    let mut tx_hash = contract
+        .approve(&conn, signer.clone(), spender, amount)
+        .await?;
     let mut retries: usize = 0;
     while retries < max_retry {
         /* wait for transaction receipt */
@@ -215,7 +327,9 @@ pub async fn approve_and_ensure_success(
             TxStatus::Reverted | TxStatus::NotFound => {
                 /* transaction is reverted or doesn't exist after confirmations, try again */
                 retries += 1;
-                tx_hash = contract.approve(signer.clone(), spender, amount).await?;
+                tx_hash = contract
+                    .approve(&conn, signer.clone(), spender, amount)
+                    .await?;
             }
             _ => continue,
         }

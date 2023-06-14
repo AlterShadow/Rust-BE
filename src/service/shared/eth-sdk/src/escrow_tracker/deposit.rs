@@ -87,10 +87,15 @@ mod tests {
         let conn = conn_pool.get(EnumBlockChain::LocalNet).await?;
         let erc20_mock = deploy_mock_erc20(conn.clone(), admin_key.clone()).await?;
         erc20_mock
-            .mint(&admin_key.key, user_key.address, U256::from(20000000))
+            .mint(
+                &conn,
+                &admin_key.key,
+                user_key.address,
+                U256::from(20000000),
+            )
             .await?;
         let tx_hash = erc20_mock
-            .transfer(&user_key.key, escrow_key.address, U256::from(20000))
+            .transfer(&conn, &user_key.key, escrow_key.address, U256::from(20000))
             .await?;
         let db = connect_to_database(database_test_config()).await?;
         let ret = db

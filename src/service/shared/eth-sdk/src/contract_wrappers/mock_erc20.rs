@@ -62,24 +62,24 @@ mod tests {
         assert_eq!(mock_erc20.balance_of(alice.address).await?, U256::from(0));
         assert_eq!(mock_erc20.total_supply().await?, U256::from(0));
         mock_erc20
-            .mint(key.clone(), alice.address, U256::from(10))
+            .mint(&conn, key.clone(), alice.address, U256::from(10))
             .await?;
         assert_eq!(mock_erc20.balance_of(alice.address).await?, U256::from(10));
         assert_eq!(mock_erc20.total_supply().await?, U256::from(10));
         mock_erc20
-            .burn(key.clone(), alice.address, U256::from(5))
+            .burn(&conn, key.clone(), alice.address, U256::from(5))
             .await?;
         assert_eq!(mock_erc20.balance_of(alice.address).await?, U256::from(5));
         assert_eq!(mock_erc20.total_supply().await?, U256::from(5));
 
         mock_erc20
-            .transfer(alice.clone(), bob.address, U256::from(5))
+            .transfer(&conn, alice.clone(), bob.address, U256::from(5))
             .await?;
         assert_eq!(mock_erc20.balance_of(alice.address).await?, U256::from(0));
         assert_eq!(mock_erc20.balance_of(bob.address).await?, U256::from(5));
 
         mock_erc20
-            .approve(bob.clone(), charlie.address, U256::from(5))
+            .approve(&conn, bob.clone(), charlie.address, U256::from(5))
             .await?;
         assert_eq!(mock_erc20.balance_of(bob.address).await?, U256::from(5));
         assert_eq!(mock_erc20.balance_of(charlie.address).await?, U256::from(0));
@@ -90,7 +90,13 @@ mod tests {
         assert_eq!(mock_erc20.total_supply().await?, U256::from(5));
 
         mock_erc20
-            .transfer_from(charlie.clone(), bob.address, alice.address, U256::from(5))
+            .transfer_from(
+                &conn,
+                charlie.clone(),
+                bob.address,
+                alice.address,
+                U256::from(5),
+            )
             .await?;
         assert_eq!(
             mock_erc20.allowance(bob.address, charlie.address).await?,
@@ -103,7 +109,7 @@ mod tests {
 
         /* reset */
         mock_erc20
-            .burn(key.clone(), alice.address, U256::from(5))
+            .burn(&conn, key.clone(), alice.address, U256::from(5))
             .await?;
         assert_eq!(mock_erc20.total_supply().await?, U256::from(0));
 
@@ -112,7 +118,7 @@ mod tests {
             tx_checker
                 .status(
                     mock_erc20
-                        .transfer(alice.clone(), bob.address, U256::from(1))
+                        .transfer(&conn, alice.clone(), bob.address, U256::from(1))
                         .await?
                 )
                 .await?,
@@ -122,7 +128,7 @@ mod tests {
             tx_checker
                 .status(
                     mock_erc20
-                        .transfer(bob.clone(), alice.address, U256::from(1))
+                        .transfer(&conn, bob.clone(), alice.address, U256::from(1))
                         .await?
                 )
                 .await?,
@@ -132,23 +138,29 @@ mod tests {
             tx_checker
                 .status(
                     mock_erc20
-                        .transfer(charlie.clone(), alice.address, U256::from(1))
+                        .transfer(&conn, charlie.clone(), alice.address, U256::from(1))
                         .await?
                 )
                 .await?,
             TxStatus::Reverted,
         );
         mock_erc20
-            .mint(key.clone(), alice.address, U256::from(10))
+            .mint(&conn, key.clone(), alice.address, U256::from(10))
             .await?;
         mock_erc20
-            .approve(alice.clone(), bob.address, U256::from(5))
+            .approve(&conn, alice.clone(), bob.address, U256::from(5))
             .await?;
         assert_eq!(
             tx_checker
                 .status(
                     mock_erc20
-                        .transfer_from(bob.clone(), alice.address, charlie.address, U256::from(6),)
+                        .transfer_from(
+                            &conn,
+                            bob.clone(),
+                            alice.address,
+                            charlie.address,
+                            U256::from(6),
+                        )
                         .await?
                 )
                 .await?,
@@ -158,7 +170,7 @@ mod tests {
             tx_checker
                 .status(
                     mock_erc20
-                        .transfer(alice.clone(), charlie.address, U256::from(11))
+                        .transfer(&conn, alice.clone(), charlie.address, U256::from(11))
                         .await?
                 )
                 .await?,
