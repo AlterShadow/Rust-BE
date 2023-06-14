@@ -360,7 +360,6 @@ BEGIN
                 ORDER BY a.pkey_id
                 LIMIT a_limit
                 OFFSET a_offset;
-                    ;
 END
             
 $$;
@@ -618,7 +617,7 @@ BEGIN
                         s.risk_score                         as risk_score,
                         s.aum                                as aum,
                         EXISTS(SELECT * FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.fkey_user_id = a_user_id AND ufs.unfollowed = FALSE)                                   AS followed
-                 FROM tbl.strategy AS a
+                 FROM tbl.strategy AS s
                           JOIN tbl.user_follow_strategy AS b ON b.fkey_strategy_id = s.pkey_id
                      AND b.fkey_user_id = a_user_id
                  WHERE unfollowed = FALSE
