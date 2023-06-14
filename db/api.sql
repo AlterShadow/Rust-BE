@@ -261,6 +261,21 @@ END
 $$;
         
 
+CREATE OR REPLACE FUNCTION api.fun_auth_update_username(a_user_id bigint, a_username varchar)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    UPDATE tbl.user SET username = a_username,
+                updated_at = EXTRACT(EPOCH FROM NOW())::bigint
+     WHERE pkey_id = a_user_id;
+    
+END
+            
+$$;
+        
+
 CREATE OR REPLACE FUNCTION api.fun_user_follow_strategy(a_user_id bigint, a_strategy_id bigint)
 RETURNS table (
     "success" boolean

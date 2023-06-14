@@ -223,6 +223,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
             "UserUpdateUserProfile",
             20172,
             vec![
+                Field::new("username", Type::optional(Type::String)),
                 Field::new("description", Type::optional(Type::String)),
                 Field::new("social_media", Type::optional(Type::String)),
             ],

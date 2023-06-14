@@ -888,6 +888,12 @@
           "code": 20172,
           "parameters": [
             {
+              "name": "username",
+              "ty": {
+                "Optional": "String"
+              }
+            },
+            {
               "name": "description",
               "ty": {
                 "Optional": "String"

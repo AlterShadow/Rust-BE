@@ -282,5 +282,21 @@ BEGIN
 END
             "#,
         ),
+        ProceduralFunction::new(
+            "fun_auth_update_username",
+            vec![
+                Field::new("user_id", Type::BigInt),
+                Field::new("username", Type::String),
+            ],
+            vec![],
+            r#"
+BEGIN
+    UPDATE tbl.user SET username = a_username,
+                updated_at = EXTRACT(EPOCH FROM NOW())::bigint
+     WHERE pkey_id = a_user_id;
+    
+END
+            "#,
+        ),
     ]
 }

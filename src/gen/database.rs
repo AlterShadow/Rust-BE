@@ -236,6 +236,32 @@ impl DatabaseRequest for FunAuthChangeLoginWalletAddressReq {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAuthUpdateUsernameReq {
+    pub user_id: i64,
+    pub username: String,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAuthUpdateUsernameRespRow {}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunAuthUpdateUsernameReq {
+    type ResponseRow = FunAuthUpdateUsernameRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_auth_update_username(a_user_id => $1::bigint, a_username => $2::varchar);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.username as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunAuthUpdateUsernameRespRow> {
+        let r = FunAuthUpdateUsernameRespRow {};
+        Ok(r)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserFollowStrategyReq {
     pub user_id: i64,
     pub strategy_id: i64,

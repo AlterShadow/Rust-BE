@@ -1890,6 +1890,8 @@ pub struct UserUnfollowStrategyResponse {
 #[serde(rename_all = "camelCase")]
 pub struct UserUpdateUserProfileRequest {
     #[serde(default)]
+    pub username: Option<String>,
+    #[serde(default)]
     pub description: Option<String>,
     #[serde(default)]
     pub social_media: Option<String>,
@@ -2906,6 +2908,12 @@ impl WsRequest for UserUpdateUserProfileRequest {
   "name": "UserUpdateUserProfile",
   "code": 20172,
   "parameters": [
+    {
+      "name": "username",
+      "ty": {
+        "Optional": "String"
+      }
+    },
     {
       "name": "description",
       "ty": {

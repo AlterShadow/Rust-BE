@@ -1393,8 +1393,16 @@ impl RequestHandler for MethodUserUpdateUserProfile {
         req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
+        // TODO: handle 2nd db for auth
         async move {
             ensure_user_role(ctx, EnumRole::User)?;
+            if let Some(username) = req.username {
+                db.execute(FunAuthUpdateUsernameReq {
+                    user_id: ctx.user_id,
+                    username,
+                })
+                .await?;
+            }
             let expert = db
                 .execute(FunUserGetUserProfileReq {
                     user_id: ctx.user_id,
