@@ -1404,13 +1404,14 @@ impl RequestHandler for MethodUserUpdateUserProfile {
         // TODO: handle 2nd db for auth
         async move {
             ensure_user_role(ctx, EnumRole::User)?;
-            if let Some(username) = req.username {
-                db.execute(FunAuthUpdateUsernameReq {
-                    user_id: ctx.user_id,
-                    username,
-                })
-                .await?;
-            }
+            db.execute(FunAuthUpdateUserTableReq {
+                user_id: ctx.user_id,
+                username: req.username,
+                family_name: req.family_name,
+                given_name: req.given_name,
+            })
+            .await?;
+
             let expert = db
                 .execute(FunUserGetUserProfileReq {
                     user_id: ctx.user_id,

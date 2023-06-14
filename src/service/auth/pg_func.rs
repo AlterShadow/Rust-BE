@@ -283,16 +283,22 @@ END
             "#,
         ),
         ProceduralFunction::new(
-            "fun_auth_update_username",
+            "fun_auth_update_user_table",
             vec![
                 Field::new("user_id", Type::BigInt),
-                Field::new("username", Type::String),
+                Field::new("username", Type::optional(Type::String)),
+                Field::new("family_name", Type::optional(Type::String)),
+                Field::new("given_name", Type::optional(Type::String)),
             ],
             vec![],
             r#"
 BEGIN
-    UPDATE tbl.user SET username = a_username,
-                updated_at = EXTRACT(EPOCH FROM NOW())::bigint
+    UPDATE tbl.user 
+    SET
+        username = COALESCE(a_username, username),
+        family_name = COALESCE(a_family_name, family_name),
+        given_name = COALESCE(a_given_name, given_name),
+        updated_at = EXTRACT(EPOCH FROM NOW())::bigint
      WHERE pkey_id = a_user_id;
     
 END

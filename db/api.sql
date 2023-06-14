@@ -261,14 +261,18 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_auth_update_username(a_user_id bigint, a_username varchar)
+CREATE OR REPLACE FUNCTION api.fun_auth_update_user_table(a_user_id bigint, a_username varchar DEFAULT NULL, a_family_name varchar DEFAULT NULL, a_given_name varchar DEFAULT NULL)
 RETURNS void
 LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    UPDATE tbl.user SET username = a_username,
-                updated_at = EXTRACT(EPOCH FROM NOW())::bigint
+    UPDATE tbl.user 
+    SET
+        username = COALESCE(a_username, username),
+        family_name = COALESCE(a_family_name, family_name),
+        given_name = COALESCE(a_given_name, given_name),
+        updated_at = EXTRACT(EPOCH FROM NOW())::bigint
      WHERE pkey_id = a_user_id;
     
 END

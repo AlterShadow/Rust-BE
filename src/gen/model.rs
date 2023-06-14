@@ -1902,6 +1902,10 @@ pub struct UserUpdateUserProfileRequest {
     #[serde(default)]
     pub username: Option<String>,
     #[serde(default)]
+    pub family_name: Option<String>,
+    #[serde(default)]
+    pub given_name: Option<String>,
+    #[serde(default)]
     pub description: Option<String>,
     #[serde(default)]
     pub social_media: Option<String>,
@@ -2920,6 +2924,18 @@ impl WsRequest for UserUpdateUserProfileRequest {
   "parameters": [
     {
       "name": "username",
+      "ty": {
+        "Optional": "String"
+      }
+    },
+    {
+      "name": "family_name",
+      "ty": {
+        "Optional": "String"
+      }
+    },
+    {
+      "name": "given_name",
       "ty": {
         "Optional": "String"
       }

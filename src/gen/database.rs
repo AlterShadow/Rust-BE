@@ -236,27 +236,34 @@ impl DatabaseRequest for FunAuthChangeLoginWalletAddressReq {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunAuthUpdateUsernameReq {
+pub struct FunAuthUpdateUserTableReq {
     pub user_id: i64,
-    pub username: String,
+    #[serde(default)]
+    pub username: Option<String>,
+    #[serde(default)]
+    pub family_name: Option<String>,
+    #[serde(default)]
+    pub given_name: Option<String>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunAuthUpdateUsernameRespRow {}
+pub struct FunAuthUpdateUserTableRespRow {}
 
 #[allow(unused_variables)]
-impl DatabaseRequest for FunAuthUpdateUsernameReq {
-    type ResponseRow = FunAuthUpdateUsernameRespRow;
+impl DatabaseRequest for FunAuthUpdateUserTableReq {
+    type ResponseRow = FunAuthUpdateUserTableRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_auth_update_username(a_user_id => $1::bigint, a_username => $2::varchar);"
+        "SELECT * FROM api.fun_auth_update_user_table(a_user_id => $1::bigint, a_username => $2::varchar, a_family_name => $3::varchar, a_given_name => $4::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
             &self.user_id as &(dyn ToSql + Sync),
             &self.username as &(dyn ToSql + Sync),
+            &self.family_name as &(dyn ToSql + Sync),
+            &self.given_name as &(dyn ToSql + Sync),
         ]
     }
-    fn parse_row(&self, row: Row) -> Result<FunAuthUpdateUsernameRespRow> {
-        let r = FunAuthUpdateUsernameRespRow {};
+    fn parse_row(&self, row: Row) -> Result<FunAuthUpdateUserTableRespRow> {
+        let r = FunAuthUpdateUserTableRespRow {};
         Ok(r)
     }
 }
