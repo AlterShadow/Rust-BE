@@ -58,7 +58,11 @@ END
         ),
         ProceduralFunction::new(
             "fun_user_list_followed_strategies",
-            vec![Field::new("user_id", Type::BigInt)],
+            vec![
+                Field::new("user_id", Type::BigInt),
+                Field::new("limit", Type::BigInt),
+                Field::new("offset", Type::BigInt),
+            ],
             vec![
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("strategy_name", Type::String),
@@ -83,13 +87,20 @@ BEGIN
                           TRUE as followed
                  FROM tbl.strategy AS a 
                      JOIN tbl.user_follow_strategy AS b ON b.fkey_strategy_id = a.pkey_id WHERE b.fkey_user_id = a_user_id AND unfollowed = FALSE
+                ORDER BY a.pkey_id
+                LIMIT a_limit
+                OFFSET a_offset;
                     ;
 END
             "#,
         ),
         ProceduralFunction::new(
             "fun_user_list_strategies",
-            vec![Field::new("user_id", Type::BigInt)],
+            vec![
+                Field::new("user_id", Type::BigInt),
+                Field::new("limit", Type::BigInt),
+                Field::new("offset", Type::BigInt),
+            ],
             vec![
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("strategy_name", Type::String),
@@ -114,7 +125,10 @@ BEGIN
                           s.aum as aum,
                           {followed} as followed
                  FROM tbl.strategy AS s
-                    ;
+                ORDER BY s.pkey_id
+                LIMIT a_limit
+                OFFSET a_offset;
+
 
 END
             "#,
@@ -123,7 +137,10 @@ END
         ),
         ProceduralFunction::new(
             "fun_user_list_top_performing_strategies",
-            vec![],
+            vec![
+                Field::new("limit", Type::BigInt),
+                Field::new("offset", Type::BigInt),
+            ],
             vec![
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("strategy_name", Type::String),
@@ -147,8 +164,9 @@ BEGIN
                           a.aum as aum
                  FROM tbl.strategy AS a 
                  ORDER BY a.aum
-                 LIMIT 10
-                    ;
+                LIMIT a_limit
+                OFFSET a_offset;
+
 END
             "#,
         ),
@@ -311,7 +329,11 @@ END
         ),
         ProceduralFunction::new(
             "fun_user_list_backed_strategies",
-            vec![Field::new("user_id", Type::BigInt)],
+            vec![
+                Field::new("user_id", Type::BigInt),
+                Field::new("offset", Type::BigInt),
+                Field::new("limit", Type::BigInt),
+            ],
             vec![
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("strategy_name", Type::String),
@@ -321,28 +343,36 @@ END
                 Field::new("backers", Type::BigInt),
                 Field::new("risk_score", Type::optional(Type::Numeric)),
                 Field::new("aum", Type::optional(Type::Numeric)),
+                Field::new("followed", Type::Boolean),
             ],
-            r#"
+            format!(
+                r#"
 BEGIN
-    RETURN QUERY SELECT a.pkey_id                            AS strategy_id,
-                        a.name                               AS strategy_name,
-                        a.description                        AS strategy_description,
+    RETURN QUERY SELECT s.pkey_id                            AS strategy_id,
+                        s.name                               AS strategy_name,
+                        s.description                        AS strategy_description,
                         0.0::double precision                AS net_value,
                         (SELECT COUNT(*)
                          FROM tbl.user_follow_strategy
-                         WHERE fkey_strategy_id = a.pkey_id
+                         WHERE fkey_strategy_id = s.pkey_id
                            AND unfollowed = FALSE)           AS followers,
                         (SELECT COUNT(DISTINCT user_back_strategy_history.fkey_user_id)
                          FROM tbl.user_back_strategy_history
-                         WHERE fkey_strategy_id = a.pkey_id) AS followers,
-                        a.risk_score                         as risk_score,
-                        a.aum                                as aum
+                         WHERE fkey_strategy_id = s.pkey_id) AS followers,
+                        s.risk_score                         as risk_score,
+                        s.aum                                as aum,
+                        {followed}                                   AS followed
                  FROM tbl.strategy AS a
-                          JOIN tbl.user_follow_strategy AS b ON b.fkey_strategy_id = a.pkey_id
+                          JOIN tbl.user_follow_strategy AS b ON b.fkey_strategy_id = s.pkey_id
                      AND b.fkey_user_id = a_user_id
-                 WHERE unfollowed = FALSE;
+                 WHERE unfollowed = FALSE
+                 ORDER BY s.pkey_id
+                 LIMIT a_limit
+                 OFFSET a_offset;
 END
 "#,
+                followed = check_if_user_follows_strategy()
+            ),
         ),
         ProceduralFunction::new(
             "fun_user_list_back_strategy_history",
@@ -1072,8 +1102,12 @@ END
 "#,
         ),
         ProceduralFunction::new(
-            "fun_user_list_followers",
-            vec![Field::new("user_id", Type::BigInt)],
+            "fun_expert_list_followers",
+            vec![
+                Field::new("user_id", Type::BigInt),
+                Field::new("limit", Type::BigInt),
+                Field::new("offset", Type::BigInt),
+            ],
             vec![
                 Field::new("public_id", Type::BigInt),
                 Field::new("username", Type::String),
@@ -1086,13 +1120,21 @@ END
 BEGIN
     RETURN QUERY SELECT b.pkey_id, b.username, b.family_name, b.given_name, a.created_at, b.created_at FROM tbl.user_follow_expert AS a
             INNER JOIN tbl.user AS b ON a.fkey_user_id = b.pkey_id
-            WHERE a.fkey_user_id = a_user_id;
+            WHERE a.fkey_user_id = a_user_id
+            ORDER BY a.pkey_id
+            LIMIT a_limit
+            OFFSET a_offset;
+
 END            
             "#,
         ),
         ProceduralFunction::new(
-            "fun_user_list_backers",
-            vec![Field::new("user_id", Type::BigInt)],
+            "fun_expert_list_backers",
+            vec![
+                Field::new("user_id", Type::BigInt),
+                Field::new("limit", Type::BigInt),
+                Field::new("offset", Type::BigInt),
+            ],
             vec![
                 Field::new("public_id", Type::BigInt),
                 Field::new("username", Type::String),
@@ -1105,7 +1147,10 @@ END
 BEGIN
     RETURN QUERY SELECT b.pkey_id, b.username, b.family_name, b.given_name, a.back_time, b.created_at FROM tbl.user_back_strategy_history AS a
             INNER JOIN tbl.user AS b ON a.fkey_user_id = b.pkey_id
-            WHERE a.fkey_user_id = a_user_id;
+            WHERE a.fkey_user_id = a_user_id
+            ORDER BY a.pkey_id
+            LIMIT a_limit
+            OFFSET a_offset;
 END
             "#,
         ),

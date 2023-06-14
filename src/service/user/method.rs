@@ -82,7 +82,7 @@ impl RequestHandler for MethodUserListFollowedStrategies {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        _req: Self::Request,
+        req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         async move {
@@ -91,6 +91,8 @@ impl RequestHandler for MethodUserListFollowedStrategies {
             let ret = db
                 .execute(FunUserListFollowedStrategiesReq {
                     user_id: ctx.user_id,
+                    limit: req.limit.unwrap_or(DEFAULT_LIMIT),
+                    offset: req.offset.unwrap_or(DEFAULT_OFFSET),
                 })
                 .await?;
             Ok(UserListFollowedStrategiesResponse {
@@ -127,7 +129,7 @@ impl RequestHandler for MethodUserListStrategies {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        _req: Self::Request,
+        req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         async move {
@@ -136,6 +138,8 @@ impl RequestHandler for MethodUserListStrategies {
             let ret = db
                 .execute(FunUserListStrategiesReq {
                     user_id: ctx.user_id,
+                    limit: req.limit.unwrap_or(DEFAULT_LIMIT),
+                    offset: req.offset.unwrap_or(DEFAULT_OFFSET),
                 })
                 .await?;
             Ok(UserListStrategiesResponse {
@@ -172,7 +176,7 @@ impl RequestHandler for MethodUserListTopPerformingStrategies {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        _req: Self::Request,
+        req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         async move {
@@ -182,6 +186,8 @@ impl RequestHandler for MethodUserListTopPerformingStrategies {
             let ret = db
                 .execute(FunUserListStrategiesReq {
                     user_id: ctx.user_id,
+                    limit: req.limit.unwrap_or(DEFAULT_LIMIT),
+                    offset: req.offset.unwrap_or(DEFAULT_OFFSET),
                 })
                 .await?;
             Ok(UserListTopPerformingStrategiesResponse {
@@ -426,7 +432,7 @@ impl RequestHandler for MethodUserListBackedStrategies {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        _req: Self::Request,
+        req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         async move {
@@ -434,6 +440,8 @@ impl RequestHandler for MethodUserListBackedStrategies {
             let ret = db
                 .execute(FunUserListBackedStrategiesReq {
                     user_id: ctx.user_id,
+                    offset: req.offset.unwrap_or(DEFAULT_OFFSET),
+                    limit: req.limit.unwrap_or(DEFAULT_LIMIT),
                 })
                 .await?;
             Ok(UserListBackedStrategiesResponse {
@@ -1467,8 +1475,15 @@ impl RequestHandler for MethodUserGetUserProfile {
             let followed_strategies = db
                 .execute(FunUserListFollowedStrategiesReq {
                     user_id: ctx.user_id,
-                    // offset: 0,
-                    // limit: DEFAULT_LIMIT,
+                    offset: 0,
+                    limit: DEFAULT_LIMIT,
+                })
+                .await?;
+            let backed_strategies = db
+                .execute(FunUserListBackedStrategiesReq {
+                    user_id: ctx.user_id,
+                    offset: 0,
+                    limit: DEFAULT_LIMIT,
                 })
                 .await?;
             // TODO: get followed experts, followed strategies, backed strategies
@@ -1501,8 +1516,42 @@ impl RequestHandler for MethodUserGetUserProfile {
                         approved_expert: x.approved_expert,
                     })
                     .collect(),
-                followed_strategies: followed_strategies.into_iter().map(|x| todo!()).collect(),
-                backed_strategies: vec![],
+                followed_strategies: followed_strategies
+                    .into_iter()
+                    .map(|x| ListStrategiesRow {
+                        strategy_id: x.strategy_id,
+                        strategy_name: x.strategy_name,
+                        strategy_description: x.strategy_description,
+                        net_value: x.net_value,
+                        followers: x.followers as _,
+                        backers: x.backers as _,
+                        risk_score: x.risk_score.unwrap_or_default(),
+                        aum: x.aum.unwrap_or_default(),
+                        followed: x.followed,
+                        swap_price: 233.0,
+                        price_change: 0.97,
+                        wallet_address: "0x000000000".to_owned(),
+                        blockchain: EnumBlockChain::EthereumMainnet,
+                    })
+                    .collect(),
+                backed_strategies: backed_strategies
+                    .into_iter()
+                    .map(|x| ListStrategiesRow {
+                        strategy_id: x.strategy_id,
+                        strategy_name: x.strategy_name,
+                        strategy_description: x.strategy_description,
+                        net_value: x.net_value,
+                        followers: x.followers as _,
+                        backers: x.backers as _,
+                        risk_score: x.risk_score.unwrap_or_default(),
+                        aum: x.aum.unwrap_or_default(),
+                        followed: x.followed,
+                        swap_price: 233.0,
+                        price_change: 0.97,
+                        wallet_address: "0x000000000".to_owned(),
+                        blockchain: EnumBlockChain::EthereumMainnet,
+                    })
+                    .collect(),
             })
         }
         .boxed()
@@ -2007,8 +2056,10 @@ impl RequestHandler for MethodExpertListFollowers {
             ensure_user_role(ctx, EnumRole::User)?;
 
             let ret = db
-                .execute(FunUserListFollowersReq {
+                .execute(FunExpertListFollowersReq {
                     user_id: ctx.user_id,
+                    limit: req.limit.unwrap_or(DEFAULT_LIMIT),
+                    offset: req.offset.unwrap_or(DEFAULT_OFFSET),
                 })
                 .await?;
 
@@ -2046,8 +2097,10 @@ impl RequestHandler for MethodExpertListBackers {
             ensure_user_role(ctx, EnumRole::Expert)?;
 
             let ret = db
-                .execute(FunUserListBackersReq {
+                .execute(FunExpertListBackersReq {
                     user_id: ctx.user_id,
+                    limit: req.limit.unwrap_or(DEFAULT_LIMIT),
+                    offset: req.offset.unwrap_or(DEFAULT_OFFSET),
                 })
                 .await?;
 

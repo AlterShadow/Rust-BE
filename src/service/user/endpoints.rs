@@ -741,7 +741,10 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
         EndpointSchema::new(
             "ExpertListFollowers",
             20340,
-            vec![],
+            vec![
+                Field::new("limit", Type::optional(Type::BigInt)),
+                Field::new("offset", Type::optional(Type::BigInt)),
+            ],
             vec![Field::new(
                 "followers",
                 Type::datatable(
@@ -760,7 +763,10 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
         EndpointSchema::new(
             "ExpertListBackers",
             20350,
-            vec![],
+            vec![
+                Field::new("limit", Type::optional(Type::BigInt)),
+                Field::new("offset", Type::optional(Type::BigInt)),
+            ],
             vec![Field::new(
                 "backers",
                 Type::datatable(

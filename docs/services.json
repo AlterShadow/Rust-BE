@@ -2602,7 +2602,20 @@
         {
           "name": "ExpertListFollowers",
           "code": 20340,
-          "parameters": [],
+          "parameters": [
+            {
+              "name": "limit",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "offset",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            }
+          ],
           "returns": [
             {
               "name": "followers",
@@ -2650,7 +2663,20 @@
         {
           "name": "ExpertListBackers",
           "code": 20350,
-          "parameters": [],
+          "parameters": [
+            {
+              "name": "limit",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "offset",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            }
+          ],
           "returns": [
             {
               "name": "backers",

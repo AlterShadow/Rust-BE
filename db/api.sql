@@ -326,7 +326,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_list_followed_strategies(a_user_id bigint)
+CREATE OR REPLACE FUNCTION api.fun_user_list_followed_strategies(a_user_id bigint, a_limit bigint, a_offset bigint)
 RETURNS table (
     "strategy_id" bigint,
     "strategy_name" varchar,
@@ -353,13 +353,16 @@ BEGIN
                           TRUE as followed
                  FROM tbl.strategy AS a 
                      JOIN tbl.user_follow_strategy AS b ON b.fkey_strategy_id = a.pkey_id WHERE b.fkey_user_id = a_user_id AND unfollowed = FALSE
+                ORDER BY a.pkey_id
+                LIMIT a_limit
+                OFFSET a_offset;
                     ;
 END
             
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_list_strategies(a_user_id bigint)
+CREATE OR REPLACE FUNCTION api.fun_user_list_strategies(a_user_id bigint, a_limit bigint, a_offset bigint)
 RETURNS table (
     "strategy_id" bigint,
     "strategy_name" varchar,
@@ -385,14 +388,17 @@ BEGIN
                           s.aum as aum,
                           EXISTS(SELECT * FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.fkey_user_id = a_user_id AND ufs.unfollowed = FALSE) as followed
                  FROM tbl.strategy AS s
-                    ;
+                ORDER BY s.pkey_id
+                LIMIT a_limit
+                OFFSET a_offset;
+
 
 END
             
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_list_top_performing_strategies()
+CREATE OR REPLACE FUNCTION api.fun_user_list_top_performing_strategies(a_limit bigint, a_offset bigint)
 RETURNS table (
     "strategy_id" bigint,
     "strategy_name" varchar,
@@ -418,8 +424,9 @@ BEGIN
                           a.aum as aum
                  FROM tbl.strategy AS a 
                  ORDER BY a.aum
-                 LIMIT 10
-                    ;
+                LIMIT a_limit
+                OFFSET a_offset;
+
 END
             
 $$;
@@ -577,7 +584,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_list_backed_strategies(a_user_id bigint)
+CREATE OR REPLACE FUNCTION api.fun_user_list_backed_strategies(a_user_id bigint, a_offset bigint, a_limit bigint)
 RETURNS table (
     "strategy_id" bigint,
     "strategy_name" varchar,
@@ -586,29 +593,34 @@ RETURNS table (
     "followers" bigint,
     "backers" bigint,
     "risk_score" double precision,
-    "aum" double precision
+    "aum" double precision,
+    "followed" boolean
 )
 LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY SELECT a.pkey_id                            AS strategy_id,
-                        a.name                               AS strategy_name,
-                        a.description                        AS strategy_description,
+    RETURN QUERY SELECT s.pkey_id                            AS strategy_id,
+                        s.name                               AS strategy_name,
+                        s.description                        AS strategy_description,
                         0.0::double precision                AS net_value,
                         (SELECT COUNT(*)
                          FROM tbl.user_follow_strategy
-                         WHERE fkey_strategy_id = a.pkey_id
+                         WHERE fkey_strategy_id = s.pkey_id
                            AND unfollowed = FALSE)           AS followers,
                         (SELECT COUNT(DISTINCT user_back_strategy_history.fkey_user_id)
                          FROM tbl.user_back_strategy_history
-                         WHERE fkey_strategy_id = a.pkey_id) AS followers,
-                        a.risk_score                         as risk_score,
-                        a.aum                                as aum
+                         WHERE fkey_strategy_id = s.pkey_id) AS followers,
+                        s.risk_score                         as risk_score,
+                        s.aum                                as aum,
+                        EXISTS(SELECT * FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.fkey_user_id = a_user_id AND ufs.unfollowed = FALSE)                                   AS followed
                  FROM tbl.strategy AS a
-                          JOIN tbl.user_follow_strategy AS b ON b.fkey_strategy_id = a.pkey_id
+                          JOIN tbl.user_follow_strategy AS b ON b.fkey_strategy_id = s.pkey_id
                      AND b.fkey_user_id = a_user_id
-                 WHERE unfollowed = FALSE;
+                 WHERE unfollowed = FALSE
+                 ORDER BY s.pkey_id
+                 LIMIT a_limit
+                 OFFSET a_offset;
 END
 
 $$;
@@ -1321,7 +1333,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_list_followers(a_user_id bigint)
+CREATE OR REPLACE FUNCTION api.fun_expert_list_followers(a_user_id bigint, a_limit bigint, a_offset bigint)
 RETURNS table (
     "public_id" bigint,
     "username" varchar,
@@ -1336,13 +1348,17 @@ AS $$
 BEGIN
     RETURN QUERY SELECT b.pkey_id, b.username, b.family_name, b.given_name, a.created_at, b.created_at FROM tbl.user_follow_expert AS a
             INNER JOIN tbl.user AS b ON a.fkey_user_id = b.pkey_id
-            WHERE a.fkey_user_id = a_user_id;
+            WHERE a.fkey_user_id = a_user_id
+            ORDER BY a.pkey_id
+            LIMIT a_limit
+            OFFSET a_offset;
+
 END            
             
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_list_backers(a_user_id bigint)
+CREATE OR REPLACE FUNCTION api.fun_expert_list_backers(a_user_id bigint, a_limit bigint, a_offset bigint)
 RETURNS table (
     "public_id" bigint,
     "username" varchar,
@@ -1357,7 +1373,10 @@ AS $$
 BEGIN
     RETURN QUERY SELECT b.pkey_id, b.username, b.family_name, b.given_name, a.back_time, b.created_at FROM tbl.user_back_strategy_history AS a
             INNER JOIN tbl.user AS b ON a.fkey_user_id = b.pkey_id
-            WHERE a.fkey_user_id = a_user_id;
+            WHERE a.fkey_user_id = a_user_id
+            ORDER BY a.pkey_id
+            LIMIT a_limit
+            OFFSET a_offset;
 END
             
 $$;

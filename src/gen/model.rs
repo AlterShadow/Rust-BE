@@ -1140,7 +1140,12 @@ pub struct ExpertCreateStrategyResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct ExpertListBackersRequest {}
+pub struct ExpertListBackersRequest {
+    #[serde(default)]
+    pub limit: Option<i64>,
+    #[serde(default)]
+    pub offset: Option<i64>,
+}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ExpertListBackersResponse {
@@ -1160,7 +1165,12 @@ pub struct ExpertListBackersRow {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct ExpertListFollowersRequest {}
+pub struct ExpertListFollowersRequest {
+    #[serde(default)]
+    pub limit: Option<i64>,
+    #[serde(default)]
+    pub offset: Option<i64>,
+}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ExpertListFollowersResponse {
@@ -4847,7 +4857,20 @@ impl WsRequest for ExpertListFollowersRequest {
     const SCHEMA: &'static str = r#"{
   "name": "ExpertListFollowers",
   "code": 20340,
-  "parameters": [],
+  "parameters": [
+    {
+      "name": "limit",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "offset",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    }
+  ],
   "returns": [
     {
       "name": "followers",
@@ -4903,7 +4926,20 @@ impl WsRequest for ExpertListBackersRequest {
     const SCHEMA: &'static str = r#"{
   "name": "ExpertListBackers",
   "code": 20350,
-  "parameters": [],
+  "parameters": [
+    {
+      "name": "limit",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "offset",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    }
+  ],
   "returns": [
     {
       "name": "backers",

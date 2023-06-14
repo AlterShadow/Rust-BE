@@ -53,8 +53,8 @@ ID: 2
 |20310|ExpertAddStrategyInitialTokenRatio|strategy_id, token_name, token_address, blockchain, quantity|success, token_id||
 |20320|ExpertRemoveStrategyInitialTokenRatio|strategy_id, token_id|success||
 |20330|UserListStrategyInitialTokenRatio|strategy_id|token_ratios||
-|20340|ExpertListFollowers||followers||
-|20350|ExpertListBackers||backers||
+|20340|ExpertListFollowers|limit, offset|followers||
+|20350|ExpertListBackers|limit, offset|backers||
 
 # admin Server
 ID: 3

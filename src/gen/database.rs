@@ -324,6 +324,8 @@ impl DatabaseRequest for FunUserUnfollowStrategyReq {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserListFollowedStrategiesReq {
     pub user_id: i64,
+    pub limit: i64,
+    pub offset: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserListFollowedStrategiesRespRow {
@@ -344,10 +346,14 @@ pub struct FunUserListFollowedStrategiesRespRow {
 impl DatabaseRequest for FunUserListFollowedStrategiesReq {
     type ResponseRow = FunUserListFollowedStrategiesRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_list_followed_strategies(a_user_id => $1::bigint);"
+        "SELECT * FROM api.fun_user_list_followed_strategies(a_user_id => $1::bigint, a_limit => $2::bigint, a_offset => $3::bigint);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
-        vec![&self.user_id as &(dyn ToSql + Sync)]
+        vec![
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.limit as &(dyn ToSql + Sync),
+            &self.offset as &(dyn ToSql + Sync),
+        ]
     }
     fn parse_row(&self, row: Row) -> Result<FunUserListFollowedStrategiesRespRow> {
         let r = FunUserListFollowedStrategiesRespRow {
@@ -368,6 +374,8 @@ impl DatabaseRequest for FunUserListFollowedStrategiesReq {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserListStrategiesReq {
     pub user_id: i64,
+    pub limit: i64,
+    pub offset: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserListStrategiesRespRow {
@@ -388,10 +396,14 @@ pub struct FunUserListStrategiesRespRow {
 impl DatabaseRequest for FunUserListStrategiesReq {
     type ResponseRow = FunUserListStrategiesRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_list_strategies(a_user_id => $1::bigint);"
+        "SELECT * FROM api.fun_user_list_strategies(a_user_id => $1::bigint, a_limit => $2::bigint, a_offset => $3::bigint);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
-        vec![&self.user_id as &(dyn ToSql + Sync)]
+        vec![
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.limit as &(dyn ToSql + Sync),
+            &self.offset as &(dyn ToSql + Sync),
+        ]
     }
     fn parse_row(&self, row: Row) -> Result<FunUserListStrategiesRespRow> {
         let r = FunUserListStrategiesRespRow {
@@ -410,7 +422,10 @@ impl DatabaseRequest for FunUserListStrategiesReq {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunUserListTopPerformingStrategiesReq {}
+pub struct FunUserListTopPerformingStrategiesReq {
+    pub limit: i64,
+    pub offset: i64,
+}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserListTopPerformingStrategiesRespRow {
     pub strategy_id: i64,
@@ -429,10 +444,13 @@ pub struct FunUserListTopPerformingStrategiesRespRow {
 impl DatabaseRequest for FunUserListTopPerformingStrategiesReq {
     type ResponseRow = FunUserListTopPerformingStrategiesRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_list_top_performing_strategies();"
+        "SELECT * FROM api.fun_user_list_top_performing_strategies(a_limit => $1::bigint, a_offset => $2::bigint);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
-        vec![]
+        vec![
+            &self.limit as &(dyn ToSql + Sync),
+            &self.offset as &(dyn ToSql + Sync),
+        ]
     }
     fn parse_row(&self, row: Row) -> Result<FunUserListTopPerformingStrategiesRespRow> {
         let r = FunUserListTopPerformingStrategiesRespRow {
@@ -673,6 +691,8 @@ impl DatabaseRequest for FunUserBackStrategyReq {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserListBackedStrategiesReq {
     pub user_id: i64,
+    pub offset: i64,
+    pub limit: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserListBackedStrategiesRespRow {
@@ -686,16 +706,21 @@ pub struct FunUserListBackedStrategiesRespRow {
     pub risk_score: Option<f64>,
     #[serde(default)]
     pub aum: Option<f64>,
+    pub followed: bool,
 }
 
 #[allow(unused_variables)]
 impl DatabaseRequest for FunUserListBackedStrategiesReq {
     type ResponseRow = FunUserListBackedStrategiesRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_list_backed_strategies(a_user_id => $1::bigint);"
+        "SELECT * FROM api.fun_user_list_backed_strategies(a_user_id => $1::bigint, a_offset => $2::bigint, a_limit => $3::bigint);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
-        vec![&self.user_id as &(dyn ToSql + Sync)]
+        vec![
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.offset as &(dyn ToSql + Sync),
+            &self.limit as &(dyn ToSql + Sync),
+        ]
     }
     fn parse_row(&self, row: Row) -> Result<FunUserListBackedStrategiesRespRow> {
         let r = FunUserListBackedStrategiesRespRow {
@@ -707,6 +732,7 @@ impl DatabaseRequest for FunUserListBackedStrategiesReq {
             backers: row.try_get(5)?,
             risk_score: row.try_get(6)?,
             aum: row.try_get(7)?,
+            followed: row.try_get(8)?,
         };
         Ok(r)
     }
@@ -1810,11 +1836,13 @@ impl DatabaseRequest for FunUserListStrategyInitialTokenRatiosReq {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunUserListFollowersReq {
+pub struct FunExpertListFollowersReq {
     pub user_id: i64,
+    pub limit: i64,
+    pub offset: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunUserListFollowersRespRow {
+pub struct FunExpertListFollowersRespRow {
     pub public_id: i64,
     pub username: String,
     #[serde(default)]
@@ -1826,16 +1854,20 @@ pub struct FunUserListFollowersRespRow {
 }
 
 #[allow(unused_variables)]
-impl DatabaseRequest for FunUserListFollowersReq {
-    type ResponseRow = FunUserListFollowersRespRow;
+impl DatabaseRequest for FunExpertListFollowersReq {
+    type ResponseRow = FunExpertListFollowersRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_list_followers(a_user_id => $1::bigint);"
+        "SELECT * FROM api.fun_expert_list_followers(a_user_id => $1::bigint, a_limit => $2::bigint, a_offset => $3::bigint);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
-        vec![&self.user_id as &(dyn ToSql + Sync)]
+        vec![
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.limit as &(dyn ToSql + Sync),
+            &self.offset as &(dyn ToSql + Sync),
+        ]
     }
-    fn parse_row(&self, row: Row) -> Result<FunUserListFollowersRespRow> {
-        let r = FunUserListFollowersRespRow {
+    fn parse_row(&self, row: Row) -> Result<FunExpertListFollowersRespRow> {
+        let r = FunExpertListFollowersRespRow {
             public_id: row.try_get(0)?,
             username: row.try_get(1)?,
             family_name: row.try_get(2)?,
@@ -1848,11 +1880,13 @@ impl DatabaseRequest for FunUserListFollowersReq {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunUserListBackersReq {
+pub struct FunExpertListBackersReq {
     pub user_id: i64,
+    pub limit: i64,
+    pub offset: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunUserListBackersRespRow {
+pub struct FunExpertListBackersRespRow {
     pub public_id: i64,
     pub username: String,
     #[serde(default)]
@@ -1864,16 +1898,20 @@ pub struct FunUserListBackersRespRow {
 }
 
 #[allow(unused_variables)]
-impl DatabaseRequest for FunUserListBackersReq {
-    type ResponseRow = FunUserListBackersRespRow;
+impl DatabaseRequest for FunExpertListBackersReq {
+    type ResponseRow = FunExpertListBackersRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_list_backers(a_user_id => $1::bigint);"
+        "SELECT * FROM api.fun_expert_list_backers(a_user_id => $1::bigint, a_limit => $2::bigint, a_offset => $3::bigint);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
-        vec![&self.user_id as &(dyn ToSql + Sync)]
+        vec![
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.limit as &(dyn ToSql + Sync),
+            &self.offset as &(dyn ToSql + Sync),
+        ]
     }
-    fn parse_row(&self, row: Row) -> Result<FunUserListBackersRespRow> {
-        let r = FunUserListBackersRespRow {
+    fn parse_row(&self, row: Row) -> Result<FunExpertListBackersRespRow> {
+        let r = FunExpertListBackersRespRow {
             public_id: row.try_get(0)?,
             username: row.try_get(1)?,
             family_name: row.try_get(2)?,
