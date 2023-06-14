@@ -57,9 +57,7 @@ mod tests {
         EthereumToken, TransactionFetcher, ANVIL_PRIV_KEY_1, ANVIL_PRIV_KEY_2,
     };
     use gen::model::{EnumBlockChain, EnumBlockchainCoin};
-    use lib::database::{
-        connect_to_database, database_test_config, drop_and_recreate_database,
-    };
+    use lib::database::{connect_to_database, database_test_config, drop_and_recreate_database};
     use lib::log::{setup_logs, LogLevel};
     use std::net::Ipv4Addr;
     use web3::types::U256;

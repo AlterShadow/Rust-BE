@@ -4,6 +4,7 @@ pub mod admin_endpoints;
 mod admin_method;
 pub mod endpoints;
 mod method;
+mod test_helper;
 
 use crate::admin_method::*;
 use crate::method::*;

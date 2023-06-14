@@ -1114,7 +1114,10 @@ pub struct FunUserGetUserProfileReq {
 pub struct FunUserGetUserProfileRespRow {
     #[serde(default)]
     pub expert_id: Option<i64>,
+    pub user_public_id: i64,
     pub name: String,
+    pub login_wallet: String,
+    pub joined_at: i64,
     #[serde(default)]
     pub follower_count: Option<i64>,
     #[serde(default)]
@@ -1141,13 +1144,16 @@ impl DatabaseRequest for FunUserGetUserProfileReq {
     fn parse_row(&self, row: Row) -> Result<FunUserGetUserProfileRespRow> {
         let r = FunUserGetUserProfileRespRow {
             expert_id: row.try_get(0)?,
-            name: row.try_get(1)?,
-            follower_count: row.try_get(2)?,
-            description: row.try_get(3)?,
-            social_media: row.try_get(4)?,
-            risk_score: row.try_get(5)?,
-            reputation_score: row.try_get(6)?,
-            aum: row.try_get(7)?,
+            user_public_id: row.try_get(1)?,
+            name: row.try_get(2)?,
+            login_wallet: row.try_get(3)?,
+            joined_at: row.try_get(4)?,
+            follower_count: row.try_get(5)?,
+            description: row.try_get(6)?,
+            social_media: row.try_get(7)?,
+            risk_score: row.try_get(8)?,
+            reputation_score: row.try_get(9)?,
+            aum: row.try_get(10)?,
         };
         Ok(r)
     }

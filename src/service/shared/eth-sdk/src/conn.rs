@@ -1,7 +1,5 @@
 use eyre::*;
 
-
-
 use web3::transports::{Either, Http, WebSocket};
 
 use web3::Web3;

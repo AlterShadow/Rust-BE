@@ -493,9 +493,11 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
         EndpointSchema::new(
             "UserGetUserProfile",
             20180,
-            vec![Field::new("user_id", Type::BigInt)],
+            vec![],
             vec![
                 Field::new("name", Type::String),
+                Field::new("login_wallet", Type::String),
+                Field::new("joined_at", Type::BigInt),
                 Field::new("follower_count", Type::Int),
                 Field::new("description", Type::String),
                 Field::new("social_media", Type::String),

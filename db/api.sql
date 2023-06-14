@@ -889,7 +889,10 @@ $$;
 CREATE OR REPLACE FUNCTION api.fun_user_get_user_profile(a_user_id bigint)
 RETURNS table (
     "expert_id" bigint,
+    "user_public_id" bigint,
     "name" varchar,
+    "login_wallet" varchar,
+    "joined_at" bigint,
     "follower_count" bigint,
     "description" varchar,
     "social_media" varchar,
@@ -902,7 +905,10 @@ AS $$
     
 BEGIN
     RETURN QUERY SELECT   a.pkey_id AS expert_id,
+                          b.public_id AS user_public_id,
                           b.username AS name,
+                          b.address AS login_wallet,
+                          b.created_at AS joined_at,
                           (SELECT COUNT(*) FROM tbl.user_follow_expert WHERE fkey_expert_id = a.pkey_id AND unfollowed = FALSE) AS follower_count,
                           a.description AS description,
                           a.social_media AS social_media,

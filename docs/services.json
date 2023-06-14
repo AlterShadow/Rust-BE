@@ -1809,16 +1809,19 @@
         {
           "name": "UserGetUserProfile",
           "code": 20180,
-          "parameters": [
-            {
-              "name": "user_id",
-              "ty": "BigInt"
-            }
-          ],
+          "parameters": [],
           "returns": [
             {
               "name": "name",
               "ty": "String"
+            },
+            {
+              "name": "login_wallet",
+              "ty": "String"
+            },
+            {
+              "name": "joined_at",
+              "ty": "BigInt"
             },
             {
               "name": "follower_count",

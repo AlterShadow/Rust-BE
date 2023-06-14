@@ -1,15 +1,3 @@
-use std::collections::hash_map::Entry;
-use std::collections::HashMap;
-use std::str::FromStr;
-use std::sync::Arc;
-use std::time::Duration;
-use eyre::*;
-use futures::FutureExt;
-use num_traits::cast::FromPrimitive;
-use tokio::time::sleep;
-use tracing::info;
-use web3::signing::Key;
-use web3::types::{Address, H256, U256};
 use api::cmc::CoinMarketCap;
 use eth_sdk::erc20::approve_and_ensure_success;
 use eth_sdk::erc20::Erc20Token;
@@ -22,6 +10,8 @@ use eth_sdk::utils::verify_message_address;
 use eth_sdk::v3::smart_router::copy_trade_and_ensure_success;
 use eth_sdk::v3::smart_router::PancakeSmartRouterV3Contract;
 use eth_sdk::*;
+use eyre::*;
+use futures::FutureExt;
 use gen::database::*;
 use gen::model::*;
 use lib::database::{DbClient, ToSql};
@@ -29,7 +19,17 @@ use lib::handler::{FutureResponse, RequestHandler};
 use lib::toolbox::*;
 use lib::utils::hex_decode;
 use lib::{DEFAULT_LIMIT, DEFAULT_OFFSET};
-
+use num_traits::cast::FromPrimitive;
+use peroxide::c;
+use std::collections::hash_map::Entry;
+use std::collections::HashMap;
+use std::str::FromStr;
+use std::sync::Arc;
+use std::time::Duration;
+use tokio::time::sleep;
+use tracing::info;
+use web3::signing::Key;
+use web3::types::{Address, H256, U256};
 
 pub fn ensure_user_role(ctx: RequestContext, role: EnumRole) -> Result<()> {
     let ctx_role = EnumRole::from_u32(ctx.role).context("Invalid role")?;
@@ -964,7 +964,7 @@ impl RequestHandler for MethodUserBackStrategy {
                 EnumBlockchainCoin::USDC,
                 escrow_contract,
                 &dex_addresses,
-								&*externally_owned_account,
+                &*externally_owned_account,
             )
             .await?;
             Ok(UserBackStrategyResponse { success: true })
@@ -1448,15 +1448,51 @@ impl RequestHandler for MethodUserGetUserProfile {
                 .await?
                 .into_result()
                 .context("failed to get expert profile")?;
-
+            let experts = db
+                .execute(FunUserListFollowedExpertsReq {
+                    user_id: ctx.user_id,
+                    offset: 0,
+                    limit: DEFAULT_LIMIT,
+                })
+                .await?;
+            let followed_strategies = db
+                .execute(FunUserListFollowedStrategiesReq {
+                    user_id: ctx.user_id,
+                    // offset: 0,
+                    // limit: DEFAULT_LIMIT,
+                })
+                .await?;
             // TODO: get followed experts, followed strategies, backed strategies
             Ok(UserGetUserProfileResponse {
                 name: ret.name,
+                login_wallet: ret.login_wallet,
+                joined_at: ret.joined_at,
                 follower_count: ret.follower_count.unwrap_or_default() as _,
                 description: ret.description.unwrap_or_default(),
                 social_media: ret.social_media.unwrap_or_default(),
-                followed_experts: vec![],
-                followed_strategies: vec![],
+                followed_experts: experts
+                    .into_iter()
+                    .map(|x| ListExpertsRow {
+                        expert_id: x.expert_id,
+                        user_public_id: x.user_public_id,
+                        linked_wallet: x.listening_wallet,
+                        name: x.username,
+                        family_name: x.family_name,
+                        given_name: x.given_name,
+                        follower_count: x.follower_count,
+                        description: x.description.unwrap_or_default(),
+                        social_media: x.social_media.unwrap_or_default(),
+                        risk_score: x.risk_score.unwrap_or_default(),
+                        reputation_score: x.reputation_score.unwrap_or_default(),
+                        aum: x.aum.unwrap_or_default(),
+                        joined_at: x.joined_at,
+                        requested_at: x.requested_at.unwrap_or_default(),
+                        approved_at: x.approved_at,
+                        pending_expert: x.pending_expert,
+                        approved_expert: x.approved_expert,
+                    })
+                    .collect(),
+                followed_strategies: followed_strategies.into_iter().map(|x| todo!()).collect(),
                 backed_strategies: vec![],
             })
         }
@@ -2025,15 +2061,16 @@ impl RequestHandler for MethodExpertListBackers {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_helper::add_strategy_initial_token_ratio;
     use eth_sdk::escrow_tracker::escrow::parse_escrow;
     use eth_sdk::mock_erc20::deploy_mock_erc20;
     use eth_sdk::signer::Secp256k1SecretKey;
+    use eth_sdk::utils::wait_for_confirmations_simple;
     use lib::database::{
         connect_to_database, database_test_config, drop_and_recreate_database, DatabaseConfig,
     };
-		use eth_sdk::utils::{wait_for_confirmations_simple};
     use lib::log::{setup_logs, LogLevel};
-    use std::net::Ipv4Addr;
+    use std::net::{IpAddr, Ipv4Addr};
     use std::{format, vec};
 
     /*
@@ -2081,11 +2118,21 @@ mod tests {
         let conn = conn_pool.get(EnumBlockChain::BscTestnet).await?;
         let token_addresses = BlockchainCoinAddresses::new();
         let db = connect_to_database(database_test_config()).await?;
-				use eth_sdk::{DEV_ACCOUNT_PRIV_KEY};
-				let secure_eoa_key = Secp256k1SecretKey::from_str(DEV_ACCOUNT_PRIV_KEY).context("failed to parse dev account private key")?;
-				let wbnb_address_on_bsc_testnet = token_addresses.get(EnumBlockChain::BscTestnet, EnumBlockchainCoin::WBNB).ok_or_else(|| eyre!("could not find WBNB address on BSC Testnet"))?;
-				let busd_address_on_bsc_testnet = token_addresses.get(EnumBlockChain::BscTestnet, EnumBlockchainCoin::BUSD).ok_or_else(|| eyre!("could not find USDC address on BSC Testnet"))?;
-				let busd_decimals = 10u64.pow(Erc20Token::new(conn.clone(), busd_address_on_bsc_testnet)?.decimals().await?.as_u32()) as i64;
+        use eth_sdk::DEV_ACCOUNT_PRIV_KEY;
+        let secure_eoa_key = Secp256k1SecretKey::from_str(DEV_ACCOUNT_PRIV_KEY)
+            .context("failed to parse dev account private key")?;
+        let wbnb_address_on_bsc_testnet = token_addresses
+            .get(EnumBlockChain::BscTestnet, EnumBlockchainCoin::WBNB)
+            .ok_or_else(|| eyre!("could not find WBNB address on BSC Testnet"))?;
+        let busd_address_on_bsc_testnet = token_addresses
+            .get(EnumBlockChain::BscTestnet, EnumBlockchainCoin::BUSD)
+            .ok_or_else(|| eyre!("could not find USDC address on BSC Testnet"))?;
+        let busd_decimals = 10u64.pow(
+            Erc20Token::new(conn.clone(), busd_address_on_bsc_testnet)?
+                .decimals()
+                .await?
+                .as_u32(),
+        ) as i64;
 
         /* create user */
         let ret = db
@@ -2126,88 +2173,108 @@ mod tests {
         let now = SystemTime::now();
         let since_the_epoch = now.duration_since(UNIX_EPOCH).expect("Time went backwards");
         let timestamp_in_seconds = since_the_epoch.as_secs() as i64;
-        db.query("
-						INSERT INTO tbl.strategy_initial_token_ratio 
-						(fkey_strategy_id, pkey_id, blockchain, token_name, token_address, quantity, updated_at, created_at) 
-						VALUES 
-						($1, $2, $3, $4, $5, $6, $7, $8);
-						", &[
-						&strategy.strategy_id as &(dyn ToSql + Sync), 
-						&(1 as i64) as &(dyn ToSql + Sync), 
-						&EnumBlockChain::BscTestnet as &(dyn ToSql + Sync), 
-						&"WBNB".to_string() as &(dyn ToSql + Sync), 
-						&format!("{:?}", wbnb_address_on_bsc_testnet) as &(dyn ToSql + Sync), 
-						&"100000000".to_string() as &(dyn ToSql + Sync), 
-						&timestamp_in_seconds as &(dyn ToSql + Sync), 
-						&timestamp_in_seconds as &(dyn ToSql + Sync)
-				]).await?;
+        add_strategy_initial_token_ratio(
+            &db,
+            &strategy.strategy_id,
+            wbnb_address_on_bsc_testnet,
+            timestamp_in_seconds,
+        )
+        .await?;
 
         let ctx = RequestContext {
-					connection_id: 0,
-					user_id: ret.user_id,
-					seq: 0,
-					method: 0,
-					log_id: 0,
-					ip_addr: Ipv4Addr::new(127, 0, 0, 1).into(),
-					role: EnumRole::Expert as u32,
-			};
+            connection_id: 0,
+            user_id: ret.user_id,
+            seq: 0,
+            method: 0,
+            log_id: 0,
+            ip_addr: Ipv4Addr::new(127, 0, 0, 1).into(),
+            role: EnumRole::Expert as u32,
+        };
 
-			/* deploy escrow contract */
-			let escrow_contract =
-            EscrowContract::deploy(conn.clone(), secure_eoa_key.clone()).await?;
+        /* deploy escrow contract */
+        let escrow_contract = EscrowContract::deploy(conn.clone(), secure_eoa_key.clone()).await?;
 
-			/* make sure dev account has enough BUSD on BSC Testnet */
-			/* transfer 10 BUSD to escrow contract */
-			let busd_contract = Erc20Token::new(conn.clone(), busd_address_on_bsc_testnet)?;
-			let transfer_tx_hash = busd_contract.transfer(secure_eoa_key.clone(), escrow_contract.address(), U256::from(10).try_checked_mul(U256::from(busd_decimals))?).await?;
-			wait_for_confirmations_simple(&conn.clone().eth(), transfer_tx_hash, Duration::from_secs(10), 10).await?;
+        /* make sure dev account has enough BUSD on BSC Testnet */
+        /* transfer 10 BUSD to escrow contract */
+        let busd_contract = Erc20Token::new(conn.clone(), busd_address_on_bsc_testnet)?;
+        let transfer_tx_hash = busd_contract
+            .transfer(
+                secure_eoa_key.clone(),
+                escrow_contract.address(),
+                U256::from(10).try_checked_mul(U256::from(busd_decimals))?,
+            )
+            .await?;
+        wait_for_confirmations_simple(
+            &conn.clone().eth(),
+            transfer_tx_hash,
+            Duration::from_secs(10),
+            10,
+        )
+        .await?;
 
-			user_back_strategy(
-					&conn,
-					&ctx,
-					&db,
-					EnumBlockChain::BscTestnet,
-					U256::from(10).try_checked_mul(U256::from(busd_decimals))?,
-					&token_addresses,
-					strategy.strategy_id,
-					EnumBlockchainCoin::BUSD,
-					escrow_contract,
-					&DexAddresses::new(),
-					secure_eoa_key,
-			)
-			.await?;
+        user_back_strategy(
+            &conn,
+            &ctx,
+            &db,
+            EnumBlockChain::BscTestnet,
+            U256::from(10).try_checked_mul(U256::from(busd_decimals))?,
+            &token_addresses,
+            strategy.strategy_id,
+            EnumBlockchainCoin::BUSD,
+            escrow_contract,
+            &DexAddresses::new(),
+            secure_eoa_key,
+        )
+        .await?;
 
-			/* fetch created strategy address */
-			let strategy = db
-			.execute(FunUserGetStrategyReq { strategy_id: strategy.strategy_id })
-			.await?
-			.into_result()
-			.context("could not retrieve strategy")?;
-			let sp_address = Address::from_str(strategy.evm_contract_address.ok_or_else(|| eyre!("could not retrieve strategy address after running back strategy on test!"))?.as_ref())?;
-			let sp_contract = StrategyPoolContract::new(conn.clone(), sp_address)?;
+        /* fetch created strategy address */
+        let strategy = db
+            .execute(FunUserGetStrategyReq {
+                strategy_id: strategy.strategy_id,
+            })
+            .await?
+            .into_result()
+            .context("could not retrieve strategy")?;
+        let sp_address = Address::from_str(
+            strategy
+                .evm_contract_address
+                .ok_or_else(|| {
+                    eyre!(
+                        "could not retrieve strategy address after running back strategy on test!"
+                    )
+                })?
+                .as_ref(),
+        )?;
+        let sp_contract = StrategyPoolContract::new(conn.clone(), sp_address)?;
 
-			/* check that SP has positive WBNB balance */
-			let sp_assets = sp_contract.assets().await?;
-			assert_eq!(sp_assets.len(), 1);
-			assert_eq!(sp_assets[0], wbnb_address_on_bsc_testnet);
-			let (sp_assets_from_another_func, sp_balances) = sp_contract.assets_and_balances().await?;
-			assert_eq!(sp_assets_from_another_func.len(), 1);
-			assert_eq!(sp_assets_from_another_func[0], wbnb_address_on_bsc_testnet);
-			assert_eq!(sp_balances.len(), 1);
-			assert!(sp_balances[0] > U256::zero());
-			assert!(sp_contract.asset_balance(wbnb_address_on_bsc_testnet).await? > U256::zero());
+        /* check that SP has positive WBNB balance */
+        let sp_assets = sp_contract.assets().await?;
+        assert_eq!(sp_assets.len(), 1);
+        assert_eq!(sp_assets[0], wbnb_address_on_bsc_testnet);
+        let (sp_assets_from_another_func, sp_balances) = sp_contract.assets_and_balances().await?;
+        assert_eq!(sp_assets_from_another_func.len(), 1);
+        assert_eq!(sp_assets_from_another_func[0], wbnb_address_on_bsc_testnet);
+        assert_eq!(sp_balances.len(), 1);
+        assert!(sp_balances[0] > U256::zero());
+        assert!(
+            sp_contract
+                .asset_balance(wbnb_address_on_bsc_testnet)
+                .await?
+                > U256::zero()
+        );
 
-			/* check that user has shares > 9 * 1e18 */
-			assert!(
-					sp_contract.balance_of(user_key.address()).await? > U256::from(9).try_checked_mul(U256::from(busd_decimals))?	
-			);
-			/* check that SP has shares > 9 * 1e18 */
-			assert!(
-					sp_contract.total_supply().await? >
-					U256::from(9).try_checked_mul(U256::from(busd_decimals))?	
-			);
+        /* check that user has shares > 9 * 1e18 */
+        assert!(
+            sp_contract.balance_of(user_key.address()).await?
+                > U256::from(9).try_checked_mul(U256::from(busd_decimals))?
+        );
+        /* check that SP has shares > 9 * 1e18 */
+        assert!(
+            sp_contract.total_supply().await?
+                > U256::from(9).try_checked_mul(U256::from(busd_decimals))?
+        );
 
-			Ok(())
+        Ok(())
     }
 
     #[tokio::test]
@@ -2267,6 +2334,8 @@ mod tests {
             seq: 0,
             method: 0,
             log_id: 0,
+            role: 0,
+            ip_addr: "127.0.0.1".parse()?,
         };
 
         let mut stablecoins = BlockchainCoinAddresses::new();
@@ -2295,6 +2364,11 @@ mod tests {
                 user_id: ctx.user_id,
                 name: "TEST".to_string(),
                 description: "TEST".to_string(),
+                strategy_thesis_url: "".to_string(),
+                minimum_backing_amount_usd: 0.0,
+                strategy_fee: 0.0,
+                expert_fee: 0.0,
+                agreed_tos: false,
             })
             .await?
             .into_result()

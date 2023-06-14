@@ -1575,13 +1575,13 @@ pub struct UserGetStrategyStatisticsResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserGetUserProfileRequest {
-    pub user_id: i64,
-}
+pub struct UserGetUserProfileRequest {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserGetUserProfileResponse {
     pub name: String,
+    pub login_wallet: String,
+    pub joined_at: i64,
     pub follower_count: i32,
     pub description: String,
     pub social_media: String,
@@ -3938,16 +3938,19 @@ impl WsRequest for UserGetUserProfileRequest {
     const SCHEMA: &'static str = r#"{
   "name": "UserGetUserProfile",
   "code": 20180,
-  "parameters": [
-    {
-      "name": "user_id",
-      "ty": "BigInt"
-    }
-  ],
+  "parameters": [],
   "returns": [
     {
       "name": "name",
       "ty": "String"
+    },
+    {
+      "name": "login_wallet",
+      "ty": "String"
+    },
+    {
+      "name": "joined_at",
+      "ty": "BigInt"
     },
     {
       "name": "follower_count",

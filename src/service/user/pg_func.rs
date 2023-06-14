@@ -637,7 +637,10 @@ END
             vec![Field::new("user_id", Type::BigInt)],
             vec![
                 Field::new("expert_id", Type::optional(Type::BigInt)),
+                Field::new("user_public_id", Type::BigInt),
                 Field::new("name", Type::String),
+                Field::new("login_wallet", Type::String),
+                Field::new("joined_at", Type::BigInt),
                 Field::new("follower_count", Type::optional(Type::BigInt)),
                 Field::new("description", Type::optional(Type::String)),
                 Field::new("social_media", Type::optional(Type::String)),
@@ -648,7 +651,10 @@ END
             r#"
 BEGIN
     RETURN QUERY SELECT   a.pkey_id AS expert_id,
+                          b.public_id AS user_public_id,
                           b.username AS name,
+                          b.address AS login_wallet,
+                          b.created_at AS joined_at,
                           (SELECT COUNT(*) FROM tbl.user_follow_expert WHERE fkey_expert_id = a.pkey_id AND unfollowed = FALSE) AS follower_count,
                           a.description AS description,
                           a.social_media AS social_media,
