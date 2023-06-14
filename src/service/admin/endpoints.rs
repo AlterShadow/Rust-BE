@@ -67,6 +67,9 @@ pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
                     vec![
                         Field::new("user_id", Type::BigInt),
                         Field::new("name", Type::String),
+                        Field::new("linked_wallet", Type::String),
+                        Field::new("joined_at", Type::BigInt),
+                        Field::new("requested_at", Type::BigInt),
                         Field::new("follower_count", Type::Int),
                         Field::new("description", Type::String),
                         Field::new("social_media", Type::String),

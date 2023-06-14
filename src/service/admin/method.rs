@@ -196,6 +196,9 @@ impl RequestHandler for MethodAdminListPendingExpertApplications {
                     .map(|x| ListPendingExpertApplicationsRow {
                         user_id: x.user_public_id,
                         name: x.name,
+                        linked_wallet: x.linked_wallet,
+                        joined_at: x.joined_at.unwrap_or_default(),
+                        requested_at: x.requested_at.unwrap_or_default(),
                         follower_count: x.follower_count as _,
                         description: x.description.unwrap_or_default(),
                         social_media: x.social_media.unwrap_or_default(),

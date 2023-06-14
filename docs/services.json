@@ -2860,6 +2860,18 @@
                       "ty": "String"
                     },
                     {
+                      "name": "linked_wallet",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "joined_at",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "requested_at",
+                      "ty": "BigInt"
+                    },
+                    {
                       "name": "follower_count",
                       "ty": "Int"
                     },

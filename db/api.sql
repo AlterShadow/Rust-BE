@@ -1465,6 +1465,7 @@ CREATE OR REPLACE FUNCTION api.fun_admin_list_pending_user_expert_applications(a
 RETURNS table (
     "user_public_id" bigint,
     "name" varchar,
+    "linked_wallet" varchar,
     "follower_count" bigint,
     "description" varchar,
     "social_media" varchar,
@@ -1482,6 +1483,7 @@ AS $$
 BEGIN
     RETURN QUERY SELECT a.public_id                AS user_public_id,
                         a.username                 AS name,
+                        a.address                  AS linked_wallet,
                         (SELECT COUNT(*)
                          FROM tbl.user_follow_expert
                          WHERE fkey_expert_id = a.pkey_id

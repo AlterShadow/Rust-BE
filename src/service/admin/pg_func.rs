@@ -130,6 +130,7 @@ END
             vec![
                 Field::new("user_public_id", Type::BigInt),
                 Field::new("name", Type::String),
+                Field::new("linked_wallet", Type::String),
                 Field::new("follower_count", Type::BigInt),
                 Field::new("description", Type::optional(Type::String)),
                 Field::new("social_media", Type::optional(Type::String)),
@@ -145,6 +146,7 @@ END
 BEGIN
     RETURN QUERY SELECT a.public_id                AS user_public_id,
                         a.username                 AS name,
+                        a.address                  AS linked_wallet,
                         (SELECT COUNT(*)
                          FROM tbl.user_follow_expert
                          WHERE fkey_expert_id = a.pkey_id

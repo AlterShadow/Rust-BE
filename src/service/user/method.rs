@@ -3,16 +3,13 @@ use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Duration;
-
 use eyre::*;
 use futures::FutureExt;
-use futures::StreamExt;
 use num_traits::cast::FromPrimitive;
 use tokio::time::sleep;
 use tracing::info;
 use web3::signing::Key;
 use web3::types::{Address, H256, U256};
-
 use api::cmc::CoinMarketCap;
 use eth_sdk::erc20::approve_and_ensure_success;
 use eth_sdk::erc20::Erc20Token;

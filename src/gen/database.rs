@@ -2031,6 +2031,7 @@ pub struct FunAdminListPendingUserExpertApplicationsReq {
 pub struct FunAdminListPendingUserExpertApplicationsRespRow {
     pub user_public_id: i64,
     pub name: String,
+    pub linked_wallet: String,
     pub follower_count: i64,
     #[serde(default)]
     pub description: Option<String>,
@@ -2066,16 +2067,17 @@ impl DatabaseRequest for FunAdminListPendingUserExpertApplicationsReq {
         let r = FunAdminListPendingUserExpertApplicationsRespRow {
             user_public_id: row.try_get(0)?,
             name: row.try_get(1)?,
-            follower_count: row.try_get(2)?,
-            description: row.try_get(3)?,
-            social_media: row.try_get(4)?,
-            risk_score: row.try_get(5)?,
-            reputation_score: row.try_get(6)?,
-            aum: row.try_get(7)?,
-            pending_expert: row.try_get(8)?,
-            approved_expert: row.try_get(9)?,
-            joined_at: row.try_get(10)?,
-            requested_at: row.try_get(11)?,
+            linked_wallet: row.try_get(2)?,
+            follower_count: row.try_get(3)?,
+            description: row.try_get(4)?,
+            social_media: row.try_get(5)?,
+            risk_score: row.try_get(6)?,
+            reputation_score: row.try_get(7)?,
+            aum: row.try_get(8)?,
+            pending_expert: row.try_get(9)?,
+            approved_expert: row.try_get(10)?,
+            joined_at: row.try_get(11)?,
+            requested_at: row.try_get(12)?,
         };
         Ok(r)
     }

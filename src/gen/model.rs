@@ -1284,6 +1284,9 @@ pub struct ListFeaturedExpertsRow {
 pub struct ListPendingExpertApplicationsRow {
     pub user_id: i64,
     pub name: String,
+    pub linked_wallet: String,
+    pub joined_at: i64,
+    pub requested_at: i64,
     pub follower_count: i32,
     pub description: String,
     pub social_media: String,
@@ -5128,6 +5131,18 @@ impl WsRequest for AdminListPendingExpertApplicationsRequest {
             {
               "name": "name",
               "ty": "String"
+            },
+            {
+              "name": "linked_wallet",
+              "ty": "String"
+            },
+            {
+              "name": "joined_at",
+              "ty": "BigInt"
+            },
+            {
+              "name": "requested_at",
+              "ty": "BigInt"
             },
             {
               "name": "follower_count",
