@@ -2239,7 +2239,7 @@ mod tests {
         let timestamp_in_seconds = since_the_epoch.as_secs() as i64;
         add_strategy_initial_token_ratio(
             &db,
-            &strategy.strategy_id,
+            strategy.strategy_id,
             wbnb_address_on_bsc_testnet,
             timestamp_in_seconds,
         )
