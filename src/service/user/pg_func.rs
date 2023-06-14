@@ -4,7 +4,7 @@ fn check_if_user_follows_strategy() -> &'static str {
     "EXISTS(SELECT * FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.fkey_user_id = a_user_id AND ufs.unfollowed = FALSE)"
 }
 fn check_if_user_follows_expert() -> &'static str {
-    "EXISTS(SELECT COUNT(*) FROM tbl.user_follow_expert AS ufe WHERE ufe.fkey_expert_id = e.pkey_id AND ufe.fkey_user_id = a_user_id AND unfollowed = FALSE)"
+    "EXISTS(SELECT * FROM tbl.user_follow_expert AS ufe WHERE ufe.fkey_expert_id = e.pkey_id AND ufe.fkey_user_id = a_user_id AND unfollowed = FALSE)"
 }
 pub fn get_user_pg_func() -> Vec<ProceduralFunction> {
     vec![

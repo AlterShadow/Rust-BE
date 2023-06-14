@@ -828,7 +828,7 @@ BEGIN
                         e.approved_at                                             AS approved_at,
                         e.pending_expert                                          AS pending_expert,
                         e.approved_expert                                         AS approved_expert,
-                        EXISTS(SELECT COUNT(*) FROM tbl.user_follow_expert AS ufe WHERE ufe.fkey_expert_id = e.pkey_id AND ufe.fkey_user_id = a_user_id AND unfollowed = FALSE) AS followed,
+                        EXISTS(SELECT * FROM tbl.user_follow_expert AS ufe WHERE ufe.fkey_expert_id = e.pkey_id AND ufe.fkey_user_id = a_user_id AND unfollowed = FALSE) AS followed,
                         (SELECT COUNT(DISTINCT d.fkey_user_id) FROM tbl.user_follow_expert AS d WHERE d.fkey_expert_id = e.pkey_id AND unfollowed = FALSE) AS follower_count,
                         (SELECT COUNT(DISTINCT d.fkey_user_id) FROM tbl.user_back_strategy_history AS d JOIN tbl.strategy AS e ON e.pkey_id = d.fkey_strategy_id WHERE e.fkey_user_id = c.pkey_id) AS backer_count
                  FROM tbl.expert_profile AS e
@@ -889,7 +889,7 @@ BEGIN
                         e.approved_at                                             AS approved_at,
                         e.pending_expert                                          AS pending_expert,
                         e.approved_expert                                         AS approved_expert,
-                        EXISTS(SELECT COUNT(*) FROM tbl.user_follow_expert AS ufe WHERE ufe.fkey_expert_id = e.pkey_id AND ufe.fkey_user_id = a_user_id AND unfollowed = FALSE) AS followed
+                        EXISTS(SELECT * FROM tbl.user_follow_expert AS ufe WHERE ufe.fkey_expert_id = e.pkey_id AND ufe.fkey_user_id = a_user_id AND unfollowed = FALSE) AS followed
 
                  FROM tbl.expert_profile AS e
                  JOIN tbl.user AS b ON b.pkey_id = e.fkey_user_id
