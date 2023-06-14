@@ -63,3 +63,52 @@ async fn test_admin_list_strategies() -> Result<()> {
     assert_eq!(resp.strategies.len(), 1);
     Ok(())
 }
+
+#[tokio::test]
+async fn test_admin_list_experts() -> Result<()> {
+    let _ = setup_logs(LogLevel::Info);
+    drop_and_recreate_database()?;
+
+    let admin = Secp256k1SecretKey::new_random();
+    signup("dev-admin", &admin.key).await?;
+    let mut admin_client = connect_user("dev-admin", &admin.key).await?;
+
+    let user = Secp256k1SecretKey::new_random();
+    signup("user1", &user.key).await?;
+
+    let mut client = connect_user("user1", &user.key).await?;
+    let apply_become_expert_resp = client.request(UserApplyBecomeExpertRequest {}).await?;
+    info!("User Apply Become Expert {:?}", apply_become_expert_resp);
+
+    let resp = admin_client
+        .request(AdminListPendingExpertApplicationsRequest {
+            offset: None,
+            limit: None,
+        })
+        .await?;
+    assert_eq!(resp.users.len(), 1);
+
+    let resp = admin_client
+        .request(AdminApproveUserBecomeExpertRequest {
+            user_id: resp.users[0].user_id,
+        })
+        .await?;
+    info!("Approve {:?}", resp);
+
+    let resp = admin_client
+        .request(AdminListExpertsRequest {
+            limit: None,
+            offset: None,
+            expert_id: None,
+            user_id: None,
+            user_public_id: None,
+            username: None,
+            family_name: None,
+            given_name: None,
+            description: None,
+            social_media: None,
+        })
+        .await?;
+    info!("Experts {:?}", resp);
+    Ok(())
+}

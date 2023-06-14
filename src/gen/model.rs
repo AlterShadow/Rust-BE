@@ -865,8 +865,10 @@ pub struct AdminListBackersRow {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminListExpertsRequest {
-    pub limit: i64,
-    pub offset: i64,
+    #[serde(default)]
+    pub limit: Option<i64>,
+    #[serde(default)]
+    pub offset: Option<i64>,
     #[serde(default)]
     pub expert_id: Option<i64>,
     #[serde(default)]
@@ -5306,11 +5308,15 @@ impl WsRequest for AdminListExpertsRequest {
   "parameters": [
     {
       "name": "limit",
-      "ty": "BigInt"
+      "ty": {
+        "Optional": "BigInt"
+      }
     },
     {
       "name": "offset",
-      "ty": "BigInt"
+      "ty": {
+        "Optional": "BigInt"
+      }
     },
     {
       "name": "expert_id",

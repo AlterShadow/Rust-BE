@@ -3,6 +3,7 @@
   "AdminApproveUserBecomeExpert",
   "AdminGetSystemConfig",
   "AdminListBackers",
+  "AdminListExperts",
   "AdminListPendingExpertApplications",
   "AdminListStrategies",
   "AdminListUsers",

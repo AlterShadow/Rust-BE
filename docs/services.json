@@ -2993,11 +2993,15 @@
           "parameters": [
             {
               "name": "limit",
-              "ty": "BigInt"
+              "ty": {
+                "Optional": "BigInt"
+              }
             },
             {
               "name": "offset",
-              "ty": "BigInt"
+              "ty": {
+                "Optional": "BigInt"
+              }
             },
             {
               "name": "expert_id",

@@ -119,8 +119,8 @@ pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
             "AdminListExperts",
             30090,
             vec![
-                Field::new("limit", Type::BigInt),
-                Field::new("offset", Type::BigInt),
+                Field::new("limit", Type::optional(Type::BigInt)),
+                Field::new("offset", Type::optional(Type::BigInt)),
                 Field::new("expert_id", Type::optional(Type::BigInt)),
                 Field::new("user_id", Type::optional(Type::BigInt)),
                 Field::new("user_public_id", Type::optional(Type::BigInt)),

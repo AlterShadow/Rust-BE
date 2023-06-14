@@ -105,6 +105,7 @@ async fn main() -> Result<()> {
     server.add_handler(MethodAdminGetSystemConfig);
     server.add_handler(MethodAdminUpdateSystemConfig);
     server.add_handler(MethodAdminListBackers);
+    server.add_handler(MethodAdminListExperts);
     server.add_handler(MethodAdminListStrategies);
 
     server.add_handler(MethodAdminAddWalletActivityHistory); // only for mocking purpose

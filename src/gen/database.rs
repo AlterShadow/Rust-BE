@@ -2167,6 +2167,7 @@ pub struct FunAdminListExpertsReq {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAdminListExpertsRespRow {
     pub expert_id: i64,
+    pub user_id: i64,
     pub user_public_id: i64,
     pub linked_wallet: String,
     pub name: String,
@@ -2174,12 +2175,18 @@ pub struct FunAdminListExpertsRespRow {
     pub family_name: Option<String>,
     #[serde(default)]
     pub given_name: Option<String>,
-    pub follower_count: i64,
-    pub description: String,
-    pub social_media: String,
-    pub risk_score: f64,
-    pub reputation_score: f64,
-    pub aum: f64,
+    #[serde(default)]
+    pub follower_count: Option<i64>,
+    #[serde(default)]
+    pub description: Option<String>,
+    #[serde(default)]
+    pub social_media: Option<String>,
+    #[serde(default)]
+    pub risk_score: Option<f64>,
+    #[serde(default)]
+    pub reputation_score: Option<f64>,
+    #[serde(default)]
+    pub aum: Option<f64>,
     pub joined_at: i64,
     pub requested_at: i64,
     #[serde(default)]
@@ -2211,22 +2218,23 @@ impl DatabaseRequest for FunAdminListExpertsReq {
     fn parse_row(&self, row: Row) -> Result<FunAdminListExpertsRespRow> {
         let r = FunAdminListExpertsRespRow {
             expert_id: row.try_get(0)?,
-            user_public_id: row.try_get(1)?,
-            linked_wallet: row.try_get(2)?,
-            name: row.try_get(3)?,
-            family_name: row.try_get(4)?,
-            given_name: row.try_get(5)?,
-            follower_count: row.try_get(6)?,
-            description: row.try_get(7)?,
-            social_media: row.try_get(8)?,
-            risk_score: row.try_get(9)?,
-            reputation_score: row.try_get(10)?,
-            aum: row.try_get(11)?,
-            joined_at: row.try_get(12)?,
-            requested_at: row.try_get(13)?,
-            approved_at: row.try_get(14)?,
-            pending_expert: row.try_get(15)?,
-            approved_expert: row.try_get(16)?,
+            user_id: row.try_get(1)?,
+            user_public_id: row.try_get(2)?,
+            linked_wallet: row.try_get(3)?,
+            name: row.try_get(4)?,
+            family_name: row.try_get(5)?,
+            given_name: row.try_get(6)?,
+            follower_count: row.try_get(7)?,
+            description: row.try_get(8)?,
+            social_media: row.try_get(9)?,
+            risk_score: row.try_get(10)?,
+            reputation_score: row.try_get(11)?,
+            aum: row.try_get(12)?,
+            joined_at: row.try_get(13)?,
+            requested_at: row.try_get(14)?,
+            approved_at: row.try_get(15)?,
+            pending_expert: row.try_get(16)?,
+            approved_expert: row.try_get(17)?,
         };
         Ok(r)
     }
