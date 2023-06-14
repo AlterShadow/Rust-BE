@@ -329,9 +329,9 @@ async fn populate_wallet_activity_history() -> Result<()> {
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<()> {
     setup_logs(LogLevel::Debug)?;
-    // populate_users().await?;
-    // populate_user_registered_wallets().await?;
-    // populate_user_apply_become_experts().await?;
+    populate_users().await?;
+    populate_user_registered_wallets().await?;
+    populate_user_apply_become_experts().await?;
     populate_wallet_activity_history().await?;
 
     Ok(())

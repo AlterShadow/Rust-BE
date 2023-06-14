@@ -1686,6 +1686,7 @@ pub struct FunUserAddStrategyInitialTokenRatioReq {
     pub strategy_id: i64,
     pub token_name: String,
     pub token_address: String,
+    pub blockchain: EnumBlockChain,
     pub quantity: String,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1697,13 +1698,14 @@ pub struct FunUserAddStrategyInitialTokenRatioRespRow {
 impl DatabaseRequest for FunUserAddStrategyInitialTokenRatioReq {
     type ResponseRow = FunUserAddStrategyInitialTokenRatioRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_add_strategy_initial_token_ratio(a_strategy_id => $1::bigint, a_token_name => $2::varchar, a_token_address => $3::varchar, a_quantity => $4::varchar);"
+        "SELECT * FROM api.fun_user_add_strategy_initial_token_ratio(a_strategy_id => $1::bigint, a_token_name => $2::varchar, a_token_address => $3::varchar, a_blockchain => $4::enum_block_chain, a_quantity => $5::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
             &self.strategy_id as &(dyn ToSql + Sync),
             &self.token_name as &(dyn ToSql + Sync),
             &self.token_address as &(dyn ToSql + Sync),
+            &self.blockchain as &(dyn ToSql + Sync),
             &self.quantity as &(dyn ToSql + Sync),
         ]
     }

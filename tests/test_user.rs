@@ -150,14 +150,28 @@ async fn test_user_follow_strategy() -> Result<()> {
         })
         .await?;
     assert_eq!(resp.strategies.len(), 1);
-
+    info!("User List Followed Strategies {:?}", resp);
     let resp = client
         .request(UserUnfollowStrategyRequest {
             strategy_id: create_strategy_resp.strategy_id,
         })
         .await?;
     info!("User Unfollow Strategy {:?}", resp);
-
+    let resp = client
+        .request(UserListFollowedStrategiesRequest {
+            limit: None,
+            offset: None,
+        })
+        .await?;
+    assert_eq!(resp.strategies.len(), 0);
+    let resp = client
+        .request(UserListStrategiesRequest {
+            limit: None,
+            offset: None,
+        })
+        .await?;
+    assert_eq!(resp.strategies.len(), 1);
+    info!("User List Strategies {:?}", resp);
     Ok(())
 }
 

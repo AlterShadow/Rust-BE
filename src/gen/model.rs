@@ -1097,6 +1097,7 @@ pub struct ExpertAddStrategyInitialTokenRatioRequest {
     pub strategy_id: i64,
     pub token_name: String,
     pub token_address: String,
+    pub blockchain: EnumBlockChain,
     pub quantity: String,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -4704,6 +4705,12 @@ impl WsRequest for ExpertAddStrategyInitialTokenRatioRequest {
     {
       "name": "token_address",
       "ty": "String"
+    },
+    {
+      "name": "blockchain",
+      "ty": {
+        "EnumRef": "block_chain"
+      }
     },
     {
       "name": "quantity",

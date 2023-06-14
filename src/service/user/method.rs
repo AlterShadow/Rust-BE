@@ -20,7 +20,6 @@ use lib::toolbox::*;
 use lib::utils::hex_decode;
 use lib::{DEFAULT_LIMIT, DEFAULT_OFFSET};
 use num_traits::cast::FromPrimitive;
-use peroxide::c;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -1899,6 +1898,7 @@ impl RequestHandler for MethodExpertAddStrategyInitialTokenRatio {
                     strategy_id: req.strategy_id,
                     token_name: req.token_name,
                     token_address: req.token_address,
+                    blockchain: req.blockchain,
                     quantity: req.quantity,
                 })
                 .await?

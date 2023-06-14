@@ -360,16 +360,16 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY SELECT a.pkey_id AS strategy_id,
-                          a.name AS strategy_name,
-                          a.description AS strategy_description,
+    RETURN QUERY SELECT s.pkey_id AS strategy_id,
+                          s.name AS strategy_name,
+                          s.description AS strategy_description,
                           0.0::double precision AS net_value,
-                          (SELECT COUNT(*) FROM tbl.user_follow_strategy WHERE fkey_strategy_id = a.pkey_id AND unfollowed = FALSE) AS followers,
-                          (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_strategy_history AS h WHERE fkey_strategy_id = a.pkey_id) AS backers,
-                          a.risk_score as risk_score,
-                          a.aum as aum,
-                          EXISTS(SELECT * FROM tbl.user_follow_strategy AS b WHERE b.fkey_strategy_id = a.pkey_id AND b.fkey_user_id = a_user_id) as followed
-                 FROM tbl.strategy AS a
+                          (SELECT COUNT(*) FROM tbl.user_follow_strategy WHERE fkey_strategy_id = s.pkey_id AND unfollowed = FALSE) AS followers,
+                          (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_strategy_history AS h WHERE fkey_strategy_id = s.pkey_id) AS backers,
+                          s.risk_score as risk_score,
+                          s.aum as aum,
+                          EXISTS(SELECT * FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.fkey_user_id = a_user_id AND ufs.unfollowed = FALSE) as followed
+                 FROM tbl.strategy AS s
                     ;
 
 END
@@ -796,29 +796,29 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY SELECT a.pkey_id                                                 AS expert_id,
-                        a.fkey_user_id                                            AS user_id,
+    RETURN QUERY SELECT e.pkey_id                                                 AS expert_id,
+                        e.fkey_user_id                                            AS user_id,
                         c.public_id                                               AS user_public_id,
                         c.address                                                 AS listening_wallet,
                         c.username                                                AS username,
                         c.family_name                                             AS family_name,
                         c.given_name                                               AS given_name,
-                        a.description                                             AS description,
-                        a.social_media                                            AS social_media,
-                        a.risk_score                                              AS risk_score,
-                        a.reputation_score                                        AS reputation_score,
-                        a.aum                                                     AS aum,
+                        e.description                                             AS description,
+                        e.social_media                                            AS social_media,
+                        e.risk_score                                              AS risk_score,
+                        e.reputation_score                                        AS reputation_score,
+                        e.aum                                                     AS aum,
                         c.created_at                                              AS joined_at,
-                        a.requested_at                                            AS requested_at,
-                        a.approved_at                                             AS approved_at,
-                        a.pending_expert                                          AS pending_expert,
-                        a.approved_expert                                         AS approved_expert,
-                        EXISTS(SELECT COUNT(*) FROM tbl.user_follow_expert WHERE fkey_expert_id = a.pkey_id AND fkey_user_id = a_user_id AND unfollowed = FALSE) AS followed,
-                        (SELECT COUNT(DISTINCT d.fkey_user_id) FROM tbl.user_follow_expert AS d WHERE d.fkey_expert_id = a.pkey_id AND unfollowed = FALSE) AS follower_count,
+                        e.requested_at                                            AS requested_at,
+                        e.approved_at                                             AS approved_at,
+                        e.pending_expert                                          AS pending_expert,
+                        e.approved_expert                                         AS approved_expert,
+                        EXISTS(SELECT COUNT(*) FROM tbl.user_follow_expert AS ufe WHERE ufe.fkey_expert_id = e.pkey_id AND ufe.fkey_user_id = a_user_id AND unfollowed = FALSE) AS followed,
+                        (SELECT COUNT(DISTINCT d.fkey_user_id) FROM tbl.user_follow_expert AS d WHERE d.fkey_expert_id = e.pkey_id AND unfollowed = FALSE) AS follower_count,
                         (SELECT COUNT(DISTINCT d.fkey_user_id) FROM tbl.user_back_strategy_history AS d JOIN tbl.strategy AS e ON e.pkey_id = d.fkey_strategy_id WHERE e.fkey_user_id = c.pkey_id) AS backer_count
-                 FROM tbl.expert_profile AS a
-                          JOIN tbl.user AS c ON c.pkey_id = a.fkey_user_id
-                 ORDER BY a.pkey_id
+                 FROM tbl.expert_profile AS e
+                          JOIN tbl.user AS c ON c.pkey_id = e.fkey_user_id
+                 ORDER BY e.pkey_id
                  OFFSET a_offset
                  LIMIT a_limit
                  ;
@@ -854,8 +854,8 @@ AS $$
     
 BEGIN
 
-    RETURN QUERY SELECT a.pkey_id                                                 AS expert_id,
-                        a.fkey_user_id                                            AS user_id,
+    RETURN QUERY SELECT e.pkey_id                                                 AS expert_id,
+                        e.fkey_user_id                                            AS user_id,
                         b.public_id                                               AS user_public_id,
                         b.address                                                 AS listening_wallet,
                         b.username                                                AS username,
@@ -863,22 +863,22 @@ BEGIN
                         b.given_name                                              AS given_name,
                         (SELECT COUNT(*)
                          FROM tbl.user_follow_expert
-                         WHERE fkey_expert_id = a.pkey_id AND unfollowed = FALSE) AS follower_count,
-                        a.description                                             AS description,
-                        a.social_media                                            AS social_media,
-                        a.risk_score                                              AS risk_score,
-                        a.reputation_score                                        AS reputation_score,
-                        a.aum                                                     AS aum,
+                         WHERE fkey_expert_id = e.pkey_id AND unfollowed = FALSE) AS follower_count,
+                        e.description                                             AS description,
+                        e.social_media                                            AS social_media,
+                        e.risk_score                                              AS risk_score,
+                        e.reputation_score                                        AS reputation_score,
+                        e.aum                                                     AS aum,
                         b.created_at                                              AS joined_at,
-                        a.requested_at                                            AS requested_at,
-                        a.approved_at                                             AS approved_at,
-                        a.pending_expert                                          AS pending_expert,
-                        a.approved_expert                                         AS approved_expert,
-                        EXISTS(SELECT COUNT(*) FROM tbl.user_follow_expert WHERE fkey_expert_id = a.pkey_id AND fkey_user_id = a_user_id AND unfollowed = FALSE) AS follower_count
+                        e.requested_at                                            AS requested_at,
+                        e.approved_at                                             AS approved_at,
+                        e.pending_expert                                          AS pending_expert,
+                        e.approved_expert                                         AS approved_expert,
+                        EXISTS(SELECT COUNT(*) FROM tbl.user_follow_expert AS ufe WHERE ufe.fkey_expert_id = e.pkey_id AND ufe.fkey_user_id = a_user_id AND unfollowed = FALSE) AS followed
 
-                 FROM tbl.expert_profile AS a 
-                 JOIN tbl.user AS b ON b.pkey_id = a.fkey_user_id
-                 WHERE a.pkey_id = a_expert_id
+                 FROM tbl.expert_profile AS e
+                 JOIN tbl.user AS b ON b.pkey_id = e.fkey_user_id
+                 WHERE e.pkey_id = a_expert_id
                  ;
 
 END
@@ -1258,7 +1258,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_add_strategy_initial_token_ratio(a_strategy_id bigint, a_token_name varchar, a_token_address varchar, a_quantity varchar)
+CREATE OR REPLACE FUNCTION api.fun_user_add_strategy_initial_token_ratio(a_strategy_id bigint, a_token_name varchar, a_token_address varchar, a_blockchain enum_block_chain, a_quantity varchar)
 RETURNS table (
     "strategy_initial_token_ratio_id" bigint
 )
@@ -1266,8 +1266,8 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY INSERT INTO tbl.strategy_initial_token_ratio (fkey_strategy_id, token_name, token_address, quantity, created_at, updated_at)
-            VALUES ( a_strategy_id, a_token_name, a_token_address, a_quantity, EXTRACT(EPOCH FROM NOW())::bigint, EXTRACT(EPOCH FROM NOW())::bigint) RETURNING pkey_id;
+    RETURN QUERY INSERT INTO tbl.strategy_initial_token_ratio (fkey_strategy_id, token_name, token_address, blockchain, quantity, created_at, updated_at)
+            VALUES ( a_strategy_id, a_token_name, a_token_address, a_blockchain, a_quantity, EXTRACT(EPOCH FROM NOW())::bigint, EXTRACT(EPOCH FROM NOW())::bigint) RETURNING pkey_id;
 END
 
 $$;
