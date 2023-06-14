@@ -2323,6 +2323,16 @@ impl DatabaseRequest for FunAdminListExpertsReq {
 pub struct FunAdminListBackersReq {
     pub offset: i64,
     pub limit: i64,
+    #[serde(default)]
+    pub user_id: Option<i64>,
+    #[serde(default)]
+    pub user_public_id: Option<i64>,
+    #[serde(default)]
+    pub username: Option<String>,
+    #[serde(default)]
+    pub family_name: Option<String>,
+    #[serde(default)]
+    pub given_name: Option<String>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAdminListBackersRespRow {
@@ -2337,12 +2347,17 @@ pub struct FunAdminListBackersRespRow {
 impl DatabaseRequest for FunAdminListBackersReq {
     type ResponseRow = FunAdminListBackersRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_admin_list_backers(a_offset => $1::bigint, a_limit => $2::bigint);"
+        "SELECT * FROM api.fun_admin_list_backers(a_offset => $1::bigint, a_limit => $2::bigint, a_user_id => $3::bigint, a_user_public_id => $4::bigint, a_username => $5::varchar, a_family_name => $6::varchar, a_given_name => $7::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
             &self.offset as &(dyn ToSql + Sync),
             &self.limit as &(dyn ToSql + Sync),
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.user_public_id as &(dyn ToSql + Sync),
+            &self.username as &(dyn ToSql + Sync),
+            &self.family_name as &(dyn ToSql + Sync),
+            &self.given_name as &(dyn ToSql + Sync),
         ]
     }
     fn parse_row(&self, row: Row) -> Result<FunAdminListBackersRespRow> {
@@ -2361,6 +2376,16 @@ impl DatabaseRequest for FunAdminListBackersReq {
 pub struct FunAdminListStrategiesReq {
     pub limit: i64,
     pub offset: i64,
+    #[serde(default)]
+    pub strategy_id: Option<i64>,
+    #[serde(default)]
+    pub strategy_name: Option<String>,
+    #[serde(default)]
+    pub expert_public_id: Option<i64>,
+    #[serde(default)]
+    pub expert_name: Option<String>,
+    #[serde(default)]
+    pub description: Option<String>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAdminListStrategiesRespRow {
@@ -2382,12 +2407,17 @@ pub struct FunAdminListStrategiesRespRow {
 impl DatabaseRequest for FunAdminListStrategiesReq {
     type ResponseRow = FunAdminListStrategiesRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_admin_list_strategies(a_limit => $1::bigint, a_offset => $2::bigint);"
+        "SELECT * FROM api.fun_admin_list_strategies(a_limit => $1::bigint, a_offset => $2::bigint, a_strategy_id => $3::bigint, a_strategy_name => $4::varchar, a_expert_public_id => $5::bigint, a_expert_name => $6::varchar, a_description => $7::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
             &self.limit as &(dyn ToSql + Sync),
             &self.offset as &(dyn ToSql + Sync),
+            &self.strategy_id as &(dyn ToSql + Sync),
+            &self.strategy_name as &(dyn ToSql + Sync),
+            &self.expert_public_id as &(dyn ToSql + Sync),
+            &self.expert_name as &(dyn ToSql + Sync),
+            &self.description as &(dyn ToSql + Sync),
         ]
     }
     fn parse_row(&self, row: Row) -> Result<FunAdminListStrategiesRespRow> {

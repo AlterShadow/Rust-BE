@@ -845,6 +845,16 @@ pub struct AdminListBackersRequest {
     pub offset: Option<i64>,
     #[serde(default)]
     pub limit: Option<i64>,
+    #[serde(default)]
+    pub user_id: Option<i64>,
+    #[serde(default)]
+    pub user_public_id: Option<i64>,
+    #[serde(default)]
+    pub username: Option<String>,
+    #[serde(default)]
+    pub family_name: Option<String>,
+    #[serde(default)]
+    pub given_name: Option<String>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -935,6 +945,16 @@ pub struct AdminListStrategiesRequest {
     pub offset: Option<i64>,
     #[serde(default)]
     pub limit: Option<i64>,
+    #[serde(default)]
+    pub strategy_id: Option<i64>,
+    #[serde(default)]
+    pub strategy_name: Option<String>,
+    #[serde(default)]
+    pub expert_public_id: Option<i64>,
+    #[serde(default)]
+    pub expert_name: Option<String>,
+    #[serde(default)]
+    pub description: Option<String>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -5559,6 +5579,36 @@ impl WsRequest for AdminListBackersRequest {
       "ty": {
         "Optional": "BigInt"
       }
+    },
+    {
+      "name": "user_id",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "user_public_id",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "username",
+      "ty": {
+        "Optional": "String"
+      }
+    },
+    {
+      "name": "family_name",
+      "ty": {
+        "Optional": "String"
+      }
+    },
+    {
+      "name": "given_name",
+      "ty": {
+        "Optional": "String"
+      }
     }
   ],
   "returns": [
@@ -5627,6 +5677,36 @@ impl WsRequest for AdminListStrategiesRequest {
       "name": "limit",
       "ty": {
         "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "strategy_id",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "strategy_name",
+      "ty": {
+        "Optional": "String"
+      }
+    },
+    {
+      "name": "expert_public_id",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "expert_name",
+      "ty": {
+        "Optional": "String"
+      }
+    },
+    {
+      "name": "description",
+      "ty": {
+        "Optional": "String"
       }
     }
   ],

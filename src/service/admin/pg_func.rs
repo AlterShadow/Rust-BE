@@ -286,6 +286,11 @@ END
             vec![
                 Field::new("offset", Type::BigInt),
                 Field::new("limit", Type::BigInt),
+                Field::new("user_id", Type::optional(Type::BigInt)),
+                Field::new("user_public_id", Type::optional(Type::BigInt)),
+                Field::new("username", Type::optional(Type::String)),
+                Field::new("family_name", Type::optional(Type::String)),
+                Field::new("given_name", Type::optional(Type::String)),
             ],
             vec![
                 Field::new("user_id", Type::BigInt),
@@ -303,6 +308,11 @@ BEGIN
                         a.created_at AS joined_at
                  FROM tbl.user AS a
                  JOIN tbl.user_back_strategy_history AS b ON b.fkey_user_id = a.pkey_id
+                WHERE (a_user_id ISNULL OR a.pkey_id = a_user_id)
+                        AND (a_user_public_id ISNULL OR a.public_id = a_user_public_id)
+                        AND (a_username ISNULL OR a.username ILIKE a_username || '%')
+                        AND (a_family_name ISNULL OR a.family_name ILIKE a_family_name || '%')
+                        AND (a_given_name ISNULL OR a.given_name ILIKE a_given_name || '%')
                  ORDER BY a.pkey_id
                  OFFSET a_offset
                  LIMIT a_limit;
@@ -314,6 +324,11 @@ END
             vec![
                 Field::new("limit", Type::BigInt),
                 Field::new("offset", Type::BigInt),
+                Field::new("strategy_id", Type::optional(Type::BigInt)),
+                Field::new("strategy_name", Type::optional(Type::String)),
+                Field::new("expert_public_id", Type::optional(Type::BigInt)),
+                Field::new("expert_name", Type::optional(Type::String)),
+                Field::new("description", Type::optional(Type::String)),
             ],
             vec![
                 Field::new("strategy_id", Type::BigInt),
@@ -341,6 +356,11 @@ BEGIN
                         TRUE AS approved_strategy
                  FROM tbl.strategy AS a
                           JOIN tbl.user AS b ON b.pkey_id = a.fkey_user_id
+                WHERE (a_strategy_id ISNULL OR a.pkey_id = a_strategy_id)
+                    AND (a_strategy_name ISNULL OR a.name ILIKE a_strategy_name || '%')
+                    AND (a_expert_public_id ISNULL OR b.public_id = a_expert_public_id)
+                    AND (a_expert_name ISNULL OR b.username ILIKE a_expert_name || '%')
+                    AND (a_description ISNULL OR a.description ILIKE a_description || '%')
                  ORDER BY a.pkey_id
                  OFFSET a_offset
                  LIMIT a_limit;

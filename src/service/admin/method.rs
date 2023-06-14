@@ -348,6 +348,11 @@ impl RequestHandler for MethodAdminListBackers {
                 .execute(FunAdminListBackersReq {
                     limit: req.limit.unwrap_or(DEFAULT_LIMIT),
                     offset: req.offset.unwrap_or(DEFAULT_OFFSET),
+                    user_id: req.user_id,
+                    user_public_id: req.user_public_id,
+                    username: req.username,
+                    family_name: req.family_name,
+                    given_name: req.given_name,
                 })
                 .await?;
 
@@ -388,6 +393,11 @@ impl RequestHandler for MethodAdminListStrategies {
                 .execute(FunAdminListStrategiesReq {
                     limit: req.limit.unwrap_or(DEFAULT_LIMIT),
                     offset: req.offset.unwrap_or(DEFAULT_OFFSET),
+                    strategy_id: req.strategy_id,
+                    strategy_name: req.strategy_name,
+                    expert_public_id: req.expert_public_id,
+                    expert_name: req.expert_name,
+                    description: req.description,
                 })
                 .await?;
 

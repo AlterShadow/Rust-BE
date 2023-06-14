@@ -163,6 +163,13 @@ pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
             vec![
                 Field::new("offset", Type::optional(Type::BigInt)),
                 Field::new("limit", Type::optional(Type::BigInt)),
+                Field::new("user_id", Type::optional(Type::BigInt)),
+                Field::new("user_public_id", Type::optional(Type::BigInt)),
+                Field::new("username", Type::optional(Type::String)),
+                Field::new("family_name", Type::optional(Type::String)),
+                Field::new("given_name", Type::optional(Type::String)),
+                // Field::new("description", Type::optional(Type::String)),
+                // Field::new("social_media", Type::optional(Type::String)),
             ],
             vec![Field::new(
                 "backers",
@@ -186,6 +193,11 @@ pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
             vec![
                 Field::new("offset", Type::optional(Type::BigInt)),
                 Field::new("limit", Type::optional(Type::BigInt)),
+                Field::new("strategy_id", Type::optional(Type::BigInt)),
+                Field::new("strategy_name", Type::optional(Type::String)),
+                Field::new("expert_public_id", Type::optional(Type::BigInt)),
+                Field::new("expert_name", Type::optional(Type::String)),
+                Field::new("description", Type::optional(Type::String)),
             ],
             vec![Field::new(
                 "strategies",
@@ -194,7 +206,6 @@ pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
                     vec![
                         Field::new("strategy_id", Type::BigInt),
                         Field::new("strategy_name", Type::String),
-                        // Field::new("expert_id", Type::BigInt),
                         Field::new("expert_public_id", Type::BigInt),
                         Field::new("expert_name", Type::String),
                         Field::new("description", Type::optional(Type::String)),

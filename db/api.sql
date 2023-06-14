@@ -1654,7 +1654,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_admin_list_backers(a_offset bigint, a_limit bigint)
+CREATE OR REPLACE FUNCTION api.fun_admin_list_backers(a_offset bigint, a_limit bigint, a_user_id bigint DEFAULT NULL, a_user_public_id bigint DEFAULT NULL, a_username varchar DEFAULT NULL, a_family_name varchar DEFAULT NULL, a_given_name varchar DEFAULT NULL)
 RETURNS table (
     "user_id" bigint,
     "user_public_id" bigint,
@@ -1673,6 +1673,11 @@ BEGIN
                         a.created_at AS joined_at
                  FROM tbl.user AS a
                  JOIN tbl.user_back_strategy_history AS b ON b.fkey_user_id = a.pkey_id
+                WHERE (a_user_id ISNULL OR a.pkey_id = a_user_id)
+                        AND (a_user_public_id ISNULL OR a.public_id = a_user_public_id)
+                        AND (a_username ISNULL OR a.username ILIKE a_username || '%')
+                        AND (a_family_name ISNULL OR a.family_name ILIKE a_family_name || '%')
+                        AND (a_given_name ISNULL OR a.given_name ILIKE a_given_name || '%')
                  ORDER BY a.pkey_id
                  OFFSET a_offset
                  LIMIT a_limit;
@@ -1681,7 +1686,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_admin_list_strategies(a_limit bigint, a_offset bigint)
+CREATE OR REPLACE FUNCTION api.fun_admin_list_strategies(a_limit bigint, a_offset bigint, a_strategy_id bigint DEFAULT NULL, a_strategy_name varchar DEFAULT NULL, a_expert_public_id bigint DEFAULT NULL, a_expert_name varchar DEFAULT NULL, a_description varchar DEFAULT NULL)
 RETURNS table (
     "strategy_id" bigint,
     "strategy_name" varchar,
@@ -1710,6 +1715,11 @@ BEGIN
                         TRUE AS approved_strategy
                  FROM tbl.strategy AS a
                           JOIN tbl.user AS b ON b.pkey_id = a.fkey_user_id
+                WHERE (a_strategy_id ISNULL OR a.pkey_id = a_strategy_id)
+                    AND (a_strategy_name ISNULL OR a.name ILIKE a_strategy_name || '%')
+                    AND (a_expert_public_id ISNULL OR b.public_id = a_expert_public_id)
+                    AND (a_expert_name ISNULL OR b.username ILIKE a_expert_name || '%')
+                    AND (a_description ISNULL OR a.description ILIKE a_description || '%')
                  ORDER BY a.pkey_id
                  OFFSET a_offset
                  LIMIT a_limit;
