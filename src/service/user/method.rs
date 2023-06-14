@@ -2176,7 +2176,7 @@ mod tests {
         db.execute(FunUserDepositToEscrowReq {
             user_id: ctx.user_id,
             quantity: format!("{:?}", esc.amount),
-            blockchain: chain.to_string(),
+            blockchain: chain,
             user_address: format!("{:?}", esc.owner),
             contract_address: format!("{:?}", tx.get_to().context("no to")?),
             transaction_hash: format!("{:?}", tx.get_hash()),
@@ -2361,28 +2361,29 @@ mod tests {
         let user_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
         let admin_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_2)?;
         let escrow_key = Secp256k1SecretKey::new_random();
-        let conn_pool = EthereumRpcConnectionPool::localnet();
-        let conn = conn_pool.get_conn().await?;
-        let erc20_mock = deploy_mock_erc20(conn.get_raw().clone(), admin_key.clone()).await?;
+        let conn_pool = EthereumRpcConnectionPool::new();
+        let conn = conn_pool.get(EnumBlockChain::LocalNet).await?;
+        let erc20_mock = deploy_mock_erc20(conn.clone(), admin_key.clone()).await?;
         erc20_mock
             .mint(
+                &conn,
                 &admin_key.key,
                 user_key.address,
                 U256::from(200000000000i64),
             )
             .await?;
-        let eth = EthereumToken::new(conn.get_raw().clone());
+        let eth = EthereumToken::new(conn.clone());
         eth.transfer(
             admin_key.clone(),
             escrow_key.address,
             U256::from(1e18 as i64),
         )
         .await?;
-        let escrow_contract =
-            EscrowContract::deploy(conn.get_raw().clone(), &escrow_key.key).await?;
+        let escrow_contract = EscrowContract::deploy(conn.clone(), &escrow_key.key).await?;
 
         let tx_hash = erc20_mock
             .transfer(
+                &conn,
                 &user_key.key,
                 escrow_contract.address(),
                 U256::from(20000000000i64),
@@ -2457,7 +2458,7 @@ mod tests {
             &db,
             EnumBlockChain::EthereumGoerli,
             &stablecoins,
-            &escrow_contract,
+            escrow_contract,
             U256::from(1000),
             user_key.address,
             &escrow_key.key,

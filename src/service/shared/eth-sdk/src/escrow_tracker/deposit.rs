@@ -56,7 +56,7 @@ mod tests {
         wait_for_confirmations_simple, BlockchainCoinAddresses, EthereumRpcConnectionPool,
         EthereumToken, TransactionFetcher, ANVIL_PRIV_KEY_1, ANVIL_PRIV_KEY_2,
     };
-    use gen::model::{EnumBlockChain, EnumBlockchainCoin};
+    use gen::model::{EnumBlockChain, EnumBlockchainCoin, EnumRole};
     use lib::database::{connect_to_database, database_test_config, drop_and_recreate_database};
     use lib::log::{setup_logs, LogLevel};
     use std::net::Ipv4Addr;
@@ -114,12 +114,15 @@ mod tests {
             .await?
             .into_result()
             .context("No user signup resp")?;
+
         let ctx = RequestContext {
             connection_id: 0,
             user_id: ret.user_id,
             seq: 0,
             method: 0,
             log_id: 0,
+            ip_addr: Ipv4Addr::new(127, 0, 0, 1).into(),
+            role: EnumRole::User as u32,
         };
 
         let mut stablecoins = BlockchainCoinAddresses::empty();
