@@ -1926,6 +1926,8 @@ pub async fn on_user_request_refund(
         .get(chain, token)
         .context("no stablecoin address")?;
 
+    // TODO: check user balance before transfer
+
     let hash = transfer_token_to_and_ensure_success(
         escrow_contract,
         &_conn,
