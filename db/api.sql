@@ -1650,12 +1650,13 @@ AS $$
     
 BEGIN
     RETURN QUERY SELECT a.pkey_id AS strategy_id,
+                        a.name AS strategy_name, 
                         b.pkey_id AS expert_id,
                         b.public_id AS expert_public_id,
                         b.username AS expert_name,
                         a.description AS description,
                         a.created_at AS created_at,
-                        0 AS approved_at,
+                        0::bigint AS approved_at,
                         FALSE AS pending_strategy,
                         TRUE AS approved_strategy
                  FROM tbl.strategy AS a
