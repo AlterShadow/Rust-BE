@@ -2223,18 +2223,8 @@
               "ty": "Boolean"
             },
             {
-              "name": "linked_wallets",
-              "ty": {
-                "DataTable": {
-                  "name": "LinkedWallet",
-                  "fields": [
-                    {
-                      "name": "wallet_address",
-                      "ty": "String"
-                    }
-                  ]
-                }
-              }
+              "name": "wallet_address",
+              "ty": "String"
             }
           ],
           "returns": [

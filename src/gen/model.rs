@@ -1150,7 +1150,7 @@ pub struct ExpertCreateStrategyRequest {
     pub strategy_fee: f64,
     pub expert_fee: f64,
     pub agreed_tos: bool,
-    pub linked_wallets: Vec<LinkedWallet>,
+    pub wallet_address: String,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1256,11 +1256,6 @@ pub struct ExpertUpdateStrategyResponse {
 pub struct FollowHistoryPoint {
     pub time: i64,
     pub follower_count: f64,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct LinkedWallet {
-    pub wallet_address: String,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -4430,18 +4425,8 @@ impl WsRequest for ExpertCreateStrategyRequest {
       "ty": "Boolean"
     },
     {
-      "name": "linked_wallets",
-      "ty": {
-        "DataTable": {
-          "name": "LinkedWallet",
-          "fields": [
-            {
-              "name": "wallet_address",
-              "ty": "String"
-            }
-          ]
-        }
-      }
+      "name": "wallet_address",
+      "ty": "String"
     }
   ],
   "returns": [

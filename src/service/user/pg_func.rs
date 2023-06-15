@@ -784,6 +784,8 @@ END
                 Field::new("strategy_fee", Type::Numeric),
                 Field::new("expert_fee", Type::Numeric),
                 Field::new("agreed_tos", Type::Boolean),
+                Field::new("wallet_address", Type::String),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
             ],
             vec![
                 Field::new("success", Type::Boolean),
@@ -806,7 +808,9 @@ BEGIN
         expert_fee,
         agreed_tos,
         updated_at, 
-        created_at
+        created_at,
+        pending_approval,
+        approved
     )
     VALUES (
         a_user_id, 
@@ -821,8 +825,28 @@ BEGIN
         a_expert_fee,
         a_agreed_tos,
         EXTRACT(EPOCH FROM NOW())::bigint, 
-        EXTRACT(EPOCH FROM NOW())::bigint
+        EXTRACT(EPOCH FROM NOW())::bigint,
+        TRUE,
+        FALSE
     ) RETURNING pkey_id INTO a_strategy_id;
+    INSERT INTO tbl.strategy_watching_wallet(
+        fkey_user_id,
+        fkey_strategy_id,
+        blockchain,
+        address,
+        dex,
+        updated_at,
+        created_at
+    ) VALUES (
+        a_user_id,
+        a_strategy_id,
+        a_blockchain,
+        a_wallet_address,
+        'PANCAKESWAP',
+        EXTRACT(EPOCH FROM NOW())::bigint,
+        EXTRACT(EPOCH FROM NOW())::bigint
+    );
+    
     RETURN QUERY SELECT TRUE, a_strategy_id;
 END
 "#,

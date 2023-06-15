@@ -1024,7 +1024,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_create_strategy(a_user_id bigint, a_name varchar, a_description varchar, a_strategy_thesis_url varchar, a_minimum_backing_amount_usd double precision, a_strategy_fee double precision, a_expert_fee double precision, a_agreed_tos boolean)
+CREATE OR REPLACE FUNCTION api.fun_user_create_strategy(a_user_id bigint, a_name varchar, a_description varchar, a_strategy_thesis_url varchar, a_minimum_backing_amount_usd double precision, a_strategy_fee double precision, a_expert_fee double precision, a_agreed_tos boolean, a_wallet_address varchar, a_blockchain enum_block_chain)
 RETURNS table (
     "success" boolean,
     "strategy_id" bigint
@@ -1048,7 +1048,9 @@ BEGIN
         expert_fee,
         agreed_tos,
         updated_at, 
-        created_at
+        created_at,
+        pending_approval,
+        approved
     )
     VALUES (
         a_user_id, 
@@ -1063,8 +1065,28 @@ BEGIN
         a_expert_fee,
         a_agreed_tos,
         EXTRACT(EPOCH FROM NOW())::bigint, 
-        EXTRACT(EPOCH FROM NOW())::bigint
+        EXTRACT(EPOCH FROM NOW())::bigint,
+        TRUE,
+        FALSE
     ) RETURNING pkey_id INTO a_strategy_id;
+    INSERT INTO tbl.strategy_watching_wallet(
+        fkey_user_id,
+        fkey_strategy_id,
+        blockchain,
+        address,
+        dex,
+        updated_at,
+        created_at
+    ) VALUES (
+        a_user_id,
+        a_strategy_id,
+        a_blockchain,
+        a_wallet_address,
+        'PANCAKESWAP',
+        EXTRACT(EPOCH FROM NOW())::bigint,
+        EXTRACT(EPOCH FROM NOW())::bigint
+    );
+    
     RETURN QUERY SELECT TRUE, a_strategy_id;
 END
 

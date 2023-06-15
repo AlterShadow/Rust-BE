@@ -1723,6 +1723,8 @@ impl RequestHandler for MethodExpertCreateStrategy {
                     strategy_fee: req.strategy_fee,
                     expert_fee: req.expert_fee,
                     agreed_tos: req.agreed_tos,
+                    wallet_address: req.wallet_address,
+                    blockchain: EnumBlockChain::EthereumMainnet,
                 })
                 .await?
                 .into_result()

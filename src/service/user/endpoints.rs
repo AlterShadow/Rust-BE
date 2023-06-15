@@ -597,16 +597,17 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 Field::new("strategy_fee", Type::Numeric),
                 Field::new("expert_fee", Type::Numeric),
                 Field::new("agreed_tos", Type::Boolean),
-                Field::new(
-                    "linked_wallets",
-                    Type::datatable(
-                        "LinkedWallet",
-                        vec![
-                            Field::new("wallet_address", Type::String),
-                            // TODO: verify ownership of the wallet by requiring signature
-                        ],
-                    ),
-                ),
+                Field::new("wallet_address", Type::String),
+                // Field::new(
+                //     "linked_wallets",
+                //     Type::datatable(
+                //         "LinkedWallet",
+                //         vec![
+                //             Field::new("wallet_address", Type::String),
+                //             TODO: verify ownership of the wallet by requiring signature
+                // ],
+                // ),
+                // ),
             ],
             vec![
                 Field::new("success", Type::Boolean),

@@ -1320,6 +1320,8 @@ pub struct FunUserCreateStrategyReq {
     pub strategy_fee: f64,
     pub expert_fee: f64,
     pub agreed_tos: bool,
+    pub wallet_address: String,
+    pub blockchain: EnumBlockChain,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserCreateStrategyRespRow {
@@ -1331,7 +1333,7 @@ pub struct FunUserCreateStrategyRespRow {
 impl DatabaseRequest for FunUserCreateStrategyReq {
     type ResponseRow = FunUserCreateStrategyRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_create_strategy(a_user_id => $1::bigint, a_name => $2::varchar, a_description => $3::varchar, a_strategy_thesis_url => $4::varchar, a_minimum_backing_amount_usd => $5::double precision, a_strategy_fee => $6::double precision, a_expert_fee => $7::double precision, a_agreed_tos => $8::boolean);"
+        "SELECT * FROM api.fun_user_create_strategy(a_user_id => $1::bigint, a_name => $2::varchar, a_description => $3::varchar, a_strategy_thesis_url => $4::varchar, a_minimum_backing_amount_usd => $5::double precision, a_strategy_fee => $6::double precision, a_expert_fee => $7::double precision, a_agreed_tos => $8::boolean, a_wallet_address => $9::varchar, a_blockchain => $10::enum_block_chain);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -1343,6 +1345,8 @@ impl DatabaseRequest for FunUserCreateStrategyReq {
             &self.strategy_fee as &(dyn ToSql + Sync),
             &self.expert_fee as &(dyn ToSql + Sync),
             &self.agreed_tos as &(dyn ToSql + Sync),
+            &self.wallet_address as &(dyn ToSql + Sync),
+            &self.blockchain as &(dyn ToSql + Sync),
         ]
     }
     fn parse_row(&self, row: Row) -> Result<FunUserCreateStrategyRespRow> {
