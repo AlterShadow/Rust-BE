@@ -402,10 +402,10 @@ BEGIN
                           s.aum as aum,
                           EXISTS(SELECT * FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.fkey_user_id = a_user_id AND ufs.unfollowed = FALSE) as followed,
                           w.address AS linked_wallet,
-                          w.blockchain AS linked_wallet
+                          w.blockchain AS linked_wallet_blockchain
                  FROM tbl.strategy AS s
-                        JOIN tbl.expert_profile AS b ON b.pkey_id = s.fkey_user_id
-                        LEFT JOIN tbl.strategy_watching_wallet AS w ON w.fkey_strategy_id = (SELECT w.fkey_strategy_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.fkey_user_id ORDER BY w.pkey_id LIMTI 1)
+                        JOIN tbl.user AS b ON b.pkey_id = s.fkey_user_id
+                        LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = (SELECT distinct on(w.pkey_id) w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.fkey_user_id ORDER BY w.pkey_id)
                  WHERE (a_strategy_id ISNULL OR s.pkey_id = a_strategy_id)
                     AND (a_strategy_name ISNULL OR s.name ILIKE a_strategy_name || '%')
                     AND (a_expert_public_id ISNULL OR b.public_id = a_expert_public_id)
