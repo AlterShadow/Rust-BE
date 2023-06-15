@@ -25,7 +25,6 @@ pub struct Config {
     pub app_db: DatabaseConfig,
     #[serde(default)]
     pub log_level: LogLevel,
-    pub eth_provider_url: String,
 
     #[serde(default)]
     pub host: String,
