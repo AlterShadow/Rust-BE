@@ -41,6 +41,32 @@ pub async fn handle_eth_escrows(
                 error!("error caching transaction: {:?}", e);
             };
 
+            /* check if it is an escrow to one of our escrow contracts */
+            let escrow =
+                match parse_escrow(blockchain, &tx, &state.stablecoin_addresses, &state.erc_20) {
+                    Ok(escrow) => escrow,
+                    Err(e) => {
+                        error!("error parsing escrow: {:?}", e);
+                        return;
+                    }
+                };
+
+            let escrow_addresses = EscrowAddresses::new();
+            let called_address = match tx.get_to() {
+                Some(called_address) => called_address,
+                None => {
+                    error!("no called address found for tx: {:?}", tx.get_hash());
+                    return;
+                }
+            };
+            match escrow_addresses.get_by_address(called_address) {
+                Some(_) => {}
+                None => {
+                    error!("no call to an escrow contract for tx: {:?}", tx.get_hash());
+                    return;
+                }
+            }
+
             /* check if transaction is from one of our users */
             // TODO: handle an escrow made by an unknown user
             let caller = match tx.get_from() {
@@ -70,32 +96,6 @@ pub async fn handle_eth_escrows(
                     return;
                 }
             };
-
-            /* check if it is an escrow to one of our escrow contracts */
-            let escrow =
-                match parse_escrow(blockchain, &tx, &state.stablecoin_addresses, &state.erc_20) {
-                    Ok(escrow) => escrow,
-                    Err(e) => {
-                        error!("error parsing escrow: {:?}", e);
-                        return;
-                    }
-                };
-
-            let escrow_addresses = EscrowAddresses::new();
-            let called_address = match tx.get_to() {
-                Some(called_address) => called_address,
-                None => {
-                    error!("no called address found for tx: {:?}", tx.get_hash());
-                    return;
-                }
-            };
-            match escrow_addresses.get_by_address(called_address) {
-                Some(_) => {}
-                None => {
-                    error!("no call to an escrow contract for tx: {:?}", tx.get_hash());
-                    return;
-                }
-            }
 
             /* insert escrow in ledger */
             match state
