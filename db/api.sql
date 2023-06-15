@@ -1075,6 +1075,7 @@ BEGIN
         blockchain,
         address,
         dex,
+        ratio_distribution,
         updated_at,
         created_at
     ) VALUES (
@@ -1083,6 +1084,7 @@ BEGIN
         a_blockchain,
         a_wallet_address,
         'PANCAKESWAP',
+        1.0,
         EXTRACT(EPOCH FROM NOW())::bigint,
         EXTRACT(EPOCH FROM NOW())::bigint
     );

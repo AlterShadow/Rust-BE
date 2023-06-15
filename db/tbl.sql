@@ -119,7 +119,7 @@ CREATE TABLE tbl.strategy (
     created_at bigint  NOT NULL,
     pending_approval boolean  NOT NULL DEFAULT FALSE,
     approved boolean  NOT NULL DEFAULT FALSE,
-    approved_at bigint  NOT NULL,
+    approved_at bigint,
     CONSTRAINT strategy_pk PRIMARY KEY (pkey_id)
 );
 

@@ -61,7 +61,7 @@ async fn test_create_update_strategy() -> Result<()> {
             strategy_fee: 0.0,
             expert_fee: 0.0,
             agreed_tos: true,
-            linked_wallets: vec![],
+            wallet_address: format!("{:?}", signer.address),
         })
         .await?;
     info!("Register wallet {:?}", resp);
@@ -132,7 +132,7 @@ async fn test_user_follow_strategy() -> Result<()> {
             strategy_fee: 0.0,
             expert_fee: 0.0,
             agreed_tos: true,
-            linked_wallets: vec![],
+            wallet_address: format!("{:?}", user.address),
         })
         .await?;
     info!("User Create Strategy {:?}", create_strategy_resp);
@@ -213,7 +213,7 @@ async fn test_user_follow_strategy_get_user_profile() -> Result<()> {
             strategy_fee: 0.0,
             expert_fee: 0.0,
             agreed_tos: true,
-            linked_wallets: vec![],
+            wallet_address: format!("{:?}", user.address),
         })
         .await?;
     info!("User Create Strategy {:?}", create_strategy_resp);
@@ -280,7 +280,7 @@ async fn test_user_list_strategies() -> Result<()> {
             strategy_fee: 0.0,
             expert_fee: 0.0,
             agreed_tos: true,
-            linked_wallets: vec![],
+            wallet_address: format!("{:?}", user.address),
         })
         .await?;
     info!("User Create Strategy {:?}", create_strategy_resp);
