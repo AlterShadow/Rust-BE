@@ -1956,6 +1956,50 @@ impl DatabaseRequest for FunExpertListBackersReq {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserListDepositHistoryReq {
+    pub user_id: i64,
+    pub limit: i64,
+    pub offset: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserListDepositHistoryRespRow {
+    pub blockchain: EnumBlockChain,
+    pub user_address: String,
+    pub contract_address: String,
+    pub receiver_address: String,
+    pub quantity: String,
+    pub transaction_hash: String,
+    pub created_at: i64,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunUserListDepositHistoryReq {
+    type ResponseRow = FunUserListDepositHistoryRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_list_deposit_history(a_user_id => $1::bigint, a_limit => $2::bigint, a_offset => $3::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.limit as &(dyn ToSql + Sync),
+            &self.offset as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserListDepositHistoryRespRow> {
+        let r = FunUserListDepositHistoryRespRow {
+            blockchain: row.try_get(0)?,
+            user_address: row.try_get(1)?,
+            contract_address: row.try_get(2)?,
+            receiver_address: row.try_get(3)?,
+            quantity: row.try_get(4)?,
+            transaction_hash: row.try_get(5)?,
+            created_at: row.try_get(6)?,
+        };
+        Ok(r)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAdminListUsersReq {
     pub limit: i64,
     pub offset: i64,

@@ -363,6 +363,9 @@ pub enum EnumEndpoint {
     #[postgres(name = "UserGetDepositAddresses")]
     UserGetDepositAddresses = 20370,
     ///
+    #[postgres(name = "UserListDepositHistory")]
+    UserListDepositHistory = 20380,
+    ///
     #[postgres(name = "AdminListUsers")]
     AdminListUsers = 30010,
     ///
@@ -1680,6 +1683,30 @@ pub struct UserListBackedStrategiesRequest {
 #[serde(rename_all = "camelCase")]
 pub struct UserListBackedStrategiesResponse {
     pub strategies: Vec<ListStrategiesRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListDepositHistoryRequest {
+    #[serde(default)]
+    pub limit: Option<i64>,
+    #[serde(default)]
+    pub offset: Option<i64>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListDepositHistoryResponse {
+    pub history: Vec<UserListDepositHistoryRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListDepositHistoryRow {
+    pub blockchain: EnumBlockChain,
+    pub user_address: String,
+    pub contract_address: String,
+    pub receiver_address: String,
+    pub quantity: String,
+    pub transaction_hash: String,
+    pub created_at: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -5185,6 +5212,77 @@ impl WsRequest for UserGetDepositAddressesRequest {
 }
 impl WsResponse for UserGetDepositAddressesResponse {
     type Request = UserGetDepositAddressesRequest;
+}
+
+impl WsRequest for UserListDepositHistoryRequest {
+    type Response = UserListDepositHistoryResponse;
+    const METHOD_ID: u32 = 20380;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserListDepositHistory",
+  "code": 20380,
+  "parameters": [
+    {
+      "name": "limit",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "offset",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    }
+  ],
+  "returns": [
+    {
+      "name": "history",
+      "ty": {
+        "DataTable": {
+          "name": "UserListDepositHistoryRow",
+          "fields": [
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
+            },
+            {
+              "name": "user_address",
+              "ty": "String"
+            },
+            {
+              "name": "contract_address",
+              "ty": "String"
+            },
+            {
+              "name": "receiver_address",
+              "ty": "String"
+            },
+            {
+              "name": "quantity",
+              "ty": "String"
+            },
+            {
+              "name": "transaction_hash",
+              "ty": "String"
+            },
+            {
+              "name": "created_at",
+              "ty": "BigInt"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for UserListDepositHistoryResponse {
+    type Request = UserListDepositHistoryRequest;
 }
 
 impl WsRequest for AdminListUsersRequest {

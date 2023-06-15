@@ -57,6 +57,7 @@ ID: 2
 |20350|ExpertListBackers|limit, offset|backers||
 |20360|UserGetDepositTokens||tokens||
 |20370|UserGetDepositAddresses||addresses||
+|20380|UserListDepositHistory|limit, offset|history||
 
 # admin Server
 ID: 3

@@ -1428,6 +1428,31 @@ END
 $$;
         
 
+CREATE OR REPLACE FUNCTION api.fun_user_list_deposit_history(a_user_id bigint, a_limit bigint, a_offset bigint)
+RETURNS table (
+    "blockchain" enum_block_chain,
+    "user_address" varchar,
+    "contract_address" varchar,
+    "receiver_address" varchar,
+    "quantity" varchar,
+    "transaction_hash" varchar,
+    "created_at" bigint
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY SELECT a.blockchain, a.user_address, a.contract_address, a.receiver_address, a.quantity, a.transaction_hash, a.created_at
+            FROM tbl.user_deposit_history AS a
+            WHERE a.fkey_user_id = a_user_id
+            ORDER BY a.pkey_id DESC
+            LIMIT a_limit
+            OFFSET a_offset;
+END
+            
+$$;
+        
+
 CREATE OR REPLACE FUNCTION api.fun_admin_list_users(a_limit bigint, a_offset bigint, a_user_id bigint DEFAULT NULL, a_address varchar DEFAULT NULL, a_username varchar DEFAULT NULL, a_email varchar DEFAULT NULL, a_role enum_role DEFAULT NULL)
 RETURNS table (
     "user_id" bigint,

@@ -1,4 +1,5 @@
 use api::cmc::CoinMarketCap;
+use chrono::Utc;
 use eth_sdk::erc20::approve_and_ensure_success;
 use eth_sdk::erc20::Erc20Token;
 use eth_sdk::escrow::transfer_token_to_and_ensure_success;
@@ -2196,7 +2197,43 @@ impl RequestHandler for MethodUserGetDepositAddresses {
         async move { Ok(UserGetDepositAddressesResponse { addresses }) }.boxed()
     }
 }
+pub struct MethodUserListDepositHistory;
+impl RequestHandler for MethodUserListDepositHistory {
+    type Request = UserListDepositHistoryRequest;
 
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db: DbClient = toolbox.get_db();
+        async move {
+            let resp = db
+                .execute(FunUserListDepositHistoryReq {
+                    user_id: ctx.user_id,
+                    limit: req.limit.unwrap_or(DEFAULT_LIMIT),
+                    offset: req.offset.unwrap_or(DEFAULT_OFFSET),
+                })
+                .await?;
+            Ok(UserListDepositHistoryResponse {
+                history: resp
+                    .into_iter()
+                    .map(|x| UserListDepositHistoryRow {
+                        blockchain: x.blockchain,
+                        user_address: x.user_address,
+                        contract_address: x.contract_address,
+                        receiver_address: x.receiver_address,
+                        quantity: x.quantity,
+                        transaction_hash: x.transaction_hash,
+                        created_at: x.created_at,
+                    })
+                    .collect(),
+            })
+        }
+        .boxed()
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;

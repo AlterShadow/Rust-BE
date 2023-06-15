@@ -825,5 +825,28 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 ),
             )],
         ),
+        EndpointSchema::new(
+            "UserListDepositHistory",
+            20380,
+            vec![
+                Field::new("limit", Type::optional(Type::BigInt)),
+                Field::new("offset", Type::optional(Type::BigInt)),
+            ],
+            vec![Field::new(
+                "history",
+                Type::datatable(
+                    "UserListDepositHistoryRow",
+                    vec![
+                        Field::new("blockchain", Type::enum_ref("block_chain")),
+                        Field::new("user_address", Type::String),
+                        Field::new("contract_address", Type::String),
+                        Field::new("receiver_address", Type::String),
+                        Field::new("quantity", Type::String),
+                        Field::new("transaction_hash", Type::String),
+                        Field::new("created_at", Type::BigInt),
+                    ],
+                ),
+            )],
+        ),
     ]
 }

@@ -2834,6 +2834,69 @@
           "stream_response": [],
           "description": "",
           "json_schema": null
+        },
+        {
+          "name": "UserListDepositHistory",
+          "code": 20380,
+          "parameters": [
+            {
+              "name": "limit",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "offset",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "name": "history",
+              "ty": {
+                "DataTable": {
+                  "name": "UserListDepositHistoryRow",
+                  "fields": [
+                    {
+                      "name": "blockchain",
+                      "ty": {
+                        "EnumRef": "block_chain"
+                      }
+                    },
+                    {
+                      "name": "user_address",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "contract_address",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "receiver_address",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "quantity",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "transaction_hash",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "created_at",
+                      "ty": "BigInt"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "stream_response": [],
+          "description": "",
+          "json_schema": null
         }
       ]
     },

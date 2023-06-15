@@ -1197,5 +1197,32 @@ BEGIN
 END
             "#,
         ),
+        ProceduralFunction::new(
+            "fun_user_list_deposit_history",
+            vec![
+                Field::new("user_id", Type::BigInt),
+                Field::new("limit", Type::BigInt),
+                Field::new("offset", Type::BigInt),
+            ],
+            vec![
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("user_address", Type::String),
+                Field::new("contract_address", Type::String),
+                Field::new("receiver_address", Type::String),
+                Field::new("quantity", Type::String),
+                Field::new("transaction_hash", Type::String),
+                Field::new("created_at", Type::BigInt),
+            ],
+            r#"
+BEGIN
+    RETURN QUERY SELECT a.blockchain, a.user_address, a.contract_address, a.receiver_address, a.quantity, a.transaction_hash, a.created_at
+            FROM tbl.user_deposit_history AS a
+            WHERE a.fkey_user_id = a_user_id
+            ORDER BY a.pkey_id DESC
+            LIMIT a_limit
+            OFFSET a_offset;
+END
+            "#,
+        ),
     ]
 }
