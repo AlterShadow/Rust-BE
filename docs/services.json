@@ -340,6 +340,36 @@
               "ty": {
                 "Optional": "BigInt"
               }
+            },
+            {
+              "name": "strategy_id",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "strategy_name",
+              "ty": {
+                "Optional": "String"
+              }
+            },
+            {
+              "name": "expert_public_id",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "expert_name",
+              "ty": {
+                "Optional": "String"
+              }
+            },
+            {
+              "name": "description",
+              "ty": {
+                "Optional": "String"
+              }
             }
           ],
           "returns": [

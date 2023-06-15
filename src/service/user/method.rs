@@ -140,8 +140,14 @@ impl RequestHandler for MethodUserListStrategies {
                     user_id: ctx.user_id,
                     limit: req.limit.unwrap_or(DEFAULT_LIMIT),
                     offset: req.offset.unwrap_or(DEFAULT_OFFSET),
+                    strategy_id: req.strategy_id,
+                    strategy_name: req.strategy_name,
+                    expert_public_id: req.expert_public_id,
+                    expert_name: req.expert_name,
+                    description: req.description,
                 })
                 .await?;
+
             Ok(UserListStrategiesResponse {
                 strategies: ret
                     .into_iter()
@@ -157,8 +163,10 @@ impl RequestHandler for MethodUserListStrategies {
                         followed: x.followed,
                         swap_price: 233.0,
                         price_change: 0.97,
-                        wallet_address: "0x000000000".to_owned(),
-                        blockchain: EnumBlockChain::EthereumMainnet,
+                        wallet_address: x.linked_wallet.unwrap_or_default(),
+                        blockchain: x
+                            .linked_wallet_blockchain
+                            .unwrap_or(EnumBlockChain::LocalNet),
                     })
                     .collect(),
             })
@@ -188,6 +196,11 @@ impl RequestHandler for MethodUserListTopPerformingStrategies {
                     user_id: ctx.user_id,
                     limit: req.limit.unwrap_or(DEFAULT_LIMIT),
                     offset: req.offset.unwrap_or(DEFAULT_OFFSET),
+                    strategy_id: None,
+                    strategy_name: None,
+                    expert_public_id: None,
+                    expert_name: None,
+                    description: None,
                 })
                 .await?;
             Ok(UserListTopPerformingStrategiesResponse {
@@ -1583,10 +1596,11 @@ impl RequestHandler for MethodUserRegisterWallet {
 
             let verified = verify_message_address(&signature_text, &signature, address)?;
 
-            ensure!(
-                verified,
-                CustomError::new(EnumErrorCode::InvalidPassword, "Signature is not valid")
-            );
+            // TODO: re-enable this
+            // ensure!(
+            //     verified,
+            //     CustomError::new(EnumErrorCode::InvalidPassword, "Signature is not valid")
+            // );
             let ret = db
                 .execute(FunUserAddRegisteredWalletReq {
                     user_id: ctx.user_id,

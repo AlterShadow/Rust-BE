@@ -383,6 +383,16 @@ pub struct FunUserListStrategiesReq {
     pub user_id: i64,
     pub limit: i64,
     pub offset: i64,
+    #[serde(default)]
+    pub strategy_id: Option<i64>,
+    #[serde(default)]
+    pub strategy_name: Option<String>,
+    #[serde(default)]
+    pub expert_public_id: Option<i64>,
+    #[serde(default)]
+    pub expert_name: Option<String>,
+    #[serde(default)]
+    pub description: Option<String>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserListStrategiesRespRow {
@@ -397,19 +407,28 @@ pub struct FunUserListStrategiesRespRow {
     #[serde(default)]
     pub aum: Option<f64>,
     pub followed: bool,
+    #[serde(default)]
+    pub linked_wallet: Option<String>,
+    #[serde(default)]
+    pub linked_wallet_blockchain: Option<EnumBlockChain>,
 }
 
 #[allow(unused_variables)]
 impl DatabaseRequest for FunUserListStrategiesReq {
     type ResponseRow = FunUserListStrategiesRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_list_strategies(a_user_id => $1::bigint, a_limit => $2::bigint, a_offset => $3::bigint);"
+        "SELECT * FROM api.fun_user_list_strategies(a_user_id => $1::bigint, a_limit => $2::bigint, a_offset => $3::bigint, a_strategy_id => $4::bigint, a_strategy_name => $5::varchar, a_expert_public_id => $6::bigint, a_expert_name => $7::varchar, a_description => $8::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
             &self.user_id as &(dyn ToSql + Sync),
             &self.limit as &(dyn ToSql + Sync),
             &self.offset as &(dyn ToSql + Sync),
+            &self.strategy_id as &(dyn ToSql + Sync),
+            &self.strategy_name as &(dyn ToSql + Sync),
+            &self.expert_public_id as &(dyn ToSql + Sync),
+            &self.expert_name as &(dyn ToSql + Sync),
+            &self.description as &(dyn ToSql + Sync),
         ]
     }
     fn parse_row(&self, row: Row) -> Result<FunUserListStrategiesRespRow> {
@@ -423,6 +442,8 @@ impl DatabaseRequest for FunUserListStrategiesReq {
             risk_score: row.try_get(6)?,
             aum: row.try_get(7)?,
             followed: row.try_get(8)?,
+            linked_wallet: row.try_get(9)?,
+            linked_wallet_blockchain: row.try_get(10)?,
         };
         Ok(r)
     }

@@ -1813,6 +1813,16 @@ pub struct UserListStrategiesRequest {
     pub limit: Option<i64>,
     #[serde(default)]
     pub offset: Option<i64>,
+    #[serde(default)]
+    pub strategy_id: Option<i64>,
+    #[serde(default)]
+    pub strategy_name: Option<String>,
+    #[serde(default)]
+    pub expert_public_id: Option<i64>,
+    #[serde(default)]
+    pub expert_name: Option<String>,
+    #[serde(default)]
+    pub description: Option<String>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -2372,6 +2382,36 @@ impl WsRequest for UserListStrategiesRequest {
       "name": "offset",
       "ty": {
         "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "strategy_id",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "strategy_name",
+      "ty": {
+        "Optional": "String"
+      }
+    },
+    {
+      "name": "expert_public_id",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "expert_name",
+      "ty": {
+        "Optional": "String"
+      }
+    },
+    {
+      "name": "description",
+      "ty": {
+        "Optional": "String"
       }
     }
   ],

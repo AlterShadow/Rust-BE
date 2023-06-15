@@ -53,6 +53,11 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
             vec![
                 Field::new("limit", Type::optional(Type::BigInt)),
                 Field::new("offset", Type::optional(Type::BigInt)),
+                Field::new("strategy_id", Type::optional(Type::BigInt)),
+                Field::new("strategy_name", Type::optional(Type::String)),
+                Field::new("expert_public_id", Type::optional(Type::BigInt)),
+                Field::new("expert_name", Type::optional(Type::String)),
+                Field::new("description", Type::optional(Type::String)),
             ],
             vec![Field::new("strategies", list_strategies_datatable())],
         )

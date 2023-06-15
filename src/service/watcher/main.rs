@@ -40,7 +40,7 @@ pub struct Config {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let config: Config = load_config("trade-watcher".to_owned())?;
+    let config: Config = load_config("watcher".to_owned())?;
     setup_logs(config.log_level)?;
     let db = connect_to_database(config.app_db).await?;
 

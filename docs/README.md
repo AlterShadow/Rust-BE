@@ -18,7 +18,7 @@ ID: 2
 |20040|UserFollowStrategy|strategy_id|success|User follows a strategy|
 |20050|UserListFollowedStrategies|limit, offset|strategies|User lists followed strategies|
 |20060|UserUnfollowStrategy|strategy_id|success||
-|20061|UserListStrategies|limit, offset|strategies|User lists strategies|
+|20061|UserListStrategies|limit, offset, strategy_id, strategy_name, expert_public_id, expert_name, description|strategies|User lists strategies|
 |20063|UserListTopPerformingStrategies|limit, offset|strategies|User lists top performing strategies|
 |20064|UserListStrategyBackers|strategy_id, limit, offset|backers||
 |20065|UserListStrategyFollowers|strategy_id, limit, offset|followers||

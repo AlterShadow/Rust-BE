@@ -374,7 +374,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_list_strategies(a_user_id bigint, a_limit bigint, a_offset bigint)
+CREATE OR REPLACE FUNCTION api.fun_user_list_strategies(a_user_id bigint, a_limit bigint, a_offset bigint, a_strategy_id bigint DEFAULT NULL, a_strategy_name varchar DEFAULT NULL, a_expert_public_id bigint DEFAULT NULL, a_expert_name varchar DEFAULT NULL, a_description varchar DEFAULT NULL)
 RETURNS table (
     "strategy_id" bigint,
     "strategy_name" varchar,
@@ -384,7 +384,9 @@ RETURNS table (
     "backers" bigint,
     "risk_score" double precision,
     "aum" double precision,
-    "followed" boolean
+    "followed" boolean,
+    "linked_wallet" varchar,
+    "linked_wallet_blockchain" enum_block_chain
 )
 LANGUAGE plpgsql
 AS $$
@@ -398,8 +400,17 @@ BEGIN
                           (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_strategy_history AS h WHERE fkey_strategy_id = s.pkey_id) AS backers,
                           s.risk_score as risk_score,
                           s.aum as aum,
-                          EXISTS(SELECT * FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.fkey_user_id = a_user_id AND ufs.unfollowed = FALSE) as followed
+                          EXISTS(SELECT * FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.fkey_user_id = a_user_id AND ufs.unfollowed = FALSE) as followed,
+                          w.address AS linked_wallet,
+                          w.blockchain AS linked_wallet
                  FROM tbl.strategy AS s
+                        JOIN tbl.expert_profile AS b ON b.pkey_id = s.fkey_user_id
+                        LEFT JOIN tbl.strategy_watching_wallet AS w ON w.fkey_strategy_id = (SELECT w.fkey_strategy_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.fkey_user_id ORDER BY w.pkey_id LIMTI 1)
+                 WHERE (a_strategy_id ISNULL OR s.pkey_id = a_strategy_id)
+                    AND (a_strategy_name ISNULL OR s.name ILIKE a_strategy_name || '%')
+                    AND (a_expert_public_id ISNULL OR b.public_id = a_expert_public_id)
+                    AND (a_expert_name ISNULL OR b.username ILIKE a_expert_name || '%')
+                    AND (a_description ISNULL OR s.description ILIKE a_description || '%')
                 ORDER BY s.pkey_id
                 LIMIT a_limit
                 OFFSET a_offset;

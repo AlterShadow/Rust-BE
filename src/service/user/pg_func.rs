@@ -99,6 +99,11 @@ END
                 Field::new("user_id", Type::BigInt),
                 Field::new("limit", Type::BigInt),
                 Field::new("offset", Type::BigInt),
+                Field::new("strategy_id", Type::optional(Type::BigInt)),
+                Field::new("strategy_name", Type::optional(Type::String)),
+                Field::new("expert_public_id", Type::optional(Type::BigInt)),
+                Field::new("expert_name", Type::optional(Type::String)),
+                Field::new("description", Type::optional(Type::String)),
             ],
             vec![
                 Field::new("strategy_id", Type::BigInt),
@@ -110,6 +115,11 @@ END
                 Field::new("risk_score", Type::optional(Type::Numeric)),
                 Field::new("aum", Type::optional(Type::Numeric)),
                 Field::new("followed", Type::Boolean),
+                Field::new("linked_wallet", Type::optional(Type::String)),
+                Field::new(
+                    "linked_wallet_blockchain",
+                    Type::optional(Type::enum_ref("block_chain")),
+                ),
             ],
             format!(
                 r#"
@@ -122,8 +132,17 @@ BEGIN
                           (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_strategy_history AS h WHERE fkey_strategy_id = s.pkey_id) AS backers,
                           s.risk_score as risk_score,
                           s.aum as aum,
-                          {followed} as followed
+                          {followed} as followed,
+                          w.address AS linked_wallet,
+                          w.blockchain AS linked_wallet
                  FROM tbl.strategy AS s
+                        JOIN tbl.expert_profile AS b ON b.pkey_id = s.fkey_user_id
+                        LEFT JOIN tbl.strategy_watching_wallet AS w ON w.fkey_strategy_id = (SELECT w.fkey_strategy_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.fkey_user_id ORDER BY w.pkey_id LIMTI 1)
+                 WHERE (a_strategy_id ISNULL OR s.pkey_id = a_strategy_id)
+                    AND (a_strategy_name ISNULL OR s.name ILIKE a_strategy_name || '%')
+                    AND (a_expert_public_id ISNULL OR b.public_id = a_expert_public_id)
+                    AND (a_expert_name ISNULL OR b.username ILIKE a_expert_name || '%')
+                    AND (a_description ISNULL OR s.description ILIKE a_description || '%')
                 ORDER BY s.pkey_id
                 LIMIT a_limit
                 OFFSET a_offset;
