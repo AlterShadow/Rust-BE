@@ -2136,6 +2136,53 @@ impl RequestHandler for MethodExpertListBackers {
         .boxed()
     }
 }
+pub struct MethodUserGetDepositTokens;
+impl RequestHandler for MethodUserGetDepositTokens {
+    type Request = UserGetDepositTokensRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        async move {
+            let tokens = BlockchainCoinAddresses::new();
+            Ok(UserGetDepositTokensResponse {
+                tokens: tokens
+                    .iter()
+                    .map(|(blockchain, token, address)| UserGetDepositTokensRow {
+                        blockchain,
+                        token,
+                        address: format!("{:?}", address),
+                        short_name: format!("{:?}", token),
+                        icon_url: "https://etherscan.io/token/images/centre-usdc_28.png"
+                            .to_string(),
+                        conversion: 1.0, // TODO: register this conversion rate
+                    })
+                    .collect(),
+            })
+        }
+        .boxed()
+    }
+}
+pub struct MethodUserGetDepositAddresses {
+    pub addresses: Vec<UserGetDepositAddressesRow>,
+}
+impl RequestHandler for MethodUserGetDepositAddresses {
+    type Request = UserGetDepositAddressesRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let addresses = self.addresses.clone();
+        async move { Ok(UserGetDepositAddressesResponse { addresses }) }.boxed()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

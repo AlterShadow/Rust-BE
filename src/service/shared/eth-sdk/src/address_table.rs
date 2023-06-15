@@ -50,4 +50,14 @@ impl<ENUM: Copy + Eq + Hash> MultiChainAddressTable<ENUM> {
     pub fn get_by_address(&self, chain: EnumBlockChain, address: Address) -> Option<ENUM> {
         self.inner.get(&chain)?.get_by_address(address)
     }
+    pub fn iter(&self) -> impl Iterator<Item = (EnumBlockChain, ENUM, Address)> + '_ {
+        self.inner
+            .iter()
+            .map(|(k, v)| {
+                v.inner
+                    .iter()
+                    .map(move |(enum_, address)| (*k, *enum_, *address))
+            })
+            .flatten()
+    }
 }

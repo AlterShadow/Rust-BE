@@ -1,39 +1,51 @@
 {
-	"ethereum_urls": {
-		"EthereumMainnet": "https://ethereum.publicnode.com",
-		"EthereumGoerli": "https://ethereum-goerli.publicnode.com",
-		"BscMainnet": "https://bsc.publicnode.com",
-		"BscTestnet": "https://bsc-testnet.publicnode.com",
-		"LocalNet": "http://127.0.0.1:8545",
-		"EthereumSepolia": "https://rpc.sepolia.dev"
-	},
-	"app_db": {
-		"host": "localhost",
-		"port": 5432,
-		"user": "postgres",
-		"password": "123456",
-		"dbname": "mc2fi"
-	},
-	"auth_db": {
-		"host": "localhost",
-		"port": 5432,
-		"user": "postgres",
-		"password": "123456",
-		"dbname": "mc2fi"
-	},
-	"auth": {
-		"host": "localhost",
-		"log_level": "trace",
-		"port": 8888
-	},
-	"user": {
-		"host": "localhost",
-		"log_level": "trace",
-		"port": 8889
-	},
-	"watcher": {
-		"host": "localhost",
-		"log_level": "trace",
-		"port": 9000
-	}
+  "ethereum_urls": {
+    "EthereumMainnet": "https://ethereum.publicnode.com",
+    "EthereumGoerli": "https://ethereum-goerli.publicnode.com",
+    "BscMainnet": "https://bsc.publicnode.com",
+    "BscTestnet": "https://bsc-testnet.publicnode.com",
+    "LocalNet": "http://127.0.0.1:8545",
+    "EthereumSepolia": "https://rpc.sepolia.dev"
+  },
+  "app_db": {
+    "host": "localhost",
+    "port": 5432,
+    "user": "postgres",
+    "password": "123456",
+    "dbname": "mc2fi"
+  },
+  "auth_db": {
+    "host": "localhost",
+    "port": 5432,
+    "user": "postgres",
+    "password": "123456",
+    "dbname": "mc2fi"
+  },
+  "auth": {
+    "host": "localhost",
+    "log_level": "trace",
+    "port": 8888
+  },
+  "user": {
+    "host": "localhost",
+    "log_level": "trace",
+    "port": 8889,
+    "escrow_addresses": [
+      {
+        "blockchain": "EthereumMainnet",
+        "address": "0x111013b7862Ebc1B9726420aa0E8728De310Ee63",
+        "shortName": "Ethereum mainnet deposit address"
+      },
+      {
+        "blockchain": "EthereumGoerli",
+        "address": "0x111013b7862Ebc1B9726420aa0E8728De310Ee63",
+        "shortName": "Ethereum testnet deposit address"
+      }
+    ]
+  },
+  "watcher": {
+    "host": "localhost",
+    "log_level": "trace",
+    "port": 9000
+  }
 }

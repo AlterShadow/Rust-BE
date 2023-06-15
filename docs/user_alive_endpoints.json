@@ -24,6 +24,8 @@
   "UserDeregisterWallet",
   "UserFollowExpert",
   "UserFollowStrategy",
+  "UserGetDepositAddresses",
+  "UserGetDepositTokens",
   "UserGetExpertProfile",
   "UserGetStrategiesStatistics",
   "UserGetStrategy",

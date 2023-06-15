@@ -785,5 +785,40 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 ),
             )],
         ),
+        EndpointSchema::new(
+            "UserGetDepositTokens",
+            20360,
+            vec![],
+            vec![Field::new(
+                "tokens",
+                Type::datatable(
+                    "UserGetDepositTokensRow",
+                    vec![
+                        Field::new("blockchain", Type::enum_ref("block_chain")),
+                        Field::new("token", Type::enum_ref("blockchain_coin")),
+                        Field::new("address", Type::String),
+                        Field::new("short_name", Type::String),
+                        Field::new("icon_url", Type::String),
+                        Field::new("conversion", Type::Numeric),
+                    ],
+                ),
+            )],
+        ),
+        EndpointSchema::new(
+            "UserGetDepositAddresses",
+            20370,
+            vec![],
+            vec![Field::new(
+                "addresses",
+                Type::datatable(
+                    "UserGetDepositAddressesRow",
+                    vec![
+                        Field::new("blockchain", Type::enum_ref("block_chain")),
+                        Field::new("address", Type::String),
+                        Field::new("short_name", Type::String),
+                    ],
+                ),
+            )],
+        ),
     ]
 }

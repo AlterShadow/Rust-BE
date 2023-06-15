@@ -2722,6 +2722,88 @@
           "stream_response": [],
           "description": "",
           "json_schema": null
+        },
+        {
+          "name": "UserGetDepositTokens",
+          "code": 20360,
+          "parameters": [],
+          "returns": [
+            {
+              "name": "tokens",
+              "ty": {
+                "DataTable": {
+                  "name": "UserGetDepositTokensRow",
+                  "fields": [
+                    {
+                      "name": "blockchain",
+                      "ty": {
+                        "EnumRef": "block_chain"
+                      }
+                    },
+                    {
+                      "name": "token",
+                      "ty": {
+                        "EnumRef": "blockchain_coin"
+                      }
+                    },
+                    {
+                      "name": "address",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "short_name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "icon_url",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "conversion",
+                      "ty": "Numeric"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "stream_response": [],
+          "description": "",
+          "json_schema": null
+        },
+        {
+          "name": "UserGetDepositAddresses",
+          "code": 20370,
+          "parameters": [],
+          "returns": [
+            {
+              "name": "addresses",
+              "ty": {
+                "DataTable": {
+                  "name": "UserGetDepositAddressesRow",
+                  "fields": [
+                    {
+                      "name": "blockchain",
+                      "ty": {
+                        "EnumRef": "block_chain"
+                      }
+                    },
+                    {
+                      "name": "address",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "short_name",
+                      "ty": "String"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "stream_response": [],
+          "description": "",
+          "json_schema": null
         }
       ]
     },

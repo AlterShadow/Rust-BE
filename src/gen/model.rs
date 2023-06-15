@@ -357,6 +357,12 @@ pub enum EnumEndpoint {
     #[postgres(name = "ExpertListBackers")]
     ExpertListBackers = 20350,
     ///
+    #[postgres(name = "UserGetDepositTokens")]
+    UserGetDepositTokens = 20360,
+    ///
+    #[postgres(name = "UserGetDepositAddresses")]
+    UserGetDepositAddresses = 20370,
+    ///
     #[postgres(name = "AdminListUsers")]
     AdminListUsers = 30010,
     ///
@@ -1529,6 +1535,39 @@ pub struct UserFollowStrategyRequest {
 #[serde(rename_all = "camelCase")]
 pub struct UserFollowStrategyResponse {
     pub success: bool,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserGetDepositAddressesRequest {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserGetDepositAddressesResponse {
+    pub addresses: Vec<UserGetDepositAddressesRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserGetDepositAddressesRow {
+    pub blockchain: EnumBlockChain,
+    pub address: String,
+    pub short_name: String,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserGetDepositTokensRequest {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserGetDepositTokensResponse {
+    pub tokens: Vec<UserGetDepositTokensRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserGetDepositTokensRow {
+    pub blockchain: EnumBlockChain,
+    pub token: EnumBlockchainCoin,
+    pub address: String,
+    pub short_name: String,
+    pub icon_url: String,
+    pub conversion: f64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -5008,6 +5047,104 @@ impl WsRequest for ExpertListBackersRequest {
 }
 impl WsResponse for ExpertListBackersResponse {
     type Request = ExpertListBackersRequest;
+}
+
+impl WsRequest for UserGetDepositTokensRequest {
+    type Response = UserGetDepositTokensResponse;
+    const METHOD_ID: u32 = 20360;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserGetDepositTokens",
+  "code": 20360,
+  "parameters": [],
+  "returns": [
+    {
+      "name": "tokens",
+      "ty": {
+        "DataTable": {
+          "name": "UserGetDepositTokensRow",
+          "fields": [
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
+            },
+            {
+              "name": "token",
+              "ty": {
+                "EnumRef": "blockchain_coin"
+              }
+            },
+            {
+              "name": "address",
+              "ty": "String"
+            },
+            {
+              "name": "short_name",
+              "ty": "String"
+            },
+            {
+              "name": "icon_url",
+              "ty": "String"
+            },
+            {
+              "name": "conversion",
+              "ty": "Numeric"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for UserGetDepositTokensResponse {
+    type Request = UserGetDepositTokensRequest;
+}
+
+impl WsRequest for UserGetDepositAddressesRequest {
+    type Response = UserGetDepositAddressesResponse;
+    const METHOD_ID: u32 = 20370;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserGetDepositAddresses",
+  "code": 20370,
+  "parameters": [],
+  "returns": [
+    {
+      "name": "addresses",
+      "ty": {
+        "DataTable": {
+          "name": "UserGetDepositAddressesRow",
+          "fields": [
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
+            },
+            {
+              "name": "address",
+              "ty": "String"
+            },
+            {
+              "name": "short_name",
+              "ty": "String"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for UserGetDepositAddressesResponse {
+    type Request = UserGetDepositAddressesRequest;
 }
 
 impl WsRequest for AdminListUsersRequest {

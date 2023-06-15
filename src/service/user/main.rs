@@ -15,7 +15,7 @@ use eth_sdk::{
     MultiChainAddressTable, ANVIL_PRIV_KEY_1,
 };
 use eyre::*;
-use gen::model::{EnumBlockChain, EnumService};
+use gen::model::{EnumBlockChain, EnumService, UserGetDepositAddressesRow};
 use lib::config::{load_config, WsServerConfig};
 use lib::database::{connect_to_database, DatabaseConfig};
 use lib::log::{setup_logs, LogLevel};
@@ -38,6 +38,7 @@ pub struct Config {
     pub ethereum_urls: EthereumConns,
     #[serde(default)]
     pub setup_ethereum_localnet: bool,
+    pub escrow_addresses: Vec<UserGetDepositAddressesRow>,
 }
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -96,6 +97,10 @@ async fn main() -> Result<()> {
     server.add_handler(MethodExpertRemoveStrategyWatchingWallet);
     server.add_handler(MethodUserListWalletActivityHistory);
     server.add_handler(MethodUserListStrategyInitialTokenRatio);
+    server.add_handler(MethodUserGetDepositTokens);
+    server.add_handler(MethodUserGetDepositAddresses {
+        addresses: config.escrow_addresses,
+    });
 
     server.add_handler(MethodAdminListUsers);
     server.add_handler(MethodAdminSetUserRole);

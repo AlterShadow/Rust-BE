@@ -55,6 +55,8 @@ ID: 2
 |20330|UserListStrategyInitialTokenRatio|strategy_id|token_ratios||
 |20340|ExpertListFollowers|limit, offset|followers||
 |20350|ExpertListBackers|limit, offset|backers||
+|20360|UserGetDepositTokens||tokens||
+|20370|UserGetDepositAddresses||addresses||
 
 # admin Server
 ID: 3
