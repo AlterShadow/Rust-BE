@@ -1,8 +1,10 @@
 use crate::escrow_tracker::escrow::parse_escrow;
 use crate::evm::{parse_quickalert_payload, AppState};
+use crate::EscrowAddresses;
 use crate::{evm, TransactionFetcher};
 use bytes::Bytes;
 use eyre::*;
+use gen::database::*;
 use gen::model::EnumBlockChain;
 use http::StatusCode;
 use std::sync::Arc;
@@ -38,13 +40,82 @@ pub async fn handle_eth_escrows(
             if let Err(e) = evm::cache_ethereum_transaction(&tx, &state.db, blockchain).await {
                 error!("error caching transaction: {:?}", e);
             };
-            if let Err(e) = parse_escrow(
-                EnumBlockChain::EthereumMainnet,
-                &tx,
-                &state.stablecoin_addresses,
-                &state.erc_20,
-            ) {
-                error!("error parsing escrow trade: {:?}", e);
+
+            /* check if transaction is from one of our users */
+            // TODO: handle an escrow made by an unknown user
+            let caller = match tx.get_from() {
+                Some(caller) => caller,
+                None => {
+                    error!("no caller found for tx: {:?}", tx.get_hash());
+                    return;
+                }
+            };
+
+            let user = match state
+                .db
+                .execute(FunUserGetUserByAddressReq {
+                    address: format!("{:?}", caller),
+                })
+                .await
+            {
+                Ok(user) => match user.into_result() {
+                    Some(user) => user,
+                    None => {
+                        error!("no user found for address: {:?}", caller);
+                        return;
+                    }
+                },
+                Err(e) => {
+                    error!("error getting user by address: {:?}", e);
+                    return;
+                }
+            };
+
+            /* check if it is an escrow to one of our escrow contracts */
+            let escrow =
+                match parse_escrow(blockchain, &tx, &state.stablecoin_addresses, &state.erc_20) {
+                    Ok(escrow) => escrow,
+                    Err(e) => {
+                        error!("error parsing escrow: {:?}", e);
+                        return;
+                    }
+                };
+
+            let escrow_addresses = EscrowAddresses::new();
+            let called_address = match tx.get_to() {
+                Some(called_address) => called_address,
+                None => {
+                    error!("no called address found for tx: {:?}", tx.get_hash());
+                    return;
+                }
+            };
+            match escrow_addresses.get_by_address(called_address) {
+                Some(_) => {}
+                None => {
+                    error!("no call to an escrow contract for tx: {:?}", tx.get_hash());
+                    return;
+                }
+            }
+
+            /* insert escrow in ledger */
+            match state
+                .db
+                .execute(FunUserDepositToEscrowReq {
+                    user_id: user.user_id,
+                    quantity: format!("{:?}", escrow.amount),
+                    blockchain: blockchain,
+                    user_address: format!("{:?}", escrow.owner),
+                    contract_address: format!("{:?}", called_address),
+                    transaction_hash: format!("{:?}", tx.get_hash()),
+                    receiver_address: format!("{:?}", escrow.recipient),
+                })
+                .await
+            {
+                Ok(_) => {}
+                Err(e) => {
+                    error!("error inserting escrow in ledger: {:?}", e);
+                    return;
+                }
             };
         });
     }
