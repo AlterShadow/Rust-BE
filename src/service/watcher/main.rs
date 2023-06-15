@@ -49,6 +49,8 @@ async fn main() -> Result<()> {
         .route("/eth-goerli-swaps", post(handle_eth_swap_goerli))
         .route("/eth-mainnet-escrows", post(handle_eth_escrows_mainnet))
         .route("/eth-goerli-escrows", post(handle_eth_escrows_goerli))
+        .route("/bsc-mainnet-swaps", post(handle_bsc_swap_mainnet))
+        .route("/bsc-mainnet-escrows", post(handle_bsc_escrows_mainnet))
         .with_state(Arc::new(AppState {
             dex_addresses: DexAddresses::new(),
             stablecoin_addresses: BlockchainCoinAddresses::new(),
@@ -104,4 +106,18 @@ pub async fn handle_eth_escrows_goerli(
     body: Bytes,
 ) -> Result<(), StatusCode> {
     handle_eth_escrows(state.0, body, EnumBlockChain::EthereumGoerli).await
+}
+
+pub async fn handle_bsc_swap_mainnet(
+    state: State<Arc<AppState>>,
+    body: Bytes,
+) -> Result<(), StatusCode> {
+    handle_eth_swap(state.0, body, EnumBlockChain::BscMainnet).await
+}
+
+pub async fn handle_bsc_escrows_mainnet(
+    state: State<Arc<AppState>>,
+    body: Bytes,
+) -> Result<(), StatusCode> {
+    handle_eth_escrows(state.0, body, EnumBlockChain::BscMainnet).await
 }
