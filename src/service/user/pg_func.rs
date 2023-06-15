@@ -1224,5 +1224,30 @@ BEGIN
 END
             "#,
         ),
+        ProceduralFunction::new(
+            "fun_user_get_user_by_address",
+            vec![Field::new("address", Type::String)],
+            vec![
+                Field::new("user_id", Type::BigInt),
+                Field::new("user_public_id", Type::BigInt),
+                Field::new("username", Type::String),
+                Field::new("family_name", Type::optional(Type::String)),
+                Field::new("given_name", Type::optional(Type::String)),
+                Field::new("joined_at", Type::BigInt),
+            ],
+            // TODO: it should later looking up user_registered_wallet table
+            r#"
+BEGIN
+    RETURN QUERY SELECT 
+            a.pkey_id, 
+            a.public_id,
+            a.username, 
+            a.family_name,
+            a.given_name, 
+            a.created_at 
+            FROM tbl.user AS a WHERE a.address = a_address;
+END
+            "#,
+        ),
     ]
 }

@@ -1453,6 +1453,32 @@ END
 $$;
         
 
+CREATE OR REPLACE FUNCTION api.fun_user_get_user_by_address(a_address varchar)
+RETURNS table (
+    "user_id" bigint,
+    "user_public_id" bigint,
+    "username" varchar,
+    "family_name" varchar,
+    "given_name" varchar,
+    "joined_at" bigint
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY SELECT 
+            a.pkey_id, 
+            a.public_id,
+            a.username, 
+            a.family_name,
+            a.given_name, 
+            a.created_at 
+            FROM tbl.user AS a WHERE a.address = a_address;
+END
+            
+$$;
+        
+
 CREATE OR REPLACE FUNCTION api.fun_admin_list_users(a_limit bigint, a_offset bigint, a_user_id bigint DEFAULT NULL, a_address varchar DEFAULT NULL, a_username varchar DEFAULT NULL, a_email varchar DEFAULT NULL, a_role enum_role DEFAULT NULL)
 RETURNS table (
     "user_id" bigint,

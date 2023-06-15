@@ -2000,6 +2000,44 @@ impl DatabaseRequest for FunUserListDepositHistoryReq {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserGetUserByAddressReq {
+    pub address: String,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserGetUserByAddressRespRow {
+    pub user_id: i64,
+    pub user_public_id: i64,
+    pub username: String,
+    #[serde(default)]
+    pub family_name: Option<String>,
+    #[serde(default)]
+    pub given_name: Option<String>,
+    pub joined_at: i64,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunUserGetUserByAddressReq {
+    type ResponseRow = FunUserGetUserByAddressRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_get_user_by_address(a_address => $1::varchar);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![&self.address as &(dyn ToSql + Sync)]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserGetUserByAddressRespRow> {
+        let r = FunUserGetUserByAddressRespRow {
+            user_id: row.try_get(0)?,
+            user_public_id: row.try_get(1)?,
+            username: row.try_get(2)?,
+            family_name: row.try_get(3)?,
+            given_name: row.try_get(4)?,
+            joined_at: row.try_get(5)?,
+        };
+        Ok(r)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAdminListUsersReq {
     pub limit: i64,
     pub offset: i64,
