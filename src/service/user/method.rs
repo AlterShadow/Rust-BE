@@ -2339,6 +2339,8 @@ mod tests {
                 strategy_fee: 1.0,
                 expert_fee: 1.0,
                 agreed_tos: true,
+                blockchain: EnumBlockChain::BscTestnet,
+                wallet_address: format!("{:?}", Address::zero()),
             })
             .await?
             .into_result()
@@ -2547,6 +2549,8 @@ mod tests {
                 strategy_fee: 0.0,
                 expert_fee: 0.0,
                 agreed_tos: false,
+                blockchain: EnumBlockChain::BscTestnet,
+                wallet_address: format!("{:?}", Address::zero()),
             })
             .await?
             .into_result()
