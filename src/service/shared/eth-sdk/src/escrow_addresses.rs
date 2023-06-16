@@ -8,6 +8,9 @@ use std::ops::{Deref, DerefMut};
 
 pub struct EscrowAddresses(AddressTable<EnumBlockChain>);
 impl EscrowAddresses {
+    pub fn empty() -> Self {
+        Self(AddressTable::new())
+    }
     pub fn new() -> Self {
         let mut this = AddressTable::new();
 
