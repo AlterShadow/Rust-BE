@@ -6,9 +6,7 @@ use reqwest::{Client, Response, Url};
 use serde_json::Value;
 use web3::types::Address;
 
-// use gen::model::EnumBlockChain;
-
-const API_KEY: &str = "";
+const API_KEY: &str = "ec6c4b09-03e6-4bd6-84f9-95406fc2ce81";
 const BASE_URL: &str = "https://pro-api.coinmarketcap.com";
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
