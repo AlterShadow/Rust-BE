@@ -1052,6 +1052,22 @@ pub struct FunUserListExpertsReq {
     pub limit: i64,
     pub offset: i64,
     pub user_id: i64,
+    #[serde(default)]
+    pub expert_id: Option<i64>,
+    #[serde(default)]
+    pub expert_user_id: Option<i64>,
+    #[serde(default)]
+    pub expert_user_public_id: Option<i64>,
+    #[serde(default)]
+    pub username: Option<String>,
+    #[serde(default)]
+    pub family_name: Option<String>,
+    #[serde(default)]
+    pub given_name: Option<String>,
+    #[serde(default)]
+    pub description: Option<String>,
+    #[serde(default)]
+    pub social_media: Option<String>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserListExpertsRespRow {
@@ -1090,13 +1106,21 @@ pub struct FunUserListExpertsRespRow {
 impl DatabaseRequest for FunUserListExpertsReq {
     type ResponseRow = FunUserListExpertsRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_list_experts(a_limit => $1::bigint, a_offset => $2::bigint, a_user_id => $3::bigint);"
+        "SELECT * FROM api.fun_user_list_experts(a_limit => $1::bigint, a_offset => $2::bigint, a_user_id => $3::bigint, a_expert_id => $4::bigint, a_expert_user_id => $5::bigint, a_expert_user_public_id => $6::bigint, a_username => $7::varchar, a_family_name => $8::varchar, a_given_name => $9::varchar, a_description => $10::varchar, a_social_media => $11::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
             &self.limit as &(dyn ToSql + Sync),
             &self.offset as &(dyn ToSql + Sync),
             &self.user_id as &(dyn ToSql + Sync),
+            &self.expert_id as &(dyn ToSql + Sync),
+            &self.expert_user_id as &(dyn ToSql + Sync),
+            &self.expert_user_public_id as &(dyn ToSql + Sync),
+            &self.username as &(dyn ToSql + Sync),
+            &self.family_name as &(dyn ToSql + Sync),
+            &self.given_name as &(dyn ToSql + Sync),
+            &self.description as &(dyn ToSql + Sync),
+            &self.social_media as &(dyn ToSql + Sync),
         ]
     }
     fn parse_row(&self, row: Row) -> Result<FunUserListExpertsRespRow> {

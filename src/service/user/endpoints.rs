@@ -382,6 +382,14 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
             vec![
                 Field::new("limit", Type::optional(Type::BigInt)),
                 Field::new("offset", Type::optional(Type::BigInt)),
+                Field::new("expert_id", Type::optional(Type::BigInt)),
+                Field::new("user_id", Type::optional(Type::BigInt)),
+                Field::new("user_public_id", Type::optional(Type::BigInt)),
+                Field::new("username", Type::optional(Type::String)),
+                Field::new("family_name", Type::optional(Type::String)),
+                Field::new("given_name", Type::optional(Type::String)),
+                Field::new("description", Type::optional(Type::String)),
+                Field::new("social_media", Type::optional(Type::String)),
             ],
             vec![Field::new(
                 "experts",

@@ -595,6 +595,14 @@ END
                 Field::new("limit", Type::BigInt),
                 Field::new("offset", Type::BigInt),
                 Field::new("user_id", Type::BigInt),
+                Field::new("expert_id", Type::optional(Type::BigInt)),
+                Field::new("expert_user_id", Type::optional(Type::BigInt)),
+                Field::new("expert_user_public_id", Type::optional(Type::BigInt)),
+                Field::new("username", Type::optional(Type::String)),
+                Field::new("family_name", Type::optional(Type::String)),
+                Field::new("given_name", Type::optional(Type::String)),
+                Field::new("description", Type::optional(Type::String)),
+                Field::new("social_media", Type::optional(Type::String)),
             ],
             vec![
                 Field::new("expert_id", Type::BigInt),
@@ -643,6 +651,14 @@ BEGIN
                         (SELECT COUNT(DISTINCT d.fkey_user_id) FROM tbl.user_back_strategy_history AS d JOIN tbl.strategy AS e ON e.pkey_id = d.fkey_strategy_id WHERE e.fkey_user_id = c.pkey_id) AS backer_count
                  FROM tbl.expert_profile AS e
                           JOIN tbl.user AS c ON c.pkey_id = e.fkey_user_id
+                 WHERE (a_expert_id ISNULL OR e.pkey_id = a_expert_id)
+                        AND (a_expert_user_id ISNULL OR c.pkey_id = a_expert_user_id)
+                        AND (a_expert_user_public_id ISNULL OR c.public_id = a_expert_user_public_id)
+                        AND (a_username ISNULL OR c.username ILIKE a_username || '%')
+                        AND (a_family_name ISNULL OR c.family_name ILIKE a_family_name || '%')
+                        AND (a_given_name ISNULL OR c.given_name ILIKE a_given_name || '%')
+                        AND (a_description ISNULL OR e.description ILIKE a_description || '%')
+                        AND (a_social_media ISNULL OR e.social_media ILIKE a_social_media || '%')
                  ORDER BY e.pkey_id
                  OFFSET a_offset
                  LIMIT a_limit

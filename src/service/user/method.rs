@@ -1239,6 +1239,14 @@ impl RequestHandler for MethodUserListExperts {
                     offset: req.offset.unwrap_or(DEFAULT_OFFSET),
                     limit: req.limit.unwrap_or(DEFAULT_LIMIT),
                     user_id: ctx.user_id,
+                    expert_id: req.expert_id,
+                    expert_user_id: req.user_id,
+                    expert_user_public_id: req.user_public_id,
+                    username: req.username,
+                    family_name: req.family_name,
+                    given_name: req.given_name,
+                    description: req.description,
+                    social_media: req.social_media,
                 })
                 .await?;
             Ok(UserListExpertsResponse {
@@ -1286,8 +1294,16 @@ impl RequestHandler for MethodUserListTopPerformingExperts {
             let ret = db
                 .execute(FunUserListExpertsReq {
                     user_id: ctx.user_id,
+                    expert_id: None,
+                    expert_user_id: None,
+                    expert_user_public_id: None,
+                    username: None,
+                    family_name: None,
+                    given_name: None,
+                    description: None,
                     offset: req.offset.unwrap_or(DEFAULT_OFFSET),
                     limit: req.limit.unwrap_or(DEFAULT_LIMIT),
+                    social_media: None,
                 })
                 .await?;
             Ok(UserListTopPerformingExpertsResponse {
@@ -1337,6 +1353,14 @@ impl RequestHandler for MethodUserListFeaturedExperts {
                     offset: req.offset.unwrap_or(DEFAULT_OFFSET),
                     limit: req.limit.unwrap_or(DEFAULT_LIMIT),
                     user_id: ctx.user_id,
+                    expert_id: None,
+                    expert_user_id: None,
+                    expert_user_public_id: None,
+                    username: None,
+                    family_name: None,
+                    given_name: None,
+                    description: None,
+                    social_media: None,
                 })
                 .await?;
             Ok(UserListFeaturedExpertsResponse {

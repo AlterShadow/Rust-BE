@@ -1730,6 +1730,22 @@ pub struct UserListExpertsRequest {
     pub limit: Option<i64>,
     #[serde(default)]
     pub offset: Option<i64>,
+    #[serde(default)]
+    pub expert_id: Option<i64>,
+    #[serde(default)]
+    pub user_id: Option<i64>,
+    #[serde(default)]
+    pub user_public_id: Option<i64>,
+    #[serde(default)]
+    pub username: Option<String>,
+    #[serde(default)]
+    pub family_name: Option<String>,
+    #[serde(default)]
+    pub given_name: Option<String>,
+    #[serde(default)]
+    pub description: Option<String>,
+    #[serde(default)]
+    pub social_media: Option<String>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -3630,6 +3646,54 @@ impl WsRequest for UserListExpertsRequest {
       "name": "offset",
       "ty": {
         "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "expert_id",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "user_id",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "user_public_id",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "username",
+      "ty": {
+        "Optional": "String"
+      }
+    },
+    {
+      "name": "family_name",
+      "ty": {
+        "Optional": "String"
+      }
+    },
+    {
+      "name": "given_name",
+      "ty": {
+        "Optional": "String"
+      }
+    },
+    {
+      "name": "description",
+      "ty": {
+        "Optional": "String"
+      }
+    },
+    {
+      "name": "social_media",
+      "ty": {
+        "Optional": "String"
       }
     }
   ],
