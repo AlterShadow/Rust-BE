@@ -8,14 +8,14 @@ mod test_helper;
 
 use crate::admin_method::*;
 use crate::method::*;
-use eth_sdk::escrow::{AbstractEscrowContract, EscrowContract};
+use eth_sdk::escrow::AbstractEscrowContract;
 use eth_sdk::signer::Secp256k1SecretKey;
 use eth_sdk::{
     BlockchainCoinAddresses, DexAddresses, EscrowAddresses, EthereumConns,
-    EthereumRpcConnectionPool, EthereumToken, MultiChainAddressTable, ANVIL_PRIV_KEY_1,
+    EthereumRpcConnectionPool,
 };
 use eyre::*;
-use gen::model::{EnumBlockChain, EnumService, UserGetDepositAddressesRow};
+use gen::model::{EnumService, UserGetDepositAddressesRow};
 use lib::config::{load_config, WsServerConfig};
 use lib::database::{connect_to_database, DatabaseConfig};
 use lib::log::{setup_logs, LogLevel};
@@ -25,7 +25,6 @@ use mc2_fi::method::MethodAuthAuthorize;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 use std::sync::Arc;
-use web3::types::U256;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
@@ -120,7 +119,7 @@ async fn main() -> Result<()> {
     let escrow_signer = Secp256k1SecretKey::new_random();
     let externally_owned_account = Secp256k1SecretKey::new_random();
     let coin_addresses = Arc::new(BlockchainCoinAddresses::new());
-    let mut escrow_contract_addresses = EscrowAddresses::new();
+    let escrow_contract_addresses = EscrowAddresses::new();
     let strategy_pool_signer = Secp256k1SecretKey::new_random();
 
     let escrow_contract = Arc::new(AbstractEscrowContract::new2(escrow_contract_addresses));

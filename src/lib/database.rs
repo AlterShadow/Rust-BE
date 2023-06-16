@@ -1,3 +1,4 @@
+use dashmap::DashMap;
 use deadpool_postgres::Runtime;
 use deadpool_postgres::*;
 use eyre::*;
@@ -8,7 +9,9 @@ use std::hash::Hash;
 use std::hash::Hasher;
 use std::path::Path;
 use std::process::Command;
+use std::sync::Arc;
 pub use tokio_postgres::types::ToSql;
+use tokio_postgres::Statement;
 pub use tokio_postgres::{NoTls, Row, ToStatement};
 use tracing::*;
 
@@ -22,6 +25,7 @@ pub trait DatabaseRequest {
 #[derive(Clone)]
 pub struct DbClient {
     pool: Pool,
+    prepared_stmts: Arc<DashMap<String, Statement>>,
     conn_hash: u64,
 }
 impl DbClient {
@@ -41,8 +45,25 @@ impl DbClient {
             .query(statement, params)
             .await?)
     }
+    pub async fn prepare(&self, statement: &str) -> Result<Statement, Error> {
+        Ok(self
+            .pool
+            .get()
+            .await
+            .context("Failed to connect to database")?
+            .prepare(statement)
+            .await?)
+    }
     pub async fn execute<T: DatabaseRequest>(&self, req: T) -> Result<DbResponse<T::ResponseRow>> {
-        let rows = self.query(req.statement(), &req.params()).await?;
+        let statement = if let Some(stmt) = self.prepared_stmts.get(req.statement()) {
+            stmt.clone()
+        } else {
+            let stmt = self.prepare(req.statement()).await?;
+            self.prepared_stmts
+                .insert(req.statement().to_string(), stmt.clone());
+            stmt
+        };
+        let rows = self.query(&statement, &req.params()).await?;
         let mut response = DbResponse::with_capacity(rows.len());
         for row in rows {
             response.push(req.parse_row(row)?);
@@ -99,7 +120,11 @@ pub async fn connect_to_database(config: DatabaseConfig) -> Result<DbClient> {
     config.dbname.hash(&mut hasher);
     let conn_hash = hasher.finish();
     let pool = config.create_pool(Some(Runtime::Tokio1), NoTls)?;
-    Ok(DbClient { pool, conn_hash })
+    Ok(DbClient {
+        pool,
+        prepared_stmts: Arc::new(Default::default()),
+        conn_hash,
+    })
 }
 pub fn database_test_config() -> DatabaseConfig {
     DatabaseConfig {
