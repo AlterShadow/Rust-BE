@@ -1,6 +1,5 @@
 use crate::escrow_tracker::escrow::parse_escrow;
 use crate::evm::{parse_quickalert_payload, AppState};
-use crate::EscrowAddresses;
 use crate::{evm, TransactionFetcher};
 use bytes::Bytes;
 use eyre::*;
@@ -8,7 +7,7 @@ use gen::database::*;
 use gen::model::EnumBlockChain;
 use http::StatusCode;
 use std::sync::Arc;
-use tracing::error;
+use tracing::{error, info};
 
 pub mod deposit;
 pub mod escrow;
@@ -46,23 +45,25 @@ pub async fn handle_eth_escrows(
                 match parse_escrow(blockchain, &tx, &state.stablecoin_addresses, &state.erc_20) {
                     Ok(escrow) => escrow,
                     Err(e) => {
-                        error!("error parsing escrow: {:?}", e);
+                        info!("tx {:?} is not an escrow: {:?}", tx.get_hash(), e);
                         return;
                     }
                 };
-
-            let escrow_addresses = EscrowAddresses::new();
-            let called_address = match tx.get_to() {
-                Some(called_address) => called_address,
-                None => {
-                    error!("no called address found for tx: {:?}", tx.get_hash());
-                    return;
+            match state.escrow_addresses.get_by_address(escrow.recipient) {
+                Some(chain) => {
+                    if chain != blockchain {
+                        info!(
+                            "no transfer to an escrow contract for tx: {:?}",
+                            tx.get_hash()
+                        );
+                        return;
+                    }
                 }
-            };
-            match escrow_addresses.get_by_address(called_address) {
-                Some(_) => {}
                 None => {
-                    error!("no call to an escrow contract for tx: {:?}", tx.get_hash());
+                    info!(
+                        "no transfer to an escrow contract for tx: {:?}",
+                        tx.get_hash()
+                    );
                     return;
                 }
             }
@@ -87,12 +88,21 @@ pub async fn handle_eth_escrows(
                 Ok(user) => match user.into_result() {
                     Some(user) => user,
                     None => {
-                        error!("no user found for address: {:?}", caller);
+                        info!("no user has address: {:?}", caller);
                         return;
                     }
                 },
                 Err(e) => {
                     error!("error getting user by address: {:?}", e);
+                    return;
+                }
+            };
+
+            /* get token address that was transferred */
+            let called_address = match tx.get_to() {
+                Some(called_address) => called_address,
+                None => {
+                    error!("no called address found for tx: {:?}", tx.get_hash());
                     return;
                 }
             };
