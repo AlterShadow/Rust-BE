@@ -375,7 +375,7 @@ BEGIN
                           w.address as linked_wallet,
                           w.blockchain as linked_wallet_blockchain
                  FROM tbl.strategy AS s
-                     LEFT JOIN tbl.strategy_watching_wallet AS w ON w.fkey_strategy_id = (SELECT distinct on(1) w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id)
+                     LEFT JOIN tbl.strategy_watching_wallet AS w ON w.fkey_strategy_id = (SELECT distinct w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id LIMIT 1)
                      JOIN tbl.user_follow_strategy AS b ON b.fkey_strategy_id = s.pkey_id WHERE b.fkey_user_id = a_user_id AND unfollowed = FALSE
                  -- TODO: filter only approved strategies
                 ORDER BY s.pkey_id
@@ -423,7 +423,7 @@ BEGIN
                           s.pending_approval as pending_approval
                  FROM tbl.strategy AS s
                         JOIN tbl.user AS b ON b.pkey_id = s.fkey_user_id
-                        LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = (SELECT distinct on(1) w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id)
+                        LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = (SELECT distinct w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id LIMIT 1)
                  WHERE (a_strategy_id ISNULL OR s.pkey_id = a_strategy_id)
                     AND (a_strategy_name ISNULL OR s.name ILIKE a_strategy_name || '%')
                     AND (a_expert_public_id ISNULL OR b.public_id = a_expert_public_id)
@@ -519,7 +519,7 @@ BEGIN
                           s.pending_approval
                  FROM tbl.strategy AS s
                     LEFT JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id
-                    LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = (SELECT distinct on(1) w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id)
+                    LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = (SELECT distinct w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id LIMIT 1)
 
                  WHERE s.pkey_id = a_strategy_id;
 END
@@ -683,7 +683,7 @@ BEGIN
                         w.blockchain                        AS linked_wallet_blockchain
                  FROM tbl.strategy AS s
                       JOIN tbl.user_back_strategy_history AS b ON b.fkey_strategy_id = s.pkey_id AND b.fkey_user_id = a_user_id
-                    LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = (SELECT distinct on(1) w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id)
+                    LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = (SELECT distinct w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id LIMIT 1)
                  ORDER BY s.pkey_id
                  LIMIT a_limit
                  OFFSET a_offset;
@@ -1864,7 +1864,7 @@ BEGIN
                         w.address AS linked_wallet,
                         w.blockchain AS linked_wallet_blockchain
                  FROM tbl.strategy AS s
-                      LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = (SELECT distinct on(1) w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id)
+                      LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = (SELECT w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id LIMIT)
                       JOIN tbl.user AS b ON b.pkey_id = s.fkey_user_id
                           
                 WHERE (a_strategy_id ISNULL OR s.pkey_id = a_strategy_id)

@@ -1,6 +1,6 @@
 use model::types::*;
 fn get_first_linked_wallet() -> &'static str {
-    "(SELECT distinct on(1) w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id)"
+    "(SELECT w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id LIMIT 1)"
 }
 pub fn get_admin_pg_func() -> Vec<ProceduralFunction> {
     vec![
