@@ -1843,7 +1843,9 @@ RETURNS table (
     "created_at" bigint,
     "pending_approval" boolean,
     "approved" boolean,
-    "approved_at" bigint
+    "approved_at" bigint,
+    "linked_wallet" varchar,
+    "linked_wallet_blockchain" enum_block_chain
 )
 LANGUAGE plpgsql
 AS $$
@@ -1858,9 +1860,13 @@ BEGIN
                         s.created_at AS created_at,
                         s.pending_approval AS pending_approval,
                         s.approved AS approved,
-                        s.approved_at AS approved_at
+                        s.approved_at AS approved_at,
+                        w.address AS linked_wallet,
+                        w.blockchain AS linked_wallet_blockchain
                  FROM tbl.strategy AS s
-                          JOIN tbl.user AS b ON b.pkey_id = s.fkey_user_id
+                      LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = (SELECT distinct on(1) w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id)
+                      JOIN tbl.user AS b ON b.pkey_id = s.fkey_user_id
+                          
                 WHERE (a_strategy_id ISNULL OR s.pkey_id = a_strategy_id)
                     AND (a_strategy_name ISNULL OR s.name ILIKE a_strategy_name || '%')
                     AND (a_expert_public_id ISNULL OR b.public_id = a_expert_public_id)

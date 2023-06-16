@@ -1,5 +1,7 @@
 use model::types::*;
-
+fn get_first_linked_wallet() -> &'static str {
+    "(SELECT distinct on(1) w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id)"
+}
 pub fn get_admin_pg_func() -> Vec<ProceduralFunction> {
     vec![
         ProceduralFunction::new(
@@ -343,8 +345,14 @@ END
                 Field::new("pending_approval", Type::Boolean),
                 Field::new("approved", Type::Boolean),
                 Field::new("approved_at", Type::optional(Type::BigInt)),
+                Field::new("linked_wallet", Type::optional(Type::String)),
+                Field::new(
+                    "linked_wallet_blockchain",
+                    Type::optional(Type::enum_ref("block_chain")),
+                ),
             ],
-            r#"
+            format!(
+                r#"
 BEGIN
     RETURN QUERY SELECT s.pkey_id AS strategy_id,
                         s.name AS strategy_name, 
@@ -355,9 +363,13 @@ BEGIN
                         s.created_at AS created_at,
                         s.pending_approval AS pending_approval,
                         s.approved AS approved,
-                        s.approved_at AS approved_at
+                        s.approved_at AS approved_at,
+                        w.address AS linked_wallet,
+                        w.blockchain AS linked_wallet_blockchain
                  FROM tbl.strategy AS s
-                          JOIN tbl.user AS b ON b.pkey_id = s.fkey_user_id
+                      LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = {linked_wallet}
+                      JOIN tbl.user AS b ON b.pkey_id = s.fkey_user_id
+                          
                 WHERE (a_strategy_id ISNULL OR s.pkey_id = a_strategy_id)
                     AND (a_strategy_name ISNULL OR s.name ILIKE a_strategy_name || '%')
                     AND (a_expert_public_id ISNULL OR b.public_id = a_expert_public_id)
@@ -368,6 +380,8 @@ BEGIN
                  LIMIT a_limit;
 END
             "#,
+                linked_wallet = get_first_linked_wallet()
+            ),
         ),
         ProceduralFunction::new(
             "fun_admin_approve_strategy",

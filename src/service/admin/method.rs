@@ -417,6 +417,10 @@ impl RequestHandler for MethodAdminListStrategies {
                         approved_at: x.approved_at,
                         pending_approval: x.pending_approval,
                         approved: x.approved,
+                        linked_wallet: x.linked_wallet.unwrap_or_default(),
+                        blockchain: x
+                            .linked_wallet_blockchain
+                            .unwrap_or(EnumBlockChain::LocalNet),
                     })
                     .collect(),
             })

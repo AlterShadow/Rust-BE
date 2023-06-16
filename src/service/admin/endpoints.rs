@@ -215,6 +215,8 @@ pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
                         Field::new("approved_at", Type::optional(Type::BigInt)),
                         Field::new("pending_approval", Type::Boolean),
                         Field::new("approved", Type::Boolean),
+                        Field::new("linked_wallet", Type::String),
+                        Field::new("blockchain", Type::enum_ref("block_chain")),
                     ],
                 ),
             )],

@@ -1005,6 +1005,8 @@ pub struct AdminListStrategiesRow {
     pub approved_at: Option<i64>,
     pub pending_approval: bool,
     pub approved: bool,
+    pub linked_wallet: String,
+    pub blockchain: EnumBlockChain,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -6211,6 +6213,16 @@ impl WsRequest for AdminListStrategiesRequest {
             {
               "name": "approved",
               "ty": "Boolean"
+            },
+            {
+              "name": "linked_wallet",
+              "ty": "String"
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
             }
           ]
         }

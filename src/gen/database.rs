@@ -2787,6 +2787,10 @@ pub struct FunAdminListStrategiesRespRow {
     pub approved: bool,
     #[serde(default)]
     pub approved_at: Option<i64>,
+    #[serde(default)]
+    pub linked_wallet: Option<String>,
+    #[serde(default)]
+    pub linked_wallet_blockchain: Option<EnumBlockChain>,
 }
 
 #[allow(unused_variables)]
@@ -2826,6 +2830,12 @@ impl DatabaseRequest for FunAdminListStrategiesReq {
                 .context("failed to get field pending_approval")?,
             approved: row.try_get(8).context("failed to get field approved")?,
             approved_at: row.try_get(9).context("failed to get field approved_at")?,
+            linked_wallet: row
+                .try_get(10)
+                .context("failed to get field linked_wallet")?,
+            linked_wallet_blockchain: row
+                .try_get(11)
+                .context("failed to get field linked_wallet_blockchain")?,
         };
         Ok(r)
     }

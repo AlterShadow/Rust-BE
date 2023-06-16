@@ -3694,6 +3694,16 @@
                     {
                       "name": "approved",
                       "ty": "Boolean"
+                    },
+                    {
+                      "name": "linked_wallet",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "blockchain",
+                      "ty": {
+                        "EnumRef": "block_chain"
+                      }
                     }
                   ]
                 }
