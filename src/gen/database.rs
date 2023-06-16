@@ -498,6 +498,7 @@ impl DatabaseRequest for FunUserListTopPerformingStrategiesReq {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserGetStrategyReq {
     pub strategy_id: i64,
+    pub user_id: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserGetStrategyRespRow {
@@ -515,16 +516,26 @@ pub struct FunUserGetStrategyRespRow {
     pub aum: Option<f64>,
     #[serde(default)]
     pub evm_contract_address: Option<String>,
+    pub followed: bool,
+    pub creator_user_public_id: i64,
+    #[serde(default)]
+    pub linked_wallet: Option<String>,
+    #[serde(default)]
+    pub linked_wallet_blockchain: Option<EnumBlockChain>,
+    pub created_at: i64,
 }
 
 #[allow(unused_variables)]
 impl DatabaseRequest for FunUserGetStrategyReq {
     type ResponseRow = FunUserGetStrategyRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_get_strategy(a_strategy_id => $1::bigint);"
+        "SELECT * FROM api.fun_user_get_strategy(a_strategy_id => $1::bigint, a_user_id => $2::bigint);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
-        vec![&self.strategy_id as &(dyn ToSql + Sync)]
+        vec![
+            &self.strategy_id as &(dyn ToSql + Sync),
+            &self.user_id as &(dyn ToSql + Sync),
+        ]
     }
     fn parse_row(&self, row: Row) -> Result<FunUserGetStrategyRespRow> {
         let r = FunUserGetStrategyRespRow {
@@ -539,6 +550,11 @@ impl DatabaseRequest for FunUserGetStrategyReq {
             risk_score: row.try_get(8)?,
             aum: row.try_get(9)?,
             evm_contract_address: row.try_get(10)?,
+            followed: row.try_get(11)?,
+            creator_user_public_id: row.try_get(12)?,
+            linked_wallet: row.try_get(13)?,
+            linked_wallet_blockchain: row.try_get(14)?,
+            created_at: row.try_get(15)?,
         };
         Ok(r)
     }

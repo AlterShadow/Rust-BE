@@ -405,7 +405,7 @@ BEGIN
                           w.blockchain AS linked_wallet_blockchain
                  FROM tbl.strategy AS s
                         JOIN tbl.user AS b ON b.pkey_id = s.fkey_user_id
-                        LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = (SELECT distinct on(1) w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.fkey_user_id ORDER BY w.pkey_id)
+                        LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = (SELECT distinct on(1) w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id)
                  WHERE (a_strategy_id ISNULL OR s.pkey_id = a_strategy_id)
                     AND (a_strategy_name ISNULL OR s.name ILIKE a_strategy_name || '%')
                     AND (a_expert_public_id ISNULL OR b.public_id = a_expert_public_id)
@@ -455,7 +455,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_get_strategy(a_strategy_id bigint)
+CREATE OR REPLACE FUNCTION api.fun_user_get_strategy(a_strategy_id bigint, a_user_id bigint)
 RETURNS table (
     "strategy_id" bigint,
     "strategy_name" varchar,
@@ -467,25 +467,37 @@ RETURNS table (
     "backers" bigint,
     "risk_score" double precision,
     "aum" double precision,
-    "evm_contract_address" varchar
+    "evm_contract_address" varchar,
+    "followed" boolean,
+    "creator_user_public_id" bigint,
+    "linked_wallet" varchar,
+    "linked_wallet_blockchain" enum_block_chain,
+    "created_at" bigint
 )
 LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY SELECT a.pkey_id AS strategy_id,
-                          a.name AS strategy_name,
-                          a.description AS strategy_description,
-                          a.current_usdc,
-                          a.total_backed_usdc,
-                          a.total_exited_usdc,
-                          (SELECT COUNT(*) FROM tbl.user_follow_strategy WHERE fkey_strategy_id = a.pkey_id AND unfollowed = FALSE) AS followers,
-                          (SELECT COUNT(DISTINCT user_back_strategy_history.fkey_user_id) FROM tbl.user_back_strategy_history WHERE fkey_strategy_id = a.pkey_id) AS followers,
-                          a.risk_score as risk_score,
-                          a.aum as aum,
-                          a.evm_contract_address
-                 FROM tbl.strategy AS a
-                 WHERE a.pkey_id = a_strategy_id;
+    RETURN QUERY SELECT s.pkey_id AS strategy_id,
+                          s.name AS strategy_name,
+                          s.description AS strategy_description,
+                          s.current_usdc,
+                          s.total_backed_usdc,
+                          s.total_exited_usdc,
+                          (SELECT COUNT(*) FROM tbl.user_follow_strategy WHERE fkey_strategy_id = s.pkey_id AND unfollowed = FALSE) AS followers,
+                          (SELECT COUNT(DISTINCT user_back_strategy_history.fkey_user_id) FROM tbl.user_back_strategy_history WHERE fkey_strategy_id = s.pkey_id) AS followers,
+                          s.risk_score as risk_score,
+                          s.aum as aum,
+                          s.evm_contract_address,
+                          EXISTS(SELECT * FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.fkey_user_id = a_user_id AND ufs.unfollowed = FALSE),
+                          w.address AS linked_wallet,
+                          w.blockchain AS linked_wallet_blockchain,
+                          s.created_at
+                 FROM tbl.strategy AS s
+                    LEFT JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id
+                    LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = (SELECT distinct on(1) w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id)
+
+                 WHERE s.pkey_id = a_strategy_id;
 END
             
 $$;

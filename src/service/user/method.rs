@@ -313,6 +313,7 @@ impl RequestHandler for MethodUserGetStrategy {
             let ret = db
                 .execute(FunUserGetStrategyReq {
                     strategy_id: req.strategy_id,
+                    user_id: ctx.user_id,
                 })
                 .await?;
             let ret = ret.into_result().context("failed to get strategy")?;
@@ -326,10 +327,10 @@ impl RequestHandler for MethodUserGetStrategy {
                 strategy_id: ret.strategy_id,
                 strategy_name: ret.strategy_name,
                 strategy_description: ret.strategy_description,
-                creator_user_id: 0,
+                creator_user_id: ret.creator_user_public_id,
                 social_media: "".to_string(),
                 historical_return: 0.0,
-                inception_time: 0,
+                inception_time: ret.created_at,
                 total_amount: 0.0,
                 token_allocation: 0,
                 net_value: 0.0,
@@ -542,7 +543,10 @@ pub async fn user_back_strategy(
 
     /* fetch strategy */
     let strategy = db
-        .execute(FunUserGetStrategyReq { strategy_id })
+        .execute(FunUserGetStrategyReq {
+            strategy_id,
+            user_id: ctx.user_id,
+        })
         .await?
         .into_result()
         .context("user_registered_strategy")?;

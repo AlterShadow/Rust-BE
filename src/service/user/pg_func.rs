@@ -6,6 +6,7 @@ fn check_if_user_follows_strategy() -> &'static str {
 fn check_if_user_follows_expert() -> &'static str {
     "EXISTS(SELECT * FROM tbl.user_follow_expert AS ufe WHERE ufe.fkey_expert_id = e.pkey_id AND ufe.fkey_user_id = a_user_id AND unfollowed = FALSE)"
 }
+// get_first_linked_wallet
 pub fn get_user_pg_func() -> Vec<ProceduralFunction> {
     vec![
         ProceduralFunction::new(
@@ -137,7 +138,7 @@ BEGIN
                           w.blockchain AS linked_wallet_blockchain
                  FROM tbl.strategy AS s
                         JOIN tbl.user AS b ON b.pkey_id = s.fkey_user_id
-                        LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = (SELECT distinct on(1) w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.fkey_user_id ORDER BY w.pkey_id)
+                        LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = (SELECT distinct on(1) w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id)
                  WHERE (a_strategy_id ISNULL OR s.pkey_id = a_strategy_id)
                     AND (a_strategy_name ISNULL OR s.name ILIKE a_strategy_name || '%')
                     AND (a_expert_public_id ISNULL OR b.public_id = a_expert_public_id)
@@ -191,7 +192,10 @@ END
         ProceduralFunction::new(
             "fun_user_get_strategy",
             // TODO search options
-            vec![Field::new("strategy_id", Type::BigInt)],
+            vec![
+                Field::new("strategy_id", Type::BigInt),
+                Field::new("user_id", Type::BigInt),
+            ],
             vec![
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("strategy_name", Type::String),
@@ -204,25 +208,42 @@ END
                 Field::new("risk_score", Type::optional(Type::Numeric)),
                 Field::new("aum", Type::optional(Type::Numeric)),
                 Field::new("evm_contract_address", Type::optional(Type::String)),
-                // TODO more fields
+                Field::new("followed", Type::Boolean),
+                Field::new("creator_user_public_id", Type::BigInt),
+                Field::new("linked_wallet", Type::optional(Type::String)),
+                Field::new(
+                    "linked_wallet_blockchain",
+                    Type::optional(Type::enum_ref("block_chain")),
+                ),
+                Field::new("created_at", Type::BigInt), // TODO more fields
             ],
-            r#"
+            format!(
+                r#"
 BEGIN
-    RETURN QUERY SELECT a.pkey_id AS strategy_id,
-                          a.name AS strategy_name,
-                          a.description AS strategy_description,
-                          a.current_usdc,
-                          a.total_backed_usdc,
-                          a.total_exited_usdc,
-                          (SELECT COUNT(*) FROM tbl.user_follow_strategy WHERE fkey_strategy_id = a.pkey_id AND unfollowed = FALSE) AS followers,
-                          (SELECT COUNT(DISTINCT user_back_strategy_history.fkey_user_id) FROM tbl.user_back_strategy_history WHERE fkey_strategy_id = a.pkey_id) AS followers,
-                          a.risk_score as risk_score,
-                          a.aum as aum,
-                          a.evm_contract_address
-                 FROM tbl.strategy AS a
-                 WHERE a.pkey_id = a_strategy_id;
+    RETURN QUERY SELECT s.pkey_id AS strategy_id,
+                          s.name AS strategy_name,
+                          s.description AS strategy_description,
+                          s.current_usdc,
+                          s.total_backed_usdc,
+                          s.total_exited_usdc,
+                          (SELECT COUNT(*) FROM tbl.user_follow_strategy WHERE fkey_strategy_id = s.pkey_id AND unfollowed = FALSE) AS followers,
+                          (SELECT COUNT(DISTINCT user_back_strategy_history.fkey_user_id) FROM tbl.user_back_strategy_history WHERE fkey_strategy_id = s.pkey_id) AS followers,
+                          s.risk_score as risk_score,
+                          s.aum as aum,
+                          s.evm_contract_address,
+                          {followed},
+                          w.address AS linked_wallet,
+                          w.blockchain AS linked_wallet_blockchain,
+                          s.created_at
+                 FROM tbl.strategy AS s
+                    LEFT JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id
+                    LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = (SELECT distinct on(1) w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id)
+
+                 WHERE s.pkey_id = a_strategy_id;
 END
             "#,
+                followed = check_if_user_follows_strategy()
+            ),
         ),
         ProceduralFunction::new(
             "fun_user_get_strategy_statistics_net_value",
