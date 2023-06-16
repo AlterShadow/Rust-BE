@@ -1725,8 +1725,7 @@ impl RequestHandler for MethodExpertCreateStrategy {
     ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         async move {
-            // TODO: check if user is expert
-            ensure_user_role(ctx, EnumRole::User)?;
+            ensure_user_role(ctx, EnumRole::Expert)?;
 
             let ret = db
                 .execute(FunUserCreateStrategyReq {
@@ -1765,9 +1764,7 @@ impl RequestHandler for MethodExpertUpdateStrategy {
     ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         async move {
-            // TODO: check if user is expert
-
-            ensure_user_role(ctx, EnumRole::User)?;
+            ensure_user_role(ctx, EnumRole::Expert)?;
 
             let ret = db
                 .execute(FunUserUpdateStrategyReq {
@@ -1800,9 +1797,7 @@ impl RequestHandler for MethodExpertAddStrategyWatchingWallet {
     ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         async move {
-            // TODO: check if user is expert
-
-            ensure_user_role(ctx, EnumRole::User)?;
+            ensure_user_role(ctx, EnumRole::Expert)?;
 
             let ret = db
                 .execute(FunUserAddStrategyWatchWalletReq {
@@ -1839,9 +1834,7 @@ impl RequestHandler for MethodExpertRemoveStrategyWatchingWallet {
         let db: DbClient = toolbox.get_db();
 
         async move {
-            // TODO: check if user is expert
-
-            ensure_user_role(ctx, EnumRole::User)?;
+            ensure_user_role(ctx, EnumRole::Expert)?;
 
             let ret = db
                 .execute(FunUserRemoveStrategyWatchWalletReq {
@@ -2083,7 +2076,7 @@ impl RequestHandler for MethodExpertListFollowers {
         let db: DbClient = toolbox.get_db();
 
         async move {
-            ensure_user_role(ctx, EnumRole::User)?;
+            ensure_user_role(ctx, EnumRole::Expert)?;
 
             let ret = db
                 .execute(FunExpertListFollowersReq {
