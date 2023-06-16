@@ -2630,7 +2630,8 @@ pub struct FunAdminListExpertsRespRow {
     #[serde(default)]
     pub aum: Option<f64>,
     pub joined_at: i64,
-    pub requested_at: i64,
+    #[serde(default)]
+    pub requested_at: Option<i64>,
     #[serde(default)]
     pub approved_at: Option<i64>,
     pub pending_expert: bool,

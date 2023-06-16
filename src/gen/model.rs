@@ -944,7 +944,8 @@ pub struct AdminListExpertsRow {
     pub reputation_score: f64,
     pub aum: f64,
     pub joined_at: i64,
-    pub requested_at: i64,
+    #[serde(default)]
+    pub requested_at: Option<i64>,
     #[serde(default)]
     pub approved_at: Option<i64>,
     pub pending_expert: bool,
@@ -5971,7 +5972,9 @@ impl WsRequest for AdminListExpertsRequest {
             },
             {
               "name": "requested_at",
-              "ty": "BigInt"
+              "ty": {
+                "Optional": "BigInt"
+              }
             },
             {
               "name": "approved_at",

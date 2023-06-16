@@ -3471,7 +3471,9 @@
                     },
                     {
                       "name": "requested_at",
-                      "ty": "BigInt"
+                      "ty": {
+                        "Optional": "BigInt"
+                      }
                     },
                     {
                       "name": "approved_at",

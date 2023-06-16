@@ -240,7 +240,7 @@ END
                 Field::new("reputation_score", Type::optional(Type::Numeric)),
                 Field::new("aum", Type::optional(Type::Numeric)),
                 Field::new("joined_at", Type::BigInt),
-                Field::new("requested_at", Type::BigInt),
+                Field::new("requested_at", Type::optional(Type::BigInt)),
                 Field::new("approved_at", Type::optional(Type::BigInt)),
                 Field::new("pending_expert", Type::Boolean),
                 Field::new("approved_expert", Type::Boolean),

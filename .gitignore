@@ -16,3 +16,4 @@ Cargo.lock
 *.pem
 etc/config.*.json
 etc/certs
+db/backup
