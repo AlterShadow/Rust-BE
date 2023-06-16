@@ -17,8 +17,8 @@ pub fn get_enums() -> Vec<Type> {
             vec![
                 EnumVariant::new("guest", 0),
                 EnumVariant::new("user", 1),
-                EnumVariant::new("admin", 2),
-                EnumVariant::new("expert", 3),
+                EnumVariant::new("expert", 2),
+                EnumVariant::new("admin", 3),
                 EnumVariant::new("developer", 4),
             ],
         ),

@@ -30,11 +30,11 @@ pub enum EnumRole {
     #[postgres(name = "user")]
     User = 1,
     ///
-    #[postgres(name = "admin")]
-    Admin = 2,
-    ///
     #[postgres(name = "expert")]
-    Expert = 3,
+    Expert = 2,
+    ///
+    #[postgres(name = "admin")]
+    Admin = 3,
     ///
     #[postgres(name = "developer")]
     Developer = 4,
