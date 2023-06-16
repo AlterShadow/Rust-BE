@@ -329,6 +329,8 @@ END
                 Field::new("expert_public_id", Type::optional(Type::BigInt)),
                 Field::new("expert_name", Type::optional(Type::String)),
                 Field::new("description", Type::optional(Type::String)),
+                Field::new("approved", Type::optional(Type::Boolean)),
+                Field::new("pending_approval", Type::optional(Type::Boolean)),
             ],
             vec![
                 Field::new("strategy_id", Type::BigInt),
@@ -338,32 +340,62 @@ END
                 Field::new("expert_name", Type::String),
                 Field::new("description", Type::optional(Type::String)),
                 Field::new("created_at", Type::BigInt),
+                Field::new("pending_approval", Type::Boolean),
+                Field::new("approved", Type::Boolean),
                 Field::new("approved_at", Type::optional(Type::BigInt)),
-                Field::new("pending_strategy", Type::Boolean),
-                Field::new("approved_strategy", Type::Boolean),
             ],
             r#"
 BEGIN
-    RETURN QUERY SELECT a.pkey_id AS strategy_id,
-                        a.name AS strategy_name, 
+    RETURN QUERY SELECT s.pkey_id AS strategy_id,
+                        s.name AS strategy_name, 
                         b.pkey_id AS expert_id,
                         b.public_id AS expert_public_id,
                         b.username AS expert_name,
-                        a.description AS description,
-                        a.created_at AS created_at,
-                        0::bigint AS approved_at,
-                        FALSE AS pending_strategy,
-                        TRUE AS approved_strategy
-                 FROM tbl.strategy AS a
-                          JOIN tbl.user AS b ON b.pkey_id = a.fkey_user_id
-                WHERE (a_strategy_id ISNULL OR a.pkey_id = a_strategy_id)
-                    AND (a_strategy_name ISNULL OR a.name ILIKE a_strategy_name || '%')
+                        s.description AS description,
+                        s.created_at AS created_at,
+                        s.pending_approval AS pending_approval,
+                        s.approved AS approved,
+                        s.approved_at AS approved_at
+                 FROM tbl.strategy AS s
+                          JOIN tbl.user AS b ON b.pkey_id = s.fkey_user_id
+                WHERE (a_strategy_id ISNULL OR s.pkey_id = a_strategy_id)
+                    AND (a_strategy_name ISNULL OR s.name ILIKE a_strategy_name || '%')
                     AND (a_expert_public_id ISNULL OR b.public_id = a_expert_public_id)
                     AND (a_expert_name ISNULL OR b.username ILIKE a_expert_name || '%')
-                    AND (a_description ISNULL OR a.description ILIKE a_description || '%')
-                 ORDER BY a.pkey_id
+                    AND (a_description ISNULL OR s.description ILIKE a_description || '%')
+                 ORDER BY s.pkey_id
                  OFFSET a_offset
                  LIMIT a_limit;
+END
+            "#,
+        ),
+        ProceduralFunction::new(
+            "fun_admin_approve_strategy",
+            vec![Field::new("strategy_id", Type::BigInt)],
+            vec![],
+            r#"
+BEGIN
+    UPDATE tbl.strategy
+       SET approved = TRUE,
+           pending_approval = FALSE,
+           approved_at = EXTRACT(EPOCH FROM NOW())::bigint,
+           updated_at = EXTRACT(EPOCH FROM NOW())::bigint
+     WHERE pkey_id = a_strategy_id;
+END
+            "#,
+        ),
+        ProceduralFunction::new(
+            "fun_admin_reject_strategies",
+            vec![Field::new("strategy_id", Type::BigInt)],
+            vec![],
+            r#"
+BEGIN
+    UPDATE tbl.strategy
+       SET approved = FALSE,
+           pending_approval = FALSE,
+           approved_at = NULL,
+          updated_at = EXTRACT(EPOCH FROM NOW())::bigint
+     WHERE pkey_id = a_strategy_id;
 END
             "#,
         ),

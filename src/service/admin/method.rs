@@ -398,6 +398,8 @@ impl RequestHandler for MethodAdminListStrategies {
                     expert_public_id: req.expert_public_id,
                     expert_name: req.expert_name,
                     description: req.description,
+                    approved: None,
+                    pending_approval: None,
                 })
                 .await?;
 
@@ -413,8 +415,8 @@ impl RequestHandler for MethodAdminListStrategies {
                         description: x.description,
                         created_at: x.created_at,
                         approved_at: x.approved_at,
-                        pending_strategy: x.pending_strategy,
-                        approved_strategy: x.approved_strategy,
+                        pending_approval: x.pending_approval,
+                        approved: x.approved,
                     })
                     .collect(),
             })
@@ -423,6 +425,30 @@ impl RequestHandler for MethodAdminListStrategies {
     }
 }
 
+pub struct MethodAdminApproveStrategy;
+impl RequestHandler for MethodAdminApproveStrategy {
+    type Request = AdminApproveStrategyRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db: DbClient = toolbox.get_db();
+        async move {
+            ensure_user_role(ctx, EnumRole::Admin)?;
+
+            db.execute(FunAdminApproveStrategyReq {
+                strategy_id: req.strategy_id,
+            })
+            .await?;
+
+            Ok(AdminApproveStrategyResponse { success: true })
+        }
+        .boxed()
+    }
+}
 pub struct MethodAdminAddWalletActivityHistory;
 impl RequestHandler for MethodAdminAddWalletActivityHistory {
     type Request = AdminAddWalletActivityHistoryRequest;

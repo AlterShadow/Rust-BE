@@ -347,6 +347,14 @@ pub struct FunUserListFollowedStrategiesRespRow {
     #[serde(default)]
     pub aum: Option<f64>,
     pub followed: bool,
+    pub approved: bool,
+    #[serde(default)]
+    pub approved_at: Option<i64>,
+    pub pending_approval: bool,
+    #[serde(default)]
+    pub linked_wallet: Option<String>,
+    #[serde(default)]
+    pub linked_wallet_blockchain: Option<EnumBlockChain>,
 }
 
 #[allow(unused_variables)]
@@ -373,6 +381,11 @@ impl DatabaseRequest for FunUserListFollowedStrategiesReq {
             risk_score: row.try_get(6)?,
             aum: row.try_get(7)?,
             followed: row.try_get(8)?,
+            approved: row.try_get(9)?,
+            approved_at: row.try_get(10)?,
+            pending_approval: row.try_get(11)?,
+            linked_wallet: row.try_get(12)?,
+            linked_wallet_blockchain: row.try_get(13)?,
         };
         Ok(r)
     }
@@ -411,6 +424,10 @@ pub struct FunUserListStrategiesRespRow {
     pub linked_wallet: Option<String>,
     #[serde(default)]
     pub linked_wallet_blockchain: Option<EnumBlockChain>,
+    pub approved: bool,
+    #[serde(default)]
+    pub approved_at: Option<i64>,
+    pub pending_approval: bool,
 }
 
 #[allow(unused_variables)]
@@ -444,6 +461,9 @@ impl DatabaseRequest for FunUserListStrategiesReq {
             followed: row.try_get(8)?,
             linked_wallet: row.try_get(9)?,
             linked_wallet_blockchain: row.try_get(10)?,
+            approved: row.try_get(11)?,
+            approved_at: row.try_get(12)?,
+            pending_approval: row.try_get(13)?,
         };
         Ok(r)
     }
@@ -523,6 +543,10 @@ pub struct FunUserGetStrategyRespRow {
     #[serde(default)]
     pub linked_wallet_blockchain: Option<EnumBlockChain>,
     pub created_at: i64,
+    pub approved: bool,
+    #[serde(default)]
+    pub approved_at: Option<i64>,
+    pub pending_approval: bool,
 }
 
 #[allow(unused_variables)]
@@ -555,6 +579,9 @@ impl DatabaseRequest for FunUserGetStrategyReq {
             linked_wallet: row.try_get(13)?,
             linked_wallet_blockchain: row.try_get(14)?,
             created_at: row.try_get(15)?,
+            approved: row.try_get(16)?,
+            approved_at: row.try_get(17)?,
+            pending_approval: row.try_get(18)?,
         };
         Ok(r)
     }
@@ -751,6 +778,13 @@ pub struct FunUserListBackedStrategiesRespRow {
     #[serde(default)]
     pub aum: Option<f64>,
     pub followed: bool,
+    pub approved: bool,
+    #[serde(default)]
+    pub approved_at: Option<i64>,
+    #[serde(default)]
+    pub linked_wallet: Option<String>,
+    #[serde(default)]
+    pub linked_wallet_blockchain: Option<EnumBlockChain>,
 }
 
 #[allow(unused_variables)]
@@ -777,6 +811,10 @@ impl DatabaseRequest for FunUserListBackedStrategiesReq {
             risk_score: row.try_get(6)?,
             aum: row.try_get(7)?,
             followed: row.try_get(8)?,
+            approved: row.try_get(9)?,
+            approved_at: row.try_get(10)?,
+            linked_wallet: row.try_get(11)?,
+            linked_wallet_blockchain: row.try_get(12)?,
         };
         Ok(r)
     }
@@ -2533,6 +2571,10 @@ pub struct FunAdminListStrategiesReq {
     pub expert_name: Option<String>,
     #[serde(default)]
     pub description: Option<String>,
+    #[serde(default)]
+    pub approved: Option<bool>,
+    #[serde(default)]
+    pub pending_approval: Option<bool>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAdminListStrategiesRespRow {
@@ -2544,17 +2586,17 @@ pub struct FunAdminListStrategiesRespRow {
     #[serde(default)]
     pub description: Option<String>,
     pub created_at: i64,
+    pub pending_approval: bool,
+    pub approved: bool,
     #[serde(default)]
     pub approved_at: Option<i64>,
-    pub pending_strategy: bool,
-    pub approved_strategy: bool,
 }
 
 #[allow(unused_variables)]
 impl DatabaseRequest for FunAdminListStrategiesReq {
     type ResponseRow = FunAdminListStrategiesRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_admin_list_strategies(a_limit => $1::bigint, a_offset => $2::bigint, a_strategy_id => $3::bigint, a_strategy_name => $4::varchar, a_expert_public_id => $5::bigint, a_expert_name => $6::varchar, a_description => $7::varchar);"
+        "SELECT * FROM api.fun_admin_list_strategies(a_limit => $1::bigint, a_offset => $2::bigint, a_strategy_id => $3::bigint, a_strategy_name => $4::varchar, a_expert_public_id => $5::bigint, a_expert_name => $6::varchar, a_description => $7::varchar, a_approved => $8::boolean, a_pending_approval => $9::boolean);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -2565,6 +2607,8 @@ impl DatabaseRequest for FunAdminListStrategiesReq {
             &self.expert_public_id as &(dyn ToSql + Sync),
             &self.expert_name as &(dyn ToSql + Sync),
             &self.description as &(dyn ToSql + Sync),
+            &self.approved as &(dyn ToSql + Sync),
+            &self.pending_approval as &(dyn ToSql + Sync),
         ]
     }
     fn parse_row(&self, row: Row) -> Result<FunAdminListStrategiesRespRow> {
@@ -2576,10 +2620,54 @@ impl DatabaseRequest for FunAdminListStrategiesReq {
             expert_name: row.try_get(4)?,
             description: row.try_get(5)?,
             created_at: row.try_get(6)?,
-            approved_at: row.try_get(7)?,
-            pending_strategy: row.try_get(8)?,
-            approved_strategy: row.try_get(9)?,
+            pending_approval: row.try_get(7)?,
+            approved: row.try_get(8)?,
+            approved_at: row.try_get(9)?,
         };
+        Ok(r)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAdminApproveStrategyReq {
+    pub strategy_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAdminApproveStrategyRespRow {}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunAdminApproveStrategyReq {
+    type ResponseRow = FunAdminApproveStrategyRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_admin_approve_strategy(a_strategy_id => $1::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![&self.strategy_id as &(dyn ToSql + Sync)]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunAdminApproveStrategyRespRow> {
+        let r = FunAdminApproveStrategyRespRow {};
+        Ok(r)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAdminRejectStrategiesReq {
+    pub strategy_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAdminRejectStrategiesRespRow {}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunAdminRejectStrategiesReq {
+    type ResponseRow = FunAdminRejectStrategiesRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_admin_reject_strategies(a_strategy_id => $1::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![&self.strategy_id as &(dyn ToSql + Sync)]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunAdminRejectStrategiesRespRow> {
+        let r = FunAdminRejectStrategiesRespRow {};
         Ok(r)
     }
 }

@@ -6,7 +6,9 @@ fn check_if_user_follows_strategy() -> &'static str {
 fn check_if_user_follows_expert() -> &'static str {
     "EXISTS(SELECT * FROM tbl.user_follow_expert AS ufe WHERE ufe.fkey_expert_id = e.pkey_id AND ufe.fkey_user_id = a_user_id AND unfollowed = FALSE)"
 }
-// get_first_linked_wallet
+fn get_first_linked_wallet() -> &'static str {
+    "(SELECT distinct on(1) w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id)"
+}
 pub fn get_user_pg_func() -> Vec<ProceduralFunction> {
     vec![
         ProceduralFunction::new(
@@ -74,25 +76,43 @@ END
                 Field::new("risk_score", Type::optional(Type::Numeric)),
                 Field::new("aum", Type::optional(Type::Numeric)),
                 Field::new("followed", Type::Boolean),
+                Field::new("approved", Type::Boolean),
+                Field::new("approved_at", Type::optional(Type::BigInt)),
+                Field::new("pending_approval", Type::Boolean),
+                Field::new("linked_wallet", Type::optional(Type::String)),
+                Field::new(
+                    "linked_wallet_blockchain",
+                    Type::optional(Type::enum_ref("block_chain")),
+                ),
             ],
-            r#"
+            format!(
+                r#"
 BEGIN
-    RETURN QUERY SELECT a.pkey_id AS strategy_id,
-                          a.name AS strategy_name,
-                          a.description AS strategy_description,
+    RETURN QUERY SELECT s.pkey_id AS strategy_id,
+                          s.name AS strategy_name,
+                          s.description AS strategy_description,
                           0.0::double precision AS net_value,
-                          (SELECT COUNT(*) FROM tbl.user_follow_strategy WHERE fkey_strategy_id = a.pkey_id AND unfollowed = FALSE) AS followers,
-                          (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_strategy_history AS h WHERE fkey_strategy_id = a.pkey_id) AS backers,
-                          a.risk_score as risk_score,
-                          a.aum as aum,
-                          TRUE as followed
-                 FROM tbl.strategy AS a 
-                     JOIN tbl.user_follow_strategy AS b ON b.fkey_strategy_id = a.pkey_id WHERE b.fkey_user_id = a_user_id AND unfollowed = FALSE
-                ORDER BY a.pkey_id
+                          (SELECT COUNT(*) FROM tbl.user_follow_strategy WHERE fkey_strategy_id = s.pkey_id AND unfollowed = FALSE) AS followers,
+                          (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_strategy_history AS h WHERE fkey_strategy_id = s.pkey_id) AS backers,
+                          s.risk_score as risk_score,
+                          s.aum as aum,
+                          TRUE as followed,
+                          s.approved as approved,
+                          s.approved_at as approved_at,
+                          s.pending_approval as pending_approval,
+                          w.address as linked_wallet,
+                          w.blockchain as linked_wallet_blockchain
+                 FROM tbl.strategy AS s
+                     LEFT JOIN tbl.strategy_watching_wallet AS w ON w.fkey_strategy_id = {linked_wallet}
+                     JOIN tbl.user_follow_strategy AS b ON b.fkey_strategy_id = s.pkey_id WHERE b.fkey_user_id = a_user_id AND unfollowed = FALSE
+                 -- TODO: filter only approved strategies
+                ORDER BY s.pkey_id
                 LIMIT a_limit
                 OFFSET a_offset;
 END
             "#,
+                linked_wallet = get_first_linked_wallet()
+            ),
         ),
         ProceduralFunction::new(
             "fun_user_list_strategies",
@@ -121,6 +141,9 @@ END
                     "linked_wallet_blockchain",
                     Type::optional(Type::enum_ref("block_chain")),
                 ),
+                Field::new("approved", Type::Boolean),
+                Field::new("approved_at", Type::optional(Type::BigInt)),
+                Field::new("pending_approval", Type::Boolean),
             ],
             format!(
                 r#"
@@ -135,10 +158,13 @@ BEGIN
                           s.aum as aum,
                           {followed} as followed,
                           w.address AS linked_wallet,
-                          w.blockchain AS linked_wallet_blockchain
+                          w.blockchain AS linked_wallet_blockchain,
+                          s.approved as approved,
+                          s.approved_at as approved_at,
+                          s.pending_approval as pending_approval
                  FROM tbl.strategy AS s
                         JOIN tbl.user AS b ON b.pkey_id = s.fkey_user_id
-                        LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = (SELECT distinct on(1) w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id)
+                        LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = {linked_wallet}
                  WHERE (a_strategy_id ISNULL OR s.pkey_id = a_strategy_id)
                     AND (a_strategy_name ISNULL OR s.name ILIKE a_strategy_name || '%')
                     AND (a_expert_public_id ISNULL OR b.public_id = a_expert_public_id)
@@ -151,7 +177,8 @@ BEGIN
 
 END
             "#,
-                followed = check_if_user_follows_strategy()
+                followed = check_if_user_follows_strategy(),
+                linked_wallet = get_first_linked_wallet()
             ),
         ),
         ProceduralFunction::new(
@@ -215,7 +242,11 @@ END
                     "linked_wallet_blockchain",
                     Type::optional(Type::enum_ref("block_chain")),
                 ),
-                Field::new("created_at", Type::BigInt), // TODO more fields
+                Field::new("created_at", Type::BigInt),
+                Field::new("approved", Type::Boolean),
+                Field::new("approved_at", Type::optional(Type::BigInt)),
+                Field::new("pending_approval", Type::Boolean),
+                // TODO more fields
             ],
             format!(
                 r#"
@@ -234,15 +265,19 @@ BEGIN
                           {followed},
                           w.address AS linked_wallet,
                           w.blockchain AS linked_wallet_blockchain,
-                          s.created_at
+                          s.created_at,
+                          s.approved,
+                          s.approved_at,
+                          s.pending_approval
                  FROM tbl.strategy AS s
                     LEFT JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id
-                    LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = (SELECT distinct on(1) w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id)
+                    LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = {linked_wallet}
 
                  WHERE s.pkey_id = a_strategy_id;
 END
             "#,
-                followed = check_if_user_follows_strategy()
+                followed = check_if_user_follows_strategy(),
+                linked_wallet = get_first_linked_wallet()
             ),
         ),
         ProceduralFunction::new(
@@ -383,6 +418,13 @@ END
                 Field::new("risk_score", Type::optional(Type::Numeric)),
                 Field::new("aum", Type::optional(Type::Numeric)),
                 Field::new("followed", Type::Boolean),
+                Field::new("approved", Type::Boolean),
+                Field::new("approved_at", Type::optional(Type::BigInt)),
+                Field::new("linked_wallet", Type::optional(Type::String)),
+                Field::new(
+                    "linked_wallet_blockchain",
+                    Type::optional(Type::enum_ref("block_chain")),
+                ),
             ],
             format!(
                 r#"
@@ -400,16 +442,21 @@ BEGIN
                          WHERE fkey_strategy_id = s.pkey_id) AS followers,
                         s.risk_score                         as risk_score,
                         s.aum                                as aum,
-                        {followed}                                   AS followed
+                        {followed}                                   AS followed,
+                        s.approved                           AS approved,
+                        s.approved_at     AS approved_at,
+                        w.address                           AS linked_wallet,
+                        w.blockchain                        AS linked_wallet_blockchain
                  FROM tbl.strategy AS s
-                          JOIN tbl.user_back_strategy_history AS b ON b.fkey_strategy_id = s.pkey_id
-                     AND b.fkey_user_id = a_user_id
+                      JOIN tbl.user_back_strategy_history AS b ON b.fkey_strategy_id = s.pkey_id AND b.fkey_user_id = a_user_id
+                    LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = {linked_wallet}
                  ORDER BY s.pkey_id
                  LIMIT a_limit
                  OFFSET a_offset;
 END
 "#,
-                followed = check_if_user_follows_strategy()
+                followed = check_if_user_follows_strategy(),
+                linked_wallet = get_first_linked_wallet()
             ),
         ),
         ProceduralFunction::new(

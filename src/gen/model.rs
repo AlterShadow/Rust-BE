@@ -399,6 +399,12 @@ pub enum EnumEndpoint {
     #[postgres(name = "AdminListStrategies")]
     AdminListStrategies = 30110,
     ///
+    #[postgres(name = "AdminApproveStrategy")]
+    AdminApproveStrategy = 30120,
+    ///
+    #[postgres(name = "AdminRejectStrategy")]
+    AdminRejectStrategy = 30130,
+    ///
     #[postgres(name = "AdminAddWalletActivityHistory")]
     AdminAddWalletActivityHistory = 31001,
 }
@@ -830,6 +836,16 @@ pub struct AdminAddWalletActivityHistoryRequest {
 pub struct AdminAddWalletActivityHistoryResponse {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct AdminApproveStrategyRequest {
+    pub strategy_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminApproveStrategyResponse {
+    pub success: bool,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct AdminApproveUserBecomeExpertRequest {
     pub user_id: i64,
 }
@@ -964,6 +980,10 @@ pub struct AdminListStrategiesRequest {
     pub expert_name: Option<String>,
     #[serde(default)]
     pub description: Option<String>,
+    #[serde(default)]
+    pub pending_approval: Option<bool>,
+    #[serde(default)]
+    pub approved: Option<bool>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -982,8 +1002,8 @@ pub struct AdminListStrategiesRow {
     pub created_at: i64,
     #[serde(default)]
     pub approved_at: Option<i64>,
-    pub pending_strategy: bool,
-    pub approved_strategy: bool,
+    pub pending_approval: bool,
+    pub approved: bool,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1005,6 +1025,16 @@ pub struct AdminListUsersRequest {
 #[serde(rename_all = "camelCase")]
 pub struct AdminListUsersResponse {
     pub users: Vec<ListUserRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminRejectStrategyRequest {
+    pub strategy_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminRejectStrategyResponse {
+    pub success: bool,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1347,6 +1377,9 @@ pub struct ListStrategiesRow {
     pub swap_price: f64,
     pub price_change: f64,
     pub wallet_address: String,
+    pub approved: bool,
+    #[serde(default)]
+    pub approved_at: Option<i64>,
     pub blockchain: EnumBlockChain,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1625,6 +1658,9 @@ pub struct UserGetStrategyResponse {
     pub aum: f64,
     pub net_value: f64,
     pub followers: i32,
+    pub approved: bool,
+    #[serde(default)]
+    pub approved_at: Option<i64>,
     pub backers: i32,
     pub watching_wallets: Vec<WatchingWalletRow>,
     pub aum_history: Vec<AumHistoryRow>,
@@ -2362,6 +2398,16 @@ impl WsRequest for UserListFollowedStrategiesRequest {
               "ty": "String"
             },
             {
+              "name": "approved",
+              "ty": "Boolean"
+            },
+            {
+              "name": "approved_at",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
               "name": "blockchain",
               "ty": {
                 "EnumRef": "block_chain"
@@ -2514,6 +2560,16 @@ impl WsRequest for UserListStrategiesRequest {
               "ty": "String"
             },
             {
+              "name": "approved",
+              "ty": "Boolean"
+            },
+            {
+              "name": "approved_at",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
               "name": "blockchain",
               "ty": {
                 "EnumRef": "block_chain"
@@ -2607,6 +2663,16 @@ impl WsRequest for UserListTopPerformingStrategiesRequest {
             {
               "name": "wallet_address",
               "ty": "String"
+            },
+            {
+              "name": "approved",
+              "ty": "Boolean"
+            },
+            {
+              "name": "approved_at",
+              "ty": {
+                "Optional": "BigInt"
+              }
             },
             {
               "name": "blockchain",
@@ -2818,6 +2884,16 @@ impl WsRequest for UserGetStrategyRequest {
     {
       "name": "followers",
       "ty": "Int"
+    },
+    {
+      "name": "approved",
+      "ty": "Boolean"
+    },
+    {
+      "name": "approved_at",
+      "ty": {
+        "Optional": "BigInt"
+      }
     },
     {
       "name": "backers",
@@ -3283,6 +3359,16 @@ impl WsRequest for UserListBackedStrategiesRequest {
             {
               "name": "wallet_address",
               "ty": "String"
+            },
+            {
+              "name": "approved",
+              "ty": "Boolean"
+            },
+            {
+              "name": "approved_at",
+              "ty": {
+                "Optional": "BigInt"
+              }
             },
             {
               "name": "blockchain",
@@ -4142,6 +4228,16 @@ impl WsRequest for UserGetExpertProfileRequest {
               "ty": "String"
             },
             {
+              "name": "approved",
+              "ty": "Boolean"
+            },
+            {
+              "name": "approved_at",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
               "name": "blockchain",
               "ty": {
                 "EnumRef": "block_chain"
@@ -4332,6 +4428,16 @@ impl WsRequest for UserGetUserProfileRequest {
               "ty": "String"
             },
             {
+              "name": "approved",
+              "ty": "Boolean"
+            },
+            {
+              "name": "approved_at",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
               "name": "blockchain",
               "ty": {
                 "EnumRef": "block_chain"
@@ -4394,6 +4500,16 @@ impl WsRequest for UserGetUserProfileRequest {
             {
               "name": "wallet_address",
               "ty": "String"
+            },
+            {
+              "name": "approved",
+              "ty": "Boolean"
+            },
+            {
+              "name": "approved_at",
+              "ty": {
+                "Optional": "BigInt"
+              }
             },
             {
               "name": "blockchain",
@@ -6032,6 +6148,18 @@ impl WsRequest for AdminListStrategiesRequest {
       "ty": {
         "Optional": "String"
       }
+    },
+    {
+      "name": "pending_approval",
+      "ty": {
+        "Optional": "Boolean"
+      }
+    },
+    {
+      "name": "approved",
+      "ty": {
+        "Optional": "Boolean"
+      }
     }
   ],
   "returns": [
@@ -6074,11 +6202,11 @@ impl WsRequest for AdminListStrategiesRequest {
               }
             },
             {
-              "name": "pending_strategy",
+              "name": "pending_approval",
               "ty": "Boolean"
             },
             {
-              "name": "approved_strategy",
+              "name": "approved",
               "ty": "Boolean"
             }
           ]
@@ -6093,6 +6221,60 @@ impl WsRequest for AdminListStrategiesRequest {
 }
 impl WsResponse for AdminListStrategiesResponse {
     type Request = AdminListStrategiesRequest;
+}
+
+impl WsRequest for AdminApproveStrategyRequest {
+    type Response = AdminApproveStrategyResponse;
+    const METHOD_ID: u32 = 30120;
+    const SCHEMA: &'static str = r#"{
+  "name": "AdminApproveStrategy",
+  "code": 30120,
+  "parameters": [
+    {
+      "name": "strategy_id",
+      "ty": "BigInt"
+    }
+  ],
+  "returns": [
+    {
+      "name": "success",
+      "ty": "Boolean"
+    }
+  ],
+  "stream_response": [],
+  "description": "Admin approves strategy",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for AdminApproveStrategyResponse {
+    type Request = AdminApproveStrategyRequest;
+}
+
+impl WsRequest for AdminRejectStrategyRequest {
+    type Response = AdminRejectStrategyResponse;
+    const METHOD_ID: u32 = 30130;
+    const SCHEMA: &'static str = r#"{
+  "name": "AdminRejectStrategy",
+  "code": 30130,
+  "parameters": [
+    {
+      "name": "strategy_id",
+      "ty": "BigInt"
+    }
+  ],
+  "returns": [
+    {
+      "name": "success",
+      "ty": "Boolean"
+    }
+  ],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for AdminRejectStrategyResponse {
+    type Request = AdminRejectStrategyRequest;
 }
 
 impl WsRequest for AdminAddWalletActivityHistoryRequest {

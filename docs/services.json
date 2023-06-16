@@ -292,6 +292,16 @@
                       "ty": "String"
                     },
                     {
+                      "name": "approved",
+                      "ty": "Boolean"
+                    },
+                    {
+                      "name": "approved_at",
+                      "ty": {
+                        "Optional": "BigInt"
+                      }
+                    },
+                    {
                       "name": "blockchain",
                       "ty": {
                         "EnumRef": "block_chain"
@@ -428,6 +438,16 @@
                       "ty": "String"
                     },
                     {
+                      "name": "approved",
+                      "ty": "Boolean"
+                    },
+                    {
+                      "name": "approved_at",
+                      "ty": {
+                        "Optional": "BigInt"
+                      }
+                    },
+                    {
                       "name": "blockchain",
                       "ty": {
                         "EnumRef": "block_chain"
@@ -513,6 +533,16 @@
                     {
                       "name": "wallet_address",
                       "ty": "String"
+                    },
+                    {
+                      "name": "approved",
+                      "ty": "Boolean"
+                    },
+                    {
+                      "name": "approved_at",
+                      "ty": {
+                        "Optional": "BigInt"
+                      }
                     },
                     {
                       "name": "blockchain",
@@ -700,6 +730,16 @@
             {
               "name": "followers",
               "ty": "Int"
+            },
+            {
+              "name": "approved",
+              "ty": "Boolean"
+            },
+            {
+              "name": "approved_at",
+              "ty": {
+                "Optional": "BigInt"
+              }
             },
             {
               "name": "backers",
@@ -1109,6 +1149,16 @@
                     {
                       "name": "wallet_address",
                       "ty": "String"
+                    },
+                    {
+                      "name": "approved",
+                      "ty": "Boolean"
+                    },
+                    {
+                      "name": "approved_at",
+                      "ty": {
+                        "Optional": "BigInt"
+                      }
                     },
                     {
                       "name": "blockchain",
@@ -1896,6 +1946,16 @@
                       "ty": "String"
                     },
                     {
+                      "name": "approved",
+                      "ty": "Boolean"
+                    },
+                    {
+                      "name": "approved_at",
+                      "ty": {
+                        "Optional": "BigInt"
+                      }
+                    },
+                    {
                       "name": "blockchain",
                       "ty": {
                         "EnumRef": "block_chain"
@@ -2078,6 +2138,16 @@
                       "ty": "String"
                     },
                     {
+                      "name": "approved",
+                      "ty": "Boolean"
+                    },
+                    {
+                      "name": "approved_at",
+                      "ty": {
+                        "Optional": "BigInt"
+                      }
+                    },
+                    {
                       "name": "blockchain",
                       "ty": {
                         "EnumRef": "block_chain"
@@ -2140,6 +2210,16 @@
                     {
                       "name": "wallet_address",
                       "ty": "String"
+                    },
+                    {
+                      "name": "approved",
+                      "ty": "Boolean"
+                    },
+                    {
+                      "name": "approved_at",
+                      "ty": {
+                        "Optional": "BigInt"
+                      }
                     },
                     {
                       "name": "blockchain",
@@ -3552,6 +3632,18 @@
               "ty": {
                 "Optional": "String"
               }
+            },
+            {
+              "name": "pending_approval",
+              "ty": {
+                "Optional": "Boolean"
+              }
+            },
+            {
+              "name": "approved",
+              "ty": {
+                "Optional": "Boolean"
+              }
             }
           ],
           "returns": [
@@ -3594,16 +3686,54 @@
                       }
                     },
                     {
-                      "name": "pending_strategy",
+                      "name": "pending_approval",
                       "ty": "Boolean"
                     },
                     {
-                      "name": "approved_strategy",
+                      "name": "approved",
                       "ty": "Boolean"
                     }
                   ]
                 }
               }
+            }
+          ],
+          "stream_response": [],
+          "description": "",
+          "json_schema": null
+        },
+        {
+          "name": "AdminApproveStrategy",
+          "code": 30120,
+          "parameters": [
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            }
+          ],
+          "returns": [
+            {
+              "name": "success",
+              "ty": "Boolean"
+            }
+          ],
+          "stream_response": [],
+          "description": "Admin approves strategy",
+          "json_schema": null
+        },
+        {
+          "name": "AdminRejectStrategy",
+          "code": 30130,
+          "parameters": [
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            }
+          ],
+          "returns": [
+            {
+              "name": "success",
+              "ty": "Boolean"
             }
           ],
           "stream_response": [],

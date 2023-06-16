@@ -17,6 +17,8 @@ fn list_strategies_datatable() -> Type {
             Field::new("swap_price", Type::Numeric),
             Field::new("price_change", Type::Numeric),
             Field::new("wallet_address", Type::String),
+            Field::new("approved", Type::Boolean),
+            Field::new("approved_at", Type::optional(Type::BigInt)),
             Field::new("blockchain", Type::enum_ref("block_chain")),
         ],
     )
@@ -133,6 +135,8 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 Field::new("aum", Type::Numeric),
                 Field::new("net_value", Type::Numeric),
                 Field::new("followers", Type::Int),
+                Field::new("approved", Type::Boolean),
+                Field::new("approved_at", Type::optional(Type::BigInt)),
                 Field::new("backers", Type::Int),
                 Field::new(
                     "watching_wallets",

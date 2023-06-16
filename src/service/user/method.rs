@@ -112,6 +112,8 @@ impl RequestHandler for MethodUserListFollowedStrategies {
                         swap_price: 233.0,
                         price_change: 0.97,
                         wallet_address: "0x000000000".to_owned(),
+                        approved: x.approved,
+                        approved_at: x.approved_at,
                         blockchain: EnumBlockChain::EthereumMainnet,
                     })
                     .collect(),
@@ -165,6 +167,8 @@ impl RequestHandler for MethodUserListStrategies {
                         swap_price: 233.0,
                         price_change: 0.97,
                         wallet_address: x.linked_wallet.unwrap_or_default(),
+                        approved: x.approved,
+                        approved_at: x.approved_at,
                         blockchain: x
                             .linked_wallet_blockchain
                             .unwrap_or(EnumBlockChain::LocalNet),
@@ -219,8 +223,12 @@ impl RequestHandler for MethodUserListTopPerformingStrategies {
                         followed: x.followed,
                         swap_price: 233.0,
                         price_change: 0.97,
-                        wallet_address: "0x000000000".to_owned(),
-                        blockchain: EnumBlockChain::EthereumMainnet,
+                        wallet_address: x.linked_wallet.unwrap_or_default(),
+                        approved: x.approved,
+                        approved_at: x.approved_at,
+                        blockchain: x
+                            .linked_wallet_blockchain
+                            .unwrap_or(EnumBlockChain::LocalNet),
                     })
                     .collect(),
             })
@@ -335,6 +343,8 @@ impl RequestHandler for MethodUserGetStrategy {
                 token_allocation: 0,
                 net_value: 0.0,
                 followers: ret.followers as _,
+                approved: ret.approved,
+                approved_at: ret.approved_at,
                 backers: ret.backers as _,
                 watching_wallets: watching_wallets
                     .into_iter()
@@ -474,8 +484,12 @@ impl RequestHandler for MethodUserListBackedStrategies {
                         followed: true,
                         swap_price: 233.0,
                         price_change: 0.97,
-                        wallet_address: "0x000000000".to_owned(),
-                        blockchain: EnumBlockChain::EthereumMainnet,
+                        wallet_address: x.linked_wallet.unwrap_or_default(),
+                        approved: x.approved,
+                        approved_at: x.approved_at,
+                        blockchain: x
+                            .linked_wallet_blockchain
+                            .unwrap_or(EnumBlockChain::LocalNet),
                     })
                     .collect(),
             })
@@ -1573,8 +1587,12 @@ impl RequestHandler for MethodUserGetUserProfile {
                         followed: x.followed,
                         swap_price: 233.0,
                         price_change: 0.97,
-                        wallet_address: "0x000000000".to_owned(),
-                        blockchain: EnumBlockChain::EthereumMainnet,
+                        wallet_address: x.linked_wallet.unwrap_or_default(),
+                        approved: x.approved,
+                        approved_at: x.approved_at,
+                        blockchain: x
+                            .linked_wallet_blockchain
+                            .unwrap_or(EnumBlockChain::LocalNet),
                     })
                     .collect(),
                 backed_strategies: backed_strategies
@@ -1591,8 +1609,12 @@ impl RequestHandler for MethodUserGetUserProfile {
                         followed: x.followed,
                         swap_price: 233.0,
                         price_change: 0.97,
-                        wallet_address: "0x000000000".to_owned(),
-                        blockchain: EnumBlockChain::EthereumMainnet,
+                        wallet_address: x.linked_wallet.unwrap_or_default(),
+                        approved: x.approved,
+                        approved_at: x.approved_at,
+                        blockchain: x
+                            .linked_wallet_blockchain
+                            .unwrap_or(EnumBlockChain::LocalNet),
                     })
                     .collect(),
             })

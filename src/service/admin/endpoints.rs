@@ -198,6 +198,8 @@ pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
                 Field::new("expert_public_id", Type::optional(Type::BigInt)),
                 Field::new("expert_name", Type::optional(Type::String)),
                 Field::new("description", Type::optional(Type::String)),
+                Field::new("pending_approval", Type::optional(Type::Boolean)),
+                Field::new("approved", Type::optional(Type::Boolean)),
             ],
             vec![Field::new(
                 "strategies",
@@ -211,11 +213,24 @@ pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
                         Field::new("description", Type::optional(Type::String)),
                         Field::new("created_at", Type::BigInt),
                         Field::new("approved_at", Type::optional(Type::BigInt)),
-                        Field::new("pending_strategy", Type::Boolean),
-                        Field::new("approved_strategy", Type::Boolean),
+                        Field::new("pending_approval", Type::Boolean),
+                        Field::new("approved", Type::Boolean),
                     ],
                 ),
             )],
+        ),
+        EndpointSchema::new(
+            "AdminApproveStrategy",
+            30120,
+            vec![Field::new("strategy_id", Type::BigInt)],
+            vec![Field::new("success", Type::Boolean)],
+        )
+        .with_description("Admin approves strategy"),
+        EndpointSchema::new(
+            "AdminRejectStrategy",
+            30130,
+            vec![Field::new("strategy_id", Type::BigInt)],
+            vec![Field::new("success", Type::Boolean)],
         ),
         EndpointSchema::new(
             "AdminAddWalletActivityHistory",

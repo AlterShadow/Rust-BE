@@ -349,24 +349,36 @@ RETURNS table (
     "backers" bigint,
     "risk_score" double precision,
     "aum" double precision,
-    "followed" boolean
+    "followed" boolean,
+    "approved" boolean,
+    "approved_at" bigint,
+    "pending_approval" boolean,
+    "linked_wallet" varchar,
+    "linked_wallet_blockchain" enum_block_chain
 )
 LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY SELECT a.pkey_id AS strategy_id,
-                          a.name AS strategy_name,
-                          a.description AS strategy_description,
+    RETURN QUERY SELECT s.pkey_id AS strategy_id,
+                          s.name AS strategy_name,
+                          s.description AS strategy_description,
                           0.0::double precision AS net_value,
-                          (SELECT COUNT(*) FROM tbl.user_follow_strategy WHERE fkey_strategy_id = a.pkey_id AND unfollowed = FALSE) AS followers,
-                          (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_strategy_history AS h WHERE fkey_strategy_id = a.pkey_id) AS backers,
-                          a.risk_score as risk_score,
-                          a.aum as aum,
-                          TRUE as followed
-                 FROM tbl.strategy AS a 
-                     JOIN tbl.user_follow_strategy AS b ON b.fkey_strategy_id = a.pkey_id WHERE b.fkey_user_id = a_user_id AND unfollowed = FALSE
-                ORDER BY a.pkey_id
+                          (SELECT COUNT(*) FROM tbl.user_follow_strategy WHERE fkey_strategy_id = s.pkey_id AND unfollowed = FALSE) AS followers,
+                          (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_strategy_history AS h WHERE fkey_strategy_id = s.pkey_id) AS backers,
+                          s.risk_score as risk_score,
+                          s.aum as aum,
+                          TRUE as followed,
+                          s.approved as approved,
+                          s.approved_at as approved_at,
+                          s.pending_approval as pending_approval,
+                          w.address as linked_wallet,
+                          w.blockchain as linked_wallet_blockchain
+                 FROM tbl.strategy AS s
+                     LEFT JOIN tbl.strategy_watching_wallet AS w ON w.fkey_strategy_id = (SELECT distinct on(1) w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id)
+                     JOIN tbl.user_follow_strategy AS b ON b.fkey_strategy_id = s.pkey_id WHERE b.fkey_user_id = a_user_id AND unfollowed = FALSE
+                 -- TODO: filter only approved strategies
+                ORDER BY s.pkey_id
                 LIMIT a_limit
                 OFFSET a_offset;
 END
@@ -386,7 +398,10 @@ RETURNS table (
     "aum" double precision,
     "followed" boolean,
     "linked_wallet" varchar,
-    "linked_wallet_blockchain" enum_block_chain
+    "linked_wallet_blockchain" enum_block_chain,
+    "approved" boolean,
+    "approved_at" bigint,
+    "pending_approval" boolean
 )
 LANGUAGE plpgsql
 AS $$
@@ -402,7 +417,10 @@ BEGIN
                           s.aum as aum,
                           EXISTS(SELECT * FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.fkey_user_id = a_user_id AND ufs.unfollowed = FALSE) as followed,
                           w.address AS linked_wallet,
-                          w.blockchain AS linked_wallet_blockchain
+                          w.blockchain AS linked_wallet_blockchain,
+                          s.approved as approved,
+                          s.approved_at as approved_at,
+                          s.pending_approval as pending_approval
                  FROM tbl.strategy AS s
                         JOIN tbl.user AS b ON b.pkey_id = s.fkey_user_id
                         LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = (SELECT distinct on(1) w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id)
@@ -472,7 +490,10 @@ RETURNS table (
     "creator_user_public_id" bigint,
     "linked_wallet" varchar,
     "linked_wallet_blockchain" enum_block_chain,
-    "created_at" bigint
+    "created_at" bigint,
+    "approved" boolean,
+    "approved_at" bigint,
+    "pending_approval" boolean
 )
 LANGUAGE plpgsql
 AS $$
@@ -492,7 +513,10 @@ BEGIN
                           EXISTS(SELECT * FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.fkey_user_id = a_user_id AND ufs.unfollowed = FALSE),
                           w.address AS linked_wallet,
                           w.blockchain AS linked_wallet_blockchain,
-                          s.created_at
+                          s.created_at,
+                          s.approved,
+                          s.approved_at,
+                          s.pending_approval
                  FROM tbl.strategy AS s
                     LEFT JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id
                     LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = (SELECT distinct on(1) w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id)
@@ -629,7 +653,11 @@ RETURNS table (
     "backers" bigint,
     "risk_score" double precision,
     "aum" double precision,
-    "followed" boolean
+    "followed" boolean,
+    "approved" boolean,
+    "approved_at" bigint,
+    "linked_wallet" varchar,
+    "linked_wallet_blockchain" enum_block_chain
 )
 LANGUAGE plpgsql
 AS $$
@@ -648,10 +676,14 @@ BEGIN
                          WHERE fkey_strategy_id = s.pkey_id) AS followers,
                         s.risk_score                         as risk_score,
                         s.aum                                as aum,
-                        EXISTS(SELECT * FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.fkey_user_id = a_user_id AND ufs.unfollowed = FALSE)                                   AS followed
+                        EXISTS(SELECT * FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.fkey_user_id = a_user_id AND ufs.unfollowed = FALSE)                                   AS followed,
+                        s.approved                           AS approved,
+                        s.approved_at     AS approved_at,
+                        w.address                           AS linked_wallet,
+                        w.blockchain                        AS linked_wallet_blockchain
                  FROM tbl.strategy AS s
-                          JOIN tbl.user_back_strategy_history AS b ON b.fkey_strategy_id = s.pkey_id
-                     AND b.fkey_user_id = a_user_id
+                      JOIN tbl.user_back_strategy_history AS b ON b.fkey_strategy_id = s.pkey_id AND b.fkey_user_id = a_user_id
+                    LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = (SELECT distinct on(1) w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id)
                  ORDER BY s.pkey_id
                  LIMIT a_limit
                  OFFSET a_offset;
@@ -1800,7 +1832,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_admin_list_strategies(a_limit bigint, a_offset bigint, a_strategy_id bigint DEFAULT NULL, a_strategy_name varchar DEFAULT NULL, a_expert_public_id bigint DEFAULT NULL, a_expert_name varchar DEFAULT NULL, a_description varchar DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_admin_list_strategies(a_limit bigint, a_offset bigint, a_strategy_id bigint DEFAULT NULL, a_strategy_name varchar DEFAULT NULL, a_expert_public_id bigint DEFAULT NULL, a_expert_name varchar DEFAULT NULL, a_description varchar DEFAULT NULL, a_approved boolean DEFAULT NULL, a_pending_approval boolean DEFAULT NULL)
 RETURNS table (
     "strategy_id" bigint,
     "strategy_name" varchar,
@@ -1809,34 +1841,68 @@ RETURNS table (
     "expert_name" varchar,
     "description" varchar,
     "created_at" bigint,
-    "approved_at" bigint,
-    "pending_strategy" boolean,
-    "approved_strategy" boolean
+    "pending_approval" boolean,
+    "approved" boolean,
+    "approved_at" bigint
 )
 LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY SELECT a.pkey_id AS strategy_id,
-                        a.name AS strategy_name, 
+    RETURN QUERY SELECT s.pkey_id AS strategy_id,
+                        s.name AS strategy_name, 
                         b.pkey_id AS expert_id,
                         b.public_id AS expert_public_id,
                         b.username AS expert_name,
-                        a.description AS description,
-                        a.created_at AS created_at,
-                        0::bigint AS approved_at,
-                        FALSE AS pending_strategy,
-                        TRUE AS approved_strategy
-                 FROM tbl.strategy AS a
-                          JOIN tbl.user AS b ON b.pkey_id = a.fkey_user_id
-                WHERE (a_strategy_id ISNULL OR a.pkey_id = a_strategy_id)
-                    AND (a_strategy_name ISNULL OR a.name ILIKE a_strategy_name || '%')
+                        s.description AS description,
+                        s.created_at AS created_at,
+                        s.pending_approval AS pending_approval,
+                        s.approved AS approved,
+                        s.approved_at AS approved_at
+                 FROM tbl.strategy AS s
+                          JOIN tbl.user AS b ON b.pkey_id = s.fkey_user_id
+                WHERE (a_strategy_id ISNULL OR s.pkey_id = a_strategy_id)
+                    AND (a_strategy_name ISNULL OR s.name ILIKE a_strategy_name || '%')
                     AND (a_expert_public_id ISNULL OR b.public_id = a_expert_public_id)
                     AND (a_expert_name ISNULL OR b.username ILIKE a_expert_name || '%')
-                    AND (a_description ISNULL OR a.description ILIKE a_description || '%')
-                 ORDER BY a.pkey_id
+                    AND (a_description ISNULL OR s.description ILIKE a_description || '%')
+                 ORDER BY s.pkey_id
                  OFFSET a_offset
                  LIMIT a_limit;
+END
+            
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_admin_approve_strategy(a_strategy_id bigint)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    UPDATE tbl.strategy
+       SET approved = TRUE,
+           pending_approval = FALSE,
+           approved_at = EXTRACT(EPOCH FROM NOW())::bigint,
+           updated_at = EXTRACT(EPOCH FROM NOW())::bigint
+     WHERE pkey_id = a_strategy_id;
+END
+            
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_admin_reject_strategies(a_strategy_id bigint)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    UPDATE tbl.strategy
+       SET approved = FALSE,
+           pending_approval = FALSE,
+           approved_at = NULL,
+          updated_at = EXTRACT(EPOCH FROM NOW())::bigint
+     WHERE pkey_id = a_strategy_id;
 END
             
 $$;
