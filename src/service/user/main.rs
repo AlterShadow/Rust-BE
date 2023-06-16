@@ -38,6 +38,7 @@ pub struct Config {
     #[serde(default)]
     pub setup_ethereum_localnet: bool,
     pub escrow_addresses: Vec<UserGetDepositAddressesRow>,
+    pub god_key: String,
 }
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -116,28 +117,23 @@ async fn main() -> Result<()> {
 
     server.add_handler(MethodAdminAddWalletActivityHistory); // only for mocking purpose
     let eth_pool = EthereumRpcConnectionPool::from_conns(config.ethereum_urls);
-    let escrow_signer = Secp256k1SecretKey::new_random();
-    let externally_owned_account = Secp256k1SecretKey::new_random();
     let coin_addresses = Arc::new(BlockchainCoinAddresses::new());
     let escrow_contract_addresses = EscrowAddresses::new();
-    let strategy_pool_signer = Secp256k1SecretKey::new_random();
-
     let escrow_contract = Arc::new(AbstractEscrowContract::new2(escrow_contract_addresses));
+    let master_key = Secp256k1SecretKey::from_str(&config.god_key)?;
 
     server.add_handler(MethodUserBackStrategy {
         pool: eth_pool.clone(),
         stablecoin_addresses: coin_addresses.clone(),
-        strategy_pool_signer,
         escrow_contract: escrow_contract.clone(),
-        escrow_signer: escrow_signer.clone(),
-        externally_owned_account,
+        master_key: master_key.clone(),
         dex_addresses: Arc::new(DexAddresses::new()),
     });
     server.add_handler(MethodUserRequestRefund {
         pool: eth_pool,
         stablecoin_addresses: coin_addresses,
         escrow_contract: escrow_contract.clone(),
-        escrow_signer,
+        master_key: master_key.clone(),
     });
     server.dump_schemas()?;
     server.listen().await?;

@@ -530,7 +530,7 @@ pub async fn user_back_strategy(
     escrow_coin: EnumBlockchainCoin,
     escrow_contract: EscrowContract<EitherTransport>,
     dex_addresses: &DexAddresses,
-    secure_eoa_key: impl Key + Clone,
+    master_key: impl Key + Clone,
 ) -> Result<()> {
     if back_usdc_amount == U256::zero() {
         bail!("back zero amount");
@@ -613,7 +613,7 @@ pub async fn user_back_strategy(
             /* if strategy pool doesn't exist in this chain, create it */
             let contract = deploy_strategy_contract(
                 &conn,
-                secure_eoa_key.clone(),
+                master_key.clone(),
                 strategy.strategy_name.clone(),
                 strategy.strategy_name, // strategy symbol
             )
@@ -690,9 +690,9 @@ pub async fn user_back_strategy(
         12,
         10,
         Duration::from_secs(10),
-        secure_eoa_key.clone(),
+        master_key.clone(),
         escrow_token_address,
-        secure_eoa_key.address(),
+        master_key.address(),
         back_usdc_amount,
     )
     .await?;
@@ -704,7 +704,7 @@ pub async fn user_back_strategy(
         12,
         10,
         Duration::from_secs(10),
-        secure_eoa_key.clone(),
+        master_key.clone(),
         pancake_contract.address(),
         back_usdc_amount,
     )
@@ -713,7 +713,7 @@ pub async fn user_back_strategy(
     /* trade escrow token for strategy's tokens */
     let (tokens_to_deposit, amounts_to_deposit) = trade_escrow_for_strategy_tokens(
         &conn,
-        secure_eoa_key.clone(),
+        master_key.clone(),
         chain,
         escrow_token_address,
         &pancake_contract,
@@ -729,7 +729,7 @@ pub async fn user_back_strategy(
             12,
             10,
             Duration::from_secs(10),
-            secure_eoa_key.clone(),
+            master_key.clone(),
             sp_contract.address(),
             amount.clone(),
         )
@@ -743,7 +743,7 @@ pub async fn user_back_strategy(
         12,
         10,
         Duration::from_secs(10),
-        secure_eoa_key.clone(),
+        master_key.clone(),
         tokens_to_deposit,
         amounts_to_deposit,
         shares_to_mint,
@@ -922,7 +922,7 @@ async fn calculate_shares(
 
 pub async fn trade_escrow_for_strategy_tokens(
     conn: &EthereumRpcConnection,
-    secure_eoa_key: impl Key + Clone,
+    master_key: impl Key + Clone,
     chain: EnumBlockChain,
     escrow_token_address: Address,
     dex_contract: &PancakeSmartRouterV3Contract<EitherTransport>,
@@ -943,7 +943,7 @@ pub async fn trade_escrow_for_strategy_tokens(
             12,
             10,
             Duration::from_secs(10),
-            secure_eoa_key.clone(),
+            master_key.clone(),
             pancake_path_set,
             amount_to_spend_on_it,
             U256::one(), // TODO: find a way to estimate amount out
@@ -964,10 +964,8 @@ pub async fn trade_escrow_for_strategy_tokens(
 pub struct MethodUserBackStrategy {
     pub pool: EthereumRpcConnectionPool,
     pub stablecoin_addresses: Arc<BlockchainCoinAddresses>,
-    pub strategy_pool_signer: Secp256k1SecretKey,
     pub escrow_contract: Arc<AbstractEscrowContract>,
-    pub escrow_signer: Secp256k1SecretKey,
-    pub externally_owned_account: Secp256k1SecretKey,
+    pub master_key: Secp256k1SecretKey,
     pub dex_addresses: Arc<DexAddresses>,
 }
 impl RequestHandler for MethodUserBackStrategy {
@@ -982,12 +980,9 @@ impl RequestHandler for MethodUserBackStrategy {
         let db: DbClient = toolbox.get_db();
         let pool = self.pool.clone();
         let token_addresses = self.stablecoin_addresses.clone();
-        // why did we have 3 EOA keys? I think we'll use only 1 as the owner of all contracts
-        // let strategy_pool_signer = self.strategy_pool_signer.clone();
-        // let escrow_signer = self.escrow_signer.clone();
-        let escrow_contract = self.escrow_contract.clone();
-        let externally_owned_account = self.externally_owned_account.clone();
         let dex_addresses = self.dex_addresses.clone();
+        let escrow_contract = self.escrow_contract.clone();
+        let master_key = self.master_key.clone();
         async move {
             let escrow_contract = escrow_contract.get(&pool, req.blockchain).await?;
             let eth_conn = pool.get(EnumBlockChain::LocalNet).await?;
@@ -1004,7 +999,7 @@ impl RequestHandler for MethodUserBackStrategy {
                 EnumBlockchainCoin::USDC,
                 escrow_contract,
                 &dex_addresses,
-                &*externally_owned_account,
+                master_key,
             )
             .await?;
             Ok(UserBackStrategyResponse { success: true })
@@ -1016,7 +1011,7 @@ pub struct MethodUserRequestRefund {
     pub pool: EthereumRpcConnectionPool,
     pub stablecoin_addresses: Arc<BlockchainCoinAddresses>,
     pub escrow_contract: Arc<AbstractEscrowContract>,
-    pub escrow_signer: Secp256k1SecretKey,
+    pub master_key: Secp256k1SecretKey,
 }
 
 impl RequestHandler for MethodUserRequestRefund {
@@ -1031,8 +1026,8 @@ impl RequestHandler for MethodUserRequestRefund {
         let db: DbClient = toolbox.get_db();
         let pool = self.pool.clone();
         let stablecoin_addresses = self.stablecoin_addresses.clone();
-        let escrow_signer = self.escrow_signer.clone();
         let escrow_contract = self.escrow_contract.clone();
+        let master_key = self.master_key.clone();
         async move {
             let escrow_contract = escrow_contract.get(&pool, req.blockchain).await?;
             let eth_conn = pool.get(req.blockchain).await?;
@@ -1048,7 +1043,7 @@ impl RequestHandler for MethodUserRequestRefund {
                 escrow_contract,
                 req.quantity.parse()?,
                 req.wallet_address.parse()?,
-                &escrow_signer.key,
+                master_key,
                 EnumBlockchainCoin::USDC,
             )
             .await?;
@@ -2338,7 +2333,7 @@ mod tests {
         let token_addresses = BlockchainCoinAddresses::new();
         let db = connect_to_database(database_test_config()).await?;
         use eth_sdk::DEV_ACCOUNT_PRIV_KEY;
-        let secure_eoa_key = Secp256k1SecretKey::from_str(DEV_ACCOUNT_PRIV_KEY)
+        let master_key = Secp256k1SecretKey::from_str(DEV_ACCOUNT_PRIV_KEY)
             .context("failed to parse dev account private key")?;
         let wbnb_address_on_bsc_testnet = token_addresses
             .get(EnumBlockChain::BscTestnet, EnumBlockchainCoin::WBNB)
@@ -2413,7 +2408,7 @@ mod tests {
         };
 
         /* deploy escrow contract */
-        let escrow_contract = EscrowContract::deploy(conn.clone(), secure_eoa_key.clone()).await?;
+        let escrow_contract = EscrowContract::deploy(conn.clone(), master_key.clone()).await?;
 
         /* make sure dev account has enough BUSD on BSC Testnet */
         /* transfer 10 BUSD to escrow contract */
@@ -2421,7 +2416,7 @@ mod tests {
         let transfer_tx_hash = busd_contract
             .transfer(
                 &conn,
-                secure_eoa_key.clone(),
+                master_key.clone(),
                 escrow_contract.address(),
                 U256::from(10).try_checked_mul(U256::from(busd_decimals))?,
             )
