@@ -110,10 +110,12 @@ impl RequestHandler for MethodUserListFollowedStrategies {
                         followed: x.followed,
                         swap_price: 233.0,
                         price_change: 0.97,
-                        wallet_address: "0x000000000".to_owned(),
+                        wallet_address: x.linked_wallet.unwrap_or_default(),
                         approved: x.approved,
                         approved_at: x.approved_at,
-                        blockchain: EnumBlockChain::EthereumMainnet,
+                        blockchain: x
+                            .linked_wallet_blockchain
+                            .unwrap_or(EnumBlockChain::LocalNet),
                     })
                     .collect(),
             })
@@ -1646,11 +1648,10 @@ impl RequestHandler for MethodUserRegisterWallet {
 
             let verified = verify_message_address(&signature_text, &signature, address)?;
 
-            // TODO: re-enable this
-            // ensure!(
-            //     verified,
-            //     CustomError::new(EnumErrorCode::InvalidPassword, "Signature is not valid")
-            // );
+            ensure!(
+                verified,
+                CustomError::new(EnumErrorCode::InvalidPassword, "Signature is not valid")
+            );
             let ret = db
                 .execute(FunUserAddRegisteredWalletReq {
                     user_id: ctx.user_id,

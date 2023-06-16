@@ -7,7 +7,7 @@ use gen::database::*;
 use gen::model::EnumBlockChain;
 use http::StatusCode;
 use std::sync::Arc;
-use tracing::{error, info};
+use tracing::{error, info, warn};
 
 pub mod deposit;
 pub mod escrow;
@@ -54,7 +54,7 @@ pub async fn handle_eth_escrows(
                 .get_by_address(blockchain, escrow.recipient)
                 .is_none()
             {
-                info!(
+                warn!(
                     "no transfer to an escrow contract for tx: {:?}",
                     tx.get_hash()
                 );

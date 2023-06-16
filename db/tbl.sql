@@ -161,7 +161,7 @@ CREATE TABLE tbl.system_config (
 -- Table: transaction_cache
 CREATE TABLE tbl.transaction_cache (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_transaction_cache_id'),
-    transaction_hash varchar(64)  NOT NULL,
+    transaction_hash varchar(80)  NOT NULL,
     blockchain varchar(20)  NOT NULL,
     dex varchar(20)  NULL,
     raw_content varchar(8192)  NOT NULL,
