@@ -1,6 +1,6 @@
 use crate::erc20::build_erc_20;
 use crate::{
-    build_pancake_swap, BlockchainCoinAddresses, ContractCall, DexAddresses,
+    build_pancake_swap, BlockchainCoinAddresses, ContractCall, DexAddresses, EscrowAddresses,
     EthereumRpcConnectionPool, PancakePairPathSet, PancakeSwap, TransactionReady,
 };
 use bytes::Bytes;
@@ -20,6 +20,7 @@ pub struct AppState {
     pub pancake_swap: PancakeSwap,
     pub db: DbClient,
     pub stablecoin_addresses: BlockchainCoinAddresses,
+    pub escrow_addresses: EscrowAddresses,
     pub erc_20: Contract,
 }
 impl AppState {
@@ -31,6 +32,7 @@ impl AppState {
             db,
             stablecoin_addresses: BlockchainCoinAddresses::new(),
             erc_20: build_erc_20()?,
+            escrow_addresses: EscrowAddresses::new(),
         })
     }
 }

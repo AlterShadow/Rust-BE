@@ -8,7 +8,7 @@ use eth_sdk::erc20::build_erc_20;
 use eth_sdk::escrow_tracker::handle_eth_escrows;
 use eth_sdk::evm::AppState;
 use eth_sdk::{
-    build_pancake_swap, BlockchainCoinAddresses, DexAddresses, EthereumConns,
+    build_pancake_swap, BlockchainCoinAddresses, DexAddresses, EscrowAddresses, EthereumConns,
     EthereumRpcConnectionPool,
 };
 use eyre::*;
@@ -54,6 +54,7 @@ async fn main() -> Result<()> {
         .with_state(Arc::new(AppState {
             dex_addresses: DexAddresses::new(),
             stablecoin_addresses: BlockchainCoinAddresses::new(),
+            escrow_addresses: EscrowAddresses::new(),
             eth_pool,
             erc_20: build_erc_20()?,
             pancake_swap: build_pancake_swap()?,
