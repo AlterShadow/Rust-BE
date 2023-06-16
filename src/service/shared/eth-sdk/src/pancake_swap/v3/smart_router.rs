@@ -50,6 +50,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
 
     pub async fn copy_trade(
         &self,
+        conn: &EthereumRpcConnection,
         signer: impl Key + Clone,
         paths: PancakePairPathSet,
         amount_in: U256,
@@ -63,6 +64,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
             1 => {
                 return Ok(self
                     .single_call(
+                        &conn,
                         signer,
                         paths.get_func_name(0)?,
                         paths.get_path(0)?,
@@ -76,7 +78,14 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
             /* saves GAS compared to calling each swap call because it only needs approval once */
             _ => {
                 return Ok(self
-                    .multi_call(signer, paths, recipient, amount_in, amount_out_minimum)
+                    .multi_call(
+                        &conn,
+                        signer,
+                        paths,
+                        recipient,
+                        amount_in,
+                        amount_out_minimum,
+                    )
                     .await?)
             }
         }
@@ -84,6 +93,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
 
     pub async fn single_call(
         &self,
+        conn: &EthereumRpcConnection,
         signer: impl Key + Clone,
         func_name: String,
         path: DexPath,
@@ -97,6 +107,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
                 /* path[0] is tokenIn, path[path.len()-1] is tokenOut */
                 Ok(self
                     .swap_exact_tokens_for_tokens(
+                        &conn,
                         signer.clone(),
                         recipient,
                         amount_in,
@@ -113,6 +124,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
                 /* path[0] is tokenIn, path[path.len()-1] is tokenOut */
                 Ok(self
                     .swap_exact_tokens_for_tokens(
+                        &conn,
                         signer.clone(),
                         recipient,
                         amount_in,
@@ -133,6 +145,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
                 };
                 Ok(self
                     .exact_input_single(
+                        &conn,
                         signer.clone(),
                         v3_single_hop_path.token_in,
                         v3_single_hop_path.token_out,
@@ -152,6 +165,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
                 };
                 Ok(self
                     .exact_input_single(
+                        &conn,
                         signer.clone(),
                         v3_single_hop_path.token_in,
                         v3_single_hop_path.token_out,
@@ -168,6 +182,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
                 /* first address is tokenOut on exact out */
                 Ok(self
                     .exact_input(
+                        &conn,
                         signer.clone(),
                         MultiHopPath::from_bytes(&match path {
                             DexPath::PancakeV3MultiHop(path) => path,
@@ -183,6 +198,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
                 /* invert the "exactOutput" call path to reuse it in the "exactInput" call */
                 Ok(self
                     .exact_input(
+                        &conn,
                         signer.clone(),
                         MultiHopPath::invert(&MultiHopPath::from_bytes(&match path {
                             DexPath::PancakeV3MultiHop(path) => path,
@@ -199,6 +215,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
 
     pub async fn swap_exact_tokens_for_tokens(
         &self,
+        conn: &EthereumRpcConnection,
         signer: impl Key,
         recipient: Address,
         amount_in: U256,
@@ -216,12 +233,17 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
             )
             .await?;
 
+        let estimated_gas_price = conn.eth().gas_price().await?;
+
         Ok(self
             .contract
             .signed_call(
                 PancakeSmartRouterV3Functions::SwapExactTokensForTokens.as_str(),
                 params,
-                Options::with(|options| options.gas = Some(estimated_gas)),
+                Options::with(|options| {
+                    options.gas = Some(estimated_gas);
+                    options.gas_price = Some(estimated_gas_price);
+                }),
                 signer,
             )
             .await?)
@@ -229,6 +251,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
 
     pub async fn swap_tokens_for_exact_tokens(
         &self,
+        conn: &EthereumRpcConnection,
         signer: impl Key,
         recipient: Address,
         amount_out: U256,
@@ -246,12 +269,17 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
             )
             .await?;
 
+        let estimated_gas_price = conn.eth().gas_price().await?;
+
         Ok(self
             .contract
             .signed_call(
                 PancakeSmartRouterV3Functions::SwapTokensForExactTokens.as_str(),
                 params,
-                Options::with(|options| options.gas = Some(estimated_gas)),
+                Options::with(|options| {
+                    options.gas = Some(estimated_gas);
+                    options.gas_price = Some(estimated_gas_price);
+                }),
                 signer,
             )
             .await?)
@@ -259,6 +287,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
 
     pub async fn exact_input_single(
         &self,
+        conn: &EthereumRpcConnection,
         signer: impl Key,
         token_in: Address,
         token_out: Address,
@@ -293,12 +322,17 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
             )
             .await?;
 
+        let estimated_gas_price = conn.eth().gas_price().await?;
+
         Ok(self
             .contract
             .signed_call(
                 PancakeSmartRouterV3Functions::ExactInputSingle.as_str(),
                 params,
-                Options::with(|options| options.gas = Some(estimated_gas)),
+                Options::with(|options| {
+                    options.gas = Some(estimated_gas);
+                    options.gas_price = Some(estimated_gas_price);
+                }),
                 signer,
             )
             .await?)
@@ -306,6 +340,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
 
     pub async fn exact_output_single(
         &self,
+        conn: &EthereumRpcConnection,
         signer: impl Key,
         token_in: Address,
         token_out: Address,
@@ -340,12 +375,17 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
             )
             .await?;
 
+        let estimated_gas_price = conn.eth().gas_price().await?;
+
         Ok(self
             .contract
             .signed_call(
                 PancakeSmartRouterV3Functions::ExactOutputSingle.as_str(),
                 params,
-                Options::with(|options| options.gas = Some(estimated_gas)),
+                Options::with(|options| {
+                    options.gas = Some(estimated_gas);
+                    options.gas_price = Some(estimated_gas_price);
+                }),
                 signer,
             )
             .await?)
@@ -353,6 +393,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
 
     pub async fn exact_input(
         &self,
+        conn: &EthereumRpcConnection,
         signer: impl Key,
         path: Vec<MultiHopPath>,
         recipient: Address,
@@ -377,12 +418,17 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
             )
             .await?;
 
+        let estimated_gas_price = conn.eth().gas_price().await?;
+
         Ok(self
             .contract
             .signed_call(
                 PancakeSmartRouterV3Functions::ExactInput.as_str(),
                 params,
-                Options::with(|options| options.gas = Some(estimated_gas)),
+                Options::with(|options| {
+                    options.gas = Some(estimated_gas);
+                    options.gas_price = Some(estimated_gas_price);
+                }),
                 signer,
             )
             .await?)
@@ -390,6 +436,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
 
     pub async fn exact_output(
         &self,
+        conn: &EthereumRpcConnection,
         signer: impl Key,
         path: Vec<MultiHopPath>,
         recipient: Address,
@@ -413,12 +460,17 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
             )
             .await?;
 
+        let estimated_gas_price = conn.eth().gas_price().await?;
+
         Ok(self
             .contract
             .signed_call(
                 PancakeSmartRouterV3Functions::ExactOutput.as_str(),
                 params,
-                Options::with(|options| options.gas = Some(estimated_gas)),
+                Options::with(|options| {
+                    options.gas = Some(estimated_gas);
+                    options.gas_price = Some(estimated_gas_price);
+                }),
                 signer,
             )
             .await?)
@@ -426,6 +478,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
 
     pub async fn multi_call(
         &self,
+        conn: &EthereumRpcConnection,
         signer: impl Key,
         paths: PancakePairPathSet,
         recipient: Address,
@@ -556,12 +609,17 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
             )
             .await?;
 
+        let estimated_gas_price = conn.eth().gas_price().await?;
+
         Ok(self
             .contract
             .signed_call(
                 "multicall",
                 params,
-                Options::with(|options| options.gas = Some(estimated_gas)),
+                Options::with(|options| {
+                    options.gas = Some(estimated_gas);
+                    options.gas_price = Some(estimated_gas_price);
+                }),
                 signer,
             )
             .await?)
@@ -680,7 +738,13 @@ pub async fn copy_trade_and_ensure_success(
 ) -> Result<H256> {
     /* publish transaction */
     let mut tx_hash = contract
-        .copy_trade(signer.clone(), paths.clone(), amount_in, amount_out_minimum)
+        .copy_trade(
+            &conn,
+            signer.clone(),
+            paths.clone(),
+            amount_in,
+            amount_out_minimum,
+        )
         .await?;
     let mut retries: usize = 0;
     while retries < max_retry {
@@ -723,7 +787,13 @@ pub async fn copy_trade_and_ensure_success(
                 /* transaction is reverted or doesn't exist after confirmations, try again */
                 retries += 1;
                 tx_hash = contract
-                    .copy_trade(signer.clone(), paths.clone(), amount_in, amount_out_minimum)
+                    .copy_trade(
+                        &conn,
+                        signer.clone(),
+                        paths.clone(),
+                        amount_in,
+                        amount_out_minimum,
+                    )
                     .await?;
             }
             _ => continue,
@@ -894,6 +964,7 @@ mod tests {
         let mut copied_trade_tx: Option<TransactionReady> = None;
         let copy_trade_tx_hash = pancake_swap
             .copy_trade(
+                &conn,
                 key.clone(),
                 working_pair_paths[0].clone(),
                 U256::from(1000),
