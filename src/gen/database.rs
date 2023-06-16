@@ -45,7 +45,7 @@ impl DatabaseRequest for FunAuthSignupReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunAuthSignupRespRow> {
         let r = FunAuthSignupRespRow {
-            user_id: row.try_get(0)?,
+            user_id: row.try_get(0).context("failed to get field user_id")?,
         };
         Ok(r)
     }
@@ -83,9 +83,11 @@ impl DatabaseRequest for FunAuthAuthenticateReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunAuthAuthenticateRespRow> {
         let r = FunAuthAuthenticateRespRow {
-            user_id: row.try_get(0)?,
-            public_user_id: row.try_get(1)?,
-            role: row.try_get(2)?,
+            user_id: row.try_get(0).context("failed to get field user_id")?,
+            public_user_id: row
+                .try_get(1)
+                .context("failed to get field public_user_id")?,
+            role: row.try_get(2).context("failed to get field role")?,
         };
         Ok(r)
     }
@@ -176,8 +178,8 @@ impl DatabaseRequest for FunAuthAuthorizeReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunAuthAuthorizeRespRow> {
         let r = FunAuthAuthorizeRespRow {
-            user_id: row.try_get(0)?,
-            role: row.try_get(1)?,
+            user_id: row.try_get(0).context("failed to get field user_id")?,
+            role: row.try_get(1).context("failed to get field role")?,
         };
         Ok(r)
     }
@@ -292,7 +294,7 @@ impl DatabaseRequest for FunUserFollowStrategyReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunUserFollowStrategyRespRow> {
         let r = FunUserFollowStrategyRespRow {
-            success: row.try_get(0)?,
+            success: row.try_get(0).context("failed to get field success")?,
         };
         Ok(r)
     }
@@ -322,7 +324,7 @@ impl DatabaseRequest for FunUserUnfollowStrategyReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunUserUnfollowStrategyRespRow> {
         let r = FunUserUnfollowStrategyRespRow {
-            success: row.try_get(0)?,
+            success: row.try_get(0).context("failed to get field success")?,
         };
         Ok(r)
     }
@@ -372,20 +374,30 @@ impl DatabaseRequest for FunUserListFollowedStrategiesReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunUserListFollowedStrategiesRespRow> {
         let r = FunUserListFollowedStrategiesRespRow {
-            strategy_id: row.try_get(0)?,
-            strategy_name: row.try_get(1)?,
-            strategy_description: row.try_get(2)?,
-            net_value: row.try_get(3)?,
-            followers: row.try_get(4)?,
-            backers: row.try_get(5)?,
-            risk_score: row.try_get(6)?,
-            aum: row.try_get(7)?,
-            followed: row.try_get(8)?,
-            approved: row.try_get(9)?,
-            approved_at: row.try_get(10)?,
-            pending_approval: row.try_get(11)?,
-            linked_wallet: row.try_get(12)?,
-            linked_wallet_blockchain: row.try_get(13)?,
+            strategy_id: row.try_get(0).context("failed to get field strategy_id")?,
+            strategy_name: row
+                .try_get(1)
+                .context("failed to get field strategy_name")?,
+            strategy_description: row
+                .try_get(2)
+                .context("failed to get field strategy_description")?,
+            net_value: row.try_get(3).context("failed to get field net_value")?,
+            followers: row.try_get(4).context("failed to get field followers")?,
+            backers: row.try_get(5).context("failed to get field backers")?,
+            risk_score: row.try_get(6).context("failed to get field risk_score")?,
+            aum: row.try_get(7).context("failed to get field aum")?,
+            followed: row.try_get(8).context("failed to get field followed")?,
+            approved: row.try_get(9).context("failed to get field approved")?,
+            approved_at: row.try_get(10).context("failed to get field approved_at")?,
+            pending_approval: row
+                .try_get(11)
+                .context("failed to get field pending_approval")?,
+            linked_wallet: row
+                .try_get(12)
+                .context("failed to get field linked_wallet")?,
+            linked_wallet_blockchain: row
+                .try_get(13)
+                .context("failed to get field linked_wallet_blockchain")?,
         };
         Ok(r)
     }
@@ -450,20 +462,30 @@ impl DatabaseRequest for FunUserListStrategiesReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunUserListStrategiesRespRow> {
         let r = FunUserListStrategiesRespRow {
-            strategy_id: row.try_get(0)?,
-            strategy_name: row.try_get(1)?,
-            strategy_description: row.try_get(2)?,
-            net_value: row.try_get(3)?,
-            followers: row.try_get(4)?,
-            backers: row.try_get(5)?,
-            risk_score: row.try_get(6)?,
-            aum: row.try_get(7)?,
-            followed: row.try_get(8)?,
-            linked_wallet: row.try_get(9)?,
-            linked_wallet_blockchain: row.try_get(10)?,
-            approved: row.try_get(11)?,
-            approved_at: row.try_get(12)?,
-            pending_approval: row.try_get(13)?,
+            strategy_id: row.try_get(0).context("failed to get field strategy_id")?,
+            strategy_name: row
+                .try_get(1)
+                .context("failed to get field strategy_name")?,
+            strategy_description: row
+                .try_get(2)
+                .context("failed to get field strategy_description")?,
+            net_value: row.try_get(3).context("failed to get field net_value")?,
+            followers: row.try_get(4).context("failed to get field followers")?,
+            backers: row.try_get(5).context("failed to get field backers")?,
+            risk_score: row.try_get(6).context("failed to get field risk_score")?,
+            aum: row.try_get(7).context("failed to get field aum")?,
+            followed: row.try_get(8).context("failed to get field followed")?,
+            linked_wallet: row
+                .try_get(9)
+                .context("failed to get field linked_wallet")?,
+            linked_wallet_blockchain: row
+                .try_get(10)
+                .context("failed to get field linked_wallet_blockchain")?,
+            approved: row.try_get(11).context("failed to get field approved")?,
+            approved_at: row.try_get(12).context("failed to get field approved_at")?,
+            pending_approval: row
+                .try_get(13)
+                .context("failed to get field pending_approval")?,
         };
         Ok(r)
     }
@@ -502,14 +524,18 @@ impl DatabaseRequest for FunUserListTopPerformingStrategiesReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunUserListTopPerformingStrategiesRespRow> {
         let r = FunUserListTopPerformingStrategiesRespRow {
-            strategy_id: row.try_get(0)?,
-            strategy_name: row.try_get(1)?,
-            strategy_description: row.try_get(2)?,
-            net_value: row.try_get(3)?,
-            followers: row.try_get(4)?,
-            backers: row.try_get(5)?,
-            risk_score: row.try_get(6)?,
-            aum: row.try_get(7)?,
+            strategy_id: row.try_get(0).context("failed to get field strategy_id")?,
+            strategy_name: row
+                .try_get(1)
+                .context("failed to get field strategy_name")?,
+            strategy_description: row
+                .try_get(2)
+                .context("failed to get field strategy_description")?,
+            net_value: row.try_get(3).context("failed to get field net_value")?,
+            followers: row.try_get(4).context("failed to get field followers")?,
+            backers: row.try_get(5).context("failed to get field backers")?,
+            risk_score: row.try_get(6).context("failed to get field risk_score")?,
+            aum: row.try_get(7).context("failed to get field aum")?,
         };
         Ok(r)
     }
@@ -563,25 +589,43 @@ impl DatabaseRequest for FunUserGetStrategyReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunUserGetStrategyRespRow> {
         let r = FunUserGetStrategyRespRow {
-            strategy_id: row.try_get(0)?,
-            strategy_name: row.try_get(1)?,
-            strategy_description: row.try_get(2)?,
-            current_usdc: row.try_get(3)?,
-            total_backed_usdc: row.try_get(4)?,
-            total_exited_usdc: row.try_get(5)?,
-            followers: row.try_get(6)?,
-            backers: row.try_get(7)?,
-            risk_score: row.try_get(8)?,
-            aum: row.try_get(9)?,
-            evm_contract_address: row.try_get(10)?,
-            followed: row.try_get(11)?,
-            creator_user_public_id: row.try_get(12)?,
-            linked_wallet: row.try_get(13)?,
-            linked_wallet_blockchain: row.try_get(14)?,
-            created_at: row.try_get(15)?,
-            approved: row.try_get(16)?,
-            approved_at: row.try_get(17)?,
-            pending_approval: row.try_get(18)?,
+            strategy_id: row.try_get(0).context("failed to get field strategy_id")?,
+            strategy_name: row
+                .try_get(1)
+                .context("failed to get field strategy_name")?,
+            strategy_description: row
+                .try_get(2)
+                .context("failed to get field strategy_description")?,
+            current_usdc: row.try_get(3).context("failed to get field current_usdc")?,
+            total_backed_usdc: row
+                .try_get(4)
+                .context("failed to get field total_backed_usdc")?,
+            total_exited_usdc: row
+                .try_get(5)
+                .context("failed to get field total_exited_usdc")?,
+            followers: row.try_get(6).context("failed to get field followers")?,
+            backers: row.try_get(7).context("failed to get field backers")?,
+            risk_score: row.try_get(8).context("failed to get field risk_score")?,
+            aum: row.try_get(9).context("failed to get field aum")?,
+            evm_contract_address: row
+                .try_get(10)
+                .context("failed to get field evm_contract_address")?,
+            followed: row.try_get(11).context("failed to get field followed")?,
+            creator_user_public_id: row
+                .try_get(12)
+                .context("failed to get field creator_user_public_id")?,
+            linked_wallet: row
+                .try_get(13)
+                .context("failed to get field linked_wallet")?,
+            linked_wallet_blockchain: row
+                .try_get(14)
+                .context("failed to get field linked_wallet_blockchain")?,
+            created_at: row.try_get(15).context("failed to get field created_at")?,
+            approved: row.try_get(16).context("failed to get field approved")?,
+            approved_at: row.try_get(17).context("failed to get field approved_at")?,
+            pending_approval: row
+                .try_get(18)
+                .context("failed to get field pending_approval")?,
         };
         Ok(r)
     }
@@ -608,8 +652,8 @@ impl DatabaseRequest for FunUserGetStrategyStatisticsNetValueReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunUserGetStrategyStatisticsNetValueRespRow> {
         let r = FunUserGetStrategyStatisticsNetValueRespRow {
-            time: row.try_get(0)?,
-            net_value: row.try_get(1)?,
+            time: row.try_get(0).context("failed to get field time")?,
+            net_value: row.try_get(1).context("failed to get field net_value")?,
         };
         Ok(r)
     }
@@ -636,8 +680,10 @@ impl DatabaseRequest for FunUserGetStrategyStatisticsFollowHistoryReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunUserGetStrategyStatisticsFollowHistoryRespRow> {
         let r = FunUserGetStrategyStatisticsFollowHistoryRespRow {
-            time: row.try_get(0)?,
-            follower_count: row.try_get(1)?,
+            time: row.try_get(0).context("failed to get field time")?,
+            follower_count: row
+                .try_get(1)
+                .context("failed to get field follower_count")?,
         };
         Ok(r)
     }
@@ -665,9 +711,11 @@ impl DatabaseRequest for FunUserGetStrategyStatisticsBackHistoryReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunUserGetStrategyStatisticsBackHistoryRespRow> {
         let r = FunUserGetStrategyStatisticsBackHistoryRespRow {
-            time: row.try_get(0)?,
-            backer_count: row.try_get(1)?,
-            backer_quantity_usd: row.try_get(2)?,
+            time: row.try_get(0).context("failed to get field time")?,
+            backer_count: row.try_get(1).context("failed to get field backer_count")?,
+            backer_quantity_usd: row
+                .try_get(2)
+                .context("failed to get field backer_quantity_usd")?,
         };
         Ok(r)
     }
@@ -707,7 +755,7 @@ impl DatabaseRequest for FunUserDepositToEscrowReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunUserDepositToEscrowRespRow> {
         let r = FunUserDepositToEscrowRespRow {
-            success: row.try_get(0)?,
+            success: row.try_get(0).context("failed to get field success")?,
         };
         Ok(r)
     }
@@ -753,7 +801,7 @@ impl DatabaseRequest for FunUserBackStrategyReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunUserBackStrategyRespRow> {
         let r = FunUserBackStrategyRespRow {
-            success: row.try_get(0)?,
+            success: row.try_get(0).context("failed to get field success")?,
         };
         Ok(r)
     }
@@ -802,19 +850,27 @@ impl DatabaseRequest for FunUserListBackedStrategiesReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunUserListBackedStrategiesRespRow> {
         let r = FunUserListBackedStrategiesRespRow {
-            strategy_id: row.try_get(0)?,
-            strategy_name: row.try_get(1)?,
-            strategy_description: row.try_get(2)?,
-            net_value: row.try_get(3)?,
-            followers: row.try_get(4)?,
-            backers: row.try_get(5)?,
-            risk_score: row.try_get(6)?,
-            aum: row.try_get(7)?,
-            followed: row.try_get(8)?,
-            approved: row.try_get(9)?,
-            approved_at: row.try_get(10)?,
-            linked_wallet: row.try_get(11)?,
-            linked_wallet_blockchain: row.try_get(12)?,
+            strategy_id: row.try_get(0).context("failed to get field strategy_id")?,
+            strategy_name: row
+                .try_get(1)
+                .context("failed to get field strategy_name")?,
+            strategy_description: row
+                .try_get(2)
+                .context("failed to get field strategy_description")?,
+            net_value: row.try_get(3).context("failed to get field net_value")?,
+            followers: row.try_get(4).context("failed to get field followers")?,
+            backers: row.try_get(5).context("failed to get field backers")?,
+            risk_score: row.try_get(6).context("failed to get field risk_score")?,
+            aum: row.try_get(7).context("failed to get field aum")?,
+            followed: row.try_get(8).context("failed to get field followed")?,
+            approved: row.try_get(9).context("failed to get field approved")?,
+            approved_at: row.try_get(10).context("failed to get field approved_at")?,
+            linked_wallet: row
+                .try_get(11)
+                .context("failed to get field linked_wallet")?,
+            linked_wallet_blockchain: row
+                .try_get(12)
+                .context("failed to get field linked_wallet_blockchain")?,
         };
         Ok(r)
     }
@@ -851,13 +907,19 @@ impl DatabaseRequest for FunUserListBackStrategyHistoryReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunUserListBackStrategyHistoryRespRow> {
         let r = FunUserListBackStrategyHistoryRespRow {
-            back_history_id: row.try_get(0)?,
-            strategy_id: row.try_get(1)?,
-            quantity: row.try_get(2)?,
-            wallet_address: row.try_get(3)?,
-            blockchain: row.try_get(4)?,
-            transaction_hash: row.try_get(5)?,
-            time: row.try_get(6)?,
+            back_history_id: row
+                .try_get(0)
+                .context("failed to get field back_history_id")?,
+            strategy_id: row.try_get(1).context("failed to get field strategy_id")?,
+            quantity: row.try_get(2).context("failed to get field quantity")?,
+            wallet_address: row
+                .try_get(3)
+                .context("failed to get field wallet_address")?,
+            blockchain: row.try_get(4).context("failed to get field blockchain")?,
+            transaction_hash: row
+                .try_get(5)
+                .context("failed to get field transaction_hash")?,
+            time: row.try_get(6).context("failed to get field time")?,
         };
         Ok(r)
     }
@@ -899,7 +961,7 @@ impl DatabaseRequest for FunUserExitStrategyReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunUserExitStrategyRespRow> {
         let r = FunUserExitStrategyRespRow {
-            success: row.try_get(0)?,
+            success: row.try_get(0).context("failed to get field success")?,
         };
         Ok(r)
     }
@@ -937,14 +999,20 @@ impl DatabaseRequest for FunUserListExitStrategyHistoryReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunUserListExitStrategyHistoryRespRow> {
         let r = FunUserListExitStrategyHistoryRespRow {
-            exit_history_id: row.try_get(0)?,
-            strategy_id: row.try_get(1)?,
-            exit_quantity: row.try_get(2)?,
-            purchase_wallet_address: row.try_get(3)?,
-            blockchain: row.try_get(4)?,
-            dex: row.try_get(5)?,
-            back_time: row.try_get(6)?,
-            exit_time: row.try_get(7)?,
+            exit_history_id: row
+                .try_get(0)
+                .context("failed to get field exit_history_id")?,
+            strategy_id: row.try_get(1).context("failed to get field strategy_id")?,
+            exit_quantity: row
+                .try_get(2)
+                .context("failed to get field exit_quantity")?,
+            purchase_wallet_address: row
+                .try_get(3)
+                .context("failed to get field purchase_wallet_address")?,
+            blockchain: row.try_get(4).context("failed to get field blockchain")?,
+            dex: row.try_get(5).context("failed to get field dex")?,
+            back_time: row.try_get(6).context("failed to get field back_time")?,
+            exit_time: row.try_get(7).context("failed to get field exit_time")?,
         };
         Ok(r)
     }
@@ -974,7 +1042,7 @@ impl DatabaseRequest for FunUserFollowExpertReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunUserFollowExpertRespRow> {
         let r = FunUserFollowExpertRespRow {
-            success: row.try_get(0)?,
+            success: row.try_get(0).context("failed to get field success")?,
         };
         Ok(r)
     }
@@ -1004,7 +1072,7 @@ impl DatabaseRequest for FunUserUnfollowExpertReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunUserUnfollowExpertRespRow> {
         let r = FunUserUnfollowExpertRespRow {
-            success: row.try_get(0)?,
+            success: row.try_get(0).context("failed to get field success")?,
         };
         Ok(r)
     }
@@ -1062,24 +1130,38 @@ impl DatabaseRequest for FunUserListFollowedExpertsReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunUserListFollowedExpertsRespRow> {
         let r = FunUserListFollowedExpertsRespRow {
-            expert_id: row.try_get(0)?,
-            user_id: row.try_get(1)?,
-            user_public_id: row.try_get(2)?,
-            listening_wallet: row.try_get(3)?,
-            username: row.try_get(4)?,
-            family_name: row.try_get(5)?,
-            given_name: row.try_get(6)?,
-            follower_count: row.try_get(7)?,
-            description: row.try_get(8)?,
-            social_media: row.try_get(9)?,
-            risk_score: row.try_get(10)?,
-            reputation_score: row.try_get(11)?,
-            aum: row.try_get(12)?,
-            joined_at: row.try_get(13)?,
-            requested_at: row.try_get(14)?,
-            approved_at: row.try_get(15)?,
-            pending_expert: row.try_get(16)?,
-            approved_expert: row.try_get(17)?,
+            expert_id: row.try_get(0).context("failed to get field expert_id")?,
+            user_id: row.try_get(1).context("failed to get field user_id")?,
+            user_public_id: row
+                .try_get(2)
+                .context("failed to get field user_public_id")?,
+            listening_wallet: row
+                .try_get(3)
+                .context("failed to get field listening_wallet")?,
+            username: row.try_get(4).context("failed to get field username")?,
+            family_name: row.try_get(5).context("failed to get field family_name")?,
+            given_name: row.try_get(6).context("failed to get field given_name")?,
+            follower_count: row
+                .try_get(7)
+                .context("failed to get field follower_count")?,
+            description: row.try_get(8).context("failed to get field description")?,
+            social_media: row.try_get(9).context("failed to get field social_media")?,
+            risk_score: row.try_get(10).context("failed to get field risk_score")?,
+            reputation_score: row
+                .try_get(11)
+                .context("failed to get field reputation_score")?,
+            aum: row.try_get(12).context("failed to get field aum")?,
+            joined_at: row.try_get(13).context("failed to get field joined_at")?,
+            requested_at: row
+                .try_get(14)
+                .context("failed to get field requested_at")?,
+            approved_at: row.try_get(15).context("failed to get field approved_at")?,
+            pending_expert: row
+                .try_get(16)
+                .context("failed to get field pending_expert")?,
+            approved_expert: row
+                .try_get(17)
+                .context("failed to get field approved_expert")?,
         };
         Ok(r)
     }
@@ -1163,26 +1245,42 @@ impl DatabaseRequest for FunUserListExpertsReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunUserListExpertsRespRow> {
         let r = FunUserListExpertsRespRow {
-            expert_id: row.try_get(0)?,
-            user_id: row.try_get(1)?,
-            user_public_id: row.try_get(2)?,
-            listening_wallet: row.try_get(3)?,
-            username: row.try_get(4)?,
-            family_name: row.try_get(5)?,
-            given_name: row.try_get(6)?,
-            description: row.try_get(7)?,
-            social_media: row.try_get(8)?,
-            risk_score: row.try_get(9)?,
-            reputation_score: row.try_get(10)?,
-            aum: row.try_get(11)?,
-            joined_at: row.try_get(12)?,
-            requested_at: row.try_get(13)?,
-            approved_at: row.try_get(14)?,
-            pending_expert: row.try_get(15)?,
-            approved_expert: row.try_get(16)?,
-            followed: row.try_get(17)?,
-            follower_count: row.try_get(18)?,
-            backer_count: row.try_get(19)?,
+            expert_id: row.try_get(0).context("failed to get field expert_id")?,
+            user_id: row.try_get(1).context("failed to get field user_id")?,
+            user_public_id: row
+                .try_get(2)
+                .context("failed to get field user_public_id")?,
+            listening_wallet: row
+                .try_get(3)
+                .context("failed to get field listening_wallet")?,
+            username: row.try_get(4).context("failed to get field username")?,
+            family_name: row.try_get(5).context("failed to get field family_name")?,
+            given_name: row.try_get(6).context("failed to get field given_name")?,
+            description: row.try_get(7).context("failed to get field description")?,
+            social_media: row.try_get(8).context("failed to get field social_media")?,
+            risk_score: row.try_get(9).context("failed to get field risk_score")?,
+            reputation_score: row
+                .try_get(10)
+                .context("failed to get field reputation_score")?,
+            aum: row.try_get(11).context("failed to get field aum")?,
+            joined_at: row.try_get(12).context("failed to get field joined_at")?,
+            requested_at: row
+                .try_get(13)
+                .context("failed to get field requested_at")?,
+            approved_at: row.try_get(14).context("failed to get field approved_at")?,
+            pending_expert: row
+                .try_get(15)
+                .context("failed to get field pending_expert")?,
+            approved_expert: row
+                .try_get(16)
+                .context("failed to get field approved_expert")?,
+            followed: row.try_get(17).context("failed to get field followed")?,
+            follower_count: row
+                .try_get(18)
+                .context("failed to get field follower_count")?,
+            backer_count: row
+                .try_get(19)
+                .context("failed to get field backer_count")?,
         };
         Ok(r)
     }
@@ -1240,25 +1338,39 @@ impl DatabaseRequest for FunUserGetExpertProfileReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunUserGetExpertProfileRespRow> {
         let r = FunUserGetExpertProfileRespRow {
-            expert_id: row.try_get(0)?,
-            user_id: row.try_get(1)?,
-            user_public_id: row.try_get(2)?,
-            listening_wallet: row.try_get(3)?,
-            username: row.try_get(4)?,
-            family_name: row.try_get(5)?,
-            given_name: row.try_get(6)?,
-            follower_count: row.try_get(7)?,
-            description: row.try_get(8)?,
-            social_media: row.try_get(9)?,
-            risk_score: row.try_get(10)?,
-            reputation_score: row.try_get(11)?,
-            aum: row.try_get(12)?,
-            joined_at: row.try_get(13)?,
-            requested_at: row.try_get(14)?,
-            approved_at: row.try_get(15)?,
-            pending_expert: row.try_get(16)?,
-            approved_expert: row.try_get(17)?,
-            followed: row.try_get(18)?,
+            expert_id: row.try_get(0).context("failed to get field expert_id")?,
+            user_id: row.try_get(1).context("failed to get field user_id")?,
+            user_public_id: row
+                .try_get(2)
+                .context("failed to get field user_public_id")?,
+            listening_wallet: row
+                .try_get(3)
+                .context("failed to get field listening_wallet")?,
+            username: row.try_get(4).context("failed to get field username")?,
+            family_name: row.try_get(5).context("failed to get field family_name")?,
+            given_name: row.try_get(6).context("failed to get field given_name")?,
+            follower_count: row
+                .try_get(7)
+                .context("failed to get field follower_count")?,
+            description: row.try_get(8).context("failed to get field description")?,
+            social_media: row.try_get(9).context("failed to get field social_media")?,
+            risk_score: row.try_get(10).context("failed to get field risk_score")?,
+            reputation_score: row
+                .try_get(11)
+                .context("failed to get field reputation_score")?,
+            aum: row.try_get(12).context("failed to get field aum")?,
+            joined_at: row.try_get(13).context("failed to get field joined_at")?,
+            requested_at: row
+                .try_get(14)
+                .context("failed to get field requested_at")?,
+            approved_at: row.try_get(15).context("failed to get field approved_at")?,
+            pending_expert: row
+                .try_get(16)
+                .context("failed to get field pending_expert")?,
+            approved_expert: row
+                .try_get(17)
+                .context("failed to get field approved_expert")?,
+            followed: row.try_get(18).context("failed to get field followed")?,
         };
         Ok(r)
     }
@@ -1301,17 +1413,23 @@ impl DatabaseRequest for FunUserGetUserProfileReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunUserGetUserProfileRespRow> {
         let r = FunUserGetUserProfileRespRow {
-            expert_id: row.try_get(0)?,
-            user_public_id: row.try_get(1)?,
-            name: row.try_get(2)?,
-            login_wallet: row.try_get(3)?,
-            joined_at: row.try_get(4)?,
-            follower_count: row.try_get(5)?,
-            description: row.try_get(6)?,
-            social_media: row.try_get(7)?,
-            risk_score: row.try_get(8)?,
-            reputation_score: row.try_get(9)?,
-            aum: row.try_get(10)?,
+            expert_id: row.try_get(0).context("failed to get field expert_id")?,
+            user_public_id: row
+                .try_get(1)
+                .context("failed to get field user_public_id")?,
+            name: row.try_get(2).context("failed to get field name")?,
+            login_wallet: row.try_get(3).context("failed to get field login_wallet")?,
+            joined_at: row.try_get(4).context("failed to get field joined_at")?,
+            follower_count: row
+                .try_get(5)
+                .context("failed to get field follower_count")?,
+            description: row.try_get(6).context("failed to get field description")?,
+            social_media: row.try_get(7).context("failed to get field social_media")?,
+            risk_score: row.try_get(8).context("failed to get field risk_score")?,
+            reputation_score: row
+                .try_get(9)
+                .context("failed to get field reputation_score")?,
+            aum: row.try_get(10).context("failed to get field aum")?,
         };
         Ok(r)
     }
@@ -1345,7 +1463,7 @@ impl DatabaseRequest for FunUserCreateExpertProfileReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunUserCreateExpertProfileRespRow> {
         let r = FunUserCreateExpertProfileRespRow {
-            expert_id: row.try_get(0)?,
+            expert_id: row.try_get(0).context("failed to get field expert_id")?,
         };
         Ok(r)
     }
@@ -1402,8 +1520,8 @@ impl DatabaseRequest for FunUserApplyBecomeExpertReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunUserApplyBecomeExpertRespRow> {
         let r = FunUserApplyBecomeExpertRespRow {
-            success: row.try_get(0)?,
-            expert_id: row.try_get(1)?,
+            success: row.try_get(0).context("failed to get field success")?,
+            expert_id: row.try_get(1).context("failed to get field expert_id")?,
         };
         Ok(r)
     }
@@ -1450,8 +1568,8 @@ impl DatabaseRequest for FunUserCreateStrategyReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunUserCreateStrategyRespRow> {
         let r = FunUserCreateStrategyRespRow {
-            success: row.try_get(0)?,
-            strategy_id: row.try_get(1)?,
+            success: row.try_get(0).context("failed to get field success")?,
+            strategy_id: row.try_get(1).context("failed to get field strategy_id")?,
         };
         Ok(r)
     }
@@ -1487,7 +1605,7 @@ impl DatabaseRequest for FunUserUpdateStrategyReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunUserUpdateStrategyRespRow> {
         let r = FunUserUpdateStrategyRespRow {
-            success: row.try_get(0)?,
+            success: row.try_get(0).context("failed to get field success")?,
         };
         Ok(r)
     }
@@ -1526,8 +1644,10 @@ impl DatabaseRequest for FunUserAddStrategyWatchWalletReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunUserAddStrategyWatchWalletRespRow> {
         let r = FunUserAddStrategyWatchWalletRespRow {
-            success: row.try_get(0)?,
-            watch_wallet_id: row.try_get(1)?,
+            success: row.try_get(0).context("failed to get field success")?,
+            watch_wallet_id: row
+                .try_get(1)
+                .context("failed to get field watch_wallet_id")?,
         };
         Ok(r)
     }
@@ -1557,7 +1677,7 @@ impl DatabaseRequest for FunUserRemoveStrategyWatchWalletReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunUserRemoveStrategyWatchWalletRespRow> {
         let r = FunUserRemoveStrategyWatchWalletRespRow {
-            success: row.try_get(0)?,
+            success: row.try_get(0).context("failed to get field success")?,
         };
         Ok(r)
     }
@@ -1586,10 +1706,14 @@ impl DatabaseRequest for FunUserListStrategyWatchWalletsReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunUserListStrategyWatchWalletsRespRow> {
         let r = FunUserListStrategyWatchWalletsRespRow {
-            watch_wallet_id: row.try_get(0)?,
-            wallet_address: row.try_get(1)?,
-            blockchain: row.try_get(2)?,
-            ratio: row.try_get(3)?,
+            watch_wallet_id: row
+                .try_get(0)
+                .context("failed to get field watch_wallet_id")?,
+            wallet_address: row
+                .try_get(1)
+                .context("failed to get field wallet_address")?,
+            blockchain: row.try_get(2).context("failed to get field blockchain")?,
+            ratio: row.try_get(3).context("failed to get field ratio")?,
         };
         Ok(r)
     }
@@ -1619,11 +1743,15 @@ impl DatabaseRequest for FunUserListStrategyFollowersReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunUserListStrategyFollowersRespRow> {
         let r = FunUserListStrategyFollowersRespRow {
-            user_id: row.try_get(0)?,
-            user_public_id: row.try_get(1)?,
-            username: row.try_get(2)?,
-            wallet_address: row.try_get(3)?,
-            followed_at: row.try_get(4)?,
+            user_id: row.try_get(0).context("failed to get field user_id")?,
+            user_public_id: row
+                .try_get(1)
+                .context("failed to get field user_public_id")?,
+            username: row.try_get(2).context("failed to get field username")?,
+            wallet_address: row
+                .try_get(3)
+                .context("failed to get field wallet_address")?,
+            followed_at: row.try_get(4).context("failed to get field followed_at")?,
         };
         Ok(r)
     }
@@ -1653,11 +1781,15 @@ impl DatabaseRequest for FunUserListStrategyBackersReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunUserListStrategyBackersRespRow> {
         let r = FunUserListStrategyBackersRespRow {
-            user_id: row.try_get(0)?,
-            user_public_id: row.try_get(1)?,
-            username: row.try_get(2)?,
-            wallet_address: row.try_get(3)?,
-            backed_at: row.try_get(4)?,
+            user_id: row.try_get(0).context("failed to get field user_id")?,
+            user_public_id: row
+                .try_get(1)
+                .context("failed to get field user_public_id")?,
+            username: row.try_get(2).context("failed to get field username")?,
+            wallet_address: row
+                .try_get(3)
+                .context("failed to get field wallet_address")?,
+            backed_at: row.try_get(4).context("failed to get field backed_at")?,
         };
         Ok(r)
     }
@@ -1689,7 +1821,9 @@ impl DatabaseRequest for FunUserAddRegisteredWalletReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunUserAddRegisteredWalletRespRow> {
         let r = FunUserAddRegisteredWalletRespRow {
-            registered_wallet_id: row.try_get(0)?,
+            registered_wallet_id: row
+                .try_get(0)
+                .context("failed to get field registered_wallet_id")?,
         };
         Ok(r)
     }
@@ -1743,9 +1877,11 @@ impl DatabaseRequest for FunUserListRegisteredWalletsReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunUserListRegisteredWalletsRespRow> {
         let r = FunUserListRegisteredWalletsRespRow {
-            registered_wallet_id: row.try_get(0)?,
-            blockchain: row.try_get(1)?,
-            address: row.try_get(2)?,
+            registered_wallet_id: row
+                .try_get(0)
+                .context("failed to get field registered_wallet_id")?,
+            blockchain: row.try_get(1).context("failed to get field blockchain")?,
+            address: row.try_get(2).context("failed to get field address")?,
         };
         Ok(r)
     }
@@ -1779,7 +1915,9 @@ impl DatabaseRequest for FunUserRequestRefundReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunUserRequestRefundRespRow> {
         let r = FunUserRequestRefundRespRow {
-            request_refund_id: row.try_get(0)?,
+            request_refund_id: row
+                .try_get(0)
+                .context("failed to get field request_refund_id")?,
         };
         Ok(r)
     }
@@ -1807,11 +1945,15 @@ impl DatabaseRequest for FunUserListRequestRefundHistoryReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunUserListRequestRefundHistoryRespRow> {
         let r = FunUserListRequestRefundHistoryRespRow {
-            request_refund_id: row.try_get(0)?,
-            user_id: row.try_get(1)?,
-            blockchain: row.try_get(2)?,
-            quantity: row.try_get(3)?,
-            wallet_address: row.try_get(4)?,
+            request_refund_id: row
+                .try_get(0)
+                .context("failed to get field request_refund_id")?,
+            user_id: row.try_get(1).context("failed to get field user_id")?,
+            blockchain: row.try_get(2).context("failed to get field blockchain")?,
+            quantity: row.try_get(3).context("failed to get field quantity")?,
+            wallet_address: row
+                .try_get(4)
+                .context("failed to get field wallet_address")?,
         };
         Ok(r)
     }
@@ -1873,7 +2015,9 @@ impl DatabaseRequest for FunUserAddStrategyInitialTokenRatioReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunUserAddStrategyInitialTokenRatioRespRow> {
         let r = FunUserAddStrategyInitialTokenRatioRespRow {
-            strategy_initial_token_ratio_id: row.try_get(0)?,
+            strategy_initial_token_ratio_id: row
+                .try_get(0)
+                .context("failed to get field strategy_initial_token_ratio_id")?,
         };
         Ok(r)
     }
@@ -1932,14 +2076,18 @@ impl DatabaseRequest for FunUserListStrategyInitialTokenRatiosReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunUserListStrategyInitialTokenRatiosRespRow> {
         let r = FunUserListStrategyInitialTokenRatiosRespRow {
-            strategy_initial_token_ratio_id: row.try_get(0)?,
-            blockchain: row.try_get(1)?,
-            token_name: row.try_get(2)?,
-            token_address: row.try_get(3)?,
-            quantity: row.try_get(4)?,
-            strategy_id: row.try_get(5)?,
-            created_at: row.try_get(6)?,
-            updated_at: row.try_get(7)?,
+            strategy_initial_token_ratio_id: row
+                .try_get(0)
+                .context("failed to get field strategy_initial_token_ratio_id")?,
+            blockchain: row.try_get(1).context("failed to get field blockchain")?,
+            token_name: row.try_get(2).context("failed to get field token_name")?,
+            token_address: row
+                .try_get(3)
+                .context("failed to get field token_address")?,
+            quantity: row.try_get(4).context("failed to get field quantity")?,
+            strategy_id: row.try_get(5).context("failed to get field strategy_id")?,
+            created_at: row.try_get(6).context("failed to get field created_at")?,
+            updated_at: row.try_get(7).context("failed to get field updated_at")?,
         };
         Ok(r)
     }
@@ -1978,12 +2126,12 @@ impl DatabaseRequest for FunExpertListFollowersReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunExpertListFollowersRespRow> {
         let r = FunExpertListFollowersRespRow {
-            public_id: row.try_get(0)?,
-            username: row.try_get(1)?,
-            family_name: row.try_get(2)?,
-            given_name: row.try_get(3)?,
-            followed_at: row.try_get(4)?,
-            joined_at: row.try_get(5)?,
+            public_id: row.try_get(0).context("failed to get field public_id")?,
+            username: row.try_get(1).context("failed to get field username")?,
+            family_name: row.try_get(2).context("failed to get field family_name")?,
+            given_name: row.try_get(3).context("failed to get field given_name")?,
+            followed_at: row.try_get(4).context("failed to get field followed_at")?,
+            joined_at: row.try_get(5).context("failed to get field joined_at")?,
         };
         Ok(r)
     }
@@ -2022,12 +2170,12 @@ impl DatabaseRequest for FunExpertListBackersReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunExpertListBackersRespRow> {
         let r = FunExpertListBackersRespRow {
-            public_id: row.try_get(0)?,
-            username: row.try_get(1)?,
-            family_name: row.try_get(2)?,
-            given_name: row.try_get(3)?,
-            backed_at: row.try_get(4)?,
-            joined_at: row.try_get(5)?,
+            public_id: row.try_get(0).context("failed to get field public_id")?,
+            username: row.try_get(1).context("failed to get field username")?,
+            family_name: row.try_get(2).context("failed to get field family_name")?,
+            given_name: row.try_get(3).context("failed to get field given_name")?,
+            backed_at: row.try_get(4).context("failed to get field backed_at")?,
+            joined_at: row.try_get(5).context("failed to get field joined_at")?,
         };
         Ok(r)
     }
@@ -2065,13 +2213,19 @@ impl DatabaseRequest for FunUserListDepositHistoryReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunUserListDepositHistoryRespRow> {
         let r = FunUserListDepositHistoryRespRow {
-            blockchain: row.try_get(0)?,
-            user_address: row.try_get(1)?,
-            contract_address: row.try_get(2)?,
-            receiver_address: row.try_get(3)?,
-            quantity: row.try_get(4)?,
-            transaction_hash: row.try_get(5)?,
-            created_at: row.try_get(6)?,
+            blockchain: row.try_get(0).context("failed to get field blockchain")?,
+            user_address: row.try_get(1).context("failed to get field user_address")?,
+            contract_address: row
+                .try_get(2)
+                .context("failed to get field contract_address")?,
+            receiver_address: row
+                .try_get(3)
+                .context("failed to get field receiver_address")?,
+            quantity: row.try_get(4).context("failed to get field quantity")?,
+            transaction_hash: row
+                .try_get(5)
+                .context("failed to get field transaction_hash")?,
+            created_at: row.try_get(6).context("failed to get field created_at")?,
         };
         Ok(r)
     }
@@ -2104,12 +2258,14 @@ impl DatabaseRequest for FunUserGetUserByAddressReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunUserGetUserByAddressRespRow> {
         let r = FunUserGetUserByAddressRespRow {
-            user_id: row.try_get(0)?,
-            user_public_id: row.try_get(1)?,
-            username: row.try_get(2)?,
-            family_name: row.try_get(3)?,
-            given_name: row.try_get(4)?,
-            joined_at: row.try_get(5)?,
+            user_id: row.try_get(0).context("failed to get field user_id")?,
+            user_public_id: row
+                .try_get(1)
+                .context("failed to get field user_public_id")?,
+            username: row.try_get(2).context("failed to get field username")?,
+            family_name: row.try_get(3).context("failed to get field family_name")?,
+            given_name: row.try_get(4).context("failed to get field given_name")?,
+            joined_at: row.try_get(5).context("failed to get field joined_at")?,
         };
         Ok(r)
     }
@@ -2166,17 +2322,21 @@ impl DatabaseRequest for FunAdminListUsersReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunAdminListUsersRespRow> {
         let r = FunAdminListUsersRespRow {
-            user_id: row.try_get(0)?,
-            public_user_id: row.try_get(1)?,
-            username: row.try_get(2)?,
-            address: row.try_get(3)?,
-            last_ip: row.try_get(4)?,
-            last_login_at: row.try_get(5)?,
-            login_count: row.try_get(6)?,
-            role: row.try_get(7)?,
-            email: row.try_get(8)?,
-            updated_at: row.try_get(9)?,
-            created_at: row.try_get(10)?,
+            user_id: row.try_get(0).context("failed to get field user_id")?,
+            public_user_id: row
+                .try_get(1)
+                .context("failed to get field public_user_id")?,
+            username: row.try_get(2).context("failed to get field username")?,
+            address: row.try_get(3).context("failed to get field address")?,
+            last_ip: row.try_get(4).context("failed to get field last_ip")?,
+            last_login_at: row
+                .try_get(5)
+                .context("failed to get field last_login_at")?,
+            login_count: row.try_get(6).context("failed to get field login_count")?,
+            role: row.try_get(7).context("failed to get field role")?,
+            email: row.try_get(8).context("failed to get field email")?,
+            updated_at: row.try_get(9).context("failed to get field updated_at")?,
+            created_at: row.try_get(10).context("failed to get field created_at")?,
         };
         Ok(r)
     }
@@ -2254,7 +2414,7 @@ impl DatabaseRequest for FunAdminApproveUserBecomeExpertReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunAdminApproveUserBecomeExpertRespRow> {
         let r = FunAdminApproveUserBecomeExpertRespRow {
-            success: row.try_get(0)?,
+            success: row.try_get(0).context("failed to get field success")?,
         };
         Ok(r)
     }
@@ -2280,7 +2440,7 @@ impl DatabaseRequest for FunAdminRejectUserBecomeExpertReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunAdminRejectUserBecomeExpertRespRow> {
         let r = FunAdminRejectUserBecomeExpertRespRow {
-            success: row.try_get(0)?,
+            success: row.try_get(0).context("failed to get field success")?,
         };
         Ok(r)
     }
@@ -2329,19 +2489,33 @@ impl DatabaseRequest for FunAdminListPendingUserExpertApplicationsReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunAdminListPendingUserExpertApplicationsRespRow> {
         let r = FunAdminListPendingUserExpertApplicationsRespRow {
-            user_public_id: row.try_get(0)?,
-            name: row.try_get(1)?,
-            linked_wallet: row.try_get(2)?,
-            follower_count: row.try_get(3)?,
-            description: row.try_get(4)?,
-            social_media: row.try_get(5)?,
-            risk_score: row.try_get(6)?,
-            reputation_score: row.try_get(7)?,
-            aum: row.try_get(8)?,
-            pending_expert: row.try_get(9)?,
-            approved_expert: row.try_get(10)?,
-            joined_at: row.try_get(11)?,
-            requested_at: row.try_get(12)?,
+            user_public_id: row
+                .try_get(0)
+                .context("failed to get field user_public_id")?,
+            name: row.try_get(1).context("failed to get field name")?,
+            linked_wallet: row
+                .try_get(2)
+                .context("failed to get field linked_wallet")?,
+            follower_count: row
+                .try_get(3)
+                .context("failed to get field follower_count")?,
+            description: row.try_get(4).context("failed to get field description")?,
+            social_media: row.try_get(5).context("failed to get field social_media")?,
+            risk_score: row.try_get(6).context("failed to get field risk_score")?,
+            reputation_score: row
+                .try_get(7)
+                .context("failed to get field reputation_score")?,
+            aum: row.try_get(8).context("failed to get field aum")?,
+            pending_expert: row
+                .try_get(9)
+                .context("failed to get field pending_expert")?,
+            approved_expert: row
+                .try_get(10)
+                .context("failed to get field approved_expert")?,
+            joined_at: row.try_get(11).context("failed to get field joined_at")?,
+            requested_at: row
+                .try_get(12)
+                .context("failed to get field requested_at")?,
         };
         Ok(r)
     }
@@ -2370,8 +2544,12 @@ impl DatabaseRequest for FunAdminGetSystemConfigReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunAdminGetSystemConfigRespRow> {
         let r = FunAdminGetSystemConfigRespRow {
-            config_placeholder_1: row.try_get(0)?,
-            config_placeholder_2: row.try_get(1)?,
+            config_placeholder_1: row
+                .try_get(0)
+                .context("failed to get field config_placeholder_1")?,
+            config_placeholder_2: row
+                .try_get(1)
+                .context("failed to get field config_placeholder_2")?,
         };
         Ok(r)
     }
@@ -2481,24 +2659,38 @@ impl DatabaseRequest for FunAdminListExpertsReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunAdminListExpertsRespRow> {
         let r = FunAdminListExpertsRespRow {
-            expert_id: row.try_get(0)?,
-            user_id: row.try_get(1)?,
-            user_public_id: row.try_get(2)?,
-            linked_wallet: row.try_get(3)?,
-            name: row.try_get(4)?,
-            family_name: row.try_get(5)?,
-            given_name: row.try_get(6)?,
-            follower_count: row.try_get(7)?,
-            description: row.try_get(8)?,
-            social_media: row.try_get(9)?,
-            risk_score: row.try_get(10)?,
-            reputation_score: row.try_get(11)?,
-            aum: row.try_get(12)?,
-            joined_at: row.try_get(13)?,
-            requested_at: row.try_get(14)?,
-            approved_at: row.try_get(15)?,
-            pending_expert: row.try_get(16)?,
-            approved_expert: row.try_get(17)?,
+            expert_id: row.try_get(0).context("failed to get field expert_id")?,
+            user_id: row.try_get(1).context("failed to get field user_id")?,
+            user_public_id: row
+                .try_get(2)
+                .context("failed to get field user_public_id")?,
+            linked_wallet: row
+                .try_get(3)
+                .context("failed to get field linked_wallet")?,
+            name: row.try_get(4).context("failed to get field name")?,
+            family_name: row.try_get(5).context("failed to get field family_name")?,
+            given_name: row.try_get(6).context("failed to get field given_name")?,
+            follower_count: row
+                .try_get(7)
+                .context("failed to get field follower_count")?,
+            description: row.try_get(8).context("failed to get field description")?,
+            social_media: row.try_get(9).context("failed to get field social_media")?,
+            risk_score: row.try_get(10).context("failed to get field risk_score")?,
+            reputation_score: row
+                .try_get(11)
+                .context("failed to get field reputation_score")?,
+            aum: row.try_get(12).context("failed to get field aum")?,
+            joined_at: row.try_get(13).context("failed to get field joined_at")?,
+            requested_at: row
+                .try_get(14)
+                .context("failed to get field requested_at")?,
+            approved_at: row.try_get(15).context("failed to get field approved_at")?,
+            pending_expert: row
+                .try_get(16)
+                .context("failed to get field pending_expert")?,
+            approved_expert: row
+                .try_get(17)
+                .context("failed to get field approved_expert")?,
         };
         Ok(r)
     }
@@ -2547,11 +2739,15 @@ impl DatabaseRequest for FunAdminListBackersReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunAdminListBackersRespRow> {
         let r = FunAdminListBackersRespRow {
-            user_id: row.try_get(0)?,
-            user_public_id: row.try_get(1)?,
-            username: row.try_get(2)?,
-            login_wallet_address: row.try_get(3)?,
-            joined_at: row.try_get(4)?,
+            user_id: row.try_get(0).context("failed to get field user_id")?,
+            user_public_id: row
+                .try_get(1)
+                .context("failed to get field user_public_id")?,
+            username: row.try_get(2).context("failed to get field username")?,
+            login_wallet_address: row
+                .try_get(3)
+                .context("failed to get field login_wallet_address")?,
+            joined_at: row.try_get(4).context("failed to get field joined_at")?,
         };
         Ok(r)
     }
@@ -2613,16 +2809,22 @@ impl DatabaseRequest for FunAdminListStrategiesReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunAdminListStrategiesRespRow> {
         let r = FunAdminListStrategiesRespRow {
-            strategy_id: row.try_get(0)?,
-            strategy_name: row.try_get(1)?,
-            expert_id: row.try_get(2)?,
-            expert_public_id: row.try_get(3)?,
-            expert_name: row.try_get(4)?,
-            description: row.try_get(5)?,
-            created_at: row.try_get(6)?,
-            pending_approval: row.try_get(7)?,
-            approved: row.try_get(8)?,
-            approved_at: row.try_get(9)?,
+            strategy_id: row.try_get(0).context("failed to get field strategy_id")?,
+            strategy_name: row
+                .try_get(1)
+                .context("failed to get field strategy_name")?,
+            expert_id: row.try_get(2).context("failed to get field expert_id")?,
+            expert_public_id: row
+                .try_get(3)
+                .context("failed to get field expert_public_id")?,
+            expert_name: row.try_get(4).context("failed to get field expert_name")?,
+            description: row.try_get(5).context("failed to get field description")?,
+            created_at: row.try_get(6).context("failed to get field created_at")?,
+            pending_approval: row
+                .try_get(7)
+                .context("failed to get field pending_approval")?,
+            approved: row.try_get(8).context("failed to get field approved")?,
+            approved_at: row.try_get(9).context("failed to get field approved_at")?,
         };
         Ok(r)
     }
@@ -2701,7 +2903,9 @@ impl DatabaseRequest for FunWatcherSaveRawTransactionReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunWatcherSaveRawTransactionRespRow> {
         let r = FunWatcherSaveRawTransactionRespRow {
-            transaction_cache_id: row.try_get(0)?,
+            transaction_cache_id: row
+                .try_get(0)
+                .context("failed to get field transaction_cache_id")?,
         };
         Ok(r)
     }
@@ -2740,12 +2944,18 @@ impl DatabaseRequest for FunWatcherGetRawTransactionReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunWatcherGetRawTransactionRespRow> {
         let r = FunWatcherGetRawTransactionRespRow {
-            transaction_cache_id: row.try_get(0)?,
-            transaction_hash: row.try_get(1)?,
-            chain: row.try_get(2)?,
-            dex: row.try_get(3)?,
-            raw_transaction: row.try_get(4)?,
-            created_at: row.try_get(5)?,
+            transaction_cache_id: row
+                .try_get(0)
+                .context("failed to get field transaction_cache_id")?,
+            transaction_hash: row
+                .try_get(1)
+                .context("failed to get field transaction_hash")?,
+            chain: row.try_get(2).context("failed to get field chain")?,
+            dex: row.try_get(3).context("failed to get field dex")?,
+            raw_transaction: row
+                .try_get(4)
+                .context("failed to get field raw_transaction")?,
+            created_at: row.try_get(5).context("failed to get field created_at")?,
         };
         Ok(r)
     }
@@ -2808,7 +3018,9 @@ impl DatabaseRequest for FunWatcherSaveWalletActivityHistoryReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunWatcherSaveWalletActivityHistoryRespRow> {
         let r = FunWatcherSaveWalletActivityHistoryRespRow {
-            wallet_activity_history_id: row.try_get(0)?,
+            wallet_activity_history_id: row
+                .try_get(0)
+                .context("failed to get field wallet_activity_history_id")?,
         };
         Ok(r)
     }
@@ -2861,21 +3073,35 @@ impl DatabaseRequest for FunWatcherListWalletActivityHistoryReq {
     }
     fn parse_row(&self, row: Row) -> Result<FunWatcherListWalletActivityHistoryRespRow> {
         let r = FunWatcherListWalletActivityHistoryRespRow {
-            wallet_activity_history_id: row.try_get(0)?,
-            address: row.try_get(1)?,
-            transaction_hash: row.try_get(2)?,
-            blockchain: row.try_get(3)?,
-            dex: row.try_get(4)?,
-            contract_address: row.try_get(5)?,
-            token_in_address: row.try_get(6)?,
-            token_out_address: row.try_get(7)?,
-            caller_address: row.try_get(8)?,
-            amount_in: row.try_get(9)?,
-            amount_out: row.try_get(10)?,
-            swap_calls: row.try_get(11)?,
-            paths: row.try_get(12)?,
-            dex_versions: row.try_get(13)?,
-            created_at: row.try_get(14)?,
+            wallet_activity_history_id: row
+                .try_get(0)
+                .context("failed to get field wallet_activity_history_id")?,
+            address: row.try_get(1).context("failed to get field address")?,
+            transaction_hash: row
+                .try_get(2)
+                .context("failed to get field transaction_hash")?,
+            blockchain: row.try_get(3).context("failed to get field blockchain")?,
+            dex: row.try_get(4).context("failed to get field dex")?,
+            contract_address: row
+                .try_get(5)
+                .context("failed to get field contract_address")?,
+            token_in_address: row
+                .try_get(6)
+                .context("failed to get field token_in_address")?,
+            token_out_address: row
+                .try_get(7)
+                .context("failed to get field token_out_address")?,
+            caller_address: row
+                .try_get(8)
+                .context("failed to get field caller_address")?,
+            amount_in: row.try_get(9).context("failed to get field amount_in")?,
+            amount_out: row.try_get(10).context("failed to get field amount_out")?,
+            swap_calls: row.try_get(11).context("failed to get field swap_calls")?,
+            paths: row.try_get(12).context("failed to get field paths")?,
+            dex_versions: row
+                .try_get(13)
+                .context("failed to get field dex_versions")?,
+            created_at: row.try_get(14).context("failed to get field created_at")?,
         };
         Ok(r)
     }

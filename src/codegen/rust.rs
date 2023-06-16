@@ -132,7 +132,12 @@ pub fn pg_func_to_rust_trait_impl(this: &ProceduralFunction) -> String {
         .returns
         .iter()
         .enumerate()
-        .map(|(i, x)| format!("{}: row.try_get({})?", x.name, i))
+        .map(|(i, x)| {
+            format!(
+                "{}: row.try_get({}).context(\"failed to get field {}\")?",
+                x.name, i, x.name
+            )
+        })
         .join(",\n");
     format!(
         "
