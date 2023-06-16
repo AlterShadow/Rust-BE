@@ -49,23 +49,16 @@ pub async fn handle_eth_escrows(
                         return;
                     }
                 };
-            match state.escrow_addresses.get_by_address(escrow.recipient) {
-                Some(chain) => {
-                    if chain != blockchain {
-                        info!(
-                            "no transfer to an escrow contract for tx: {:?}",
-                            tx.get_hash()
-                        );
-                        return;
-                    }
-                }
-                None => {
-                    info!(
-                        "no transfer to an escrow contract for tx: {:?}",
-                        tx.get_hash()
-                    );
-                    return;
-                }
+            if state
+                .escrow_addresses
+                .get_by_address(blockchain, escrow.recipient)
+                .is_none()
+            {
+                info!(
+                    "no transfer to an escrow contract for tx: {:?}",
+                    tx.get_hash()
+                );
+                return;
             }
 
             /* check if transaction is from one of our users */

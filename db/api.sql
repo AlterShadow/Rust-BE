@@ -1864,7 +1864,7 @@ BEGIN
                         w.address AS linked_wallet,
                         w.blockchain AS linked_wallet_blockchain
                  FROM tbl.strategy AS s
-                      LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = (SELECT w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id LIMIT)
+                      LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = (SELECT w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id LIMIT 1)
                       JOIN tbl.user AS b ON b.pkey_id = s.fkey_user_id
                           
                 WHERE (a_strategy_id ISNULL OR s.pkey_id = a_strategy_id)

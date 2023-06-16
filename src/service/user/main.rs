@@ -11,8 +11,8 @@ use crate::method::*;
 use eth_sdk::escrow::{AbstractEscrowContract, EscrowContract};
 use eth_sdk::signer::Secp256k1SecretKey;
 use eth_sdk::{
-    BlockchainCoinAddresses, DexAddresses, EthereumConns, EthereumRpcConnectionPool, EthereumToken,
-    MultiChainAddressTable, ANVIL_PRIV_KEY_1,
+    BlockchainCoinAddresses, DexAddresses, EscrowAddresses, EthereumConns,
+    EthereumRpcConnectionPool, EthereumToken, MultiChainAddressTable, ANVIL_PRIV_KEY_1,
 };
 use eyre::*;
 use gen::model::{EnumBlockChain, EnumService, UserGetDepositAddressesRow};
@@ -120,38 +120,10 @@ async fn main() -> Result<()> {
     let escrow_signer = Secp256k1SecretKey::new_random();
     let externally_owned_account = Secp256k1SecretKey::new_random();
     let coin_addresses = Arc::new(BlockchainCoinAddresses::new());
-    let mut escrow_contract_addresses = MultiChainAddressTable::empty();
+    let mut escrow_contract_addresses = EscrowAddresses::new();
     let strategy_pool_signer = Secp256k1SecretKey::new_random();
 
-    if config.setup_ethereum_localnet {
-        let conn = eth_pool.get(EnumBlockChain::LocalNet).await?.clone();
-        let god = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
-        let eth = EthereumToken::new(conn.clone());
-        eth.transfer(
-            &god.key,
-            escrow_signer.address,
-            U256::from(100) * U256::exp10(18),
-        )
-        .await?;
-        // TODO: get escrow_signer from MultiChainAddressTable
-        let escrow_contract = EscrowContract::deploy(conn, &escrow_signer.key)
-            .await
-            .context("Deploy escrow contract")?;
-        eth.transfer(
-            &god.key,
-            strategy_pool_signer.address,
-            U256::from(100) * U256::exp10(18),
-        )
-        .await?;
-        eth.transfer(
-            &god.key,
-            strategy_pool_signer.address,
-            U256::from(100) * U256::exp10(18),
-        )
-        .await?;
-        escrow_contract_addresses.insert(EnumBlockChain::LocalNet, (), escrow_contract.address());
-    }
-    let escrow_contract = Arc::new(AbstractEscrowContract::new(escrow_contract_addresses));
+    let escrow_contract = Arc::new(AbstractEscrowContract::new2(escrow_contract_addresses));
 
     server.add_handler(MethodUserBackStrategy {
         pool: eth_pool.clone(),

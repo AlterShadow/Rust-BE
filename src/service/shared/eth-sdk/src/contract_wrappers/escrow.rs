@@ -11,8 +11,9 @@ use web3::{ethabi, Transport, Web3};
 
 use crate::contract::AbstractContract;
 use crate::{
-    deploy_contract, wait_for_confirmations_simple, EitherTransport, EthereumRpcConnection,
-    EthereumRpcConnectionPool, MultiChainAddressTable, TransactionFetcher, TxStatus,
+    deploy_contract, wait_for_confirmations_simple, EitherTransport, EscrowAddresses,
+    EthereumRpcConnection, EthereumRpcConnectionPool, MultiChainAddressTable, TransactionFetcher,
+    TxStatus,
 };
 use gen::model::EnumBlockChain;
 
@@ -27,6 +28,15 @@ impl AbstractEscrowContract {
             name: "Escrow".to_string(),
             abi,
             contract_addresses: table,
+        })
+    }
+    pub fn new2(table: EscrowAddresses) -> Self {
+        let abi = ethabi::Contract::load(ESCROW_ABI_JSON.as_bytes()).unwrap();
+
+        Self(AbstractContract {
+            name: "Escrow".to_string(),
+            abi,
+            contract_addresses: table.0,
         })
     }
 

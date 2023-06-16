@@ -1,5 +1,4 @@
 use api::cmc::CoinMarketCap;
-use chrono::Utc;
 use eth_sdk::erc20::approve_and_ensure_success;
 use eth_sdk::erc20::Erc20Token;
 use eth_sdk::escrow::transfer_token_to_and_ensure_success;
