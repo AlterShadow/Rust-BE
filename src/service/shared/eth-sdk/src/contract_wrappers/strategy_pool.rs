@@ -2262,10 +2262,11 @@ mod tests {
             mock_erc20_a.balance_of(god_key.address()).await?,
             U256::from(100)
         );
-        assert_eq!(
-            strategy_pool.asset_balance(mock_erc20_a.address).await?,
-            U256::zero()
-        );
+        // can't query assets, SP is trading
+        assert!(matches!(
+            strategy_pool.asset_balance(mock_erc20_a.address).await, // = 0
+            Err(_)
+        ));
         assert_eq!(
             strategy_pool.balance_of(alice.address).await?,
             U256::from(1)
@@ -2396,10 +2397,11 @@ mod tests {
             mock_erc20_a.balance_of(god_key.address()).await?,
             U256::from(100)
         );
-        assert_eq!(
-            strategy_pool.asset_balance(mock_erc20_a.address).await?,
-            U256::zero()
-        );
+        // can't query assets, SP is trading
+        assert!(matches!(
+            strategy_pool.asset_balance(mock_erc20_a.address).await, // = 0
+            Err(_)
+        ));
         assert_eq!(
             strategy_pool.balance_of(alice.address).await?,
             U256::from(1)
