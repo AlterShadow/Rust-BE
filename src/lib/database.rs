@@ -46,27 +46,17 @@ impl DbClient {
             .query(statement, params)
             .await?)
     }
-    pub async fn prepare(&self, statement: &str) -> Result<Statement, Error> {
-        Ok(self
-            .pool
-            .get()
-            .await
-            .context("Failed to connect to database")?
-            .prepare(statement)
-            .await?)
-    }
+
     pub async fn execute<T: DatabaseRequest>(&self, req: T) -> Result<RDataTable<T::ResponseRow>> {
         let mut error = None;
         for _ in 0..2 {
-            let statement = if let Some(stmt) = self.prepared_stmts.get(req.statement()) {
-                stmt.clone()
-            } else {
-                let stmt = self.prepare(req.statement()).await?;
-                self.prepared_stmts
-                    .insert(req.statement().to_string(), stmt.clone());
-                stmt
-            };
-
+            let client = self
+                .pool
+                .get()
+                .await
+                .context("Failed to connect to database")?;
+            let statement = client.prepare(req.statement()).await?;
+            // TODO: cache statement along with the client into prepared_stmts. other wise there will be runtime error
             let rows = match self.query(&statement, &req.params()).await {
                 Ok(rows) => rows,
                 Err(err) => {
