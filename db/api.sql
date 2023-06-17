@@ -216,7 +216,7 @@ BEGIN
     -- Log the authorization attempt
     INSERT INTO tbl.authorization_attempt(fkey_user, ip_address, is_token_ok, moment)
     VALUES (user_id_, a_ip_address, is_token_ok_ NOTNULL AND is_token_ok_, extract(Epoch FROM (NOW()))::bigint);
-
+    COMMIT;
     -- Validating the token
     IF NOT is_token_ok_ OR is_token_ok_ IS NULL THEN
         RAISE SQLSTATE 'R000A'; -- InvalidToken

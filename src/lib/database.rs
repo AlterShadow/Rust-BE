@@ -54,7 +54,7 @@ impl DbClient {
             .prepare(statement)
             .await?)
     }
-    pub async fn execute<T: DatabaseRequest>(&self, req: T) -> Result<DataTable<T::ResponseRow>> {
+    pub async fn execute<T: DatabaseRequest>(&self, req: T) -> Result<RDataTable<T::ResponseRow>> {
         let mut error = None;
         for _ in 0..2 {
             let statement = if let Some(stmt) = self.prepared_stmts.get(req.statement()) {
@@ -72,6 +72,7 @@ impl DbClient {
                     let reason = err.to_string();
                     if reason.contains("cache lookup failed for type")
                         || reason.contains("cached plan must not change result type")
+                        || reason.contains("prepared statement")
                     {
                         warn!("Database has been updated. Cleaning cache and retrying query");
                         self.prepared_stmts.clear();
@@ -81,7 +82,7 @@ impl DbClient {
                     return Err(err);
                 }
             };
-            let mut response = DataTable::with_capacity(rows.len());
+            let mut response = RDataTable::with_capacity(rows.len());
             for row in rows {
                 response.push(T::ResponseRow::try_from_row(&row)?);
             }
@@ -95,10 +96,10 @@ impl DbClient {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct DataTable<T> {
+pub struct RDataTable<T> {
     rows: Vec<T>,
 }
-impl<T> DataTable<T> {
+impl<T> RDataTable<T> {
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
             rows: Vec::with_capacity(capacity),
