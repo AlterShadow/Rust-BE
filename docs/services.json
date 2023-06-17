@@ -1114,7 +1114,9 @@
             },
             {
               "name": "quantity",
-              "ty": "String"
+              "ty": {
+                "Optional": "String"
+              }
             },
             {
               "name": "blockchain",
