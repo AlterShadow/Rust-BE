@@ -74,7 +74,6 @@ impl DbClient {
                     if reason.contains("cache lookup failed for type")
                         || reason.contains("cached plan must not change result type")
                         || reason.contains("prepared statement")
-                        || reason.contains("invalid transaction termination")
                     {
                         warn!("Database has been updated. Cleaning cache and retrying query");
                         self.prepared_stmts.clear();
