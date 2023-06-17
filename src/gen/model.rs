@@ -1323,6 +1323,9 @@ pub struct ListStrategiesRow {
     #[serde(default)]
     pub approved_at: Option<i64>,
     pub blockchain: EnumBlockChain,
+    #[serde(default)]
+    pub requested_at: Option<i64>,
+    pub created_at: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -2354,6 +2357,16 @@ impl WsRequest for UserListFollowedStrategiesRequest {
               "ty": {
                 "EnumRef": "block_chain"
               }
+            },
+            {
+              "name": "requested_at",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "created_at",
+              "ty": "BigInt"
             }
           ]
         }
@@ -2516,6 +2529,16 @@ impl WsRequest for UserListStrategiesRequest {
               "ty": {
                 "EnumRef": "block_chain"
               }
+            },
+            {
+              "name": "requested_at",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "created_at",
+              "ty": "BigInt"
             }
           ]
         }
@@ -2621,6 +2644,16 @@ impl WsRequest for UserListTopPerformingStrategiesRequest {
               "ty": {
                 "EnumRef": "block_chain"
               }
+            },
+            {
+              "name": "requested_at",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "created_at",
+              "ty": "BigInt"
             }
           ]
         }
@@ -3317,6 +3350,16 @@ impl WsRequest for UserListBackedStrategiesRequest {
               "ty": {
                 "EnumRef": "block_chain"
               }
+            },
+            {
+              "name": "requested_at",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "created_at",
+              "ty": "BigInt"
             }
           ]
         }
@@ -4208,6 +4251,16 @@ impl WsRequest for UserGetExpertProfileRequest {
               "ty": {
                 "EnumRef": "block_chain"
               }
+            },
+            {
+              "name": "requested_at",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "created_at",
+              "ty": "BigInt"
             }
           ]
         }
@@ -4420,6 +4473,16 @@ impl WsRequest for UserGetUserProfileRequest {
               "ty": {
                 "EnumRef": "block_chain"
               }
+            },
+            {
+              "name": "requested_at",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "created_at",
+              "ty": "BigInt"
             }
           ]
         }
@@ -4494,6 +4557,16 @@ impl WsRequest for UserGetUserProfileRequest {
               "ty": {
                 "EnumRef": "block_chain"
               }
+            },
+            {
+              "name": "requested_at",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "created_at",
+              "ty": "BigInt"
             }
           ]
         }
@@ -6281,6 +6354,16 @@ impl WsRequest for AdminListStrategiesRequest {
               "ty": {
                 "EnumRef": "block_chain"
               }
+            },
+            {
+              "name": "requested_at",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "created_at",
+              "ty": "BigInt"
             }
           ]
         }

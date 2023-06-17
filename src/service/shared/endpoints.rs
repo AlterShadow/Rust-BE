@@ -18,6 +18,8 @@ pub fn list_strategies_datatable() -> Type {
             Field::new("approved", Type::Boolean),
             Field::new("approved_at", Type::optional(Type::BigInt)),
             Field::new("blockchain", Type::enum_ref("block_chain")),
+            Field::new("requested_at", Type::optional(Type::BigInt)),
+            Field::new("created_at", Type::BigInt),
         ],
     )
 }

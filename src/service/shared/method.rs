@@ -25,6 +25,8 @@ pub fn convert_strategy_db_to_api(x: FunUserStrategyRowType) -> ListStrategiesRo
         wallet_address: x.linked_wallet.unwrap_or_default(),
         approved: x.approved,
         approved_at: x.approved_at,
+        requested_at: x.requested_at,
+        created_at: x.created_at,
         blockchain: x
             .linked_wallet_blockchain
             .unwrap_or(EnumBlockChain::LocalNet),

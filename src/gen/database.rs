@@ -434,6 +434,8 @@ pub struct FunUserStrategyRowType {
     pub followers: i64,
     pub backers: i64,
     pub followed: bool,
+    #[serde(default)]
+    pub requested_at: Option<i64>,
     pub approved: bool,
     #[serde(default)]
     pub approved_at: Option<i64>,
