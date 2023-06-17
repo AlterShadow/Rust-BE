@@ -2326,7 +2326,7 @@ mod tests {
             EnumBlockchainCoin::BUSD,
             escrow_contract,
             &DexAddresses::new(),
-            secure_eoa_key,
+            master_key,
         )
         .await?;
 
@@ -2334,6 +2334,7 @@ mod tests {
         let strategy = db
             .execute(FunUserGetStrategyReq {
                 strategy_id: strategy.strategy_id,
+                user_id: ret.user_id,
             })
             .await?
             .into_result()
@@ -2348,7 +2349,21 @@ mod tests {
                 })?
                 .as_ref(),
         )?;
+
+        /* instantiate strategy pool contract */
         let sp_contract = StrategyPoolContract::new(conn.clone(), sp_address)?;
+
+        /* fetch user's strategy wallet address on this chain */
+        let strategy_wallet_address = Address::from_str(
+            &db.execute(FunUserListStrategyWalletsReq {
+                user_id: ret.user_id,
+                blockchain: Some(EnumBlockChain::BscTestnet),
+            })
+            .await?
+            .into_result()
+            .context("could not retrieve strategy wallet address")?
+            .address,
+        )?;
 
         /* check that SP has positive WBNB balance */
         let sp_assets = sp_contract.assets().await?;
@@ -2366,9 +2381,9 @@ mod tests {
                 > U256::zero()
         );
 
-        /* check that user has shares > 9 * 1e18 */
+        /* check that user's strategy wallet has shares > 9 * 1e18 */
         assert!(
-            sp_contract.balance_of(user_key.address()).await?
+            sp_contract.balance_of(strategy_wallet_address).await?
                 > U256::from(9).try_checked_mul(U256::from(busd_decimals))?
         );
         /* check that SP has shares > 9 * 1e18 */
