@@ -1,5 +1,5 @@
 -- Created by Vertabelo (http://vertabelo.com)
--- Last modification date: 2023-06-14 15:28:11.804
+-- Last modification date: 2023-06-17 03:46:04.971
 
 CREATE SCHEMA IF NOT EXISTS tbl;;
 
@@ -119,7 +119,7 @@ CREATE TABLE tbl.strategy (
     created_at bigint  NOT NULL,
     pending_approval boolean  NOT NULL DEFAULT FALSE,
     approved boolean  NOT NULL DEFAULT FALSE,
-    approved_at bigint,
+    approved_at bigint  NULL,
     CONSTRAINT strategy_pk PRIMARY KEY (pkey_id)
 );
 
@@ -134,6 +134,17 @@ CREATE TABLE tbl.strategy_initial_token_ratio (
     updated_at bigint  NOT NULL,
     created_at bigint  NOT NULL,
     CONSTRAINT strategy_initial_token_ratio_pk PRIMARY KEY (pkey_id)
+);
+
+-- Table: strategy_wallet
+CREATE TABLE tbl.strategy_wallet (
+    pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_strategy_wallet_id'),
+    address varchar(64)  NOT NULL,
+    blockchain enum_block_chain  NOT NULL,
+    fkey_user_id bigint  NOT NULL,
+    created_at bigint  NOT NULL,
+    CONSTRAINT strategy_wallet_ak_1 UNIQUE (address, blockchain) NOT DEFERRABLE  INITIALLY IMMEDIATE,
+    CONSTRAINT strategy_wallet_pk PRIMARY KEY (pkey_id)
 );
 
 -- Table: strategy_watching_wallet
@@ -375,6 +386,14 @@ ALTER TABLE tbl.strategy_watching_wallet ADD CONSTRAINT strategy_strategy_watchi
     INITIALLY IMMEDIATE
 ;
 
+-- Reference: strategy_wallet_user (table: strategy_wallet)
+ALTER TABLE tbl.strategy_wallet ADD CONSTRAINT strategy_wallet_user
+    FOREIGN KEY (fkey_user_id)
+    REFERENCES tbl."user" (pkey_id)  
+    NOT DEFERRABLE 
+    INITIALLY IMMEDIATE
+;
+
 -- Reference: user_back_strategy_history_strategy (table: user_back_strategy_history)
 ALTER TABLE tbl.user_back_strategy_history ADD CONSTRAINT user_back_strategy_history_strategy
     FOREIGN KEY (fkey_strategy_id)
@@ -518,6 +537,13 @@ CREATE SEQUENCE tbl.seq_strategy_id
 
 -- Sequence: seq_strategy_initial_token_ratio_id
 CREATE SEQUENCE tbl.seq_strategy_initial_token_ratio_id
+      NO MINVALUE
+      NO MAXVALUE
+      NO CYCLE
+;
+
+-- Sequence: seq_strategy_wallet_id
+CREATE SEQUENCE tbl.seq_strategy_wallet_id
       NO MINVALUE
       NO MAXVALUE
       NO CYCLE

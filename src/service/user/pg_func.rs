@@ -1333,5 +1333,40 @@ BEGIN
 END
             "#,
         ),
+        ProceduralFunction::new(
+            "fun_user_add_strategy_wallet",
+            vec![
+                Field::new("user_id", Type::BigInt),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("address", Type::String),
+            ],
+            vec![],
+            r#"
+BEGIN
+    INSERT INTO tbl.user_registered_wallet (fkey_user_id, blockchain, address, created_at) 
+    VALUES (a_user_id, a_blockchain, a_address, EXTRACT(EPOCH FROM NOW())::BIGINT);
+END
+            "#,
+        ),
+        ProceduralFunction::new(
+            "fun_user_list_strategy_wallets",
+            vec![
+                Field::new("user_id", Type::BigInt),
+                Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
+            ],
+            vec![
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("address", Type::String),
+                Field::new("created_at", Type::BigInt),
+            ],
+            r#"
+BEGIN
+    RETURN QUERY SELECT a.blockchain, a.address, a.created_at 
+    FROM tbl.user_registered_wallet AS a 
+    WHERE a.fkey_user_id = a_user_id 
+        AND (a_blockchain ISNULL OR a.blockchain = a_blockchain);
+END
+            "#,
+        ),
     ]
 }

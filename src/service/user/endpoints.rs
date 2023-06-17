@@ -860,5 +860,24 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 ),
             )],
         ),
+        EndpointSchema::new(
+            "UserListStrategyWallets",
+            20390,
+            vec![Field::new(
+                "blockchain",
+                Type::optional(Type::enum_ref("block_chain")),
+            )],
+            vec![Field::new(
+                "wallets",
+                Type::datatable(
+                    "UserListStrategyWalletsRow",
+                    vec![
+                        Field::new("blockchain", Type::enum_ref("block_chain")),
+                        Field::new("address", Type::String),
+                        Field::new("created_at", Type::BigInt),
+                    ],
+                ),
+            )],
+        ),
     ]
 }

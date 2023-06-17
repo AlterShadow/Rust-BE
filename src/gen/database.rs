@@ -2272,6 +2272,69 @@ impl DatabaseRequest for FunUserGetUserByAddressReq {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserAddStrategyWalletReq {
+    pub user_id: i64,
+    pub blockchain: EnumBlockChain,
+    pub address: String,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserAddStrategyWalletRespRow {}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunUserAddStrategyWalletReq {
+    type ResponseRow = FunUserAddStrategyWalletRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_add_strategy_wallet(a_user_id => $1::bigint, a_blockchain => $2::enum_block_chain, a_address => $3::varchar);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.blockchain as &(dyn ToSql + Sync),
+            &self.address as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserAddStrategyWalletRespRow> {
+        let r = FunUserAddStrategyWalletRespRow {};
+        Ok(r)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserListStrategyWalletsReq {
+    pub user_id: i64,
+    #[serde(default)]
+    pub blockchain: Option<EnumBlockChain>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserListStrategyWalletsRespRow {
+    pub blockchain: EnumBlockChain,
+    pub address: String,
+    pub created_at: i64,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunUserListStrategyWalletsReq {
+    type ResponseRow = FunUserListStrategyWalletsRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_list_strategy_wallets(a_user_id => $1::bigint, a_blockchain => $2::enum_block_chain);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.blockchain as &(dyn ToSql + Sync),
+        ]
+    }
+    fn parse_row(&self, row: Row) -> Result<FunUserListStrategyWalletsRespRow> {
+        let r = FunUserListStrategyWalletsRespRow {
+            blockchain: row.try_get(0).context("failed to get field blockchain")?,
+            address: row.try_get(1).context("failed to get field address")?,
+            created_at: row.try_get(2).context("failed to get field created_at")?,
+        };
+        Ok(r)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAdminListUsersReq {
     pub limit: i64,
     pub offset: i64,

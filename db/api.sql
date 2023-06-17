@@ -1531,6 +1531,38 @@ END
 $$;
         
 
+CREATE OR REPLACE FUNCTION api.fun_user_add_strategy_wallet(a_user_id bigint, a_blockchain enum_block_chain, a_address varchar)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    INSERT INTO tbl.user_registered_wallet (fkey_user_id, blockchain, address, created_at) 
+    VALUES (a_user_id, a_blockchain, a_address, EXTRACT(EPOCH FROM NOW())::BIGINT);
+END
+            
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_list_strategy_wallets(a_user_id bigint, a_blockchain enum_block_chain DEFAULT NULL)
+RETURNS table (
+    "blockchain" enum_block_chain,
+    "address" varchar,
+    "created_at" bigint
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY SELECT a.blockchain, a.address, a.created_at 
+    FROM tbl.user_registered_wallet AS a 
+    WHERE a.fkey_user_id = a_user_id 
+        AND (a_blockchain ISNULL OR a.blockchain = a_blockchain);
+END
+            
+$$;
+        
+
 CREATE OR REPLACE FUNCTION api.fun_admin_list_users(a_limit bigint, a_offset bigint, a_user_id bigint DEFAULT NULL, a_address varchar DEFAULT NULL, a_username varchar DEFAULT NULL, a_email varchar DEFAULT NULL, a_role enum_role DEFAULT NULL)
 RETURNS table (
     "user_id" bigint,

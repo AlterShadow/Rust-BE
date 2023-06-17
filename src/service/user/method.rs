@@ -2272,6 +2272,38 @@ impl RequestHandler for MethodUserListDepositHistory {
         .boxed()
     }
 }
+pub struct MethodUserListStrategyWallets;
+impl RequestHandler for MethodUserListStrategyWallets {
+    type Request = UserListStrategyWalletsRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db: DbClient = toolbox.get_db();
+        async move {
+            let resp = db
+                .execute(FunUserListStrategyWalletsReq {
+                    user_id: ctx.user_id,
+                    blockchain: req.blockchain,
+                })
+                .await?;
+            Ok(UserListStrategyWalletsResponse {
+                wallets: resp
+                    .into_iter()
+                    .map(|x| UserListStrategyWalletsRow {
+                        blockchain: x.blockchain,
+                        address: x.address,
+                        created_at: x.created_at,
+                    })
+                    .collect(),
+            })
+        }
+        .boxed()
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;

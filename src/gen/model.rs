@@ -366,6 +366,9 @@ pub enum EnumEndpoint {
     #[postgres(name = "UserListDepositHistory")]
     UserListDepositHistory = 20380,
     ///
+    #[postgres(name = "UserListStrategyWallets")]
+    UserListStrategyWallets = 20390,
+    ///
     #[postgres(name = "AdminListUsers")]
     AdminListUsers = 30010,
     ///
@@ -1948,6 +1951,24 @@ pub struct UserListStrategyInitialTokenRatioRequest {
 #[serde(rename_all = "camelCase")]
 pub struct UserListStrategyInitialTokenRatioResponse {
     pub token_ratios: Vec<ListStrategyInitialTokenRatioRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListStrategyWalletsRequest {
+    #[serde(default)]
+    pub blockchain: Option<EnumBlockChain>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListStrategyWalletsResponse {
+    pub wallets: Vec<UserListStrategyWalletsRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListStrategyWalletsRow {
+    pub blockchain: EnumBlockChain,
+    pub address: String,
+    pub created_at: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -5466,6 +5487,57 @@ impl WsRequest for UserListDepositHistoryRequest {
 }
 impl WsResponse for UserListDepositHistoryResponse {
     type Request = UserListDepositHistoryRequest;
+}
+
+impl WsRequest for UserListStrategyWalletsRequest {
+    type Response = UserListStrategyWalletsResponse;
+    const METHOD_ID: u32 = 20390;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserListStrategyWallets",
+  "code": 20390,
+  "parameters": [
+    {
+      "name": "blockchain",
+      "ty": {
+        "Optional": {
+          "EnumRef": "block_chain"
+        }
+      }
+    }
+  ],
+  "returns": [
+    {
+      "name": "wallets",
+      "ty": {
+        "DataTable": {
+          "name": "UserListStrategyWalletsRow",
+          "fields": [
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
+            },
+            {
+              "name": "address",
+              "ty": "String"
+            },
+            {
+              "name": "created_at",
+              "ty": "BigInt"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for UserListStrategyWalletsResponse {
+    type Request = UserListStrategyWalletsRequest;
 }
 
 impl WsRequest for AdminListUsersRequest {

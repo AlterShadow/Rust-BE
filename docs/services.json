@@ -3025,6 +3025,49 @@
           "stream_response": [],
           "description": "",
           "json_schema": null
+        },
+        {
+          "name": "UserListStrategyWallets",
+          "code": 20390,
+          "parameters": [
+            {
+              "name": "blockchain",
+              "ty": {
+                "Optional": {
+                  "EnumRef": "block_chain"
+                }
+              }
+            }
+          ],
+          "returns": [
+            {
+              "name": "wallets",
+              "ty": {
+                "DataTable": {
+                  "name": "UserListStrategyWalletsRow",
+                  "fields": [
+                    {
+                      "name": "blockchain",
+                      "ty": {
+                        "EnumRef": "block_chain"
+                      }
+                    },
+                    {
+                      "name": "address",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "created_at",
+                      "ty": "BigInt"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "stream_response": [],
+          "description": "",
+          "json_schema": null
         }
       ]
     },
