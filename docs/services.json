@@ -1115,6 +1115,12 @@
             {
               "name": "quantity",
               "ty": "String"
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
             }
           ],
           "returns": [

@@ -1494,6 +1494,7 @@ pub struct UserDeregisterWalletResponse {
 pub struct UserExitStrategyRequest {
     pub strategy_id: i64,
     pub quantity: String,
+    pub blockchain: EnumBlockChain,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -3254,6 +3255,12 @@ impl WsRequest for UserExitStrategyRequest {
     {
       "name": "quantity",
       "ty": "String"
+    },
+    {
+      "name": "blockchain",
+      "ty": {
+        "EnumRef": "block_chain"
+      }
     }
   ],
   "returns": [
