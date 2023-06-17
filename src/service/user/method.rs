@@ -6,6 +6,10 @@ use eth_sdk::escrow::{AbstractEscrowContract, EscrowContract};
 use eth_sdk::pair_paths::WorkingPancakePairPaths;
 use eth_sdk::signer::Secp256k1SecretKey;
 use eth_sdk::strategy_pool::{deposit_and_ensure_success, StrategyPoolContract};
+use eth_sdk::strategy_wallet::{
+    full_redeem_from_strategy_and_ensure_success, redeem_from_strategy_and_ensure_success,
+    StrategyWalletContract,
+};
 use eth_sdk::utils::verify_message_address;
 use eth_sdk::v3::smart_router::copy_trade_and_ensure_success;
 use eth_sdk::v3::smart_router::PancakeSmartRouterV3Contract;
@@ -406,6 +410,21 @@ impl RequestHandler for MethodUserListBackedStrategies {
     }
 }
 
+pub async fn deploy_wallet_contract(
+    conn: &EthereumRpcConnection,
+    key: impl Key,
+    backer: Address,
+    admin: Address,
+) -> Result<StrategyWalletContract<EitherTransport>> {
+    info!("Deploying wallet contract");
+
+    let wallet = StrategyWalletContract::deploy(conn.clone(), key, backer, admin).await?;
+
+    info!("Deploy wallet contract success");
+
+    Ok(wallet)
+}
+
 pub async fn deploy_strategy_contract(
     conn: &EthereumRpcConnection,
     key: impl Key,
@@ -463,6 +482,45 @@ pub async fn user_back_strategy(
             .try_get("address")?,
     )?;
 
+    /* instantiate strategy wallet contract wrapper */
+    let strategy_wallet_contract = match db
+        .execute(FunUserListStrategyWalletsReq {
+            user_id: ctx.user_id,
+            blockchain: Some(chain),
+        })
+        .await?
+        .into_result()
+    {
+        Some(strategy_wallet_contract) => {
+            /* if user has wallet on this chain, use it */
+            StrategyWalletContract::new(
+                conn.clone(),
+                Address::from_str(&strategy_wallet_contract.address)?,
+            )?
+        }
+        None => {
+            /* if user does not have a wallet on this chain, deploy it, and use it */
+            // TODO: add admin as Address::zero() if user has opted out of having an admin
+            let strategy_wallet_contract = deploy_wallet_contract(
+                &conn,
+                master_key.clone(),
+                user_wallet_address_to_receive_shares_on_this_chain,
+                master_key.address(),
+            )
+            .await?;
+
+            /* save wallet to database */
+            db.execute(FunUserAddStrategyWalletReq {
+                user_id: ctx.user_id,
+                blockchain: chain,
+                address: format!("{:?}", strategy_wallet_contract.address()),
+            })
+            .await?;
+
+            strategy_wallet_contract
+        }
+    };
+
     /* fetch strategy */
     let strategy = db
         .execute(FunUserGetStrategyReq {
@@ -471,7 +529,7 @@ pub async fn user_back_strategy(
         })
         .await?
         .into_result()
-        .context("user_registered_strategy")?;
+        .context("strategy is not registered in the database")?;
 
     /* fetch strategy's tokens */
     let strategy_token_rows = db
@@ -508,7 +566,7 @@ pub async fn user_back_strategy(
         strategy_tokens_and_amounts_on_this_chain,
     )?;
 
-    /* instanciate strategy contract wrapper */
+    /* instantiate strategy contract wrapper */
     // TODO: add addresses for strategy contract on multiple chains to database
     let sp_contract: StrategyPoolContract<EitherTransport>;
     match strategy.evm_contract_address {
@@ -580,7 +638,7 @@ pub async fn user_back_strategy(
     )
     .await?;
 
-    /* instanciate pancake contract */
+    /* instantiate pancake contract */
     let pancake_contract = PancakeSmartRouterV3Contract::new(
         conn.clone(),
         dex_addresses
@@ -654,7 +712,7 @@ pub async fn user_back_strategy(
         tokens_to_deposit,
         amounts_to_deposit,
         shares_to_mint,
-        user_wallet_address_to_receive_shares_on_this_chain,
+        strategy_wallet_contract.address(),
     )
     .await?;
 
