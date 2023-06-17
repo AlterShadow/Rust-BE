@@ -71,7 +71,6 @@ mod tests {
             .await?;
         assert_eq!(mock_erc20.balance_of(alice.address).await?, U256::from(5));
         assert_eq!(mock_erc20.total_supply().await?, U256::from(5));
-
         mock_erc20
             .transfer(&conn, alice.clone(), bob.address, U256::from(5))
             .await?;
@@ -114,68 +113,48 @@ mod tests {
         assert_eq!(mock_erc20.total_supply().await?, U256::from(0));
 
         /* negative assertions */
-        assert_eq!(
-            tx_checker
-                .status(
-                    mock_erc20
-                        .transfer(&conn, alice.clone(), bob.address, U256::from(1))
-                        .await?
-                )
-                .await?,
-            TxStatus::Reverted,
-        );
-        assert_eq!(
-            tx_checker
-                .status(
-                    mock_erc20
-                        .transfer(&conn, bob.clone(), alice.address, U256::from(1))
-                        .await?
-                )
-                .await?,
-            TxStatus::Reverted,
-        );
-        assert_eq!(
-            tx_checker
-                .status(
-                    mock_erc20
-                        .transfer(&conn, charlie.clone(), alice.address, U256::from(1))
-                        .await?
-                )
-                .await?,
-            TxStatus::Reverted,
-        );
+        assert!(matches!(
+            mock_erc20
+                .transfer(&conn, alice.clone(), bob.address, U256::from(1))
+                .await,
+            Err(_)
+        ));
+        assert!(matches!(
+            mock_erc20
+                .transfer(&conn, bob.clone(), alice.address, U256::from(1))
+                .await,
+            Err(_)
+        ));
+        assert!(matches!(
+            mock_erc20
+                .transfer(&conn, charlie.clone(), alice.address, U256::from(1))
+                .await,
+            Err(_)
+        ));
         mock_erc20
             .mint(&conn, key.clone(), alice.address, U256::from(10))
             .await?;
         mock_erc20
             .approve(&conn, alice.clone(), bob.address, U256::from(5))
             .await?;
-        assert_eq!(
-            tx_checker
-                .status(
-                    mock_erc20
-                        .transfer_from(
-                            &conn,
-                            bob.clone(),
-                            alice.address,
-                            charlie.address,
-                            U256::from(6),
-                        )
-                        .await?
+        assert!(matches!(
+            mock_erc20
+                .transfer_from(
+                    &conn,
+                    bob.clone(),
+                    alice.address,
+                    charlie.address,
+                    U256::from(6),
                 )
-                .await?,
-            TxStatus::Reverted,
-        );
-        assert_eq!(
-            tx_checker
-                .status(
-                    mock_erc20
-                        .transfer(&conn, alice.clone(), charlie.address, U256::from(11))
-                        .await?
-                )
-                .await?,
-            TxStatus::Reverted,
-        );
+                .await,
+            Err(_)
+        ));
+        assert!(matches!(
+            mock_erc20
+                .transfer(&conn, alice.clone(), charlie.address, U256::from(11))
+                .await,
+            Err(_)
+        ));
         Ok(())
     }
 }
