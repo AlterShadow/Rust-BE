@@ -57,7 +57,7 @@ impl DbClient {
                 .context("Failed to connect to database")?;
             let statement = client.prepare(req.statement()).await?;
             // TODO: cache statement along with the client into prepared_stmts. other wise there will be runtime error
-            let rows = match self.query(&statement, &req.params()).await {
+            let rows = match client.query(&statement, &req.params()).await {
                 Ok(rows) => rows,
                 Err(err) => {
                     let reason = err.to_string();
@@ -70,7 +70,7 @@ impl DbClient {
                         error = Some(err);
                         continue;
                     }
-                    return Err(err);
+                    return Err(err.into());
                 }
             };
             let mut response = RDataTable::with_capacity(rows.len());
@@ -79,7 +79,7 @@ impl DbClient {
             }
             return Ok(response);
         }
-        Err(error.unwrap())
+        Err(error.unwrap().into())
     }
     pub fn conn_hash(&self) -> u64 {
         self.conn_hash
