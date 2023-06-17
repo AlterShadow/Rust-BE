@@ -4,7 +4,9 @@ use eyre::*;
 use tracing::info;
 use web3::contract::tokens::Tokenize;
 use web3::contract::{Contract, Options};
+use web3::ethabi;
 use web3::signing::Key;
+use web3::types::Bytes;
 use web3::{Transport, Web3};
 
 pub mod erc20;
@@ -16,7 +18,7 @@ pub mod wrapped_token;
 pub async fn deploy_contract<T: Transport>(
     w3: Web3<T>,
     key: impl Key,
-    params: impl Tokenize,
+    params: impl Tokenize + Clone,
     contract_name: &str,
 ) -> Result<Contract<T>> {
     let base = get_project_root().parent().unwrap().to_owned();
@@ -32,10 +34,43 @@ pub async fn deploy_contract<T: Transport>(
     ));
     info!("Reading {}", bin_path.display());
     let bin = std::fs::read_to_string(bin_path)?;
-    // web3::contract::web3 never worked: Abi error: Invalid data for ABI json
+
+    /* encode constructor parameters */
+    let constructor_params = ethabi::encode(&params.clone().into_tokens());
+
+    /* decode contract bytecode from hex */
+    let bin_bytes = hex::decode(&bin)?;
+
+    /* append encoded parameters to bytecode bytes */
+    let code_with_constructor = [bin_bytes, constructor_params].concat();
+
+    /* estimate gas */
+    let estimated_gas = w3
+        .eth()
+        .estimate_gas(
+            web3::types::CallRequest {
+                from: None,
+                to: None, // for contract deployment this must be None
+                gas: None,
+                gas_price: None,
+                value: None,
+                data: Some(Bytes::from(code_with_constructor)),
+                transaction_type: None,
+                access_list: None,
+                max_fee_per_gas: None,
+                max_priority_fee_per_gas: None,
+            },
+            None,
+        )
+        .await?;
+
+    /* estimate gas price */
+    let estimated_gas_price = w3.eth().gas_price().await?;
+
+    /* setup options with GAS estimations */
     let options = Options {
-        gas: Some(20000000.into()),
-        gas_price: None,
+        gas: Some(estimated_gas),
+        gas_price: Some(estimated_gas_price),
         value: None,
         nonce: None,
         condition: None,
