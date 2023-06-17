@@ -56,7 +56,6 @@ pub struct EscrowContract<T: Transport> {
 }
 
 impl<T: Transport> EscrowContract<T> {
-    // only for testing
     pub async fn deploy(w3: Web3<T>, key: impl Key) -> Result<Self> {
         let address = key.address();
         let contract = deploy_contract(w3, key, address, "Escrow").await?;

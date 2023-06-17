@@ -42,7 +42,6 @@ pub struct StrategyPoolContract<T: Transport> {
 }
 
 impl<T: Transport> StrategyPoolContract<T> {
-    // only for testing
     pub async fn deploy(w3: Web3<T>, key: impl Key, name: String, symbol: String) -> Result<Self> {
         let params = (name.clone(), symbol.clone(), key.address());
         let contract = deploy_contract(w3.clone(), key, params, "StrategyPool").await?;

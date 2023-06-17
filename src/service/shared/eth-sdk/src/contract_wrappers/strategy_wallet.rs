@@ -43,7 +43,6 @@ pub struct StrategyWalletContract<T: Transport> {
 }
 
 impl<T: Transport> StrategyWalletContract<T> {
-    // only for testing
     pub async fn deploy(
         w3: Web3<T>,
         key: impl Key,
