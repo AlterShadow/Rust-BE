@@ -363,7 +363,9 @@ RETURNS table (
     "created_at" bigint,
     "creator_public_id" bigint,
     "creator_id" bigint,
-    "creator_username" varchar
+    "creator_username" varchar,
+    "creator_family_name" varchar,
+    "creator_given_name" varchar
 )
 LANGUAGE plpgsql
 AS $$
@@ -391,7 +393,9 @@ BEGIN
       s.created_at as created_at,
       u.public_id as creator_public_id,
       u.pkey_id as creator_id,
-      u.username as creator_username
+      u.username as creator_username,
+      u.family_name as creator_family_name,
+      u.given_name as creator_given_name
       
                  FROM tbl.strategy AS s
                      LEFT JOIN tbl.strategy_watching_wallet AS w ON w.fkey_strategy_id = (SELECT distinct w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id LIMIT 1)
@@ -431,7 +435,9 @@ RETURNS table (
     "created_at" bigint,
     "creator_public_id" bigint,
     "creator_id" bigint,
-    "creator_username" varchar
+    "creator_username" varchar,
+    "creator_family_name" varchar,
+    "creator_given_name" varchar
 )
 LANGUAGE plpgsql
 AS $$
@@ -459,7 +465,9 @@ BEGIN
       s.created_at as created_at,
       u.public_id as creator_public_id,
       u.pkey_id as creator_id,
-      u.username as creator_username
+      u.username as creator_username,
+      u.family_name as creator_family_name,
+      u.given_name as creator_given_name
       
                  FROM tbl.strategy AS s
                         JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id
@@ -537,7 +545,9 @@ RETURNS table (
     "created_at" bigint,
     "creator_public_id" bigint,
     "creator_id" bigint,
-    "creator_username" varchar
+    "creator_username" varchar,
+    "creator_family_name" varchar,
+    "creator_given_name" varchar
 )
 LANGUAGE plpgsql
 AS $$
@@ -565,7 +575,9 @@ BEGIN
       s.created_at as created_at,
       u.public_id as creator_public_id,
       u.pkey_id as creator_id,
-      u.username as creator_username
+      u.username as creator_username,
+      u.family_name as creator_family_name,
+      u.given_name as creator_given_name
       
                  FROM tbl.strategy AS s
                     LEFT JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id
@@ -717,7 +729,9 @@ RETURNS table (
     "created_at" bigint,
     "creator_public_id" bigint,
     "creator_id" bigint,
-    "creator_username" varchar
+    "creator_username" varchar,
+    "creator_family_name" varchar,
+    "creator_given_name" varchar
 )
 LANGUAGE plpgsql
 AS $$
@@ -745,7 +759,9 @@ BEGIN
       s.created_at as created_at,
       u.public_id as creator_public_id,
       u.pkey_id as creator_id,
-      u.username as creator_username
+      u.username as creator_username,
+      u.family_name as creator_family_name,
+      u.given_name as creator_given_name
       
                  FROM tbl.strategy AS s
                       JOIN tbl.user_back_strategy_history AS b ON b.fkey_strategy_id = s.pkey_id AND b.fkey_user_id = a_user_id
@@ -1983,7 +1999,9 @@ RETURNS table (
     "created_at" bigint,
     "creator_public_id" bigint,
     "creator_id" bigint,
-    "creator_username" varchar
+    "creator_username" varchar,
+    "creator_family_name" varchar,
+    "creator_given_name" varchar
 )
 LANGUAGE plpgsql
 AS $$
@@ -2013,7 +2031,9 @@ BEGIN
       s.created_at as created_at,
       u.public_id as creator_public_id,
       u.pkey_id as creator_id,
-      u.username as creator_username
+      u.username as creator_username,
+      u.family_name as creator_family_name,
+      u.given_name as creator_given_name
       
                  FROM tbl.strategy AS s
                       LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = (SELECT distinct w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id LIMIT 1)

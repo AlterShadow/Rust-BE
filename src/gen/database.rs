@@ -450,6 +450,10 @@ pub struct FunUserStrategyRowType {
     pub creator_public_id: i64,
     pub creator_id: i64,
     pub creator_username: String,
+    #[serde(default)]
+    pub creator_family_name: Option<String>,
+    #[serde(default)]
+    pub creator_given_name: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]

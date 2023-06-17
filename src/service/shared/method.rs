@@ -27,6 +27,10 @@ pub fn convert_strategy_db_to_api(x: FunUserStrategyRowType) -> ListStrategiesRo
         approved_at: x.approved_at,
         requested_at: x.requested_at,
         created_at: x.created_at,
+        expert_public_id: x.creator_public_id,
+        expert_username: x.creator_username,
+        expert_family_name: x.creator_family_name.unwrap_or_default(),
+        expert_given_name: x.creator_given_name.unwrap_or_default(),
         blockchain: x
             .linked_wallet_blockchain
             .unwrap_or(EnumBlockChain::LocalNet),

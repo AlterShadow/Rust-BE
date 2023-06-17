@@ -1,10 +1,11 @@
+use crate::datatable::RDataTable;
 use dashmap::DashMap;
 use deadpool_postgres::Runtime;
 use deadpool_postgres::*;
 use eyre::*;
 use postgres_from_row::FromRow;
 use serde::de::DeserializeOwned;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::Hash;
 use std::hash::Hasher;
@@ -73,6 +74,7 @@ impl DbClient {
                     if reason.contains("cache lookup failed for type")
                         || reason.contains("cached plan must not change result type")
                         || reason.contains("prepared statement")
+                        || reason.contains("invalid transaction termination")
                     {
                         warn!("Database has been updated. Cleaning cache and retrying query");
                         self.prepared_stmts.clear();
@@ -95,44 +97,6 @@ impl DbClient {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct RDataTable<T> {
-    rows: Vec<T>,
-}
-impl<T> RDataTable<T> {
-    pub fn with_capacity(capacity: usize) -> Self {
-        Self {
-            rows: Vec::with_capacity(capacity),
-        }
-    }
-    pub fn first<R>(&self, f: impl Fn(&T) -> R) -> Option<R> {
-        self.rows.first().map(|x| f(x))
-    }
-    pub fn rows(&self) -> &Vec<T> {
-        &self.rows
-    }
-    pub fn into_rows(self) -> Vec<T> {
-        self.rows
-    }
-    pub fn into_iter(self) -> impl Iterator<Item = T> {
-        self.rows.into_iter()
-    }
-    pub fn len(&self) -> usize {
-        self.rows.len()
-    }
-    pub fn is_empty(&self) -> bool {
-        self.rows.is_empty()
-    }
-    pub fn into_result(self) -> Option<T> {
-        self.rows.into_iter().next()
-    }
-    pub fn push(&mut self, row: T) {
-        self.rows.push(row);
-    }
-    pub fn map<R>(self, f: impl Fn(T) -> R) -> Vec<R> {
-        self.rows.into_iter().map(f).collect()
-    }
-}
 pub async fn connect_to_database(config: DatabaseConfig) -> Result<DbClient> {
     info!(
         "Connecting to database {}:{} {}",

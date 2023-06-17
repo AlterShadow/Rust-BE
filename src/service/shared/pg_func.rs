@@ -43,6 +43,8 @@ pub fn strategy_row_type() -> Type {
             Field::new("creator_public_id", Type::BigInt),
             Field::new("creator_id", Type::BigInt),
             Field::new("creator_username", Type::String),
+            Field::new("creator_family_name", Type::optional(Type::String)),
+            Field::new("creator_given_name", Type::optional(Type::String)),
         ],
     )
 }
@@ -70,7 +72,9 @@ pub fn get_strategy(followed: &str) -> String {
       s.created_at as created_at,
       u.public_id as creator_public_id,
       u.pkey_id as creator_id,
-      u.username as creator_username
+      u.username as creator_username,
+      u.family_name as creator_family_name,
+      u.given_name as creator_given_name
       ",
         followers = get_strategy_followers_count(),
         backers = get_strategy_backers_count(),

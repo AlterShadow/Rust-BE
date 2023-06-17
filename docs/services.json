@@ -320,6 +320,22 @@
                     {
                       "name": "created_at",
                       "ty": "BigInt"
+                    },
+                    {
+                      "name": "expert_public_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "expert_username",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "expert_family_name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "expert_given_name",
+                      "ty": "String"
                     }
                   ]
                 }
@@ -476,6 +492,22 @@
                     {
                       "name": "created_at",
                       "ty": "BigInt"
+                    },
+                    {
+                      "name": "expert_public_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "expert_username",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "expert_family_name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "expert_given_name",
+                      "ty": "String"
                     }
                   ]
                 }
@@ -583,6 +615,22 @@
                     {
                       "name": "created_at",
                       "ty": "BigInt"
+                    },
+                    {
+                      "name": "expert_public_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "expert_username",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "expert_family_name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "expert_given_name",
+                      "ty": "String"
                     }
                   ]
                 }
@@ -1209,6 +1257,22 @@
                     {
                       "name": "created_at",
                       "ty": "BigInt"
+                    },
+                    {
+                      "name": "expert_public_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "expert_username",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "expert_family_name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "expert_given_name",
+                      "ty": "String"
                     }
                   ]
                 }
@@ -2038,6 +2102,22 @@
                     {
                       "name": "created_at",
                       "ty": "BigInt"
+                    },
+                    {
+                      "name": "expert_public_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "expert_username",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "expert_family_name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "expert_given_name",
+                      "ty": "String"
                     }
                   ]
                 }
@@ -2252,6 +2332,22 @@
                     {
                       "name": "created_at",
                       "ty": "BigInt"
+                    },
+                    {
+                      "name": "expert_public_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "expert_username",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "expert_family_name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "expert_given_name",
+                      "ty": "String"
                     }
                   ]
                 }
@@ -2336,6 +2432,22 @@
                     {
                       "name": "created_at",
                       "ty": "BigInt"
+                    },
+                    {
+                      "name": "expert_public_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "expert_username",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "expert_family_name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "expert_given_name",
+                      "ty": "String"
                     }
                   ]
                 }
@@ -3899,6 +4011,22 @@
                     {
                       "name": "created_at",
                       "ty": "BigInt"
+                    },
+                    {
+                      "name": "expert_public_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "expert_username",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "expert_family_name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "expert_given_name",
+                      "ty": "String"
                     }
                   ]
                 }

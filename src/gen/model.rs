@@ -1326,6 +1326,10 @@ pub struct ListStrategiesRow {
     #[serde(default)]
     pub requested_at: Option<i64>,
     pub created_at: i64,
+    pub expert_public_id: i64,
+    pub expert_username: String,
+    pub expert_family_name: String,
+    pub expert_given_name: String,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -2367,6 +2371,22 @@ impl WsRequest for UserListFollowedStrategiesRequest {
             {
               "name": "created_at",
               "ty": "BigInt"
+            },
+            {
+              "name": "expert_public_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "expert_username",
+              "ty": "String"
+            },
+            {
+              "name": "expert_family_name",
+              "ty": "String"
+            },
+            {
+              "name": "expert_given_name",
+              "ty": "String"
             }
           ]
         }
@@ -2539,6 +2559,22 @@ impl WsRequest for UserListStrategiesRequest {
             {
               "name": "created_at",
               "ty": "BigInt"
+            },
+            {
+              "name": "expert_public_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "expert_username",
+              "ty": "String"
+            },
+            {
+              "name": "expert_family_name",
+              "ty": "String"
+            },
+            {
+              "name": "expert_given_name",
+              "ty": "String"
             }
           ]
         }
@@ -2654,6 +2690,22 @@ impl WsRequest for UserListTopPerformingStrategiesRequest {
             {
               "name": "created_at",
               "ty": "BigInt"
+            },
+            {
+              "name": "expert_public_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "expert_username",
+              "ty": "String"
+            },
+            {
+              "name": "expert_family_name",
+              "ty": "String"
+            },
+            {
+              "name": "expert_given_name",
+              "ty": "String"
             }
           ]
         }
@@ -3360,6 +3412,22 @@ impl WsRequest for UserListBackedStrategiesRequest {
             {
               "name": "created_at",
               "ty": "BigInt"
+            },
+            {
+              "name": "expert_public_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "expert_username",
+              "ty": "String"
+            },
+            {
+              "name": "expert_family_name",
+              "ty": "String"
+            },
+            {
+              "name": "expert_given_name",
+              "ty": "String"
             }
           ]
         }
@@ -4261,6 +4329,22 @@ impl WsRequest for UserGetExpertProfileRequest {
             {
               "name": "created_at",
               "ty": "BigInt"
+            },
+            {
+              "name": "expert_public_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "expert_username",
+              "ty": "String"
+            },
+            {
+              "name": "expert_family_name",
+              "ty": "String"
+            },
+            {
+              "name": "expert_given_name",
+              "ty": "String"
             }
           ]
         }
@@ -4483,6 +4567,22 @@ impl WsRequest for UserGetUserProfileRequest {
             {
               "name": "created_at",
               "ty": "BigInt"
+            },
+            {
+              "name": "expert_public_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "expert_username",
+              "ty": "String"
+            },
+            {
+              "name": "expert_family_name",
+              "ty": "String"
+            },
+            {
+              "name": "expert_given_name",
+              "ty": "String"
             }
           ]
         }
@@ -4567,6 +4667,22 @@ impl WsRequest for UserGetUserProfileRequest {
             {
               "name": "created_at",
               "ty": "BigInt"
+            },
+            {
+              "name": "expert_public_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "expert_username",
+              "ty": "String"
+            },
+            {
+              "name": "expert_family_name",
+              "ty": "String"
+            },
+            {
+              "name": "expert_given_name",
+              "ty": "String"
             }
           ]
         }
@@ -6364,6 +6480,22 @@ impl WsRequest for AdminListStrategiesRequest {
             {
               "name": "created_at",
               "ty": "BigInt"
+            },
+            {
+              "name": "expert_public_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "expert_username",
+              "ty": "String"
+            },
+            {
+              "name": "expert_family_name",
+              "ty": "String"
+            },
+            {
+              "name": "expert_given_name",
+              "ty": "String"
             }
           ]
         }
