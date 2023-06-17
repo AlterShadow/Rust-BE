@@ -927,32 +927,8 @@ pub struct AdminListExpertsRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminListExpertsResponse {
-    pub experts: Vec<AdminListExpertsRow>,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct AdminListExpertsRow {
-    pub expert_id: i64,
-    pub user_public_id: i64,
-    pub linked_wallet: String,
-    pub name: String,
-    #[serde(default)]
-    pub family_name: Option<String>,
-    #[serde(default)]
-    pub given_name: Option<String>,
-    pub follower_count: i64,
-    pub description: String,
-    pub social_media: String,
-    pub risk_score: f64,
-    pub reputation_score: f64,
-    pub aum: f64,
-    pub joined_at: i64,
-    #[serde(default)]
-    pub requested_at: Option<i64>,
-    #[serde(default)]
-    pub approved_at: Option<i64>,
-    pub pending_expert: bool,
-    pub approved_expert: bool,
+    pub experts_total: i64,
+    pub experts: Vec<ListExpertsRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -992,24 +968,7 @@ pub struct AdminListStrategiesRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminListStrategiesResponse {
-    pub strategies: Vec<AdminListStrategiesRow>,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct AdminListStrategiesRow {
-    pub strategy_id: i64,
-    pub strategy_name: String,
-    pub expert_public_id: i64,
-    pub expert_name: String,
-    #[serde(default)]
-    pub description: Option<String>,
-    pub created_at: i64,
-    #[serde(default)]
-    pub approved_at: Option<i64>,
-    pub pending_approval: bool,
-    pub approved: bool,
-    pub linked_wallet: String,
-    pub blockchain: EnumBlockChain,
+    pub strategies: Vec<ListStrategiesRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1030,6 +989,7 @@ pub struct AdminListUsersRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminListUsersResponse {
+    pub users_total: i64,
     pub users: Vec<ListUserRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1314,43 +1274,19 @@ pub struct ListExpertsRow {
     #[serde(default)]
     pub given_name: Option<String>,
     pub follower_count: i64,
-    pub description: String,
-    pub social_media: String,
-    pub risk_score: f64,
-    pub reputation_score: f64,
-    pub aum: f64,
-    pub joined_at: i64,
-    pub requested_at: i64,
-    #[serde(default)]
-    pub approved_at: Option<i64>,
-    pub pending_expert: bool,
-    pub approved_expert: bool,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct ListFeaturedExpertsRow {
-    pub expert_id: i64,
-    pub user_public_id: i64,
-    pub linked_wallet: String,
-    pub name: String,
-    #[serde(default)]
-    pub family_name: Option<String>,
-    #[serde(default)]
-    pub given_name: Option<String>,
-    pub follower_count: i64,
-    pub description: String,
-    pub social_media: String,
-    pub risk_score: f64,
-    pub reputation_score: f64,
-    pub aum: f64,
-    pub joined_at: i64,
-    pub requested_at: i64,
-    #[serde(default)]
-    pub approved_at: Option<i64>,
-    pub pending_expert: bool,
-    pub approved_expert: bool,
     pub backer_count: i64,
+    pub description: String,
+    pub social_media: String,
+    pub risk_score: f64,
+    pub reputation_score: f64,
     pub consistent_score: f64,
+    pub aum: f64,
+    pub joined_at: i64,
+    pub requested_at: i64,
+    #[serde(default)]
+    pub approved_at: Option<i64>,
+    pub pending_expert: bool,
+    pub approved_expert: bool,
     pub followed: bool,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1792,32 +1728,7 @@ pub struct UserListExpertsRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserListExpertsResponse {
-    pub experts: Vec<UserListExpertsRow>,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserListExpertsRow {
-    pub expert_id: i64,
-    pub user_public_id: i64,
-    pub linked_wallet: String,
-    pub name: String,
-    #[serde(default)]
-    pub family_name: Option<String>,
-    #[serde(default)]
-    pub given_name: Option<String>,
-    pub follower_count: i64,
-    pub description: String,
-    pub social_media: String,
-    pub risk_score: f64,
-    pub reputation_score: f64,
-    pub aum: f64,
-    pub joined_at: i64,
-    pub requested_at: i64,
-    #[serde(default)]
-    pub approved_at: Option<i64>,
-    pub pending_expert: bool,
-    pub approved_expert: bool,
-    pub followed: bool,
+    pub experts: Vec<ListExpertsRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1830,7 +1741,8 @@ pub struct UserListFeaturedExpertsRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserListFeaturedExpertsResponse {
-    pub experts: Vec<ListFeaturedExpertsRow>,
+    pub experts_total: i64,
+    pub experts: Vec<ListExpertsRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1881,6 +1793,7 @@ pub struct UserListFollowedStrategiesRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserListFollowedStrategiesResponse {
+    pub strategies_total: i64,
     pub strategies: Vec<ListStrategiesRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1991,7 +1904,8 @@ pub struct UserListTopPerformingExpertsRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserListTopPerformingExpertsResponse {
-    pub experts: Vec<UserListExpertsRow>,
+    pub experts_total: i64,
+    pub experts: Vec<ListExpertsRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -2367,6 +2281,10 @@ impl WsRequest for UserListFollowedStrategiesRequest {
     }
   ],
   "returns": [
+    {
+      "name": "strategies_total",
+      "ty": "BigInt"
+    },
     {
       "name": "strategies",
       "ty": {
@@ -3812,7 +3730,7 @@ impl WsRequest for UserListExpertsRequest {
       "name": "experts",
       "ty": {
         "DataTable": {
-          "name": "UserListExpertsRow",
+          "name": "ListExpertsRow",
           "fields": [
             {
               "name": "expert_id",
@@ -3847,6 +3765,10 @@ impl WsRequest for UserListExpertsRequest {
               "ty": "BigInt"
             },
             {
+              "name": "backer_count",
+              "ty": "BigInt"
+            },
+            {
               "name": "description",
               "ty": "String"
             },
@@ -3860,6 +3782,10 @@ impl WsRequest for UserListExpertsRequest {
             },
             {
               "name": "reputation_score",
+              "ty": "Numeric"
+            },
+            {
+              "name": "consistent_score",
               "ty": "Numeric"
             },
             {
@@ -3928,10 +3854,14 @@ impl WsRequest for UserListTopPerformingExpertsRequest {
   ],
   "returns": [
     {
+      "name": "experts_total",
+      "ty": "BigInt"
+    },
+    {
       "name": "experts",
       "ty": {
         "DataTable": {
-          "name": "UserListExpertsRow",
+          "name": "ListExpertsRow",
           "fields": [
             {
               "name": "expert_id",
@@ -3966,6 +3896,10 @@ impl WsRequest for UserListTopPerformingExpertsRequest {
               "ty": "BigInt"
             },
             {
+              "name": "backer_count",
+              "ty": "BigInt"
+            },
+            {
               "name": "description",
               "ty": "String"
             },
@@ -3979,6 +3913,10 @@ impl WsRequest for UserListTopPerformingExpertsRequest {
             },
             {
               "name": "reputation_score",
+              "ty": "Numeric"
+            },
+            {
+              "name": "consistent_score",
               "ty": "Numeric"
             },
             {
@@ -4047,10 +3985,14 @@ impl WsRequest for UserListFeaturedExpertsRequest {
   ],
   "returns": [
     {
+      "name": "experts_total",
+      "ty": "BigInt"
+    },
+    {
       "name": "experts",
       "ty": {
         "DataTable": {
-          "name": "ListFeaturedExpertsRow",
+          "name": "ListExpertsRow",
           "fields": [
             {
               "name": "expert_id",
@@ -4085,6 +4027,10 @@ impl WsRequest for UserListFeaturedExpertsRequest {
               "ty": "BigInt"
             },
             {
+              "name": "backer_count",
+              "ty": "BigInt"
+            },
+            {
               "name": "description",
               "ty": "String"
             },
@@ -4098,6 +4044,10 @@ impl WsRequest for UserListFeaturedExpertsRequest {
             },
             {
               "name": "reputation_score",
+              "ty": "Numeric"
+            },
+            {
+              "name": "consistent_score",
               "ty": "Numeric"
             },
             {
@@ -4125,14 +4075,6 @@ impl WsRequest for UserListFeaturedExpertsRequest {
             {
               "name": "approved_expert",
               "ty": "Boolean"
-            },
-            {
-              "name": "backer_count",
-              "ty": "BigInt"
-            },
-            {
-              "name": "consistent_score",
-              "ty": "Numeric"
             },
             {
               "name": "followed",
@@ -4352,6 +4294,10 @@ impl WsRequest for UserGetUserProfileRequest {
               "ty": "BigInt"
             },
             {
+              "name": "backer_count",
+              "ty": "BigInt"
+            },
+            {
               "name": "description",
               "ty": "String"
             },
@@ -4365,6 +4311,10 @@ impl WsRequest for UserGetUserProfileRequest {
             },
             {
               "name": "reputation_score",
+              "ty": "Numeric"
+            },
+            {
+              "name": "consistent_score",
               "ty": "Numeric"
             },
             {
@@ -4391,6 +4341,10 @@ impl WsRequest for UserGetUserProfileRequest {
             },
             {
               "name": "approved_expert",
+              "ty": "Boolean"
+            },
+            {
+              "name": "followed",
               "ty": "Boolean"
             }
           ]
@@ -5590,6 +5544,10 @@ impl WsRequest for AdminListUsersRequest {
   ],
   "returns": [
     {
+      "name": "users_total",
+      "ty": "BigInt"
+    },
+    {
       "name": "users",
       "ty": {
         "DataTable": {
@@ -5983,10 +5941,14 @@ impl WsRequest for AdminListExpertsRequest {
   ],
   "returns": [
     {
+      "name": "experts_total",
+      "ty": "BigInt"
+    },
+    {
       "name": "experts",
       "ty": {
         "DataTable": {
-          "name": "AdminListExpertsRow",
+          "name": "ListExpertsRow",
           "fields": [
             {
               "name": "expert_id",
@@ -6021,6 +5983,10 @@ impl WsRequest for AdminListExpertsRequest {
               "ty": "BigInt"
             },
             {
+              "name": "backer_count",
+              "ty": "BigInt"
+            },
+            {
               "name": "description",
               "ty": "String"
             },
@@ -6037,6 +6003,10 @@ impl WsRequest for AdminListExpertsRequest {
               "ty": "Numeric"
             },
             {
+              "name": "consistent_score",
+              "ty": "Numeric"
+            },
+            {
               "name": "aum",
               "ty": "Numeric"
             },
@@ -6046,9 +6016,7 @@ impl WsRequest for AdminListExpertsRequest {
             },
             {
               "name": "requested_at",
-              "ty": {
-                "Optional": "BigInt"
-              }
+              "ty": "BigInt"
             },
             {
               "name": "approved_at",
@@ -6062,6 +6030,10 @@ impl WsRequest for AdminListExpertsRequest {
             },
             {
               "name": "approved_expert",
+              "ty": "Boolean"
+            },
+            {
+              "name": "followed",
               "ty": "Boolean"
             }
           ]
@@ -6244,7 +6216,7 @@ impl WsRequest for AdminListStrategiesRequest {
       "name": "strategies",
       "ty": {
         "DataTable": {
-          "name": "AdminListStrategiesRow",
+          "name": "ListStrategiesRow",
           "fields": [
             {
               "name": "strategy_id",
@@ -6255,40 +6227,54 @@ impl WsRequest for AdminListStrategiesRequest {
               "ty": "String"
             },
             {
-              "name": "expert_public_id",
-              "ty": "BigInt"
-            },
-            {
-              "name": "expert_name",
+              "name": "strategy_description",
               "ty": "String"
             },
             {
-              "name": "description",
-              "ty": {
-                "Optional": "String"
-              }
+              "name": "net_value",
+              "ty": "Numeric"
             },
             {
-              "name": "created_at",
-              "ty": "BigInt"
+              "name": "followers",
+              "ty": "Int"
             },
             {
-              "name": "approved_at",
-              "ty": {
-                "Optional": "BigInt"
-              }
+              "name": "backers",
+              "ty": "Int"
             },
             {
-              "name": "pending_approval",
+              "name": "risk_score",
+              "ty": "Numeric"
+            },
+            {
+              "name": "aum",
+              "ty": "Numeric"
+            },
+            {
+              "name": "followed",
               "ty": "Boolean"
+            },
+            {
+              "name": "swap_price",
+              "ty": "Numeric"
+            },
+            {
+              "name": "price_change",
+              "ty": "Numeric"
+            },
+            {
+              "name": "wallet_address",
+              "ty": "String"
             },
             {
               "name": "approved",
               "ty": "Boolean"
             },
             {
-              "name": "linked_wallet",
-              "ty": "String"
+              "name": "approved_at",
+              "ty": {
+                "Optional": "BigInt"
+              }
             },
             {
               "name": "blockchain",

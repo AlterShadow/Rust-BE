@@ -43,6 +43,7 @@
   "UserListStrategyBackers",
   "UserListStrategyFollowers",
   "UserListStrategyInitialTokenRatio",
+  "UserListStrategyWallets",
   "UserListTopPerformingExperts",
   "UserListTopPerformingStrategies",
   "UserListWalletActivityHistory",

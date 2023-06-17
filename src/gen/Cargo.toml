@@ -25,5 +25,7 @@ num-derive = "0.3"
 num-traits = "0.2"
 strum = "0.24"
 strum_macros = "0.24"
+postgres-from-row = "0.5.2"
+
 [build-dependencies]
 codegen = { path = "../codegen" }

@@ -1,9 +1,11 @@
 use crate::{enums, services};
 use convert_case::{Case, Casing};
 use itertools::Itertools;
+use model::pg_func::ProceduralFunction;
 use model::types::*;
 use std::fs::File;
 use std::io::Write;
+
 pub const PARAM_PREFIX: &str = "a_";
 
 pub trait ToSql {
@@ -58,11 +60,6 @@ impl ToSql for ProceduralFunction {
                 y => format!("{}{} {}", PARAM_PREFIX, x.name, y.to_sql()),
             })
             .join(", ");
-        let returns = if self.returns.len() == 0 {
-            "void".to_owned()
-        } else {
-            Type::struct_("", self.returns.clone()).to_sql()
-        };
         format!(
             "
 CREATE OR REPLACE FUNCTION api.{name}({params})
@@ -74,8 +71,11 @@ $$;
         ",
             name = self.name,
             params = params,
-            returns = returns,
-            body = self.body.replace("$", PARAM_PREFIX)
+            returns = match &self.return_row_type {
+                Type::Struct { fields, .. } if fields.is_empty() => "void".to_owned(),
+                x => x.to_sql(),
+            },
+            body = self.body
         )
     }
 }

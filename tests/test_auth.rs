@@ -1,11 +1,10 @@
 pub mod tools;
 
-use eth_sdk::signer::{EthereumSigner, Secp256k1SecretKey};
+use eth_sdk::signer::Secp256k1SecretKey;
 use eyre::*;
 use gen::model::*;
 use lib::database::drop_and_recreate_database;
 use lib::log::{setup_logs, LogLevel};
-use std::sync::Arc;
 use tools::*;
 
 #[path = "../src/service/auth/endpoints.rs"]

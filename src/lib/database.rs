@@ -2,6 +2,7 @@ use dashmap::DashMap;
 use deadpool_postgres::Runtime;
 use deadpool_postgres::*;
 use eyre::*;
+use postgres_from_row::FromRow;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::DefaultHasher;
@@ -17,10 +18,9 @@ use tracing::*;
 
 pub type DatabaseConfig = deadpool_postgres::Config;
 pub trait DatabaseRequest {
-    type ResponseRow: Send + Sync + Clone + Serialize + DeserializeOwned;
+    type ResponseRow: Send + Sync + Clone + Serialize + DeserializeOwned + FromRow;
     fn statement(&self) -> &str;
     fn params(&self) -> Vec<&(dyn ToSql + Sync)>;
-    fn parse_row(&self, row: Row) -> Result<Self::ResponseRow>;
 }
 #[derive(Clone)]
 pub struct DbClient {
@@ -54,21 +54,40 @@ impl DbClient {
             .prepare(statement)
             .await?)
     }
-    pub async fn execute<T: DatabaseRequest>(&self, req: T) -> Result<DbResponse<T::ResponseRow>> {
-        let statement = if let Some(stmt) = self.prepared_stmts.get(req.statement()) {
-            stmt.clone()
-        } else {
-            let stmt = self.prepare(req.statement()).await?;
-            self.prepared_stmts
-                .insert(req.statement().to_string(), stmt.clone());
-            stmt
-        };
-        let rows = self.query(&statement, &req.params()).await?;
-        let mut response = DbResponse::with_capacity(rows.len());
-        for row in rows {
-            response.push(req.parse_row(row)?);
+    pub async fn execute<T: DatabaseRequest>(&self, req: T) -> Result<DataTable<T::ResponseRow>> {
+        let mut error = None;
+        for _ in 0..2 {
+            let statement = if let Some(stmt) = self.prepared_stmts.get(req.statement()) {
+                stmt.clone()
+            } else {
+                let stmt = self.prepare(req.statement()).await?;
+                self.prepared_stmts
+                    .insert(req.statement().to_string(), stmt.clone());
+                stmt
+            };
+
+            let rows = match self.query(&statement, &req.params()).await {
+                Ok(rows) => rows,
+                Err(err) => {
+                    let reason = err.to_string();
+                    if reason.contains("cache lookup failed for type")
+                        || reason.contains("cached plan must not change result type")
+                    {
+                        warn!("Database has been updated. Cleaning cache and retrying query");
+                        self.prepared_stmts.clear();
+                        error = Some(err);
+                        continue;
+                    }
+                    return Err(err);
+                }
+            };
+            let mut response = DataTable::with_capacity(rows.len());
+            for row in rows {
+                response.push(T::ResponseRow::try_from_row(&row)?);
+            }
+            return Ok(response);
         }
-        Ok(response)
+        Err(error.unwrap())
     }
     pub fn conn_hash(&self) -> u64 {
         self.conn_hash
@@ -76,14 +95,17 @@ impl DbClient {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct DbResponse<T> {
+pub struct DataTable<T> {
     rows: Vec<T>,
 }
-impl<T> DbResponse<T> {
+impl<T> DataTable<T> {
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
             rows: Vec::with_capacity(capacity),
         }
+    }
+    pub fn first<R>(&self, f: impl Fn(&T) -> R) -> Option<R> {
+        self.rows.first().map(|x| f(x))
     }
     pub fn rows(&self) -> &Vec<T> {
         &self.rows
@@ -105,6 +127,9 @@ impl<T> DbResponse<T> {
     }
     pub fn push(&mut self, row: T) {
         self.rows.push(row);
+    }
+    pub fn map<R>(self, f: impl Fn(T) -> R) -> Vec<R> {
+        self.rows.into_iter().map(f).collect()
     }
 }
 pub async fn connect_to_database(config: DatabaseConfig) -> Result<DbClient> {

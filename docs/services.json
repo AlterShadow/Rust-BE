@@ -238,6 +238,10 @@
           ],
           "returns": [
             {
+              "name": "strategies_total",
+              "ty": "BigInt"
+            },
+            {
               "name": "strategies",
               "ty": {
                 "DataTable": {
@@ -1530,7 +1534,7 @@
               "name": "experts",
               "ty": {
                 "DataTable": {
-                  "name": "UserListExpertsRow",
+                  "name": "ListExpertsRow",
                   "fields": [
                     {
                       "name": "expert_id",
@@ -1565,6 +1569,10 @@
                       "ty": "BigInt"
                     },
                     {
+                      "name": "backer_count",
+                      "ty": "BigInt"
+                    },
+                    {
                       "name": "description",
                       "ty": "String"
                     },
@@ -1578,6 +1586,10 @@
                     },
                     {
                       "name": "reputation_score",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "consistent_score",
                       "ty": "Numeric"
                     },
                     {
@@ -1638,10 +1650,14 @@
           ],
           "returns": [
             {
+              "name": "experts_total",
+              "ty": "BigInt"
+            },
+            {
               "name": "experts",
               "ty": {
                 "DataTable": {
-                  "name": "UserListExpertsRow",
+                  "name": "ListExpertsRow",
                   "fields": [
                     {
                       "name": "expert_id",
@@ -1676,6 +1692,10 @@
                       "ty": "BigInt"
                     },
                     {
+                      "name": "backer_count",
+                      "ty": "BigInt"
+                    },
+                    {
                       "name": "description",
                       "ty": "String"
                     },
@@ -1689,6 +1709,10 @@
                     },
                     {
                       "name": "reputation_score",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "consistent_score",
                       "ty": "Numeric"
                     },
                     {
@@ -1749,10 +1773,14 @@
           ],
           "returns": [
             {
+              "name": "experts_total",
+              "ty": "BigInt"
+            },
+            {
               "name": "experts",
               "ty": {
                 "DataTable": {
-                  "name": "ListFeaturedExpertsRow",
+                  "name": "ListExpertsRow",
                   "fields": [
                     {
                       "name": "expert_id",
@@ -1787,6 +1815,10 @@
                       "ty": "BigInt"
                     },
                     {
+                      "name": "backer_count",
+                      "ty": "BigInt"
+                    },
+                    {
                       "name": "description",
                       "ty": "String"
                     },
@@ -1800,6 +1832,10 @@
                     },
                     {
                       "name": "reputation_score",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "consistent_score",
                       "ty": "Numeric"
                     },
                     {
@@ -1827,14 +1863,6 @@
                     {
                       "name": "approved_expert",
                       "ty": "Boolean"
-                    },
-                    {
-                      "name": "backer_count",
-                      "ty": "BigInt"
-                    },
-                    {
-                      "name": "consistent_score",
-                      "ty": "Numeric"
                     },
                     {
                       "name": "followed",
@@ -2038,6 +2066,10 @@
                       "ty": "BigInt"
                     },
                     {
+                      "name": "backer_count",
+                      "ty": "BigInt"
+                    },
+                    {
                       "name": "description",
                       "ty": "String"
                     },
@@ -2051,6 +2083,10 @@
                     },
                     {
                       "name": "reputation_score",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "consistent_score",
                       "ty": "Numeric"
                     },
                     {
@@ -2077,6 +2113,10 @@
                     },
                     {
                       "name": "approved_expert",
+                      "ty": "Boolean"
+                    },
+                    {
+                      "name": "followed",
                       "ty": "Boolean"
                     }
                   ]
@@ -3122,6 +3162,10 @@
           ],
           "returns": [
             {
+              "name": "users_total",
+              "ty": "BigInt"
+            },
+            {
               "name": "users",
               "ty": {
                 "DataTable": {
@@ -3451,10 +3495,14 @@
           ],
           "returns": [
             {
+              "name": "experts_total",
+              "ty": "BigInt"
+            },
+            {
               "name": "experts",
               "ty": {
                 "DataTable": {
-                  "name": "AdminListExpertsRow",
+                  "name": "ListExpertsRow",
                   "fields": [
                     {
                       "name": "expert_id",
@@ -3489,6 +3537,10 @@
                       "ty": "BigInt"
                     },
                     {
+                      "name": "backer_count",
+                      "ty": "BigInt"
+                    },
+                    {
                       "name": "description",
                       "ty": "String"
                     },
@@ -3505,6 +3557,10 @@
                       "ty": "Numeric"
                     },
                     {
+                      "name": "consistent_score",
+                      "ty": "Numeric"
+                    },
+                    {
                       "name": "aum",
                       "ty": "Numeric"
                     },
@@ -3514,9 +3570,7 @@
                     },
                     {
                       "name": "requested_at",
-                      "ty": {
-                        "Optional": "BigInt"
-                      }
+                      "ty": "BigInt"
                     },
                     {
                       "name": "approved_at",
@@ -3530,6 +3584,10 @@
                     },
                     {
                       "name": "approved_expert",
+                      "ty": "Boolean"
+                    },
+                    {
+                      "name": "followed",
                       "ty": "Boolean"
                     }
                   ]
@@ -3696,7 +3754,7 @@
               "name": "strategies",
               "ty": {
                 "DataTable": {
-                  "name": "AdminListStrategiesRow",
+                  "name": "ListStrategiesRow",
                   "fields": [
                     {
                       "name": "strategy_id",
@@ -3707,40 +3765,54 @@
                       "ty": "String"
                     },
                     {
-                      "name": "expert_public_id",
-                      "ty": "BigInt"
-                    },
-                    {
-                      "name": "expert_name",
+                      "name": "strategy_description",
                       "ty": "String"
                     },
                     {
-                      "name": "description",
-                      "ty": {
-                        "Optional": "String"
-                      }
+                      "name": "net_value",
+                      "ty": "Numeric"
                     },
                     {
-                      "name": "created_at",
-                      "ty": "BigInt"
+                      "name": "followers",
+                      "ty": "Int"
                     },
                     {
-                      "name": "approved_at",
-                      "ty": {
-                        "Optional": "BigInt"
-                      }
+                      "name": "backers",
+                      "ty": "Int"
                     },
                     {
-                      "name": "pending_approval",
+                      "name": "risk_score",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "aum",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "followed",
                       "ty": "Boolean"
+                    },
+                    {
+                      "name": "swap_price",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "price_change",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "wallet_address",
+                      "ty": "String"
                     },
                     {
                       "name": "approved",
                       "ty": "Boolean"
                     },
                     {
-                      "name": "linked_wallet",
-                      "ty": "String"
+                      "name": "approved_at",
+                      "ty": {
+                        "Optional": "BigInt"
+                      }
                     },
                     {
                       "name": "blockchain",

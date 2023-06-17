@@ -1,29 +1,6 @@
 use model::endpoint::*;
 use model::types::{Field, Type};
-
-fn list_strategies_datatable() -> Type {
-    Type::datatable(
-        "ListStrategiesRow",
-        vec![
-            Field::new("strategy_id", Type::BigInt),
-            Field::new("strategy_name", Type::String),
-            Field::new("strategy_description", Type::String),
-            Field::new("net_value", Type::Numeric),
-            Field::new("followers", Type::Int),
-            Field::new("backers", Type::Int),
-            Field::new("risk_score", Type::Numeric),
-            Field::new("aum", Type::Numeric),
-            Field::new("followed", Type::Boolean),
-            Field::new("swap_price", Type::Numeric),
-            Field::new("price_change", Type::Numeric),
-            Field::new("wallet_address", Type::String),
-            Field::new("approved", Type::Boolean),
-            Field::new("approved_at", Type::optional(Type::BigInt)),
-            Field::new("blockchain", Type::enum_ref("block_chain")),
-        ],
-    )
-}
-
+include!("../shared/endpoints.rs");
 pub fn get_user_endpoints() -> Vec<EndpointSchema> {
     vec![
         EndpointSchema::new(
@@ -40,7 +17,10 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 Field::new("limit", Type::optional(Type::BigInt)),
                 Field::new("offset", Type::optional(Type::BigInt)),
             ],
-            vec![Field::new("strategies", list_strategies_datatable())],
+            vec![
+                Field::new("strategies_total", Type::BigInt),
+                Field::new("strategies", list_strategies_datatable()),
+            ],
         )
         .with_description("User lists followed strategies"),
         EndpointSchema::new(
@@ -395,32 +375,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 Field::new("description", Type::optional(Type::String)),
                 Field::new("social_media", Type::optional(Type::String)),
             ],
-            vec![Field::new(
-                "experts",
-                Type::datatable(
-                    "UserListExpertsRow",
-                    vec![
-                        Field::new("expert_id", Type::BigInt),
-                        Field::new("user_public_id", Type::BigInt),
-                        Field::new("linked_wallet", Type::String),
-                        Field::new("name", Type::String),
-                        Field::new("family_name", Type::optional(Type::String)),
-                        Field::new("given_name", Type::optional(Type::String)),
-                        Field::new("follower_count", Type::BigInt),
-                        Field::new("description", Type::String),
-                        Field::new("social_media", Type::String),
-                        Field::new("risk_score", Type::Numeric),
-                        Field::new("reputation_score", Type::Numeric),
-                        Field::new("aum", Type::Numeric),
-                        Field::new("joined_at", Type::BigInt),
-                        Field::new("requested_at", Type::BigInt),
-                        Field::new("approved_at", Type::optional(Type::BigInt)),
-                        Field::new("pending_expert", Type::Boolean),
-                        Field::new("approved_expert", Type::Boolean),
-                        Field::new("followed", Type::Boolean),
-                    ],
-                ),
-            )],
+            vec![Field::new("experts", list_experts_datatable())],
         )
         .with_description("User lists experts"),
         EndpointSchema::new(
@@ -430,32 +385,10 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 Field::new("limit", Type::optional(Type::BigInt)),
                 Field::new("offset", Type::optional(Type::BigInt)),
             ],
-            vec![Field::new(
-                "experts",
-                Type::datatable(
-                    "UserListExpertsRow",
-                    vec![
-                        Field::new("expert_id", Type::BigInt),
-                        Field::new("user_public_id", Type::BigInt),
-                        Field::new("linked_wallet", Type::String),
-                        Field::new("name", Type::String),
-                        Field::new("family_name", Type::optional(Type::String)),
-                        Field::new("given_name", Type::optional(Type::String)),
-                        Field::new("follower_count", Type::BigInt),
-                        Field::new("description", Type::String),
-                        Field::new("social_media", Type::String),
-                        Field::new("risk_score", Type::Numeric),
-                        Field::new("reputation_score", Type::Numeric),
-                        Field::new("aum", Type::Numeric),
-                        Field::new("joined_at", Type::BigInt),
-                        Field::new("requested_at", Type::BigInt),
-                        Field::new("approved_at", Type::optional(Type::BigInt)),
-                        Field::new("pending_expert", Type::Boolean),
-                        Field::new("approved_expert", Type::Boolean),
-                        Field::new("followed", Type::Boolean),
-                    ],
-                ),
-            )],
+            vec![
+                Field::new("experts_total", Type::BigInt),
+                Field::new("experts", list_experts_datatable()),
+            ],
         )
         .with_description("User lists experts"),
         EndpointSchema::new(
@@ -465,34 +398,10 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 Field::new("limit", Type::optional(Type::BigInt)),
                 Field::new("offset", Type::optional(Type::BigInt)),
             ],
-            vec![Field::new(
-                "experts",
-                Type::datatable(
-                    "ListFeaturedExpertsRow",
-                    vec![
-                        Field::new("expert_id", Type::BigInt),
-                        Field::new("user_public_id", Type::BigInt),
-                        Field::new("linked_wallet", Type::String),
-                        Field::new("name", Type::String),
-                        Field::new("family_name", Type::optional(Type::String)),
-                        Field::new("given_name", Type::optional(Type::String)),
-                        Field::new("follower_count", Type::BigInt),
-                        Field::new("description", Type::String),
-                        Field::new("social_media", Type::String),
-                        Field::new("risk_score", Type::Numeric),
-                        Field::new("reputation_score", Type::Numeric),
-                        Field::new("aum", Type::Numeric),
-                        Field::new("joined_at", Type::BigInt),
-                        Field::new("requested_at", Type::BigInt),
-                        Field::new("approved_at", Type::optional(Type::BigInt)),
-                        Field::new("pending_expert", Type::Boolean),
-                        Field::new("approved_expert", Type::Boolean),
-                        Field::new("backer_count", Type::BigInt),
-                        Field::new("consistent_score", Type::Numeric),
-                        Field::new("followed", Type::Boolean),
-                    ],
-                ),
-            )],
+            vec![
+                Field::new("experts_total", Type::BigInt),
+                Field::new("experts", list_experts_datatable()),
+            ],
         )
         .with_description("User lists experts"),
         EndpointSchema::new(
@@ -523,31 +432,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 Field::new("follower_count", Type::Int),
                 Field::new("description", Type::String),
                 Field::new("social_media", Type::String),
-                Field::new(
-                    "followed_experts",
-                    Type::datatable(
-                        "ListExpertsRow",
-                        vec![
-                            Field::new("expert_id", Type::BigInt),
-                            Field::new("user_public_id", Type::BigInt),
-                            Field::new("linked_wallet", Type::String),
-                            Field::new("name", Type::String),
-                            Field::new("family_name", Type::optional(Type::String)),
-                            Field::new("given_name", Type::optional(Type::String)),
-                            Field::new("follower_count", Type::BigInt),
-                            Field::new("description", Type::String),
-                            Field::new("social_media", Type::String),
-                            Field::new("risk_score", Type::Numeric),
-                            Field::new("reputation_score", Type::Numeric),
-                            Field::new("aum", Type::Numeric),
-                            Field::new("joined_at", Type::BigInt),
-                            Field::new("requested_at", Type::BigInt),
-                            Field::new("approved_at", Type::optional(Type::BigInt)),
-                            Field::new("pending_expert", Type::Boolean),
-                            Field::new("approved_expert", Type::Boolean),
-                        ],
-                    ),
-                ),
+                Field::new("followed_experts", list_experts_datatable()),
                 Field::new("followed_strategies", list_strategies_datatable()),
                 Field::new("backed_strategies", list_strategies_datatable()),
             ],

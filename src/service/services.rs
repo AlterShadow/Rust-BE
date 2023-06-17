@@ -1,5 +1,5 @@
+use model::pg_func::ProceduralFunction;
 use model::service::*;
-use model::types::*;
 
 #[path = "auth/endpoints.rs"]
 mod auth_endpoints;

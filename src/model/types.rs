@@ -102,26 +102,3 @@ impl Type {
         }
     }
 }
-#[derive(Clone, Debug)]
-pub struct ProceduralFunction {
-    pub name: String,
-    pub parameters: Vec<Field>,
-    pub returns: Vec<Field>,
-    pub body: String,
-}
-
-impl ProceduralFunction {
-    pub fn new(
-        name: impl Into<String>,
-        parameters: Vec<Field>,
-        returns: Vec<Field>,
-        body: impl Into<String>,
-    ) -> Self {
-        Self {
-            name: name.into(),
-            parameters,
-            returns,
-            body: body.into(),
-        }
-    }
-}

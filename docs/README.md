@@ -16,7 +16,7 @@ ID: 2
 |Method Code|Method Name|Parameters|Response|Description|
 |-----------|-----------|----------|--------|-----------|
 |20040|UserFollowStrategy|strategy_id|success|User follows a strategy|
-|20050|UserListFollowedStrategies|limit, offset|strategies|User lists followed strategies|
+|20050|UserListFollowedStrategies|limit, offset|strategies_total, strategies|User lists followed strategies|
 |20060|UserUnfollowStrategy|strategy_id|success||
 |20061|UserListStrategies|limit, offset, strategy_id, strategy_name, expert_public_id, expert_name, description|strategies|User lists strategies|
 |20063|UserListTopPerformingStrategies|limit, offset|strategies|User lists top performing strategies|
@@ -36,8 +36,8 @@ ID: 2
 |20140|UserListFollowedExperts|limit, offset|experts|User lists followed experts|
 |20150|UserUnfollowExpert|expert_id|success|User unfollows an expert|
 |20160|UserListExperts|limit, offset, expert_id, user_id, user_public_id, username, family_name, given_name, description, social_media|experts|User lists experts|
-|20161|UserListTopPerformingExperts|limit, offset|experts|User lists experts|
-|20162|UserListFeaturedExperts|limit, offset|experts|User lists experts|
+|20161|UserListTopPerformingExperts|limit, offset|experts_total, experts|User lists experts|
+|20162|UserListFeaturedExperts|limit, offset|experts_total, experts|User lists experts|
 |20170|UserGetExpertProfile|expert_id|expert_id, name, follower_count, description, social_media, risk_score, reputation_score, aum, strategies|User gets an expert profile|
 |20180|UserGetUserProfile||name, login_wallet, joined_at, follower_count, description, social_media, followed_experts, followed_strategies, backed_strategies|User gets an user profile|
 |20190|UserRegisterWallet|blockchain, wallet_address, message_to_sign, message_signature|success, wallet_id|User registers a wallet|
@@ -65,7 +65,7 @@ ID: 3
 ## Endpoints
 |Method Code|Method Name|Parameters|Response|Description|
 |-----------|-----------|----------|--------|-----------|
-|30010|AdminListUsers|limit, offset, user_id, address, username, email, role|users||
+|30010|AdminListUsers|limit, offset, user_id, address, username, email, role|users_total, users||
 |30020|AdminSetUserRole|user_id, role|||
 |30030|AdminSetBlockUser|user_id, blocked|||
 |30060|AdminListPendingExpertApplications|offset, limit|users|Admin approves a user to become an expert|
@@ -73,7 +73,7 @@ ID: 3
 |30050|AdminRejectUserBecomeExpert|user_id|success|Admin approves a user to become an expert|
 |30070|AdminGetSystemConfig||config_placeholder_1, config_placeholder_2|Admin get system config|
 |30080|AdminUpdateSystemConfig|config_placeholder_1, config_placeholder_2|success|Admin updates system config|
-|30090|AdminListExperts|limit, offset, expert_id, user_id, user_public_id, username, family_name, given_name, description, social_media|experts|Admin lists experts|
+|30090|AdminListExperts|limit, offset, expert_id, user_id, user_public_id, username, family_name, given_name, description, social_media|experts_total, experts|Admin lists experts|
 |30100|AdminListBackers|offset, limit, user_id, user_public_id, username, family_name, given_name|backers||
 |30110|AdminListStrategies|offset, limit, strategy_id, strategy_name, expert_public_id, expert_name, description, pending_approval, approved|strategies||
 |30120|AdminApproveStrategy|strategy_id|success|Admin approves strategy|

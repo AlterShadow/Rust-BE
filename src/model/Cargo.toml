@@ -10,3 +10,4 @@ path = "lib.rs"
 [dependencies]
 serde = { version = "*", features = ["derive"] }
 serde_json = "*"
+convert_case = "*"

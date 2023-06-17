@@ -116,7 +116,7 @@ async fn test_handle_eth_escrows() -> Result<()> {
 
     /* fake escrow address */
     let mut fake_escrow_addresses = EscrowAddresses::empty();
-    fake_escrow_addresses.insert(EnumBlockChain::LocalNet, fake_escrow_contract.address());
+    fake_escrow_addresses.insert(EnumBlockChain::LocalNet, (), fake_escrow_contract.address());
 
     /* fake AppState */
     let config: Config = load_config("watcher".to_owned())?;
@@ -212,7 +212,7 @@ async fn test_handle_eth_escrows_testnet() -> Result<()> {
 
     /* get escrow contract addresses */
     let escrow_address_bsc_testnet = EscrowAddresses::new()
-        .get(EnumBlockChain::BscTestnet)
+        .get(EnumBlockChain::BscTestnet, ())
         .ok_or_else(|| eyre!("could not find escrow contract address on bsc testnet"))?;
 
     /* instantiate Erc20Token for BUSD contract address */

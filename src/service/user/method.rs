@@ -29,18 +29,8 @@ use tokio::time::sleep;
 use tracing::info;
 use web3::signing::Key;
 use web3::types::{Address, H256, U256};
+include!("../shared/method.rs");
 
-pub fn ensure_user_role(ctx: RequestContext, role: EnumRole) -> Result<()> {
-    let ctx_role = EnumRole::from_u32(ctx.role).context("Invalid role")?;
-    ensure!(
-        ctx_role >= role,
-        CustomError::new(
-            EnumErrorCode::InvalidRole,
-            format!("Requires {} Actual {}", role, ctx_role)
-        )
-    );
-    Ok(())
-}
 pub struct MethodUserFollowStrategy;
 
 impl RequestHandler for MethodUserFollowStrategy {
@@ -96,28 +86,8 @@ impl RequestHandler for MethodUserListFollowedStrategies {
                 })
                 .await?;
             Ok(UserListFollowedStrategiesResponse {
-                strategies: ret
-                    .into_iter()
-                    .map(|x| ListStrategiesRow {
-                        strategy_id: x.strategy_id,
-                        strategy_name: x.strategy_name,
-                        strategy_description: x.strategy_description,
-                        net_value: x.net_value,
-                        followers: x.followers as _,
-                        backers: x.backers as _,
-                        risk_score: x.risk_score.unwrap_or_default(),
-                        aum: x.aum.unwrap_or_default(),
-                        followed: x.followed,
-                        swap_price: 233.0,
-                        price_change: 0.97,
-                        wallet_address: x.linked_wallet.unwrap_or_default(),
-                        approved: x.approved,
-                        approved_at: x.approved_at,
-                        blockchain: x
-                            .linked_wallet_blockchain
-                            .unwrap_or(EnumBlockChain::LocalNet),
-                    })
-                    .collect(),
+                strategies_total: ret.first(|x| x.total).unwrap_or_default(),
+                strategies: ret.map(convert_strategy_db_to_api),
             })
         }
         .boxed()
@@ -153,28 +123,7 @@ impl RequestHandler for MethodUserListStrategies {
                 .await?;
 
             Ok(UserListStrategiesResponse {
-                strategies: ret
-                    .into_iter()
-                    .map(|x| ListStrategiesRow {
-                        strategy_id: x.strategy_id,
-                        strategy_name: x.strategy_name,
-                        strategy_description: x.strategy_description,
-                        net_value: x.net_value,
-                        followers: x.followers as _,
-                        backers: x.backers as _,
-                        risk_score: x.risk_score.unwrap_or_default(),
-                        aum: x.aum.unwrap_or_default(),
-                        followed: x.followed,
-                        swap_price: 233.0,
-                        price_change: 0.97,
-                        wallet_address: x.linked_wallet.unwrap_or_default(),
-                        approved: x.approved,
-                        approved_at: x.approved_at,
-                        blockchain: x
-                            .linked_wallet_blockchain
-                            .unwrap_or(EnumBlockChain::LocalNet),
-                    })
-                    .collect(),
+                strategies: ret.map(convert_strategy_db_to_api),
             })
         }
         .boxed()
@@ -210,28 +159,7 @@ impl RequestHandler for MethodUserListTopPerformingStrategies {
                 })
                 .await?;
             Ok(UserListTopPerformingStrategiesResponse {
-                strategies: ret
-                    .into_iter()
-                    .map(|x| ListStrategiesRow {
-                        strategy_id: x.strategy_id,
-                        strategy_name: x.strategy_name,
-                        strategy_description: x.strategy_description,
-                        net_value: x.net_value,
-                        followers: x.followers as _,
-                        backers: x.backers as _,
-                        risk_score: x.risk_score.unwrap_or_default(),
-                        aum: x.aum.unwrap_or_default(),
-                        followed: x.followed,
-                        swap_price: 233.0,
-                        price_change: 0.97,
-                        wallet_address: x.linked_wallet.unwrap_or_default(),
-                        approved: x.approved,
-                        approved_at: x.approved_at,
-                        blockchain: x
-                            .linked_wallet_blockchain
-                            .unwrap_or(EnumBlockChain::LocalNet),
-                    })
-                    .collect(),
+                strategies: ret.map(convert_strategy_db_to_api),
             })
         }
         .boxed()
@@ -336,7 +264,7 @@ impl RequestHandler for MethodUserGetStrategy {
                 strategy_id: ret.strategy_id,
                 strategy_name: ret.strategy_name,
                 strategy_description: ret.strategy_description,
-                creator_user_id: ret.creator_user_public_id,
+                creator_user_id: ret.creator_public_id,
                 social_media: "".to_string(),
                 historical_return: 0.0,
                 inception_time: ret.created_at,
@@ -401,7 +329,7 @@ impl RequestHandler for MethodUserGetStrategyStatistics {
                     .into_iter()
                     .map(|x| NetValuePoint {
                         time: x.time,
-                        net_value: x.net_value,
+                        net_value: 0.0,
                     })
                     .collect(),
                 follow_history: follow_hist
@@ -471,28 +399,7 @@ impl RequestHandler for MethodUserListBackedStrategies {
                 })
                 .await?;
             Ok(UserListBackedStrategiesResponse {
-                strategies: ret
-                    .into_iter()
-                    .map(|x| ListStrategiesRow {
-                        strategy_id: x.strategy_id,
-                        strategy_name: x.strategy_name,
-                        strategy_description: x.strategy_description,
-                        net_value: x.net_value,
-                        followers: x.followers as _,
-                        backers: x.backers as _,
-                        risk_score: x.risk_score.unwrap_or_default(),
-                        aum: x.aum.unwrap_or_default(),
-                        followed: true,
-                        swap_price: 233.0,
-                        price_change: 0.97,
-                        wallet_address: x.linked_wallet.unwrap_or_default(),
-                        approved: x.approved,
-                        approved_at: x.approved_at,
-                        blockchain: x
-                            .linked_wallet_blockchain
-                            .unwrap_or(EnumBlockChain::LocalNet),
-                    })
-                    .collect(),
+                strategies: ret.map(convert_strategy_db_to_api),
             })
         }
         .boxed()
@@ -1260,29 +1167,7 @@ impl RequestHandler for MethodUserListExperts {
                 })
                 .await?;
             Ok(UserListExpertsResponse {
-                experts: ret
-                    .into_iter()
-                    .map(|x| UserListExpertsRow {
-                        expert_id: x.expert_id,
-                        user_public_id: x.user_public_id,
-                        name: x.username,
-                        linked_wallet: x.listening_wallet,
-                        family_name: x.family_name,
-                        given_name: x.given_name,
-                        follower_count: x.follower_count as _,
-                        description: x.description.unwrap_or_default(),
-                        social_media: x.social_media.unwrap_or_default(),
-                        risk_score: x.risk_score.unwrap_or_default(),
-                        aum: x.aum.unwrap_or_default(),
-                        joined_at: x.joined_at,
-                        reputation_score: x.reputation_score.unwrap_or_default(),
-                        requested_at: x.requested_at.unwrap_or_default(),
-                        approved_at: x.approved_at,
-                        pending_expert: x.pending_expert,
-                        approved_expert: x.approved_expert,
-                        followed: x.followed,
-                    })
-                    .collect(),
+                experts: ret.map(convert_expert_db_to_api),
             })
         }
         .boxed()
@@ -1317,29 +1202,8 @@ impl RequestHandler for MethodUserListTopPerformingExperts {
                 })
                 .await?;
             Ok(UserListTopPerformingExpertsResponse {
-                experts: ret
-                    .into_iter()
-                    .map(|x| UserListExpertsRow {
-                        expert_id: x.expert_id,
-                        user_public_id: x.user_public_id,
-                        name: x.username,
-                        linked_wallet: x.listening_wallet,
-                        family_name: x.family_name,
-                        given_name: x.given_name,
-                        follower_count: x.follower_count as _,
-                        description: x.description.unwrap_or_default(),
-                        social_media: x.social_media.unwrap_or_default(),
-                        risk_score: x.risk_score.unwrap_or_default(),
-                        aum: x.aum.unwrap_or_default(),
-                        joined_at: x.joined_at,
-                        reputation_score: x.reputation_score.unwrap_or_default(),
-                        requested_at: x.requested_at.unwrap_or_default(),
-                        approved_at: x.approved_at,
-                        pending_expert: x.pending_expert,
-                        approved_expert: x.approved_expert,
-                        followed: x.followed,
-                    })
-                    .collect(),
+                experts_total: ret.first(|x| x.total).unwrap_or_default(),
+                experts: ret.map(convert_expert_db_to_api),
             })
         }
         .boxed()
@@ -1374,31 +1238,8 @@ impl RequestHandler for MethodUserListFeaturedExperts {
                 })
                 .await?;
             Ok(UserListFeaturedExpertsResponse {
-                experts: ret
-                    .into_iter()
-                    .map(|x| ListFeaturedExpertsRow {
-                        expert_id: x.expert_id,
-                        user_public_id: x.user_public_id,
-                        name: x.username,
-                        linked_wallet: x.listening_wallet,
-                        family_name: x.family_name,
-                        given_name: x.given_name,
-                        follower_count: x.follower_count as _,
-                        description: x.description.unwrap_or_default(),
-                        social_media: x.social_media.unwrap_or_default(),
-                        risk_score: x.risk_score.unwrap_or_default(),
-                        aum: x.aum.unwrap_or_default(),
-                        joined_at: x.joined_at,
-                        reputation_score: x.reputation_score.unwrap_or_default(),
-                        requested_at: x.requested_at.unwrap_or_default(),
-                        approved_at: x.approved_at,
-                        pending_expert: x.pending_expert,
-                        approved_expert: x.approved_expert,
-                        backer_count: x.backer_count,
-                        consistent_score: 0.0,
-                        followed: x.followed,
-                    })
-                    .collect(),
+                experts_total: ret.first(|x| x.total).unwrap_or_default(),
+                experts: ret.map(convert_expert_db_to_api),
             })
         }
         .boxed()
@@ -1425,8 +1266,20 @@ impl RequestHandler for MethodUserGetExpertProfile {
                 .await?
                 .into_result()
                 .context("failed to get expert profile")?;
+            let strategies = db
+                .execute(FunUserListStrategiesReq {
+                    user_id: ctx.user_id,
+                    limit: 10,
+                    offset: 0,
+                    strategy_id: None,
+                    strategy_name: None,
+                    expert_public_id: Some(ret.user_public_id),
+                    expert_name: None,
+                    description: None,
+                })
+                .await?;
             Ok(UserGetExpertProfileResponse {
-                expert_id: ret.expert_id.unwrap_or_default(),
+                expert_id: ret.expert_id,
                 name: ret.username,
                 follower_count: ret.follower_count as _,
                 description: ret.description.unwrap_or_default(),
@@ -1435,7 +1288,7 @@ impl RequestHandler for MethodUserGetExpertProfile {
                 aum: ret.aum.unwrap_or_default(),
                 reputation_score: ret.reputation_score.unwrap_or_default(),
                 // TODO: get strategies by expert
-                strategies: vec![],
+                strategies: strategies.map(convert_strategy_db_to_api),
             })
         }
         .boxed()
@@ -1547,71 +1400,14 @@ impl RequestHandler for MethodUserGetUserProfile {
                 follower_count: ret.follower_count.unwrap_or_default() as _,
                 description: ret.description.unwrap_or_default(),
                 social_media: ret.social_media.unwrap_or_default(),
-                followed_experts: experts
-                    .into_iter()
-                    .map(|x| ListExpertsRow {
-                        expert_id: x.expert_id,
-                        user_public_id: x.user_public_id,
-                        linked_wallet: x.listening_wallet,
-                        name: x.username,
-                        family_name: x.family_name,
-                        given_name: x.given_name,
-                        follower_count: x.follower_count,
-                        description: x.description.unwrap_or_default(),
-                        social_media: x.social_media.unwrap_or_default(),
-                        risk_score: x.risk_score.unwrap_or_default(),
-                        reputation_score: x.reputation_score.unwrap_or_default(),
-                        aum: x.aum.unwrap_or_default(),
-                        joined_at: x.joined_at,
-                        requested_at: x.requested_at.unwrap_or_default(),
-                        approved_at: x.approved_at,
-                        pending_expert: x.pending_expert,
-                        approved_expert: x.approved_expert,
-                    })
-                    .collect(),
+                followed_experts: experts.map(convert_expert_db_to_api),
                 followed_strategies: followed_strategies
                     .into_iter()
-                    .map(|x| ListStrategiesRow {
-                        strategy_id: x.strategy_id,
-                        strategy_name: x.strategy_name,
-                        strategy_description: x.strategy_description,
-                        net_value: x.net_value,
-                        followers: x.followers as _,
-                        backers: x.backers as _,
-                        risk_score: x.risk_score.unwrap_or_default(),
-                        aum: x.aum.unwrap_or_default(),
-                        followed: x.followed,
-                        swap_price: 233.0,
-                        price_change: 0.97,
-                        wallet_address: x.linked_wallet.unwrap_or_default(),
-                        approved: x.approved,
-                        approved_at: x.approved_at,
-                        blockchain: x
-                            .linked_wallet_blockchain
-                            .unwrap_or(EnumBlockChain::LocalNet),
-                    })
+                    .map(convert_strategy_db_to_api)
                     .collect(),
                 backed_strategies: backed_strategies
                     .into_iter()
-                    .map(|x| ListStrategiesRow {
-                        strategy_id: x.strategy_id,
-                        strategy_name: x.strategy_name,
-                        strategy_description: x.strategy_description,
-                        net_value: x.net_value,
-                        followers: x.followers as _,
-                        backers: x.backers as _,
-                        risk_score: x.risk_score.unwrap_or_default(),
-                        aum: x.aum.unwrap_or_default(),
-                        followed: x.followed,
-                        swap_price: 233.0,
-                        price_change: 0.97,
-                        wallet_address: x.linked_wallet.unwrap_or_default(),
-                        approved: x.approved,
-                        approved_at: x.approved_at,
-                        blockchain: x
-                            .linked_wallet_blockchain
-                            .unwrap_or(EnumBlockChain::LocalNet),
-                    })
+                    .map(convert_strategy_db_to_api)
                     .collect(),
             })
         }

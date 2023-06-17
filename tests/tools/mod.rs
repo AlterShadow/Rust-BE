@@ -1,3 +1,4 @@
+use eth_sdk::signer::Secp256k1SecretKey;
 use eth_sdk::utils::get_signed_text;
 use eyre::*;
 use gen::model::*;
@@ -101,4 +102,36 @@ pub async fn connect_user_ext(
     })
     .await?;
     Ok((client, login))
+}
+
+pub async fn prepare_expert() -> Result<(Secp256k1SecretKey, WsClient, Secp256k1SecretKey, WsClient)>
+{
+    let admin = Secp256k1SecretKey::new_random();
+    signup("dev-admin", &admin.key).await?;
+    let mut admin_client = connect_user("dev-admin", &admin.key).await?;
+
+    let user = Secp256k1SecretKey::new_random();
+    signup("user1", &user.key).await?;
+
+    let mut client = connect_user("user1", &user.key).await?;
+    let resp = client.request(UserApplyBecomeExpertRequest {}).await?;
+    info!("User Apply Become Expert {:?}", resp);
+
+    let resp = admin_client
+        .request(AdminListPendingExpertApplicationsRequest {
+            offset: None,
+            limit: None,
+        })
+        .await?;
+    assert_eq!(resp.users.len(), 1);
+    let resp = admin_client
+        .request(AdminApproveUserBecomeExpertRequest {
+            user_id: resp.users[0].user_id,
+        })
+        .await?;
+    info!("Approve {:?}", resp);
+    // reconnect user to refresh role cache on server side
+    let mut client = connect_user("user1", &user.key).await?;
+
+    Ok((admin, admin_client, user, client))
 }

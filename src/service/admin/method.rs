@@ -1,4 +1,4 @@
-use crate::method::ensure_user_role;
+use crate::method::{convert_expert_db_to_api, convert_strategy_db_to_api, ensure_user_role};
 use eyre::ContextCompat;
 use futures::FutureExt;
 use gen::database::*;
@@ -35,6 +35,7 @@ impl RequestHandler for MethodAdminListUsers {
                 .await?;
 
             Ok(AdminListUsersResponse {
+                users_total: ret.first(|x| x.total).unwrap_or_default(),
                 users: ret
                     .into_iter()
                     .map(|x| ListUserRow {
@@ -302,29 +303,8 @@ impl RequestHandler for MethodAdminListExperts {
                 .await?;
 
             Ok(AdminListExpertsResponse {
-                experts: ret
-                    .into_rows()
-                    .into_iter()
-                    .map(|x| AdminListExpertsRow {
-                        expert_id: x.expert_id,
-                        user_public_id: x.user_public_id,
-                        name: x.name,
-                        family_name: x.family_name,
-                        given_name: x.given_name,
-                        follower_count: x.follower_count.unwrap_or_default(),
-                        description: x.description.unwrap_or_default(),
-                        social_media: x.social_media.unwrap_or_default(),
-                        risk_score: x.risk_score.unwrap_or_default(),
-                        reputation_score: x.reputation_score.unwrap_or_default(),
-                        aum: x.aum.unwrap_or_default(),
-                        joined_at: x.joined_at,
-                        requested_at: x.requested_at,
-                        approved_at: x.approved_at,
-                        pending_expert: x.pending_expert,
-                        linked_wallet: x.linked_wallet,
-                        approved_expert: x.approved_expert,
-                    })
-                    .collect(),
+                experts_total: ret.first(|x| x.total).unwrap_or_default(),
+                experts: ret.map(convert_expert_db_to_api),
             })
         }
         .boxed()
@@ -404,25 +384,7 @@ impl RequestHandler for MethodAdminListStrategies {
                 .await?;
 
             Ok(AdminListStrategiesResponse {
-                strategies: ret
-                    .into_iter()
-                    .map(|x| AdminListStrategiesRow {
-                        strategy_id: x.strategy_id,
-                        strategy_name: x.strategy_name,
-                        // expert_id: x.expert_id,
-                        expert_public_id: x.expert_public_id,
-                        expert_name: x.expert_name,
-                        description: x.description,
-                        created_at: x.created_at,
-                        approved_at: x.approved_at,
-                        pending_approval: x.pending_approval,
-                        approved: x.approved,
-                        linked_wallet: x.linked_wallet.unwrap_or_default(),
-                        blockchain: x
-                            .linked_wallet_blockchain
-                            .unwrap_or(EnumBlockChain::LocalNet),
-                    })
-                    .collect(),
+                strategies: ret.map(convert_strategy_db_to_api),
             })
         }
         .boxed()

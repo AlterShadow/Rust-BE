@@ -1,5 +1,6 @@
 use model::endpoint::*;
 use model::types::{Field, Type};
+include!("../shared/endpoints.rs");
 
 pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
     vec![
@@ -15,25 +16,28 @@ pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
                 Field::new("email", Type::optional(Type::String)),
                 Field::new("role", Type::optional(Type::enum_ref("role"))),
             ],
-            vec![Field::new(
-                "users",
-                Type::datatable(
-                    "ListUserRow",
-                    vec![
-                        Field::new("user_id", Type::BigInt),
-                        Field::new("public_user_id", Type::BigInt),
-                        Field::new("username", Type::optional(Type::String)),
-                        Field::new("address", Type::String),
-                        Field::new("last_ip", Type::Inet),
-                        Field::new("last_login_at", Type::BigInt),
-                        Field::new("login_count", Type::Int),
-                        Field::new("role", Type::enum_ref("role")),
-                        Field::new("email", Type::optional(Type::String)),
-                        Field::new("updated_at", Type::BigInt),
-                        Field::new("created_at", Type::BigInt),
-                    ],
+            vec![
+                Field::new("users_total", Type::BigInt),
+                Field::new(
+                    "users",
+                    Type::datatable(
+                        "ListUserRow",
+                        vec![
+                            Field::new("user_id", Type::BigInt),
+                            Field::new("public_user_id", Type::BigInt),
+                            Field::new("username", Type::optional(Type::String)),
+                            Field::new("address", Type::String),
+                            Field::new("last_ip", Type::Inet),
+                            Field::new("last_login_at", Type::BigInt),
+                            Field::new("login_count", Type::Int),
+                            Field::new("role", Type::enum_ref("role")),
+                            Field::new("email", Type::optional(Type::String)),
+                            Field::new("updated_at", Type::BigInt),
+                            Field::new("created_at", Type::BigInt),
+                        ],
+                    ),
                 ),
-            )],
+            ],
         ),
         EndpointSchema::new(
             "AdminSetUserRole",
@@ -130,31 +134,10 @@ pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
                 Field::new("description", Type::optional(Type::String)),
                 Field::new("social_media", Type::optional(Type::String)),
             ],
-            vec![Field::new(
-                "experts",
-                Type::datatable(
-                    "AdminListExpertsRow",
-                    vec![
-                        Field::new("expert_id", Type::BigInt),
-                        Field::new("user_public_id", Type::BigInt),
-                        Field::new("linked_wallet", Type::String),
-                        Field::new("name", Type::String),
-                        Field::new("family_name", Type::optional(Type::String)),
-                        Field::new("given_name", Type::optional(Type::String)),
-                        Field::new("follower_count", Type::BigInt),
-                        Field::new("description", Type::String),
-                        Field::new("social_media", Type::String),
-                        Field::new("risk_score", Type::Numeric),
-                        Field::new("reputation_score", Type::Numeric),
-                        Field::new("aum", Type::Numeric),
-                        Field::new("joined_at", Type::BigInt),
-                        Field::new("requested_at", Type::optional(Type::BigInt)),
-                        Field::new("approved_at", Type::optional(Type::BigInt)),
-                        Field::new("pending_expert", Type::Boolean),
-                        Field::new("approved_expert", Type::Boolean),
-                    ],
-                ),
-            )],
+            vec![
+                Field::new("experts_total", Type::BigInt),
+                Field::new("experts", list_experts_datatable()),
+            ],
         )
         .with_description("Admin lists experts"),
         EndpointSchema::new(
@@ -201,25 +184,7 @@ pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
                 Field::new("pending_approval", Type::optional(Type::Boolean)),
                 Field::new("approved", Type::optional(Type::Boolean)),
             ],
-            vec![Field::new(
-                "strategies",
-                Type::datatable(
-                    "AdminListStrategiesRow",
-                    vec![
-                        Field::new("strategy_id", Type::BigInt),
-                        Field::new("strategy_name", Type::String),
-                        Field::new("expert_public_id", Type::BigInt),
-                        Field::new("expert_name", Type::String),
-                        Field::new("description", Type::optional(Type::String)),
-                        Field::new("created_at", Type::BigInt),
-                        Field::new("approved_at", Type::optional(Type::BigInt)),
-                        Field::new("pending_approval", Type::Boolean),
-                        Field::new("approved", Type::Boolean),
-                        Field::new("linked_wallet", Type::String),
-                        Field::new("blockchain", Type::enum_ref("block_chain")),
-                    ],
-                ),
-            )],
+            vec![Field::new("strategies", list_strategies_datatable())],
         ),
         EndpointSchema::new(
             "AdminApproveStrategy",

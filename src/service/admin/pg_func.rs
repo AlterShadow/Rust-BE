@@ -1,7 +1,7 @@
+use model::pg_func::ProceduralFunction;
 use model::types::*;
-fn get_first_linked_wallet() -> &'static str {
-    "(SELECT w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id LIMIT 1)"
-}
+include!("../shared/pg_func.rs");
+
 pub fn get_admin_pg_func() -> Vec<ProceduralFunction> {
     vec![
         ProceduralFunction::new(
@@ -16,6 +16,7 @@ pub fn get_admin_pg_func() -> Vec<ProceduralFunction> {
                 Field::new("role", Type::optional(Type::enum_ref("role"))),
             ],
             vec![
+                Field::new("total", Type::BigInt),
                 Field::new("user_id", Type::BigInt),
                 Field::new("public_user_id", Type::BigInt),
                 Field::new("username", Type::optional(Type::String)),
@@ -32,6 +33,7 @@ pub fn get_admin_pg_func() -> Vec<ProceduralFunction> {
 BEGIN
     RETURN QUERY
     SELECT
+        count(*) OVER() AS total,
         u.pkey_id,
         u.public_id,
         u.username,
@@ -213,7 +215,7 @@ BEGIN
 END
 "#,
         ),
-        ProceduralFunction::new(
+        ProceduralFunction::new_with_row_type(
             "fun_admin_list_experts",
             vec![
                 Field::new("limit", Type::BigInt),
@@ -227,61 +229,28 @@ END
                 Field::new("description", Type::optional(Type::String)),
                 Field::new("social_media", Type::optional(Type::String)),
             ],
-            vec![
-                Field::new("expert_id", Type::BigInt),
-                Field::new("user_id", Type::BigInt),
-                Field::new("user_public_id", Type::BigInt),
-                Field::new("linked_wallet", Type::String),
-                Field::new("name", Type::String),
-                Field::new("family_name", Type::optional(Type::String)),
-                Field::new("given_name", Type::optional(Type::String)),
-                Field::new("follower_count", Type::optional(Type::BigInt)),
-                Field::new("description", Type::optional(Type::String)),
-                Field::new("social_media", Type::optional(Type::String)),
-                Field::new("risk_score", Type::optional(Type::Numeric)),
-                Field::new("reputation_score", Type::optional(Type::Numeric)),
-                Field::new("aum", Type::optional(Type::Numeric)),
-                Field::new("joined_at", Type::BigInt),
-                Field::new("requested_at", Type::optional(Type::BigInt)),
-                Field::new("approved_at", Type::optional(Type::BigInt)),
-                Field::new("pending_expert", Type::Boolean),
-                Field::new("approved_expert", Type::Boolean),
-            ],
-            r#"
+            expert_row_type(),
+            format!(
+                r#"
 BEGIN
-    RETURN QUERY SELECT a.pkey_id AS expert_id,
-                        a.fkey_user_id   AS user_id,
-                        c.public_id      AS user_public_id,
-                        c.address        AS listening_wallet,
-                        c.username                                                AS username,
-                        c.family_name                                             AS family_name,
-                        c.given_name                                               AS given_name,
-                        (SELECT COUNT(*) FROM tbl.user_follow_expert WHERE fkey_expert_id = a.pkey_id AND unfollowed = FALSE) AS follower_count,
-                        a.description AS description,
-                        a.social_media AS social_media,
-                        a.risk_score AS risk_score,
-                        a.reputation_score AS reputation_score,
-                        a.aum AS aum,
-                        c.created_at AS joined_at,
-                        a.requested_at AS request_at,
-                        a.approved_at AS created_at,
-                        a.pending_expert AS pending_expert,
-                        a.approved_expert AS approved_expert
-                 FROM tbl.expert_profile AS a
-                          JOIN tbl.user AS c ON c.pkey_id = a.fkey_user_id
-                 WHERE (a_expert_id ISNULL OR a.pkey_id = a_expert_id)
-                        AND (a_user_id ISNULL OR c.pkey_id = a_user_id)
-                        AND (a_user_public_id ISNULL OR c.public_id = a_user_public_id)
-                        AND (a_username ISNULL OR c.username ILIKE a_username || '%')
-                        AND (a_family_name ISNULL OR c.family_name ILIKE a_family_name || '%')
-                        AND (a_given_name ISNULL OR c.given_name ILIKE a_given_name || '%')
-                        AND (a_description ISNULL OR a.description ILIKE a_description || '%')
-                        AND (a_social_media ISNULL OR a.social_media ILIKE a_social_media || '%')
-                 ORDER BY a.pkey_id
+    RETURN QUERY SELECT {expert}
+                 FROM tbl.expert_profile AS e
+                   JOIN tbl.user AS u ON u.pkey_id = e.fkey_user_id
+                 WHERE (a_expert_id ISNULL OR e.pkey_id = a_expert_id)
+                        AND (a_user_id ISNULL OR u.pkey_id = a_user_id)
+                        AND (a_user_public_id ISNULL OR u.public_id = a_user_public_id)
+                        AND (a_username ISNULL OR u.username ILIKE a_username || '%')
+                        AND (a_family_name ISNULL OR u.family_name ILIKE a_family_name || '%')
+                        AND (a_given_name ISNULL OR u.given_name ILIKE a_given_name || '%')
+                        AND (a_description ISNULL OR e.description ILIKE a_description || '%')
+                        AND (a_social_media ISNULL OR e.social_media ILIKE a_social_media || '%')
+                 ORDER BY e.pkey_id
                  OFFSET a_offset
                  LIMIT a_limit;
 END
 "#,
+                expert = get_expert(check_if_user_follows_expert())
+            ),
         ),
         ProceduralFunction::new(
             "fun_admin_list_backers",
@@ -321,7 +290,7 @@ BEGIN
 END
             "#,
         ),
-        ProceduralFunction::new(
+        ProceduralFunction::new_with_row_type(
             "fun_admin_list_strategies",
             vec![
                 Field::new("limit", Type::BigInt),
@@ -334,52 +303,28 @@ END
                 Field::new("approved", Type::optional(Type::Boolean)),
                 Field::new("pending_approval", Type::optional(Type::Boolean)),
             ],
-            vec![
-                Field::new("strategy_id", Type::BigInt),
-                Field::new("strategy_name", Type::String),
-                Field::new("expert_id", Type::BigInt),
-                Field::new("expert_public_id", Type::BigInt),
-                Field::new("expert_name", Type::String),
-                Field::new("description", Type::optional(Type::String)),
-                Field::new("created_at", Type::BigInt),
-                Field::new("pending_approval", Type::Boolean),
-                Field::new("approved", Type::Boolean),
-                Field::new("approved_at", Type::optional(Type::BigInt)),
-                Field::new("linked_wallet", Type::optional(Type::String)),
-                Field::new(
-                    "linked_wallet_blockchain",
-                    Type::optional(Type::enum_ref("block_chain")),
-                ),
-            ],
+            strategy_row_type(),
             format!(
                 r#"
+DECLARE
+    a_user_id bigint = NULL;
 BEGIN
-    RETURN QUERY SELECT s.pkey_id AS strategy_id,
-                        s.name AS strategy_name, 
-                        b.pkey_id AS expert_id,
-                        b.public_id AS expert_public_id,
-                        b.username AS expert_name,
-                        s.description AS description,
-                        s.created_at AS created_at,
-                        s.pending_approval AS pending_approval,
-                        s.approved AS approved,
-                        s.approved_at AS approved_at,
-                        w.address AS linked_wallet,
-                        w.blockchain AS linked_wallet_blockchain
+    RETURN QUERY SELECT {strategy}
                  FROM tbl.strategy AS s
                       LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = {linked_wallet}
-                      JOIN tbl.user AS b ON b.pkey_id = s.fkey_user_id
+                      JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id
                           
                 WHERE (a_strategy_id ISNULL OR s.pkey_id = a_strategy_id)
                     AND (a_strategy_name ISNULL OR s.name ILIKE a_strategy_name || '%')
-                    AND (a_expert_public_id ISNULL OR b.public_id = a_expert_public_id)
-                    AND (a_expert_name ISNULL OR b.username ILIKE a_expert_name || '%')
+                    AND (a_expert_public_id ISNULL OR u.public_id = a_expert_public_id)
+                    AND (a_expert_name ISNULL OR u.username ILIKE a_expert_name || '%')
                     AND (a_description ISNULL OR s.description ILIKE a_description || '%')
                  ORDER BY s.pkey_id
                  OFFSET a_offset
                  LIMIT a_limit;
 END
             "#,
+                strategy = get_strategy(check_if_user_follows_strategy()),
                 linked_wallet = get_first_linked_wallet()
             ),
         ),

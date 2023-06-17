@@ -341,42 +341,61 @@ $$;
 
 CREATE OR REPLACE FUNCTION api.fun_user_list_followed_strategies(a_user_id bigint, a_limit bigint, a_offset bigint)
 RETURNS table (
+    "total" bigint,
     "strategy_id" bigint,
     "strategy_name" varchar,
     "strategy_description" varchar,
-    "net_value" double precision,
-    "followers" bigint,
-    "backers" bigint,
+    "current_usdc" varchar,
+    "total_backed_usdc" varchar,
+    "total_exited_usdc" varchar,
     "risk_score" double precision,
     "aum" double precision,
+    "followers" bigint,
+    "backers" bigint,
     "followed" boolean,
     "approved" boolean,
     "approved_at" bigint,
     "pending_approval" boolean,
     "linked_wallet" varchar,
-    "linked_wallet_blockchain" enum_block_chain
+    "linked_wallet_blockchain" enum_block_chain,
+    "evm_contract_address" varchar,
+    "created_at" bigint,
+    "creator_public_id" bigint,
+    "creator_id" bigint,
+    "creator_username" varchar
 )
 LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY SELECT s.pkey_id AS strategy_id,
-                          s.name AS strategy_name,
-                          s.description AS strategy_description,
-                          0.0::double precision AS net_value,
-                          (SELECT COUNT(*) FROM tbl.user_follow_strategy WHERE fkey_strategy_id = s.pkey_id AND unfollowed = FALSE) AS followers,
-                          (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_strategy_history AS h WHERE fkey_strategy_id = s.pkey_id) AS backers,
-                          s.risk_score as risk_score,
-                          s.aum as aum,
-                          TRUE as followed,
-                          s.approved as approved,
-                          s.approved_at as approved_at,
-                          s.pending_approval as pending_approval,
-                          w.address as linked_wallet,
-                          w.blockchain as linked_wallet_blockchain
+    RETURN QUERY SELECT count(*) OVER() AS total,
+      s.pkey_id AS strategy_id,
+      s.name AS strategy_name,
+      s.description AS strategy_description,
+      s.current_usdc,
+      s.total_backed_usdc,
+      s.total_exited_usdc,
+      s.risk_score as risk_score,
+      s.aum as aum,
+      (SELECT count(*) FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.unfollowed = FALSE) AS followers,
+      (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_strategy_history AS h WHERE fkey_strategy_id = s.pkey_id) AS backers,
+      TRUE as followed,
+      s.approved as approved,
+      s.approved_at as approved_at,
+      s.pending_approval as pending_approval,
+      w.address as linked_wallet,
+      w.blockchain as linked_wallet_blockchain,
+      s.evm_contract_address as evm_contract_address,
+      s.created_at as created_at,
+      u.public_id as creator_public_id,
+      u.pkey_id as creator_id,
+      u.username as creator_username
+      
                  FROM tbl.strategy AS s
                      LEFT JOIN tbl.strategy_watching_wallet AS w ON w.fkey_strategy_id = (SELECT distinct w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id LIMIT 1)
-                     JOIN tbl.user_follow_strategy AS b ON b.fkey_strategy_id = s.pkey_id WHERE b.fkey_user_id = a_user_id AND unfollowed = FALSE
+                     JOIN tbl.user_follow_strategy AS b ON b.fkey_strategy_id = s.pkey_id
+                     JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id
+                 WHERE b.fkey_user_id = a_user_id AND unfollowed = FALSE
                  -- TODO: filter only approved strategies
                 ORDER BY s.pkey_id
                 LIMIT a_limit
@@ -388,46 +407,63 @@ $$;
 
 CREATE OR REPLACE FUNCTION api.fun_user_list_strategies(a_user_id bigint, a_limit bigint, a_offset bigint, a_strategy_id bigint DEFAULT NULL, a_strategy_name varchar DEFAULT NULL, a_expert_public_id bigint DEFAULT NULL, a_expert_name varchar DEFAULT NULL, a_description varchar DEFAULT NULL)
 RETURNS table (
+    "total" bigint,
     "strategy_id" bigint,
     "strategy_name" varchar,
     "strategy_description" varchar,
-    "net_value" double precision,
-    "followers" bigint,
-    "backers" bigint,
+    "current_usdc" varchar,
+    "total_backed_usdc" varchar,
+    "total_exited_usdc" varchar,
     "risk_score" double precision,
     "aum" double precision,
+    "followers" bigint,
+    "backers" bigint,
     "followed" boolean,
-    "linked_wallet" varchar,
-    "linked_wallet_blockchain" enum_block_chain,
     "approved" boolean,
     "approved_at" bigint,
-    "pending_approval" boolean
+    "pending_approval" boolean,
+    "linked_wallet" varchar,
+    "linked_wallet_blockchain" enum_block_chain,
+    "evm_contract_address" varchar,
+    "created_at" bigint,
+    "creator_public_id" bigint,
+    "creator_id" bigint,
+    "creator_username" varchar
 )
 LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY SELECT s.pkey_id AS strategy_id,
-                          s.name AS strategy_name,
-                          s.description AS strategy_description,
-                          0.0::double precision AS net_value,
-                          (SELECT COUNT(*) FROM tbl.user_follow_strategy WHERE fkey_strategy_id = s.pkey_id AND unfollowed = FALSE) AS followers,
-                          (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_strategy_history AS h WHERE fkey_strategy_id = s.pkey_id) AS backers,
-                          s.risk_score as risk_score,
-                          s.aum as aum,
-                          EXISTS(SELECT * FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.fkey_user_id = a_user_id AND ufs.unfollowed = FALSE) as followed,
-                          w.address AS linked_wallet,
-                          w.blockchain AS linked_wallet_blockchain,
-                          s.approved as approved,
-                          s.approved_at as approved_at,
-                          s.pending_approval as pending_approval
+    RETURN QUERY SELECT count(*) OVER() AS total,
+      s.pkey_id AS strategy_id,
+      s.name AS strategy_name,
+      s.description AS strategy_description,
+      s.current_usdc,
+      s.total_backed_usdc,
+      s.total_exited_usdc,
+      s.risk_score as risk_score,
+      s.aum as aum,
+      (SELECT count(*) FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.unfollowed = FALSE) AS followers,
+      (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_strategy_history AS h WHERE fkey_strategy_id = s.pkey_id) AS backers,
+      EXISTS(SELECT * FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.fkey_user_id = a_user_id AND ufs.unfollowed = FALSE) as followed,
+      s.approved as approved,
+      s.approved_at as approved_at,
+      s.pending_approval as pending_approval,
+      w.address as linked_wallet,
+      w.blockchain as linked_wallet_blockchain,
+      s.evm_contract_address as evm_contract_address,
+      s.created_at as created_at,
+      u.public_id as creator_public_id,
+      u.pkey_id as creator_id,
+      u.username as creator_username
+      
                  FROM tbl.strategy AS s
-                        JOIN tbl.user AS b ON b.pkey_id = s.fkey_user_id
+                        JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id
                         LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = (SELECT distinct w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id LIMIT 1)
                  WHERE (a_strategy_id ISNULL OR s.pkey_id = a_strategy_id)
                     AND (a_strategy_name ISNULL OR s.name ILIKE a_strategy_name || '%')
-                    AND (a_expert_public_id ISNULL OR b.public_id = a_expert_public_id)
-                    AND (a_expert_name ISNULL OR b.username ILIKE a_expert_name || '%')
+                    AND (a_expert_public_id ISNULL OR u.public_id = a_expert_public_id)
+                    AND (a_expert_name ISNULL OR u.username ILIKE a_expert_name || '%')
                     AND (a_description ISNULL OR s.description ILIKE a_description || '%')
                 ORDER BY s.pkey_id
                 LIMIT a_limit
@@ -475,48 +511,56 @@ $$;
 
 CREATE OR REPLACE FUNCTION api.fun_user_get_strategy(a_strategy_id bigint, a_user_id bigint)
 RETURNS table (
+    "total" bigint,
     "strategy_id" bigint,
     "strategy_name" varchar,
     "strategy_description" varchar,
     "current_usdc" varchar,
     "total_backed_usdc" varchar,
     "total_exited_usdc" varchar,
-    "followers" bigint,
-    "backers" bigint,
     "risk_score" double precision,
     "aum" double precision,
-    "evm_contract_address" varchar,
+    "followers" bigint,
+    "backers" bigint,
     "followed" boolean,
-    "creator_user_public_id" bigint,
-    "linked_wallet" varchar,
-    "linked_wallet_blockchain" enum_block_chain,
-    "created_at" bigint,
     "approved" boolean,
     "approved_at" bigint,
-    "pending_approval" boolean
+    "pending_approval" boolean,
+    "linked_wallet" varchar,
+    "linked_wallet_blockchain" enum_block_chain,
+    "evm_contract_address" varchar,
+    "created_at" bigint,
+    "creator_public_id" bigint,
+    "creator_id" bigint,
+    "creator_username" varchar
 )
 LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY SELECT s.pkey_id AS strategy_id,
-                          s.name AS strategy_name,
-                          s.description AS strategy_description,
-                          s.current_usdc,
-                          s.total_backed_usdc,
-                          s.total_exited_usdc,
-                          (SELECT COUNT(*) FROM tbl.user_follow_strategy WHERE fkey_strategy_id = s.pkey_id AND unfollowed = FALSE) AS followers,
-                          (SELECT COUNT(DISTINCT user_back_strategy_history.fkey_user_id) FROM tbl.user_back_strategy_history WHERE fkey_strategy_id = s.pkey_id) AS followers,
-                          s.risk_score as risk_score,
-                          s.aum as aum,
-                          s.evm_contract_address,
-                          EXISTS(SELECT * FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.fkey_user_id = a_user_id AND ufs.unfollowed = FALSE),
-                          w.address AS linked_wallet,
-                          w.blockchain AS linked_wallet_blockchain,
-                          s.created_at,
-                          s.approved,
-                          s.approved_at,
-                          s.pending_approval
+    RETURN QUERY SELECT count(*) OVER() AS total,
+      s.pkey_id AS strategy_id,
+      s.name AS strategy_name,
+      s.description AS strategy_description,
+      s.current_usdc,
+      s.total_backed_usdc,
+      s.total_exited_usdc,
+      s.risk_score as risk_score,
+      s.aum as aum,
+      (SELECT count(*) FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.unfollowed = FALSE) AS followers,
+      (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_strategy_history AS h WHERE fkey_strategy_id = s.pkey_id) AS backers,
+      EXISTS(SELECT * FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.fkey_user_id = a_user_id AND ufs.unfollowed = FALSE) as followed,
+      s.approved as approved,
+      s.approved_at as approved_at,
+      s.pending_approval as pending_approval,
+      w.address as linked_wallet,
+      w.blockchain as linked_wallet_blockchain,
+      s.evm_contract_address as evm_contract_address,
+      s.created_at as created_at,
+      u.public_id as creator_public_id,
+      u.pkey_id as creator_id,
+      u.username as creator_username
+      
                  FROM tbl.strategy AS s
                     LEFT JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id
                     LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = (SELECT distinct w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id LIMIT 1)
@@ -645,45 +689,61 @@ $$;
 
 CREATE OR REPLACE FUNCTION api.fun_user_list_backed_strategies(a_user_id bigint, a_offset bigint, a_limit bigint)
 RETURNS table (
+    "total" bigint,
     "strategy_id" bigint,
     "strategy_name" varchar,
     "strategy_description" varchar,
-    "net_value" double precision,
-    "followers" bigint,
-    "backers" bigint,
+    "current_usdc" varchar,
+    "total_backed_usdc" varchar,
+    "total_exited_usdc" varchar,
     "risk_score" double precision,
     "aum" double precision,
+    "followers" bigint,
+    "backers" bigint,
     "followed" boolean,
     "approved" boolean,
     "approved_at" bigint,
+    "pending_approval" boolean,
     "linked_wallet" varchar,
-    "linked_wallet_blockchain" enum_block_chain
+    "linked_wallet_blockchain" enum_block_chain,
+    "evm_contract_address" varchar,
+    "created_at" bigint,
+    "creator_public_id" bigint,
+    "creator_id" bigint,
+    "creator_username" varchar
 )
 LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY SELECT s.pkey_id                            AS strategy_id,
-                        s.name                               AS strategy_name,
-                        s.description                        AS strategy_description,
-                        0.0::double precision                AS net_value,
-                        (SELECT COUNT(*)
-                         FROM tbl.user_follow_strategy
-                         WHERE fkey_strategy_id = s.pkey_id
-                           AND unfollowed = FALSE)           AS followers,
-                        (SELECT COUNT(DISTINCT user_back_strategy_history.fkey_user_id)
-                         FROM tbl.user_back_strategy_history
-                         WHERE fkey_strategy_id = s.pkey_id) AS followers,
-                        s.risk_score                         as risk_score,
-                        s.aum                                as aum,
-                        EXISTS(SELECT * FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.fkey_user_id = a_user_id AND ufs.unfollowed = FALSE)                                   AS followed,
-                        s.approved                           AS approved,
-                        s.approved_at     AS approved_at,
-                        w.address                           AS linked_wallet,
-                        w.blockchain                        AS linked_wallet_blockchain
+    RETURN QUERY SELECT count(*) OVER() AS total,
+      s.pkey_id AS strategy_id,
+      s.name AS strategy_name,
+      s.description AS strategy_description,
+      s.current_usdc,
+      s.total_backed_usdc,
+      s.total_exited_usdc,
+      s.risk_score as risk_score,
+      s.aum as aum,
+      (SELECT count(*) FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.unfollowed = FALSE) AS followers,
+      (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_strategy_history AS h WHERE fkey_strategy_id = s.pkey_id) AS backers,
+      EXISTS(SELECT * FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.fkey_user_id = a_user_id AND ufs.unfollowed = FALSE) as followed,
+      s.approved as approved,
+      s.approved_at as approved_at,
+      s.pending_approval as pending_approval,
+      w.address as linked_wallet,
+      w.blockchain as linked_wallet_blockchain,
+      s.evm_contract_address as evm_contract_address,
+      s.created_at as created_at,
+      u.public_id as creator_public_id,
+      u.pkey_id as creator_id,
+      u.username as creator_username
+      
                  FROM tbl.strategy AS s
                       JOIN tbl.user_back_strategy_history AS b ON b.fkey_strategy_id = s.pkey_id AND b.fkey_user_id = a_user_id
+                      JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id
                     LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = (SELECT distinct w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id LIMIT 1)
+                 WHERE b.fkey_user_id = a_user_id
                  ORDER BY s.pkey_id
                  LIMIT a_limit
                  OFFSET a_offset;
@@ -805,6 +865,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION api.fun_user_list_followed_experts(a_user_id bigint, a_offset bigint, a_limit bigint)
 RETURNS table (
+    "total" bigint,
     "expert_id" bigint,
     "user_id" bigint,
     "user_public_id" bigint,
@@ -813,64 +874,7 @@ RETURNS table (
     "family_name" varchar,
     "given_name" varchar,
     "follower_count" bigint,
-    "description" varchar,
-    "social_media" varchar,
-    "risk_score" double precision,
-    "reputation_score" double precision,
-    "aum" double precision,
-    "joined_at" bigint,
-    "requested_at" bigint,
-    "approved_at" bigint,
-    "pending_expert" boolean,
-    "approved_expert" boolean
-)
-LANGUAGE plpgsql
-AS $$
-    
-BEGIN
-    RETURN QUERY SELECT a.pkey_id                                                 AS expert_id,
-                        a.fkey_user_id                                            AS user_id,
-                        c.public_id                                               AS user_public_id,
-                        c.address                                                 AS listening_wallet,
-                        c.username                                                AS username,
-                        c.family_name                                             AS family_name,
-                        c.given_name                                               AS given_name,
-                        (SELECT COUNT(*)
-                         FROM tbl.user_follow_expert
-                         WHERE fkey_expert_id = a.pkey_id AND unfollowed = FALSE) AS follower_count,
-                        a.description                                             AS description,
-                        a.social_media                                            AS social_media,
-                        a.risk_score                                              AS risk_score,
-                        a.reputation_score                                        AS reputation_score,
-                        a.aum                                                     AS aum,
-                        c.created_at                                              AS joined_at,
-                        a.requested_at                                            AS requested_at,
-                        a.approved_at                                             AS approved_at,
-                        a.pending_expert                                          AS pending_expert,
-                        a.approved_expert                                         AS approved_expert
-                FROM tbl.expert_profile AS a
-                          JOIN tbl.user_follow_expert AS b ON b.fkey_expert_id = a.pkey_id
-                          JOIN tbl.user AS c ON c.pkey_id = a.fkey_user_id
-                WHERE b.fkey_user_id = a_user_id
-                    AND unfollowed = FALSE
-                ORDER BY a.pkey_id
-                OFFSET a_offset
-                LIMIT a_limit
-                ;
-END
-
-$$;
-        
-
-CREATE OR REPLACE FUNCTION api.fun_user_list_experts(a_limit bigint, a_offset bigint, a_user_id bigint, a_expert_id bigint DEFAULT NULL, a_expert_user_id bigint DEFAULT NULL, a_expert_user_public_id bigint DEFAULT NULL, a_username varchar DEFAULT NULL, a_family_name varchar DEFAULT NULL, a_given_name varchar DEFAULT NULL, a_description varchar DEFAULT NULL, a_social_media varchar DEFAULT NULL)
-RETURNS table (
-    "expert_id" bigint,
-    "user_id" bigint,
-    "user_public_id" bigint,
-    "listening_wallet" varchar,
-    "username" varchar,
-    "family_name" varchar,
-    "given_name" varchar,
+    "backer_count" bigint,
     "description" varchar,
     "social_media" varchar,
     "risk_score" double precision,
@@ -882,41 +886,109 @@ RETURNS table (
     "pending_expert" boolean,
     "approved_expert" boolean,
     "followed" boolean,
+    "linked_wallet" varchar
+)
+LANGUAGE plpgsql
+AS $$
+    
+    BEGIN
+        RETURN QUERY SELECT count(*) OVER() AS total,
+        e.pkey_id                                                 AS expert_id,
+        e.fkey_user_id                                            AS user_id,
+        u.public_id                                               AS user_public_id,
+        u.address                                                 AS listening_wallet,
+        u.username                                                AS username,
+        u.family_name                                             AS family_name,
+        u.given_name                                              AS given_name,
+        (SELECT COUNT(DISTINCT d.fkey_user_id) FROM tbl.user_follow_expert AS d WHERE d.fkey_expert_id = e.pkey_id AND unfollowed = FALSE) AS follower_count,
+        (SELECT COUNT(DISTINCT d.fkey_user_id) FROM tbl.user_back_strategy_history AS d JOIN tbl.strategy AS e ON e.pkey_id = d.fkey_strategy_id WHERE e.fkey_user_id = u.pkey_id) AS backer_count,   
+        e.description                                             AS description,
+        e.social_media                                            AS social_media,
+        e.risk_score                                              AS risk_score,
+        e.reputation_score                                        AS reputation_score,
+        e.aum                                                     AS aum,
+        u.created_at                                              AS joined_at,
+        e.requested_at                                            AS requested_at,
+        e.approved_at                                             AS approved_at,
+        e.pending_expert                                          AS pending_expert,
+        e.approved_expert                                         AS approved_expert,
+        TRUE                                                AS followed,
+        u.address                                                 AS linked_wallet
+        
+                    FROM tbl.expert_profile AS e
+                      JOIN tbl.user_follow_expert AS b ON b.fkey_expert_id = e.pkey_id
+                      JOIN tbl.user AS u ON u.pkey_id = e.fkey_user_id
+                    WHERE b.fkey_user_id = a_user_id
+                        AND unfollowed = FALSE
+                    ORDER BY e.pkey_id
+                    OFFSET a_offset
+                    LIMIT a_limit
+                    ;
+    END
+    
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_list_experts(a_limit bigint, a_offset bigint, a_user_id bigint, a_expert_id bigint DEFAULT NULL, a_expert_user_id bigint DEFAULT NULL, a_expert_user_public_id bigint DEFAULT NULL, a_username varchar DEFAULT NULL, a_family_name varchar DEFAULT NULL, a_given_name varchar DEFAULT NULL, a_description varchar DEFAULT NULL, a_social_media varchar DEFAULT NULL)
+RETURNS table (
+    "total" bigint,
+    "expert_id" bigint,
+    "user_id" bigint,
+    "user_public_id" bigint,
+    "listening_wallet" varchar,
+    "username" varchar,
+    "family_name" varchar,
+    "given_name" varchar,
     "follower_count" bigint,
-    "backer_count" bigint
+    "backer_count" bigint,
+    "description" varchar,
+    "social_media" varchar,
+    "risk_score" double precision,
+    "reputation_score" double precision,
+    "aum" double precision,
+    "joined_at" bigint,
+    "requested_at" bigint,
+    "approved_at" bigint,
+    "pending_expert" boolean,
+    "approved_expert" boolean,
+    "followed" boolean,
+    "linked_wallet" varchar
 )
 LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY SELECT e.pkey_id                                                 AS expert_id,
-                        e.fkey_user_id                                            AS user_id,
-                        c.public_id                                               AS user_public_id,
-                        c.address                                                 AS listening_wallet,
-                        c.username                                                AS username,
-                        c.family_name                                             AS family_name,
-                        c.given_name                                               AS given_name,
-                        e.description                                             AS description,
-                        e.social_media                                            AS social_media,
-                        e.risk_score                                              AS risk_score,
-                        e.reputation_score                                        AS reputation_score,
-                        e.aum                                                     AS aum,
-                        c.created_at                                              AS joined_at,
-                        e.requested_at                                            AS requested_at,
-                        e.approved_at                                             AS approved_at,
-                        e.pending_expert                                          AS pending_expert,
-                        e.approved_expert                                         AS approved_expert,
-                        EXISTS(SELECT * FROM tbl.user_follow_expert AS ufe WHERE ufe.fkey_expert_id = e.pkey_id AND ufe.fkey_user_id = a_user_id AND unfollowed = FALSE) AS followed,
-                        (SELECT COUNT(DISTINCT d.fkey_user_id) FROM tbl.user_follow_expert AS d WHERE d.fkey_expert_id = e.pkey_id AND unfollowed = FALSE) AS follower_count,
-                        (SELECT COUNT(DISTINCT d.fkey_user_id) FROM tbl.user_back_strategy_history AS d JOIN tbl.strategy AS e ON e.pkey_id = d.fkey_strategy_id WHERE e.fkey_user_id = c.pkey_id) AS backer_count
+    RETURN QUERY SELECT count(*) OVER() AS total,
+        e.pkey_id                                                 AS expert_id,
+        e.fkey_user_id                                            AS user_id,
+        u.public_id                                               AS user_public_id,
+        u.address                                                 AS listening_wallet,
+        u.username                                                AS username,
+        u.family_name                                             AS family_name,
+        u.given_name                                              AS given_name,
+        (SELECT COUNT(DISTINCT d.fkey_user_id) FROM tbl.user_follow_expert AS d WHERE d.fkey_expert_id = e.pkey_id AND unfollowed = FALSE) AS follower_count,
+        (SELECT COUNT(DISTINCT d.fkey_user_id) FROM tbl.user_back_strategy_history AS d JOIN tbl.strategy AS e ON e.pkey_id = d.fkey_strategy_id WHERE e.fkey_user_id = u.pkey_id) AS backer_count,   
+        e.description                                             AS description,
+        e.social_media                                            AS social_media,
+        e.risk_score                                              AS risk_score,
+        e.reputation_score                                        AS reputation_score,
+        e.aum                                                     AS aum,
+        u.created_at                                              AS joined_at,
+        e.requested_at                                            AS requested_at,
+        e.approved_at                                             AS approved_at,
+        e.pending_expert                                          AS pending_expert,
+        e.approved_expert                                         AS approved_expert,
+        EXISTS(SELECT * FROM tbl.user_follow_expert AS ufe WHERE ufe.fkey_expert_id = e.pkey_id AND ufe.fkey_user_id = a_user_id AND unfollowed = FALSE)                                                AS followed,
+        u.address                                                 AS linked_wallet
+        
                  FROM tbl.expert_profile AS e
-                          JOIN tbl.user AS c ON c.pkey_id = e.fkey_user_id
+                   JOIN tbl.user AS u ON u.pkey_id = e.fkey_user_id
                  WHERE (a_expert_id ISNULL OR e.pkey_id = a_expert_id)
-                        AND (a_expert_user_id ISNULL OR c.pkey_id = a_expert_user_id)
-                        AND (a_expert_user_public_id ISNULL OR c.public_id = a_expert_user_public_id)
-                        AND (a_username ISNULL OR c.username ILIKE a_username || '%')
-                        AND (a_family_name ISNULL OR c.family_name ILIKE a_family_name || '%')
-                        AND (a_given_name ISNULL OR c.given_name ILIKE a_given_name || '%')
+                        AND (a_expert_user_id ISNULL OR u.pkey_id = a_expert_user_id)
+                        AND (a_expert_user_public_id ISNULL OR u.public_id = a_expert_user_public_id)
+                        AND (a_username ISNULL OR u.username ILIKE a_username || '%')
+                        AND (a_family_name ISNULL OR u.family_name ILIKE a_family_name || '%')
+                        AND (a_given_name ISNULL OR u.given_name ILIKE a_given_name || '%')
                         AND (a_description ISNULL OR e.description ILIKE a_description || '%')
                         AND (a_social_media ISNULL OR e.social_media ILIKE a_social_media || '%')
                  ORDER BY e.pkey_id
@@ -930,6 +1002,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION api.fun_user_get_expert_profile(a_expert_id bigint, a_user_id bigint)
 RETURNS table (
+    "total" bigint,
     "expert_id" bigint,
     "user_id" bigint,
     "user_public_id" bigint,
@@ -938,6 +1011,7 @@ RETURNS table (
     "family_name" varchar,
     "given_name" varchar,
     "follower_count" bigint,
+    "backer_count" bigint,
     "description" varchar,
     "social_media" varchar,
     "risk_score" double precision,
@@ -948,37 +1022,39 @@ RETURNS table (
     "approved_at" bigint,
     "pending_expert" boolean,
     "approved_expert" boolean,
-    "followed" boolean
+    "followed" boolean,
+    "linked_wallet" varchar
 )
 LANGUAGE plpgsql
 AS $$
     
 BEGIN
 
-    RETURN QUERY SELECT e.pkey_id                                                 AS expert_id,
-                        e.fkey_user_id                                            AS user_id,
-                        b.public_id                                               AS user_public_id,
-                        b.address                                                 AS listening_wallet,
-                        b.username                                                AS username,
-                        b.family_name                                             AS family_name,
-                        b.given_name                                              AS given_name,
-                        (SELECT COUNT(*)
-                         FROM tbl.user_follow_expert
-                         WHERE fkey_expert_id = e.pkey_id AND unfollowed = FALSE) AS follower_count,
-                        e.description                                             AS description,
-                        e.social_media                                            AS social_media,
-                        e.risk_score                                              AS risk_score,
-                        e.reputation_score                                        AS reputation_score,
-                        e.aum                                                     AS aum,
-                        b.created_at                                              AS joined_at,
-                        e.requested_at                                            AS requested_at,
-                        e.approved_at                                             AS approved_at,
-                        e.pending_expert                                          AS pending_expert,
-                        e.approved_expert                                         AS approved_expert,
-                        EXISTS(SELECT * FROM tbl.user_follow_expert AS ufe WHERE ufe.fkey_expert_id = e.pkey_id AND ufe.fkey_user_id = a_user_id AND unfollowed = FALSE) AS followed
-
+    RETURN QUERY SELECT count(*) OVER() AS total,
+        e.pkey_id                                                 AS expert_id,
+        e.fkey_user_id                                            AS user_id,
+        u.public_id                                               AS user_public_id,
+        u.address                                                 AS listening_wallet,
+        u.username                                                AS username,
+        u.family_name                                             AS family_name,
+        u.given_name                                              AS given_name,
+        (SELECT COUNT(DISTINCT d.fkey_user_id) FROM tbl.user_follow_expert AS d WHERE d.fkey_expert_id = e.pkey_id AND unfollowed = FALSE) AS follower_count,
+        (SELECT COUNT(DISTINCT d.fkey_user_id) FROM tbl.user_back_strategy_history AS d JOIN tbl.strategy AS e ON e.pkey_id = d.fkey_strategy_id WHERE e.fkey_user_id = u.pkey_id) AS backer_count,   
+        e.description                                             AS description,
+        e.social_media                                            AS social_media,
+        e.risk_score                                              AS risk_score,
+        e.reputation_score                                        AS reputation_score,
+        e.aum                                                     AS aum,
+        u.created_at                                              AS joined_at,
+        e.requested_at                                            AS requested_at,
+        e.approved_at                                             AS approved_at,
+        e.pending_expert                                          AS pending_expert,
+        e.approved_expert                                         AS approved_expert,
+        EXISTS(SELECT * FROM tbl.user_follow_expert AS ufe WHERE ufe.fkey_expert_id = e.pkey_id AND ufe.fkey_user_id = a_user_id AND unfollowed = FALSE)                                                AS followed,
+        u.address                                                 AS linked_wallet
+        
                  FROM tbl.expert_profile AS e
-                 JOIN tbl.user AS b ON b.pkey_id = e.fkey_user_id
+                 JOIN tbl.user AS u ON u.pkey_id = e.fkey_user_id
                  WHERE e.pkey_id = a_expert_id
                  ;
 
@@ -1005,19 +1081,19 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY SELECT   a.pkey_id AS expert_id,
+    RETURN QUERY SELECT   e.pkey_id AS expert_id,
                           b.public_id AS user_public_id,
                           b.username AS name,
                           b.address AS login_wallet,
                           b.created_at AS joined_at,
-                          (SELECT COUNT(*) FROM tbl.user_follow_expert WHERE fkey_expert_id = a.pkey_id AND unfollowed = FALSE) AS follower_count,
-                          a.description AS description,
-                          a.social_media AS social_media,
-                          a.risk_score AS risk_score,
-                          a.reputation_score AS reputation_score,
-                          a.aum AS aum
-                 FROM tbl.expert_profile AS a
-                 RIGHT JOIN tbl.user AS b ON b.pkey_id = a.fkey_user_id
+                          (SELECT COUNT(*) FROM tbl.user_follow_expert WHERE fkey_expert_id = e.pkey_id AND unfollowed = FALSE) AS follower_count,
+                          e.description AS description,
+                          e.social_media AS social_media,
+                          e.risk_score AS risk_score,
+                          e.reputation_score AS reputation_score,
+                          e.aum AS aum
+                 FROM tbl.expert_profile AS e
+                 RIGHT JOIN tbl.user AS b ON b.pkey_id = e.fkey_user_id
                  WHERE b.pkey_id = a_user_id;
 
 END
@@ -1565,6 +1641,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION api.fun_admin_list_users(a_limit bigint, a_offset bigint, a_user_id bigint DEFAULT NULL, a_address varchar DEFAULT NULL, a_username varchar DEFAULT NULL, a_email varchar DEFAULT NULL, a_role enum_role DEFAULT NULL)
 RETURNS table (
+    "total" bigint,
     "user_id" bigint,
     "public_user_id" bigint,
     "username" varchar,
@@ -1583,6 +1660,7 @@ AS $$
 BEGIN
     RETURN QUERY
     SELECT
+        count(*) OVER() AS total,
         u.pkey_id,
         u.public_id,
         u.username,
@@ -1773,14 +1851,16 @@ $$;
 
 CREATE OR REPLACE FUNCTION api.fun_admin_list_experts(a_limit bigint, a_offset bigint, a_expert_id bigint DEFAULT NULL, a_user_id bigint DEFAULT NULL, a_user_public_id bigint DEFAULT NULL, a_username varchar DEFAULT NULL, a_family_name varchar DEFAULT NULL, a_given_name varchar DEFAULT NULL, a_description varchar DEFAULT NULL, a_social_media varchar DEFAULT NULL)
 RETURNS table (
+    "total" bigint,
     "expert_id" bigint,
     "user_id" bigint,
     "user_public_id" bigint,
-    "linked_wallet" varchar,
-    "name" varchar,
+    "listening_wallet" varchar,
+    "username" varchar,
     "family_name" varchar,
     "given_name" varchar,
     "follower_count" bigint,
+    "backer_count" bigint,
     "description" varchar,
     "social_media" varchar,
     "risk_score" double precision,
@@ -1790,41 +1870,48 @@ RETURNS table (
     "requested_at" bigint,
     "approved_at" bigint,
     "pending_expert" boolean,
-    "approved_expert" boolean
+    "approved_expert" boolean,
+    "followed" boolean,
+    "linked_wallet" varchar
 )
 LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY SELECT a.pkey_id AS expert_id,
-                        a.fkey_user_id   AS user_id,
-                        c.public_id      AS user_public_id,
-                        c.address        AS listening_wallet,
-                        c.username                                                AS username,
-                        c.family_name                                             AS family_name,
-                        c.given_name                                               AS given_name,
-                        (SELECT COUNT(*) FROM tbl.user_follow_expert WHERE fkey_expert_id = a.pkey_id AND unfollowed = FALSE) AS follower_count,
-                        a.description AS description,
-                        a.social_media AS social_media,
-                        a.risk_score AS risk_score,
-                        a.reputation_score AS reputation_score,
-                        a.aum AS aum,
-                        c.created_at AS joined_at,
-                        a.requested_at AS request_at,
-                        a.approved_at AS created_at,
-                        a.pending_expert AS pending_expert,
-                        a.approved_expert AS approved_expert
-                 FROM tbl.expert_profile AS a
-                          JOIN tbl.user AS c ON c.pkey_id = a.fkey_user_id
-                 WHERE (a_expert_id ISNULL OR a.pkey_id = a_expert_id)
-                        AND (a_user_id ISNULL OR c.pkey_id = a_user_id)
-                        AND (a_user_public_id ISNULL OR c.public_id = a_user_public_id)
-                        AND (a_username ISNULL OR c.username ILIKE a_username || '%')
-                        AND (a_family_name ISNULL OR c.family_name ILIKE a_family_name || '%')
-                        AND (a_given_name ISNULL OR c.given_name ILIKE a_given_name || '%')
-                        AND (a_description ISNULL OR a.description ILIKE a_description || '%')
-                        AND (a_social_media ISNULL OR a.social_media ILIKE a_social_media || '%')
-                 ORDER BY a.pkey_id
+    RETURN QUERY SELECT count(*) OVER() AS total,
+        e.pkey_id                                                 AS expert_id,
+        e.fkey_user_id                                            AS user_id,
+        u.public_id                                               AS user_public_id,
+        u.address                                                 AS listening_wallet,
+        u.username                                                AS username,
+        u.family_name                                             AS family_name,
+        u.given_name                                              AS given_name,
+        (SELECT COUNT(DISTINCT d.fkey_user_id) FROM tbl.user_follow_expert AS d WHERE d.fkey_expert_id = e.pkey_id AND unfollowed = FALSE) AS follower_count,
+        (SELECT COUNT(DISTINCT d.fkey_user_id) FROM tbl.user_back_strategy_history AS d JOIN tbl.strategy AS e ON e.pkey_id = d.fkey_strategy_id WHERE e.fkey_user_id = u.pkey_id) AS backer_count,   
+        e.description                                             AS description,
+        e.social_media                                            AS social_media,
+        e.risk_score                                              AS risk_score,
+        e.reputation_score                                        AS reputation_score,
+        e.aum                                                     AS aum,
+        u.created_at                                              AS joined_at,
+        e.requested_at                                            AS requested_at,
+        e.approved_at                                             AS approved_at,
+        e.pending_expert                                          AS pending_expert,
+        e.approved_expert                                         AS approved_expert,
+        EXISTS(SELECT * FROM tbl.user_follow_expert AS ufe WHERE ufe.fkey_expert_id = e.pkey_id AND ufe.fkey_user_id = a_user_id AND unfollowed = FALSE)                                                AS followed,
+        u.address                                                 AS linked_wallet
+        
+                 FROM tbl.expert_profile AS e
+                   JOIN tbl.user AS u ON u.pkey_id = e.fkey_user_id
+                 WHERE (a_expert_id ISNULL OR e.pkey_id = a_expert_id)
+                        AND (a_user_id ISNULL OR u.pkey_id = a_user_id)
+                        AND (a_user_public_id ISNULL OR u.public_id = a_user_public_id)
+                        AND (a_username ISNULL OR u.username ILIKE a_username || '%')
+                        AND (a_family_name ISNULL OR u.family_name ILIKE a_family_name || '%')
+                        AND (a_given_name ISNULL OR u.given_name ILIKE a_given_name || '%')
+                        AND (a_description ISNULL OR e.description ILIKE a_description || '%')
+                        AND (a_social_media ISNULL OR e.social_media ILIKE a_social_media || '%')
+                 ORDER BY e.pkey_id
                  OFFSET a_offset
                  LIMIT a_limit;
 END
@@ -1866,43 +1953,66 @@ $$;
 
 CREATE OR REPLACE FUNCTION api.fun_admin_list_strategies(a_limit bigint, a_offset bigint, a_strategy_id bigint DEFAULT NULL, a_strategy_name varchar DEFAULT NULL, a_expert_public_id bigint DEFAULT NULL, a_expert_name varchar DEFAULT NULL, a_description varchar DEFAULT NULL, a_approved boolean DEFAULT NULL, a_pending_approval boolean DEFAULT NULL)
 RETURNS table (
+    "total" bigint,
     "strategy_id" bigint,
     "strategy_name" varchar,
-    "expert_id" bigint,
-    "expert_public_id" bigint,
-    "expert_name" varchar,
-    "description" varchar,
-    "created_at" bigint,
-    "pending_approval" boolean,
+    "strategy_description" varchar,
+    "current_usdc" varchar,
+    "total_backed_usdc" varchar,
+    "total_exited_usdc" varchar,
+    "risk_score" double precision,
+    "aum" double precision,
+    "followers" bigint,
+    "backers" bigint,
+    "followed" boolean,
     "approved" boolean,
     "approved_at" bigint,
+    "pending_approval" boolean,
     "linked_wallet" varchar,
-    "linked_wallet_blockchain" enum_block_chain
+    "linked_wallet_blockchain" enum_block_chain,
+    "evm_contract_address" varchar,
+    "created_at" bigint,
+    "creator_public_id" bigint,
+    "creator_id" bigint,
+    "creator_username" varchar
 )
 LANGUAGE plpgsql
 AS $$
     
+DECLARE
+    a_user_id bigint = NULL;
 BEGIN
-    RETURN QUERY SELECT s.pkey_id AS strategy_id,
-                        s.name AS strategy_name, 
-                        b.pkey_id AS expert_id,
-                        b.public_id AS expert_public_id,
-                        b.username AS expert_name,
-                        s.description AS description,
-                        s.created_at AS created_at,
-                        s.pending_approval AS pending_approval,
-                        s.approved AS approved,
-                        s.approved_at AS approved_at,
-                        w.address AS linked_wallet,
-                        w.blockchain AS linked_wallet_blockchain
+    RETURN QUERY SELECT count(*) OVER() AS total,
+      s.pkey_id AS strategy_id,
+      s.name AS strategy_name,
+      s.description AS strategy_description,
+      s.current_usdc,
+      s.total_backed_usdc,
+      s.total_exited_usdc,
+      s.risk_score as risk_score,
+      s.aum as aum,
+      (SELECT count(*) FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.unfollowed = FALSE) AS followers,
+      (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_strategy_history AS h WHERE fkey_strategy_id = s.pkey_id) AS backers,
+      EXISTS(SELECT * FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.fkey_user_id = a_user_id AND ufs.unfollowed = FALSE) as followed,
+      s.approved as approved,
+      s.approved_at as approved_at,
+      s.pending_approval as pending_approval,
+      w.address as linked_wallet,
+      w.blockchain as linked_wallet_blockchain,
+      s.evm_contract_address as evm_contract_address,
+      s.created_at as created_at,
+      u.public_id as creator_public_id,
+      u.pkey_id as creator_id,
+      u.username as creator_username
+      
                  FROM tbl.strategy AS s
-                      LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = (SELECT w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id LIMIT 1)
-                      JOIN tbl.user AS b ON b.pkey_id = s.fkey_user_id
+                      LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = (SELECT distinct w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id LIMIT 1)
+                      JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id
                           
                 WHERE (a_strategy_id ISNULL OR s.pkey_id = a_strategy_id)
                     AND (a_strategy_name ISNULL OR s.name ILIKE a_strategy_name || '%')
-                    AND (a_expert_public_id ISNULL OR b.public_id = a_expert_public_id)
-                    AND (a_expert_name ISNULL OR b.username ILIKE a_expert_name || '%')
+                    AND (a_expert_public_id ISNULL OR u.public_id = a_expert_public_id)
+                    AND (a_expert_name ISNULL OR u.username ILIKE a_expert_name || '%')
                     AND (a_description ISNULL OR s.description ILIKE a_description || '%')
                  ORDER BY s.pkey_id
                  OFFSET a_offset

@@ -1,3 +1,4 @@
+use model::pg_func::ProceduralFunction;
 use model::types::*;
 
 pub fn get_auth_pg_func() -> Vec<ProceduralFunction> {
