@@ -117,6 +117,7 @@ CREATE TABLE tbl.strategy (
     strategy_fee double precision  NULL,
     updated_at bigint  NOT NULL,
     created_at bigint  NOT NULL,
+    requested_at bigint  NULL,
     pending_approval boolean  NOT NULL DEFAULT FALSE,
     approved boolean  NOT NULL DEFAULT FALSE,
     approved_at bigint  NULL,
