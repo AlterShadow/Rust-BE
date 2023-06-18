@@ -795,7 +795,7 @@ BEGIN
                         a.quantity         AS quantity,
                         a.blockchain       AS blockchain,
                         a.transaction_hash AS transaction_hash,
-                        a.time             AS time
+                        a.back_time             AS time
                  FROM tbl.user_back_strategy_history AS a
                  WHERE a.fkey_user_id = a_user_id
                   AND (a_strategy_id NOTNULL OR a_strategy_id = a.fkey_strategy_id);
