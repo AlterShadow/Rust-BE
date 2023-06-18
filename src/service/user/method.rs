@@ -972,6 +972,196 @@ impl RequestHandler for MethodUserBackStrategy {
         .boxed()
     }
 }
+
+async fn user_exit_strategy(
+    conn: &EthereumRpcConnection,
+    ctx: &RequestContext,
+    db: &DbClient,
+    blockchain: EnumBlockChain,
+    strategy_id: i64,
+    shares: Option<U256>,
+    master_key: impl Key + Clone,
+) -> Result<H256> {
+    /* instantiate strategy wallet */
+    let strategy_wallet_contract = match db
+        .execute(FunUserListStrategyWalletsReq {
+            user_id: ctx.user_id,
+            blockchain: Some(blockchain),
+        })
+        .await?
+        .into_result()
+    {
+        Some(strategy_wallet_contract) => StrategyWalletContract::new(
+            conn.clone(),
+            Address::from_str(&strategy_wallet_contract.address)?,
+        )?,
+
+        None => bail!("user has no strategy wallet on this chain"),
+    };
+
+    /* if master key eoa is not admin, we can't redeem */
+    if strategy_wallet_contract.admin().await? != master_key.address() {
+        bail!("strategy wallet has another or no admin");
+    }
+
+    /* fetch strategy */
+    let strategy = db
+        .execute(FunUserGetStrategyReq {
+            strategy_id,
+            user_id: ctx.user_id,
+        })
+        .await?
+        .into_result()
+        .context("strategy is not registered in the database")?;
+
+    /* instantiate strategy pool contract wrapper */
+    // TODO: fetch the address of the strategy pool in this chain
+    let sp_contract = match strategy.evm_contract_address {
+        Some(addr) => {
+            let address = Address::from_str(&addr)?;
+            StrategyPoolContract::new(conn.clone(), address)?
+        }
+        None => bail!("redeem from unexisting strategy pool"),
+    };
+
+    /* check if strategy is trading */
+    if sp_contract.is_paused().await? {
+        bail!("strategy is currently trading, redeem is not possible");
+    }
+
+    /* redeem */
+    let shares_redeemed: U256;
+    let tx_hash = match shares {
+        Some(shares) => {
+            /* check share balance first */
+            if sp_contract
+                .balance_of(strategy_wallet_contract.address())
+                .await?
+                < shares
+            {
+                bail!("not enough shares");
+            }
+            shares_redeemed = shares;
+            /* if strategy is currently trading, redeem is not possible */
+            match redeem_from_strategy_and_ensure_success(
+                strategy_wallet_contract.clone(),
+                &conn,
+                12,
+                10,
+                Duration::from_secs(10),
+                master_key.clone(),
+                sp_contract.address(),
+                shares,
+            )
+            .await
+            {
+                Ok(tx_hash) => tx_hash,
+                Err(_) => bail!("redeem is not possible currently"),
+            }
+        }
+        None => {
+            /* check share balance first */
+            let share_balance = sp_contract
+                .balance_of(strategy_wallet_contract.address())
+                .await?;
+            if share_balance == U256::zero() {
+                bail!("no shares to redeem");
+            }
+
+            shares_redeemed = share_balance;
+            /* if strategy is currently trading, redeem is not possible */
+            match full_redeem_from_strategy_and_ensure_success(
+                strategy_wallet_contract.clone(),
+                &conn,
+                12,
+                10,
+                Duration::from_secs(10),
+                master_key.clone(),
+                sp_contract.address(),
+            )
+            .await
+            {
+                Ok(tx_hash) => tx_hash,
+                Err(_) => bail!("redeem is not possible currently"),
+            }
+        }
+    };
+
+    /* get back time */
+    // TODO: this query fails
+    // let back_history_row = db
+    //     .execute(FunUserListBackStrategyHistoryReq {
+    //         user_id: ctx.user_id,
+    //         strategy_id: Some(strategy_id),
+    //     })
+    //     .await?
+    //     .into_result()
+    //     .context("user has not backed strategy, but has exited it")?;
+
+    /* update exit strategy ledger */
+    db.execute(FunUserExitStrategyReq {
+        user_id: ctx.user_id,
+        strategy_id: strategy_id,
+        quantity: format!("{:?}", shares_redeemed),
+        blockchain: blockchain,
+        transaction_hash: format!("{:?}", tx_hash),
+        // TODO: is back time the time when the user first backed?
+        // TODO: there could be multiple "back strategies" before one "exit strategy"
+        back_time: 0,
+        // TODO: what is purchase wallet?
+        purchase_wallet: format!("{:?}", strategy_wallet_contract.address()),
+        // TODO: remove dex from back and exit strategy ledgers
+        dex: EnumDex::PancakeSwap.to_string(),
+    })
+    .await?;
+
+    Ok(tx_hash)
+}
+
+pub struct MethodUserExitStrategy {
+    pub pool: EthereumRpcConnectionPool,
+    pub master_key: Secp256k1SecretKey,
+}
+
+impl RequestHandler for MethodUserExitStrategy {
+    type Request = UserExitStrategyRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db: DbClient = toolbox.get_db();
+        let pool = self.pool.clone();
+        let master_key = self.master_key.clone();
+        async move {
+            let eth_conn = pool.get(EnumBlockChain::LocalNet).await?;
+            // TODO: decide if we should ensure user role
+            ensure_user_role(ctx, EnumRole::User)?;
+
+            let tx_hash = user_exit_strategy(
+                &eth_conn,
+                &ctx,
+                &db,
+                req.blockchain,
+                req.strategy_id,
+                match req.quantity {
+                    Some(quantity) => Some(quantity.parse()?),
+                    None => None,
+                },
+                master_key,
+            )
+            .await?;
+            Ok(UserExitStrategyResponse {
+                success: true,
+                transaction_hash: format!("{:?}", tx_hash),
+            })
+        }
+        .boxed()
+    }
+}
+
 pub struct MethodUserRequestRefund {
     pub pool: EthereumRpcConnectionPool,
     pub stablecoin_addresses: Arc<BlockchainCoinAddresses>,

@@ -130,6 +130,10 @@ async fn main() -> Result<()> {
         master_key: master_key.clone(),
         dex_addresses: Arc::new(DexAddresses::new()),
     });
+    server.add_handler(MethodUserExitStrategy {
+        pool: eth_pool.clone(),
+        master_key: master_key.clone(),
+    });
     server.add_handler(MethodUserRequestRefund {
         pool: eth_pool,
         stablecoin_addresses: coin_addresses,
