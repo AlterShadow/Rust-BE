@@ -410,7 +410,7 @@ impl RequestHandler for MethodUserListBackedStrategies {
     }
 }
 
-pub async fn deploy_wallet_contract(
+async fn deploy_wallet_contract(
     conn: &EthereumRpcConnection,
     key: impl Key,
     backer: Address,
@@ -425,7 +425,7 @@ pub async fn deploy_wallet_contract(
     Ok(wallet)
 }
 
-pub async fn deploy_strategy_contract(
+async fn deploy_strategy_contract(
     conn: &EthereumRpcConnection,
     key: impl Key,
     strategy_token_name: String,
@@ -445,7 +445,7 @@ pub async fn deploy_strategy_contract(
     Ok(strategy)
 }
 
-pub async fn user_back_strategy(
+async fn user_back_strategy(
     conn: &EthereumRpcConnection,
     ctx: &RequestContext,
     db: &DbClient,
@@ -885,7 +885,7 @@ async fn calculate_shares(
     }
 }
 
-pub async fn trade_escrow_for_strategy_tokens(
+async fn trade_escrow_for_strategy_tokens(
     conn: &EthereumRpcConnection,
     master_key: impl Key + Clone,
     chain: EnumBlockChain,
