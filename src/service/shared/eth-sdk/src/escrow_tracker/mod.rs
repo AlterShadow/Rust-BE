@@ -1,5 +1,6 @@
 use crate::escrow_tracker::escrow::parse_escrow;
 use crate::evm::{parse_quickalert_payload, AppState};
+use crate::utils::wait_for_confirmations_simple;
 use crate::{evm, TransactionFetcher};
 use bytes::Bytes;
 use eyre::*;
@@ -7,6 +8,7 @@ use gen::database::*;
 use gen::model::EnumBlockChain;
 use http::StatusCode;
 use std::sync::Arc;
+use std::time::Duration;
 use tracing::{error, info, warn};
 
 pub mod deposit;
@@ -29,6 +31,17 @@ pub async fn handle_eth_escrows(
         })?;
         let state = state.clone();
         tokio::spawn(async move {
+            /* the transactions from the quickalerts payload might not be yet mined */
+            match wait_for_confirmations_simple(&conn.eth(), hash, Duration::from_secs(10), 10)
+                .await
+            {
+                Ok(_) => {}
+                Err(e) => {
+                    error!("escrow tx was not mined: {:?}", e);
+                    return;
+                }
+            }
+            // TODO: wait for confirmations blocks before processing to properly handle ommer blocks & reorgs
             let tx = match TransactionFetcher::new_and_assume_ready(hash, &conn).await {
                 Ok(tx) => tx,
                 Err(err) => {
