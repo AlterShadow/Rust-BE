@@ -1,3 +1,4 @@
+use crate::audit::get_audit_rules;
 use api::cmc::CoinMarketCap;
 use eth_sdk::erc20::approve_and_ensure_success;
 use eth_sdk::erc20::Erc20Token;
@@ -18,6 +19,7 @@ use eyre::*;
 use futures::FutureExt;
 use gen::database::*;
 use gen::model::*;
+use itertools::Itertools;
 use lib::database::{DbClient, ToSql};
 use lib::handler::{FutureResponse, RequestHandler};
 use lib::toolbox::*;
@@ -2315,6 +2317,60 @@ impl RequestHandler for MethodUserListStrategyWallets {
                     })
                     .collect(),
             })
+        }
+        .boxed()
+    }
+}
+pub struct MethodUserListStrategyAuditRules;
+
+impl RequestHandler for MethodUserListStrategyAuditRules {
+    type Request = UserListStrategyAuditRulesRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db: DbClient = toolbox.get_db();
+        async move {
+            let rules = get_audit_rules();
+            if let Some(strategy_id) = req.strategy_id {
+                let resp = db
+                    .execute(FunUserListStrategyAuditRulesReq { strategy_id })
+                    .await?;
+                Ok(UserListStrategyAuditRulesResponse {
+                    audit_rules: resp
+                        .into_iter()
+                        .map(|x| {
+                            let rule = rules
+                                .iter()
+                                .find(|y| x.rule_id == y.id as i64)
+                                .context("Could not find rule")?;
+                            Ok::<_, Error>(UserListStrategyAuditRulesRow {
+                                rule_id: x.rule_id,
+                                rule_name: rule.name.to_string(),
+                                rule_description: rule.description.to_string(),
+                                created_at: x.created_at,
+                                enabled: x.enabled,
+                            })
+                        })
+                        .try_collect()?,
+                })
+            } else {
+                Ok(UserListStrategyAuditRulesResponse {
+                    audit_rules: rules
+                        .into_iter()
+                        .map(|rule| UserListStrategyAuditRulesRow {
+                            rule_id: rule.id as _,
+                            rule_name: rule.name.to_string(),
+                            rule_description: rule.description.to_string(),
+                            created_at: 0,
+                            enabled: true,
+                        })
+                        .collect(),
+                })
+            }
         }
         .boxed()
     }

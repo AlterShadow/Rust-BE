@@ -341,6 +341,13 @@ pub struct FunUserListRequestRefundHistoryRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunUserListStrategyAuditRulesRespRow {
+    pub rule_id: i64,
+    pub created_at: i64,
+    pub enabled: bool,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserListStrategyBackersRespRow {
     pub user_id: i64,
     pub user_public_id: i64,
@@ -1733,6 +1740,22 @@ impl DatabaseRequest for FunUserListStrategyWalletsReq {
             &self.user_id as &(dyn ToSql + Sync),
             &self.blockchain as &(dyn ToSql + Sync),
         ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserListStrategyAuditRulesReq {
+    pub strategy_id: i64,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunUserListStrategyAuditRulesReq {
+    type ResponseRow = FunUserListStrategyAuditRulesRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_list_strategy_audit_rules(a_strategy_id => $1::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![&self.strategy_id as &(dyn ToSql + Sync)]
     }
 }
 

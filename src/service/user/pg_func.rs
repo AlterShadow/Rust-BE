@@ -1103,5 +1103,21 @@ BEGIN
 END
             "#,
         ),
+        ProceduralFunction::new(
+            "fun_user_list_strategy_audit_rules",
+            vec![Field::new("strategy_id", Type::BigInt)],
+            vec![
+                Field::new("rule_id", Type::BigInt),
+                Field::new("created_at", Type::BigInt),
+                Field::new("enabled", Type::Boolean),
+            ],
+            r#"
+BEGIN
+    RETURN QUERY SELECT a.pkey_id, a.rule, a.created_at, a.enabled
+    FROM tbl.strategy_audit_rule AS a
+    WHERE a.fkey_strategy_id = a_strategy_id;
+END
+            "#,
+        ),
     ]
 }

@@ -369,6 +369,9 @@ pub enum EnumEndpoint {
     #[postgres(name = "UserListStrategyWallets")]
     UserListStrategyWallets = 20390,
     ///
+    #[postgres(name = "UserListStrategyAuditRules")]
+    UserListStrategyAuditRules = 20400,
+    ///
     #[postgres(name = "AdminListUsers")]
     AdminListUsers = 30010,
     ///
@@ -1832,6 +1835,26 @@ pub struct UserListStrategiesRequest {
 #[serde(rename_all = "camelCase")]
 pub struct UserListStrategiesResponse {
     pub strategies: Vec<ListStrategiesRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListStrategyAuditRulesRequest {
+    #[serde(default)]
+    pub strategy_id: Option<i64>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListStrategyAuditRulesResponse {
+    pub audit_rules: Vec<UserListStrategyAuditRulesRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListStrategyAuditRulesRow {
+    pub rule_id: i64,
+    pub rule_name: String,
+    pub rule_description: String,
+    pub created_at: i64,
+    pub enabled: bool,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -5676,6 +5699,61 @@ impl WsRequest for UserListStrategyWalletsRequest {
 }
 impl WsResponse for UserListStrategyWalletsResponse {
     type Request = UserListStrategyWalletsRequest;
+}
+
+impl WsRequest for UserListStrategyAuditRulesRequest {
+    type Response = UserListStrategyAuditRulesResponse;
+    const METHOD_ID: u32 = 20400;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserListStrategyAuditRules",
+  "code": 20400,
+  "parameters": [
+    {
+      "name": "strategy_id",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    }
+  ],
+  "returns": [
+    {
+      "name": "audit_rules",
+      "ty": {
+        "DataTable": {
+          "name": "UserListStrategyAuditRulesRow",
+          "fields": [
+            {
+              "name": "rule_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "rule_name",
+              "ty": "String"
+            },
+            {
+              "name": "rule_description",
+              "ty": "String"
+            },
+            {
+              "name": "created_at",
+              "ty": "BigInt"
+            },
+            {
+              "name": "enabled",
+              "ty": "Boolean"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for UserListStrategyAuditRulesResponse {
+    type Request = UserListStrategyAuditRulesRequest;
 }
 
 impl WsRequest for AdminListUsersRequest {

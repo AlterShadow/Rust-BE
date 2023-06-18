@@ -2,6 +2,7 @@
 pub mod admin_endpoints;
 #[path = "../admin/method.rs"]
 mod admin_method;
+pub mod audit;
 pub mod endpoints;
 mod method;
 mod test_helper;
@@ -103,6 +104,7 @@ async fn main() -> Result<()> {
     server.add_handler(MethodUserGetDepositAddresses {
         addresses: config.escrow_addresses,
     });
+    server.add_handler(MethodUserListStrategyAuditRules);
 
     server.add_handler(MethodAdminListUsers);
     server.add_handler(MethodAdminSetUserRole);

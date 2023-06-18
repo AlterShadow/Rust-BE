@@ -59,6 +59,7 @@ ID: 2
 |20370|UserGetDepositAddresses||addresses||
 |20380|UserListDepositHistory|limit, offset|history||
 |20390|UserListStrategyWallets|blockchain|wallets||
+|20400|UserListStrategyAuditRules|strategy_id|audit_rules||
 
 # admin Server
 ID: 3

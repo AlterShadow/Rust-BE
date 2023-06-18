@@ -1665,6 +1665,24 @@ END
 $$;
         
 
+CREATE OR REPLACE FUNCTION api.fun_user_list_strategy_audit_rules(a_strategy_id bigint)
+RETURNS table (
+    "rule_id" bigint,
+    "created_at" bigint,
+    "enabled" boolean
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY SELECT a.pkey_id, a.rule, a.created_at, a.enabled
+    FROM tbl.strategy_audit_rule AS a
+    WHERE a.fkey_strategy_id = a_strategy_id;
+END
+            
+$$;
+        
+
 CREATE OR REPLACE FUNCTION api.fun_admin_list_users(a_limit bigint, a_offset bigint, a_user_id bigint DEFAULT NULL, a_address varchar DEFAULT NULL, a_username varchar DEFAULT NULL, a_email varchar DEFAULT NULL, a_role enum_role DEFAULT NULL)
 RETURNS table (
     "total" bigint,
