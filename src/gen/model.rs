@@ -1617,6 +1617,7 @@ pub struct UserGetStrategyResponse {
     pub backers: i32,
     pub watching_wallets: Vec<WatchingWalletRow>,
     pub aum_history: Vec<AumHistoryRow>,
+    pub audit_rules: Vec<UserListStrategyAuditRulesRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -3037,6 +3038,36 @@ impl WsRequest for UserGetStrategyRequest {
             {
               "name": "yield_30d",
               "ty": "Numeric"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "audit_rules",
+      "ty": {
+        "DataTable": {
+          "name": "UserListStrategyAuditRulesRow",
+          "fields": [
+            {
+              "name": "rule_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "rule_name",
+              "ty": "String"
+            },
+            {
+              "name": "rule_description",
+              "ty": "String"
+            },
+            {
+              "name": "created_at",
+              "ty": "BigInt"
+            },
+            {
+              "name": "enabled",
+              "ty": "Boolean"
             }
           ]
         }

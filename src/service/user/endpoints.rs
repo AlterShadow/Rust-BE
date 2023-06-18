@@ -151,6 +151,19 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                         ],
                     ),
                 ),
+                Field::new(
+                    "audit_rules",
+                    Type::datatable(
+                        "UserListStrategyAuditRulesRow",
+                        vec![
+                            Field::new("rule_id", Type::BigInt),
+                            Field::new("rule_name", Type::String),
+                            Field::new("rule_description", Type::String),
+                            Field::new("created_at", Type::BigInt),
+                            Field::new("enabled", Type::Boolean),
+                        ],
+                    ),
+                ),
             ],
         )
         .with_description("User gets a strategy"),

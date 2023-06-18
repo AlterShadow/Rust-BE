@@ -22,8 +22,8 @@ pub const TOKENS_NO_MORE_THAN_10_PERCENT: AuditData = AuditData {
     description: "No asset allowed should be more than 10% of the total portfolio",
 };
 
-pub fn get_audit_rules() -> Vec<AuditData> {
-    vec![
+pub fn get_audit_rules() -> &'static [AuditData] {
+    &[
         TOP25_TOKENS,
         IMMUTABLE_TOKENS,
         TOKENS_NO_MORE_THAN_10_PERCENT,

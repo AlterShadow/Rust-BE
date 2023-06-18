@@ -258,13 +258,9 @@ impl RequestHandler for MethodUserGetStrategy {
                     strategy_id: req.strategy_id,
                     user_id: ctx.user_id,
                 })
-                .await?;
-            let ret = ret.into_result().context("failed to get strategy")?;
-            let watching_wallets = db
-                .execute(FunUserListStrategyWatchWalletsReq {
-                    strategy_id: req.strategy_id,
-                })
-                .await?;
+                .await?
+                .into_result()
+                .context("failed to get strategy")?;
             // TODO: complete missing fields
             Ok(UserGetStrategyResponse {
                 strategy_id: ret.strategy_id,
@@ -281,20 +277,42 @@ impl RequestHandler for MethodUserGetStrategy {
                 approved: ret.approved,
                 approved_at: ret.approved_at,
                 backers: ret.backers as _,
-                watching_wallets: watching_wallets
-                    .into_iter()
+                watching_wallets: db
+                    .execute(FunUserListStrategyWatchWalletsReq {
+                        strategy_id: req.strategy_id,
+                    })
+                    .await?
                     .map(|x| WatchingWalletRow {
                         watching_wallet_id: x.watch_wallet_id,
                         wallet_address: x.wallet_address,
                         blockchain: x.blockchain,
                         dex: "DEX TODO".to_string(),
                         ratio_distribution: x.ratio,
-                    })
-                    .collect(),
+                    }),
                 risk_score: ret.risk_score.unwrap_or(0.0),
                 aum: ret.aum.unwrap_or(0.0),
                 reputation: 0,
                 aum_history: vec![],
+                audit_rules: db
+                    .execute(FunUserListStrategyAuditRulesReq {
+                        strategy_id: req.strategy_id,
+                    })
+                    .await?
+                    .into_iter()
+                    .map(|x| {
+                        let rule = get_audit_rules()
+                            .iter()
+                            .find(|y| x.rule_id == y.id as i64)
+                            .context("Could not find rule")?;
+                        Ok::<_, Error>(UserListStrategyAuditRulesRow {
+                            rule_id: x.rule_id,
+                            rule_name: rule.name.to_string(),
+                            rule_description: rule.description.to_string(),
+                            created_at: x.created_at,
+                            enabled: x.enabled,
+                        })
+                    })
+                    .try_collect()?,
             })
         }
         .boxed()

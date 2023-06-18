@@ -918,6 +918,36 @@
                   ]
                 }
               }
+            },
+            {
+              "name": "audit_rules",
+              "ty": {
+                "DataTable": {
+                  "name": "UserListStrategyAuditRulesRow",
+                  "fields": [
+                    {
+                      "name": "rule_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "rule_name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "rule_description",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "created_at",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "enabled",
+                      "ty": "Boolean"
+                    }
+                  ]
+                }
+              }
             }
           ],
           "stream_response": [],
@@ -2605,14 +2635,8 @@
             {
               "name": "audit_rules",
               "ty": {
-                "DataTable": {
-                  "name": "UserExpertStrategyEnabledRule",
-                  "fields": [
-                    {
-                      "name": "rule_id",
-                      "ty": "BigInt"
-                    }
-                  ]
+                "Optional": {
+                  "Vec": "BigInt"
                 }
               }
             }
