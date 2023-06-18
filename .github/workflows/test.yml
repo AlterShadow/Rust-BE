@@ -52,7 +52,7 @@ jobs:
           cargo install --git https://github.com/foundry-rs/foundry --profile local --force foundry-cli anvil chisel
 
       - name: Run Anvil
-        run: anvil &
+        run: anvil --block-time 1 &
 
       - name: Assert Anvil is Running
         run: |
