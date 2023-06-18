@@ -1683,6 +1683,19 @@ END
 $$;
         
 
+CREATE OR REPLACE FUNCTION api.fun_user_add_strategy_audit_rule(a_strategy_id bigint, a_audit_rule_id bigint)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    INSERT INTO tbl.strategy_audit_rule (fkey_strategy_id, fkey_audit_rule_id, created_at)
+    VALUES (a_strategy_id, a_audit_rule_id, EXTRACT(EPOCH FROM NOW())::BIGINT);
+END
+            
+$$;
+        
+
 CREATE OR REPLACE FUNCTION api.fun_admin_list_users(a_limit bigint, a_offset bigint, a_user_id bigint DEFAULT NULL, a_address varchar DEFAULT NULL, a_username varchar DEFAULT NULL, a_email varchar DEFAULT NULL, a_role enum_role DEFAULT NULL)
 RETURNS table (
     "total" bigint,

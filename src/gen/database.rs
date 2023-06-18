@@ -150,6 +150,9 @@ pub struct FunUserAddRegisteredWalletRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunUserAddStrategyAuditRuleRespRow {}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserAddStrategyInitialTokenRatioRespRow {
     pub strategy_initial_token_ratio_id: i64,
 }
@@ -1756,6 +1759,26 @@ impl DatabaseRequest for FunUserListStrategyAuditRulesReq {
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![&self.strategy_id as &(dyn ToSql + Sync)]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserAddStrategyAuditRuleReq {
+    pub strategy_id: i64,
+    pub audit_rule_id: i64,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunUserAddStrategyAuditRuleReq {
+    type ResponseRow = FunUserAddStrategyAuditRuleRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_add_strategy_audit_rule(a_strategy_id => $1::bigint, a_audit_rule_id => $2::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.strategy_id as &(dyn ToSql + Sync),
+            &self.audit_rule_id as &(dyn ToSql + Sync),
+        ]
     }
 }
 

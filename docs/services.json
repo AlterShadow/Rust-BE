@@ -2601,6 +2601,20 @@
             {
               "name": "wallet_address",
               "ty": "String"
+            },
+            {
+              "name": "audit_rules",
+              "ty": {
+                "DataTable": {
+                  "name": "UserExpertStrategyEnabledRule",
+                  "fields": [
+                    {
+                      "name": "rule_id",
+                      "ty": "BigInt"
+                    }
+                  ]
+                }
+              }
             }
           ],
           "returns": [

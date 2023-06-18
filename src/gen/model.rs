@@ -1156,6 +1156,7 @@ pub struct ExpertCreateStrategyRequest {
     pub expert_fee: f64,
     pub agreed_tos: bool,
     pub wallet_address: String,
+    pub audit_rules: Vec<UserExpertStrategyEnabledRule>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1502,6 +1503,11 @@ pub struct UserExitStrategyRequest {
 pub struct UserExitStrategyResponse {
     pub success: bool,
     pub transaction_hash: String,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserExpertStrategyEnabledRule {
+    pub rule_id: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -4898,6 +4904,20 @@ impl WsRequest for ExpertCreateStrategyRequest {
     {
       "name": "wallet_address",
       "ty": "String"
+    },
+    {
+      "name": "audit_rules",
+      "ty": {
+        "DataTable": {
+          "name": "UserExpertStrategyEnabledRule",
+          "fields": [
+            {
+              "name": "rule_id",
+              "ty": "BigInt"
+            }
+          ]
+        }
+      }
     }
   ],
   "returns": [

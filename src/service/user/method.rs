@@ -1805,6 +1805,13 @@ impl RequestHandler for MethodExpertCreateStrategy {
                 .await?
                 .into_result()
                 .context("failed to create strategy")?;
+            for s in req.audit_rules {
+                db.execute(FunUserAddStrategyAuditRuleReq {
+                    strategy_id: ret.strategy_id,
+                    audit_rule_id: s.rule_id,
+                })
+                .await?;
+            }
 
             Ok(ExpertCreateStrategyResponse {
                 success: ret.success,

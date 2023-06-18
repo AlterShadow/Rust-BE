@@ -24,6 +24,7 @@ async fn test_create_update_strategy() -> Result<()> {
             expert_fee: 0.0,
             agreed_tos: true,
             wallet_address: format!("{:?}", user.address),
+            audit_rules: vec![UserExpertStrategyEnabledRule { rule_id: 1 }],
         })
         .await?;
     info!("Register wallet {:?}", resp);
@@ -72,6 +73,7 @@ async fn test_user_follow_strategy() -> Result<()> {
             expert_fee: 0.0,
             agreed_tos: true,
             wallet_address: format!("{:?}", user.address),
+            audit_rules: vec![UserExpertStrategyEnabledRule { rule_id: 1 }],
         })
         .await?;
     info!("User Create Strategy {:?}", create_strategy_resp);
@@ -135,6 +137,7 @@ async fn test_user_follow_strategy_get_user_profile() -> Result<()> {
             expert_fee: 0.0,
             agreed_tos: true,
             wallet_address: format!("{:?}", user.address),
+            audit_rules: vec![UserExpertStrategyEnabledRule { rule_id: 1 }],
         })
         .await?;
     info!("User Create Strategy {:?}", create_strategy_resp);

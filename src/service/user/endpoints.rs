@@ -508,6 +508,13 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 // ],
                 // ),
                 // ),
+                Field::new(
+                    "audit_rules",
+                    Type::datatable(
+                        "UserExpertStrategyEnabledRule",
+                        vec![Field::new("rule_id", Type::BigInt)],
+                    ),
+                ),
             ],
             vec![
                 Field::new("success", Type::Boolean),

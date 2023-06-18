@@ -1119,5 +1119,19 @@ BEGIN
 END
             "#,
         ),
+        ProceduralFunction::new(
+            "fun_user_add_strategy_audit_rule",
+            vec![
+                Field::new("strategy_id", Type::BigInt),
+                Field::new("audit_rule_id", Type::BigInt),
+            ],
+            vec![],
+            r#"
+BEGIN
+    INSERT INTO tbl.strategy_audit_rule (fkey_strategy_id, fkey_audit_rule_id, created_at)
+    VALUES (a_strategy_id, a_audit_rule_id, EXTRACT(EPOCH FROM NOW())::BIGINT);
+END
+            "#,
+        ),
     ]
 }
