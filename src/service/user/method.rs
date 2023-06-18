@@ -672,7 +672,7 @@ async fn user_back_strategy(
     transfer_token_to_and_ensure_success(
         escrow_contract,
         &conn,
-        12,
+        14,
         10,
         Duration::from_secs(10),
         master_key.clone(),
@@ -2028,7 +2028,7 @@ pub async fn on_user_request_refund(
     let hash = transfer_token_to_and_ensure_success(
         escrow_contract,
         &_conn,
-        12,
+        14,
         10,
         Duration::from_secs(10),
         escrow_signer,

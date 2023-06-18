@@ -17,7 +17,7 @@ use web3::signing::Key;
 use web3::types::{Address, TransactionParameters, TransactionReceipt, TransactionRequest};
 use web3::{ethabi, Transport};
 
-use crate::utils::wait_for_confirmations_simple;
+use crate::utils::wait_for_confirmations;
 
 /// A configuration builder for contract deployment.
 #[derive(Debug)]
@@ -121,7 +121,7 @@ impl<T: Transport> ContractDeployer<T> {
 
                     // TODO: buggy here
                     let tx_hash = eth.send_raw_transaction(signed_tx.raw_transaction).await?;
-                    wait_for_confirmations_simple(&eth, tx_hash, poll_interval, max_retries).await
+                    wait_for_confirmations(&eth, tx_hash, poll_interval, max_retries, 14).await
                 },
             )
             .await?;

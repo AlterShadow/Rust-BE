@@ -51,6 +51,32 @@ where
         max_retry
     )
 }
+pub async fn wait_for_confirmations<T>(
+    eth: &Eth<T>,
+    hash: H256,
+    poll_interval: Duration,
+    max_retry: usize,
+    confirmations: u64,
+) -> Result<TransactionReceipt>
+where
+    T: Transport,
+{
+    let begin_block_number = eth.block_number().await?.as_u64();
+    for _ in 0..max_retry {
+        if let Some(receipt) = eth.transaction_receipt(hash).await? {
+            let block_number = receipt.block_number.unwrap().as_u64();
+            if block_number - begin_block_number > confirmations {
+                return Ok(receipt);
+            }
+        }
+        tokio::time::sleep(poll_interval).await;
+    }
+    bail!(
+        "Transaction {:?} not found within {} retries",
+        hash,
+        max_retry
+    )
+}
 
 pub fn encode_signature(sig: &Signature) -> String {
     let mut sig_bytes = vec![];
