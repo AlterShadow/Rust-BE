@@ -269,7 +269,7 @@ impl RequestHandler for MethodUserGetStrategy {
                 strategy_name: ret.strategy_name,
                 strategy_description: ret.strategy_description,
                 creator_user_id: ret.creator_public_id,
-                social_media: "".to_string(),
+                social_media: ret.social_media.unwrap_or_default(),
                 historical_return: 0.0,
                 inception_time: ret.created_at,
                 total_amount: 0.0,
@@ -1238,11 +1238,8 @@ impl RequestHandler for MethodUserListExitStrategyHistory {
                         exit_history_id: x.exit_history_id,
                         strategy_id: x.strategy_id,
                         exit_quantity: x.exit_quantity,
-                        purchase_wallet_address: x.purchase_wallet_address,
                         blockchain: x.blockchain,
-                        dex: x.dex,
                         exit_time: x.exit_time,
-                        back_time: x.back_time,
                     })
                     .collect(),
             })

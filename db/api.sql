@@ -365,7 +365,8 @@ RETURNS table (
     "creator_id" bigint,
     "creator_username" varchar,
     "creator_family_name" varchar,
-    "creator_given_name" varchar
+    "creator_given_name" varchar,
+    "social_media" varchar
 )
 LANGUAGE plpgsql
 AS $$
@@ -395,7 +396,8 @@ BEGIN
       u.pkey_id as creator_id,
       u.username as creator_username,
       u.family_name as creator_family_name,
-      u.given_name as creator_given_name
+      u.given_name as creator_given_name,
+      s.social_media as social_media
       
                  FROM tbl.strategy AS s
                      LEFT JOIN tbl.strategy_watching_wallet AS w ON w.fkey_strategy_id = (SELECT distinct w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id LIMIT 1)
@@ -437,7 +439,8 @@ RETURNS table (
     "creator_id" bigint,
     "creator_username" varchar,
     "creator_family_name" varchar,
-    "creator_given_name" varchar
+    "creator_given_name" varchar,
+    "social_media" varchar
 )
 LANGUAGE plpgsql
 AS $$
@@ -467,7 +470,8 @@ BEGIN
       u.pkey_id as creator_id,
       u.username as creator_username,
       u.family_name as creator_family_name,
-      u.given_name as creator_given_name
+      u.given_name as creator_given_name,
+      s.social_media as social_media
       
                  FROM tbl.strategy AS s
                         JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id
@@ -547,7 +551,8 @@ RETURNS table (
     "creator_id" bigint,
     "creator_username" varchar,
     "creator_family_name" varchar,
-    "creator_given_name" varchar
+    "creator_given_name" varchar,
+    "social_media" varchar
 )
 LANGUAGE plpgsql
 AS $$
@@ -577,7 +582,8 @@ BEGIN
       u.pkey_id as creator_id,
       u.username as creator_username,
       u.family_name as creator_family_name,
-      u.given_name as creator_given_name
+      u.given_name as creator_given_name,
+      s.social_media as social_media
       
                  FROM tbl.strategy AS s
                     LEFT JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id
@@ -731,7 +737,8 @@ RETURNS table (
     "creator_id" bigint,
     "creator_username" varchar,
     "creator_family_name" varchar,
-    "creator_given_name" varchar
+    "creator_given_name" varchar,
+    "social_media" varchar
 )
 LANGUAGE plpgsql
 AS $$
@@ -761,7 +768,8 @@ BEGIN
       u.pkey_id as creator_id,
       u.username as creator_username,
       u.family_name as creator_family_name,
-      u.given_name as creator_given_name
+      u.given_name as creator_given_name,
+      s.social_media as social_media
       
                  FROM tbl.strategy AS s
                       JOIN tbl.user_back_strategy_history AS b ON b.fkey_strategy_id = s.pkey_id AND b.fkey_user_id = a_user_id
@@ -828,10 +836,7 @@ RETURNS table (
     "exit_history_id" bigint,
     "strategy_id" bigint,
     "exit_quantity" varchar,
-    "purchase_wallet_address" varchar,
     "blockchain" enum_block_chain,
-    "dex" varchar,
-    "back_time" bigint,
     "exit_time" bigint
 )
 LANGUAGE plpgsql
@@ -842,10 +847,7 @@ BEGIN
     RETURN QUERY SELECT a.pkey_id AS exit_history_id,
                           a.fkey_strategy_id AS strategy_id,
                           a.exit_quantity AS exit_quantity,
-                          a.purchase_wallet AS purchase_wallet_address,
                           a.blockchain AS blockchain,
-                          a.dex AS dex,
-                          a.back_time AS back_time,
                           a.exit_time AS exit_time
                  FROM tbl.user_exit_strategy_history AS a
                  WHERE a.fkey_user_id = a_user_id AND (a.fkey_strategy_id = a_strategy_id OR a_strategy_id IS NULL);
@@ -2001,7 +2003,8 @@ RETURNS table (
     "creator_id" bigint,
     "creator_username" varchar,
     "creator_family_name" varchar,
-    "creator_given_name" varchar
+    "creator_given_name" varchar,
+    "social_media" varchar
 )
 LANGUAGE plpgsql
 AS $$
@@ -2033,7 +2036,8 @@ BEGIN
       u.pkey_id as creator_id,
       u.username as creator_username,
       u.family_name as creator_family_name,
-      u.given_name as creator_given_name
+      u.given_name as creator_given_name,
+      s.social_media as social_media
       
                  FROM tbl.strategy AS s
                       LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = (SELECT distinct w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id LIMIT 1)

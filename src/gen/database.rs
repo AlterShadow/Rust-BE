@@ -320,10 +320,7 @@ pub struct FunUserListExitStrategyHistoryRespRow {
     pub exit_history_id: i64,
     pub strategy_id: i64,
     pub exit_quantity: String,
-    pub purchase_wallet_address: String,
     pub blockchain: EnumBlockChain,
-    pub dex: String,
-    pub back_time: i64,
     pub exit_time: i64,
 }
 
@@ -454,6 +451,8 @@ pub struct FunUserStrategyRowType {
     pub creator_family_name: Option<String>,
     #[serde(default)]
     pub creator_given_name: Option<String>,
+    #[serde(default)]
+    pub social_media: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]

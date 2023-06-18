@@ -1397,22 +1397,10 @@
                       "ty": "String"
                     },
                     {
-                      "name": "purchase_wallet_address",
-                      "ty": "String"
-                    },
-                    {
                       "name": "blockchain",
                       "ty": {
                         "EnumRef": "block_chain"
                       }
-                    },
-                    {
-                      "name": "dex",
-                      "ty": "String"
-                    },
-                    {
-                      "name": "back_time",
-                      "ty": "BigInt"
                     },
                     {
                       "name": "exit_time",

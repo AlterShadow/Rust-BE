@@ -1110,10 +1110,7 @@ pub struct ExitStrategyHistoryRow {
     pub exit_history_id: i64,
     pub strategy_id: i64,
     pub exit_quantity: String,
-    pub purchase_wallet_address: String,
     pub blockchain: EnumBlockChain,
-    pub dex: String,
-    pub back_time: i64,
     pub exit_time: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -3570,22 +3567,10 @@ impl WsRequest for UserListExitStrategyHistoryRequest {
               "ty": "String"
             },
             {
-              "name": "purchase_wallet_address",
-              "ty": "String"
-            },
-            {
               "name": "blockchain",
               "ty": {
                 "EnumRef": "block_chain"
               }
-            },
-            {
-              "name": "dex",
-              "ty": "String"
-            },
-            {
-              "name": "back_time",
-              "ty": "BigInt"
             },
             {
               "name": "exit_time",

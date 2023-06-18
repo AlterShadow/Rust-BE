@@ -379,10 +379,7 @@ END
                 Field::new("exit_history_id", Type::BigInt),
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("exit_quantity", Type::String),
-                Field::new("purchase_wallet_address", Type::String),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
-                Field::new("dex", Type::String),
-                Field::new("back_time", Type::BigInt),
                 Field::new("exit_time", Type::BigInt),
             ],
             r#"
@@ -391,10 +388,7 @@ BEGIN
     RETURN QUERY SELECT a.pkey_id AS exit_history_id,
                           a.fkey_strategy_id AS strategy_id,
                           a.exit_quantity AS exit_quantity,
-                          a.purchase_wallet AS purchase_wallet_address,
                           a.blockchain AS blockchain,
-                          a.dex AS dex,
-                          a.back_time AS back_time,
                           a.exit_time AS exit_time
                  FROM tbl.user_exit_strategy_history AS a
                  WHERE a.fkey_user_id = a_user_id AND (a.fkey_strategy_id = a_strategy_id OR a_strategy_id IS NULL);
