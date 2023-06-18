@@ -1027,17 +1027,14 @@ pub struct FunUserExitStrategyReq {
     pub strategy_id: i64,
     pub quantity: String,
     pub blockchain: EnumBlockChain,
-    pub dex: String,
-    pub back_time: i64,
     pub transaction_hash: String,
-    pub purchase_wallet: String,
 }
 
 #[allow(unused_variables)]
 impl DatabaseRequest for FunUserExitStrategyReq {
     type ResponseRow = FunUserExitStrategyRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_exit_strategy(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_quantity => $3::varchar, a_blockchain => $4::enum_block_chain, a_dex => $5::varchar, a_back_time => $6::bigint, a_transaction_hash => $7::varchar, a_purchase_wallet => $8::varchar);"
+        "SELECT * FROM api.fun_user_exit_strategy(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_quantity => $3::varchar, a_blockchain => $4::enum_block_chain, a_transaction_hash => $5::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -1045,10 +1042,7 @@ impl DatabaseRequest for FunUserExitStrategyReq {
             &self.strategy_id as &(dyn ToSql + Sync),
             &self.quantity as &(dyn ToSql + Sync),
             &self.blockchain as &(dyn ToSql + Sync),
-            &self.dex as &(dyn ToSql + Sync),
-            &self.back_time as &(dyn ToSql + Sync),
             &self.transaction_hash as &(dyn ToSql + Sync),
-            &self.purchase_wallet as &(dyn ToSql + Sync),
         ]
     }
 }

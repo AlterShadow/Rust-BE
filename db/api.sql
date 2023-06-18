@@ -804,7 +804,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_exit_strategy(a_user_id bigint, a_strategy_id bigint, a_quantity varchar, a_blockchain enum_block_chain, a_dex varchar, a_back_time bigint, a_transaction_hash varchar, a_purchase_wallet varchar)
+CREATE OR REPLACE FUNCTION api.fun_user_exit_strategy(a_user_id bigint, a_strategy_id bigint, a_quantity varchar, a_blockchain enum_block_chain, a_transaction_hash varchar)
 RETURNS table (
     "success" boolean
 )
@@ -812,9 +812,9 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    INSERT INTO tbl.user_exit_strategy_history (fkey_user_id, fkey_strategy_id, exit_quantity, dex, back_time,
-                                                exit_time, purchase_wallet, blockchain, transaction_hash)
-    VALUES (a_user_id, a_strategy_id, a_quantity, a_dex, a_back_time, extract(epoch from now()), a_purchase_wallet,
+    INSERT INTO tbl.user_exit_strategy_history (fkey_user_id, fkey_strategy_id, exit_quantity,
+                                                exit_time, blockchain, transaction_hash)
+    VALUES (a_user_id, a_strategy_id, a_quantity, extract(epoch from now()),
             a_blockchain,
             a_transaction_hash);
     RETURN QUERY SELECT TRUE;

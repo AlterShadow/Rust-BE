@@ -355,17 +355,14 @@ END
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("quantity", Type::String),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
-                Field::new("dex", Type::String),
-                Field::new("back_time", Type::BigInt),
                 Field::new("transaction_hash", Type::String),
-                Field::new("purchase_wallet", Type::String),
             ],
             vec![Field::new("success", Type::Boolean)],
             r#"
 BEGIN
-    INSERT INTO tbl.user_exit_strategy_history (fkey_user_id, fkey_strategy_id, exit_quantity, dex, back_time,
-                                                exit_time, purchase_wallet, blockchain, transaction_hash)
-    VALUES (a_user_id, a_strategy_id, a_quantity, a_dex, a_back_time, extract(epoch from now()), a_purchase_wallet,
+    INSERT INTO tbl.user_exit_strategy_history (fkey_user_id, fkey_strategy_id, exit_quantity,
+                                                exit_time, blockchain, transaction_hash)
+    VALUES (a_user_id, a_strategy_id, a_quantity, extract(epoch from now()),
             a_blockchain,
             a_transaction_hash);
     RETURN QUERY SELECT TRUE;

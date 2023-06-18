@@ -42,9 +42,12 @@ pub struct CoinMarketCap {
 }
 
 impl CoinMarketCap {
-    pub fn new() -> Result<Self> {
+    pub fn new_debug_key() -> Result<Self> {
+        Self::new(API_KEY)
+    }
+    pub fn new(api_key: &str) -> Result<Self> {
         let mut headers = HeaderMap::new();
-        headers.insert("X-CMC_PRO_API_KEY", HeaderValue::from_static(API_KEY));
+        headers.insert("X-CMC_PRO_API_KEY", HeaderValue::from_str(api_key)?);
         headers.insert("Accept", HeaderValue::from_static("application/json"));
         headers.insert("Accept-Encoding", HeaderValue::from_static("deflate, gzip"));
 
@@ -183,7 +186,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_usd_price_by_symbol() -> Result<()> {
-        let cmc = CoinMarketCap::new().unwrap();
+        let cmc = CoinMarketCap::new_debug_key().unwrap();
         let prices = cmc
             .get_usd_prices_by_symbol(&vec!["ETH".to_string()])
             .await?;
@@ -194,7 +197,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_cmc_id_by_symbol() -> Result<()> {
-        let cmc = CoinMarketCap::new().unwrap();
+        let cmc = CoinMarketCap::new_debug_key().unwrap();
         let infos = cmc
             .get_cmc_token_infos_by_symbol(&vec!["ETH".to_string()])
             .await?;

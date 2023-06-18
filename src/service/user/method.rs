@@ -628,7 +628,7 @@ async fn user_back_strategy(
     let escrow_token_contract = Erc20Token::new(conn.clone(), escrow_token_address)?;
     let shares_to_mint = calculate_shares(
         &conn,
-        &CoinMarketCap::new()?,
+        &CoinMarketCap::new_debug_key()?,
         sp_total_shares,
         sp_assets_and_amounts,
         sp_contract.decimals().await?,
@@ -983,21 +983,18 @@ async fn user_exit_strategy(
     master_key: impl Key + Clone,
 ) -> Result<H256> {
     /* instantiate strategy wallet */
-    let strategy_wallet_contract = match db
+    let strategy_wallet_contract = db
         .execute(FunUserListStrategyWalletsReq {
             user_id: ctx.user_id,
             blockchain: Some(blockchain),
         })
         .await?
         .into_result()
-    {
-        Some(strategy_wallet_contract) => StrategyWalletContract::new(
-            conn.clone(),
-            Address::from_str(&strategy_wallet_contract.address)?,
-        )?,
-
-        None => bail!("user has no strategy wallet on this chain"),
-    };
+        .context("user has no strategy wallet on this chain")?;
+    let strategy_wallet_contract = StrategyWalletContract::new(
+        conn.clone(),
+        Address::from_str(&strategy_wallet_contract.address)?,
+    )?;
 
     /* if master key eoa is not admin, we can't redeem */
     if strategy_wallet_contract.admin().await? != master_key.address() {
@@ -1016,13 +1013,14 @@ async fn user_exit_strategy(
 
     /* instantiate strategy pool contract wrapper */
     // TODO: fetch the address of the strategy pool in this chain
-    let sp_contract = match strategy.evm_contract_address {
-        Some(addr) => {
-            let address = Address::from_str(&addr)?;
-            StrategyPoolContract::new(conn.clone(), address)?
-        }
-        None => bail!("redeem from unexisting strategy pool"),
-    };
+    let sp_contract = StrategyPoolContract::new(
+        conn.clone(),
+        Address::from_str(
+            &strategy
+                .evm_contract_address
+                .context("redeem from unexisting strategy pool")?,
+        )?,
+    )?;
 
     /* check if strategy is trading */
     if sp_contract.is_paused().await? {
@@ -1043,7 +1041,7 @@ async fn user_exit_strategy(
             }
             shares_redeemed = shares;
             /* if strategy is currently trading, redeem is not possible */
-            match redeem_from_strategy_and_ensure_success(
+            redeem_from_strategy_and_ensure_success(
                 strategy_wallet_contract.clone(),
                 &conn,
                 12,
@@ -1054,10 +1052,7 @@ async fn user_exit_strategy(
                 shares,
             )
             .await
-            {
-                Ok(tx_hash) => tx_hash,
-                Err(_) => bail!("redeem is not possible currently"),
-            }
+            .context("redeem is not possible currently")?
         }
         None => {
             /* check share balance first */
@@ -1070,7 +1065,7 @@ async fn user_exit_strategy(
 
             shares_redeemed = share_balance;
             /* if strategy is currently trading, redeem is not possible */
-            match full_redeem_from_strategy_and_ensure_success(
+            full_redeem_from_strategy_and_ensure_success(
                 strategy_wallet_contract.clone(),
                 &conn,
                 12,
@@ -1080,38 +1075,17 @@ async fn user_exit_strategy(
                 sp_contract.address(),
             )
             .await
-            {
-                Ok(tx_hash) => tx_hash,
-                Err(_) => bail!("redeem is not possible currently"),
-            }
+            .context("redeem is not possible currently")?
         }
     };
-
-    /* get back time */
-    // TODO: this query fails
-    // let back_history_row = db
-    //     .execute(FunUserListBackStrategyHistoryReq {
-    //         user_id: ctx.user_id,
-    //         strategy_id: Some(strategy_id),
-    //     })
-    //     .await?
-    //     .into_result()
-    //     .context("user has not backed strategy, but has exited it")?;
 
     /* update exit strategy ledger */
     db.execute(FunUserExitStrategyReq {
         user_id: ctx.user_id,
-        strategy_id: strategy_id,
+        strategy_id,
         quantity: format!("{:?}", shares_redeemed),
-        blockchain: blockchain,
+        blockchain,
         transaction_hash: format!("{:?}", tx_hash),
-        // TODO: is back time the time when the user first backed?
-        // TODO: there could be multiple "back strategies" before one "exit strategy"
-        back_time: 0,
-        // TODO: what is purchase wallet?
-        purchase_wallet: format!("{:?}", strategy_wallet_contract.address()),
-        // TODO: remove dex from back and exit strategy ledgers
-        dex: EnumDex::PancakeSwap.to_string(),
     })
     .await?;
 

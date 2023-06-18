@@ -1,5 +1,5 @@
 -- Created by Vertabelo (http://vertabelo.com)
--- Last modification date: 2023-06-17 03:46:04.971
+-- Last modification date: 2023-06-18 11:25:17.47
 
 CREATE SCHEMA IF NOT EXISTS tbl;;
 
@@ -124,6 +124,16 @@ CREATE TABLE tbl.strategy (
     CONSTRAINT strategy_pk PRIMARY KEY (pkey_id)
 );
 
+-- Table: strategy_audit_rule
+CREATE TABLE tbl.strategy_audit_rule (
+    pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_strategy_audit_rule'),
+    fkey_strategy_id bigint  NOT NULL,
+    fkey_audit_rule_id bigint  NOT NULL,
+    updated_at bigint  NOT NULL,
+    created_at bigint  NOT NULL,
+    CONSTRAINT strategy_audit_rule_pk PRIMARY KEY (pkey_id)
+);
+
 -- Table: strategy_initial_token_ratio
 CREATE TABLE tbl.strategy_initial_token_ratio (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_strategy_initial_token_ratio_id'),
@@ -245,12 +255,9 @@ CREATE TABLE tbl.user_exit_strategy_history (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_user_exit_strategy_history_id'),
     fkey_user_id bigint  NOT NULL,
     fkey_strategy_id bigint  NOT NULL,
-    purchase_wallet varchar(64)  NOT NULL,
     blockchain enum_block_chain  NOT NULL,
-    dex varchar(20)  NOT NULL,
     transaction_hash varchar(80)  NOT NULL,
     exit_quantity varchar(64)  NOT NULL,
-    back_time bigint  NOT NULL,
     exit_time bigint  NOT NULL,
     CONSTRAINT user_exit_strategy_history_pk PRIMARY KEY (pkey_id)
 );
@@ -367,6 +374,14 @@ ALTER TABLE tbl.user_deposit_history ADD CONSTRAINT fkey_user
 ALTER TABLE tbl.login_attempt ADD CONSTRAINT login_attempt_user
     FOREIGN KEY (fkey_user)
     REFERENCES tbl."user" (pkey_id)  
+    NOT DEFERRABLE 
+    INITIALLY IMMEDIATE
+;
+
+-- Reference: strategy_audit_rule_strategy (table: strategy_audit_rule)
+ALTER TABLE tbl.strategy_audit_rule ADD CONSTRAINT strategy_audit_rule_strategy
+    FOREIGN KEY (fkey_strategy_id)
+    REFERENCES tbl.strategy (pkey_id)  
     NOT DEFERRABLE 
     INITIALLY IMMEDIATE
 ;
@@ -527,6 +542,13 @@ CREATE SEQUENCE tbl.seq_login_attempt_id
       NO MAXVALUE
       NO CYCLE
       AS bigint
+;
+
+-- Sequence: seq_strategy_audit_rule
+CREATE SEQUENCE tbl.seq_strategy_audit_rule
+      NO MINVALUE
+      NO MAXVALUE
+      NO CYCLE
 ;
 
 -- Sequence: seq_strategy_id
