@@ -432,7 +432,7 @@ impl RequestHandler for MethodUserListBackedStrategies {
 
 async fn deploy_wallet_contract(
     conn: &EthereumRpcConnection,
-    key: impl Key,
+    key: impl Key + Clone,
     backer: Address,
     admin: Address,
 ) -> Result<StrategyWalletContract<EitherTransport>> {
@@ -447,7 +447,7 @@ async fn deploy_wallet_contract(
 
 async fn deploy_strategy_contract(
     conn: &EthereumRpcConnection,
-    key: impl Key,
+    key: impl Key + Clone,
     strategy_token_name: String,
     strategy_token_symbol: String,
 ) -> Result<StrategyPoolContract<EitherTransport>> {

@@ -18,7 +18,7 @@ pub mod wrapped_token;
 
 pub async fn deploy_contract<T: Transport>(
     w3: Web3<T>,
-    key: impl Key,
+    key: impl Key + Clone,
     params: impl Tokenize + Clone,
     contract_name: &str,
 ) -> Result<Contract<T>> {

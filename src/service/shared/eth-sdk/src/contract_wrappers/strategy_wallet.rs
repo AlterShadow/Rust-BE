@@ -45,7 +45,7 @@ pub struct StrategyWalletContract<T: Transport> {
 impl<T: Transport> StrategyWalletContract<T> {
     pub async fn deploy(
         w3: Web3<T>,
-        key: impl Key,
+        key: impl Key + Clone,
         backer: Address,
         admin: Address,
     ) -> Result<Self> {

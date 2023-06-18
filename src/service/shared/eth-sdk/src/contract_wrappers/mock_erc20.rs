@@ -7,7 +7,10 @@ use web3::contract::Options;
 use web3::signing::Key;
 use web3::Web3;
 
-pub async fn deploy_mock_erc20(conn: Web3<EitherTransport>, key: impl Key) -> Result<Erc20Token> {
+pub async fn deploy_mock_erc20(
+    conn: Web3<EitherTransport>,
+    key: impl Key + Clone,
+) -> Result<Erc20Token> {
     let base = get_project_root().parent().unwrap().to_owned();
     let abi_json = read_abi_from_solc_output(
         &base.join("app.mc2.fi-solidity/out/MockToken.sol/MockToken.json"),

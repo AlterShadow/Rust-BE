@@ -1,7 +1,7 @@
 use crate::{
     EitherTransport, EthereumRpcConnectionGuard, EthereumRpcConnectionPool, MultiChainAddressTable,
 };
-use eyre::ContextCompat;
+use eyre::{bail, ContextCompat};
 use gen::model::EnumBlockChain;
 use serde_json::Value;
 use std::fmt::{Debug, Formatter};
@@ -9,6 +9,7 @@ use std::future::Future;
 use std::hash::Hash;
 use std::path::Path;
 use std::{collections::HashMap, time};
+use tracing::warn;
 use web3::api::{Accounts, Eth, Namespace};
 use web3::contract::deploy::Error;
 use web3::contract::tokens::Tokenize;
@@ -86,7 +87,7 @@ impl<T: Transport> ContractDeployer<T> {
     ) -> eyre::Result<Contract<T>>
     where
         P: Tokenize,
-        K: Key,
+        K: Key + Clone,
     {
         let transport = self.eth.transport().clone();
         let poll_interval = self.poll_interval;
@@ -99,29 +100,34 @@ impl<T: Transport> ContractDeployer<T> {
                 self.code.as_deref().context("Code is not provided")?,
                 params,
                 signer.address(),
-                move |tx| async move {
-                    let tx = TransactionParameters {
-                        nonce: tx.nonce,
-                        to: tx.to,
-                        gas: gas.expect("No gas set"),
-                        gas_price: tx.gas_price,
-                        value: tx.value.unwrap_or_else(|| 0.into()),
-                        data: tx
-                            .data
-                            .expect("Tried to deploy a contract but transaction data wasn't set"),
-                        chain_id,
-                        transaction_type: tx.transaction_type,
-                        access_list: tx.access_list,
-                        max_fee_per_gas: tx.max_fee_per_gas,
-                        max_priority_fee_per_gas: tx.max_priority_fee_per_gas,
-                    };
-                    let signed_tx = Accounts::new(transport.clone())
-                        .sign_transaction(tx, signer)
-                        .await?;
+                move |tx| {
+                    let transport = transport.clone();
+                    let signer = signer.clone();
+                    let eth = eth.clone();
+                    async move {
+                        let tx = TransactionParameters {
+                            nonce: tx.nonce,
+                            to: tx.to,
+                            gas: gas.expect("No gas set"),
+                            gas_price: tx.gas_price,
+                            value: tx.value.unwrap_or_else(|| 0.into()),
+                            data: tx.data.expect(
+                                "Tried to deploy a contract but transaction data wasn't set",
+                            ),
+                            chain_id,
+                            transaction_type: tx.transaction_type,
+                            access_list: tx.access_list,
+                            max_fee_per_gas: tx.max_fee_per_gas,
+                            max_priority_fee_per_gas: tx.max_priority_fee_per_gas,
+                        };
+                        let signed_tx = Accounts::new(transport)
+                            .sign_transaction(tx, signer)
+                            .await?;
 
-                    // TODO: buggy here
-                    let tx_hash = eth.send_raw_transaction(signed_tx.raw_transaction).await?;
-                    wait_for_confirmations(&eth, tx_hash, poll_interval, max_retries, 14).await
+                        // TODO: buggy here
+                        let tx_hash = eth.send_raw_transaction(signed_tx.raw_transaction).await?;
+                        wait_for_confirmations(&eth, tx_hash, poll_interval, max_retries, 14).await
+                    }
                 },
             )
             .await?;
@@ -133,7 +139,7 @@ impl<T: Transport> ContractDeployer<T> {
         code: V,
         params: P,
         from: Address,
-        send: impl FnOnce(TransactionRequest) -> Ft,
+        send: impl Fn(TransactionRequest) -> Ft,
     ) -> eyre::Result<Contract<T>>
     where
         P: Tokenize,
@@ -187,18 +193,31 @@ impl<T: Transport> ContractDeployer<T> {
             max_fee_per_gas: options.max_fee_per_gas,
             max_priority_fee_per_gas: options.max_priority_fee_per_gas,
         };
-        let receipt = send(tx).await?;
-        match receipt.status {
-            Some(status) if status == 0.into() => {
-                Err(Error::ContractDeploymentFailure(receipt.transaction_hash).into())
+        for _ in 0..self.max_retries {
+            let receipt = send(tx.clone()).await;
+            match receipt {
+                Ok(receipt) => {
+                    return match receipt.status {
+                        Some(status) if status == 0.into() => {
+                            Err(Error::ContractDeploymentFailure(receipt.transaction_hash).into())
+                        }
+                        // If the `status` field is not present we use the presence of `contract_address` to
+                        // determine if deployment was successfull.
+                        _ => match receipt.contract_address {
+                            Some(address) => Ok(Contract::new(eth.clone(), address, abi.clone())),
+                            None => {
+                                Err(Error::ContractDeploymentFailure(receipt.transaction_hash)
+                                    .into())
+                            }
+                        },
+                    };
+                }
+                Err(err) => {
+                    warn!("Failed to deploy contract, retrying: {:?}", err);
+                }
             }
-            // If the `status` field is not present we use the presence of `contract_address` to
-            // determine if deployment was successfull.
-            _ => match receipt.contract_address {
-                Some(address) => Ok(Contract::new(eth.clone(), address, abi.clone())),
-                None => Err(Error::ContractDeploymentFailure(receipt.transaction_hash).into()),
-            },
         }
+        bail!("Max retries exceeded, failed to deploy contract")
     }
 }
 
