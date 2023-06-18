@@ -2586,6 +2586,200 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_user_exit_strategy() -> Result<()> {
+        drop_and_recreate_database()?;
+        let master_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
+        let user_key = Secp256k1SecretKey::new_random();
+        let conn_pool = EthereumRpcConnectionPool::new();
+        let conn = conn_pool.get(EnumBlockChain::LocalNet).await?;
+        let db = connect_to_database(database_test_config()).await?;
+
+        /* create user */
+        let ret = db
+            .execute(FunAuthSignupReq {
+                address: format!("{:?}", user_key.address()),
+                email: "".to_string(),
+                phone: "".to_string(),
+                preferred_language: "".to_string(),
+                agreed_tos: true,
+                agreed_privacy: true,
+                ip_address: Ipv4Addr::new(127, 0, 0, 1).into(),
+                username: Some("TEST".to_string()),
+                age: None,
+                public_id: 1,
+            })
+            .await?
+            .into_result()
+            .context("no user signup resp")?;
+
+        /* deploy strategy wallet contract with master key as admin */
+        let strategy_wallet_contract = StrategyWalletContract::deploy(
+            conn.clone(),
+            master_key.clone(),
+            user_key.address(),
+            master_key.address(),
+        )
+        .await?;
+
+        /* insert strategy wallet on this chain into database */
+        db.execute(FunUserAddStrategyWalletReq {
+            user_id: ret.user_id,
+            blockchain: EnumBlockChain::LocalNet,
+            address: format!("{:?}", strategy_wallet_contract.address()),
+        })
+        .await?;
+
+        /* create strategy */
+        let strategy = db
+            .execute(FunUserCreateStrategyReq {
+                user_id: ret.user_id,
+                name: "TEST".to_string(),
+                description: "TEST".to_string(),
+                strategy_thesis_url: "TEST".to_string(),
+                minimum_backing_amount_usd: 1.0,
+                strategy_fee: 1.0,
+                expert_fee: 1.0,
+                agreed_tos: true,
+                blockchain: EnumBlockChain::LocalNet,
+                wallet_address: format!("{:?}", Address::zero()),
+            })
+            .await?
+            .into_result()
+            .context("failed to create strategy")?;
+
+        /* deploy strategy contract */
+        let strategy_contract = StrategyPoolContract::deploy(
+            conn.clone(),
+            master_key.clone(),
+            "TEST".to_string(),
+            "TEST".to_string(),
+        )
+        .await?;
+
+        /* insert strategy contract address in the database */
+        db.query(
+            "
+					UPDATE tbl.strategy
+					SET evm_contract_address = $1
+					WHERE pkey_id = $2;
+					",
+            &[
+                &format!("{:?}", strategy_contract.address()) as &(dyn ToSql + Sync),
+                &strategy.strategy_id as &(dyn ToSql + Sync),
+            ],
+        )
+        .await?;
+
+        /* deploy token contract */
+        let token_contract = deploy_mock_erc20(conn.clone(), master_key.clone()).await?;
+
+        let tokens_minted = U256::from(1000000);
+        /* mint tokens for master key (simulating transferring escrow to our eoa and trading) */
+        wait_for_confirmations_simple(
+            &conn.eth(),
+            token_contract
+                .mint(
+                    &conn,
+                    master_key.clone(),
+                    master_key.address(),
+                    tokens_minted,
+                )
+                .await?,
+            Duration::from_secs(1),
+            10,
+        )
+        .await?;
+
+        /* approve strategy contract for tokens */
+        wait_for_confirmations_simple(
+            &conn.eth(),
+            token_contract
+                .approve(
+                    &conn,
+                    master_key.clone(),
+                    strategy_contract.address(),
+                    tokens_minted,
+                )
+                .await?,
+            Duration::from_secs(1),
+            10,
+        )
+        .await?;
+
+        let shares_minted = U256::from(1000000);
+        /* deposit tokens in strategy pool to strategy wallet's address */
+        let deposit_hash = strategy_contract
+            .deposit(
+                &conn,
+                master_key.clone(),
+                vec![token_contract.address],
+                vec![tokens_minted],
+                shares_minted,
+                strategy_wallet_contract.address(),
+            )
+            .await?;
+        wait_for_confirmations_simple(&conn.eth(), deposit_hash, Duration::from_secs(1), 10)
+            .await?;
+
+        /* insert into back strategy history */
+        /* here ends the back strategy simulation */
+        db.execute(FunUserBackStrategyReq {
+            user_id: ret.user_id,
+            strategy_id: strategy.strategy_id,
+            quantity: "1000000".to_string(),
+            new_total_backed_quantity: "1000000".to_string(),
+            old_total_backed_quantity: "0".to_string(),
+            new_current_quantity: "1000000".to_string(),
+            old_current_quantity: "0".to_string(),
+            blockchain: EnumBlockChain::LocalNet,
+            transaction_hash: format!("{:?}", deposit_hash),
+            earn_sp_tokens: format!("{:?}", shares_minted),
+        })
+        .await?;
+
+        /* call exit strategy */
+        let ctx = RequestContext {
+            connection_id: 0,
+            user_id: ret.user_id,
+            seq: 0,
+            method: 0,
+            log_id: 0,
+            ip_addr: Ipv4Addr::new(127, 0, 0, 1).into(),
+            role: EnumRole::User as u32,
+        };
+        let exit_hash = user_exit_strategy(
+            &conn,
+            &ctx,
+            &db,
+            EnumBlockChain::LocalNet,
+            strategy.strategy_id,
+            Some(shares_minted),
+            master_key.clone(),
+        )
+        .await?;
+
+        /* check user key now has the tokens */
+        assert_eq!(
+            token_contract.balance_of(user_key.address()).await?,
+            tokens_minted
+        );
+
+        /* check user exit strategy is in database */
+        let exit_strategy = db
+            .execute(FunUserListExitStrategyHistoryReq {
+                user_id: ret.user_id,
+                strategy_id: Some(strategy.strategy_id),
+            })
+            .await?
+            .into_result()
+            .context("no exit strategy")?;
+
+        assert_eq!(exit_strategy.exit_quantity, shares_minted.to_string());
+
+        Ok(())
+    }
+
+    #[tokio::test]
     async fn test_user_ethereum_deposit_refund() -> Result<()> {
         let _ = setup_logs(LogLevel::Info);
         drop_and_recreate_database()?;
