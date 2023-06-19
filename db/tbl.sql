@@ -177,7 +177,7 @@ CREATE TABLE tbl.strategy_watching_wallet (
 
 -- Table: strategy_whitelisted_tokens
 CREATE TABLE tbl.strategy_whitelisted_tokens (
-    pkey_id bigint  NOT NULL DEFAULT nextval('tbl.strategy_whitelisted_tokens'),
+    pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_strategy_whitelisted_tokens_id'),
     fkey_strategy_id bigint  NOT NULL,
     token_name varchar(32)  NOT NULL,
     CONSTRAINT strategy_whitelisted_tokens_pk PRIMARY KEY (pkey_id)
