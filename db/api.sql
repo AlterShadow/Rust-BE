@@ -2132,6 +2132,8 @@ BEGIN
                     AND (a_expert_public_id ISNULL OR u.public_id = a_expert_public_id)
                     AND (a_expert_name ISNULL OR u.username ILIKE a_expert_name || '%')
                     AND (a_description ISNULL OR s.description ILIKE a_description || '%')
+                    AND (a_approved ISNULL OR s.approved = a_approved)
+                    AND (a_pending_approval ISNULL OR s.pending_approval = a_pending_approval)
                  ORDER BY s.pkey_id
                  OFFSET a_offset
                  LIMIT a_limit;
