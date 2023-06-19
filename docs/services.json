@@ -828,6 +828,10 @@
               "ty": "Int"
             },
             {
+              "name": "immutable",
+              "ty": "Boolean"
+            },
+            {
               "name": "watching_wallets",
               "ty": {
                 "DataTable": {
@@ -846,10 +850,6 @@
                       "ty": {
                         "EnumRef": "block_chain"
                       }
-                    },
-                    {
-                      "name": "dex",
-                      "ty": "String"
                     },
                     {
                       "name": "ratio_distribution",
@@ -947,6 +947,12 @@
                     }
                   ]
                 }
+              }
+            },
+            {
+              "name": "whitelisted_tokens",
+              "ty": {
+                "Vec": "String"
               }
             }
           ],
@@ -2633,11 +2639,21 @@
               "ty": "String"
             },
             {
-              "name": "audit_rules",
+              "name": "immutable",
               "ty": {
-                "Optional": {
-                  "Vec": "BigInt"
-                }
+                "Optional": "Boolean"
+              }
+            },
+            {
+              "name": "whitelist_top25_coins",
+              "ty": {
+                "Optional": "Boolean"
+              }
+            },
+            {
+              "name": "asset_ratio_limit",
+              "ty": {
+                "Optional": "Boolean"
               }
             }
           ],

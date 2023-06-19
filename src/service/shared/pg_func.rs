@@ -46,6 +46,8 @@ pub fn strategy_row_type() -> Type {
             Field::new("creator_family_name", Type::optional(Type::String)),
             Field::new("creator_given_name", Type::optional(Type::String)),
             Field::new("social_media", Type::optional(Type::String)),
+            Field::new("immutable", Type::Boolean),
+            Field::new("asset_ratio_limit", Type::optional(Type::Numeric)),
         ],
     )
 }
@@ -76,7 +78,9 @@ pub fn get_strategy(followed: &str) -> String {
       u.username as creator_username,
       u.family_name as creator_family_name,
       u.given_name as creator_given_name,
-      s.social_media as social_media
+      s.social_media as social_media,
+      s.immutable as immutable,
+      s.asset_ratio_limit as asset_ratio_limit
       ",
         followers = get_strategy_followers_count(),
         backers = get_strategy_backers_count(),

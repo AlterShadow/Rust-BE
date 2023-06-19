@@ -31,6 +31,7 @@
     "host": "localhost",
     "log_level": "trace",
     "port": 8889,
+    "cmc_api_key": "cd270acf-14f5-4fa2-8787-4fdafc8570f0",
     "escrow_addresses": [
       {
         "blockchain": "EthereumMainnet",

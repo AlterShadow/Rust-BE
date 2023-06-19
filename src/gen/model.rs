@@ -1157,7 +1157,11 @@ pub struct ExpertCreateStrategyRequest {
     pub agreed_tos: bool,
     pub wallet_address: String,
     #[serde(default)]
-    pub audit_rules: Option<Vec<i64>>,
+    pub immutable: Option<bool>,
+    #[serde(default)]
+    pub whitelist_top25_coins: Option<bool>,
+    #[serde(default)]
+    pub asset_ratio_limit: Option<bool>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1615,9 +1619,11 @@ pub struct UserGetStrategyResponse {
     #[serde(default)]
     pub approved_at: Option<i64>,
     pub backers: i32,
+    pub immutable: bool,
     pub watching_wallets: Vec<WatchingWalletRow>,
     pub aum_history: Vec<AumHistoryRow>,
     pub audit_rules: Vec<UserListStrategyAuditRulesRow>,
+    pub whitelisted_tokens: Vec<String>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -2032,7 +2038,6 @@ pub struct WatchingWalletRow {
     pub watching_wallet_id: i64,
     pub wallet_address: String,
     pub blockchain: EnumBlockChain,
-    pub dex: String,
     pub ratio_distribution: f64,
 }
 impl WsRequest for LoginRequest {
@@ -2952,6 +2957,10 @@ impl WsRequest for UserGetStrategyRequest {
       "ty": "Int"
     },
     {
+      "name": "immutable",
+      "ty": "Boolean"
+    },
+    {
       "name": "watching_wallets",
       "ty": {
         "DataTable": {
@@ -2970,10 +2979,6 @@ impl WsRequest for UserGetStrategyRequest {
               "ty": {
                 "EnumRef": "block_chain"
               }
-            },
-            {
-              "name": "dex",
-              "ty": "String"
             },
             {
               "name": "ratio_distribution",
@@ -3071,6 +3076,12 @@ impl WsRequest for UserGetStrategyRequest {
             }
           ]
         }
+      }
+    },
+    {
+      "name": "whitelisted_tokens",
+      "ty": {
+        "Vec": "String"
       }
     }
   ],
@@ -4933,11 +4944,21 @@ impl WsRequest for ExpertCreateStrategyRequest {
       "ty": "String"
     },
     {
-      "name": "audit_rules",
+      "name": "immutable",
       "ty": {
-        "Optional": {
-          "Vec": "BigInt"
-        }
+        "Optional": "Boolean"
+      }
+    },
+    {
+      "name": "whitelist_top25_coins",
+      "ty": {
+        "Optional": "Boolean"
+      }
+    },
+    {
+      "name": "asset_ratio_limit",
+      "ty": {
+        "Optional": "Boolean"
       }
     }
   ],

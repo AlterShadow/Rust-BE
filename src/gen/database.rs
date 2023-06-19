@@ -167,6 +167,9 @@ pub struct FunUserAddStrategyWatchWalletRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunUserAddStrategyWhitelistedTokenRespRow {}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserApplyBecomeExpertRespRow {
     pub success: bool,
     pub expert_id: i64,
@@ -396,6 +399,11 @@ pub struct FunUserListStrategyWatchWalletsRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunUserListStrategyWhitelistedTokensRespRow {
+    pub token_name: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserListTopPerformingStrategiesRespRow {
     pub strategy_id: i64,
     pub strategy_name: String,
@@ -463,6 +471,9 @@ pub struct FunUserStrategyRowType {
     pub creator_given_name: Option<String>,
     #[serde(default)]
     pub social_media: Option<String>,
+    pub immutable: bool,
+    #[serde(default)]
+    pub asset_ratio_limit: Option<f64>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -1297,13 +1308,15 @@ pub struct FunUserCreateStrategyReq {
     pub agreed_tos: bool,
     pub wallet_address: String,
     pub blockchain: EnumBlockChain,
+    pub immutable: bool,
+    pub asset_ratio_limit: bool,
 }
 
 #[allow(unused_variables)]
 impl DatabaseRequest for FunUserCreateStrategyReq {
     type ResponseRow = FunUserCreateStrategyRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_create_strategy(a_user_id => $1::bigint, a_name => $2::varchar, a_description => $3::varchar, a_strategy_thesis_url => $4::varchar, a_minimum_backing_amount_usd => $5::double precision, a_strategy_fee => $6::double precision, a_expert_fee => $7::double precision, a_agreed_tos => $8::boolean, a_wallet_address => $9::varchar, a_blockchain => $10::enum_block_chain);"
+        "SELECT * FROM api.fun_user_create_strategy(a_user_id => $1::bigint, a_name => $2::varchar, a_description => $3::varchar, a_strategy_thesis_url => $4::varchar, a_minimum_backing_amount_usd => $5::double precision, a_strategy_fee => $6::double precision, a_expert_fee => $7::double precision, a_agreed_tos => $8::boolean, a_wallet_address => $9::varchar, a_blockchain => $10::enum_block_chain, a_immutable => $11::boolean, a_asset_ratio_limit => $12::boolean);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -1317,6 +1330,8 @@ impl DatabaseRequest for FunUserCreateStrategyReq {
             &self.agreed_tos as &(dyn ToSql + Sync),
             &self.wallet_address as &(dyn ToSql + Sync),
             &self.blockchain as &(dyn ToSql + Sync),
+            &self.immutable as &(dyn ToSql + Sync),
+            &self.asset_ratio_limit as &(dyn ToSql + Sync),
         ]
     }
 }
@@ -1779,6 +1794,42 @@ impl DatabaseRequest for FunUserAddStrategyAuditRuleReq {
             &self.strategy_id as &(dyn ToSql + Sync),
             &self.audit_rule_id as &(dyn ToSql + Sync),
         ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserAddStrategyWhitelistedTokenReq {
+    pub strategy_id: i64,
+    pub token_name: String,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunUserAddStrategyWhitelistedTokenReq {
+    type ResponseRow = FunUserAddStrategyWhitelistedTokenRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_add_strategy_whitelisted_token(a_strategy_id => $1::bigint, a_token_name => $2::varchar);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.strategy_id as &(dyn ToSql + Sync),
+            &self.token_name as &(dyn ToSql + Sync),
+        ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserListStrategyWhitelistedTokensReq {
+    pub strategy_id: i64,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunUserListStrategyWhitelistedTokensReq {
+    type ResponseRow = FunUserListStrategyWhitelistedTokensRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_list_strategy_whitelisted_tokens(a_strategy_id => $1::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![&self.strategy_id as &(dyn ToSql + Sync)]
     }
 }
 

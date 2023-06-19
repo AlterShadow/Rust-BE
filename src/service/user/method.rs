@@ -1,4 +1,7 @@
-use crate::audit::get_audit_rules;
+use crate::audit::{
+    get_audit_rules, AUDIT_IMMUTABLE_TOKENS, AUDIT_TOKENS_NO_MORE_THAN_10_PERCENT,
+    AUDIT_TOP25_TOKENS,
+};
 use api::cmc::CoinMarketCap;
 use eth_sdk::erc20::approve_and_ensure_success;
 use eth_sdk::erc20::Erc20Token;
@@ -277,6 +280,7 @@ impl RequestHandler for MethodUserGetStrategy {
                 approved: ret.approved,
                 approved_at: ret.approved_at,
                 backers: ret.backers as _,
+                immutable: ret.immutable,
                 watching_wallets: db
                     .execute(FunUserListStrategyWatchWalletsReq {
                         strategy_id: req.strategy_id,
@@ -286,7 +290,6 @@ impl RequestHandler for MethodUserGetStrategy {
                         watching_wallet_id: x.watch_wallet_id,
                         wallet_address: x.wallet_address,
                         blockchain: x.blockchain,
-                        dex: "DEX TODO".to_string(),
                         ratio_distribution: x.ratio,
                     }),
                 risk_score: ret.risk_score.unwrap_or(0.0),
@@ -313,6 +316,12 @@ impl RequestHandler for MethodUserGetStrategy {
                         })
                     })
                     .try_collect()?,
+                whitelisted_tokens: db
+                    .execute(FunUserListStrategyWhitelistedTokensReq {
+                        strategy_id: req.strategy_id,
+                    })
+                    .await?
+                    .map(|x| x.token_name),
             })
         }
         .boxed()
@@ -1792,7 +1801,9 @@ impl RequestHandler for MethodUserApplyBecomeExpert {
         .boxed()
     }
 }
-pub struct MethodExpertCreateStrategy;
+pub struct MethodExpertCreateStrategy {
+    pub cmc_client: Arc<CoinMarketCap>,
+}
 
 impl RequestHandler for MethodExpertCreateStrategy {
     type Request = ExpertCreateStrategyRequest;
@@ -1804,6 +1815,7 @@ impl RequestHandler for MethodExpertCreateStrategy {
         req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
+        let cmc_client = self.cmc_client.clone();
         async move {
             ensure_user_role(ctx, EnumRole::Expert)?;
 
@@ -1819,16 +1831,38 @@ impl RequestHandler for MethodExpertCreateStrategy {
                     agreed_tos: req.agreed_tos,
                     wallet_address: req.wallet_address,
                     blockchain: EnumBlockChain::EthereumMainnet,
+                    immutable: req.immutable.unwrap_or_default(),
+                    asset_ratio_limit: req.asset_ratio_limit.unwrap_or_default(),
                 })
                 .await?
                 .into_result()
                 .context("failed to create strategy")?;
-            for s in req.audit_rules.unwrap_or_default() {
+            let mut audit_rules = vec![];
+            if req.immutable == Some(true) {
+                audit_rules.push(AUDIT_IMMUTABLE_TOKENS.id);
+            }
+            if req.asset_ratio_limit == Some(true) {
+                audit_rules.push(AUDIT_TOKENS_NO_MORE_THAN_10_PERCENT.id);
+            }
+            if req.whitelist_top25_coins == Some(true) {
+                audit_rules.push(AUDIT_TOP25_TOKENS.id);
+            }
+            for s in audit_rules {
                 db.execute(FunUserAddStrategyAuditRuleReq {
                     strategy_id: ret.strategy_id,
-                    audit_rule_id: s,
+                    audit_rule_id: s as _,
                 })
                 .await?;
+            }
+            if req.whitelist_top25_coins == Some(true) {
+                let token_list = cmc_client.get_top_25_coins().await?;
+                for token in token_list.data {
+                    db.execute(FunUserAddStrategyWhitelistedTokenReq {
+                        strategy_id: ret.strategy_id,
+                        token_name: token.symbol,
+                    })
+                    .await?;
+                }
             }
 
             Ok(ExpertCreateStrategyResponse {
@@ -2403,7 +2437,33 @@ impl RequestHandler for MethodUserListStrategyAuditRules {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_helper::add_strategy_initial_token_ratio;
+
+    pub async fn add_strategy_initial_token_ratio(
+        db: &DbClient,
+        strategy_id: i64,
+        wbnb_address_on_bsc_testnet: Address,
+        ts: i64,
+    ) -> Result<()> {
+        db.query(
+            "
+			INSERT INTO tbl.strategy_initial_token_ratio
+			(fkey_strategy_id, blockchain, token_name, token_address, quantity, updated_at, created_at)
+			VALUES
+			($1, $2, $3, $4, $5, $6, $7);
+			",
+            &[
+                &strategy_id as &(dyn ToSql + Sync),
+                &EnumBlockChain::BscTestnet as &(dyn ToSql + Sync),
+                &"WBNB".to_string() as &(dyn ToSql + Sync),
+                &format!("{:?}", wbnb_address_on_bsc_testnet) as &(dyn ToSql + Sync),
+                &"100000000".to_string() as &(dyn ToSql + Sync),
+                &ts as &(dyn ToSql + Sync),
+                &ts as &(dyn ToSql + Sync),
+            ],
+        )
+        .await?;
+        Ok(())
+    }
     use eth_sdk::escrow_tracker::escrow::parse_escrow;
     use eth_sdk::mock_erc20::deploy_mock_erc20;
     use eth_sdk::signer::Secp256k1SecretKey;

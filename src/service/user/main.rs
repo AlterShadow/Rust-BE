@@ -5,10 +5,10 @@ mod admin_method;
 pub mod audit;
 pub mod endpoints;
 mod method;
-mod test_helper;
 
 use crate::admin_method::*;
 use crate::method::*;
+use api::cmc::CoinMarketCap;
 use eth_sdk::escrow::AbstractEscrowContract;
 use eth_sdk::signer::Secp256k1SecretKey;
 use eth_sdk::{
@@ -40,6 +40,7 @@ pub struct Config {
     pub setup_ethereum_localnet: bool,
     pub escrow_addresses: Vec<UserGetDepositAddressesRow>,
     pub god_key: String,
+    pub cmc_api_key: String,
 }
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -91,7 +92,9 @@ async fn main() -> Result<()> {
     server.add_handler(MethodUserUpdateUserProfile);
     server.add_handler(MethodUserApplyBecomeExpert);
 
-    server.add_handler(MethodExpertCreateStrategy);
+    server.add_handler(MethodExpertCreateStrategy {
+        cmc_client: Arc::new(CoinMarketCap::new(&config.cmc_api_key)?),
+    });
     server.add_handler(MethodExpertUpdateStrategy);
     server.add_handler(MethodExpertAddStrategyInitialTokenRatio);
     server.add_handler(MethodExpertRemoveStrategyInitialTokenRatio);

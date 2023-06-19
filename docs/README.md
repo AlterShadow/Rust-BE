@@ -22,7 +22,7 @@ ID: 2
 |20063|UserListTopPerformingStrategies|limit, offset|strategies|User lists top performing strategies|
 |20064|UserListStrategyBackers|strategy_id, limit, offset|backers||
 |20065|UserListStrategyFollowers|strategy_id, limit, offset|followers||
-|20062|UserGetStrategy|strategy_id|strategy_id, strategy_name, strategy_description, creator_user_id, social_media, historical_return, inception_time, total_amount, token_allocation, reputation, risk_score, aum, net_value, followers, approved, approved_at, backers, watching_wallets, aum_history, audit_rules|User gets a strategy|
+|20062|UserGetStrategy|strategy_id|strategy_id, strategy_name, strategy_description, creator_user_id, social_media, historical_return, inception_time, total_amount, token_allocation, reputation, risk_score, aum, net_value, followers, approved, approved_at, backers, immutable, watching_wallets, aum_history, audit_rules, whitelisted_tokens|User gets a strategy|
 |20070|UserGetStrategyStatistics|strategy_id|strategy_id, net_value, follow_history, back_history|User gets a strategy statistics|
 |20071|UserGetStrategiesStatistics||tracking_amount_usd, backing_amount_usd, difference_amount_usd, aum_value_usd, current_value_usd, withdrawable_value_usd|User gets statistics of all strategies related to the user|
 |20172|UserUpdateUserProfile|username, family_name, given_name, description, social_media||User update its expert profile|
@@ -44,7 +44,7 @@ ID: 2
 |20200|UserListRegisteredWallets||wallets|User lists wallets|
 |20210|UserDeregisterWallet|wallet_id|success|User deregisters a wallet|
 |20220|UserApplyBecomeExpert||success, expert_id|User applies to become an expert|
-|20250|ExpertCreateStrategy|name, description, strategy_thesis_url, minimum_backing_amount_usd, strategy_fee, expert_fee, agreed_tos, wallet_address, audit_rules|success, strategy_id|User makes a strategy|
+|20250|ExpertCreateStrategy|name, description, strategy_thesis_url, minimum_backing_amount_usd, strategy_fee, expert_fee, agreed_tos, wallet_address, immutable, whitelist_top25_coins, asset_ratio_limit|success, strategy_id|User makes a strategy|
 |20260|ExpertUpdateStrategy|strategy_id, name, description, social_media, risk_score, reputation_score, aum|success|User updates a strategy|
 |20270|ExpertAddStrategyWatchingWallet|strategy_id, blockchain, wallet_address, ratio|success, wallet_id||
 |20280|ExpertRemoveStrategyWatchingWallet|wallet_id|success||

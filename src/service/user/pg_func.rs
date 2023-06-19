@@ -624,6 +624,8 @@ END
                 Field::new("agreed_tos", Type::Boolean),
                 Field::new("wallet_address", Type::String),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("immutable", Type::Boolean),
+                Field::new("asset_ratio_limit", Type::Boolean),
             ],
             vec![
                 Field::new("success", Type::Boolean),
@@ -648,7 +650,9 @@ BEGIN
         updated_at, 
         created_at,
         pending_approval,
-        approved
+        approved,
+        immutable,
+        asset_ratio_limit
     )
     VALUES (
         a_user_id, 
@@ -665,7 +669,9 @@ BEGIN
         EXTRACT(EPOCH FROM NOW())::bigint, 
         EXTRACT(EPOCH FROM NOW())::bigint,
         TRUE,
-        FALSE
+        FALSE,
+        a_immutable,
+        a_asset_ratio_limit
     ) RETURNING pkey_id INTO a_strategy_id;
     INSERT INTO tbl.strategy_watching_wallet(
         fkey_user_id,
@@ -1130,6 +1136,32 @@ END
 BEGIN
     INSERT INTO tbl.strategy_audit_rule (fkey_strategy_id, fkey_audit_rule_id, created_at)
     VALUES (a_strategy_id, a_audit_rule_id, EXTRACT(EPOCH FROM NOW())::BIGINT);
+END
+            "#,
+        ),
+        ProceduralFunction::new(
+            "fun_user_add_strategy_whitelisted_token",
+            vec![
+                Field::new("strategy_id", Type::BigInt),
+                Field::new("token_name", Type::String),
+            ],
+            vec![],
+            r#"
+BEGIN
+    INSERT INTO tbl.strategy_whitelisted_token (fkey_strategy_id, token_name)
+    VALUES (a_strategy_id, a_token_name);
+END
+            "#,
+        ),
+        ProceduralFunction::new(
+            "fun_user_list_strategy_whitelisted_tokens",
+            vec![Field::new("strategy_id", Type::BigInt)],
+            vec![Field::new("token_name", Type::String)],
+            r#"
+BEGIN
+    RETURN QUERY SELECT a.token_name
+    FROM tbl.strategy_whitelisted_token AS a
+    WHERE a.fkey_strategy_id = a_strategy_id;
 END
             "#,
         ),

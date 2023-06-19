@@ -366,7 +366,9 @@ RETURNS table (
     "creator_username" varchar,
     "creator_family_name" varchar,
     "creator_given_name" varchar,
-    "social_media" varchar
+    "social_media" varchar,
+    "immutable" boolean,
+    "asset_ratio_limit" double precision
 )
 LANGUAGE plpgsql
 AS $$
@@ -397,7 +399,9 @@ BEGIN
       u.username as creator_username,
       u.family_name as creator_family_name,
       u.given_name as creator_given_name,
-      s.social_media as social_media
+      s.social_media as social_media,
+      s.immutable as immutable,
+      s.asset_ratio_limit as asset_ratio_limit
       
                  FROM tbl.strategy AS s
                      LEFT JOIN tbl.strategy_watching_wallet AS w ON w.fkey_strategy_id = (SELECT distinct w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id LIMIT 1)
@@ -440,7 +444,9 @@ RETURNS table (
     "creator_username" varchar,
     "creator_family_name" varchar,
     "creator_given_name" varchar,
-    "social_media" varchar
+    "social_media" varchar,
+    "immutable" boolean,
+    "asset_ratio_limit" double precision
 )
 LANGUAGE plpgsql
 AS $$
@@ -471,7 +477,9 @@ BEGIN
       u.username as creator_username,
       u.family_name as creator_family_name,
       u.given_name as creator_given_name,
-      s.social_media as social_media
+      s.social_media as social_media,
+      s.immutable as immutable,
+      s.asset_ratio_limit as asset_ratio_limit
       
                  FROM tbl.strategy AS s
                         JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id
@@ -552,7 +560,9 @@ RETURNS table (
     "creator_username" varchar,
     "creator_family_name" varchar,
     "creator_given_name" varchar,
-    "social_media" varchar
+    "social_media" varchar,
+    "immutable" boolean,
+    "asset_ratio_limit" double precision
 )
 LANGUAGE plpgsql
 AS $$
@@ -583,7 +593,9 @@ BEGIN
       u.username as creator_username,
       u.family_name as creator_family_name,
       u.given_name as creator_given_name,
-      s.social_media as social_media
+      s.social_media as social_media,
+      s.immutable as immutable,
+      s.asset_ratio_limit as asset_ratio_limit
       
                  FROM tbl.strategy AS s
                     LEFT JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id
@@ -738,7 +750,9 @@ RETURNS table (
     "creator_username" varchar,
     "creator_family_name" varchar,
     "creator_given_name" varchar,
-    "social_media" varchar
+    "social_media" varchar,
+    "immutable" boolean,
+    "asset_ratio_limit" double precision
 )
 LANGUAGE plpgsql
 AS $$
@@ -769,7 +783,9 @@ BEGIN
       u.username as creator_username,
       u.family_name as creator_family_name,
       u.given_name as creator_given_name,
-      s.social_media as social_media
+      s.social_media as social_media,
+      s.immutable as immutable,
+      s.asset_ratio_limit as asset_ratio_limit
       
                  FROM tbl.strategy AS s
                       JOIN tbl.user_back_strategy_history AS b ON b.fkey_strategy_id = s.pkey_id AND b.fkey_user_id = a_user_id
@@ -1189,7 +1205,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_create_strategy(a_user_id bigint, a_name varchar, a_description varchar, a_strategy_thesis_url varchar, a_minimum_backing_amount_usd double precision, a_strategy_fee double precision, a_expert_fee double precision, a_agreed_tos boolean, a_wallet_address varchar, a_blockchain enum_block_chain)
+CREATE OR REPLACE FUNCTION api.fun_user_create_strategy(a_user_id bigint, a_name varchar, a_description varchar, a_strategy_thesis_url varchar, a_minimum_backing_amount_usd double precision, a_strategy_fee double precision, a_expert_fee double precision, a_agreed_tos boolean, a_wallet_address varchar, a_blockchain enum_block_chain, a_immutable boolean, a_asset_ratio_limit boolean)
 RETURNS table (
     "success" boolean,
     "strategy_id" bigint
@@ -1215,7 +1231,9 @@ BEGIN
         updated_at, 
         created_at,
         pending_approval,
-        approved
+        approved,
+        immutable,
+        asset_ratio_limit
     )
     VALUES (
         a_user_id, 
@@ -1232,7 +1250,9 @@ BEGIN
         EXTRACT(EPOCH FROM NOW())::bigint, 
         EXTRACT(EPOCH FROM NOW())::bigint,
         TRUE,
-        FALSE
+        FALSE,
+        a_immutable,
+        a_asset_ratio_limit
     ) RETURNING pkey_id INTO a_strategy_id;
     INSERT INTO tbl.strategy_watching_wallet(
         fkey_user_id,
@@ -1696,6 +1716,35 @@ END
 $$;
         
 
+CREATE OR REPLACE FUNCTION api.fun_user_add_strategy_whitelisted_token(a_strategy_id bigint, a_token_name varchar)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    INSERT INTO tbl.strategy_whitelisted_token (fkey_strategy_id, token_name)
+    VALUES (a_strategy_id, a_token_name);
+END
+            
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_list_strategy_whitelisted_tokens(a_strategy_id bigint)
+RETURNS table (
+    "token_name" varchar
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY SELECT a.token_name
+    FROM tbl.strategy_whitelisted_token AS a
+    WHERE a.fkey_strategy_id = a_strategy_id;
+END
+            
+$$;
+        
+
 CREATE OR REPLACE FUNCTION api.fun_admin_list_users(a_limit bigint, a_offset bigint, a_user_id bigint DEFAULT NULL, a_address varchar DEFAULT NULL, a_username varchar DEFAULT NULL, a_email varchar DEFAULT NULL, a_role enum_role DEFAULT NULL)
 RETURNS table (
     "total" bigint,
@@ -2035,7 +2084,9 @@ RETURNS table (
     "creator_username" varchar,
     "creator_family_name" varchar,
     "creator_given_name" varchar,
-    "social_media" varchar
+    "social_media" varchar,
+    "immutable" boolean,
+    "asset_ratio_limit" double precision
 )
 LANGUAGE plpgsql
 AS $$
@@ -2068,7 +2119,9 @@ BEGIN
       u.username as creator_username,
       u.family_name as creator_family_name,
       u.given_name as creator_given_name,
-      s.social_media as social_media
+      s.social_media as social_media,
+      s.immutable as immutable,
+      s.asset_ratio_limit as asset_ratio_limit
       
                  FROM tbl.strategy AS s
                       LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = (SELECT distinct w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id LIMIT 1)
