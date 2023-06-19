@@ -957,6 +957,21 @@ END
 "#,
         ),
         ProceduralFunction::new(
+            "fun_user_update_strategy_initial_token_ratio",
+            vec![
+                Field::new("strategy_initial_token_ratio_id", Type::BigInt),
+                Field::new("new_quantity", Type::String),
+            ],
+            vec![],
+            r#"
+BEGIN
+		UPDATE tbl.strategy_initial_token_ratio
+				SET quantity = a_new_quantity, updated_at = EXTRACT(EPOCH FROM NOW())::bigint
+				WHERE pkey_id = a_strategy_initial_token_ratio_id;
+END
+"#,
+        ),
+        ProceduralFunction::new(
             "fun_user_remove_strategy_initial_token_ratio",
             vec![
                 Field::new("strategy_initial_token_ratio_id", Type::BigInt),

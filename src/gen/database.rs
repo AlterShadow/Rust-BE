@@ -498,6 +498,9 @@ pub struct FunUserUpdateExpertProfileRespRow {}
 pub struct FunUserUpdateRequestRefundHistoryRespRow {}
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunUserUpdateStrategyInitialTokenRatioRespRow {}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserUpdateStrategyRespRow {
     pub success: bool,
 }
@@ -1624,6 +1627,26 @@ impl DatabaseRequest for FunUserAddStrategyInitialTokenRatioReq {
             &self.token_address as &(dyn ToSql + Sync),
             &self.blockchain as &(dyn ToSql + Sync),
             &self.quantity as &(dyn ToSql + Sync),
+        ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserUpdateStrategyInitialTokenRatioReq {
+    pub strategy_initial_token_ratio_id: i64,
+    pub new_quantity: String,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunUserUpdateStrategyInitialTokenRatioReq {
+    type ResponseRow = FunUserUpdateStrategyInitialTokenRatioRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_update_strategy_initial_token_ratio(a_strategy_initial_token_ratio_id => $1::bigint, a_new_quantity => $2::varchar);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.strategy_initial_token_ratio_id as &(dyn ToSql + Sync),
+            &self.new_quantity as &(dyn ToSql + Sync),
         ]
     }
 }

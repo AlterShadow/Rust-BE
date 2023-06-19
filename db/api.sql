@@ -1539,6 +1539,20 @@ END
 $$;
         
 
+CREATE OR REPLACE FUNCTION api.fun_user_update_strategy_initial_token_ratio(a_strategy_initial_token_ratio_id bigint, a_new_quantity varchar)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+		UPDATE tbl.strategy_initial_token_ratio
+				SET quantity = a_new_quantity, updated_at = EXTRACT(EPOCH FROM NOW())::bigint
+				WHERE pkey_id = a_strategy_initial_token_ratio_id;
+END
+
+$$;
+        
+
 CREATE OR REPLACE FUNCTION api.fun_user_remove_strategy_initial_token_ratio(a_strategy_initial_token_ratio_id bigint, a_strategy_id bigint)
 RETURNS void
 LANGUAGE plpgsql
