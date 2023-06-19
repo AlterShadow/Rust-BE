@@ -344,7 +344,7 @@ END
             "#,
         ),
         ProceduralFunction::new(
-            "fun_admin_reject_strategies",
+            "fun_admin_reject_strategy",
             vec![Field::new("strategy_id", Type::BigInt)],
             vec![],
             r#"
@@ -353,7 +353,7 @@ BEGIN
        SET approved = FALSE,
            pending_approval = FALSE,
            approved_at = NULL,
-          updated_at = EXTRACT(EPOCH FROM NOW())::bigint
+           updated_at = EXTRACT(EPOCH FROM NOW())::bigint
      WHERE pkey_id = a_strategy_id;
 END
             "#,

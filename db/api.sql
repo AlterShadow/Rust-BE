@@ -2104,7 +2104,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_admin_reject_strategies(a_strategy_id bigint)
+CREATE OR REPLACE FUNCTION api.fun_admin_reject_strategy(a_strategy_id bigint)
 RETURNS void
 LANGUAGE plpgsql
 AS $$
@@ -2114,7 +2114,7 @@ BEGIN
        SET approved = FALSE,
            pending_approval = FALSE,
            approved_at = NULL,
-          updated_at = EXTRACT(EPOCH FROM NOW())::bigint
+           updated_at = EXTRACT(EPOCH FROM NOW())::bigint
      WHERE pkey_id = a_strategy_id;
 END
             

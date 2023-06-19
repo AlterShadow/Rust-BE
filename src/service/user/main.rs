@@ -117,6 +117,8 @@ async fn main() -> Result<()> {
     server.add_handler(MethodAdminListBackers);
     server.add_handler(MethodAdminListExperts);
     server.add_handler(MethodAdminListStrategies);
+    server.add_handler(MethodAdminApproveStrategy);
+    server.add_handler(MethodAdminRejectStrategy);
 
     server.add_handler(MethodAdminAddWalletActivityHistory); // only for mocking purpose
     let eth_pool = EthereumRpcConnectionPool::from_conns(config.ethereum_urls);

@@ -1,5 +1,6 @@
 [
   "AdminAddWalletActivityHistory",
+  "AdminApproveStrategy",
   "AdminApproveUserBecomeExpert",
   "AdminGetSystemConfig",
   "AdminListBackers",
@@ -7,6 +8,7 @@
   "AdminListPendingExpertApplications",
   "AdminListStrategies",
   "AdminListUsers",
+  "AdminRejectStrategy",
   "AdminRejectUserBecomeExpert",
   "AdminSetBlockUser",
   "AdminSetUserRole",

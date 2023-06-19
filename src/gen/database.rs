@@ -71,7 +71,7 @@ pub struct FunAdminListUsersRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
-pub struct FunAdminRejectStrategiesRespRow {}
+pub struct FunAdminRejectStrategyRespRow {}
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunAdminRejectUserBecomeExpertRespRow {
@@ -2086,15 +2086,15 @@ impl DatabaseRequest for FunAdminApproveStrategyReq {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunAdminRejectStrategiesReq {
+pub struct FunAdminRejectStrategyReq {
     pub strategy_id: i64,
 }
 
 #[allow(unused_variables)]
-impl DatabaseRequest for FunAdminRejectStrategiesReq {
-    type ResponseRow = FunAdminRejectStrategiesRespRow;
+impl DatabaseRequest for FunAdminRejectStrategyReq {
+    type ResponseRow = FunAdminRejectStrategyRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_admin_reject_strategies(a_strategy_id => $1::bigint);"
+        "SELECT * FROM api.fun_admin_reject_strategy(a_strategy_id => $1::bigint);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![&self.strategy_id as &(dyn ToSql + Sync)]

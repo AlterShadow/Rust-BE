@@ -378,8 +378,8 @@ impl RequestHandler for MethodAdminListStrategies {
                     expert_public_id: req.expert_public_id,
                     expert_name: req.expert_name,
                     description: req.description,
-                    approved: None,
-                    pending_approval: None,
+                    approved: req.approved,
+                    pending_approval: req.pending_approval,
                 })
                 .await?;
 
@@ -411,6 +411,30 @@ impl RequestHandler for MethodAdminApproveStrategy {
             .await?;
 
             Ok(AdminApproveStrategyResponse { success: true })
+        }
+        .boxed()
+    }
+}
+pub struct MethodAdminRejectStrategy;
+impl RequestHandler for MethodAdminRejectStrategy {
+    type Request = AdminRejectStrategyRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db: DbClient = toolbox.get_db();
+        async move {
+            ensure_user_role(ctx, EnumRole::Admin)?;
+
+            db.execute(FunAdminRejectStrategyReq {
+                strategy_id: req.strategy_id,
+            })
+            .await?;
+
+            Ok(AdminRejectStrategyResponse { success: true })
         }
         .boxed()
     }
