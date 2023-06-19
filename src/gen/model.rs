@@ -470,7 +470,7 @@ pub struct ErrorOrganizationAssignRoleForbiddenAdmin {}
 pub struct ErrorOrganizationAssignRoleForbiddenSelf {}
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct ErrorOrganizationMembershipNotFound {}
+pub struct ErrorImmutableStrategy {}
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ErrorInvalidEnumLevel {}
@@ -670,9 +670,9 @@ pub enum EnumErrorCode {
     /// Custom Cannot set role higher than your role
     #[postgres(name = "OrganizationAssignRoleForbiddenSelf")]
     OrganizationAssignRoleForbiddenSelf = 102602,
-    /// Custom User is not a member in organization
-    #[postgres(name = "OrganizationMembershipNotFound")]
-    OrganizationMembershipNotFound = 102603,
+    /// Custom Strategy is immutable
+    #[postgres(name = "ImmutableStrategy")]
+    ImmutableStrategy = 102603,
     /// SQL 22P02 InvalidEnumLevel
     #[postgres(name = "InvalidEnumLevel")]
     InvalidEnumLevel = 3484946,

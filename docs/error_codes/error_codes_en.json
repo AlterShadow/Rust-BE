@@ -106,8 +106,8 @@
     },
     {
       "code": 102603,
-      "symbol": "OrganizationMembershipNotFound",
-      "message": "User is not a member in organization",
+      "symbol": "ImmutableStrategy",
+      "message": "Strategy is immutable",
       "source": "Custom"
     },
     {

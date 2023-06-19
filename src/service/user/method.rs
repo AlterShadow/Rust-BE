@@ -1919,7 +1919,25 @@ impl RequestHandler for MethodExpertAddStrategyWatchingWallet {
         let db: DbClient = toolbox.get_db();
         async move {
             ensure_user_role(ctx, EnumRole::Expert)?;
-
+            let strategy = db
+                .execute(FunUserGetStrategyReq {
+                    strategy_id: req.strategy_id,
+                    user_id: ctx.user_id,
+                })
+                .await?
+                .into_result()
+                .context(CustomError::new(
+                    EnumErrorCode::NotFound,
+                    "Could not find strategy",
+                ))?;
+            ensure!(
+                !strategy.immutable,
+                CustomError::new(EnumErrorCode::ImmutableStrategy, "Strategy is immutable")
+            );
+            ensure!(
+                strategy.creator_id == ctx.user_id,
+                CustomError::new(EnumErrorCode::UserForbidden, "Not your strategy")
+            );
             let ret = db
                 .execute(FunUserAddStrategyWatchWalletReq {
                     user_id: ctx.user_id,
@@ -2095,7 +2113,25 @@ impl RequestHandler for MethodExpertAddStrategyInitialTokenRatio {
 
         async move {
             ensure_user_role(ctx, EnumRole::Expert)?;
-            // TODO: verify strategy belongs to user
+            let strategy = db
+                .execute(FunUserGetStrategyReq {
+                    strategy_id: req.strategy_id,
+                    user_id: ctx.user_id,
+                })
+                .await?
+                .into_result()
+                .context(CustomError::new(
+                    EnumErrorCode::NotFound,
+                    "Could not find strategy",
+                ))?;
+            ensure!(
+                !strategy.immutable,
+                CustomError::new(EnumErrorCode::ImmutableStrategy, "Strategy is immutable")
+            );
+            ensure!(
+                strategy.creator_id == ctx.user_id,
+                CustomError::new(EnumErrorCode::UserForbidden, "Not your strategy")
+            );
             let ret = db
                 .execute(FunUserAddStrategyInitialTokenRatioReq {
                     strategy_id: req.strategy_id,

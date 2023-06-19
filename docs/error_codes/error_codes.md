@@ -19,7 +19,7 @@
 |102404|OrganizationNotFound|Organization Not Found|Custom|
 |102601|OrganizationAssignRoleForbiddenAdmin|Cannot set role higher than admin|Custom|
 |102602|OrganizationAssignRoleForbiddenSelf|Cannot set role higher than your role|Custom|
-|102603|OrganizationMembershipNotFound|User is not a member in organization|Custom|
+|102603|ImmutableStrategy|Strategy is immutable|Custom|
 |3484946|InvalidEnumLevel|InvalidEnumLevel|SQL 22P02|
 |103404|AssetNotFound|Asset Not Found|Custom|
 |104404|AssetPlanNotFound|AssetPlan Not Found|Custom|
