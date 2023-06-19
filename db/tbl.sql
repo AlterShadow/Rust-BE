@@ -122,7 +122,7 @@ CREATE TABLE tbl.strategy (
     approved boolean  NOT NULL DEFAULT FALSE,
     approved_at bigint  NULL,
     immutable boolean  NOT NULL DEFAULT FALSE,
-    asset_ratio_limit double precision  NULL,
+    asset_ratio_limit boolean  NULL,
     CONSTRAINT strategy_pk PRIMARY KEY (pkey_id)
 );
 
