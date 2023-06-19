@@ -96,6 +96,7 @@ async fn main() -> Result<()> {
         cmc_client: Arc::new(CoinMarketCap::new(&config.cmc_api_key)?),
     });
     server.add_handler(MethodExpertUpdateStrategy);
+    server.add_handler(MethodExpertFreezeStrategy);
     server.add_handler(MethodExpertAddStrategyInitialTokenRatio);
     server.add_handler(MethodExpertRemoveStrategyInitialTokenRatio);
 

@@ -1886,19 +1886,72 @@ impl RequestHandler for MethodExpertUpdateStrategy {
         let db: DbClient = toolbox.get_db();
         async move {
             ensure_user_role(ctx, EnumRole::Expert)?;
-
+            let strategy = db
+                .execute(FunUserGetStrategyReq {
+                    strategy_id: req.strategy_id,
+                    user_id: ctx.user_id,
+                })
+                .await?
+                .into_result()
+                .context(CustomError::new(
+                    EnumErrorCode::NotFound,
+                    "Could not find strategy",
+                ))?;
+            ensure!(
+                !strategy.immutable,
+                CustomError::new(EnumErrorCode::ImmutableStrategy, "Strategy is immutable")
+            );
+            ensure!(
+                strategy.creator_id == ctx.user_id,
+                CustomError::new(EnumErrorCode::UserForbidden, "Not your strategy")
+            );
             let ret = db
                 .execute(FunUserUpdateStrategyReq {
                     user_id: ctx.user_id,
                     strategy_id: req.strategy_id,
                     name: req.name,
                     description: req.description,
+                    social_media: req.social_media,
                 })
                 .await?
                 .into_result()
                 .context("failed to update strategy")?;
 
             Ok(ExpertUpdateStrategyResponse {
+                success: ret.success,
+            })
+        }
+        .boxed()
+    }
+}
+pub struct MethodExpertFreezeStrategy;
+impl RequestHandler for MethodExpertFreezeStrategy {
+    type Request = ExpertFreezeStrategyRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db: DbClient = toolbox.get_db();
+        async move {
+            ensure_user_role(ctx, EnumRole::Expert)?;
+
+            let ret = db
+                .execute(FunUserFreezeStrategyReq {
+                    user_id: ctx.user_id,
+                    strategy_id: req.strategy_id,
+                })
+                .await?
+                .into_result()
+                .context("failed to freeze strategy")?;
+            db.execute(FunUserAddStrategyAuditRuleReq {
+                strategy_id: req.strategy_id,
+                audit_rule_id: AUDIT_IMMUTABLE_TOKENS.id as _,
+            })
+            .await?;
+            Ok(ExpertFreezeStrategyResponse {
                 success: ret.success,
             })
         }

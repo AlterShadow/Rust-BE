@@ -704,6 +704,7 @@ END
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("name", Type::optional(Type::String)),
                 Field::new("description", Type::optional(Type::String)),
+                Field::new("social_media", Type::optional(Type::String)),
             ],
             vec![Field::new("success", Type::Boolean)],
             r#"
@@ -711,9 +712,27 @@ END
 BEGIN
     UPDATE tbl.strategy
     SET name = COALESCE(a_name, name),
-        description = COALESCE(a_description, description)
+        description = COALESCE(a_description, description),
+        social_media = COALESCE(a_social_media, social_media)
     WHERE pkey_id = a_strategy_id
       AND fkey_user_id = a_user_id;
+    RETURN QUERY SELECT TRUE;
+END
+"#,
+        ),
+        ProceduralFunction::new(
+            "fun_user_freeze_strategy",
+            vec![
+                Field::new("user_id", Type::BigInt),
+                Field::new("strategy_id", Type::BigInt),
+            ],
+            vec![Field::new("success", Type::Boolean)],
+            r#"
+BEGIN
+    UPDATE tbl.strategy
+    SET immutable = TRUE
+    WHERE pkey_id = a_strategy_id
+        AND fkey_user_id = a_user_id;
     RETURN QUERY SELECT TRUE;
 END
 "#,

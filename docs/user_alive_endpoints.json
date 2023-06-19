@@ -16,6 +16,7 @@
   "ExpertAddStrategyInitialTokenRatio",
   "ExpertAddStrategyWatchingWallet",
   "ExpertCreateStrategy",
+  "ExpertFreezeStrategy",
   "ExpertListBackers",
   "ExpertListFollowers",
   "ExpertRemoveStrategyInitialTokenRatio",

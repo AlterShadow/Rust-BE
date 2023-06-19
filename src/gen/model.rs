@@ -330,6 +330,9 @@ pub enum EnumEndpoint {
     #[postgres(name = "ExpertUpdateStrategy")]
     ExpertUpdateStrategy = 20260,
     ///
+    #[postgres(name = "ExpertFreezeStrategy")]
+    ExpertFreezeStrategy = 20265,
+    ///
     #[postgres(name = "ExpertAddStrategyWatchingWallet")]
     ExpertAddStrategyWatchingWallet = 20270,
     ///
@@ -1171,6 +1174,16 @@ pub struct ExpertCreateStrategyResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct ExpertFreezeStrategyRequest {
+    pub strategy_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ExpertFreezeStrategyResponse {
+    pub success: bool,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct ExpertListBackersRequest {
     #[serde(default)]
     pub limit: Option<i64>,
@@ -1250,12 +1263,6 @@ pub struct ExpertUpdateStrategyRequest {
     pub description: Option<String>,
     #[serde(default)]
     pub social_media: Option<String>,
-    #[serde(default)]
-    pub risk_score: Option<f64>,
-    #[serde(default)]
-    pub reputation_score: Option<f64>,
-    #[serde(default)]
-    pub aum: Option<f64>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -5009,24 +5016,6 @@ impl WsRequest for ExpertUpdateStrategyRequest {
       "ty": {
         "Optional": "String"
       }
-    },
-    {
-      "name": "risk_score",
-      "ty": {
-        "Optional": "Numeric"
-      }
-    },
-    {
-      "name": "reputation_score",
-      "ty": {
-        "Optional": "Numeric"
-      }
-    },
-    {
-      "name": "aum",
-      "ty": {
-        "Optional": "Numeric"
-      }
     }
   ],
   "returns": [
@@ -5036,12 +5025,39 @@ impl WsRequest for ExpertUpdateStrategyRequest {
     }
   ],
   "stream_response": [],
-  "description": "User updates a strategy",
+  "description": "Expert updates a strategy",
   "json_schema": null
 }"#;
 }
 impl WsResponse for ExpertUpdateStrategyResponse {
     type Request = ExpertUpdateStrategyRequest;
+}
+
+impl WsRequest for ExpertFreezeStrategyRequest {
+    type Response = ExpertFreezeStrategyResponse;
+    const METHOD_ID: u32 = 20265;
+    const SCHEMA: &'static str = r#"{
+  "name": "ExpertFreezeStrategy",
+  "code": 20265,
+  "parameters": [
+    {
+      "name": "strategy_id",
+      "ty": "BigInt"
+    }
+  ],
+  "returns": [
+    {
+      "name": "success",
+      "ty": "Boolean"
+    }
+  ],
+  "stream_response": [],
+  "description": "Expert freezes a strategy, by making it immutable",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for ExpertFreezeStrategyResponse {
+    type Request = ExpertFreezeStrategyRequest;
 }
 
 impl WsRequest for ExpertAddStrategyWatchingWalletRequest {

@@ -247,6 +247,11 @@ pub struct FunUserFollowStrategyRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunUserFreezeStrategyRespRow {
+    pub success: bool,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserGetStrategyStatisticsBackHistoryRespRow {
     pub time: i64,
     pub backer_count: f64,
@@ -1344,13 +1349,15 @@ pub struct FunUserUpdateStrategyReq {
     pub name: Option<String>,
     #[serde(default)]
     pub description: Option<String>,
+    #[serde(default)]
+    pub social_media: Option<String>,
 }
 
 #[allow(unused_variables)]
 impl DatabaseRequest for FunUserUpdateStrategyReq {
     type ResponseRow = FunUserUpdateStrategyRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_update_strategy(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_name => $3::varchar, a_description => $4::varchar);"
+        "SELECT * FROM api.fun_user_update_strategy(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_name => $3::varchar, a_description => $4::varchar, a_social_media => $5::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -1358,6 +1365,27 @@ impl DatabaseRequest for FunUserUpdateStrategyReq {
             &self.strategy_id as &(dyn ToSql + Sync),
             &self.name as &(dyn ToSql + Sync),
             &self.description as &(dyn ToSql + Sync),
+            &self.social_media as &(dyn ToSql + Sync),
+        ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserFreezeStrategyReq {
+    pub user_id: i64,
+    pub strategy_id: i64,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunUserFreezeStrategyReq {
+    type ResponseRow = FunUserFreezeStrategyRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_freeze_strategy(a_user_id => $1::bigint, a_strategy_id => $2::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.strategy_id as &(dyn ToSql + Sync),
         ]
     }
 }

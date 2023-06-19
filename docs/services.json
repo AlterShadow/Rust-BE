@@ -2696,24 +2696,6 @@
               "ty": {
                 "Optional": "String"
               }
-            },
-            {
-              "name": "risk_score",
-              "ty": {
-                "Optional": "Numeric"
-              }
-            },
-            {
-              "name": "reputation_score",
-              "ty": {
-                "Optional": "Numeric"
-              }
-            },
-            {
-              "name": "aum",
-              "ty": {
-                "Optional": "Numeric"
-              }
             }
           ],
           "returns": [
@@ -2723,7 +2705,26 @@
             }
           ],
           "stream_response": [],
-          "description": "User updates a strategy",
+          "description": "Expert updates a strategy",
+          "json_schema": null
+        },
+        {
+          "name": "ExpertFreezeStrategy",
+          "code": 20265,
+          "parameters": [
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            }
+          ],
+          "returns": [
+            {
+              "name": "success",
+              "ty": "Boolean"
+            }
+          ],
+          "stream_response": [],
+          "description": "Expert freezes a strategy, by making it immutable",
           "json_schema": null
         },
         {

@@ -1280,7 +1280,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_update_strategy(a_user_id bigint, a_strategy_id bigint, a_name varchar DEFAULT NULL, a_description varchar DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_user_update_strategy(a_user_id bigint, a_strategy_id bigint, a_name varchar DEFAULT NULL, a_description varchar DEFAULT NULL, a_social_media varchar DEFAULT NULL)
 RETURNS table (
     "success" boolean
 )
@@ -1291,9 +1291,28 @@ AS $$
 BEGIN
     UPDATE tbl.strategy
     SET name = COALESCE(a_name, name),
-        description = COALESCE(a_description, description)
+        description = COALESCE(a_description, description),
+        social_media = COALESCE(a_social_media, social_media)
     WHERE pkey_id = a_strategy_id
       AND fkey_user_id = a_user_id;
+    RETURN QUERY SELECT TRUE;
+END
+
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_freeze_strategy(a_user_id bigint, a_strategy_id bigint)
+RETURNS table (
+    "success" boolean
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    UPDATE tbl.strategy
+    SET immutable = TRUE
+    WHERE pkey_id = a_strategy_id
+        AND fkey_user_id = a_user_id;
     RETURN QUERY SELECT TRUE;
 END
 

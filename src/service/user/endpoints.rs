@@ -540,13 +540,17 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 Field::new("name", Type::optional(Type::String)),
                 Field::new("description", Type::optional(Type::String)),
                 Field::new("social_media", Type::optional(Type::String)),
-                Field::new("risk_score", Type::optional(Type::Numeric)),
-                Field::new("reputation_score", Type::optional(Type::Numeric)),
-                Field::new("aum", Type::optional(Type::Numeric)),
             ],
             vec![Field::new("success", Type::Boolean)],
         )
-        .with_description("User updates a strategy"),
+        .with_description("Expert updates a strategy"),
+        EndpointSchema::new(
+            "ExpertFreezeStrategy",
+            20265,
+            vec![Field::new("strategy_id", Type::BigInt)],
+            vec![Field::new("success", Type::Boolean)],
+        )
+        .with_description("Expert freezes a strategy, by making it immutable"),
         EndpointSchema::new(
             "ExpertAddStrategyWatchingWallet",
             20270,
