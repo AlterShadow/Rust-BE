@@ -9,6 +9,8 @@ pub trait ScaledMath {
     fn try_checked_sub(&self, term: U256) -> Result<U256>;
     fn try_checked_mul(&self, factor: U256) -> Result<U256>;
     fn try_checked_div(&self, divisor: U256) -> Result<U256>;
+    fn remove_least_significant_digits(&self, digits: usize) -> Result<U256>;
+    fn add_least_significant_digits(&self, digits: usize) -> Result<U256>;
 }
 
 impl ScaledMath for U256 {
@@ -70,11 +72,30 @@ impl ScaledMath for U256 {
         self.checked_div(divisor)
             .ok_or_else(|| eyre!("division by zero"))
     }
+
+    fn remove_least_significant_digits(&self, digits: usize) -> Result<U256> {
+        let divisor = U256::exp10(digits);
+        self.try_checked_div(divisor)
+    }
+
+    fn add_least_significant_digits(&self, digits: usize) -> Result<U256> {
+        let multiplier = U256::exp10(digits);
+        self.try_checked_mul(multiplier)
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn mul_f64_does_not_change_number_of_digits_from_decimals() {
+        let ten = U256::from(10);
+        assert_eq!(ten.mul_f64(1.0).unwrap(), U256::from(10));
+        assert_eq!(ten.mul_f64(1.5).unwrap(), U256::from(15));
+        assert_eq!(ten.mul_f64(1.05).unwrap(), U256::from(10));
+        assert_eq!(ten.mul_f64(1.15).unwrap(), U256::from(11));
+    }
 
     #[test]
     fn mul_f64_with_overflow() {
