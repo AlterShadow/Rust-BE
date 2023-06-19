@@ -1,9 +1,9 @@
-use std::str::FromStr;
-
 use eyre::*;
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::{Client, Response, Url};
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::str::FromStr;
 use web3::types::Address;
 
 const API_KEY: &str = "ec6c4b09-03e6-4bd6-84f9-95406fc2ce81";
@@ -34,11 +34,36 @@ pub struct CoinMarketCapTokenInfo {
     pub addresses: Vec<TokenAddress>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MapCoinPlatform {
+    pub id: u64,
+    pub name: String,
+    pub symbol: String,
+    pub slug: String,
+    pub token_address: String,
+}
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MapCoinInfo {
+    pub id: i32,
+    pub rank: i32,
+    pub name: String,
+    pub symbol: String,
+    pub slug: String,
+    pub is_active: i32,
+    pub first_historical_data: String,
+    pub last_historical_data: String,
+    pub platform: Option<String>,
+}
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MapCoinResponse {
+    pub data: Vec<MapCoinInfo>,
+}
 pub struct CoinMarketCap {
     client: Client,
     base_url: String,
     price_path: String,
     metadata_path: String,
+    map_path: String,
 }
 
 impl CoinMarketCap {
@@ -56,6 +81,7 @@ impl CoinMarketCap {
             client: Client::builder().default_headers(headers).build()?,
             price_path: "/v2/cryptocurrency/quotes/latest".to_string(),
             metadata_path: "/v2/cryptocurrency/info".to_string(),
+            map_path: "/v1/cryptocurrency/map".to_string(),
         })
     }
 
@@ -147,6 +173,14 @@ impl CoinMarketCap {
         }
         Ok(token_prices)
     }
+    pub async fn get_top_25_coins(&self) -> Result<MapCoinResponse> {
+        let mut url = self.map_url()?;
+        self.append_url_params(&mut url, "limit", &vec!["25".to_string()]);
+        self.append_url_params(&mut url, "sort", &vec!["cmc_rank".to_string()]);
+        let result = self.client.get(url).send().await?;
+        let data: MapCoinResponse = result.json().await?;
+        Ok(data)
+    }
 
     fn price_url(&self) -> Result<Url> {
         Ok(Url::parse(&format!(
@@ -160,6 +194,9 @@ impl CoinMarketCap {
             "{}{}",
             self.base_url, self.metadata_path
         ))?)
+    }
+    fn map_url(&self) -> Result<Url> {
+        Ok(Url::parse(&format!("{}{}", self.base_url, self.map_path))?)
     }
 
     fn append_url_params(&self, url: &mut Url, param_key: &str, param_values: &Vec<String>) -> () {
