@@ -53,7 +53,7 @@ async fn main() -> Result<()> {
         .route("/bsc-mainnet-escrows", post(handle_bsc_escrows_mainnet))
         .with_state(Arc::new(AppState {
             dex_addresses: DexAddresses::new(),
-            stablecoin_addresses: BlockchainCoinAddresses::new(),
+            token_addresses: BlockchainCoinAddresses::new(),
             escrow_addresses: EscrowAddresses::new(),
             eth_pool,
             erc_20: build_erc_20()?,

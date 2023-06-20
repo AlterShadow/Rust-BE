@@ -19,7 +19,7 @@ pub struct AppState {
     pub eth_pool: EthereumRpcConnectionPool,
     pub pancake_swap: PancakeSwap,
     pub db: DbClient,
-    pub stablecoin_addresses: BlockchainCoinAddresses,
+    pub token_addresses: BlockchainCoinAddresses,
     pub escrow_addresses: EscrowAddresses,
     pub erc_20: Contract,
 }
@@ -30,7 +30,7 @@ impl AppState {
             eth_pool,
             pancake_swap: build_pancake_swap()?,
             db,
-            stablecoin_addresses: BlockchainCoinAddresses::new(),
+            token_addresses: BlockchainCoinAddresses::new(),
             erc_20: build_erc_20()?,
             escrow_addresses: EscrowAddresses::new(),
         })

@@ -1,6 +1,6 @@
 use crate::{BlockchainCoinAddresses, ContractCall, EscrowTransfer, TransactionReady};
 use eyre::*;
-use gen::model::EnumBlockChain;
+use gen::model::{EnumBlockChain, EnumBlockchainCoin};
 use tracing::info;
 
 fn get_method_by_name(name: &str) -> Option<Erc20Method> {
@@ -25,7 +25,14 @@ pub fn parse_escrow(
     let called_contract = tx.get_to().context("missing called contract")?;
     let token = stablecoin_addresses
         .get_by_address(chain, called_contract)
-        .context("Unsupported coin")?;
+        .context("unsupported coin")?;
+
+    match token {
+        EnumBlockchainCoin::USDC => {}
+        EnumBlockchainCoin::USDT => {}
+        EnumBlockchainCoin::BUSD => {}
+        _ => bail!("unsupported coin"),
+    }
 
     let sender = tx.get_from().context("No sender")?;
 

@@ -54,14 +54,14 @@ pub async fn handle_eth_escrows(
             };
 
             /* check if it is an escrow to one of our escrow contracts */
-            let escrow =
-                match parse_escrow(blockchain, &tx, &state.stablecoin_addresses, &state.erc_20) {
-                    Ok(escrow) => escrow,
-                    Err(e) => {
-                        info!("tx {:?} is not an escrow: {:?}", tx.get_hash(), e);
-                        return;
-                    }
-                };
+            let escrow = match parse_escrow(blockchain, &tx, &state.token_addresses, &state.erc_20)
+            {
+                Ok(escrow) => escrow,
+                Err(e) => {
+                    info!("tx {:?} is not an escrow: {:?}", tx.get_hash(), e);
+                    return;
+                }
+            };
             if state
                 .escrow_addresses
                 .get_by_address(blockchain, escrow.recipient)
