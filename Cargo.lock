@@ -1823,6 +1823,43 @@ version = "0.1.0"
 [[package]]
 name = "mc2fi_admin"
 version = "0.1.0"
+dependencies = [
+ "api",
+ "async-trait",
+ "axum-server",
+ "bytes",
+ "chrono",
+ "crossbeam",
+ "crypto",
+ "dashmap",
+ "deadpool",
+ "deadpool-postgres",
+ "eth-sdk",
+ "eyre",
+ "futures",
+ "gen",
+ "hex",
+ "itertools",
+ "lib",
+ "mc2fi_auth",
+ "model",
+ "num",
+ "num-derive",
+ "num-traits",
+ "peroxide",
+ "rand 0.8.5",
+ "reqwest",
+ "secp256k1",
+ "secrecy",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-cron-scheduler",
+ "tokio-tungstenite",
+ "tracing",
+ "tracing-appender",
+ "web3",
+]
 
 [[package]]
 name = "mc2fi_auth"

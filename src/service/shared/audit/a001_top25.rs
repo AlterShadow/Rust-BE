@@ -1,7 +1,7 @@
 use crate::audit::{AuditLogger, AuditRule};
 use api::cmc::CoinMarketCap;
 use eyre::*;
-use gen::database::{FunUserCheckIfTokenWhitelistedReq, FunUserGetStrategyReq};
+use gen::database::FunUserCheckIfTokenWhitelistedReq;
 use gen::model::EnumErrorCode;
 use lib::database::DbClient;
 use lib::toolbox::CustomError;
