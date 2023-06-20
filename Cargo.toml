@@ -44,7 +44,7 @@ axum = { version = "0.6.18", default-features = false, features = [
 	"tokio",
 ] }
 axum-server = { version = "0.5.0", features = ["tls-rustls"] }
-
+secrecy = { version = "0.8.0", features = ["serde"] }
 deadpool = { version = "0.9.5", features = ["managed", "rt_tokio_1"] }
 async-trait = "*"
 crypto = { path = "src/service/shared/crypto" }

@@ -53,6 +53,7 @@ kanal = { version = "0.1.0-pre7", features = ["async"] }
 csv = "1.2.1"
 web3 = { version = "0.18", features = ["signing"] }
 postgres-from-row = "0.5.2"
+secrecy = { version = "0.8.0", features = ["serde"] }
 
 
 [lib]

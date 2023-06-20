@@ -4,20 +4,77 @@ use deadpool_postgres::Runtime;
 use deadpool_postgres::*;
 use eyre::*;
 use postgres_from_row::FromRow;
+use secrecy::{ExposeSecret, SecretString};
 use serde::de::DeserializeOwned;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::Hash;
 use std::hash::Hasher;
 use std::path::Path;
 use std::process::Command;
 use std::sync::Arc;
+use std::time::Duration;
 pub use tokio_postgres::types::ToSql;
 use tokio_postgres::Statement;
 pub use tokio_postgres::{NoTls, Row, ToStatement};
 use tracing::*;
 
-pub type DatabaseConfig = deadpool_postgres::Config;
+#[derive(Clone, Debug, Default, Deserialize)]
+pub struct DatabaseConfig {
+    /// See [`tokio_postgres::Config::user`].
+    pub user: Option<String>,
+    /// See [`tokio_postgres::Config::password`].
+    pub password: Option<SecretString>,
+    /// See [`tokio_postgres::Config::dbname`].
+    pub dbname: Option<String>,
+    /// See [`tokio_postgres::Config::options`].
+    pub options: Option<String>,
+    /// See [`tokio_postgres::Config::application_name`].
+    pub application_name: Option<String>,
+    /// See [`tokio_postgres::Config::ssl_mode`].
+    pub ssl_mode: Option<SslMode>,
+    /// This is similar to [`Config::hosts`] but only allows one host to be
+    /// specified.
+    ///
+    /// Unlike [`tokio_postgres::Config`] this structure differentiates between
+    /// one host and more than one host. This makes it possible to store this
+    /// configuration in an environment variable.
+    ///
+    /// See [`tokio_postgres::Config::host`].
+    pub host: Option<String>,
+    /// See [`tokio_postgres::Config::host`].
+    pub hosts: Option<Vec<String>>,
+    /// This is similar to [`Config::ports`] but only allows one port to be
+    /// specified.
+    ///
+    /// Unlike [`tokio_postgres::Config`] this structure differentiates between
+    /// one port and more than one port. This makes it possible to store this
+    /// configuration in an environment variable.
+    ///
+    /// See [`tokio_postgres::Config::port`].
+    pub port: Option<u16>,
+    /// See [`tokio_postgres::Config::port`].
+    pub ports: Option<Vec<u16>>,
+    /// See [`tokio_postgres::Config::connect_timeout`].
+    pub connect_timeout: Option<Duration>,
+    /// See [`tokio_postgres::Config::keepalives`].
+    pub keepalives: Option<bool>,
+    /// See [`tokio_postgres::Config::keepalives_idle`].
+    pub keepalives_idle: Option<Duration>,
+    /// See [`tokio_postgres::Config::target_session_attrs`].
+    pub target_session_attrs: Option<TargetSessionAttrs>,
+    /// See [`tokio_postgres::Config::channel_binding`].
+    pub channel_binding: Option<ChannelBinding>,
+
+    /// [`Manager`] configuration.
+    ///
+    /// [`Manager`]: super::Manager
+    pub manager: Option<ManagerConfig>,
+
+    /// [`Pool`] configuration.
+    pub pool: Option<PoolConfig>,
+}
+
 pub trait DatabaseRequest {
     type ResponseRow: Send + Sync + Clone + Serialize + DeserializeOwned + FromRow;
     fn statement(&self) -> &str;
@@ -87,6 +144,25 @@ impl DbClient {
 }
 
 pub async fn connect_to_database(config: DatabaseConfig) -> Result<DbClient> {
+    let config = Config {
+        user: config.user,
+        password: config.password.map(|s| s.expose_secret().clone()),
+        dbname: config.dbname,
+        options: config.options,
+        application_name: config.application_name,
+        ssl_mode: config.ssl_mode,
+        host: config.host,
+        hosts: config.hosts,
+        port: config.port,
+        ports: config.ports,
+        connect_timeout: config.connect_timeout,
+        keepalives: config.keepalives,
+        keepalives_idle: config.keepalives_idle,
+        target_session_attrs: config.target_session_attrs,
+        channel_binding: config.channel_binding,
+        manager: config.manager,
+        pool: config.pool,
+    };
     info!(
         "Connecting to database {}:{} {}",
         config.host.as_deref().unwrap_or(""),
@@ -108,7 +184,7 @@ pub async fn connect_to_database(config: DatabaseConfig) -> Result<DbClient> {
 pub fn database_test_config() -> DatabaseConfig {
     DatabaseConfig {
         user: Some("postgres".to_string()),
-        password: Some("123456".to_string()),
+        password: Some("123456".to_string().into()),
         dbname: Some("mc2fi".to_string()),
         host: Some("localhost".to_string()),
         ..Default::default()

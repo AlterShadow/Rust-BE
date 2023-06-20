@@ -2,6 +2,7 @@
 pub mod admin_endpoints;
 #[path = "../admin/method.rs"]
 mod admin_method;
+#[path = "../shared/audit/mod.rs"]
 pub mod audit;
 pub mod endpoints;
 mod method;
@@ -23,11 +24,12 @@ use lib::log::{setup_logs, LogLevel};
 use lib::ws::{EndpointAuthController, WebsocketServer};
 use mc2_fi::endpoints::endpoint_auth_authorize;
 use mc2_fi::method::MethodAuthAuthorize;
+use secrecy::{ExposeSecret, SecretString};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 use std::sync::Arc;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Config {
     pub app_db: DatabaseConfig,
     pub auth_db: DatabaseConfig,
@@ -39,8 +41,8 @@ pub struct Config {
     #[serde(default)]
     pub setup_ethereum_localnet: bool,
     pub escrow_addresses: Vec<UserGetDepositAddressesRow>,
-    pub god_key: String,
-    pub cmc_api_key: String,
+    pub god_key: SecretString,
+    pub cmc_api_key: SecretString,
 }
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -93,7 +95,7 @@ async fn main() -> Result<()> {
     server.add_handler(MethodUserApplyBecomeExpert);
 
     server.add_handler(MethodExpertCreateStrategy {
-        cmc_client: Arc::new(CoinMarketCap::new(&config.cmc_api_key)?),
+        cmc_client: Arc::new(CoinMarketCap::new(config.cmc_api_key.expose_secret())?),
     });
     server.add_handler(MethodExpertUpdateStrategy);
     server.add_handler(MethodExpertFreezeStrategy);
@@ -129,7 +131,7 @@ async fn main() -> Result<()> {
     let coin_addresses = Arc::new(BlockchainCoinAddresses::new());
     let escrow_contract_addresses = EscrowAddresses::new();
     let escrow_contract = Arc::new(AbstractEscrowContract::new2(escrow_contract_addresses));
-    let master_key = Secp256k1SecretKey::from_str(&config.god_key)?;
+    let master_key = Secp256k1SecretKey::from_str(config.god_key.expose_secret())?;
 
     server.add_handler(MethodUserBackStrategy {
         pool: eth_pool.clone(),
