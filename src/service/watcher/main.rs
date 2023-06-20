@@ -95,6 +95,13 @@ pub async fn handle_eth_swap_goerli(
     handle_eth_swap(state.0, body, EnumBlockChain::EthereumGoerli).await
 }
 
+pub async fn handle_bsc_swap_mainnet(
+    state: State<Arc<AppState>>,
+    body: Bytes,
+) -> Result<(), StatusCode> {
+    handle_eth_swap(state.0, body, EnumBlockChain::BscMainnet).await
+}
+
 pub async fn handle_eth_escrows_mainnet(
     state: State<Arc<AppState>>,
     body: Bytes,
@@ -107,13 +114,6 @@ pub async fn handle_eth_escrows_goerli(
     body: Bytes,
 ) -> Result<(), StatusCode> {
     handle_eth_escrows(state.0, body, EnumBlockChain::EthereumGoerli).await
-}
-
-pub async fn handle_bsc_swap_mainnet(
-    state: State<Arc<AppState>>,
-    body: Bytes,
-) -> Result<(), StatusCode> {
-    handle_eth_swap(state.0, body, EnumBlockChain::BscMainnet).await
 }
 
 pub async fn handle_bsc_escrows_mainnet(
