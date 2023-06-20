@@ -1586,6 +1586,28 @@ END
 $$;
         
 
+CREATE OR REPLACE FUNCTION api.fun_user_get_strategy_initial_token_ratio_by_address_and_chain(a_strategy_id bigint, a_token_address varchar, a_blockchain enum_block_chain)
+RETURNS table (
+    "strategy_initial_token_ratio_id" bigint,
+    "blockchain" enum_block_chain,
+    "token_name" varchar,
+    "token_address" varchar,
+    "quantity" varchar,
+    "strategy_id" bigint,
+    "created_at" bigint,
+    "updated_at" bigint
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+		RETURN QUERY SELECT a.pkey_id, a.blockchain, a.token_name, a.token_address, a.quantity, a.fkey_strategy_id, a.updated_at, a.created_at FROM tbl.strategy_initial_token_ratio AS a
+		WHERE a.fkey_strategy_id = a_strategy_id AND a.token_address = a_token_address AND a.blockchain = a_blockchain;
+END
+
+$$;
+        
+
 CREATE OR REPLACE FUNCTION api.fun_expert_list_followers(a_user_id bigint, a_limit bigint, a_offset bigint)
 RETURNS table (
     "public_id" bigint,

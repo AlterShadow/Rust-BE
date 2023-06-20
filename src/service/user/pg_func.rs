@@ -1004,6 +1004,30 @@ END
 "#,
         ),
         ProceduralFunction::new(
+            "fun_user_get_strategy_initial_token_ratio_by_address_and_chain",
+            vec![
+                Field::new("strategy_id", Type::BigInt),
+                Field::new("token_address", Type::String),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+            ],
+            vec![
+                Field::new("strategy_initial_token_ratio_id", Type::BigInt),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("token_name", Type::String),
+                Field::new("token_address", Type::String),
+                Field::new("quantity", Type::String),
+                Field::new("strategy_id", Type::BigInt),
+                Field::new("created_at", Type::BigInt),
+                Field::new("updated_at", Type::BigInt),
+            ],
+            r#"
+BEGIN
+		RETURN QUERY SELECT a.pkey_id, a.blockchain, a.token_name, a.token_address, a.quantity, a.fkey_strategy_id, a.updated_at, a.created_at FROM tbl.strategy_initial_token_ratio AS a
+		WHERE a.fkey_strategy_id = a_strategy_id AND a.token_address = a_token_address AND a.blockchain = a_blockchain;
+END
+"#,
+        ),
+        ProceduralFunction::new(
             "fun_expert_list_followers",
             vec![
                 Field::new("user_id", Type::BigInt),
