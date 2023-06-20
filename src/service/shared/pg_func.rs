@@ -46,6 +46,7 @@ pub fn strategy_row_type() -> Type {
             Field::new("creator_family_name", Type::optional(Type::String)),
             Field::new("creator_given_name", Type::optional(Type::String)),
             Field::new("social_media", Type::optional(Type::String)),
+            Field::new("immutable_audit_rules", Type::Boolean),
         ],
     )
 }
@@ -76,7 +77,8 @@ pub fn get_strategy(followed: &str) -> String {
       u.username as creator_username,
       u.family_name as creator_family_name,
       u.given_name as creator_given_name,
-      s.social_media as social_media
+      s.social_media as social_media,
+      s.immutable_audit_rules as immutable_audit_rules
       ",
         followers = get_strategy_followers_count(),
         backers = get_strategy_backers_count(),
@@ -109,6 +111,7 @@ pub fn expert_row_type() -> Type {
             Field::new("approved_expert", Type::Boolean),
             Field::new("followed", Type::Boolean),
             Field::new("linked_wallet", Type::String),
+            Field::new("immutable_audit_rules", Type::Boolean),
         ],
     )
 }
@@ -136,7 +139,8 @@ pub fn get_expert(followed: &str) -> String {
         e.pending_expert                                          AS pending_expert,
         e.approved_expert                                         AS approved_expert,
         {followed}                                                AS followed,
-        u.address                                                 AS linked_wallet
+        u.address                                                 AS linked_wallet,
+        e.immutable_audit_rules                                   AS immutable_audit_rules
         "
     )
 }

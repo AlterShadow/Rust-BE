@@ -1205,6 +1205,21 @@ END
             "#,
         ),
         ProceduralFunction::new(
+            "fun_user_del_strategy_audit_rule",
+            vec![
+                Field::new("strategy_id", Type::BigInt),
+                Field::new("audit_rule_id", Type::BigInt),
+            ],
+            vec![],
+            r#"
+BEGIN
+    DELETE FROM tbl.strategy_audit_rule AS a
+    WHERE a.fkey_strategy_id = a_strategy_id
+    AND a.fkey_audit_rule_id = a_audit_rule_id;
+END
+            "#,
+        ),
+        ProceduralFunction::new(
             "fun_user_add_strategy_whitelisted_token",
             vec![
                 Field::new("strategy_id", Type::BigInt),
@@ -1254,6 +1269,22 @@ BEGIN
         WHERE a.fkey_strategy_id = a_strategy_id
             AND a.token_name = a_token_name
     );
+END
+            "#,
+        ),
+        ProceduralFunction::new(
+            "fun_user_list_audit_rules",
+            vec![Field::new("audit_rule_id", Type::optional(Type::BigInt))],
+            vec![
+                Field::new("rule_id", Type::BigInt),
+                Field::new("name", Type::String),
+                Field::new("description", Type::String),
+            ],
+            r#"
+BEGIN
+    RETURN QUERY SELECT a.pkey_id, a.name, a.description
+    FROM tbl.audit_rule AS a
+    WHERE (a_audit_rule_id ISNULL OR a.pkey_id = a_audit_rule_id);
 END
             "#,
         ),

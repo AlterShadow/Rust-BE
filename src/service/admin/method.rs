@@ -477,3 +477,31 @@ impl RequestHandler for MethodAdminAddWalletActivityHistory {
         .boxed()
     }
 }
+pub struct MethodAdminAddAuditRule;
+impl RequestHandler for MethodAdminAddAuditRule {
+    type Request = AdminAddAuditRuleRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db: DbClient = toolbox.get_db();
+
+        async move {
+            ensure_user_role(ctx, EnumRole::Admin)?;
+
+            let ret = db
+                .execute(FunAdminAddAuditRuleReq {
+                    rule_id: req.rule_id,
+                    name: req.name,
+                    description: req.description,
+                })
+                .await?;
+
+            Ok(AdminAddAuditRuleResponse {})
+        }
+        .boxed()
+    }
+}

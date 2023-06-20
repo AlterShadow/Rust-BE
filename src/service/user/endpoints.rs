@@ -120,6 +120,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 Field::new("approved", Type::Boolean),
                 Field::new("approved_at", Type::optional(Type::BigInt)),
                 Field::new("backers", Type::Int),
+                Field::new("immutable_audit_rules", Type::Boolean),
                 Field::new(
                     "watching_wallets",
                     Type::datatable(
@@ -805,6 +806,24 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                     ],
                 ),
             )],
+        ),
+        EndpointSchema::new(
+            "UserAddStrategyAuditRule",
+            20410,
+            vec![
+                Field::new("strategy_id", Type::BigInt),
+                Field::new("rule_id", Type::BigInt),
+            ],
+            vec![],
+        ),
+        EndpointSchema::new(
+            "UserRemoveStrategyAuditRule",
+            20420,
+            vec![
+                Field::new("strategy_id", Type::BigInt),
+                Field::new("rule_id", Type::BigInt),
+            ],
+            vec![],
         ),
     ]
 }

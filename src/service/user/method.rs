@@ -284,6 +284,7 @@ impl RequestHandler for MethodUserGetStrategy {
                 approved: ret.approved,
                 approved_at: ret.approved_at,
                 backers: ret.backers as _,
+                immutable_audit_rules: ret.immutable_audit_rules,
                 watching_wallets: db
                     .execute(FunUserListStrategyWatchWalletsReq {
                         strategy_id: req.strategy_id,
@@ -2534,6 +2535,86 @@ impl RequestHandler for MethodUserListStrategyAuditRules {
         .boxed()
     }
 }
+pub struct MethodUserAddStrategyAuditRule;
+impl RequestHandler for MethodUserAddStrategyAuditRule {
+    type Request = UserAddStrategyAuditRuleRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db: DbClient = toolbox.get_db();
+        async move {
+            let strategy = db
+                .execute(FunUserGetStrategyReq {
+                    user_id: ctx.user_id,
+                    strategy_id: req.strategy_id,
+                })
+                .await?
+                .into_result()
+                .with_context(|| {
+                    CustomError::new(EnumErrorCode::NotFound, "failed to find strategy")
+                })?;
+            ensure!(
+                strategy.creator_id == ctx.user_id,
+                CustomError::new(EnumErrorCode::UserForbidden, "Not your strategy")
+            );
+            ensure!(
+                strategy.immutable_audit_rules,
+                CustomError::new(EnumErrorCode::UserForbidden, "Strategy rules immutable")
+            );
+            db.execute(FunUserAddStrategyAuditRuleReq {
+                strategy_id: req.strategy_id,
+                audit_rule_id: req.rule_id,
+            })
+            .await?;
+            Ok(UserAddStrategyAuditRuleResponse {})
+        }
+        .boxed()
+    }
+}
+pub struct MethodUserRemoveStrategyAuditRule;
+impl RequestHandler for MethodUserRemoveStrategyAuditRule {
+    type Request = UserRemoveStrategyAuditRuleRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db: DbClient = toolbox.get_db();
+        async move {
+            let strategy = db
+                .execute(FunUserGetStrategyReq {
+                    user_id: ctx.user_id,
+                    strategy_id: req.strategy_id,
+                })
+                .await?
+                .into_result()
+                .with_context(|| {
+                    CustomError::new(EnumErrorCode::NotFound, "failed to find strategy")
+                })?;
+            ensure!(
+                strategy.creator_id == ctx.user_id,
+                CustomError::new(EnumErrorCode::UserForbidden, "Not your strategy")
+            );
+            ensure!(
+                strategy.immutable_audit_rules,
+                CustomError::new(EnumErrorCode::UserForbidden, "Strategy rules immutable")
+            );
+            db.execute(FunUserDelStrategyAuditRuleReq {
+                strategy_id: req.strategy_id,
+                audit_rule_id: req.rule_id,
+            })
+            .await?;
+            Ok(UserRemoveStrategyAuditRuleResponse {})
+        }
+        .boxed()
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2666,9 +2747,7 @@ mod tests {
                 expert_fee: 1.0,
                 agreed_tos: true,
                 blockchain: EnumBlockChain::BscTestnet,
-                immutable: false,
                 wallet_address: format!("{:?}", Address::zero()),
-                asset_ratio_limit: false,
             })
             .await?
             .into_result()
@@ -2855,9 +2934,7 @@ mod tests {
                 expert_fee: 1.0,
                 agreed_tos: true,
                 blockchain: EnumBlockChain::LocalNet,
-                immutable: false,
                 wallet_address: format!("{:?}", Address::zero()),
-                asset_ratio_limit: false,
             })
             .await?
             .into_result()
@@ -3089,9 +3166,7 @@ mod tests {
                 expert_fee: 0.0,
                 agreed_tos: false,
                 blockchain: EnumBlockChain::BscTestnet,
-                immutable: false,
                 wallet_address: format!("{:?}", Address::zero()),
-                asset_ratio_limit: false,
             })
             .await?
             .into_result()

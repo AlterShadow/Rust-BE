@@ -221,5 +221,15 @@ pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
             vec![],
         )
         .with_description("Admin adds wallet activity history. for mocking purpose"),
+        EndpointSchema::new(
+            "AdminAddAuditRule",
+            31002,
+            vec![
+                Field::new("rule_id", Type::BigInt),
+                Field::new("name", Type::String),
+                Field::new("description", Type::String),
+            ],
+            vec![],
+        ),
     ]
 }

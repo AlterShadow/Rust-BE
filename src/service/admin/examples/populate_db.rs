@@ -1,5 +1,7 @@
+#[path = "../../shared/audit/mod.rs"]
+pub mod audit;
 pub mod tools;
-
+use crate::audit::get_audit_rules;
 use chrono::Utc;
 use eth_sdk::signer::Secp256k1SecretKey;
 use eth_sdk::utils::get_signed_text;
@@ -222,6 +224,20 @@ async fn populate_users() -> Result<()> {
     Ok(())
 }
 
+async fn populate_audit_rules() -> Result<()> {
+    let admin_signer = get_admin_key();
+    let mut admin_client = connect_user("dev-0", &admin_signer.key).await?;
+    for rule in get_audit_rules() {
+        admin_client
+            .request(AdminAddAuditRuleRequest {
+                rule_id: rule.id,
+                name: rule.name.to_string(),
+                description: rule.description.to_string(),
+            })
+            .await?;
+    }
+    Ok(())
+}
 async fn populate_user_registered_wallets() -> Result<()> {
     let mut tasks = vec![];
     for i in 0..KEYS.len() {
@@ -278,7 +294,9 @@ async fn populate_user_apply_become_experts() -> Result<()> {
                         strategy_fee: random(),
                         expert_fee: random(),
                         agreed_tos: true,
-                        linked_wallets: vec![],
+                        wallet_address: format!("{:?}", signer.address),
+                        wallet_blockchain: EnumBlockChain::EthereumMainnet,
+                        audit_rules: None,
                     })
                     .await?;
                 info!("User Create Strategy {:?}", create_strategy_resp);
@@ -330,6 +348,7 @@ async fn populate_wallet_activity_history() -> Result<()> {
 async fn main() -> Result<()> {
     setup_logs(LogLevel::Debug)?;
     populate_users().await?;
+    populate_audit_rules().await?;
     populate_user_registered_wallets().await?;
     populate_user_apply_become_experts().await?;
     populate_wallet_activity_history().await?;

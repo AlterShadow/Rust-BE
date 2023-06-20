@@ -22,7 +22,7 @@ ID: 2
 |20063|UserListTopPerformingStrategies|limit, offset|strategies|User lists top performing strategies|
 |20064|UserListStrategyBackers|strategy_id, limit, offset|backers||
 |20065|UserListStrategyFollowers|strategy_id, limit, offset|followers||
-|20062|UserGetStrategy|strategy_id|strategy_id, strategy_name, strategy_description, creator_user_id, social_media, historical_return, inception_time, total_amount, token_allocation, reputation, risk_score, aum, net_value, followers, approved, approved_at, backers, watching_wallets, aum_history, audit_rules, whitelisted_tokens|User gets a strategy|
+|20062|UserGetStrategy|strategy_id|strategy_id, strategy_name, strategy_description, creator_user_id, social_media, historical_return, inception_time, total_amount, token_allocation, reputation, risk_score, aum, net_value, followers, approved, approved_at, backers, immutable_audit_rules, watching_wallets, aum_history, audit_rules, whitelisted_tokens|User gets a strategy|
 |20070|UserGetStrategyStatistics|strategy_id|strategy_id, net_value, follow_history, back_history|User gets a strategy statistics|
 |20071|UserGetStrategiesStatistics||tracking_amount_usd, backing_amount_usd, difference_amount_usd, aum_value_usd, current_value_usd, withdrawable_value_usd|User gets statistics of all strategies related to the user|
 |20172|UserUpdateUserProfile|username, family_name, given_name, description, social_media||User update its expert profile|
@@ -61,6 +61,8 @@ ID: 2
 |20380|UserListDepositHistory|limit, offset|history||
 |20390|UserListStrategyWallets|blockchain|wallets||
 |20400|UserListStrategyAuditRules|strategy_id|audit_rules||
+|20410|UserAddStrategyAuditRule|strategy_id, rule_id|||
+|20420|UserRemoveStrategyAuditRule|strategy_id, rule_id|||
 
 # admin Server
 ID: 3
@@ -81,6 +83,7 @@ ID: 3
 |30120|AdminApproveStrategy|strategy_id|success|Admin approves strategy|
 |30130|AdminRejectStrategy|strategy_id|success||
 |31001|AdminAddWalletActivityHistory|wallet_address, blockchain, transaction_hash, dex, contract_address, token_in_address, token_out_address, caller_address, amount_in, amount_out, swap_calls, paths, dex_versions, created_at||Admin adds wallet activity history. for mocking purpose|
+|31002|AdminAddAuditRule|rule_id, name, description|||
 
 # watcher Server
 ID: 4

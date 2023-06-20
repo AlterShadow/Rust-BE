@@ -360,5 +360,20 @@ BEGIN
 END
             "#,
         ),
+        ProceduralFunction::new(
+            "fun_admin_add_audit_rule",
+            vec![
+                Field::new("rule_id", Type::BigInt),
+                Field::new("name", Type::String),
+                Field::new("description", Type::String),
+            ],
+            vec![],
+            r#"
+BEGIN
+    INSERT INTO tbl.audit_rule (pkey_id, name, description)
+         VALUES (a_rule_id, a_name, a_description);
+END
+            "#,
+        ),
     ]
 }

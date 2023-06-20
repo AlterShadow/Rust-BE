@@ -366,7 +366,8 @@ RETURNS table (
     "creator_username" varchar,
     "creator_family_name" varchar,
     "creator_given_name" varchar,
-    "social_media" varchar
+    "social_media" varchar,
+    "immutable_audit_rules" boolean
 )
 LANGUAGE plpgsql
 AS $$
@@ -397,7 +398,8 @@ BEGIN
       u.username as creator_username,
       u.family_name as creator_family_name,
       u.given_name as creator_given_name,
-      s.social_media as social_media
+      s.social_media as social_media,
+      s.immutable_audit_rules as immutable_audit_rules
       
                  FROM tbl.strategy AS s
                      LEFT JOIN tbl.strategy_watching_wallet AS w ON w.fkey_strategy_id = (SELECT distinct w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id LIMIT 1)
@@ -440,7 +442,8 @@ RETURNS table (
     "creator_username" varchar,
     "creator_family_name" varchar,
     "creator_given_name" varchar,
-    "social_media" varchar
+    "social_media" varchar,
+    "immutable_audit_rules" boolean
 )
 LANGUAGE plpgsql
 AS $$
@@ -471,7 +474,8 @@ BEGIN
       u.username as creator_username,
       u.family_name as creator_family_name,
       u.given_name as creator_given_name,
-      s.social_media as social_media
+      s.social_media as social_media,
+      s.immutable_audit_rules as immutable_audit_rules
       
                  FROM tbl.strategy AS s
                         JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id
@@ -554,7 +558,8 @@ RETURNS table (
     "creator_username" varchar,
     "creator_family_name" varchar,
     "creator_given_name" varchar,
-    "social_media" varchar
+    "social_media" varchar,
+    "immutable_audit_rules" boolean
 )
 LANGUAGE plpgsql
 AS $$
@@ -585,7 +590,8 @@ BEGIN
       u.username as creator_username,
       u.family_name as creator_family_name,
       u.given_name as creator_given_name,
-      s.social_media as social_media
+      s.social_media as social_media,
+      s.immutable_audit_rules as immutable_audit_rules
       
                  FROM tbl.strategy AS s
                     LEFT JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id
@@ -740,7 +746,8 @@ RETURNS table (
     "creator_username" varchar,
     "creator_family_name" varchar,
     "creator_given_name" varchar,
-    "social_media" varchar
+    "social_media" varchar,
+    "immutable_audit_rules" boolean
 )
 LANGUAGE plpgsql
 AS $$
@@ -771,7 +778,8 @@ BEGIN
       u.username as creator_username,
       u.family_name as creator_family_name,
       u.given_name as creator_given_name,
-      s.social_media as social_media
+      s.social_media as social_media,
+      s.immutable_audit_rules as immutable_audit_rules
       
                  FROM tbl.strategy AS s
                       JOIN tbl.user_back_strategy_history AS b ON b.fkey_strategy_id = s.pkey_id AND b.fkey_user_id = a_user_id
@@ -914,7 +922,8 @@ RETURNS table (
     "pending_expert" boolean,
     "approved_expert" boolean,
     "followed" boolean,
-    "linked_wallet" varchar
+    "linked_wallet" varchar,
+    "immutable_audit_rules" boolean
 )
 LANGUAGE plpgsql
 AS $$
@@ -941,7 +950,8 @@ AS $$
         e.pending_expert                                          AS pending_expert,
         e.approved_expert                                         AS approved_expert,
         TRUE                                                AS followed,
-        u.address                                                 AS linked_wallet
+        u.address                                                 AS linked_wallet,
+        e.immutable_audit_rules                                   AS immutable_audit_rules
         
                     FROM tbl.expert_profile AS e
                       JOIN tbl.user_follow_expert AS b ON b.fkey_expert_id = e.pkey_id
@@ -980,7 +990,8 @@ RETURNS table (
     "pending_expert" boolean,
     "approved_expert" boolean,
     "followed" boolean,
-    "linked_wallet" varchar
+    "linked_wallet" varchar,
+    "immutable_audit_rules" boolean
 )
 LANGUAGE plpgsql
 AS $$
@@ -1007,7 +1018,8 @@ BEGIN
         e.pending_expert                                          AS pending_expert,
         e.approved_expert                                         AS approved_expert,
         EXISTS(SELECT * FROM tbl.user_follow_expert AS ufe WHERE ufe.fkey_expert_id = e.pkey_id AND ufe.fkey_user_id = a_user_id AND unfollowed = FALSE)                                                AS followed,
-        u.address                                                 AS linked_wallet
+        u.address                                                 AS linked_wallet,
+        e.immutable_audit_rules                                   AS immutable_audit_rules
         
                  FROM tbl.expert_profile AS e
                    JOIN tbl.user AS u ON u.pkey_id = e.fkey_user_id
@@ -1054,7 +1066,8 @@ RETURNS table (
     "pending_expert" boolean,
     "approved_expert" boolean,
     "followed" boolean,
-    "linked_wallet" varchar
+    "linked_wallet" varchar,
+    "immutable_audit_rules" boolean
 )
 LANGUAGE plpgsql
 AS $$
@@ -1082,7 +1095,8 @@ BEGIN
         e.pending_expert                                          AS pending_expert,
         e.approved_expert                                         AS approved_expert,
         EXISTS(SELECT * FROM tbl.user_follow_expert AS ufe WHERE ufe.fkey_expert_id = e.pkey_id AND ufe.fkey_user_id = a_user_id AND unfollowed = FALSE)                                                AS followed,
-        u.address                                                 AS linked_wallet
+        u.address                                                 AS linked_wallet,
+        e.immutable_audit_rules                                   AS immutable_audit_rules
         
                  FROM tbl.expert_profile AS e
                  JOIN tbl.user AS u ON u.pkey_id = e.fkey_user_id
@@ -1757,6 +1771,20 @@ END
 $$;
         
 
+CREATE OR REPLACE FUNCTION api.fun_user_del_strategy_audit_rule(a_strategy_id bigint, a_audit_rule_id bigint)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    DELETE FROM tbl.strategy_audit_rule AS a
+    WHERE a.fkey_strategy_id = a_strategy_id
+    AND a.fkey_audit_rule_id = a_audit_rule_id;
+END
+            
+$$;
+        
+
 CREATE OR REPLACE FUNCTION api.fun_user_add_strategy_whitelisted_token(a_strategy_id bigint, a_token_name varchar)
 RETURNS void
 LANGUAGE plpgsql
@@ -1809,6 +1837,24 @@ BEGIN
         WHERE a.fkey_strategy_id = a_strategy_id
             AND a.token_name = a_token_name
     );
+END
+            
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_list_audit_rules(a_audit_rule_id bigint DEFAULT NULL)
+RETURNS table (
+    "rule_id" bigint,
+    "name" varchar,
+    "description" varchar
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY SELECT a.pkey_id, a.name, a.description
+    FROM tbl.audit_rule AS a
+    WHERE (a_audit_rule_id ISNULL OR a.pkey_id = a_audit_rule_id);
 END
             
 $$;
@@ -2047,7 +2093,8 @@ RETURNS table (
     "pending_expert" boolean,
     "approved_expert" boolean,
     "followed" boolean,
-    "linked_wallet" varchar
+    "linked_wallet" varchar,
+    "immutable_audit_rules" boolean
 )
 LANGUAGE plpgsql
 AS $$
@@ -2074,7 +2121,8 @@ BEGIN
         e.pending_expert                                          AS pending_expert,
         e.approved_expert                                         AS approved_expert,
         EXISTS(SELECT * FROM tbl.user_follow_expert AS ufe WHERE ufe.fkey_expert_id = e.pkey_id AND ufe.fkey_user_id = a_user_id AND unfollowed = FALSE)                                                AS followed,
-        u.address                                                 AS linked_wallet
+        u.address                                                 AS linked_wallet,
+        e.immutable_audit_rules                                   AS immutable_audit_rules
         
                  FROM tbl.expert_profile AS e
                    JOIN tbl.user AS u ON u.pkey_id = e.fkey_user_id
@@ -2153,7 +2201,8 @@ RETURNS table (
     "creator_username" varchar,
     "creator_family_name" varchar,
     "creator_given_name" varchar,
-    "social_media" varchar
+    "social_media" varchar,
+    "immutable_audit_rules" boolean
 )
 LANGUAGE plpgsql
 AS $$
@@ -2186,7 +2235,8 @@ BEGIN
       u.username as creator_username,
       u.family_name as creator_family_name,
       u.given_name as creator_given_name,
-      s.social_media as social_media
+      s.social_media as social_media,
+      s.immutable_audit_rules as immutable_audit_rules
       
                  FROM tbl.strategy AS s
                       LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = (SELECT distinct w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id LIMIT 1)
@@ -2236,6 +2286,19 @@ BEGIN
            approved_at = NULL,
            updated_at = EXTRACT(EPOCH FROM NOW())::bigint
      WHERE pkey_id = a_strategy_id;
+END
+            
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_admin_add_audit_rule(a_rule_id bigint, a_name varchar, a_description varchar)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    INSERT INTO tbl.audit_rule (pkey_id, name, description)
+         VALUES (a_rule_id, a_name, a_description);
 END
             
 $$;

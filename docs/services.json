@@ -842,6 +842,10 @@
               "ty": "Int"
             },
             {
+              "name": "immutable_audit_rules",
+              "ty": "Boolean"
+            },
+            {
               "name": "watching_wallets",
               "ty": {
                 "DataTable": {
@@ -3408,6 +3412,42 @@
           "stream_response": [],
           "description": "",
           "json_schema": null
+        },
+        {
+          "name": "UserAddStrategyAuditRule",
+          "code": 20410,
+          "parameters": [
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "rule_id",
+              "ty": "BigInt"
+            }
+          ],
+          "returns": [],
+          "stream_response": [],
+          "description": "",
+          "json_schema": null
+        },
+        {
+          "name": "UserRemoveStrategyAuditRule",
+          "code": 20420,
+          "parameters": [
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "rule_id",
+              "ty": "BigInt"
+            }
+          ],
+          "returns": [],
+          "stream_response": [],
+          "description": "",
+          "json_schema": null
         }
       ]
     },
@@ -4277,6 +4317,28 @@
           "returns": [],
           "stream_response": [],
           "description": "Admin adds wallet activity history. for mocking purpose",
+          "json_schema": null
+        },
+        {
+          "name": "AdminAddAuditRule",
+          "code": 31002,
+          "parameters": [
+            {
+              "name": "rule_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "name",
+              "ty": "String"
+            },
+            {
+              "name": "description",
+              "ty": "String"
+            }
+          ],
+          "returns": [],
+          "stream_response": [],
+          "description": "",
           "json_schema": null
         }
       ]

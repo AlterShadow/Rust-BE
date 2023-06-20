@@ -4,6 +4,9 @@ use postgres_from_row::FromRow;
 use serde::*;
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunAdminAddAuditRuleRespRow {}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunAdminApproveStrategyRespRow {}
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -197,6 +200,9 @@ pub struct FunUserCreateStrategyRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunUserDelStrategyAuditRuleRespRow {}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserDepositToEscrowRespRow {
     pub success: bool,
 }
@@ -239,6 +245,7 @@ pub struct FunUserExpertRowType {
     pub approved_expert: bool,
     pub followed: bool,
     pub linked_wallet: String,
+    pub immutable_audit_rules: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -319,6 +326,13 @@ pub struct FunUserGetUserProfileRespRow {
     pub reputation_score: Option<f64>,
     #[serde(default)]
     pub aum: Option<f64>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunUserListAuditRulesRespRow {
+    pub rule_id: i64,
+    pub name: String,
+    pub description: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -492,6 +506,7 @@ pub struct FunUserStrategyRowType {
     pub creator_given_name: Option<String>,
     #[serde(default)]
     pub social_media: Option<String>,
+    pub immutable_audit_rules: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -1895,6 +1910,26 @@ impl DatabaseRequest for FunUserAddStrategyAuditRuleReq {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserDelStrategyAuditRuleReq {
+    pub strategy_id: i64,
+    pub audit_rule_id: i64,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunUserDelStrategyAuditRuleReq {
+    type ResponseRow = FunUserDelStrategyAuditRuleRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_del_strategy_audit_rule(a_strategy_id => $1::bigint, a_audit_rule_id => $2::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.strategy_id as &(dyn ToSql + Sync),
+            &self.audit_rule_id as &(dyn ToSql + Sync),
+        ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserAddStrategyWhitelistedTokenReq {
     pub strategy_id: i64,
     pub token_name: String,
@@ -1947,6 +1982,23 @@ impl DatabaseRequest for FunUserCheckIfTokenWhitelistedReq {
             &self.strategy_id as &(dyn ToSql + Sync),
             &self.token_name as &(dyn ToSql + Sync),
         ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserListAuditRulesReq {
+    #[serde(default)]
+    pub audit_rule_id: Option<i64>,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunUserListAuditRulesReq {
+    type ResponseRow = FunUserListAuditRulesRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_list_audit_rules(a_audit_rule_id => $1::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![&self.audit_rule_id as &(dyn ToSql + Sync)]
     }
 }
 
@@ -2266,6 +2318,28 @@ impl DatabaseRequest for FunAdminRejectStrategyReq {
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![&self.strategy_id as &(dyn ToSql + Sync)]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAdminAddAuditRuleReq {
+    pub rule_id: i64,
+    pub name: String,
+    pub description: String,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunAdminAddAuditRuleReq {
+    type ResponseRow = FunAdminAddAuditRuleRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_admin_add_audit_rule(a_rule_id => $1::bigint, a_name => $2::varchar, a_description => $3::varchar);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.rule_id as &(dyn ToSql + Sync),
+            &self.name as &(dyn ToSql + Sync),
+            &self.description as &(dyn ToSql + Sync),
+        ]
     }
 }
 

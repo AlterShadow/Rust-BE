@@ -375,6 +375,12 @@ pub enum EnumEndpoint {
     #[postgres(name = "UserListStrategyAuditRules")]
     UserListStrategyAuditRules = 20400,
     ///
+    #[postgres(name = "UserAddStrategyAuditRule")]
+    UserAddStrategyAuditRule = 20410,
+    ///
+    #[postgres(name = "UserRemoveStrategyAuditRule")]
+    UserRemoveStrategyAuditRule = 20420,
+    ///
     #[postgres(name = "AdminListUsers")]
     AdminListUsers = 30010,
     ///
@@ -416,6 +422,9 @@ pub enum EnumEndpoint {
     ///
     #[postgres(name = "AdminAddWalletActivityHistory")]
     AdminAddWalletActivityHistory = 31001,
+    ///
+    #[postgres(name = "AdminAddAuditRule")]
+    AdminAddAuditRule = 31002,
 }
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -756,6 +765,16 @@ impl Into<ErrorCode> for EnumErrorCode {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminAddAuditRuleRequest {
+    pub rule_id: i64,
+    pub name: String,
+    pub description: String,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminAddAuditRuleResponse {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminAddWalletActivityHistoryRequest {
@@ -1414,6 +1433,15 @@ pub struct SignupResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct UserAddStrategyAuditRuleRequest {
+    pub strategy_id: i64,
+    pub rule_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserAddStrategyAuditRuleResponse {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct UserApplyBecomeExpertRequest {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1568,6 +1596,7 @@ pub struct UserGetStrategyResponse {
     #[serde(default)]
     pub approved_at: Option<i64>,
     pub backers: i32,
+    pub immutable_audit_rules: bool,
     pub watching_wallets: Vec<WatchingWalletRow>,
     pub aum_history: Vec<AumHistoryRow>,
     pub audit_rules: Vec<UserListStrategyAuditRulesRow>,
@@ -1937,6 +1966,15 @@ pub struct UserRegisterWalletResponse {
     pub success: bool,
     pub wallet_id: i64,
 }
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserRemoveStrategyAuditRuleRequest {
+    pub strategy_id: i64,
+    pub rule_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserRemoveStrategyAuditRuleResponse {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserRequestRefundRequest {
@@ -2923,6 +2961,10 @@ impl WsRequest for UserGetStrategyRequest {
     {
       "name": "backers",
       "ty": "Int"
+    },
+    {
+      "name": "immutable_audit_rules",
+      "ty": "Boolean"
     },
     {
       "name": "watching_wallets",
@@ -5801,6 +5843,58 @@ impl WsResponse for UserListStrategyAuditRulesResponse {
     type Request = UserListStrategyAuditRulesRequest;
 }
 
+impl WsRequest for UserAddStrategyAuditRuleRequest {
+    type Response = UserAddStrategyAuditRuleResponse;
+    const METHOD_ID: u32 = 20410;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserAddStrategyAuditRule",
+  "code": 20410,
+  "parameters": [
+    {
+      "name": "strategy_id",
+      "ty": "BigInt"
+    },
+    {
+      "name": "rule_id",
+      "ty": "BigInt"
+    }
+  ],
+  "returns": [],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for UserAddStrategyAuditRuleResponse {
+    type Request = UserAddStrategyAuditRuleRequest;
+}
+
+impl WsRequest for UserRemoveStrategyAuditRuleRequest {
+    type Response = UserRemoveStrategyAuditRuleResponse;
+    const METHOD_ID: u32 = 20420;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserRemoveStrategyAuditRule",
+  "code": 20420,
+  "parameters": [
+    {
+      "name": "strategy_id",
+      "ty": "BigInt"
+    },
+    {
+      "name": "rule_id",
+      "ty": "BigInt"
+    }
+  ],
+  "returns": [],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for UserRemoveStrategyAuditRuleResponse {
+    type Request = UserRemoveStrategyAuditRuleRequest;
+}
+
 impl WsRequest for AdminListUsersRequest {
     type Response = AdminListUsersResponse;
     const METHOD_ID: u32 = 30010;
@@ -6775,4 +6869,34 @@ impl WsRequest for AdminAddWalletActivityHistoryRequest {
 }
 impl WsResponse for AdminAddWalletActivityHistoryResponse {
     type Request = AdminAddWalletActivityHistoryRequest;
+}
+
+impl WsRequest for AdminAddAuditRuleRequest {
+    type Response = AdminAddAuditRuleResponse;
+    const METHOD_ID: u32 = 31002;
+    const SCHEMA: &'static str = r#"{
+  "name": "AdminAddAuditRule",
+  "code": 31002,
+  "parameters": [
+    {
+      "name": "rule_id",
+      "ty": "BigInt"
+    },
+    {
+      "name": "name",
+      "ty": "String"
+    },
+    {
+      "name": "description",
+      "ty": "String"
+    }
+  ],
+  "returns": [],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for AdminAddAuditRuleResponse {
+    type Request = AdminAddAuditRuleRequest;
 }

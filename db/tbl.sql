@@ -1,9 +1,17 @@
 -- Created by Vertabelo (http://vertabelo.com)
--- Last modification date: 2023-06-20 12:59:22.445
+-- Last modification date: 2023-06-20 13:58:31.116
 
 CREATE SCHEMA IF NOT EXISTS tbl;;
 
 -- tables
+-- Table: audit_rule
+CREATE TABLE tbl.audit_rule (
+    pkey_id bigint  NOT NULL,
+    name varchar(32)  NOT NULL,
+    description varchar(512)  NOT NULL,
+    CONSTRAINT audit_rule_pk PRIMARY KEY (pkey_id)
+);
+
 -- Table: aum_history
 CREATE TABLE tbl.aum_history (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_aum_history_id'),
@@ -121,6 +129,7 @@ CREATE TABLE tbl.strategy (
     pending_approval boolean  NOT NULL DEFAULT FALSE,
     approved boolean  NOT NULL DEFAULT FALSE,
     approved_at bigint  NULL,
+    immutable_audit_rules boolean  NOT NULL DEFAULT FALSE,
     CONSTRAINT strategy_pk PRIMARY KEY (pkey_id)
 );
 
@@ -383,6 +392,14 @@ ALTER TABLE tbl.user_deposit_history ADD CONSTRAINT fkey_user
 ALTER TABLE tbl.login_attempt ADD CONSTRAINT login_attempt_user
     FOREIGN KEY (fkey_user)
     REFERENCES tbl."user" (pkey_id)  
+    NOT DEFERRABLE 
+    INITIALLY IMMEDIATE
+;
+
+-- Reference: strategy_audit_rule_audit_rule (table: strategy_audit_rule)
+ALTER TABLE tbl.strategy_audit_rule ADD CONSTRAINT strategy_audit_rule_audit_rule
+    FOREIGN KEY (fkey_audit_rule_id)
+    REFERENCES tbl.audit_rule (pkey_id)  
     NOT DEFERRABLE 
     INITIALLY IMMEDIATE
 ;
