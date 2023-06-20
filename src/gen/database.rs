@@ -1441,6 +1441,7 @@ impl DatabaseRequest for FunUserAddStrategyWatchWalletReq {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserRemoveStrategyWatchWalletReq {
     pub user_id: i64,
+    pub strategy_id: i64,
     pub watch_wallet_id: i64,
 }
 
@@ -1448,11 +1449,12 @@ pub struct FunUserRemoveStrategyWatchWalletReq {
 impl DatabaseRequest for FunUserRemoveStrategyWatchWalletReq {
     type ResponseRow = FunUserRemoveStrategyWatchWalletRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_remove_strategy_watch_wallet(a_user_id => $1::bigint, a_watch_wallet_id => $2::bigint);"
+        "SELECT * FROM api.fun_user_remove_strategy_watch_wallet(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_watch_wallet_id => $3::bigint);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
             &self.user_id as &(dyn ToSql + Sync),
+            &self.strategy_id as &(dyn ToSql + Sync),
             &self.watch_wallet_id as &(dyn ToSql + Sync),
         ]
     }

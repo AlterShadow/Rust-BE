@@ -1189,6 +1189,7 @@ pub struct ExpertRemoveStrategyInitialTokenRatioResponse {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ExpertRemoveStrategyWatchingWalletRequest {
+    pub strategy_id: i64,
     pub wallet_id: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -5055,6 +5056,10 @@ impl WsRequest for ExpertRemoveStrategyWatchingWalletRequest {
   "name": "ExpertRemoveStrategyWatchingWallet",
   "code": 20280,
   "parameters": [
+    {
+      "name": "strategy_id",
+      "ty": "BigInt"
+    },
     {
       "name": "wallet_id",
       "ty": "BigInt"

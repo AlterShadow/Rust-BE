@@ -1,4 +1,4 @@
-use crate::audit::AuditRule;
+use crate::audit::{AuditLogger, AuditRule};
 use api::cmc::CoinMarketCap;
 use eyre::*;
 use gen::database::{FunUserCheckIfTokenWhitelistedReq, FunUserGetStrategyReq};
@@ -31,10 +31,15 @@ pub async fn validate_audit_rule_top25_tokens(
 }
 
 pub async fn validate_audit_rule_token_whitelisted(
+    logger: &AuditLogger,
     db: &DbClient,
     strategy_id: i64,
     token: &str,
 ) -> Result<()> {
+    logger.log(
+        AUDIT_TOP25_TOKENS,
+        &format!("auditing strategy_id={strategy_id} token={token}"),
+    )?;
     let ret = db
         .execute(FunUserCheckIfTokenWhitelistedReq {
             strategy_id,
@@ -43,9 +48,19 @@ pub async fn validate_audit_rule_token_whitelisted(
         .await?
         .into_result()
         .context("No result")?;
-    ensure!(
-        ret.whitelisted,
-        CustomError::new(EnumErrorCode::TokenNotTop25, "Token is not in top 25")
-    );
+    if !ret.whitelisted {
+        logger.log(
+            AUDIT_TOP25_TOKENS,
+            &format!("audit FAILED strategy_id={strategy_id} token={token}"),
+        )?;
+        bail!(CustomError::new(
+            EnumErrorCode::TokenNotTop25,
+            "Token is not in top 25"
+        ));
+    }
+    logger.log(
+        AUDIT_TOP25_TOKENS,
+        &format!("audit FAILED strategy_id={strategy_id} token={token}"),
+    )?;
     Ok(())
 }

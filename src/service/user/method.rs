@@ -1,5 +1,5 @@
 use crate::audit::{
-    get_audit_rules, validate_audit_rule_immutable_tokens, AUDIT_IMMUTABLE_TOKENS,
+    get_audit_rules, validate_audit_rule_immutable_tokens, AuditLogger, AUDIT_IMMUTABLE_TOKENS,
     AUDIT_TOKENS_NO_MORE_THAN_10_PERCENT, AUDIT_TOP25_TOKENS,
 };
 use api::cmc::CoinMarketCap;
@@ -1873,7 +1873,9 @@ impl RequestHandler for MethodExpertCreateStrategy {
         .boxed()
     }
 }
-pub struct MethodExpertUpdateStrategy;
+pub struct MethodExpertUpdateStrategy {
+    pub logger: AuditLogger,
+}
 impl RequestHandler for MethodExpertUpdateStrategy {
     type Request = ExpertUpdateStrategyRequest;
 
@@ -1884,10 +1886,12 @@ impl RequestHandler for MethodExpertUpdateStrategy {
         req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
+        let logger = self.logger.clone();
         async move {
             ensure_user_role(ctx, EnumRole::Expert)?;
             let strategy =
-                validate_audit_rule_immutable_tokens(&db, req.strategy_id, ctx.user_id).await?;
+                validate_audit_rule_immutable_tokens(&logger, &db, req.strategy_id, ctx.user_id)
+                    .await?;
             ensure!(
                 strategy.creator_id == ctx.user_id,
                 CustomError::new(EnumErrorCode::UserForbidden, "Not your strategy")
@@ -1946,7 +1950,9 @@ impl RequestHandler for MethodExpertFreezeStrategy {
     }
 }
 // pub struct MethodUserDeleteStrategy;
-pub struct MethodExpertAddStrategyWatchingWallet;
+pub struct MethodExpertAddStrategyWatchingWallet {
+    pub logger: AuditLogger,
+}
 impl RequestHandler for MethodExpertAddStrategyWatchingWallet {
     type Request = ExpertAddStrategyWatchingWalletRequest;
 
@@ -1957,10 +1963,12 @@ impl RequestHandler for MethodExpertAddStrategyWatchingWallet {
         req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
+        let logger = self.logger.clone();
         async move {
             ensure_user_role(ctx, EnumRole::Expert)?;
             let strategy =
-                validate_audit_rule_immutable_tokens(&db, req.strategy_id, ctx.user_id).await?;
+                validate_audit_rule_immutable_tokens(&logger, &db, req.strategy_id, ctx.user_id)
+                    .await?;
             ensure!(
                 strategy.creator_id == ctx.user_id,
                 CustomError::new(EnumErrorCode::UserForbidden, "Not your strategy")
@@ -1987,7 +1995,9 @@ impl RequestHandler for MethodExpertAddStrategyWatchingWallet {
         .boxed()
     }
 }
-pub struct MethodExpertRemoveStrategyWatchingWallet;
+pub struct MethodExpertRemoveStrategyWatchingWallet {
+    pub logger: AuditLogger,
+}
 impl RequestHandler for MethodExpertRemoveStrategyWatchingWallet {
     type Request = ExpertRemoveStrategyWatchingWalletRequest;
 
@@ -1998,13 +2008,15 @@ impl RequestHandler for MethodExpertRemoveStrategyWatchingWallet {
         req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
-
+        let logger = self.logger.clone();
         async move {
             ensure_user_role(ctx, EnumRole::Expert)?;
-
+            validate_audit_rule_immutable_tokens(&logger, &db, req.strategy_id, ctx.user_id)
+                .await?;
             let ret = db
                 .execute(FunUserRemoveStrategyWatchWalletReq {
                     user_id: ctx.user_id,
+                    strategy_id: req.strategy_id,
                     watch_wallet_id: req.wallet_id,
                 })
                 .await?
@@ -2126,7 +2138,9 @@ pub async fn on_user_request_refund(
     Ok(hash)
 }
 
-pub struct MethodExpertAddStrategyInitialTokenRatio;
+pub struct MethodExpertAddStrategyInitialTokenRatio {
+    pub logger: AuditLogger,
+}
 impl RequestHandler for MethodExpertAddStrategyInitialTokenRatio {
     type Request = ExpertAddStrategyInitialTokenRatioRequest;
 
@@ -2137,12 +2151,13 @@ impl RequestHandler for MethodExpertAddStrategyInitialTokenRatio {
         req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
-
+        let logger = self.logger.clone();
         async move {
             ensure_user_role(ctx, EnumRole::Expert)?;
 
             let strategy =
-                validate_audit_rule_immutable_tokens(&db, req.strategy_id, ctx.user_id).await?;
+                validate_audit_rule_immutable_tokens(&logger, &db, req.strategy_id, ctx.user_id)
+                    .await?;
             ensure!(
                 strategy.creator_id == ctx.user_id,
                 CustomError::new(EnumErrorCode::UserForbidden, "Not your strategy")
@@ -2167,7 +2182,9 @@ impl RequestHandler for MethodExpertAddStrategyInitialTokenRatio {
         .boxed()
     }
 }
-pub struct MethodExpertRemoveStrategyInitialTokenRatio;
+pub struct MethodExpertRemoveStrategyInitialTokenRatio {
+    pub logger: AuditLogger,
+}
 impl RequestHandler for MethodExpertRemoveStrategyInitialTokenRatio {
     type Request = ExpertRemoveStrategyInitialTokenRatioRequest;
 
@@ -2178,11 +2195,13 @@ impl RequestHandler for MethodExpertRemoveStrategyInitialTokenRatio {
         req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
+        let logger = self.logger.clone();
 
         async move {
             ensure_user_role(ctx, EnumRole::Expert)?;
-
-            let ret = db
+            validate_audit_rule_immutable_tokens(&logger, &db, req.strategy_id, ctx.user_id)
+                .await?;
+            let _ret = db
                 .execute(FunUserRemoveStrategyInitialTokenRatioReq {
                     strategy_initial_token_ratio_id: req.token_id,
                     strategy_id: req.strategy_id,

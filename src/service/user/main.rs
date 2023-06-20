@@ -7,6 +7,7 @@ pub mod audit;
 pub mod endpoints;
 mod method;
 use crate::admin_method::*;
+use crate::audit::AuditLogger;
 use crate::method::*;
 use api::cmc::CoinMarketCap;
 use eth_sdk::escrow::AbstractEscrowContract;
@@ -47,6 +48,7 @@ pub struct Config {
 async fn main() -> Result<()> {
     let config: Config = load_config("user".to_owned())?;
     setup_logs(config.log_level)?;
+    let audit_logger = AuditLogger::new()?;
     let mut server = WebsocketServer::new(config.app.clone());
     server.add_database(connect_to_database(config.app_db).await?);
     server.add_database(connect_to_database(config.auth_db).await?);
@@ -96,13 +98,23 @@ async fn main() -> Result<()> {
     server.add_handler(MethodExpertCreateStrategy {
         cmc_client: Arc::new(CoinMarketCap::new(config.cmc_api_key.expose_secret())?),
     });
-    server.add_handler(MethodExpertUpdateStrategy);
+    server.add_handler(MethodExpertUpdateStrategy {
+        logger: audit_logger.clone(),
+    });
     server.add_handler(MethodExpertFreezeStrategy);
-    server.add_handler(MethodExpertAddStrategyInitialTokenRatio);
-    server.add_handler(MethodExpertRemoveStrategyInitialTokenRatio);
+    server.add_handler(MethodExpertAddStrategyInitialTokenRatio {
+        logger: audit_logger.clone(),
+    });
+    server.add_handler(MethodExpertRemoveStrategyInitialTokenRatio {
+        logger: audit_logger.clone(),
+    });
 
-    server.add_handler(MethodExpertAddStrategyWatchingWallet);
-    server.add_handler(MethodExpertRemoveStrategyWatchingWallet);
+    server.add_handler(MethodExpertAddStrategyWatchingWallet {
+        logger: audit_logger.clone(),
+    });
+    server.add_handler(MethodExpertRemoveStrategyWatchingWallet {
+        logger: audit_logger.clone(),
+    });
     server.add_handler(MethodUserListWalletActivityHistory);
     server.add_handler(MethodUserListStrategyInitialTokenRatio);
     server.add_handler(MethodUserGetDepositTokens);

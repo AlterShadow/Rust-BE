@@ -29,14 +29,14 @@ pub struct AuditLogger {
     appender: Arc<Mutex<tracing_appender::rolling::RollingFileAppender>>,
 }
 impl AuditLogger {
-    pub fn new(prefix: &str) -> Result<Self> {
+    pub fn new() -> Result<Self> {
         std::fs::create_dir_all("log")?;
-        let appender = tracing_appender::rolling::hourly("log", format!("{}.log", prefix));
+        let appender = tracing_appender::rolling::hourly("log", "audit.log");
         Ok(Self {
             appender: Arc::new(Mutex::new(appender)),
         })
     }
-    pub fn log(&mut self, rule: AuditRule, text: &str) -> Result<()> {
+    pub fn log(&self, rule: AuditRule, text: &str) -> Result<()> {
         let time = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S");
         let rule = rule.name;
         self.appender

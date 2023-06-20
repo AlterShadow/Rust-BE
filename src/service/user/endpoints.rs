@@ -568,7 +568,10 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
         EndpointSchema::new(
             "ExpertRemoveStrategyWatchingWallet",
             20280,
-            vec![Field::new("wallet_id", Type::BigInt)],
+            vec![
+                Field::new("strategy_id", Type::BigInt),
+                Field::new("wallet_id", Type::BigInt),
+            ],
             vec![Field::new("success", Type::Boolean)],
         ),
         EndpointSchema::new(

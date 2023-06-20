@@ -2769,6 +2769,10 @@
           "code": 20280,
           "parameters": [
             {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            },
+            {
               "name": "wallet_id",
               "ty": "BigInt"
             }

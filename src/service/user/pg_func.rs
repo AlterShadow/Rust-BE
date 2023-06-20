@@ -768,6 +768,7 @@ END
             "fun_user_remove_strategy_watch_wallet",
             vec![
                 Field::new("user_id", Type::BigInt),
+                Field::new("strategy_id", Type::BigInt),
                 Field::new("watch_wallet_id", Type::BigInt),
             ],
             vec![Field::new("success", Type::Boolean)],
@@ -775,7 +776,8 @@ END
 BEGIN
     DELETE FROM tbl.strategy_watching_wallet
     WHERE fkey_user_id = a_user_id
-      AND pkey_id = a_watch_wallet_id;
+      AND pkey_id = a_watch_wallet_id
+        AND fkey_strategy_id = a_strategy_id;
     RETURN QUERY SELECT TRUE;
 END
 "#,

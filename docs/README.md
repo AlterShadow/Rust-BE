@@ -48,7 +48,7 @@ ID: 2
 |20260|ExpertUpdateStrategy|strategy_id, name, description, social_media|success|Expert updates a strategy|
 |20265|ExpertFreezeStrategy|strategy_id|success|Expert freezes a strategy, by making it immutable|
 |20270|ExpertAddStrategyWatchingWallet|strategy_id, blockchain, wallet_address, ratio|success, wallet_id||
-|20280|ExpertRemoveStrategyWatchingWallet|wallet_id|success||
+|20280|ExpertRemoveStrategyWatchingWallet|strategy_id, wallet_id|success||
 |20290|UserListStrategyWatchingWallets|strategy_id|wallets||
 |20300|UserListWalletActivityHistory|wallet_address, blockchain|wallet_activities||
 |20310|ExpertAddStrategyInitialTokenRatio|strategy_id, token_name, token_address, blockchain, quantity|success, token_id||
