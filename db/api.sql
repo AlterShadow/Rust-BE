@@ -417,7 +417,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_list_strategies(a_user_id bigint, a_limit bigint, a_offset bigint, a_strategy_id bigint DEFAULT NULL, a_strategy_name varchar DEFAULT NULL, a_expert_public_id bigint DEFAULT NULL, a_expert_name varchar DEFAULT NULL, a_description varchar DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_user_list_strategies(a_user_id bigint, a_limit bigint, a_offset bigint, a_strategy_id bigint DEFAULT NULL, a_strategy_name varchar DEFAULT NULL, a_expert_public_id bigint DEFAULT NULL, a_expert_name varchar DEFAULT NULL, a_description varchar DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL, a_wallet_address varchar DEFAULT NULL)
 RETURNS table (
     "total" bigint,
     "strategy_id" bigint,
@@ -489,6 +489,8 @@ BEGIN
                     AND (a_expert_public_id ISNULL OR u.public_id = a_expert_public_id)
                     AND (a_expert_name ISNULL OR u.username ILIKE a_expert_name || '%')
                     AND (a_description ISNULL OR s.description ILIKE a_description || '%')
+                    AND (a_blockchain ISNULL OR linked_wallet_blockchain ISNULL OR linked_wallet_blockchain = a_blockchain)
+                    AND (a_wallet_address ISNULL OR linked_wallet ISNULL OR linked_wallet ILIKE a_wallet_address || '%')
                 ORDER BY s.pkey_id
                 LIMIT a_limit
                 OFFSET a_offset;

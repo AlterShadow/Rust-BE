@@ -128,6 +128,8 @@ impl RequestHandler for MethodUserListStrategies {
                     expert_public_id: req.expert_public_id,
                     expert_name: req.expert_name,
                     description: req.description,
+                    blockchain: req.blockchain,
+                    wallet_address: req.wallet_address,
                 })
                 .await?;
 
@@ -165,6 +167,8 @@ impl RequestHandler for MethodUserListTopPerformingStrategies {
                     expert_public_id: None,
                     expert_name: None,
                     description: None,
+                    blockchain: None,
+                    wallet_address: None,
                 })
                 .await?;
             Ok(UserListTopPerformingStrategiesResponse {
@@ -1527,6 +1531,8 @@ impl RequestHandler for MethodUserGetExpertProfile {
                     expert_public_id: Some(ret.user_public_id),
                     expert_name: None,
                     description: None,
+                    blockchain: None,
+                    wallet_address: None,
                 })
                 .await?;
             Ok(UserGetExpertProfileResponse {
@@ -1538,7 +1544,7 @@ impl RequestHandler for MethodUserGetExpertProfile {
                 risk_score: ret.risk_score.unwrap_or_default(),
                 aum: ret.aum.unwrap_or_default(),
                 reputation_score: ret.reputation_score.unwrap_or_default(),
-                // TODO: get strategies by expert
+                strategies_total: strategies.first(|x| x.total).unwrap_or_default(),
                 strategies: strategies.map(convert_strategy_db_to_api),
             })
         }
@@ -2828,7 +2834,9 @@ mod tests {
                 expert_fee: 1.0,
                 agreed_tos: true,
                 blockchain: EnumBlockChain::LocalNet,
+                immutable: false,
                 wallet_address: format!("{:?}", Address::zero()),
+                asset_ratio_limit: false,
             })
             .await?
             .into_result()
@@ -3060,7 +3068,9 @@ mod tests {
                 expert_fee: 0.0,
                 agreed_tos: false,
                 blockchain: EnumBlockChain::BscTestnet,
+                immutable: false,
                 wallet_address: format!("{:?}", Address::zero()),
+                asset_ratio_limit: false,
             })
             .await?
             .into_result()

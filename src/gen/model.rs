@@ -1529,6 +1529,7 @@ pub struct UserGetExpertProfileResponse {
     pub risk_score: f64,
     pub reputation_score: f64,
     pub aum: f64,
+    pub strategies_total: i64,
     pub strategies: Vec<ListStrategiesRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1792,6 +1793,10 @@ pub struct UserListStrategiesRequest {
     pub expert_name: Option<String>,
     #[serde(default)]
     pub description: Option<String>,
+    #[serde(default)]
+    pub blockchain: Option<EnumBlockChain>,
+    #[serde(default)]
+    pub wallet_address: Option<String>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -2457,6 +2462,20 @@ impl WsRequest for UserListStrategiesRequest {
     },
     {
       "name": "description",
+      "ty": {
+        "Optional": "String"
+      }
+    },
+    {
+      "name": "blockchain",
+      "ty": {
+        "Optional": {
+          "EnumRef": "block_chain"
+        }
+      }
+    },
+    {
+      "name": "wallet_address",
       "ty": {
         "Optional": "String"
       }
@@ -4270,6 +4289,10 @@ impl WsRequest for UserGetExpertProfileRequest {
     {
       "name": "aum",
       "ty": "Numeric"
+    },
+    {
+      "name": "strategies_total",
+      "ty": "BigInt"
     },
     {
       "name": "strategies",

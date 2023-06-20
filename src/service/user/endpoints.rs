@@ -40,6 +40,8 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 Field::new("expert_public_id", Type::optional(Type::BigInt)),
                 Field::new("expert_name", Type::optional(Type::String)),
                 Field::new("description", Type::optional(Type::String)),
+                Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
+                Field::new("wallet_address", Type::optional(Type::String)),
             ],
             vec![Field::new("strategies", list_strategies_datatable())],
         )
@@ -430,6 +432,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 Field::new("risk_score", Type::Numeric),
                 Field::new("reputation_score", Type::Numeric),
                 Field::new("aum", Type::Numeric),
+                Field::new("strategies_total", Type::BigInt),
                 Field::new("strategies", list_strategies_datatable()),
             ],
         )

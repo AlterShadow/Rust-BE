@@ -410,6 +410,20 @@
               "ty": {
                 "Optional": "String"
               }
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "Optional": {
+                  "EnumRef": "block_chain"
+                }
+              }
+            },
+            {
+              "name": "wallet_address",
+              "ty": {
+                "Optional": "String"
+              }
             }
           ],
           "returns": [
@@ -2060,6 +2074,10 @@
             {
               "name": "aum",
               "ty": "Numeric"
+            },
+            {
+              "name": "strategies_total",
+              "ty": "BigInt"
             },
             {
               "name": "strategies",

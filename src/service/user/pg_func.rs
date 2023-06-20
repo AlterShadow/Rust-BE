@@ -89,6 +89,8 @@ END
                 Field::new("expert_public_id", Type::optional(Type::BigInt)),
                 Field::new("expert_name", Type::optional(Type::String)),
                 Field::new("description", Type::optional(Type::String)),
+                Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
+                Field::new("wallet_address", Type::optional(Type::String)),
             ],
             strategy_row_type(),
             format!(
@@ -103,6 +105,8 @@ BEGIN
                     AND (a_expert_public_id ISNULL OR u.public_id = a_expert_public_id)
                     AND (a_expert_name ISNULL OR u.username ILIKE a_expert_name || '%')
                     AND (a_description ISNULL OR s.description ILIKE a_description || '%')
+                    AND (a_blockchain ISNULL OR linked_wallet_blockchain ISNULL OR linked_wallet_blockchain = a_blockchain)
+                    AND (a_wallet_address ISNULL OR linked_wallet ISNULL OR linked_wallet ILIKE a_wallet_address || '%')
                 ORDER BY s.pkey_id
                 LIMIT a_limit
                 OFFSET a_offset;
