@@ -316,7 +316,7 @@ impl RequestHandler for MethodUserGetStrategy {
                             rule_name: rule.name.to_string(),
                             rule_description: rule.description.to_string(),
                             created_at: x.created_at,
-                            enabled: x.enabled,
+                            enabled: true,
                         })
                     })
                     .try_collect()?,
@@ -2490,7 +2490,7 @@ impl RequestHandler for MethodUserListStrategyAuditRules {
                                 rule_name: rule.name.to_string(),
                                 rule_description: rule.description.to_string(),
                                 created_at: x.created_at,
-                                enabled: x.enabled,
+                                enabled: true,
                             })
                         })
                         .try_collect()?,

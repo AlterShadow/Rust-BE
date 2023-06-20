@@ -973,7 +973,7 @@ AS $$
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_list_experts(a_limit bigint, a_offset bigint, a_user_id bigint, a_expert_id bigint DEFAULT NULL, a_expert_user_id bigint DEFAULT NULL, a_expert_user_public_id bigint DEFAULT NULL, a_username varchar DEFAULT NULL, a_family_name varchar DEFAULT NULL, a_given_name varchar DEFAULT NULL, a_description varchar DEFAULT NULL, a_social_media varchar DEFAULT NULL, a_sort_by_followers boolean)
+CREATE OR REPLACE FUNCTION api.fun_user_list_experts(a_limit bigint, a_offset bigint, a_user_id bigint, a_sort_by_followers boolean, a_expert_id bigint DEFAULT NULL, a_expert_user_id bigint DEFAULT NULL, a_expert_user_public_id bigint DEFAULT NULL, a_username varchar DEFAULT NULL, a_family_name varchar DEFAULT NULL, a_given_name varchar DEFAULT NULL, a_description varchar DEFAULT NULL, a_social_media varchar DEFAULT NULL)
 RETURNS table (
     "total" bigint,
     "expert_id" bigint,
@@ -1749,14 +1749,13 @@ $$;
 CREATE OR REPLACE FUNCTION api.fun_user_list_strategy_audit_rules(a_strategy_id bigint)
 RETURNS table (
     "rule_id" bigint,
-    "created_at" bigint,
-    "enabled" boolean
+    "created_at" bigint
 )
 LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY SELECT a.pkey_id, a.rule, a.created_at, a.enabled
+    RETURN QUERY SELECT a.pkey_id, a.fkey_audit_rule_id, a.created_at
     FROM tbl.strategy_audit_rule AS a
     WHERE a.fkey_strategy_id = a_strategy_id;
 END
@@ -1770,8 +1769,8 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    INSERT INTO tbl.strategy_audit_rule (fkey_strategy_id, fkey_audit_rule_id, created_at)
-    VALUES (a_strategy_id, a_audit_rule_id, EXTRACT(EPOCH FROM NOW())::BIGINT);
+    INSERT INTO tbl.strategy_audit_rule (fkey_strategy_id, fkey_audit_rule_id, updated_at, created_at)
+    VALUES (a_strategy_id, a_audit_rule_id, EXTRACT(EPOCH FROM NOW())::BIGINT, EXTRACT(EPOCH FROM NOW())::BIGINT);
 END
             
 $$;

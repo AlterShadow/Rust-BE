@@ -462,6 +462,7 @@ END
                 Field::new("limit", Type::BigInt),
                 Field::new("offset", Type::BigInt),
                 Field::new("user_id", Type::BigInt),
+                Field::new("sort_by_followers", Type::Boolean),
                 Field::new("expert_id", Type::optional(Type::BigInt)),
                 Field::new("expert_user_id", Type::optional(Type::BigInt)),
                 Field::new("expert_user_public_id", Type::optional(Type::BigInt)),
@@ -470,7 +471,6 @@ END
                 Field::new("given_name", Type::optional(Type::String)),
                 Field::new("description", Type::optional(Type::String)),
                 Field::new("social_media", Type::optional(Type::String)),
-                Field::new("sort_by_followers", Type::Boolean),
             ],
             expert_row_type(),
             format!(
@@ -1183,11 +1183,10 @@ END
             vec![
                 Field::new("rule_id", Type::BigInt),
                 Field::new("created_at", Type::BigInt),
-                Field::new("enabled", Type::Boolean),
             ],
             r#"
 BEGIN
-    RETURN QUERY SELECT a.pkey_id, a.rule, a.created_at, a.enabled
+    RETURN QUERY SELECT a.pkey_id, a.fkey_audit_rule_id, a.created_at
     FROM tbl.strategy_audit_rule AS a
     WHERE a.fkey_strategy_id = a_strategy_id;
 END
@@ -1202,8 +1201,8 @@ END
             vec![],
             r#"
 BEGIN
-    INSERT INTO tbl.strategy_audit_rule (fkey_strategy_id, fkey_audit_rule_id, created_at)
-    VALUES (a_strategy_id, a_audit_rule_id, EXTRACT(EPOCH FROM NOW())::BIGINT);
+    INSERT INTO tbl.strategy_audit_rule (fkey_strategy_id, fkey_audit_rule_id, updated_at, created_at)
+    VALUES (a_strategy_id, a_audit_rule_id, EXTRACT(EPOCH FROM NOW())::BIGINT, EXTRACT(EPOCH FROM NOW())::BIGINT);
 END
             "#,
         ),
