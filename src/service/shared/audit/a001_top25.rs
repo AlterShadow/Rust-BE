@@ -1,6 +1,6 @@
-use crate::audit::AuditData;
+use crate::audit::AuditRule;
 use eyre::*;
-pub const AUDIT_TOP25_TOKENS: AuditData = AuditData {
+pub const AUDIT_TOP25_TOKENS: AuditRule = AuditRule {
     id: 1,
     name: "TOP 25 TOKENS",
     description: "top 25 TOKENS from CoinMarketCap",

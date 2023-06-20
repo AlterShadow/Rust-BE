@@ -1,6 +1,6 @@
 use crate::audit::{
-    get_audit_rules, AUDIT_IMMUTABLE_TOKENS, AUDIT_TOKENS_NO_MORE_THAN_10_PERCENT,
-    AUDIT_TOP25_TOKENS,
+    get_audit_rules, validate_audit_rule_immutable_tokens, AUDIT_IMMUTABLE_TOKENS,
+    AUDIT_TOKENS_NO_MORE_THAN_10_PERCENT, AUDIT_TOP25_TOKENS,
 };
 use api::cmc::CoinMarketCap;
 use eth_sdk::erc20::approve_and_ensure_success;
@@ -1886,21 +1886,8 @@ impl RequestHandler for MethodExpertUpdateStrategy {
         let db: DbClient = toolbox.get_db();
         async move {
             ensure_user_role(ctx, EnumRole::Expert)?;
-            let strategy = db
-                .execute(FunUserGetStrategyReq {
-                    strategy_id: req.strategy_id,
-                    user_id: ctx.user_id,
-                })
-                .await?
-                .into_result()
-                .context(CustomError::new(
-                    EnumErrorCode::NotFound,
-                    "Could not find strategy",
-                ))?;
-            ensure!(
-                !strategy.immutable,
-                CustomError::new(EnumErrorCode::ImmutableStrategy, "Strategy is immutable")
-            );
+            let strategy =
+                validate_audit_rule_immutable_tokens(&db, req.strategy_id, ctx.user_id).await?;
             ensure!(
                 strategy.creator_id == ctx.user_id,
                 CustomError::new(EnumErrorCode::UserForbidden, "Not your strategy")
@@ -1972,21 +1959,8 @@ impl RequestHandler for MethodExpertAddStrategyWatchingWallet {
         let db: DbClient = toolbox.get_db();
         async move {
             ensure_user_role(ctx, EnumRole::Expert)?;
-            let strategy = db
-                .execute(FunUserGetStrategyReq {
-                    strategy_id: req.strategy_id,
-                    user_id: ctx.user_id,
-                })
-                .await?
-                .into_result()
-                .context(CustomError::new(
-                    EnumErrorCode::NotFound,
-                    "Could not find strategy",
-                ))?;
-            ensure!(
-                !strategy.immutable,
-                CustomError::new(EnumErrorCode::ImmutableStrategy, "Strategy is immutable")
-            );
+            let strategy =
+                validate_audit_rule_immutable_tokens(&db, req.strategy_id, ctx.user_id).await?;
             ensure!(
                 strategy.creator_id == ctx.user_id,
                 CustomError::new(EnumErrorCode::UserForbidden, "Not your strategy")
@@ -2166,21 +2140,9 @@ impl RequestHandler for MethodExpertAddStrategyInitialTokenRatio {
 
         async move {
             ensure_user_role(ctx, EnumRole::Expert)?;
-            let strategy = db
-                .execute(FunUserGetStrategyReq {
-                    strategy_id: req.strategy_id,
-                    user_id: ctx.user_id,
-                })
-                .await?
-                .into_result()
-                .context(CustomError::new(
-                    EnumErrorCode::NotFound,
-                    "Could not find strategy",
-                ))?;
-            ensure!(
-                !strategy.immutable,
-                CustomError::new(EnumErrorCode::ImmutableStrategy, "Strategy is immutable")
-            );
+
+            let strategy =
+                validate_audit_rule_immutable_tokens(&db, req.strategy_id, ctx.user_id).await?;
             ensure!(
                 strategy.creator_id == ctx.user_id,
                 CustomError::new(EnumErrorCode::UserForbidden, "Not your strategy")

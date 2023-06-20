@@ -1,13 +1,15 @@
 use eyre::*;
 use serde::*;
 use std::str::FromStr;
+use tracing::info;
 use tracing::level_filters::LevelFilter;
 use tracing_log::LogTracer;
 use tracing_subscriber::{fmt, EnvFilter};
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Copy, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum LogLevel {
+    #[default]
     Off,
     Trace,
     Debug,
@@ -42,13 +44,7 @@ impl FromStr for LogLevel {
         }
     }
 }
-impl Default for LogLevel {
-    fn default() -> Self {
-        LogLevel::Off
-    }
-}
-pub fn setup_logs(log_level: LogLevel) -> Result<()> {
-    LogTracer::init().context("Cannot setup_logs")?;
+fn build_env_filter(log_level: LogLevel) -> Result<EnvFilter> {
     let filter = EnvFilter::from_default_env()
         .add_directive(log_level.as_level_filter().into())
         .add_directive("tungstenite::protocol=debug".parse()?)
@@ -62,6 +58,11 @@ pub fn setup_logs(log_level: LogLevel) -> Result<()> {
         .add_directive("hyper::proto::h2=info".parse()?)
         .add_directive("mio=info".parse()?)
         .add_directive("want=info".parse()?);
+    Ok(filter)
+}
+pub fn setup_logs(log_level: LogLevel) -> Result<()> {
+    LogTracer::init().context("Cannot setup_logs")?;
+    let filter = build_env_filter(log_level)?;
 
     let subscriber = fmt()
         .with_thread_names(true)

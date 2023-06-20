@@ -44,6 +44,7 @@ crypto = { path = "../shared/crypto" }
 eth-sdk = { path = "../shared/eth-sdk" }
 api = { path = "../shared/api" }
 mc2fi_auth = { path = "../auth" }
+tracing-appender = "0.2"
 
 [dependencies.uuid]
 version = "1.1.2"
