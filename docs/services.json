@@ -1663,6 +1663,12 @@
               "ty": {
                 "Optional": "String"
               }
+            },
+            {
+              "name": "sort_by_followers",
+              "ty": {
+                "Optional": "Boolean"
+              }
             }
           ],
           "returns": [

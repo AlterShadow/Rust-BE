@@ -466,6 +466,7 @@ END
                 Field::new("given_name", Type::optional(Type::String)),
                 Field::new("description", Type::optional(Type::String)),
                 Field::new("social_media", Type::optional(Type::String)),
+                Field::new("sort_by_followers", Type::Boolean),
             ],
             expert_row_type(),
             format!(
@@ -482,7 +483,10 @@ BEGIN
                         AND (a_given_name ISNULL OR u.given_name ILIKE a_given_name || '%')
                         AND (a_description ISNULL OR e.description ILIKE a_description || '%')
                         AND (a_social_media ISNULL OR e.social_media ILIKE a_social_media || '%')
-                 ORDER BY e.pkey_id
+                 ORDER BY CASE 
+                  WHEN a_sort_by_followers = TRUE THEN follower_count 
+                  ELSE e.pkey_id
+                 END DESC
                  OFFSET a_offset
                  LIMIT a_limit
                  ;

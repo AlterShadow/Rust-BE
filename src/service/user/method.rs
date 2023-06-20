@@ -1412,6 +1412,7 @@ impl RequestHandler for MethodUserListExperts {
                     given_name: req.given_name,
                     description: req.description,
                     social_media: req.social_media,
+                    sort_by_followers: req.sort_by_followers.unwrap_or_default(),
                 })
                 .await?;
             Ok(UserListExpertsResponse {
@@ -1444,9 +1445,10 @@ impl RequestHandler for MethodUserListTopPerformingExperts {
                     family_name: None,
                     given_name: None,
                     description: None,
+                    social_media: None,
                     offset: req.offset.unwrap_or(DEFAULT_OFFSET),
                     limit: req.limit.unwrap_or(DEFAULT_LIMIT),
-                    social_media: None,
+                    sort_by_followers: false,
                 })
                 .await?;
             Ok(UserListTopPerformingExpertsResponse {
@@ -1483,6 +1485,7 @@ impl RequestHandler for MethodUserListFeaturedExperts {
                     given_name: None,
                     description: None,
                     social_media: None,
+                    sort_by_followers: false,
                 })
                 .await?;
             Ok(UserListFeaturedExpertsResponse {
@@ -2636,7 +2639,9 @@ mod tests {
                 expert_fee: 1.0,
                 agreed_tos: true,
                 blockchain: EnumBlockChain::BscTestnet,
+                immutable: false,
                 wallet_address: format!("{:?}", Address::zero()),
+                asset_ratio_limit: false,
             })
             .await?
             .into_result()

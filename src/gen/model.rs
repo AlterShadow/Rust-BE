@@ -1693,6 +1693,8 @@ pub struct UserListExpertsRequest {
     pub description: Option<String>,
     #[serde(default)]
     pub social_media: Option<String>,
+    #[serde(default)]
+    pub sort_by_followers: Option<bool>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -3846,6 +3848,12 @@ impl WsRequest for UserListExpertsRequest {
       "name": "social_media",
       "ty": {
         "Optional": "String"
+      }
+    },
+    {
+      "name": "sort_by_followers",
+      "ty": {
+        "Optional": "Boolean"
       }
     }
   ],

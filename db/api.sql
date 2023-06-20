@@ -971,7 +971,7 @@ AS $$
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_list_experts(a_limit bigint, a_offset bigint, a_user_id bigint, a_expert_id bigint DEFAULT NULL, a_expert_user_id bigint DEFAULT NULL, a_expert_user_public_id bigint DEFAULT NULL, a_username varchar DEFAULT NULL, a_family_name varchar DEFAULT NULL, a_given_name varchar DEFAULT NULL, a_description varchar DEFAULT NULL, a_social_media varchar DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_user_list_experts(a_limit bigint, a_offset bigint, a_user_id bigint, a_expert_id bigint DEFAULT NULL, a_expert_user_id bigint DEFAULT NULL, a_expert_user_public_id bigint DEFAULT NULL, a_username varchar DEFAULT NULL, a_family_name varchar DEFAULT NULL, a_given_name varchar DEFAULT NULL, a_description varchar DEFAULT NULL, a_social_media varchar DEFAULT NULL, a_sort_by_followers boolean)
 RETURNS table (
     "total" bigint,
     "expert_id" bigint,
@@ -1033,7 +1033,10 @@ BEGIN
                         AND (a_given_name ISNULL OR u.given_name ILIKE a_given_name || '%')
                         AND (a_description ISNULL OR e.description ILIKE a_description || '%')
                         AND (a_social_media ISNULL OR e.social_media ILIKE a_social_media || '%')
-                 ORDER BY e.pkey_id
+                 ORDER BY CASE 
+                  WHEN a_sort_by_followers = TRUE THEN follower_count 
+                  ELSE e.pkey_id
+                 END DESC
                  OFFSET a_offset
                  LIMIT a_limit
                  ;

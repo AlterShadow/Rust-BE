@@ -386,6 +386,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 Field::new("given_name", Type::optional(Type::String)),
                 Field::new("description", Type::optional(Type::String)),
                 Field::new("social_media", Type::optional(Type::String)),
+                Field::new("sort_by_followers", Type::optional(Type::Boolean)),
             ],
             vec![Field::new("experts", list_experts_datatable())],
         )

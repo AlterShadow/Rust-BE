@@ -35,7 +35,7 @@ ID: 2
 |20130|UserFollowExpert|expert_id|success|User follows an expert|
 |20140|UserListFollowedExperts|limit, offset|experts|User lists followed experts|
 |20150|UserUnfollowExpert|expert_id|success|User unfollows an expert|
-|20160|UserListExperts|limit, offset, expert_id, user_id, user_public_id, username, family_name, given_name, description, social_media|experts|User lists experts|
+|20160|UserListExperts|limit, offset, expert_id, user_id, user_public_id, username, family_name, given_name, description, social_media, sort_by_followers|experts|User lists experts|
 |20161|UserListTopPerformingExperts|limit, offset|experts_total, experts|User lists experts|
 |20162|UserListFeaturedExperts|limit, offset|experts_total, experts|User lists experts|
 |20170|UserGetExpertProfile|expert_id|expert_id, name, follower_count, description, social_media, risk_score, reputation_score, aum, strategies|User gets an expert profile|

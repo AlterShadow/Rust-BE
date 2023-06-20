@@ -1196,13 +1196,14 @@ pub struct FunUserListExpertsReq {
     pub description: Option<String>,
     #[serde(default)]
     pub social_media: Option<String>,
+    pub sort_by_followers: bool,
 }
 
 #[allow(unused_variables)]
 impl DatabaseRequest for FunUserListExpertsReq {
     type ResponseRow = FunUserExpertRowType;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_list_experts(a_limit => $1::bigint, a_offset => $2::bigint, a_user_id => $3::bigint, a_expert_id => $4::bigint, a_expert_user_id => $5::bigint, a_expert_user_public_id => $6::bigint, a_username => $7::varchar, a_family_name => $8::varchar, a_given_name => $9::varchar, a_description => $10::varchar, a_social_media => $11::varchar);"
+        "SELECT * FROM api.fun_user_list_experts(a_limit => $1::bigint, a_offset => $2::bigint, a_user_id => $3::bigint, a_expert_id => $4::bigint, a_expert_user_id => $5::bigint, a_expert_user_public_id => $6::bigint, a_username => $7::varchar, a_family_name => $8::varchar, a_given_name => $9::varchar, a_description => $10::varchar, a_social_media => $11::varchar, a_sort_by_followers => $12::boolean);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -1217,6 +1218,7 @@ impl DatabaseRequest for FunUserListExpertsReq {
             &self.given_name as &(dyn ToSql + Sync),
             &self.description as &(dyn ToSql + Sync),
             &self.social_media as &(dyn ToSql + Sync),
+            &self.sort_by_followers as &(dyn ToSql + Sync),
         ]
     }
 }
