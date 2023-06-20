@@ -1,16 +1,14 @@
-mod method;
-
 use crate::endpoints::*;
-use crate::method::*;
 use eyre::*;
 use lib::config::{load_config, WsServerConfig};
 use lib::database::{connect_to_database, DatabaseConfig};
 use lib::log::{setup_logs, LogLevel};
 use lib::ws::{EndpointAuthController, WebsocketServer};
+use mc2fi_auth::endpoints::{endpoint_auth_login, endpoint_auth_logout, endpoint_auth_signup};
+use mc2fi_auth::method::{MethodAuthLogin, MethodAuthLogout, MethodAuthSignup};
 use serde::*;
 
-pub mod endpoints;
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Config {
     pub app_db: DatabaseConfig,
     pub auth_db: DatabaseConfig,

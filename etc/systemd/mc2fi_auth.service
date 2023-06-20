@@ -9,7 +9,7 @@ Type=simple
 Restart=always
 RestartSec=1
 WorkingDirectory=/home/mc2fi/mc2fi
-ExecStart=/home/mc2fi/mc2fi/target/release/auth --config=etc/config.json
+ExecStart=/home/mc2fi/mc2fi/target/release/mc2fi_auth --config=etc/config.json
 
 StandardError=append:/home/mc2fi/mc2fi/log/mc2fi_auth.log
 StandardOutput=append:/home/mc2fi/mc2fi/log/mc2fi_auth.log

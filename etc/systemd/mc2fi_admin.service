@@ -9,7 +9,7 @@ Type=simple
 Restart=always
 RestartSec=1
 WorkingDirectory=/home/mc2fi/mc2fi
-ExecStart=/home/mc2fi/mc2fi/target/release/admin --config=etc/config.json
+ExecStart=/home/mc2fi/mc2fi/target/release/mc2fi_admin --config=etc/config.json
 
 StandardError=append:/home/mc2fi/mc2fi/log/mc2fi_admin.log
 StandardOutput=append:/home/mc2fi/mc2fi/log/mc2fi_admin.log

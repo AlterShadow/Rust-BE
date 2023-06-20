@@ -1,93 +1,17 @@
 [package]
-name = "mc2_fi"
+name = "mc2fi"
 version = "0.1.0"
-edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-eyre = "0.6.1"
-serde = { version = "1.0", features = ["derive"] }
-tracing = "0.1.35"
-hex = "0.4.3"
-dashmap = "5.3.4"
-tokio = { version = "1", features = ["full"] }
-crossbeam = "*"
-reqwest = { version = "*", default-features = false, features = [
-	"rustls-tls",
-	"serde_json",
-	"json",
-] }
-tokio-tungstenite = { version = "*", features = ["rustls-tls-webpki-roots"] }
-itertools = "0.10.3"
-futures = "*"
-serde_json = "*"
-peroxide = "*"
-chrono = "*"
-deadpool-postgres = "*"
-tokio-cron-scheduler = "*"
-model = { path = "src/model" }
-gen = { path = "src/gen" }
-lib = { path = "src/lib" }
-bytes = "*"
-web3 = { version = "0.18", features = ["signing"] }
-secp256k1 = "0.21.3"
-rand = "0.8.5"
-num = "0.4"
-num-derive = "0.3"
-num-traits = "0.2"
-axum = { version = "0.6.18", default-features = false, features = [
-	"http1",
-	"json",
-	"matched-path",
-	"original-uri",
-	"tokio",
-] }
-axum-server = { version = "0.5.0", features = ["tls-rustls"] }
-secrecy = { version = "0.8.0", features = ["serde"] }
-deadpool = { version = "0.9.5", features = ["managed", "rt_tokio_1"] }
-async-trait = "*"
-crypto = { path = "src/service/shared/crypto" }
-eth-sdk = { path = "src/service/shared/eth-sdk" }
-api = { path = "src/service/shared/api" }
-
-[dependencies.uuid]
-version = "1.1.2"
-features = [
-	"v4",                # Lets you generate random UUIDs
-	"fast-rng",          # Use a faster (but still sufficiently random) RNG
-	"macro-diagnostics", # Enable better diagnostics for compile-time UUIDs
-	"serde",             # Enable serde support
-]
-[features]
-default = []
-no-github-ci-tests = []
-
-[lib]
-path = "src/service/lib.rs"
-
-[[bin]]
-name = "auth"
-path = "src/service/auth/main.rs"
-
-[[bin]]
-name = "user"
-path = "src/service/user/main.rs"
-
-[[bin]]
-name = "admin"
-path = "src/service/admin/main.rs"
-
-
-[[bin]]
-name = "watcher"
-path = "src/service/watcher/main.rs"
 
 [workspace]
+resolver = "2"
 members = [
-	"src/service/shared/eth-sdk",
-	"src/service/shared/crypto",
-	"src/service/shared/api",
-	"src/lib",
-	"src/gen",
+    "src/service/shared/eth-sdk",
+    "src/service/shared/crypto",
+    "src/service/shared/api",
+    "src/service/auth",
+    "src/service/user",
+    "src/service/admin",
+    "src/service/watcher",
+    "src/lib",
+    "src/gen",
 ]

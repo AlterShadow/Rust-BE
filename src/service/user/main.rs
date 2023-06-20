@@ -6,7 +6,6 @@ mod admin_method;
 pub mod audit;
 pub mod endpoints;
 mod method;
-
 use crate::admin_method::*;
 use crate::method::*;
 use api::cmc::CoinMarketCap;
@@ -22,10 +21,10 @@ use lib::config::{load_config, WsServerConfig};
 use lib::database::{connect_to_database, DatabaseConfig};
 use lib::log::{setup_logs, LogLevel};
 use lib::ws::{EndpointAuthController, WebsocketServer};
-use mc2_fi::endpoints::endpoint_auth_authorize;
-use mc2_fi::method::MethodAuthAuthorize;
+use mc2fi_auth::endpoints::endpoint_auth_authorize;
+use mc2fi_auth::method::MethodAuthAuthorize;
 use secrecy::{ExposeSecret, SecretString};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::fmt::Debug;
 use std::sync::Arc;
 

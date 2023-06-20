@@ -9,7 +9,7 @@ Type=simple
 Restart=always
 RestartSec=1
 WorkingDirectory=/home/mc2fi/mc2fi
-ExecStart=/home/mc2fi/mc2fi/target/release/watcher --config=etc/config.json
+ExecStart=/home/mc2fi/mc2fi/target/release/mc2fi_watcher --config=etc/config.json
 
 StandardError=append:/home/mc2fi/mc2fi/log/mc2fi_watcher.log
 StandardOutput=append:/home/mc2fi/mc2fi/log/mc2fi_watcher.log
