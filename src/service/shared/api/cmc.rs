@@ -181,7 +181,6 @@ impl CoinMarketCap {
         let data: MapCoinResponse = result.json().await?;
         Ok(data)
     }
-
     fn price_url(&self) -> Result<Url> {
         Ok(Url::parse(&format!(
             "{}{}",

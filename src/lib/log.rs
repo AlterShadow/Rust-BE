@@ -1,7 +1,6 @@
 use eyre::*;
 use serde::*;
 use std::str::FromStr;
-use tracing::info;
 use tracing::level_filters::LevelFilter;
 use tracing_log::LogTracer;
 use tracing_subscriber::{fmt, EnvFilter};

@@ -181,6 +181,11 @@ pub struct FunUserBackStrategyRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunUserCheckIfTokenWhitelistedRespRow {
+    pub whitelisted: bool,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserCreateExpertProfileRespRow {
     pub expert_id: i64,
 }
@@ -1915,6 +1920,26 @@ impl DatabaseRequest for FunUserListStrategyWhitelistedTokensReq {
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![&self.strategy_id as &(dyn ToSql + Sync)]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserCheckIfTokenWhitelistedReq {
+    pub strategy_id: i64,
+    pub token_name: String,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunUserCheckIfTokenWhitelistedReq {
+    type ResponseRow = FunUserCheckIfTokenWhitelistedRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_check_if_token_whitelisted(a_strategy_id => $1::bigint, a_token_name => $2::varchar);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.strategy_id as &(dyn ToSql + Sync),
+            &self.token_name as &(dyn ToSql + Sync),
+        ]
     }
 }
 

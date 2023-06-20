@@ -1223,5 +1223,32 @@ BEGIN
 END
             "#,
         ),
+        ProceduralFunction::new(
+            "fun_user_check_if_token_whitelisted",
+            vec![
+                Field::new("strategy_id", Type::BigInt),
+                Field::new("token_name", Type::String),
+            ],
+            vec![Field::new("whitelisted", Type::Boolean)],
+            r#"
+BEGIN
+    -- if a strategy does not have whitelist, it is considered as all tokens are whitelisted
+    IF NOT EXISTS(
+        SELECT 1
+        FROM tbl.strategy_whitelisted_token AS a
+        WHERE a.fkey_strategy_id = a_strategy_id
+    ) THEN
+        RETURN QUERY SELECT TRUE;
+        RETURN;
+    END IF;
+    RETURN QUERY SELECT EXISTS(
+        SELECT 1
+        FROM tbl.strategy_whitelisted_token AS a
+        WHERE a.fkey_strategy_id = a_strategy_id
+            AND a.token_name = a_token_name
+    );
+END
+            "#,
+        ),
     ]
 }

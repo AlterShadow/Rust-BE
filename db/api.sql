@@ -1800,6 +1800,34 @@ END
 $$;
         
 
+CREATE OR REPLACE FUNCTION api.fun_user_check_if_token_whitelisted(a_strategy_id bigint, a_token_name varchar)
+RETURNS table (
+    "whitelisted" boolean
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    -- if a strategy does not have whitelist, it is considered as all tokens are whitelisted
+    IF NOT EXISTS(
+        SELECT 1
+        FROM tbl.strategy_whitelisted_token AS a
+        WHERE a.fkey_strategy_id = a_strategy_id
+    ) THEN
+        RETURN QUERY SELECT TRUE;
+        RETURN;
+    END IF;
+    RETURN QUERY SELECT EXISTS(
+        SELECT 1
+        FROM tbl.strategy_whitelisted_token AS a
+        WHERE a.fkey_strategy_id = a_strategy_id
+            AND a.token_name = a_token_name
+    );
+END
+            
+$$;
+        
+
 CREATE OR REPLACE FUNCTION api.fun_admin_list_users(a_limit bigint, a_offset bigint, a_user_id bigint DEFAULT NULL, a_address varchar DEFAULT NULL, a_username varchar DEFAULT NULL, a_email varchar DEFAULT NULL, a_role enum_role DEFAULT NULL)
 RETURNS table (
     "total" bigint,

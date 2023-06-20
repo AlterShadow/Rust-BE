@@ -62,12 +62,6 @@
       "source": "Custom"
     },
     {
-      "code": 101603,
-      "symbol": "UserNoValidSalt",
-      "message": "No valid salt",
-      "source": "Custom"
-    },
-    {
       "code": 101604,
       "symbol": "UserNoAuthToken",
       "message": "No auth token",
@@ -79,72 +73,23 @@
       "message": "token invalid",
       "source": "Custom"
     },
-
-    {
-      "code": 102403,
-      "symbol": "OrganizationForbidden",
-      "message": "Insufficient role for {user} in organization {organization}",
-      "source": "Custom"
-    },
-    {
-      "code": 102404,
-      "symbol": "OrganizationNotFound",
-      "message": "Organization Not Found",
-      "source": "Custom"
-    },
-    {
-      "code": 102601,
-      "symbol": "OrganizationAssignRoleForbiddenAdmin",
-      "message": "Cannot set role higher than admin",
-      "source": "Custom"
-    },
     {
       "code": 102602,
-      "symbol": "OrganizationAssignRoleForbiddenSelf",
-      "message": "Cannot set role higher than your role",
-      "source": "Custom"
+      "symbol": "TokenNotTop25",
+      "message": "Token is not top 25",
+      "source": "Audit"
     },
     {
       "code": 102603,
       "symbol": "ImmutableStrategy",
       "message": "Strategy is immutable",
-      "source": "Custom"
+      "source": "Audit"
     },
     {
       "code": 3484946,
       "symbol": "InvalidEnumLevel",
       "message": "InvalidEnumLevel",
       "source": "SQL 22P02"
-    },
-    {
-      "code": 103404,
-      "symbol": "AssetNotFound",
-      "message": "Asset Not Found",
-      "source": "Custom"
-    },
-    {
-      "code": 104404,
-      "symbol": "AssetPlanNotFound",
-      "message": "AssetPlan Not Found",
-      "source": "Custom"
-    },
-    {
-      "code": 105404,
-      "symbol": "VaultWalletNotFound",
-      "message": "Vault wallet Not Found",
-      "source": "Custom"
-    },
-    {
-      "code": 106404,
-      "symbol": "VaultNotFound",
-      "message": "Vault Not Found",
-      "source": "Custom"
-    },
-    {
-      "code": 107404,
-      "symbol": "BucketNotFound",
-      "message": "Bucket Not Found",
-      "source": "Custom"
     },
     {
       "code": 4349632,

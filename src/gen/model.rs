@@ -449,49 +449,19 @@ pub struct ErrorUserMustAgreeTos {}
 pub struct ErrorUserMustAgreePrivacyPolicy {}
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct ErrorUserNoValidSalt {}
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
 pub struct ErrorUserNoAuthToken {}
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ErrorUserInvalidAuthToken {}
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct ErrorOrganizationForbidden {
-    pub user: String,
-    pub organization: String,
-}
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct ErrorOrganizationNotFound {}
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct ErrorOrganizationAssignRoleForbiddenAdmin {}
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct ErrorOrganizationAssignRoleForbiddenSelf {}
+pub struct ErrorTokenNotTop25 {}
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ErrorImmutableStrategy {}
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ErrorInvalidEnumLevel {}
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct ErrorAssetNotFound {}
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct ErrorAssetPlanNotFound {}
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct ErrorVaultWalletNotFound {}
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct ErrorVaultNotFound {}
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct ErrorBucketNotFound {}
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ErrorError {}
@@ -652,48 +622,21 @@ pub enum EnumErrorCode {
     /// Custom Must agree to the privacy policy
     #[postgres(name = "UserMustAgreePrivacyPolicy")]
     UserMustAgreePrivacyPolicy = 101602,
-    /// Custom No valid salt
-    #[postgres(name = "UserNoValidSalt")]
-    UserNoValidSalt = 101603,
     /// Custom No auth token
     #[postgres(name = "UserNoAuthToken")]
     UserNoAuthToken = 101604,
     /// Custom token invalid
     #[postgres(name = "UserInvalidAuthToken")]
     UserInvalidAuthToken = 101605,
-    /// Custom Insufficient role for {user} in organization {organization}
-    #[postgres(name = "OrganizationForbidden")]
-    OrganizationForbidden = 102403,
-    /// Custom Organization Not Found
-    #[postgres(name = "OrganizationNotFound")]
-    OrganizationNotFound = 102404,
-    /// Custom Cannot set role higher than admin
-    #[postgres(name = "OrganizationAssignRoleForbiddenAdmin")]
-    OrganizationAssignRoleForbiddenAdmin = 102601,
-    /// Custom Cannot set role higher than your role
-    #[postgres(name = "OrganizationAssignRoleForbiddenSelf")]
-    OrganizationAssignRoleForbiddenSelf = 102602,
-    /// Custom Strategy is immutable
+    /// Audit Token is not top 25
+    #[postgres(name = "TokenNotTop25")]
+    TokenNotTop25 = 102602,
+    /// Audit Strategy is immutable
     #[postgres(name = "ImmutableStrategy")]
     ImmutableStrategy = 102603,
     /// SQL 22P02 InvalidEnumLevel
     #[postgres(name = "InvalidEnumLevel")]
     InvalidEnumLevel = 3484946,
-    /// Custom Asset Not Found
-    #[postgres(name = "AssetNotFound")]
-    AssetNotFound = 103404,
-    /// Custom AssetPlan Not Found
-    #[postgres(name = "AssetPlanNotFound")]
-    AssetPlanNotFound = 104404,
-    /// Custom Vault wallet Not Found
-    #[postgres(name = "VaultWalletNotFound")]
-    VaultWalletNotFound = 105404,
-    /// Custom Vault Not Found
-    #[postgres(name = "VaultNotFound")]
-    VaultNotFound = 106404,
-    /// Custom Bucket Not Found
-    #[postgres(name = "BucketNotFound")]
-    BucketNotFound = 107404,
     /// SQL R0000 Error
     #[postgres(name = "Error")]
     Error = 4349632,

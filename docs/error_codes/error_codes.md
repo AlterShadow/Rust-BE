@@ -12,20 +12,11 @@
 |101404|UserNotFound|User not found|Custom|
 |101601|UserMustAgreeTOS|Must agree to the terms of service|Custom|
 |101602|UserMustAgreePrivacyPolicy|Must agree to the privacy policy|Custom|
-|101603|UserNoValidSalt|No valid salt|Custom|
 |101604|UserNoAuthToken|No auth token|Custom|
 |101605|UserInvalidAuthToken|token invalid|Custom|
-|102403|OrganizationForbidden|Insufficient role for {user} in organization {organization}|Custom|
-|102404|OrganizationNotFound|Organization Not Found|Custom|
-|102601|OrganizationAssignRoleForbiddenAdmin|Cannot set role higher than admin|Custom|
-|102602|OrganizationAssignRoleForbiddenSelf|Cannot set role higher than your role|Custom|
-|102603|ImmutableStrategy|Strategy is immutable|Custom|
+|102602|TokenNotTop25|Token is not top 25|Audit|
+|102603|ImmutableStrategy|Strategy is immutable|Audit|
 |3484946|InvalidEnumLevel|InvalidEnumLevel|SQL 22P02|
-|103404|AssetNotFound|Asset Not Found|Custom|
-|104404|AssetPlanNotFound|AssetPlan Not Found|Custom|
-|105404|VaultWalletNotFound|Vault wallet Not Found|Custom|
-|106404|VaultNotFound|Vault Not Found|Custom|
-|107404|BucketNotFound|Bucket Not Found|Custom|
 |4349632|Error|Error|SQL R0000|
 |45349633|InvalidArgument|InvalidArgument|SQL R0001|
 |45349634|InvalidState|InvalidState|SQL R0002|
