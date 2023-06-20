@@ -12,7 +12,7 @@ use std::sync::{Arc, Mutex};
 use tracing::info;
 
 pub struct AuditRule {
-    pub id: i32,
+    pub id: i64,
     pub name: &'static str,
     pub description: &'static str,
 }

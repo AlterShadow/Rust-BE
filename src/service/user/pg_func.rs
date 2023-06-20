@@ -632,8 +632,6 @@ END
                 Field::new("agreed_tos", Type::Boolean),
                 Field::new("wallet_address", Type::String),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
-                Field::new("immutable", Type::Boolean),
-                Field::new("asset_ratio_limit", Type::Boolean),
             ],
             vec![
                 Field::new("success", Type::Boolean),
@@ -658,9 +656,7 @@ BEGIN
         updated_at, 
         created_at,
         pending_approval,
-        approved,
-        immutable,
-        asset_ratio_limit
+        approved
     )
     VALUES (
         a_user_id, 
@@ -677,9 +673,7 @@ BEGIN
         EXTRACT(EPOCH FROM NOW())::bigint, 
         EXTRACT(EPOCH FROM NOW())::bigint,
         TRUE,
-        FALSE,
-        a_immutable,
-        a_asset_ratio_limit
+        FALSE
     ) RETURNING pkey_id INTO a_strategy_id;
     INSERT INTO tbl.strategy_watching_wallet(
         fkey_user_id,
@@ -1179,7 +1173,10 @@ END
         ),
         ProceduralFunction::new(
             "fun_user_list_strategy_audit_rules",
-            vec![Field::new("strategy_id", Type::BigInt)],
+            vec![
+                Field::new("strategy_id", Type::BigInt),
+                Field::new("audit_rule_id", Type::optional(Type::BigInt)),
+            ],
             vec![
                 Field::new("rule_id", Type::BigInt),
                 Field::new("created_at", Type::BigInt),
@@ -1188,7 +1185,8 @@ END
 BEGIN
     RETURN QUERY SELECT a.pkey_id, a.fkey_audit_rule_id, a.created_at
     FROM tbl.strategy_audit_rule AS a
-    WHERE a.fkey_strategy_id = a_strategy_id;
+    WHERE a.fkey_strategy_id = a_strategy_id
+    AND (a_audit_rule_id ISNULL OR a.fkey_audit_rule_id = a_audit_rule_id);
 END
             "#,
         ),

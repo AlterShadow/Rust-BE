@@ -284,7 +284,6 @@ impl RequestHandler for MethodUserGetStrategy {
                 approved: ret.approved,
                 approved_at: ret.approved_at,
                 backers: ret.backers as _,
-                immutable: ret.immutable,
                 watching_wallets: db
                     .execute(FunUserListStrategyWatchWalletsReq {
                         strategy_id: req.strategy_id,
@@ -303,13 +302,14 @@ impl RequestHandler for MethodUserGetStrategy {
                 audit_rules: db
                     .execute(FunUserListStrategyAuditRulesReq {
                         strategy_id: req.strategy_id,
+                        audit_rule_id: None,
                     })
                     .await?
                     .into_iter()
                     .map(|x| {
                         let rule = get_audit_rules()
                             .iter()
-                            .find(|y| x.rule_id == y.id as i64)
+                            .find(|y| x.rule_id == y.id)
                             .context("Could not find rule")?;
                         Ok::<_, Error>(UserListStrategyAuditRulesRow {
                             rule_id: x.rule_id,
@@ -1839,31 +1839,26 @@ impl RequestHandler for MethodExpertCreateStrategy {
                     expert_fee: req.expert_fee,
                     agreed_tos: req.agreed_tos,
                     wallet_address: req.wallet_address,
-                    blockchain: EnumBlockChain::EthereumMainnet,
-                    immutable: req.immutable.unwrap_or_default(),
-                    asset_ratio_limit: req.asset_ratio_limit.unwrap_or_default(),
+                    blockchain: req.wallet_blockchain,
                 })
                 .await?
                 .into_result()
                 .context("failed to create strategy")?;
-            let mut audit_rules = vec![];
-            if req.immutable == Some(true) {
-                audit_rules.push(AUDIT_IMMUTABLE_TOKENS.id);
-            }
-            if req.asset_ratio_limit == Some(true) {
-                audit_rules.push(AUDIT_TOKENS_NO_MORE_THAN_10_PERCENT.id);
-            }
-            if req.whitelist_top25_coins == Some(true) {
-                audit_rules.push(AUDIT_TOP25_TOKENS.id);
-            }
-            for s in audit_rules {
+            let mut audit_rules: Vec<_> = req
+                .audit_rules
+                .unwrap_or_default()
+                .into_iter()
+                .filter(|x| get_audit_rules().iter().map(|y| y.id).contains(x))
+                .collect();
+
+            for &s in &audit_rules {
                 db.execute(FunUserAddStrategyAuditRuleReq {
                     strategy_id: ret.strategy_id,
-                    audit_rule_id: s as _,
+                    audit_rule_id: s,
                 })
                 .await?;
             }
-            if req.whitelist_top25_coins == Some(true) {
+            if audit_rules.iter().contains(&AUDIT_TOP25_TOKENS.id) {
                 let token_list = cmc_client.get_top_25_coins().await?;
                 for token in token_list.data {
                     db.execute(FunUserAddStrategyWhitelistedTokenReq {
@@ -1898,9 +1893,17 @@ impl RequestHandler for MethodExpertUpdateStrategy {
         let logger = self.logger.clone();
         async move {
             ensure_user_role(ctx, EnumRole::Expert)?;
-            let strategy =
-                validate_audit_rule_immutable_tokens(&logger, &db, req.strategy_id, ctx.user_id)
-                    .await?;
+            validate_audit_rule_immutable_tokens(&logger, &db, req.strategy_id).await?;
+            let strategy = db
+                .execute(FunUserGetStrategyReq {
+                    user_id: ctx.user_id,
+                    strategy_id: req.strategy_id,
+                })
+                .await?
+                .into_result()
+                .with_context(|| {
+                    CustomError::new(EnumErrorCode::NotFound, "failed to find strategy")
+                })?;
             ensure!(
                 strategy.creator_id == ctx.user_id,
                 CustomError::new(EnumErrorCode::UserForbidden, "Not your strategy")
@@ -1975,9 +1978,18 @@ impl RequestHandler for MethodExpertAddStrategyWatchingWallet {
         let logger = self.logger.clone();
         async move {
             ensure_user_role(ctx, EnumRole::Expert)?;
-            let strategy =
-                validate_audit_rule_immutable_tokens(&logger, &db, req.strategy_id, ctx.user_id)
-                    .await?;
+
+            validate_audit_rule_immutable_tokens(&logger, &db, req.strategy_id).await?;
+            let strategy = db
+                .execute(FunUserGetStrategyReq {
+                    user_id: ctx.user_id,
+                    strategy_id: req.strategy_id,
+                })
+                .await?
+                .into_result()
+                .with_context(|| {
+                    CustomError::new(EnumErrorCode::NotFound, "failed to find strategy")
+                })?;
             ensure!(
                 strategy.creator_id == ctx.user_id,
                 CustomError::new(EnumErrorCode::UserForbidden, "Not your strategy")
@@ -2020,8 +2032,7 @@ impl RequestHandler for MethodExpertRemoveStrategyWatchingWallet {
         let logger = self.logger.clone();
         async move {
             ensure_user_role(ctx, EnumRole::Expert)?;
-            validate_audit_rule_immutable_tokens(&logger, &db, req.strategy_id, ctx.user_id)
-                .await?;
+            validate_audit_rule_immutable_tokens(&logger, &db, req.strategy_id).await?;
             let ret = db
                 .execute(FunUserRemoveStrategyWatchWalletReq {
                     user_id: ctx.user_id,
@@ -2164,9 +2175,17 @@ impl RequestHandler for MethodExpertAddStrategyInitialTokenRatio {
         async move {
             ensure_user_role(ctx, EnumRole::Expert)?;
 
-            let strategy =
-                validate_audit_rule_immutable_tokens(&logger, &db, req.strategy_id, ctx.user_id)
-                    .await?;
+            validate_audit_rule_immutable_tokens(&logger, &db, req.strategy_id).await?;
+            let strategy = db
+                .execute(FunUserGetStrategyReq {
+                    user_id: ctx.user_id,
+                    strategy_id: req.strategy_id,
+                })
+                .await?
+                .into_result()
+                .with_context(|| {
+                    CustomError::new(EnumErrorCode::NotFound, "failed to find strategy")
+                })?;
             ensure!(
                 strategy.creator_id == ctx.user_id,
                 CustomError::new(EnumErrorCode::UserForbidden, "Not your strategy")
@@ -2208,8 +2227,7 @@ impl RequestHandler for MethodExpertRemoveStrategyInitialTokenRatio {
 
         async move {
             ensure_user_role(ctx, EnumRole::Expert)?;
-            validate_audit_rule_immutable_tokens(&logger, &db, req.strategy_id, ctx.user_id)
-                .await?;
+            validate_audit_rule_immutable_tokens(&logger, &db, req.strategy_id).await?;
             let _ret = db
                 .execute(FunUserRemoveStrategyInitialTokenRatioReq {
                     strategy_initial_token_ratio_id: req.token_id,
@@ -2475,7 +2493,10 @@ impl RequestHandler for MethodUserListStrategyAuditRules {
             let rules = get_audit_rules();
             if let Some(strategy_id) = req.strategy_id {
                 let resp = db
-                    .execute(FunUserListStrategyAuditRulesReq { strategy_id })
+                    .execute(FunUserListStrategyAuditRulesReq {
+                        strategy_id,
+                        audit_rule_id: None,
+                    })
                     .await?;
                 Ok(UserListStrategyAuditRulesResponse {
                     audit_rules: resp

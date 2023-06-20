@@ -492,9 +492,6 @@ pub struct FunUserStrategyRowType {
     pub creator_given_name: Option<String>,
     #[serde(default)]
     pub social_media: Option<String>,
-    pub immutable: bool,
-    #[serde(default)]
-    pub asset_ratio_limit: Option<f64>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -1340,15 +1337,13 @@ pub struct FunUserCreateStrategyReq {
     pub agreed_tos: bool,
     pub wallet_address: String,
     pub blockchain: EnumBlockChain,
-    pub immutable: bool,
-    pub asset_ratio_limit: bool,
 }
 
 #[allow(unused_variables)]
 impl DatabaseRequest for FunUserCreateStrategyReq {
     type ResponseRow = FunUserCreateStrategyRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_create_strategy(a_user_id => $1::bigint, a_name => $2::varchar, a_description => $3::varchar, a_strategy_thesis_url => $4::varchar, a_minimum_backing_amount_usd => $5::double precision, a_strategy_fee => $6::double precision, a_expert_fee => $7::double precision, a_agreed_tos => $8::boolean, a_wallet_address => $9::varchar, a_blockchain => $10::enum_block_chain, a_immutable => $11::boolean, a_asset_ratio_limit => $12::boolean);"
+        "SELECT * FROM api.fun_user_create_strategy(a_user_id => $1::bigint, a_name => $2::varchar, a_description => $3::varchar, a_strategy_thesis_url => $4::varchar, a_minimum_backing_amount_usd => $5::double precision, a_strategy_fee => $6::double precision, a_expert_fee => $7::double precision, a_agreed_tos => $8::boolean, a_wallet_address => $9::varchar, a_blockchain => $10::enum_block_chain);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -1362,8 +1357,6 @@ impl DatabaseRequest for FunUserCreateStrategyReq {
             &self.agreed_tos as &(dyn ToSql + Sync),
             &self.wallet_address as &(dyn ToSql + Sync),
             &self.blockchain as &(dyn ToSql + Sync),
-            &self.immutable as &(dyn ToSql + Sync),
-            &self.asset_ratio_limit as &(dyn ToSql + Sync),
         ]
     }
 }
@@ -1863,16 +1856,21 @@ impl DatabaseRequest for FunUserListStrategyWalletsReq {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserListStrategyAuditRulesReq {
     pub strategy_id: i64,
+    #[serde(default)]
+    pub audit_rule_id: Option<i64>,
 }
 
 #[allow(unused_variables)]
 impl DatabaseRequest for FunUserListStrategyAuditRulesReq {
     type ResponseRow = FunUserListStrategyAuditRulesRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_list_strategy_audit_rules(a_strategy_id => $1::bigint);"
+        "SELECT * FROM api.fun_user_list_strategy_audit_rules(a_strategy_id => $1::bigint, a_audit_rule_id => $2::bigint);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
-        vec![&self.strategy_id as &(dyn ToSql + Sync)]
+        vec![
+            &self.strategy_id as &(dyn ToSql + Sync),
+            &self.audit_rule_id as &(dyn ToSql + Sync),
+        ]
     }
 }
 

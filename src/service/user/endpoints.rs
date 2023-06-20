@@ -120,7 +120,6 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 Field::new("approved", Type::Boolean),
                 Field::new("approved_at", Type::optional(Type::BigInt)),
                 Field::new("backers", Type::Int),
-                Field::new("immutable", Type::Boolean),
                 Field::new(
                     "watching_wallets",
                     Type::datatable(
@@ -516,6 +515,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 Field::new("expert_fee", Type::Numeric),
                 Field::new("agreed_tos", Type::Boolean),
                 Field::new("wallet_address", Type::String),
+                Field::new("wallet_blockchain", Type::enum_ref("block_chain")),
                 // Field::new(
                 //     "linked_wallets",
                 //     Type::datatable(
@@ -526,9 +526,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 // ],
                 // ),
                 // ),
-                Field::new("immutable", Type::optional(Type::Boolean)),
-                Field::new("whitelist_top25_coins", Type::optional(Type::Boolean)),
-                Field::new("asset_ratio_limit", Type::optional(Type::Boolean)),
+                Field::new("audit_rules", Type::optional(Type::vec(Type::BigInt))),
             ],
             vec![
                 Field::new("success", Type::Boolean),

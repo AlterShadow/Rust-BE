@@ -1102,12 +1102,9 @@ pub struct ExpertCreateStrategyRequest {
     pub expert_fee: f64,
     pub agreed_tos: bool,
     pub wallet_address: String,
+    pub wallet_blockchain: EnumBlockChain,
     #[serde(default)]
-    pub immutable: Option<bool>,
-    #[serde(default)]
-    pub whitelist_top25_coins: Option<bool>,
-    #[serde(default)]
-    pub asset_ratio_limit: Option<bool>,
+    pub audit_rules: Option<Vec<i64>>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1571,7 +1568,6 @@ pub struct UserGetStrategyResponse {
     #[serde(default)]
     pub approved_at: Option<i64>,
     pub backers: i32,
-    pub immutable: bool,
     pub watching_wallets: Vec<WatchingWalletRow>,
     pub aum_history: Vec<AumHistoryRow>,
     pub audit_rules: Vec<UserListStrategyAuditRulesRow>,
@@ -2927,10 +2923,6 @@ impl WsRequest for UserGetStrategyRequest {
     {
       "name": "backers",
       "ty": "Int"
-    },
-    {
-      "name": "immutable",
-      "ty": "Boolean"
     },
     {
       "name": "watching_wallets",
@@ -4926,21 +4918,17 @@ impl WsRequest for ExpertCreateStrategyRequest {
       "ty": "String"
     },
     {
-      "name": "immutable",
+      "name": "wallet_blockchain",
       "ty": {
-        "Optional": "Boolean"
+        "EnumRef": "block_chain"
       }
     },
     {
-      "name": "whitelist_top25_coins",
+      "name": "audit_rules",
       "ty": {
-        "Optional": "Boolean"
-      }
-    },
-    {
-      "name": "asset_ratio_limit",
-      "ty": {
-        "Optional": "Boolean"
+        "Optional": {
+          "Vec": "BigInt"
+        }
       }
     }
   ],

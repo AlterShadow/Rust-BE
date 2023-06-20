@@ -842,10 +842,6 @@
               "ty": "Int"
             },
             {
-              "name": "immutable",
-              "ty": "Boolean"
-            },
-            {
               "name": "watching_wallets",
               "ty": {
                 "DataTable": {
@@ -2663,21 +2659,17 @@
               "ty": "String"
             },
             {
-              "name": "immutable",
+              "name": "wallet_blockchain",
               "ty": {
-                "Optional": "Boolean"
+                "EnumRef": "block_chain"
               }
             },
             {
-              "name": "whitelist_top25_coins",
+              "name": "audit_rules",
               "ty": {
-                "Optional": "Boolean"
-              }
-            },
-            {
-              "name": "asset_ratio_limit",
-              "ty": {
-                "Optional": "Boolean"
+                "Optional": {
+                  "Vec": "BigInt"
+                }
               }
             }
           ],

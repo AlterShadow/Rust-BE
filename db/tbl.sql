@@ -1,5 +1,5 @@
 -- Created by Vertabelo (http://vertabelo.com)
--- Last modification date: 2023-06-19 14:14:41.608
+-- Last modification date: 2023-06-20 12:59:22.445
 
 CREATE SCHEMA IF NOT EXISTS tbl;;
 
@@ -121,8 +121,6 @@ CREATE TABLE tbl.strategy (
     pending_approval boolean  NOT NULL DEFAULT FALSE,
     approved boolean  NOT NULL DEFAULT FALSE,
     approved_at bigint  NULL,
-    immutable boolean  NOT NULL DEFAULT FALSE,
-    asset_ratio_limit boolean  NULL,
     CONSTRAINT strategy_pk PRIMARY KEY (pkey_id)
 );
 
@@ -175,12 +173,12 @@ CREATE TABLE tbl.strategy_watching_wallet (
     CONSTRAINT strategy_watching_wallet_pk PRIMARY KEY (pkey_id)
 );
 
--- Table: strategy_whitelisted_tokens
-CREATE TABLE tbl.strategy_whitelisted_tokens (
-    pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_strategy_whitelisted_tokens_id'),
-    fkey_strategy_id bigint  NOT NULL,
+-- Table: strategy_whitelisted_token
+CREATE TABLE tbl.strategy_whitelisted_token (
+    pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_strategy_whitelisted_token_id'),
     token_name varchar(32)  NOT NULL,
-    CONSTRAINT strategy_whitelisted_tokens_pk PRIMARY KEY (pkey_id)
+    fkey_strategy_id bigint  NOT NULL,
+    CONSTRAINT strategy_whitelisted_token_pk PRIMARY KEY (pkey_id)
 );
 
 -- Table: system_config
@@ -421,8 +419,8 @@ ALTER TABLE tbl.strategy_wallet ADD CONSTRAINT strategy_wallet_user
     INITIALLY IMMEDIATE
 ;
 
--- Reference: strategy_whitelisted_tokens_strategy (table: strategy_whitelisted_tokens)
-ALTER TABLE tbl.strategy_whitelisted_tokens ADD CONSTRAINT strategy_whitelisted_tokens_strategy
+-- Reference: strategy_whitelisted_token_strategy (table: strategy_whitelisted_token)
+ALTER TABLE tbl.strategy_whitelisted_token ADD CONSTRAINT strategy_whitelisted_token_strategy
     FOREIGN KEY (fkey_strategy_id)
     REFERENCES tbl.strategy (pkey_id)  
     NOT DEFERRABLE 
@@ -593,6 +591,13 @@ CREATE SEQUENCE tbl.seq_strategy_wallet_id
 
 -- Sequence: seq_strategy_watching_wallet_id
 CREATE SEQUENCE tbl.seq_strategy_watching_wallet_id
+      NO MINVALUE
+      NO MAXVALUE
+      NO CYCLE
+;
+
+-- Sequence: seq_strategy_whitelisted_token_id
+CREATE SEQUENCE tbl.seq_strategy_whitelisted_token_id
       NO MINVALUE
       NO MAXVALUE
       NO CYCLE
