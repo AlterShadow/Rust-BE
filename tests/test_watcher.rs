@@ -284,3 +284,255 @@ async fn test_handle_eth_escrows_testnet() -> Result<()> {
 
     Ok(())
 }
+
+#[tokio::test]
+async fn test_handle_eth_swap_testnet() -> Result<()> {
+		use eth_sdk::dex_tracker::handle_eth_swap;
+		use eth_sdk::dex_tracker::parse_dex_trade;
+		use eth_sdk::pair_paths::WorkingPancakePairPaths;
+		use eth_sdk::strategy_pool::{deposit_and_ensure_success, StrategyPoolContract};
+		use eth_sdk::v3::smart_router::copy_trade_and_ensure_success;
+		use eth_sdk::DEV_ACCOUNT_PRIV_KEY;
+		use eth_sdk::*;
+
+		drop_and_recreate_database()?;
+		let fake_baker_strategy_wallet_key = Secp256k1SecretKey::new_random();
+		let expert_key = Secp256k1SecretKey::new_random();
+		let master_key = Secp256k1SecretKey::from_str(DEV_ACCOUNT_PRIV_KEY)
+				.context("failed to parse dev account private key")?;
+		let conn_pool = EthereumRpcConnectionPool::new();
+		let conn = conn_pool.get(EnumBlockChain::BscTestnet).await?;
+		let token_addresses = BlockchainCoinAddresses::new();
+		let db = connect_to_database(database_test_config()).await?;
+
+		let wbnb_address_on_bsc_testnet = token_addresses
+				.get(EnumBlockChain::BscTestnet, EnumBlockchainCoin::WBNB)
+				.ok_or_else(|| eyre!("could not find WBNB address on BSC Testnet"))?;
+		let busd_address_on_bsc_testnet = token_addresses
+				.get(EnumBlockChain::BscTestnet, EnumBlockchainCoin::BUSD)
+				.ok_or_else(|| eyre!("could not find USDC address on BSC Testnet"))?;
+		let busd_contract = Erc20Token::new(conn.clone(), busd_address_on_bsc_testnet)?;
+
+		/* create expert */
+		let expert = db
+				.execute(FunAuthSignupReq {
+						address: format!("{:?}", expert_key.address()),
+						email: "".to_string(),
+						phone: "".to_string(),
+						preferred_language: "".to_string(),
+						agreed_tos: true,
+						agreed_privacy: true,
+						ip_address: Ipv4Addr::new(127, 0, 0, 1).into(),
+						username: Some("TEST".to_string()),
+						age: None,
+						public_id: 2,
+				})
+				.await?
+				.into_result()
+				.context("no user signup resp")?;
+
+		/* create strategy */
+		let strategy = db
+				.execute(FunUserCreateStrategyReq {
+						user_id: expert.user_id,
+						name: "TEST".to_string(),
+						description: "TEST".to_string(),
+						strategy_thesis_url: "TEST".to_string(),
+						minimum_backing_amount_usd: 1.0,
+						strategy_fee: 1.0,
+						expert_fee: 1.0,
+						agreed_tos: true,
+						blockchain: EnumBlockChain::BscTestnet,
+						wallet_address: format!("{:?}", Address::zero()),
+				})
+				.await?
+				.into_result()
+				.context("failed to create strategy")?;
+
+		/* add strategy watching wallet */
+		let watching_wallet = db
+				.execute(FunUserAddStrategyWatchWalletReq {
+						user_id: expert.user_id,
+						strategy_id: strategy.strategy_id,
+						blockchain: EnumBlockChain::BscTestnet,
+						wallet_address: format!("{:?}", expert_key.address()),
+						ratio: 1.0,
+						dex: EnumDex::PancakeSwap.to_string(),
+				})
+				.await?
+				.into_result()
+				.context("failed to add watching wallet")?;
+
+		/* deploy strategy contract */
+		let sp_contract =
+				StrategyPoolContract::deploy(conn.clone(), key, "TEST".to_string(), "TEST".to_string())
+						.await?;
+
+		/* add strategy contract address to the database */
+		db.query(
+				"
+			UPDATE tbl.strategy
+			SET evm_contract_address = $1
+			WHERE pkey_id = $2;
+			",
+				&[
+						&format!("{:?}", sp_contract.address()) as &(dyn ToSql + Sync),
+						&strategy.strategy_id as &(dyn ToSql + Sync),
+				],
+		)
+		.await?;
+
+		/* deposit 5 BUSD to strategy pool */
+		/* make sure dev wallet has enough BUSD */
+		deposit_and_ensure_success(
+				sp_contract.clone(),
+				&conn,
+				12,
+				10,
+				Duration::from_secs(10),
+				master_key.clone(),
+				vec![busd_address_on_bsc_testnet],
+				vec![U256::from(5).try_checked_mul(U256::exp10(busd_contract.decimals().await?))],
+				U256::from(1),
+				fake_baker_strategy_wallet_key.address(),
+		)
+		.await?;
+
+		/* transfer 5 BUSD to expert */
+		/* make sure dev wallet has enough BUSD */
+		let transfer_hash = busd_contract
+				.transfer(
+						&conn,
+						master_key.clone(),
+						expert_key.address(),
+						U256::from(5).try_checked_mul(U256::exp10(busd_contract.decimals().await?)),
+				)
+				.await?;
+		wait_for_confirmations_simple(&conn.eth(), transfer_hash, Duration::from_secs(10), 10)
+				.await?;
+
+		/* expert trades 5 BUSD for WBNB on pancake swap */
+		let pancake_paths = WorkingPancakePairPaths::new()?;
+		let pancake_path_set = pancake_paths.get_pair_by_address(
+				EnumBlockChain::BscTestnet,
+				busd_address_on_bsc_testnet,
+				wbnb_address_on_bsc_testnet,
+		)?;
+		let pancake_swap_contract =
+				PancakeSmartRouterV3Contract::new(conn.clone(), pancake_swap_address_on_bsc_testnet)?;
+		let expert_trade_hash = copy_trade_and_ensure_success(
+				pancake_swap_contract,
+				&conn,
+				12,
+				10,
+				Duration::from_secs(10),
+				expert_key.clone(),
+				pancake_path_set,
+				U256::from(5).try_checked_mul(U256::exp10(busd_contract.decimals().await?)),
+				U256::from(1),
+		)
+		.await?;
+
+		/* set up app state */
+		let app_state = AppState {
+				dex_addresses: DexAddresses::new(),
+				eth_pool: conn_pool.clone(),
+				erc_20: build_erc_20()?,
+				pancake_swap: build_pancake_swap()?,
+				token_addresses: BlockchainCoinAddresses::new(),
+				escrow_addresses: EscrowAddresses::new(),
+				db: db.clone(),
+				master_key: master_key.clone(),
+		};
+
+		/* fake QuickAlert payload body */
+		let fake_payload_hashes = vec![expert_trade_hash];
+		let fake_payload_json = serde_json::to_string(&fake_payload_hashes)?;
+		let fake_payload = Bytes::from(fake_payload_json);
+
+		/* handle eth swaps */
+		handle_eth_swap(app_state, fake_payload, EnumBlockChain::BscTestnet).await?;
+
+		/* parse expert trade to check quantities */
+		let expert_trade = parse_dex_trade(
+				EnumBlockChain::BscTestnet,
+				&TransactionFetcher::new_and_assume_ready(expert_trade_hash, &conn).await?,
+				&DexAddresses::new(),
+				&build_pancake_swap()?,
+		)
+		.await?;
+
+		/* check entry in wallet activity ledger */
+		let wallet_activity = db
+				.execute(FunWatcherListWalletActivityHistoryReq {
+						address: format!("{:?}", expert_key.address()),
+						blockchain: EnumBlockChain::BscTestnet,
+				})
+				.await?
+				.into_result()?;
+
+		assert_eq!(
+				wallet_activity.address,
+				format!("{:?}", expert_key.address())
+		);
+		assert_eq!(wallet_activity.blockchain, EnumBlockChain::BscTestnet);
+		assert_eq!(
+				wallet_activity.transaction_hash,
+				format!("{:?}", expert_trade_hash)
+		);
+		assert_eq!(wallet_activity.dex, Some(EnumDex::PancakeSwap.to_string()));
+		assert_eq!(
+				wallet_activity.contract_address,
+				format!("{:?}", pancake_swap_address_on_bsc_testnet)
+		);
+		assert_eq!(
+				wallet_activity.token_in_address,
+				Some(format!("{:?}", busd_address_on_bsc_testnet))
+		);
+		assert_eq!(
+				wallet_activity.token_out_address,
+				Some(format!("{:?}", wbnb_address_on_bsc_testnet))
+		);
+		assert_eq!(
+				wallet_activity.caller_address,
+				format!("{:?}", expert_key.address())
+		);
+		assert_eq!(
+				wallet_activity.amount_in,
+				Some(format!(
+						"{:?}",
+						U256::from(5).try_checked_mul(U256::exp10(busd_contract.decimals().await?))
+				))
+		);
+		assert_eq!(
+				wallet_activity.amount_out,
+				Some(format!("{:?}", expert_trade.amount_out))
+		);
+
+		/* check strategy_initial_token_ratio now shows wbnb */
+		let strategy_tokens = db
+				.execute(FunUserListStrategyInitialTokenRatiosReq {
+						strategy_id: strategy.strategy_id,
+				})
+				.await?
+				.into_result()
+				.context("no tokens")?;
+		assert_eq!(
+				strategy_tokens.token_address,
+				format!("{:?}", wbnb_address_on_bsc_testnet)
+		);
+		assert_eq!(
+				strategy_tokens.quantity,
+				format!("{:?}", expert_trade.amount_out)
+		);
+		assert_eq!(strategy_tokens.blockchain, EnumBlockChain::BscTestnet);
+		assert_eq!(strategy_tokens.strategy_id, strategy.strategy_id);
+
+		/* check sp contract now holds wbnb instead of busd */
+		let sp_contract_wbnb_balance = sp_contract
+				.balance_of(&conn, wbnb_address_on_bsc_testnet)
+				.await?;
+		assert!(sp_contract_wbnb_balance > U256::zero());
+
+		Ok(())
+}
