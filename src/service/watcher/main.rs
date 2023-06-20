@@ -7,6 +7,7 @@ use eth_sdk::dex_tracker::handle_eth_swap;
 use eth_sdk::erc20::build_erc_20;
 use eth_sdk::escrow_tracker::handle_eth_escrows;
 use eth_sdk::evm::AppState;
+use eth_sdk::signer::Secp256k1SecretKey;
 use eth_sdk::{
     build_pancake_swap, BlockchainCoinAddresses, DexAddresses, EscrowAddresses, EthereumConns,
     EthereumRpcConnectionPool,
@@ -16,6 +17,7 @@ use gen::model::EnumBlockChain;
 use lib::config::load_config;
 use lib::database::{connect_to_database, DatabaseConfig};
 use lib::log::{setup_logs, LogLevel};
+use secrecy::{ExposeSecret, SecretString};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tracing::*;
@@ -35,6 +37,7 @@ pub struct Config {
     #[serde(default)]
     pub priv_cert: Option<String>,
     pub ethereum_urls: EthereumConns,
+    pub god_key: SecretString,
 }
 
 #[tokio::main]
@@ -44,6 +47,7 @@ async fn main() -> Result<()> {
     let db = connect_to_database(config.app_db).await?;
 
     let eth_pool = EthereumRpcConnectionPool::from_conns(config.ethereum_urls);
+    let master_key = Secp256k1SecretKey::from_str(config.god_key.expose_secret())?;
     let app: Router<(), Body> = Router::new()
         .route("/eth-mainnet-swaps", post(handle_eth_swap_mainnet))
         .route("/eth-goerli-swaps", post(handle_eth_swap_goerli))
@@ -59,6 +63,7 @@ async fn main() -> Result<()> {
             erc_20: build_erc_20()?,
             pancake_swap: build_pancake_swap()?,
             db,
+            master_key,
         }));
 
     let addr = tokio::net::lookup_host((config.host.as_ref(), config.port))

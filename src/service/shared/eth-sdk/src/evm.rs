@@ -1,4 +1,5 @@
 use crate::erc20::build_erc_20;
+use crate::signer::Secp256k1SecretKey;
 use crate::{
     build_pancake_swap, BlockchainCoinAddresses, ContractCall, DexAddresses, EscrowAddresses,
     EthereumRpcConnectionPool, PancakePairPathSet, PancakeSwap, TransactionReady,
@@ -22,9 +23,14 @@ pub struct AppState {
     pub token_addresses: BlockchainCoinAddresses,
     pub escrow_addresses: EscrowAddresses,
     pub erc_20: Contract,
+    pub master_key: Secp256k1SecretKey,
 }
 impl AppState {
-    pub fn new(db: DbClient, eth_pool: EthereumRpcConnectionPool) -> Result<Self> {
+    pub fn new(
+        db: DbClient,
+        eth_pool: EthereumRpcConnectionPool,
+        master_key: Secp256k1SecretKey,
+    ) -> Result<Self> {
         Ok(Self {
             dex_addresses: DexAddresses::new(),
             eth_pool,
@@ -33,6 +39,7 @@ impl AppState {
             token_addresses: BlockchainCoinAddresses::new(),
             erc_20: build_erc_20()?,
             escrow_addresses: EscrowAddresses::new(),
+            master_key,
         })
     }
 }
