@@ -40,7 +40,7 @@ impl<T: Transport> ContractDeployer<T> {
             abi,
             options: Options::default(),
             max_retries: 3,
-            poll_interval: time::Duration::from_secs(7),
+            poll_interval: time::Duration::from_secs(15),
             linker: HashMap::default(),
             code: None,
         })
