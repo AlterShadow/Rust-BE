@@ -36,6 +36,8 @@ impl AbstractErc20Token {
         })
     }
 }
+
+#[derive(Clone)]
 pub struct Erc20Token {
     pub address: Address,
     pub contract: Contract<EitherTransport>,
