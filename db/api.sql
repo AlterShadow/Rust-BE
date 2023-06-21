@@ -367,7 +367,8 @@ RETURNS table (
     "creator_family_name" varchar,
     "creator_given_name" varchar,
     "social_media" varchar,
-    "immutable_audit_rules" boolean
+    "immutable_audit_rules" boolean,
+    "strategy_pool_token" varchar
 )
 LANGUAGE plpgsql
 AS $$
@@ -399,7 +400,8 @@ BEGIN
       u.family_name as creator_family_name,
       u.given_name as creator_given_name,
       s.social_media as social_media,
-      s.immutable_audit_rules as immutable_audit_rules
+      s.immutable_audit_rules as immutable_audit_rules,
+      (SELECT balance FROM tbl.user_strategy_ledger AS spt WHERE spt.fkey_strategy_id = s.pkey_id AND spt.fkey_user_id = a_user_id) as strategy_pool_token
       
                  FROM tbl.strategy AS s
                      LEFT JOIN tbl.strategy_watching_wallet AS w ON w.fkey_strategy_id = (SELECT distinct w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id LIMIT 1)
@@ -443,7 +445,8 @@ RETURNS table (
     "creator_family_name" varchar,
     "creator_given_name" varchar,
     "social_media" varchar,
-    "immutable_audit_rules" boolean
+    "immutable_audit_rules" boolean,
+    "strategy_pool_token" varchar
 )
 LANGUAGE plpgsql
 AS $$
@@ -475,7 +478,8 @@ BEGIN
       u.family_name as creator_family_name,
       u.given_name as creator_given_name,
       s.social_media as social_media,
-      s.immutable_audit_rules as immutable_audit_rules
+      s.immutable_audit_rules as immutable_audit_rules,
+      (SELECT balance FROM tbl.user_strategy_ledger AS spt WHERE spt.fkey_strategy_id = s.pkey_id AND spt.fkey_user_id = a_user_id) as strategy_pool_token
       
                  FROM tbl.strategy AS s
                         JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id
@@ -559,7 +563,8 @@ RETURNS table (
     "creator_family_name" varchar,
     "creator_given_name" varchar,
     "social_media" varchar,
-    "immutable_audit_rules" boolean
+    "immutable_audit_rules" boolean,
+    "strategy_pool_token" varchar
 )
 LANGUAGE plpgsql
 AS $$
@@ -591,7 +596,8 @@ BEGIN
       u.family_name as creator_family_name,
       u.given_name as creator_given_name,
       s.social_media as social_media,
-      s.immutable_audit_rules as immutable_audit_rules
+      s.immutable_audit_rules as immutable_audit_rules,
+      (SELECT balance FROM tbl.user_strategy_ledger AS spt WHERE spt.fkey_strategy_id = s.pkey_id AND spt.fkey_user_id = a_user_id) as strategy_pool_token
       
                  FROM tbl.strategy AS s
                     LEFT JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id
@@ -747,7 +753,8 @@ RETURNS table (
     "creator_family_name" varchar,
     "creator_given_name" varchar,
     "social_media" varchar,
-    "immutable_audit_rules" boolean
+    "immutable_audit_rules" boolean,
+    "strategy_pool_token" varchar
 )
 LANGUAGE plpgsql
 AS $$
@@ -779,7 +786,8 @@ BEGIN
       u.family_name as creator_family_name,
       u.given_name as creator_given_name,
       s.social_media as social_media,
-      s.immutable_audit_rules as immutable_audit_rules
+      s.immutable_audit_rules as immutable_audit_rules,
+      (SELECT balance FROM tbl.user_strategy_ledger AS spt WHERE spt.fkey_strategy_id = s.pkey_id AND spt.fkey_user_id = a_user_id) as strategy_pool_token
       
                  FROM tbl.strategy AS s
                       JOIN tbl.user_back_strategy_history AS b ON b.fkey_strategy_id = s.pkey_id AND b.fkey_user_id = a_user_id
@@ -1837,13 +1845,18 @@ $$;
         
 
 CREATE OR REPLACE FUNCTION api.fun_user_list_user_strategy_ledger(a_user_id bigint, a_strategy_id bigint DEFAULT NULL)
-RETURNS void
+RETURNS table (
+    "ledger_id" bigint,
+    "user_id" bigint,
+    "strategy_id" bigint,
+    "balance" varchar,
+    "updated_at" varchar
+)
 LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY SELECT a.pkey_id, a.fkey_user_id, a.fkey_strategy_id,
-        a.fkey_token_id, a.blockchain, a.address, a.amount, a.created_at
+    RETURN QUERY SELECT a.pkey_id, a.fkey_user_id, a.fkey_strategy_id, a.balance, a.updated_at
     FROM tbl.user_strategy_ledger AS a
     WHERE a.fkey_user_id = a_user_id
         AND (a_strategy_id ISNULL OR a.fkey_strategy_id = a_strategy_id);
@@ -1853,13 +1866,41 @@ $$;
         
 
 CREATE OR REPLACE FUNCTION api.fun_user_update_user_strategy_ledger(a_user_id bigint, a_strategy_id bigint, a_old_balance varchar, a_new_balance varchar)
-RETURNS void
+RETURNS table (
+    "success" boolean
+)
 LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    INSERT INTO tbl.user_strategy_ledger (fkey_user_id, fkey_strategy_id, old_balance, new_balance, created_at)
-    VALUES (a_user_id, a_strategy_id, a_old_balance, a_new_balance, EXTRACT(EPOCH FROM NOW())::BIGINT);
+    -- if no records, create one
+    IF NOT EXISTS(
+        SELECT 1
+        FROM tbl.user_strategy_ledger AS a
+        WHERE a.fkey_user_id = a_user_id
+            AND a.fkey_strategy_id = a_strategy_id
+    ) THEN
+        INSERT INTO tbl.user_strategy_ledger (fkey_user_id, fkey_strategy_id, balance, updated_at)
+        VALUES (a_user_id, a_strategy_id, a_new_balance, EXTRACT(EPOCH FROM NOW())::BIGINT);
+        RETURN QUERY SELECT TRUE;
+    END IF;
+    -- if old balance does not equal to balance, return FALSE
+    IF EXISTS(
+        SELECT 1
+        FROM tbl.user_strategy_ledger AS a
+        WHERE a.fkey_user_id = a_user_id
+            AND a.fkey_strategy_id = a_strategy_id
+            AND a.balance != a_old_balance
+    ) THEN
+        RETURN QUERY SELECT FALSE;
+        RETURN;
+    END IF;
+    -- update balance
+    UPDATE tbl.user_strategy_ledger AS a
+    SET balance = a_new_balance, updated_at = EXTRACT(EPOCH FROM NOW())::BIGINT
+    WHERE a.fkey_user_id = a_user_id
+        AND a.fkey_strategy_id = a_strategy_id;
+    RETURN QUERY SELECT TRUE;
 END
             
 $$;
@@ -2205,7 +2246,8 @@ RETURNS table (
     "creator_family_name" varchar,
     "creator_given_name" varchar,
     "social_media" varchar,
-    "immutable_audit_rules" boolean
+    "immutable_audit_rules" boolean,
+    "strategy_pool_token" varchar
 )
 LANGUAGE plpgsql
 AS $$
@@ -2239,7 +2281,8 @@ BEGIN
       u.family_name as creator_family_name,
       u.given_name as creator_given_name,
       s.social_media as social_media,
-      s.immutable_audit_rules as immutable_audit_rules
+      s.immutable_audit_rules as immutable_audit_rules,
+      (SELECT balance FROM tbl.user_strategy_ledger AS spt WHERE spt.fkey_strategy_id = s.pkey_id AND spt.fkey_user_id = a_user_id) as strategy_pool_token
       
                  FROM tbl.strategy AS s
                       LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = (SELECT distinct w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id LIMIT 1)

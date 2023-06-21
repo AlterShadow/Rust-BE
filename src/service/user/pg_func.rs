@@ -1277,11 +1277,16 @@ END
                 Field::new("user_id", Type::BigInt),
                 Field::new("strategy_id", Type::optional(Type::BigInt)),
             ],
-            vec![],
+            vec![
+                Field::new("ledger_id", Type::BigInt),
+                Field::new("user_id", Type::BigInt),
+                Field::new("strategy_id", Type::BigInt),
+                Field::new("balance", Type::String),
+                Field::new("updated_at", Type::String),
+            ],
             r#"
 BEGIN
-    RETURN QUERY SELECT a.pkey_id, a.fkey_user_id, a.fkey_strategy_id,
-        a.fkey_token_id, a.blockchain, a.address, a.amount, a.created_at
+    RETURN QUERY SELECT a.pkey_id, a.fkey_user_id, a.fkey_strategy_id, a.balance, a.updated_at
     FROM tbl.user_strategy_ledger AS a
     WHERE a.fkey_user_id = a_user_id
         AND (a_strategy_id ISNULL OR a.fkey_strategy_id = a_strategy_id);
@@ -1296,11 +1301,37 @@ END
                 Field::new("old_balance", Type::String),
                 Field::new("new_balance", Type::String),
             ],
-            vec![],
+            vec![Field::new("success", Type::Boolean)],
             r#"
 BEGIN
-    INSERT INTO tbl.user_strategy_ledger (fkey_user_id, fkey_strategy_id, old_balance, new_balance, created_at)
-    VALUES (a_user_id, a_strategy_id, a_old_balance, a_new_balance, EXTRACT(EPOCH FROM NOW())::BIGINT);
+    -- if no records, create one
+    IF NOT EXISTS(
+        SELECT 1
+        FROM tbl.user_strategy_ledger AS a
+        WHERE a.fkey_user_id = a_user_id
+            AND a.fkey_strategy_id = a_strategy_id
+    ) THEN
+        INSERT INTO tbl.user_strategy_ledger (fkey_user_id, fkey_strategy_id, balance, updated_at)
+        VALUES (a_user_id, a_strategy_id, a_new_balance, EXTRACT(EPOCH FROM NOW())::BIGINT);
+        RETURN QUERY SELECT TRUE;
+    END IF;
+    -- if old balance does not equal to balance, return FALSE
+    IF EXISTS(
+        SELECT 1
+        FROM tbl.user_strategy_ledger AS a
+        WHERE a.fkey_user_id = a_user_id
+            AND a.fkey_strategy_id = a_strategy_id
+            AND a.balance != a_old_balance
+    ) THEN
+        RETURN QUERY SELECT FALSE;
+        RETURN;
+    END IF;
+    -- update balance
+    UPDATE tbl.user_strategy_ledger AS a
+    SET balance = a_new_balance, updated_at = EXTRACT(EPOCH FROM NOW())::BIGINT
+    WHERE a.fkey_user_id = a_user_id
+        AND a.fkey_strategy_id = a_strategy_id;
+    RETURN QUERY SELECT TRUE;
 END
             "#,
         ),

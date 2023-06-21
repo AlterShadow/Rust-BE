@@ -1304,6 +1304,7 @@ pub struct ListStrategiesRow {
     pub expert_given_name: String,
     pub reputation: i32,
     pub risk_score: f64,
+    pub strategy_pool_token: String,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -2416,6 +2417,10 @@ impl WsRequest for UserListFollowedStrategiesRequest {
               {
                 "name": "risk_score",
                 "ty": "Numeric"
+              },
+              {
+                "name": "strategy_pool_token",
+                "ty": "String"
               }
             ]
           }
@@ -2624,6 +2629,10 @@ impl WsRequest for UserListStrategiesRequest {
               {
                 "name": "risk_score",
                 "ty": "Numeric"
+              },
+              {
+                "name": "strategy_pool_token",
+                "ty": "String"
               }
             ]
           }
@@ -2761,6 +2770,10 @@ impl WsRequest for UserListTopPerformingStrategiesRequest {
               {
                 "name": "risk_score",
                 "ty": "Numeric"
+              },
+              {
+                "name": "strategy_pool_token",
+                "ty": "String"
               }
             ]
           }
@@ -3011,6 +3024,10 @@ impl WsRequest for UserGetStrategyRequest {
             {
               "name": "risk_score",
               "ty": "Numeric"
+            },
+            {
+              "name": "strategy_pool_token",
+              "ty": "String"
             }
           ]
         }
@@ -3637,6 +3654,10 @@ impl WsRequest for UserListBackedStrategiesRequest {
               {
                 "name": "risk_score",
                 "ty": "Numeric"
+              },
+              {
+                "name": "strategy_pool_token",
+                "ty": "String"
               }
             ]
           }
@@ -4564,6 +4585,10 @@ impl WsRequest for UserGetExpertProfileRequest {
               {
                 "name": "risk_score",
                 "ty": "Numeric"
+              },
+              {
+                "name": "strategy_pool_token",
+                "ty": "String"
               }
             ]
           }
@@ -4810,6 +4835,10 @@ impl WsRequest for UserGetUserProfileRequest {
               {
                 "name": "risk_score",
                 "ty": "Numeric"
+              },
+              {
+                "name": "strategy_pool_token",
+                "ty": "String"
               }
             ]
           }
@@ -4916,6 +4945,10 @@ impl WsRequest for UserGetUserProfileRequest {
               {
                 "name": "risk_score",
                 "ty": "Numeric"
+              },
+              {
+                "name": "strategy_pool_token",
+                "ty": "String"
               }
             ]
           }
@@ -6871,6 +6904,10 @@ impl WsRequest for AdminListStrategiesRequest {
               {
                 "name": "risk_score",
                 "ty": "Numeric"
+              },
+              {
+                "name": "strategy_pool_token",
+                "ty": "String"
               }
             ]
           }

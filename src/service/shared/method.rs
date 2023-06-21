@@ -35,6 +35,7 @@ pub fn convert_strategy_db_to_api(x: FunUserStrategyRowType) -> ListStrategiesRo
         swap_price: 233.0,
         price_change: 0.97,
         reputation: 5,
+        strategy_pool_token: x.strategy_pool_token.unwrap_or_default(),
     }
 }
 pub fn convert_expert_db_to_api(x: FunUserExpertRowType) -> ListExpertsRow {

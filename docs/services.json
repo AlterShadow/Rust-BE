@@ -341,6 +341,10 @@
                       {
                         "name": "risk_score",
                         "ty": "Numeric"
+                      },
+                      {
+                        "name": "strategy_pool_token",
+                        "ty": "String"
                       }
                     ]
                   }
@@ -533,6 +537,10 @@
                       {
                         "name": "risk_score",
                         "ty": "Numeric"
+                      },
+                      {
+                        "name": "strategy_pool_token",
+                        "ty": "String"
                       }
                     ]
                   }
@@ -662,6 +670,10 @@
                       {
                         "name": "risk_score",
                         "ty": "Numeric"
+                      },
+                      {
+                        "name": "strategy_pool_token",
+                        "ty": "String"
                       }
                     ]
                   }
@@ -888,6 +900,10 @@
                     {
                       "name": "risk_score",
                       "ty": "Numeric"
+                    },
+                    {
+                      "name": "strategy_pool_token",
+                      "ty": "String"
                     }
                   ]
                 }
@@ -1458,6 +1474,10 @@
                       {
                         "name": "risk_score",
                         "ty": "Numeric"
+                      },
+                      {
+                        "name": "strategy_pool_token",
+                        "ty": "String"
                       }
                     ]
                   }
@@ -2313,6 +2333,10 @@
                       {
                         "name": "risk_score",
                         "ty": "Numeric"
+                      },
+                      {
+                        "name": "strategy_pool_token",
+                        "ty": "String"
                       }
                     ]
                   }
@@ -2551,6 +2575,10 @@
                       {
                         "name": "risk_score",
                         "ty": "Numeric"
+                      },
+                      {
+                        "name": "strategy_pool_token",
+                        "ty": "String"
                       }
                     ]
                   }
@@ -2657,6 +2685,10 @@
                       {
                         "name": "risk_score",
                         "ty": "Numeric"
+                      },
+                      {
+                        "name": "strategy_pool_token",
+                        "ty": "String"
                       }
                     ]
                   }
@@ -4346,6 +4378,10 @@
                       {
                         "name": "risk_score",
                         "ty": "Numeric"
+                      },
+                      {
+                        "name": "strategy_pool_token",
+                        "ty": "String"
                       }
                     ]
                   }

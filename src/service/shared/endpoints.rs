@@ -26,6 +26,7 @@ pub fn strategy_row() -> Type {
             Field::new("expert_given_name", Type::String),
             Field::new("reputation", Type::Int),
             Field::new("risk_score", Type::Numeric),
+            Field::new("strategy_pool_token", Type::String),
         ],
     )
 }

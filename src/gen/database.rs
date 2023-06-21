@@ -447,7 +447,13 @@ pub struct FunUserListTopPerformingStrategiesRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
-pub struct FunUserListUserStrategyLedgerRespRow {}
+pub struct FunUserListUserStrategyLedgerRespRow {
+    pub ledger_id: i64,
+    pub user_id: i64,
+    pub strategy_id: i64,
+    pub balance: String,
+    pub updated_at: String,
+}
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserRemoveRegisteredWalletRespRow {}
@@ -504,6 +510,8 @@ pub struct FunUserStrategyRowType {
     #[serde(default)]
     pub social_media: Option<String>,
     pub immutable_audit_rules: bool,
+    #[serde(default)]
+    pub strategy_pool_token: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -531,7 +539,9 @@ pub struct FunUserUpdateStrategyRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
-pub struct FunUserUpdateUserStrategyLedgerRespRow {}
+pub struct FunUserUpdateUserStrategyLedgerRespRow {
+    pub success: bool,
+}
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunWatcherGetRawTransactionRespRow {

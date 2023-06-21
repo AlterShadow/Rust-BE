@@ -47,6 +47,7 @@ pub fn strategy_row_type() -> Type {
             Field::new("creator_given_name", Type::optional(Type::String)),
             Field::new("social_media", Type::optional(Type::String)),
             Field::new("immutable_audit_rules", Type::Boolean),
+            Field::new("strategy_pool_token", Type::optional(Type::String)),
         ],
     )
 }
@@ -78,7 +79,8 @@ pub fn get_strategy(followed: &str) -> String {
       u.family_name as creator_family_name,
       u.given_name as creator_given_name,
       s.social_media as social_media,
-      s.immutable_audit_rules as immutable_audit_rules
+      s.immutable_audit_rules as immutable_audit_rules,
+      (SELECT balance FROM tbl.user_strategy_ledger AS spt WHERE spt.fkey_strategy_id = s.pkey_id AND spt.fkey_user_id = a_user_id) as strategy_pool_token
       ",
         followers = get_strategy_followers_count(),
         backers = get_strategy_backers_count(),
