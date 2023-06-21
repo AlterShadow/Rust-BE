@@ -1,8 +1,6 @@
 use crate::audit::{AuditLogger, AuditRule};
 use eyre::*;
-use gen::database::{
-    FunUserGetStrategyReq, FunUserListStrategyAuditRulesReq, FunUserStrategyRowType,
-};
+use gen::database::FunUserListStrategyAuditRulesReq;
 use gen::model::EnumErrorCode;
 use lib::database::DbClient;
 use lib::toolbox::CustomError;

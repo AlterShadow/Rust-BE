@@ -1,5 +1,5 @@
 -- Created by Vertabelo (http://vertabelo.com)
--- Last modification date: 2023-06-20 13:58:31.116
+-- Last modification date: 2023-06-21 02:05:26.132
 
 CREATE SCHEMA IF NOT EXISTS tbl;;
 
@@ -326,6 +326,16 @@ CREATE TABLE tbl.user_request_refund_history (
     CONSTRAINT user_request_refund_history_pk PRIMARY KEY (pkey_id)
 );
 
+-- Table: user_strategy_ledger
+CREATE TABLE tbl.user_strategy_ledger (
+    pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_user_strategy_ledger_id'),
+    fkey_strategy_id bigint  NOT NULL,
+    fkey_user_id bigint  NOT NULL,
+    balance varchar(64)  NOT NULL,
+    updated_at bigint  NOT NULL,
+    CONSTRAINT user_strategy_ledger_pk PRIMARY KEY (pkey_id)
+);
+
 -- Table: wallet_activity_history
 CREATE TABLE tbl.wallet_activity_history (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_wallet_activity_history_id'),
@@ -524,6 +534,22 @@ ALTER TABLE tbl.strategy ADD CONSTRAINT user_strategy
     INITIALLY IMMEDIATE
 ;
 
+-- Reference: user_strategy_ledger_strategy (table: user_strategy_ledger)
+ALTER TABLE tbl.user_strategy_ledger ADD CONSTRAINT user_strategy_ledger_strategy
+    FOREIGN KEY (fkey_strategy_id)
+    REFERENCES tbl.strategy (pkey_id)  
+    NOT DEFERRABLE 
+    INITIALLY IMMEDIATE
+;
+
+-- Reference: user_strategy_ledger_user (table: user_strategy_ledger)
+ALTER TABLE tbl.user_strategy_ledger ADD CONSTRAINT user_strategy_ledger_user
+    FOREIGN KEY (fkey_user_id)
+    REFERENCES tbl."user" (pkey_id)  
+    NOT DEFERRABLE 
+    INITIALLY IMMEDIATE
+;
+
 -- Reference: user_user_request_refund_history (table: user_request_refund_history)
 ALTER TABLE tbl.user_request_refund_history ADD CONSTRAINT user_user_request_refund_history
     FOREIGN KEY (fkey_user_id)
@@ -686,6 +712,13 @@ CREATE SEQUENCE tbl.seq_user_registered_wallet_id
 
 -- Sequence: seq_user_request_refund_history_id
 CREATE SEQUENCE tbl.seq_user_request_refund_history_id
+      NO MINVALUE
+      NO MAXVALUE
+      NO CYCLE
+;
+
+-- Sequence: seq_user_strategy_ledger_id
+CREATE SEQUENCE tbl.seq_user_strategy_ledger_id
       NO MINVALUE
       NO MAXVALUE
       NO CYCLE

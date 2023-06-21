@@ -1294,24 +1294,6 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_freeze_strategy(a_user_id bigint, a_strategy_id bigint)
-RETURNS table (
-    "success" boolean
-)
-LANGUAGE plpgsql
-AS $$
-    
-BEGIN
-    UPDATE tbl.strategy
-    SET immutable = TRUE
-    WHERE pkey_id = a_strategy_id
-        AND fkey_user_id = a_user_id;
-    RETURN QUERY SELECT TRUE;
-END
-
-$$;
-        
-
 CREATE OR REPLACE FUNCTION api.fun_user_add_strategy_watch_wallet(a_user_id bigint, a_strategy_id bigint, a_wallet_address varchar, a_blockchain enum_block_chain, a_ratio double precision, a_dex varchar)
 RETURNS table (
     "success" boolean,
@@ -1849,6 +1831,35 @@ BEGIN
     RETURN QUERY SELECT a.pkey_id, a.name, a.description
     FROM tbl.audit_rule AS a
     WHERE (a_audit_rule_id ISNULL OR a.pkey_id = a_audit_rule_id);
+END
+            
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_list_user_strategy_ledger(a_user_id bigint, a_strategy_id bigint DEFAULT NULL)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY SELECT a.pkey_id, a.fkey_user_id, a.fkey_strategy_id,
+        a.fkey_token_id, a.blockchain, a.address, a.amount, a.created_at
+    FROM tbl.user_strategy_ledger AS a
+    WHERE a.fkey_user_id = a_user_id
+        AND (a_strategy_id ISNULL OR a.fkey_strategy_id = a_strategy_id);
+END
+            
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_update_user_strategy_ledger(a_user_id bigint, a_strategy_id bigint, a_old_balance varchar, a_new_balance varchar)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    INSERT INTO tbl.user_strategy_ledger (fkey_user_id, fkey_strategy_id, old_balance, new_balance, created_at)
+    VALUES (a_user_id, a_strategy_id, a_old_balance, a_new_balance, EXTRACT(EPOCH FROM NOW())::BIGINT);
 END
             
 $$;

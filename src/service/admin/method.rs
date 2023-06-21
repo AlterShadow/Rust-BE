@@ -71,7 +71,7 @@ impl RequestHandler for MethodAdminSetUserRole {
         async move {
             ensure_user_role(ctx, EnumRole::Admin)?;
 
-            let ret = db
+            let _ret = db
                 .execute(FunAdminSetUserRoleReq {
                     user_id: req.user_id,
                     role: req.role,
@@ -97,7 +97,7 @@ impl RequestHandler for MethodAdminSetBlockUser {
         async move {
             ensure_user_role(ctx, EnumRole::Admin)?;
 
-            let ret = db
+            let _ret = db
                 .execute(FunAdminSetBlockUserReq {
                     user_id: req.user_id,
                     blocked: req.blocked,
@@ -260,7 +260,7 @@ impl RequestHandler for MethodAdminUpdateSystemConfig {
         async move {
             ensure_user_role(ctx, EnumRole::Admin)?;
 
-            let ret = db
+            let _ret = db
                 .execute(FunAdminUpdateSystemConfigReq {
                     config_id: 0,
                     config_placeholder_1: req.config_placeholder_1,
@@ -453,7 +453,7 @@ impl RequestHandler for MethodAdminAddWalletActivityHistory {
         async move {
             ensure_user_role(ctx, EnumRole::Admin)?;
 
-            let ret = db
+            let _ret = db
                 .execute(FunWatcherSaveWalletActivityHistoryReq {
                     address: req.wallet_address,
                     transaction_hash: req.transaction_hash,
@@ -492,7 +492,7 @@ impl RequestHandler for MethodAdminAddAuditRule {
         async move {
             ensure_user_role(ctx, EnumRole::Admin)?;
 
-            let ret = db
+            let _ret = db
                 .execute(FunAdminAddAuditRuleReq {
                     rule_id: req.rule_id,
                     name: req.name,

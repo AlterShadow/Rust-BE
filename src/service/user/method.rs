@@ -1,6 +1,6 @@
 use crate::audit::{
     get_audit_rules, validate_audit_rule_immutable_tokens, AuditLogger, AUDIT_IMMUTABLE_TOKENS,
-    AUDIT_TOKENS_NO_MORE_THAN_10_PERCENT, AUDIT_TOP25_TOKENS,
+    AUDIT_TOP25_TOKENS,
 };
 use api::cmc::CoinMarketCap;
 use eth_sdk::erc20::approve_and_ensure_success;
@@ -1845,7 +1845,7 @@ impl RequestHandler for MethodExpertCreateStrategy {
                 .await?
                 .into_result()
                 .context("failed to create strategy")?;
-            let mut audit_rules: Vec<_> = req
+            let audit_rules: Vec<_> = req
                 .audit_rules
                 .unwrap_or_default()
                 .into_iter()

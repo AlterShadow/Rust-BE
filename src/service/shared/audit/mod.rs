@@ -9,7 +9,6 @@ pub use a003_tokens_no_more_than_10_percent::*;
 use eyre::*;
 use std::io::Write;
 use std::sync::{Arc, Mutex};
-use tracing::info;
 
 pub struct AuditRule {
     pub id: i64,
