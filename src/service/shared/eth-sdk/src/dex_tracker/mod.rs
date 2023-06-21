@@ -448,7 +448,7 @@ pub async fn add_or_update_initial_token_ratio(
                 strategy_id: strategy_id,
                 token_address: format!("{:?}", trade.token_out),
                 token_name: token_out.symbol().await?,
-                quantity: format!("{:?}", token_out.balance_of(trade.caller).await?),
+                quantity: format!("{:?}", trade.amount_out),
                 blockchain: blockchain,
             })
             .await?;
