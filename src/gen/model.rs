@@ -1579,6 +1579,7 @@ pub struct UserGetStrategyRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserGetStrategyResponse {
+    pub strategy: ListStrategiesRow,
     pub strategy_id: i64,
     pub strategy_name: String,
     pub strategy_description: String,
@@ -2318,104 +2319,106 @@ impl WsRequest for UserListFollowedStrategiesRequest {
     {
       "name": "strategies",
       "ty": {
-        "DataTable": {
-          "name": "ListStrategiesRow",
-          "fields": [
-            {
-              "name": "strategy_id",
-              "ty": "BigInt"
-            },
-            {
-              "name": "strategy_name",
-              "ty": "String"
-            },
-            {
-              "name": "strategy_description",
-              "ty": "String"
-            },
-            {
-              "name": "net_value",
-              "ty": "Numeric"
-            },
-            {
-              "name": "followers",
-              "ty": "Int"
-            },
-            {
-              "name": "backers",
-              "ty": "Int"
-            },
-            {
-              "name": "aum",
-              "ty": "Numeric"
-            },
-            {
-              "name": "followed",
-              "ty": "Boolean"
-            },
-            {
-              "name": "swap_price",
-              "ty": "Numeric"
-            },
-            {
-              "name": "price_change",
-              "ty": "Numeric"
-            },
-            {
-              "name": "wallet_address",
-              "ty": "String"
-            },
-            {
-              "name": "approved",
-              "ty": "Boolean"
-            },
-            {
-              "name": "approved_at",
-              "ty": {
-                "Optional": "BigInt"
+        "Vec": {
+          "Struct": {
+            "name": "ListStrategiesRow",
+            "fields": [
+              {
+                "name": "strategy_id",
+                "ty": "BigInt"
+              },
+              {
+                "name": "strategy_name",
+                "ty": "String"
+              },
+              {
+                "name": "strategy_description",
+                "ty": "String"
+              },
+              {
+                "name": "net_value",
+                "ty": "Numeric"
+              },
+              {
+                "name": "followers",
+                "ty": "Int"
+              },
+              {
+                "name": "backers",
+                "ty": "Int"
+              },
+              {
+                "name": "aum",
+                "ty": "Numeric"
+              },
+              {
+                "name": "followed",
+                "ty": "Boolean"
+              },
+              {
+                "name": "swap_price",
+                "ty": "Numeric"
+              },
+              {
+                "name": "price_change",
+                "ty": "Numeric"
+              },
+              {
+                "name": "wallet_address",
+                "ty": "String"
+              },
+              {
+                "name": "approved",
+                "ty": "Boolean"
+              },
+              {
+                "name": "approved_at",
+                "ty": {
+                  "Optional": "BigInt"
+                }
+              },
+              {
+                "name": "blockchain",
+                "ty": {
+                  "EnumRef": "block_chain"
+                }
+              },
+              {
+                "name": "requested_at",
+                "ty": {
+                  "Optional": "BigInt"
+                }
+              },
+              {
+                "name": "created_at",
+                "ty": "BigInt"
+              },
+              {
+                "name": "expert_public_id",
+                "ty": "BigInt"
+              },
+              {
+                "name": "expert_username",
+                "ty": "String"
+              },
+              {
+                "name": "expert_family_name",
+                "ty": "String"
+              },
+              {
+                "name": "expert_given_name",
+                "ty": "String"
+              },
+              {
+                "name": "reputation",
+                "ty": "Int"
+              },
+              {
+                "name": "risk_score",
+                "ty": "Numeric"
               }
-            },
-            {
-              "name": "blockchain",
-              "ty": {
-                "EnumRef": "block_chain"
-              }
-            },
-            {
-              "name": "requested_at",
-              "ty": {
-                "Optional": "BigInt"
-              }
-            },
-            {
-              "name": "created_at",
-              "ty": "BigInt"
-            },
-            {
-              "name": "expert_public_id",
-              "ty": "BigInt"
-            },
-            {
-              "name": "expert_username",
-              "ty": "String"
-            },
-            {
-              "name": "expert_family_name",
-              "ty": "String"
-            },
-            {
-              "name": "expert_given_name",
-              "ty": "String"
-            },
-            {
-              "name": "reputation",
-              "ty": "Int"
-            },
-            {
-              "name": "risk_score",
-              "ty": "Numeric"
-            }
-          ]
+            ]
+          }
         }
       }
     }
@@ -2524,104 +2527,106 @@ impl WsRequest for UserListStrategiesRequest {
     {
       "name": "strategies",
       "ty": {
-        "DataTable": {
-          "name": "ListStrategiesRow",
-          "fields": [
-            {
-              "name": "strategy_id",
-              "ty": "BigInt"
-            },
-            {
-              "name": "strategy_name",
-              "ty": "String"
-            },
-            {
-              "name": "strategy_description",
-              "ty": "String"
-            },
-            {
-              "name": "net_value",
-              "ty": "Numeric"
-            },
-            {
-              "name": "followers",
-              "ty": "Int"
-            },
-            {
-              "name": "backers",
-              "ty": "Int"
-            },
-            {
-              "name": "aum",
-              "ty": "Numeric"
-            },
-            {
-              "name": "followed",
-              "ty": "Boolean"
-            },
-            {
-              "name": "swap_price",
-              "ty": "Numeric"
-            },
-            {
-              "name": "price_change",
-              "ty": "Numeric"
-            },
-            {
-              "name": "wallet_address",
-              "ty": "String"
-            },
-            {
-              "name": "approved",
-              "ty": "Boolean"
-            },
-            {
-              "name": "approved_at",
-              "ty": {
-                "Optional": "BigInt"
+        "Vec": {
+          "Struct": {
+            "name": "ListStrategiesRow",
+            "fields": [
+              {
+                "name": "strategy_id",
+                "ty": "BigInt"
+              },
+              {
+                "name": "strategy_name",
+                "ty": "String"
+              },
+              {
+                "name": "strategy_description",
+                "ty": "String"
+              },
+              {
+                "name": "net_value",
+                "ty": "Numeric"
+              },
+              {
+                "name": "followers",
+                "ty": "Int"
+              },
+              {
+                "name": "backers",
+                "ty": "Int"
+              },
+              {
+                "name": "aum",
+                "ty": "Numeric"
+              },
+              {
+                "name": "followed",
+                "ty": "Boolean"
+              },
+              {
+                "name": "swap_price",
+                "ty": "Numeric"
+              },
+              {
+                "name": "price_change",
+                "ty": "Numeric"
+              },
+              {
+                "name": "wallet_address",
+                "ty": "String"
+              },
+              {
+                "name": "approved",
+                "ty": "Boolean"
+              },
+              {
+                "name": "approved_at",
+                "ty": {
+                  "Optional": "BigInt"
+                }
+              },
+              {
+                "name": "blockchain",
+                "ty": {
+                  "EnumRef": "block_chain"
+                }
+              },
+              {
+                "name": "requested_at",
+                "ty": {
+                  "Optional": "BigInt"
+                }
+              },
+              {
+                "name": "created_at",
+                "ty": "BigInt"
+              },
+              {
+                "name": "expert_public_id",
+                "ty": "BigInt"
+              },
+              {
+                "name": "expert_username",
+                "ty": "String"
+              },
+              {
+                "name": "expert_family_name",
+                "ty": "String"
+              },
+              {
+                "name": "expert_given_name",
+                "ty": "String"
+              },
+              {
+                "name": "reputation",
+                "ty": "Int"
+              },
+              {
+                "name": "risk_score",
+                "ty": "Numeric"
               }
-            },
-            {
-              "name": "blockchain",
-              "ty": {
-                "EnumRef": "block_chain"
-              }
-            },
-            {
-              "name": "requested_at",
-              "ty": {
-                "Optional": "BigInt"
-              }
-            },
-            {
-              "name": "created_at",
-              "ty": "BigInt"
-            },
-            {
-              "name": "expert_public_id",
-              "ty": "BigInt"
-            },
-            {
-              "name": "expert_username",
-              "ty": "String"
-            },
-            {
-              "name": "expert_family_name",
-              "ty": "String"
-            },
-            {
-              "name": "expert_given_name",
-              "ty": "String"
-            },
-            {
-              "name": "reputation",
-              "ty": "Int"
-            },
-            {
-              "name": "risk_score",
-              "ty": "Numeric"
-            }
-          ]
+            ]
+          }
         }
       }
     }
@@ -2659,104 +2664,106 @@ impl WsRequest for UserListTopPerformingStrategiesRequest {
     {
       "name": "strategies",
       "ty": {
-        "DataTable": {
-          "name": "ListStrategiesRow",
-          "fields": [
-            {
-              "name": "strategy_id",
-              "ty": "BigInt"
-            },
-            {
-              "name": "strategy_name",
-              "ty": "String"
-            },
-            {
-              "name": "strategy_description",
-              "ty": "String"
-            },
-            {
-              "name": "net_value",
-              "ty": "Numeric"
-            },
-            {
-              "name": "followers",
-              "ty": "Int"
-            },
-            {
-              "name": "backers",
-              "ty": "Int"
-            },
-            {
-              "name": "aum",
-              "ty": "Numeric"
-            },
-            {
-              "name": "followed",
-              "ty": "Boolean"
-            },
-            {
-              "name": "swap_price",
-              "ty": "Numeric"
-            },
-            {
-              "name": "price_change",
-              "ty": "Numeric"
-            },
-            {
-              "name": "wallet_address",
-              "ty": "String"
-            },
-            {
-              "name": "approved",
-              "ty": "Boolean"
-            },
-            {
-              "name": "approved_at",
-              "ty": {
-                "Optional": "BigInt"
+        "Vec": {
+          "Struct": {
+            "name": "ListStrategiesRow",
+            "fields": [
+              {
+                "name": "strategy_id",
+                "ty": "BigInt"
+              },
+              {
+                "name": "strategy_name",
+                "ty": "String"
+              },
+              {
+                "name": "strategy_description",
+                "ty": "String"
+              },
+              {
+                "name": "net_value",
+                "ty": "Numeric"
+              },
+              {
+                "name": "followers",
+                "ty": "Int"
+              },
+              {
+                "name": "backers",
+                "ty": "Int"
+              },
+              {
+                "name": "aum",
+                "ty": "Numeric"
+              },
+              {
+                "name": "followed",
+                "ty": "Boolean"
+              },
+              {
+                "name": "swap_price",
+                "ty": "Numeric"
+              },
+              {
+                "name": "price_change",
+                "ty": "Numeric"
+              },
+              {
+                "name": "wallet_address",
+                "ty": "String"
+              },
+              {
+                "name": "approved",
+                "ty": "Boolean"
+              },
+              {
+                "name": "approved_at",
+                "ty": {
+                  "Optional": "BigInt"
+                }
+              },
+              {
+                "name": "blockchain",
+                "ty": {
+                  "EnumRef": "block_chain"
+                }
+              },
+              {
+                "name": "requested_at",
+                "ty": {
+                  "Optional": "BigInt"
+                }
+              },
+              {
+                "name": "created_at",
+                "ty": "BigInt"
+              },
+              {
+                "name": "expert_public_id",
+                "ty": "BigInt"
+              },
+              {
+                "name": "expert_username",
+                "ty": "String"
+              },
+              {
+                "name": "expert_family_name",
+                "ty": "String"
+              },
+              {
+                "name": "expert_given_name",
+                "ty": "String"
+              },
+              {
+                "name": "reputation",
+                "ty": "Int"
+              },
+              {
+                "name": "risk_score",
+                "ty": "Numeric"
               }
-            },
-            {
-              "name": "blockchain",
-              "ty": {
-                "EnumRef": "block_chain"
-              }
-            },
-            {
-              "name": "requested_at",
-              "ty": {
-                "Optional": "BigInt"
-              }
-            },
-            {
-              "name": "created_at",
-              "ty": "BigInt"
-            },
-            {
-              "name": "expert_public_id",
-              "ty": "BigInt"
-            },
-            {
-              "name": "expert_username",
-              "ty": "String"
-            },
-            {
-              "name": "expert_family_name",
-              "ty": "String"
-            },
-            {
-              "name": "expert_given_name",
-              "ty": "String"
-            },
-            {
-              "name": "reputation",
-              "ty": "Int"
-            },
-            {
-              "name": "risk_score",
-              "ty": "Numeric"
-            }
-          ]
+            ]
+          }
         }
       }
     }
@@ -2905,6 +2912,110 @@ impl WsRequest for UserGetStrategyRequest {
     }
   ],
   "returns": [
+    {
+      "name": "strategy",
+      "ty": {
+        "Struct": {
+          "name": "ListStrategiesRow",
+          "fields": [
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "strategy_name",
+              "ty": "String"
+            },
+            {
+              "name": "strategy_description",
+              "ty": "String"
+            },
+            {
+              "name": "net_value",
+              "ty": "Numeric"
+            },
+            {
+              "name": "followers",
+              "ty": "Int"
+            },
+            {
+              "name": "backers",
+              "ty": "Int"
+            },
+            {
+              "name": "aum",
+              "ty": "Numeric"
+            },
+            {
+              "name": "followed",
+              "ty": "Boolean"
+            },
+            {
+              "name": "swap_price",
+              "ty": "Numeric"
+            },
+            {
+              "name": "price_change",
+              "ty": "Numeric"
+            },
+            {
+              "name": "wallet_address",
+              "ty": "String"
+            },
+            {
+              "name": "approved",
+              "ty": "Boolean"
+            },
+            {
+              "name": "approved_at",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
+            },
+            {
+              "name": "requested_at",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "created_at",
+              "ty": "BigInt"
+            },
+            {
+              "name": "expert_public_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "expert_username",
+              "ty": "String"
+            },
+            {
+              "name": "expert_family_name",
+              "ty": "String"
+            },
+            {
+              "name": "expert_given_name",
+              "ty": "String"
+            },
+            {
+              "name": "reputation",
+              "ty": "Int"
+            },
+            {
+              "name": "risk_score",
+              "ty": "Numeric"
+            }
+          ]
+        }
+      }
+    },
     {
       "name": "strategy_id",
       "ty": "BigInt"
@@ -3429,104 +3540,106 @@ impl WsRequest for UserListBackedStrategiesRequest {
     {
       "name": "strategies",
       "ty": {
-        "DataTable": {
-          "name": "ListStrategiesRow",
-          "fields": [
-            {
-              "name": "strategy_id",
-              "ty": "BigInt"
-            },
-            {
-              "name": "strategy_name",
-              "ty": "String"
-            },
-            {
-              "name": "strategy_description",
-              "ty": "String"
-            },
-            {
-              "name": "net_value",
-              "ty": "Numeric"
-            },
-            {
-              "name": "followers",
-              "ty": "Int"
-            },
-            {
-              "name": "backers",
-              "ty": "Int"
-            },
-            {
-              "name": "aum",
-              "ty": "Numeric"
-            },
-            {
-              "name": "followed",
-              "ty": "Boolean"
-            },
-            {
-              "name": "swap_price",
-              "ty": "Numeric"
-            },
-            {
-              "name": "price_change",
-              "ty": "Numeric"
-            },
-            {
-              "name": "wallet_address",
-              "ty": "String"
-            },
-            {
-              "name": "approved",
-              "ty": "Boolean"
-            },
-            {
-              "name": "approved_at",
-              "ty": {
-                "Optional": "BigInt"
+        "Vec": {
+          "Struct": {
+            "name": "ListStrategiesRow",
+            "fields": [
+              {
+                "name": "strategy_id",
+                "ty": "BigInt"
+              },
+              {
+                "name": "strategy_name",
+                "ty": "String"
+              },
+              {
+                "name": "strategy_description",
+                "ty": "String"
+              },
+              {
+                "name": "net_value",
+                "ty": "Numeric"
+              },
+              {
+                "name": "followers",
+                "ty": "Int"
+              },
+              {
+                "name": "backers",
+                "ty": "Int"
+              },
+              {
+                "name": "aum",
+                "ty": "Numeric"
+              },
+              {
+                "name": "followed",
+                "ty": "Boolean"
+              },
+              {
+                "name": "swap_price",
+                "ty": "Numeric"
+              },
+              {
+                "name": "price_change",
+                "ty": "Numeric"
+              },
+              {
+                "name": "wallet_address",
+                "ty": "String"
+              },
+              {
+                "name": "approved",
+                "ty": "Boolean"
+              },
+              {
+                "name": "approved_at",
+                "ty": {
+                  "Optional": "BigInt"
+                }
+              },
+              {
+                "name": "blockchain",
+                "ty": {
+                  "EnumRef": "block_chain"
+                }
+              },
+              {
+                "name": "requested_at",
+                "ty": {
+                  "Optional": "BigInt"
+                }
+              },
+              {
+                "name": "created_at",
+                "ty": "BigInt"
+              },
+              {
+                "name": "expert_public_id",
+                "ty": "BigInt"
+              },
+              {
+                "name": "expert_username",
+                "ty": "String"
+              },
+              {
+                "name": "expert_family_name",
+                "ty": "String"
+              },
+              {
+                "name": "expert_given_name",
+                "ty": "String"
+              },
+              {
+                "name": "reputation",
+                "ty": "Int"
+              },
+              {
+                "name": "risk_score",
+                "ty": "Numeric"
               }
-            },
-            {
-              "name": "blockchain",
-              "ty": {
-                "EnumRef": "block_chain"
-              }
-            },
-            {
-              "name": "requested_at",
-              "ty": {
-                "Optional": "BigInt"
-              }
-            },
-            {
-              "name": "created_at",
-              "ty": "BigInt"
-            },
-            {
-              "name": "expert_public_id",
-              "ty": "BigInt"
-            },
-            {
-              "name": "expert_username",
-              "ty": "String"
-            },
-            {
-              "name": "expert_family_name",
-              "ty": "String"
-            },
-            {
-              "name": "expert_given_name",
-              "ty": "String"
-            },
-            {
-              "name": "reputation",
-              "ty": "Int"
-            },
-            {
-              "name": "risk_score",
-              "ty": "Numeric"
-            }
-          ]
+            ]
+          }
         }
       }
     }
@@ -3931,96 +4044,98 @@ impl WsRequest for UserListExpertsRequest {
     {
       "name": "experts",
       "ty": {
-        "DataTable": {
-          "name": "ListExpertsRow",
-          "fields": [
-            {
-              "name": "expert_id",
-              "ty": "BigInt"
-            },
-            {
-              "name": "user_public_id",
-              "ty": "BigInt"
-            },
-            {
-              "name": "linked_wallet",
-              "ty": "String"
-            },
-            {
-              "name": "name",
-              "ty": "String"
-            },
-            {
-              "name": "family_name",
-              "ty": {
-                "Optional": "String"
+        "Vec": {
+          "Struct": {
+            "name": "ListExpertsRow",
+            "fields": [
+              {
+                "name": "expert_id",
+                "ty": "BigInt"
+              },
+              {
+                "name": "user_public_id",
+                "ty": "BigInt"
+              },
+              {
+                "name": "linked_wallet",
+                "ty": "String"
+              },
+              {
+                "name": "name",
+                "ty": "String"
+              },
+              {
+                "name": "family_name",
+                "ty": {
+                  "Optional": "String"
+                }
+              },
+              {
+                "name": "given_name",
+                "ty": {
+                  "Optional": "String"
+                }
+              },
+              {
+                "name": "follower_count",
+                "ty": "BigInt"
+              },
+              {
+                "name": "backer_count",
+                "ty": "BigInt"
+              },
+              {
+                "name": "description",
+                "ty": "String"
+              },
+              {
+                "name": "social_media",
+                "ty": "String"
+              },
+              {
+                "name": "risk_score",
+                "ty": "Numeric"
+              },
+              {
+                "name": "reputation_score",
+                "ty": "Numeric"
+              },
+              {
+                "name": "consistent_score",
+                "ty": "Numeric"
+              },
+              {
+                "name": "aum",
+                "ty": "Numeric"
+              },
+              {
+                "name": "joined_at",
+                "ty": "BigInt"
+              },
+              {
+                "name": "requested_at",
+                "ty": "BigInt"
+              },
+              {
+                "name": "approved_at",
+                "ty": {
+                  "Optional": "BigInt"
+                }
+              },
+              {
+                "name": "pending_expert",
+                "ty": "Boolean"
+              },
+              {
+                "name": "approved_expert",
+                "ty": "Boolean"
+              },
+              {
+                "name": "followed",
+                "ty": "Boolean"
               }
-            },
-            {
-              "name": "given_name",
-              "ty": {
-                "Optional": "String"
-              }
-            },
-            {
-              "name": "follower_count",
-              "ty": "BigInt"
-            },
-            {
-              "name": "backer_count",
-              "ty": "BigInt"
-            },
-            {
-              "name": "description",
-              "ty": "String"
-            },
-            {
-              "name": "social_media",
-              "ty": "String"
-            },
-            {
-              "name": "risk_score",
-              "ty": "Numeric"
-            },
-            {
-              "name": "reputation_score",
-              "ty": "Numeric"
-            },
-            {
-              "name": "consistent_score",
-              "ty": "Numeric"
-            },
-            {
-              "name": "aum",
-              "ty": "Numeric"
-            },
-            {
-              "name": "joined_at",
-              "ty": "BigInt"
-            },
-            {
-              "name": "requested_at",
-              "ty": "BigInt"
-            },
-            {
-              "name": "approved_at",
-              "ty": {
-                "Optional": "BigInt"
-              }
-            },
-            {
-              "name": "pending_expert",
-              "ty": "Boolean"
-            },
-            {
-              "name": "approved_expert",
-              "ty": "Boolean"
-            },
-            {
-              "name": "followed",
-              "ty": "Boolean"
-            }
-          ]
+            ]
+          }
         }
       }
     }
@@ -4062,96 +4177,98 @@ impl WsRequest for UserListTopPerformingExpertsRequest {
     {
       "name": "experts",
       "ty": {
-        "DataTable": {
-          "name": "ListExpertsRow",
-          "fields": [
-            {
-              "name": "expert_id",
-              "ty": "BigInt"
-            },
-            {
-              "name": "user_public_id",
-              "ty": "BigInt"
-            },
-            {
-              "name": "linked_wallet",
-              "ty": "String"
-            },
-            {
-              "name": "name",
-              "ty": "String"
-            },
-            {
-              "name": "family_name",
-              "ty": {
-                "Optional": "String"
+        "Vec": {
+          "Struct": {
+            "name": "ListExpertsRow",
+            "fields": [
+              {
+                "name": "expert_id",
+                "ty": "BigInt"
+              },
+              {
+                "name": "user_public_id",
+                "ty": "BigInt"
+              },
+              {
+                "name": "linked_wallet",
+                "ty": "String"
+              },
+              {
+                "name": "name",
+                "ty": "String"
+              },
+              {
+                "name": "family_name",
+                "ty": {
+                  "Optional": "String"
+                }
+              },
+              {
+                "name": "given_name",
+                "ty": {
+                  "Optional": "String"
+                }
+              },
+              {
+                "name": "follower_count",
+                "ty": "BigInt"
+              },
+              {
+                "name": "backer_count",
+                "ty": "BigInt"
+              },
+              {
+                "name": "description",
+                "ty": "String"
+              },
+              {
+                "name": "social_media",
+                "ty": "String"
+              },
+              {
+                "name": "risk_score",
+                "ty": "Numeric"
+              },
+              {
+                "name": "reputation_score",
+                "ty": "Numeric"
+              },
+              {
+                "name": "consistent_score",
+                "ty": "Numeric"
+              },
+              {
+                "name": "aum",
+                "ty": "Numeric"
+              },
+              {
+                "name": "joined_at",
+                "ty": "BigInt"
+              },
+              {
+                "name": "requested_at",
+                "ty": "BigInt"
+              },
+              {
+                "name": "approved_at",
+                "ty": {
+                  "Optional": "BigInt"
+                }
+              },
+              {
+                "name": "pending_expert",
+                "ty": "Boolean"
+              },
+              {
+                "name": "approved_expert",
+                "ty": "Boolean"
+              },
+              {
+                "name": "followed",
+                "ty": "Boolean"
               }
-            },
-            {
-              "name": "given_name",
-              "ty": {
-                "Optional": "String"
-              }
-            },
-            {
-              "name": "follower_count",
-              "ty": "BigInt"
-            },
-            {
-              "name": "backer_count",
-              "ty": "BigInt"
-            },
-            {
-              "name": "description",
-              "ty": "String"
-            },
-            {
-              "name": "social_media",
-              "ty": "String"
-            },
-            {
-              "name": "risk_score",
-              "ty": "Numeric"
-            },
-            {
-              "name": "reputation_score",
-              "ty": "Numeric"
-            },
-            {
-              "name": "consistent_score",
-              "ty": "Numeric"
-            },
-            {
-              "name": "aum",
-              "ty": "Numeric"
-            },
-            {
-              "name": "joined_at",
-              "ty": "BigInt"
-            },
-            {
-              "name": "requested_at",
-              "ty": "BigInt"
-            },
-            {
-              "name": "approved_at",
-              "ty": {
-                "Optional": "BigInt"
-              }
-            },
-            {
-              "name": "pending_expert",
-              "ty": "Boolean"
-            },
-            {
-              "name": "approved_expert",
-              "ty": "Boolean"
-            },
-            {
-              "name": "followed",
-              "ty": "Boolean"
-            }
-          ]
+            ]
+          }
         }
       }
     }
@@ -4193,96 +4310,98 @@ impl WsRequest for UserListFeaturedExpertsRequest {
     {
       "name": "experts",
       "ty": {
-        "DataTable": {
-          "name": "ListExpertsRow",
-          "fields": [
-            {
-              "name": "expert_id",
-              "ty": "BigInt"
-            },
-            {
-              "name": "user_public_id",
-              "ty": "BigInt"
-            },
-            {
-              "name": "linked_wallet",
-              "ty": "String"
-            },
-            {
-              "name": "name",
-              "ty": "String"
-            },
-            {
-              "name": "family_name",
-              "ty": {
-                "Optional": "String"
+        "Vec": {
+          "Struct": {
+            "name": "ListExpertsRow",
+            "fields": [
+              {
+                "name": "expert_id",
+                "ty": "BigInt"
+              },
+              {
+                "name": "user_public_id",
+                "ty": "BigInt"
+              },
+              {
+                "name": "linked_wallet",
+                "ty": "String"
+              },
+              {
+                "name": "name",
+                "ty": "String"
+              },
+              {
+                "name": "family_name",
+                "ty": {
+                  "Optional": "String"
+                }
+              },
+              {
+                "name": "given_name",
+                "ty": {
+                  "Optional": "String"
+                }
+              },
+              {
+                "name": "follower_count",
+                "ty": "BigInt"
+              },
+              {
+                "name": "backer_count",
+                "ty": "BigInt"
+              },
+              {
+                "name": "description",
+                "ty": "String"
+              },
+              {
+                "name": "social_media",
+                "ty": "String"
+              },
+              {
+                "name": "risk_score",
+                "ty": "Numeric"
+              },
+              {
+                "name": "reputation_score",
+                "ty": "Numeric"
+              },
+              {
+                "name": "consistent_score",
+                "ty": "Numeric"
+              },
+              {
+                "name": "aum",
+                "ty": "Numeric"
+              },
+              {
+                "name": "joined_at",
+                "ty": "BigInt"
+              },
+              {
+                "name": "requested_at",
+                "ty": "BigInt"
+              },
+              {
+                "name": "approved_at",
+                "ty": {
+                  "Optional": "BigInt"
+                }
+              },
+              {
+                "name": "pending_expert",
+                "ty": "Boolean"
+              },
+              {
+                "name": "approved_expert",
+                "ty": "Boolean"
+              },
+              {
+                "name": "followed",
+                "ty": "Boolean"
               }
-            },
-            {
-              "name": "given_name",
-              "ty": {
-                "Optional": "String"
-              }
-            },
-            {
-              "name": "follower_count",
-              "ty": "BigInt"
-            },
-            {
-              "name": "backer_count",
-              "ty": "BigInt"
-            },
-            {
-              "name": "description",
-              "ty": "String"
-            },
-            {
-              "name": "social_media",
-              "ty": "String"
-            },
-            {
-              "name": "risk_score",
-              "ty": "Numeric"
-            },
-            {
-              "name": "reputation_score",
-              "ty": "Numeric"
-            },
-            {
-              "name": "consistent_score",
-              "ty": "Numeric"
-            },
-            {
-              "name": "aum",
-              "ty": "Numeric"
-            },
-            {
-              "name": "joined_at",
-              "ty": "BigInt"
-            },
-            {
-              "name": "requested_at",
-              "ty": "BigInt"
-            },
-            {
-              "name": "approved_at",
-              "ty": {
-                "Optional": "BigInt"
-              }
-            },
-            {
-              "name": "pending_expert",
-              "ty": "Boolean"
-            },
-            {
-              "name": "approved_expert",
-              "ty": "Boolean"
-            },
-            {
-              "name": "followed",
-              "ty": "Boolean"
-            }
-          ]
+            ]
+          }
         }
       }
     }
@@ -4348,104 +4467,106 @@ impl WsRequest for UserGetExpertProfileRequest {
     {
       "name": "strategies",
       "ty": {
-        "DataTable": {
-          "name": "ListStrategiesRow",
-          "fields": [
-            {
-              "name": "strategy_id",
-              "ty": "BigInt"
-            },
-            {
-              "name": "strategy_name",
-              "ty": "String"
-            },
-            {
-              "name": "strategy_description",
-              "ty": "String"
-            },
-            {
-              "name": "net_value",
-              "ty": "Numeric"
-            },
-            {
-              "name": "followers",
-              "ty": "Int"
-            },
-            {
-              "name": "backers",
-              "ty": "Int"
-            },
-            {
-              "name": "aum",
-              "ty": "Numeric"
-            },
-            {
-              "name": "followed",
-              "ty": "Boolean"
-            },
-            {
-              "name": "swap_price",
-              "ty": "Numeric"
-            },
-            {
-              "name": "price_change",
-              "ty": "Numeric"
-            },
-            {
-              "name": "wallet_address",
-              "ty": "String"
-            },
-            {
-              "name": "approved",
-              "ty": "Boolean"
-            },
-            {
-              "name": "approved_at",
-              "ty": {
-                "Optional": "BigInt"
+        "Vec": {
+          "Struct": {
+            "name": "ListStrategiesRow",
+            "fields": [
+              {
+                "name": "strategy_id",
+                "ty": "BigInt"
+              },
+              {
+                "name": "strategy_name",
+                "ty": "String"
+              },
+              {
+                "name": "strategy_description",
+                "ty": "String"
+              },
+              {
+                "name": "net_value",
+                "ty": "Numeric"
+              },
+              {
+                "name": "followers",
+                "ty": "Int"
+              },
+              {
+                "name": "backers",
+                "ty": "Int"
+              },
+              {
+                "name": "aum",
+                "ty": "Numeric"
+              },
+              {
+                "name": "followed",
+                "ty": "Boolean"
+              },
+              {
+                "name": "swap_price",
+                "ty": "Numeric"
+              },
+              {
+                "name": "price_change",
+                "ty": "Numeric"
+              },
+              {
+                "name": "wallet_address",
+                "ty": "String"
+              },
+              {
+                "name": "approved",
+                "ty": "Boolean"
+              },
+              {
+                "name": "approved_at",
+                "ty": {
+                  "Optional": "BigInt"
+                }
+              },
+              {
+                "name": "blockchain",
+                "ty": {
+                  "EnumRef": "block_chain"
+                }
+              },
+              {
+                "name": "requested_at",
+                "ty": {
+                  "Optional": "BigInt"
+                }
+              },
+              {
+                "name": "created_at",
+                "ty": "BigInt"
+              },
+              {
+                "name": "expert_public_id",
+                "ty": "BigInt"
+              },
+              {
+                "name": "expert_username",
+                "ty": "String"
+              },
+              {
+                "name": "expert_family_name",
+                "ty": "String"
+              },
+              {
+                "name": "expert_given_name",
+                "ty": "String"
+              },
+              {
+                "name": "reputation",
+                "ty": "Int"
+              },
+              {
+                "name": "risk_score",
+                "ty": "Numeric"
               }
-            },
-            {
-              "name": "blockchain",
-              "ty": {
-                "EnumRef": "block_chain"
-              }
-            },
-            {
-              "name": "requested_at",
-              "ty": {
-                "Optional": "BigInt"
-              }
-            },
-            {
-              "name": "created_at",
-              "ty": "BigInt"
-            },
-            {
-              "name": "expert_public_id",
-              "ty": "BigInt"
-            },
-            {
-              "name": "expert_username",
-              "ty": "String"
-            },
-            {
-              "name": "expert_family_name",
-              "ty": "String"
-            },
-            {
-              "name": "expert_given_name",
-              "ty": "String"
-            },
-            {
-              "name": "reputation",
-              "ty": "Int"
-            },
-            {
-              "name": "risk_score",
-              "ty": "Numeric"
-            }
-          ]
+            ]
+          }
         }
       }
     }
@@ -4494,304 +4615,310 @@ impl WsRequest for UserGetUserProfileRequest {
     {
       "name": "followed_experts",
       "ty": {
-        "DataTable": {
-          "name": "ListExpertsRow",
-          "fields": [
-            {
-              "name": "expert_id",
-              "ty": "BigInt"
-            },
-            {
-              "name": "user_public_id",
-              "ty": "BigInt"
-            },
-            {
-              "name": "linked_wallet",
-              "ty": "String"
-            },
-            {
-              "name": "name",
-              "ty": "String"
-            },
-            {
-              "name": "family_name",
-              "ty": {
-                "Optional": "String"
+        "Vec": {
+          "Struct": {
+            "name": "ListExpertsRow",
+            "fields": [
+              {
+                "name": "expert_id",
+                "ty": "BigInt"
+              },
+              {
+                "name": "user_public_id",
+                "ty": "BigInt"
+              },
+              {
+                "name": "linked_wallet",
+                "ty": "String"
+              },
+              {
+                "name": "name",
+                "ty": "String"
+              },
+              {
+                "name": "family_name",
+                "ty": {
+                  "Optional": "String"
+                }
+              },
+              {
+                "name": "given_name",
+                "ty": {
+                  "Optional": "String"
+                }
+              },
+              {
+                "name": "follower_count",
+                "ty": "BigInt"
+              },
+              {
+                "name": "backer_count",
+                "ty": "BigInt"
+              },
+              {
+                "name": "description",
+                "ty": "String"
+              },
+              {
+                "name": "social_media",
+                "ty": "String"
+              },
+              {
+                "name": "risk_score",
+                "ty": "Numeric"
+              },
+              {
+                "name": "reputation_score",
+                "ty": "Numeric"
+              },
+              {
+                "name": "consistent_score",
+                "ty": "Numeric"
+              },
+              {
+                "name": "aum",
+                "ty": "Numeric"
+              },
+              {
+                "name": "joined_at",
+                "ty": "BigInt"
+              },
+              {
+                "name": "requested_at",
+                "ty": "BigInt"
+              },
+              {
+                "name": "approved_at",
+                "ty": {
+                  "Optional": "BigInt"
+                }
+              },
+              {
+                "name": "pending_expert",
+                "ty": "Boolean"
+              },
+              {
+                "name": "approved_expert",
+                "ty": "Boolean"
+              },
+              {
+                "name": "followed",
+                "ty": "Boolean"
               }
-            },
-            {
-              "name": "given_name",
-              "ty": {
-                "Optional": "String"
-              }
-            },
-            {
-              "name": "follower_count",
-              "ty": "BigInt"
-            },
-            {
-              "name": "backer_count",
-              "ty": "BigInt"
-            },
-            {
-              "name": "description",
-              "ty": "String"
-            },
-            {
-              "name": "social_media",
-              "ty": "String"
-            },
-            {
-              "name": "risk_score",
-              "ty": "Numeric"
-            },
-            {
-              "name": "reputation_score",
-              "ty": "Numeric"
-            },
-            {
-              "name": "consistent_score",
-              "ty": "Numeric"
-            },
-            {
-              "name": "aum",
-              "ty": "Numeric"
-            },
-            {
-              "name": "joined_at",
-              "ty": "BigInt"
-            },
-            {
-              "name": "requested_at",
-              "ty": "BigInt"
-            },
-            {
-              "name": "approved_at",
-              "ty": {
-                "Optional": "BigInt"
-              }
-            },
-            {
-              "name": "pending_expert",
-              "ty": "Boolean"
-            },
-            {
-              "name": "approved_expert",
-              "ty": "Boolean"
-            },
-            {
-              "name": "followed",
-              "ty": "Boolean"
-            }
-          ]
+            ]
+          }
         }
       }
     },
     {
       "name": "followed_strategies",
       "ty": {
-        "DataTable": {
-          "name": "ListStrategiesRow",
-          "fields": [
-            {
-              "name": "strategy_id",
-              "ty": "BigInt"
-            },
-            {
-              "name": "strategy_name",
-              "ty": "String"
-            },
-            {
-              "name": "strategy_description",
-              "ty": "String"
-            },
-            {
-              "name": "net_value",
-              "ty": "Numeric"
-            },
-            {
-              "name": "followers",
-              "ty": "Int"
-            },
-            {
-              "name": "backers",
-              "ty": "Int"
-            },
-            {
-              "name": "aum",
-              "ty": "Numeric"
-            },
-            {
-              "name": "followed",
-              "ty": "Boolean"
-            },
-            {
-              "name": "swap_price",
-              "ty": "Numeric"
-            },
-            {
-              "name": "price_change",
-              "ty": "Numeric"
-            },
-            {
-              "name": "wallet_address",
-              "ty": "String"
-            },
-            {
-              "name": "approved",
-              "ty": "Boolean"
-            },
-            {
-              "name": "approved_at",
-              "ty": {
-                "Optional": "BigInt"
+        "Vec": {
+          "Struct": {
+            "name": "ListStrategiesRow",
+            "fields": [
+              {
+                "name": "strategy_id",
+                "ty": "BigInt"
+              },
+              {
+                "name": "strategy_name",
+                "ty": "String"
+              },
+              {
+                "name": "strategy_description",
+                "ty": "String"
+              },
+              {
+                "name": "net_value",
+                "ty": "Numeric"
+              },
+              {
+                "name": "followers",
+                "ty": "Int"
+              },
+              {
+                "name": "backers",
+                "ty": "Int"
+              },
+              {
+                "name": "aum",
+                "ty": "Numeric"
+              },
+              {
+                "name": "followed",
+                "ty": "Boolean"
+              },
+              {
+                "name": "swap_price",
+                "ty": "Numeric"
+              },
+              {
+                "name": "price_change",
+                "ty": "Numeric"
+              },
+              {
+                "name": "wallet_address",
+                "ty": "String"
+              },
+              {
+                "name": "approved",
+                "ty": "Boolean"
+              },
+              {
+                "name": "approved_at",
+                "ty": {
+                  "Optional": "BigInt"
+                }
+              },
+              {
+                "name": "blockchain",
+                "ty": {
+                  "EnumRef": "block_chain"
+                }
+              },
+              {
+                "name": "requested_at",
+                "ty": {
+                  "Optional": "BigInt"
+                }
+              },
+              {
+                "name": "created_at",
+                "ty": "BigInt"
+              },
+              {
+                "name": "expert_public_id",
+                "ty": "BigInt"
+              },
+              {
+                "name": "expert_username",
+                "ty": "String"
+              },
+              {
+                "name": "expert_family_name",
+                "ty": "String"
+              },
+              {
+                "name": "expert_given_name",
+                "ty": "String"
+              },
+              {
+                "name": "reputation",
+                "ty": "Int"
+              },
+              {
+                "name": "risk_score",
+                "ty": "Numeric"
               }
-            },
-            {
-              "name": "blockchain",
-              "ty": {
-                "EnumRef": "block_chain"
-              }
-            },
-            {
-              "name": "requested_at",
-              "ty": {
-                "Optional": "BigInt"
-              }
-            },
-            {
-              "name": "created_at",
-              "ty": "BigInt"
-            },
-            {
-              "name": "expert_public_id",
-              "ty": "BigInt"
-            },
-            {
-              "name": "expert_username",
-              "ty": "String"
-            },
-            {
-              "name": "expert_family_name",
-              "ty": "String"
-            },
-            {
-              "name": "expert_given_name",
-              "ty": "String"
-            },
-            {
-              "name": "reputation",
-              "ty": "Int"
-            },
-            {
-              "name": "risk_score",
-              "ty": "Numeric"
-            }
-          ]
+            ]
+          }
         }
       }
     },
     {
       "name": "backed_strategies",
       "ty": {
-        "DataTable": {
-          "name": "ListStrategiesRow",
-          "fields": [
-            {
-              "name": "strategy_id",
-              "ty": "BigInt"
-            },
-            {
-              "name": "strategy_name",
-              "ty": "String"
-            },
-            {
-              "name": "strategy_description",
-              "ty": "String"
-            },
-            {
-              "name": "net_value",
-              "ty": "Numeric"
-            },
-            {
-              "name": "followers",
-              "ty": "Int"
-            },
-            {
-              "name": "backers",
-              "ty": "Int"
-            },
-            {
-              "name": "aum",
-              "ty": "Numeric"
-            },
-            {
-              "name": "followed",
-              "ty": "Boolean"
-            },
-            {
-              "name": "swap_price",
-              "ty": "Numeric"
-            },
-            {
-              "name": "price_change",
-              "ty": "Numeric"
-            },
-            {
-              "name": "wallet_address",
-              "ty": "String"
-            },
-            {
-              "name": "approved",
-              "ty": "Boolean"
-            },
-            {
-              "name": "approved_at",
-              "ty": {
-                "Optional": "BigInt"
+        "Vec": {
+          "Struct": {
+            "name": "ListStrategiesRow",
+            "fields": [
+              {
+                "name": "strategy_id",
+                "ty": "BigInt"
+              },
+              {
+                "name": "strategy_name",
+                "ty": "String"
+              },
+              {
+                "name": "strategy_description",
+                "ty": "String"
+              },
+              {
+                "name": "net_value",
+                "ty": "Numeric"
+              },
+              {
+                "name": "followers",
+                "ty": "Int"
+              },
+              {
+                "name": "backers",
+                "ty": "Int"
+              },
+              {
+                "name": "aum",
+                "ty": "Numeric"
+              },
+              {
+                "name": "followed",
+                "ty": "Boolean"
+              },
+              {
+                "name": "swap_price",
+                "ty": "Numeric"
+              },
+              {
+                "name": "price_change",
+                "ty": "Numeric"
+              },
+              {
+                "name": "wallet_address",
+                "ty": "String"
+              },
+              {
+                "name": "approved",
+                "ty": "Boolean"
+              },
+              {
+                "name": "approved_at",
+                "ty": {
+                  "Optional": "BigInt"
+                }
+              },
+              {
+                "name": "blockchain",
+                "ty": {
+                  "EnumRef": "block_chain"
+                }
+              },
+              {
+                "name": "requested_at",
+                "ty": {
+                  "Optional": "BigInt"
+                }
+              },
+              {
+                "name": "created_at",
+                "ty": "BigInt"
+              },
+              {
+                "name": "expert_public_id",
+                "ty": "BigInt"
+              },
+              {
+                "name": "expert_username",
+                "ty": "String"
+              },
+              {
+                "name": "expert_family_name",
+                "ty": "String"
+              },
+              {
+                "name": "expert_given_name",
+                "ty": "String"
+              },
+              {
+                "name": "reputation",
+                "ty": "Int"
+              },
+              {
+                "name": "risk_score",
+                "ty": "Numeric"
               }
-            },
-            {
-              "name": "blockchain",
-              "ty": {
-                "EnumRef": "block_chain"
-              }
-            },
-            {
-              "name": "requested_at",
-              "ty": {
-                "Optional": "BigInt"
-              }
-            },
-            {
-              "name": "created_at",
-              "ty": "BigInt"
-            },
-            {
-              "name": "expert_public_id",
-              "ty": "BigInt"
-            },
-            {
-              "name": "expert_username",
-              "ty": "String"
-            },
-            {
-              "name": "expert_family_name",
-              "ty": "String"
-            },
-            {
-              "name": "expert_given_name",
-              "ty": "String"
-            },
-            {
-              "name": "reputation",
-              "ty": "Int"
-            },
-            {
-              "name": "risk_score",
-              "ty": "Numeric"
-            }
-          ]
+            ]
+          }
         }
       }
     }
@@ -6377,96 +6504,98 @@ impl WsRequest for AdminListExpertsRequest {
     {
       "name": "experts",
       "ty": {
-        "DataTable": {
-          "name": "ListExpertsRow",
-          "fields": [
-            {
-              "name": "expert_id",
-              "ty": "BigInt"
-            },
-            {
-              "name": "user_public_id",
-              "ty": "BigInt"
-            },
-            {
-              "name": "linked_wallet",
-              "ty": "String"
-            },
-            {
-              "name": "name",
-              "ty": "String"
-            },
-            {
-              "name": "family_name",
-              "ty": {
-                "Optional": "String"
+        "Vec": {
+          "Struct": {
+            "name": "ListExpertsRow",
+            "fields": [
+              {
+                "name": "expert_id",
+                "ty": "BigInt"
+              },
+              {
+                "name": "user_public_id",
+                "ty": "BigInt"
+              },
+              {
+                "name": "linked_wallet",
+                "ty": "String"
+              },
+              {
+                "name": "name",
+                "ty": "String"
+              },
+              {
+                "name": "family_name",
+                "ty": {
+                  "Optional": "String"
+                }
+              },
+              {
+                "name": "given_name",
+                "ty": {
+                  "Optional": "String"
+                }
+              },
+              {
+                "name": "follower_count",
+                "ty": "BigInt"
+              },
+              {
+                "name": "backer_count",
+                "ty": "BigInt"
+              },
+              {
+                "name": "description",
+                "ty": "String"
+              },
+              {
+                "name": "social_media",
+                "ty": "String"
+              },
+              {
+                "name": "risk_score",
+                "ty": "Numeric"
+              },
+              {
+                "name": "reputation_score",
+                "ty": "Numeric"
+              },
+              {
+                "name": "consistent_score",
+                "ty": "Numeric"
+              },
+              {
+                "name": "aum",
+                "ty": "Numeric"
+              },
+              {
+                "name": "joined_at",
+                "ty": "BigInt"
+              },
+              {
+                "name": "requested_at",
+                "ty": "BigInt"
+              },
+              {
+                "name": "approved_at",
+                "ty": {
+                  "Optional": "BigInt"
+                }
+              },
+              {
+                "name": "pending_expert",
+                "ty": "Boolean"
+              },
+              {
+                "name": "approved_expert",
+                "ty": "Boolean"
+              },
+              {
+                "name": "followed",
+                "ty": "Boolean"
               }
-            },
-            {
-              "name": "given_name",
-              "ty": {
-                "Optional": "String"
-              }
-            },
-            {
-              "name": "follower_count",
-              "ty": "BigInt"
-            },
-            {
-              "name": "backer_count",
-              "ty": "BigInt"
-            },
-            {
-              "name": "description",
-              "ty": "String"
-            },
-            {
-              "name": "social_media",
-              "ty": "String"
-            },
-            {
-              "name": "risk_score",
-              "ty": "Numeric"
-            },
-            {
-              "name": "reputation_score",
-              "ty": "Numeric"
-            },
-            {
-              "name": "consistent_score",
-              "ty": "Numeric"
-            },
-            {
-              "name": "aum",
-              "ty": "Numeric"
-            },
-            {
-              "name": "joined_at",
-              "ty": "BigInt"
-            },
-            {
-              "name": "requested_at",
-              "ty": "BigInt"
-            },
-            {
-              "name": "approved_at",
-              "ty": {
-                "Optional": "BigInt"
-              }
-            },
-            {
-              "name": "pending_expert",
-              "ty": "Boolean"
-            },
-            {
-              "name": "approved_expert",
-              "ty": "Boolean"
-            },
-            {
-              "name": "followed",
-              "ty": "Boolean"
-            }
-          ]
+            ]
+          }
         }
       }
     }
@@ -6645,104 +6774,106 @@ impl WsRequest for AdminListStrategiesRequest {
     {
       "name": "strategies",
       "ty": {
-        "DataTable": {
-          "name": "ListStrategiesRow",
-          "fields": [
-            {
-              "name": "strategy_id",
-              "ty": "BigInt"
-            },
-            {
-              "name": "strategy_name",
-              "ty": "String"
-            },
-            {
-              "name": "strategy_description",
-              "ty": "String"
-            },
-            {
-              "name": "net_value",
-              "ty": "Numeric"
-            },
-            {
-              "name": "followers",
-              "ty": "Int"
-            },
-            {
-              "name": "backers",
-              "ty": "Int"
-            },
-            {
-              "name": "aum",
-              "ty": "Numeric"
-            },
-            {
-              "name": "followed",
-              "ty": "Boolean"
-            },
-            {
-              "name": "swap_price",
-              "ty": "Numeric"
-            },
-            {
-              "name": "price_change",
-              "ty": "Numeric"
-            },
-            {
-              "name": "wallet_address",
-              "ty": "String"
-            },
-            {
-              "name": "approved",
-              "ty": "Boolean"
-            },
-            {
-              "name": "approved_at",
-              "ty": {
-                "Optional": "BigInt"
+        "Vec": {
+          "Struct": {
+            "name": "ListStrategiesRow",
+            "fields": [
+              {
+                "name": "strategy_id",
+                "ty": "BigInt"
+              },
+              {
+                "name": "strategy_name",
+                "ty": "String"
+              },
+              {
+                "name": "strategy_description",
+                "ty": "String"
+              },
+              {
+                "name": "net_value",
+                "ty": "Numeric"
+              },
+              {
+                "name": "followers",
+                "ty": "Int"
+              },
+              {
+                "name": "backers",
+                "ty": "Int"
+              },
+              {
+                "name": "aum",
+                "ty": "Numeric"
+              },
+              {
+                "name": "followed",
+                "ty": "Boolean"
+              },
+              {
+                "name": "swap_price",
+                "ty": "Numeric"
+              },
+              {
+                "name": "price_change",
+                "ty": "Numeric"
+              },
+              {
+                "name": "wallet_address",
+                "ty": "String"
+              },
+              {
+                "name": "approved",
+                "ty": "Boolean"
+              },
+              {
+                "name": "approved_at",
+                "ty": {
+                  "Optional": "BigInt"
+                }
+              },
+              {
+                "name": "blockchain",
+                "ty": {
+                  "EnumRef": "block_chain"
+                }
+              },
+              {
+                "name": "requested_at",
+                "ty": {
+                  "Optional": "BigInt"
+                }
+              },
+              {
+                "name": "created_at",
+                "ty": "BigInt"
+              },
+              {
+                "name": "expert_public_id",
+                "ty": "BigInt"
+              },
+              {
+                "name": "expert_username",
+                "ty": "String"
+              },
+              {
+                "name": "expert_family_name",
+                "ty": "String"
+              },
+              {
+                "name": "expert_given_name",
+                "ty": "String"
+              },
+              {
+                "name": "reputation",
+                "ty": "Int"
+              },
+              {
+                "name": "risk_score",
+                "ty": "Numeric"
               }
-            },
-            {
-              "name": "blockchain",
-              "ty": {
-                "EnumRef": "block_chain"
-              }
-            },
-            {
-              "name": "requested_at",
-              "ty": {
-                "Optional": "BigInt"
-              }
-            },
-            {
-              "name": "created_at",
-              "ty": "BigInt"
-            },
-            {
-              "name": "expert_public_id",
-              "ty": "BigInt"
-            },
-            {
-              "name": "expert_username",
-              "ty": "String"
-            },
-            {
-              "name": "expert_family_name",
-              "ty": "String"
-            },
-            {
-              "name": "expert_given_name",
-              "ty": "String"
-            },
-            {
-              "name": "reputation",
-              "ty": "Int"
-            },
-            {
-              "name": "risk_score",
-              "ty": "Numeric"
-            }
-          ]
+            ]
+          }
         }
       }
     }

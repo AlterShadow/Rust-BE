@@ -1,6 +1,7 @@
 // TODO: rework Type::datatable to be more ergonomic
-pub fn list_strategies_datatable() -> Type {
-    Type::datatable(
+
+pub fn strategy_row() -> Type {
+    Type::struct_(
         "ListStrategiesRow",
         vec![
             Field::new("strategy_id", Type::BigInt),
@@ -28,8 +29,11 @@ pub fn list_strategies_datatable() -> Type {
         ],
     )
 }
-pub fn list_experts_datatable() -> Type {
-    Type::datatable(
+pub fn list_strategies_datatable() -> Type {
+    Type::vec(strategy_row())
+}
+pub fn expert_row() -> Type {
+    Type::struct_(
         "ListExpertsRow",
         vec![
             Field::new("expert_id", Type::BigInt),
@@ -54,4 +58,7 @@ pub fn list_experts_datatable() -> Type {
             Field::new("followed", Type::Boolean),
         ],
     )
+}
+pub fn list_experts_datatable() -> Type {
+    Type::vec(expert_row())
 }

@@ -103,6 +103,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
             20062,
             vec![Field::new("strategy_id", Type::BigInt)],
             vec![
+                Field::new("strategy", strategy_row()),
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("strategy_name", Type::String),
                 Field::new("strategy_description", Type::String),

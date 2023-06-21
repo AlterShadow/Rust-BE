@@ -258,17 +258,25 @@ impl RequestHandler for MethodUserGetStrategy {
         let db: DbClient = toolbox.get_db();
         async move {
             ensure_user_role(ctx, EnumRole::User)?;
-
             let ret = db
-                .execute(FunUserGetStrategyReq {
-                    strategy_id: req.strategy_id,
+                .execute(FunUserListStrategiesReq {
                     user_id: ctx.user_id,
+                    limit: 1,
+                    offset: 0,
+                    strategy_id: Some(req.strategy_id),
+                    strategy_name: None,
+                    expert_public_id: None,
+                    expert_name: None,
+                    description: None,
+                    blockchain: None,
+                    wallet_address: None,
                 })
                 .await?
                 .into_result()
                 .context("failed to get strategy")?;
-            // TODO: complete missing fields
+
             Ok(UserGetStrategyResponse {
+                strategy: convert_strategy_db_to_api(ret.clone()),
                 strategy_id: ret.strategy_id,
                 strategy_name: ret.strategy_name,
                 strategy_description: ret.strategy_description,
