@@ -24,7 +24,8 @@ async fn test_create_update_strategy() -> Result<()> {
             expert_fee: 0.0,
             agreed_tos: true,
             wallet_address: format!("{:?}", user.address),
-            audit_rules: vec![UserExpertStrategyEnabledRule { rule_id: 1 }],
+            wallet_blockchain: EnumBlockChain::EthereumMainnet,
+            audit_rules: Some(vec![1]),
         })
         .await?;
     info!("Register wallet {:?}", resp);
@@ -34,9 +35,6 @@ async fn test_create_update_strategy() -> Result<()> {
             name: None,
             description: None,
             social_media: None,
-            risk_score: None,
-            reputation_score: None,
-            aum: None,
         })
         .await?;
     let wallet = client
@@ -50,6 +48,7 @@ async fn test_create_update_strategy() -> Result<()> {
     info!("Add wallet {:?}", wallet);
     let remove_wallet = client
         .request(ExpertRemoveStrategyWatchingWalletRequest {
+            strategy_id: resp.strategy_id,
             wallet_id: wallet.wallet_id,
         })
         .await?;
@@ -73,7 +72,8 @@ async fn test_user_follow_strategy() -> Result<()> {
             expert_fee: 0.0,
             agreed_tos: true,
             wallet_address: format!("{:?}", user.address),
-            audit_rules: vec![UserExpertStrategyEnabledRule { rule_id: 1 }],
+            wallet_blockchain: EnumBlockChain::EthereumMainnet,
+            audit_rules: Some(vec![1]),
         })
         .await?;
     info!("User Create Strategy {:?}", create_strategy_resp);
@@ -114,6 +114,8 @@ async fn test_user_follow_strategy() -> Result<()> {
             expert_public_id: None,
             expert_name: None,
             description: None,
+            blockchain: None,
+            wallet_address: None,
         })
         .await?;
     assert_eq!(resp.strategies.len(), 1);
@@ -137,7 +139,8 @@ async fn test_user_follow_strategy_get_user_profile() -> Result<()> {
             expert_fee: 0.0,
             agreed_tos: true,
             wallet_address: format!("{:?}", user.address),
-            audit_rules: vec![UserExpertStrategyEnabledRule { rule_id: 1 }],
+            wallet_blockchain: EnumBlockChain::EthereumMainnet,
+            audit_rules: Some(vec![1]),
         })
         .await?;
     info!("User Create Strategy {:?}", create_strategy_resp);
@@ -182,6 +185,8 @@ async fn test_user_list_strategies() -> Result<()> {
             expert_fee: 0.0,
             agreed_tos: true,
             wallet_address: format!("{:?}", user.address),
+            wallet_blockchain: EnumBlockChain::EthereumMainnet,
+            audit_rules: None,
         })
         .await?;
     info!("User Create Strategy {:?}", create_strategy_resp);
@@ -195,6 +200,8 @@ async fn test_user_list_strategies() -> Result<()> {
             expert_public_id: None,
             expert_name: None,
             description: None,
+            blockchain: None,
+            wallet_address: None,
         })
         .await?;
     info!("User List Strategies {:?}", resp);
@@ -327,6 +334,7 @@ async fn test_user_list_experts() -> Result<()> {
             given_name: None,
             description: None,
             social_media: None,
+            sort_by_followers: None,
         })
         .await?;
     info!("Experts {:?}", resp);

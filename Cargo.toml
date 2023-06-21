@@ -1,6 +1,48 @@
 [package]
 name = "mc2fi"
 version = "0.1.0"
+edition = "2021"
+
+[dev-dependencies]
+eyre = "0.6.1"
+serde = { version = "1.0", features = ["derive"] }
+tracing = "0.1.35"
+hex = "0.4.3"
+dashmap = "5.3.4"
+tokio = { version = "1", features = ["full"] }
+crossbeam = "*"
+reqwest = { version = "*", default-features = false, features = [
+	"rustls-tls",
+	"serde_json",
+	"json",
+] }
+tokio-tungstenite = { version = "*", features = ["rustls-tls-webpki-roots"] }
+itertools = "0.10.3"
+futures = "*"
+serde_json = "*"
+peroxide = "*"
+chrono = "*"
+deadpool-postgres = "*"
+tokio-cron-scheduler = "*"
+model = { path = "src/model" }
+gen = { path = "src/gen" }
+lib = { path = "src/lib" }
+bytes = "*"
+web3 = { version = "0.18", features = ["signing"] }
+secp256k1 = "0.21.3"
+rand = "0.8.5"
+num = "0.4"
+num-derive = "0.3"
+num-traits = "0.2"
+axum-server = { version = "0.5.0", features = ["tls-rustls"] }
+secrecy = { version = "0.8.0", features = ["serde"] }
+deadpool = { version = "0.9.5", features = ["managed", "rt_tokio_1"] }
+async-trait = "*"
+crypto = { path = "src/service/shared/crypto" }
+eth-sdk = { path = "src/service/shared/eth-sdk" }
+api = { path = "src/service/shared/api" }
+mc2fi_auth = { path = "src/service/auth" }
+tracing-appender = "0.2"
 
 [workspace]
 resolver = "2"

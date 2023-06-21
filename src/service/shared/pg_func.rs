@@ -111,7 +111,6 @@ pub fn expert_row_type() -> Type {
             Field::new("approved_expert", Type::Boolean),
             Field::new("followed", Type::Boolean),
             Field::new("linked_wallet", Type::String),
-            Field::new("immutable_audit_rules", Type::Boolean),
         ],
     )
 }
@@ -139,8 +138,7 @@ pub fn get_expert(followed: &str) -> String {
         e.pending_expert                                          AS pending_expert,
         e.approved_expert                                         AS approved_expert,
         {followed}                                                AS followed,
-        u.address                                                 AS linked_wallet,
-        e.immutable_audit_rules                                   AS immutable_audit_rules
+        u.address                                                 AS linked_wallet
         "
     )
 }

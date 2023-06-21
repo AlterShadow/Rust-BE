@@ -3,7 +3,7 @@ use eyre::*;
 use gen::model::*;
 use lib::utils::encode_header;
 use lib::ws::WsClient;
-use mc2_fi::endpoints::{endpoint_auth_authorize, endpoint_auth_login, endpoint_auth_signup};
+use mc2fi_auth::endpoints::{endpoint_auth_authorize, endpoint_auth_login, endpoint_auth_signup};
 use tracing::*;
 use web3::signing::Key;
 

@@ -922,8 +922,7 @@ RETURNS table (
     "pending_expert" boolean,
     "approved_expert" boolean,
     "followed" boolean,
-    "linked_wallet" varchar,
-    "immutable_audit_rules" boolean
+    "linked_wallet" varchar
 )
 LANGUAGE plpgsql
 AS $$
@@ -950,8 +949,7 @@ AS $$
         e.pending_expert                                          AS pending_expert,
         e.approved_expert                                         AS approved_expert,
         TRUE                                                AS followed,
-        u.address                                                 AS linked_wallet,
-        e.immutable_audit_rules                                   AS immutable_audit_rules
+        u.address                                                 AS linked_wallet
         
                     FROM tbl.expert_profile AS e
                       JOIN tbl.user_follow_expert AS b ON b.fkey_expert_id = e.pkey_id
@@ -990,8 +988,7 @@ RETURNS table (
     "pending_expert" boolean,
     "approved_expert" boolean,
     "followed" boolean,
-    "linked_wallet" varchar,
-    "immutable_audit_rules" boolean
+    "linked_wallet" varchar
 )
 LANGUAGE plpgsql
 AS $$
@@ -1018,8 +1015,7 @@ BEGIN
         e.pending_expert                                          AS pending_expert,
         e.approved_expert                                         AS approved_expert,
         EXISTS(SELECT * FROM tbl.user_follow_expert AS ufe WHERE ufe.fkey_expert_id = e.pkey_id AND ufe.fkey_user_id = a_user_id AND unfollowed = FALSE)                                                AS followed,
-        u.address                                                 AS linked_wallet,
-        e.immutable_audit_rules                                   AS immutable_audit_rules
+        u.address                                                 AS linked_wallet
         
                  FROM tbl.expert_profile AS e
                    JOIN tbl.user AS u ON u.pkey_id = e.fkey_user_id
@@ -1066,8 +1062,7 @@ RETURNS table (
     "pending_expert" boolean,
     "approved_expert" boolean,
     "followed" boolean,
-    "linked_wallet" varchar,
-    "immutable_audit_rules" boolean
+    "linked_wallet" varchar
 )
 LANGUAGE plpgsql
 AS $$
@@ -1095,8 +1090,7 @@ BEGIN
         e.pending_expert                                          AS pending_expert,
         e.approved_expert                                         AS approved_expert,
         EXISTS(SELECT * FROM tbl.user_follow_expert AS ufe WHERE ufe.fkey_expert_id = e.pkey_id AND ufe.fkey_user_id = a_user_id AND unfollowed = FALSE)                                                AS followed,
-        u.address                                                 AS linked_wallet,
-        e.immutable_audit_rules                                   AS immutable_audit_rules
+        u.address                                                 AS linked_wallet
         
                  FROM tbl.expert_profile AS e
                  JOIN tbl.user AS u ON u.pkey_id = e.fkey_user_id
@@ -2093,8 +2087,7 @@ RETURNS table (
     "pending_expert" boolean,
     "approved_expert" boolean,
     "followed" boolean,
-    "linked_wallet" varchar,
-    "immutable_audit_rules" boolean
+    "linked_wallet" varchar
 )
 LANGUAGE plpgsql
 AS $$
@@ -2121,8 +2114,7 @@ BEGIN
         e.pending_expert                                          AS pending_expert,
         e.approved_expert                                         AS approved_expert,
         EXISTS(SELECT * FROM tbl.user_follow_expert AS ufe WHERE ufe.fkey_expert_id = e.pkey_id AND ufe.fkey_user_id = a_user_id AND unfollowed = FALSE)                                                AS followed,
-        u.address                                                 AS linked_wallet,
-        e.immutable_audit_rules                                   AS immutable_audit_rules
+        u.address                                                 AS linked_wallet
         
                  FROM tbl.expert_profile AS e
                    JOIN tbl.user AS u ON u.pkey_id = e.fkey_user_id

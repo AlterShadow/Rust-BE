@@ -245,7 +245,6 @@ pub struct FunUserExpertRowType {
     pub approved_expert: bool,
     pub followed: bool,
     pub linked_wallet: String,
-    pub immutable_audit_rules: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
