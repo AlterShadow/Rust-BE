@@ -276,22 +276,7 @@ impl RequestHandler for MethodUserGetStrategy {
                 .context("failed to get strategy")?;
 
             Ok(UserGetStrategyResponse {
-                strategy: convert_strategy_db_to_api(ret.clone()),
-                strategy_id: ret.strategy_id,
-                strategy_name: ret.strategy_name,
-                strategy_description: ret.strategy_description,
-                creator_user_id: ret.creator_public_id,
-                social_media: ret.social_media.unwrap_or_default(),
-                historical_return: 0.0,
-                inception_time: ret.created_at,
-                total_amount: 0.0,
-                token_allocation: 0,
-                net_value: 0.0,
-                followers: ret.followers as _,
-                approved: ret.approved,
-                approved_at: ret.approved_at,
-                backers: ret.backers as _,
-                immutable_audit_rules: ret.immutable_audit_rules,
+                strategy: convert_strategy_db_to_api(ret),
                 watching_wallets: db
                     .execute(FunUserListStrategyWatchWalletsReq {
                         strategy_id: req.strategy_id,
@@ -303,9 +288,6 @@ impl RequestHandler for MethodUserGetStrategy {
                         blockchain: x.blockchain,
                         ratio_distribution: x.ratio,
                     }),
-                risk_score: ret.risk_score.unwrap_or(0.0),
-                aum: ret.aum.unwrap_or(0.0),
-                reputation: 0,
                 aum_history: vec![],
                 audit_rules: db
                     .execute(FunUserListStrategyAuditRulesReq {

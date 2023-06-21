@@ -1581,25 +1581,6 @@ pub struct UserGetStrategyRequest {
 #[serde(rename_all = "camelCase")]
 pub struct UserGetStrategyResponse {
     pub strategy: ListStrategiesRow,
-    pub strategy_id: i64,
-    pub strategy_name: String,
-    pub strategy_description: String,
-    pub creator_user_id: i64,
-    pub social_media: String,
-    pub historical_return: f64,
-    pub inception_time: i64,
-    pub total_amount: f64,
-    pub token_allocation: i64,
-    pub reputation: i32,
-    pub risk_score: f64,
-    pub aum: f64,
-    pub net_value: f64,
-    pub followers: i32,
-    pub approved: bool,
-    #[serde(default)]
-    pub approved_at: Option<i64>,
-    pub backers: i32,
-    pub immutable_audit_rules: bool,
     pub watching_wallets: Vec<WatchingWalletRow>,
     pub aum_history: Vec<AumHistoryRow>,
     pub audit_rules: Vec<UserListStrategyAuditRulesRow>,
@@ -3032,80 +3013,6 @@ impl WsRequest for UserGetStrategyRequest {
           ]
         }
       }
-    },
-    {
-      "name": "strategy_id",
-      "ty": "BigInt"
-    },
-    {
-      "name": "strategy_name",
-      "ty": "String"
-    },
-    {
-      "name": "strategy_description",
-      "ty": "String"
-    },
-    {
-      "name": "creator_user_id",
-      "ty": "BigInt"
-    },
-    {
-      "name": "social_media",
-      "ty": "String"
-    },
-    {
-      "name": "historical_return",
-      "ty": "Numeric"
-    },
-    {
-      "name": "inception_time",
-      "ty": "BigInt"
-    },
-    {
-      "name": "total_amount",
-      "ty": "Numeric"
-    },
-    {
-      "name": "token_allocation",
-      "ty": "BigInt"
-    },
-    {
-      "name": "reputation",
-      "ty": "Int"
-    },
-    {
-      "name": "risk_score",
-      "ty": "Numeric"
-    },
-    {
-      "name": "aum",
-      "ty": "Numeric"
-    },
-    {
-      "name": "net_value",
-      "ty": "Numeric"
-    },
-    {
-      "name": "followers",
-      "ty": "Int"
-    },
-    {
-      "name": "approved",
-      "ty": "Boolean"
-    },
-    {
-      "name": "approved_at",
-      "ty": {
-        "Optional": "BigInt"
-      }
-    },
-    {
-      "name": "backers",
-      "ty": "Int"
-    },
-    {
-      "name": "immutable_audit_rules",
-      "ty": "Boolean"
     },
     {
       "name": "watching_wallets",
