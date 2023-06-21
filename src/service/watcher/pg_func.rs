@@ -140,24 +140,24 @@ END
             ],
             r#"
 BEGIN
-    RETURN QUERY SELECT pkey_id,
-                      address,
-                      transaction_hash,
-                      blockchain,
-                      dex,
-                      contract_address,
-                      token_in_address,
-                      token_out_address,
-                      caller_address,
-                      amount_in,
-                      amount_out,
-                      swap_calls,
-                      paths,
-                      dex_versions,
-                      created_at
-                 FROM tbl.wallet_activity_history
-                 WHERE address = a_address
-                   AND blockchain = a_blockchain;
+    RETURN QUERY SELECT a.pkey_id,
+                      a.address,
+                      a.transaction_hash,
+                      a.blockchain,
+                      a.dex,
+                      a.contract_address,
+                      a.token_in_address,
+                      a.token_out_address,
+                      a.caller_address,
+                      a.amount_in,
+                      a.amount_out,
+                      a.swap_calls,
+                      a.paths,
+                      a.dex_versions,
+                      a.created_at
+                 FROM tbl.wallet_activity_history AS a
+                 WHERE a.address = a_address
+                   AND a.blockchain = a_blockchain;
 END
         "#,
         ),
