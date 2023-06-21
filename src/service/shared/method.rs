@@ -14,14 +14,11 @@ pub fn convert_strategy_db_to_api(x: FunUserStrategyRowType) -> ListStrategiesRo
         strategy_id: x.strategy_id,
         strategy_name: x.strategy_name,
         strategy_description: x.strategy_description,
-        net_value: 0.0,
         followers: x.followers as _,
         backers: x.backers as _,
         risk_score: x.risk_score.unwrap_or_default(),
         aum: x.aum.unwrap_or_default(),
         followed: x.followed,
-        swap_price: 233.0,
-        price_change: 0.97,
         wallet_address: x.linked_wallet.unwrap_or_default(),
         approved: x.approved,
         approved_at: x.approved_at,
@@ -34,6 +31,10 @@ pub fn convert_strategy_db_to_api(x: FunUserStrategyRowType) -> ListStrategiesRo
         blockchain: x
             .linked_wallet_blockchain
             .unwrap_or(EnumBlockChain::LocalNet),
+        net_value: 0.0,
+        swap_price: 233.0,
+        price_change: 0.97,
+        reputation: 5,
     }
 }
 pub fn convert_expert_db_to_api(x: FunUserExpertRowType) -> ListExpertsRow {

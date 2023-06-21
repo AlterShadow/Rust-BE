@@ -101,7 +101,6 @@ async fn main() -> Result<()> {
     server.add_handler(MethodExpertUpdateStrategy {
         logger: audit_logger.clone(),
     });
-    server.add_handler(MethodExpertFreezeStrategy);
     server.add_handler(MethodExpertAddStrategyInitialTokenRatio {
         logger: audit_logger.clone(),
     });

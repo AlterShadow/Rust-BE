@@ -1,6 +1,5 @@
 use crate::audit::{
-    get_audit_rules, validate_audit_rule_immutable_tokens, AuditLogger, AUDIT_IMMUTABLE_TOKENS,
-    AUDIT_TOP25_TOKENS,
+    get_audit_rules, validate_audit_rule_immutable_tokens, AuditLogger, AUDIT_TOP25_TOKENS,
 };
 use api::cmc::CoinMarketCap;
 use eth_sdk::erc20::approve_and_ensure_success;
@@ -1928,40 +1927,7 @@ impl RequestHandler for MethodExpertUpdateStrategy {
         .boxed()
     }
 }
-pub struct MethodExpertFreezeStrategy;
-impl RequestHandler for MethodExpertFreezeStrategy {
-    type Request = ExpertFreezeStrategyRequest;
 
-    fn handle(
-        &self,
-        toolbox: &Toolbox,
-        ctx: RequestContext,
-        req: Self::Request,
-    ) -> FutureResponse<Self::Request> {
-        let db: DbClient = toolbox.get_db();
-        async move {
-            ensure_user_role(ctx, EnumRole::Expert)?;
-
-            let ret = db
-                .execute(FunUserFreezeStrategyReq {
-                    user_id: ctx.user_id,
-                    strategy_id: req.strategy_id,
-                })
-                .await?
-                .into_result()
-                .context("failed to freeze strategy")?;
-            db.execute(FunUserAddStrategyAuditRuleReq {
-                strategy_id: req.strategy_id,
-                audit_rule_id: AUDIT_IMMUTABLE_TOKENS.id as _,
-            })
-            .await?;
-            Ok(ExpertFreezeStrategyResponse {
-                success: ret.success,
-            })
-        }
-        .boxed()
-    }
-}
 // pub struct MethodUserDeleteStrategy;
 pub struct MethodExpertAddStrategyWatchingWallet {
     pub logger: AuditLogger,

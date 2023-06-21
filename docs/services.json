@@ -272,10 +272,6 @@
                       "ty": "Int"
                     },
                     {
-                      "name": "risk_score",
-                      "ty": "Numeric"
-                    },
-                    {
                       "name": "aum",
                       "ty": "Numeric"
                     },
@@ -336,6 +332,14 @@
                     {
                       "name": "expert_given_name",
                       "ty": "String"
+                    },
+                    {
+                      "name": "reputation",
+                      "ty": "Int"
+                    },
+                    {
+                      "name": "risk_score",
+                      "ty": "Numeric"
                     }
                   ]
                 }
@@ -458,10 +462,6 @@
                       "ty": "Int"
                     },
                     {
-                      "name": "risk_score",
-                      "ty": "Numeric"
-                    },
-                    {
                       "name": "aum",
                       "ty": "Numeric"
                     },
@@ -522,6 +522,14 @@
                     {
                       "name": "expert_given_name",
                       "ty": "String"
+                    },
+                    {
+                      "name": "reputation",
+                      "ty": "Int"
+                    },
+                    {
+                      "name": "risk_score",
+                      "ty": "Numeric"
                     }
                   ]
                 }
@@ -581,10 +589,6 @@
                       "ty": "Int"
                     },
                     {
-                      "name": "risk_score",
-                      "ty": "Numeric"
-                    },
-                    {
                       "name": "aum",
                       "ty": "Numeric"
                     },
@@ -645,6 +649,14 @@
                     {
                       "name": "expert_given_name",
                       "ty": "String"
+                    },
+                    {
+                      "name": "reputation",
+                      "ty": "Int"
+                    },
+                    {
+                      "name": "risk_score",
+                      "ty": "Numeric"
                     }
                   ]
                 }
@@ -1267,10 +1279,6 @@
                       "ty": "Int"
                     },
                     {
-                      "name": "risk_score",
-                      "ty": "Numeric"
-                    },
-                    {
                       "name": "aum",
                       "ty": "Numeric"
                     },
@@ -1331,6 +1339,14 @@
                     {
                       "name": "expert_given_name",
                       "ty": "String"
+                    },
+                    {
+                      "name": "reputation",
+                      "ty": "Int"
+                    },
+                    {
+                      "name": "risk_score",
+                      "ty": "Numeric"
                     }
                   ]
                 }
@@ -2110,10 +2126,6 @@
                       "ty": "Int"
                     },
                     {
-                      "name": "risk_score",
-                      "ty": "Numeric"
-                    },
-                    {
                       "name": "aum",
                       "ty": "Numeric"
                     },
@@ -2174,6 +2186,14 @@
                     {
                       "name": "expert_given_name",
                       "ty": "String"
+                    },
+                    {
+                      "name": "reputation",
+                      "ty": "Int"
+                    },
+                    {
+                      "name": "risk_score",
+                      "ty": "Numeric"
                     }
                   ]
                 }
@@ -2340,10 +2360,6 @@
                       "ty": "Int"
                     },
                     {
-                      "name": "risk_score",
-                      "ty": "Numeric"
-                    },
-                    {
                       "name": "aum",
                       "ty": "Numeric"
                     },
@@ -2404,6 +2420,14 @@
                     {
                       "name": "expert_given_name",
                       "ty": "String"
+                    },
+                    {
+                      "name": "reputation",
+                      "ty": "Int"
+                    },
+                    {
+                      "name": "risk_score",
+                      "ty": "Numeric"
                     }
                   ]
                 }
@@ -2440,10 +2464,6 @@
                       "ty": "Int"
                     },
                     {
-                      "name": "risk_score",
-                      "ty": "Numeric"
-                    },
-                    {
                       "name": "aum",
                       "ty": "Numeric"
                     },
@@ -2504,6 +2524,14 @@
                     {
                       "name": "expert_given_name",
                       "ty": "String"
+                    },
+                    {
+                      "name": "reputation",
+                      "ty": "Int"
+                    },
+                    {
+                      "name": "risk_score",
+                      "ty": "Numeric"
                     }
                   ]
                 }
@@ -4121,10 +4149,6 @@
                       "ty": "Int"
                     },
                     {
-                      "name": "risk_score",
-                      "ty": "Numeric"
-                    },
-                    {
                       "name": "aum",
                       "ty": "Numeric"
                     },
@@ -4185,6 +4209,14 @@
                     {
                       "name": "expert_given_name",
                       "ty": "String"
+                    },
+                    {
+                      "name": "reputation",
+                      "ty": "Int"
+                    },
+                    {
+                      "name": "risk_score",
+                      "ty": "Numeric"
                     }
                   ]
                 }

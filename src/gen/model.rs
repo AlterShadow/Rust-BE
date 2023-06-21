@@ -1286,7 +1286,6 @@ pub struct ListStrategiesRow {
     pub net_value: f64,
     pub followers: i32,
     pub backers: i32,
-    pub risk_score: f64,
     pub aum: f64,
     pub followed: bool,
     pub swap_price: f64,
@@ -1303,6 +1302,8 @@ pub struct ListStrategiesRow {
     pub expert_username: String,
     pub expert_family_name: String,
     pub expert_given_name: String,
+    pub reputation: i32,
+    pub risk_score: f64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -2345,10 +2346,6 @@ impl WsRequest for UserListFollowedStrategiesRequest {
               "ty": "Int"
             },
             {
-              "name": "risk_score",
-              "ty": "Numeric"
-            },
-            {
               "name": "aum",
               "ty": "Numeric"
             },
@@ -2409,6 +2406,14 @@ impl WsRequest for UserListFollowedStrategiesRequest {
             {
               "name": "expert_given_name",
               "ty": "String"
+            },
+            {
+              "name": "reputation",
+              "ty": "Int"
+            },
+            {
+              "name": "risk_score",
+              "ty": "Numeric"
             }
           ]
         }
@@ -2547,10 +2552,6 @@ impl WsRequest for UserListStrategiesRequest {
               "ty": "Int"
             },
             {
-              "name": "risk_score",
-              "ty": "Numeric"
-            },
-            {
               "name": "aum",
               "ty": "Numeric"
             },
@@ -2611,6 +2612,14 @@ impl WsRequest for UserListStrategiesRequest {
             {
               "name": "expert_given_name",
               "ty": "String"
+            },
+            {
+              "name": "reputation",
+              "ty": "Int"
+            },
+            {
+              "name": "risk_score",
+              "ty": "Numeric"
             }
           ]
         }
@@ -2678,10 +2687,6 @@ impl WsRequest for UserListTopPerformingStrategiesRequest {
               "ty": "Int"
             },
             {
-              "name": "risk_score",
-              "ty": "Numeric"
-            },
-            {
               "name": "aum",
               "ty": "Numeric"
             },
@@ -2742,6 +2747,14 @@ impl WsRequest for UserListTopPerformingStrategiesRequest {
             {
               "name": "expert_given_name",
               "ty": "String"
+            },
+            {
+              "name": "reputation",
+              "ty": "Int"
+            },
+            {
+              "name": "risk_score",
+              "ty": "Numeric"
             }
           ]
         }
@@ -3444,10 +3457,6 @@ impl WsRequest for UserListBackedStrategiesRequest {
               "ty": "Int"
             },
             {
-              "name": "risk_score",
-              "ty": "Numeric"
-            },
-            {
               "name": "aum",
               "ty": "Numeric"
             },
@@ -3508,6 +3517,14 @@ impl WsRequest for UserListBackedStrategiesRequest {
             {
               "name": "expert_given_name",
               "ty": "String"
+            },
+            {
+              "name": "reputation",
+              "ty": "Int"
+            },
+            {
+              "name": "risk_score",
+              "ty": "Numeric"
             }
           ]
         }
@@ -4359,10 +4376,6 @@ impl WsRequest for UserGetExpertProfileRequest {
               "ty": "Int"
             },
             {
-              "name": "risk_score",
-              "ty": "Numeric"
-            },
-            {
               "name": "aum",
               "ty": "Numeric"
             },
@@ -4423,6 +4436,14 @@ impl WsRequest for UserGetExpertProfileRequest {
             {
               "name": "expert_given_name",
               "ty": "String"
+            },
+            {
+              "name": "reputation",
+              "ty": "Int"
+            },
+            {
+              "name": "risk_score",
+              "ty": "Numeric"
             }
           ]
         }
@@ -4597,10 +4618,6 @@ impl WsRequest for UserGetUserProfileRequest {
               "ty": "Int"
             },
             {
-              "name": "risk_score",
-              "ty": "Numeric"
-            },
-            {
               "name": "aum",
               "ty": "Numeric"
             },
@@ -4661,6 +4678,14 @@ impl WsRequest for UserGetUserProfileRequest {
             {
               "name": "expert_given_name",
               "ty": "String"
+            },
+            {
+              "name": "reputation",
+              "ty": "Int"
+            },
+            {
+              "name": "risk_score",
+              "ty": "Numeric"
             }
           ]
         }
@@ -4697,10 +4722,6 @@ impl WsRequest for UserGetUserProfileRequest {
               "ty": "Int"
             },
             {
-              "name": "risk_score",
-              "ty": "Numeric"
-            },
-            {
               "name": "aum",
               "ty": "Numeric"
             },
@@ -4761,6 +4782,14 @@ impl WsRequest for UserGetUserProfileRequest {
             {
               "name": "expert_given_name",
               "ty": "String"
+            },
+            {
+              "name": "reputation",
+              "ty": "Int"
+            },
+            {
+              "name": "risk_score",
+              "ty": "Numeric"
             }
           ]
         }
@@ -6644,10 +6673,6 @@ impl WsRequest for AdminListStrategiesRequest {
               "ty": "Int"
             },
             {
-              "name": "risk_score",
-              "ty": "Numeric"
-            },
-            {
               "name": "aum",
               "ty": "Numeric"
             },
@@ -6708,6 +6733,14 @@ impl WsRequest for AdminListStrategiesRequest {
             {
               "name": "expert_given_name",
               "ty": "String"
+            },
+            {
+              "name": "reputation",
+              "ty": "Int"
+            },
+            {
+              "name": "risk_score",
+              "ty": "Numeric"
             }
           ]
         }
