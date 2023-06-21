@@ -61,21 +61,44 @@ pub async fn wait_for_confirmations<T>(
 where
     T: Transport,
 {
-    let begin_block_number = eth.block_number().await?.as_u64();
+    /* wait for transaction to be mined and produce a receipt */
+    let mut receipt_at_beginning: Option<TransactionReceipt> = None;
     for _ in 0..max_retry {
         if let Some(receipt) = eth.transaction_receipt(hash).await? {
-            let block_number = receipt.block_number.unwrap().as_u64();
-            if block_number - begin_block_number > confirmations {
-                return Ok(receipt);
-            }
+            receipt_at_beginning = Some(receipt);
         }
         tokio::time::sleep(poll_interval).await;
     }
-    bail!(
-        "Transaction {:?} not found within {} retries",
-        hash,
-        max_retry
-    )
+
+    /* if receipt was produced, check it's status & wait for confirmations */
+    if let Some(receipt) = receipt_at_beginning {
+        if receipt.status == Some(web3::types::U64([0])) {
+            bail!("transaction reverted");
+        }
+        let receipt_block_number = receipt.block_number.unwrap().as_u64();
+        let mut current_block_number = eth.block_number().await?.as_u64();
+        while current_block_number - receipt_block_number < confirmations {
+            current_block_number = eth.block_number().await?.as_u64();
+            tokio::time::sleep(poll_interval).await;
+        }
+    } else {
+        bail!(
+            "transaction {:?} not found within {} retries",
+            hash,
+            max_retry
+        );
+    }
+
+    /* after confirmations, fetch the receipt again, and check it's status */
+    let receipt_after_confirmations = eth
+        .transaction_receipt(hash)
+        .await?
+        .context("transaction was ommerized after confirmations")?;
+    if receipt_after_confirmations.status == Some(web3::types::U64([1])) {
+        return Ok(receipt_after_confirmations);
+    } else {
+        bail!("transaction reverted after confirmations");
+    }
 }
 
 pub fn encode_signature(sig: &Signature) -> String {
