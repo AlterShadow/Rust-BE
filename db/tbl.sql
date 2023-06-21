@@ -341,7 +341,7 @@ CREATE TABLE tbl.wallet_activity_history (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_wallet_activity_history_id'),
     address varchar(64)  NOT NULL,
     transaction_hash varchar(80)  NOT NULL,
-    blockchain varchar(20)  NOT NULL,
+    blockchain enum_block_chain NOT NULL,
     dex varchar(20)  NULL,
     contract_address varchar(64)  NOT NULL,
     token_in_address varchar(64)  NULL,
