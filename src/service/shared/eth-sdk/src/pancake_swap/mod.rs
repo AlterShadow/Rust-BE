@@ -35,7 +35,7 @@ pub struct Swap {
 #[derive(Clone, Debug)]
 pub struct PancakeSwap {
     smart_router: Contract,
-    transfer_event_signature: H256,
+    erc20_transfer_event_signature: H256,
     refer_to_self_flag: H160,
 }
 
@@ -43,10 +43,13 @@ impl PancakeSwap {
     /* Parses Calls to the PancakeSwap V3 Smart Router into a Trade */
     /* https://etherscan.io/address/0x13f4EA83D0bd40E75C8222255bc855a974568Dd4#code */
 
-    pub fn new(smart_router: Contract, transfer_event_signature: H256) -> Self {
+    pub fn new(smart_router: Contract) -> Self {
         Self {
             smart_router,
-            transfer_event_signature,
+            erc20_transfer_event_signature: H256::from_str(
+                "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+            )
+            .unwrap(),
             refer_to_self_flag: H160::from_str("0x0000000000000000000000000000000000000002")
                 .unwrap(),
         }
@@ -350,7 +353,7 @@ impl PancakeSwap {
                         .amount_of_token_received(
                             swap.token_out,
                             contract,
-                            self.transfer_event_signature,
+                            self.erc20_transfer_event_signature,
                         )
                         .context("failed to get amount_out")?;
                     swap.amount_out = Some(amount_out);
@@ -363,7 +366,7 @@ impl PancakeSwap {
                         .amount_of_token_received(
                             swap.token_out,
                             swap.recipient,
-                            self.transfer_event_signature,
+                            self.erc20_transfer_event_signature,
                         )
                         .context("failed to get amount_out")?;
                     swap.amount_out = Some(amount_out);
@@ -383,7 +386,7 @@ impl PancakeSwap {
                         .amount_of_token_sent(
                             swap.token_in,
                             contract,
-                            self.transfer_event_signature,
+                            self.erc20_transfer_event_signature,
                         )
                         .context("failed to get amount_in")?;
 
@@ -392,7 +395,11 @@ impl PancakeSwap {
                     /* if the call has no value, the caller paid in non-native tokens */
                     /* swap's amount_in is in the transfer of token_in from caller */
                     let amount_in = tx
-                        .amount_of_token_sent(swap.token_in, caller, self.transfer_event_signature)
+                        .amount_of_token_sent(
+                            swap.token_in,
+                            caller,
+                            self.erc20_transfer_event_signature,
+                        )
                         .context("failed to get amount_in")?;
                     swap.amount_in = Some(amount_in);
                 }
@@ -475,12 +482,7 @@ enum PancakeSwapMethod {
 pub fn build_pancake_swap() -> Result<PancakeSwap> {
     let cursor = Cursor::new(SMART_ROUTER_ABI_JSON);
     let pancake_smart_router = Contract::load(cursor).context("failed to read contract ABI")?;
-    let erc20 = build_erc_20()?;
-    let transfer_event_signature = erc20
-        .event("Transfer")
-        .context("Failed to get Transfer event signature")?
-        .signature();
-    let pancake = PancakeSwap::new(pancake_smart_router, transfer_event_signature);
+    let pancake = PancakeSwap::new(pancake_smart_router);
     Ok(pancake)
 }
 
