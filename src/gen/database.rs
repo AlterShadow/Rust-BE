@@ -555,6 +555,15 @@ pub struct FunWatcherGetRawTransactionRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunWatcherListExpertListenedWalletAssetLedgerRespRow {
+    pub pkey_id: i64,
+    pub address: String,
+    pub blockchain: EnumBlockChain,
+    pub token_id: i64,
+    pub entry: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunWatcherListStrategyEscrowPendingWalletLedgerRespRow {
     pub strategy_id: i64,
     pub blockchain: EnumBlockChain,
@@ -2576,7 +2585,7 @@ impl DatabaseRequest for FunWatcherListUserStrategyLedgerReq {
 pub struct FunWatcherUpsertExpertListenedWalletAssetLedgerReq {
     pub address: String,
     pub blockchain: EnumBlockChain,
-    pub token_id: String,
+    pub token_id: i64,
     pub old_entry: String,
     pub new_entry: String,
 }
@@ -2585,7 +2594,7 @@ pub struct FunWatcherUpsertExpertListenedWalletAssetLedgerReq {
 impl DatabaseRequest for FunWatcherUpsertExpertListenedWalletAssetLedgerReq {
     type ResponseRow = FunWatcherUpsertExpertListenedWalletAssetLedgerRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_watcher_upsert_expert_listened_wallet_asset_ledger(a_address => $1::varchar, a_blockchain => $2::enum_block_chain, a_token_id => $3::varchar, a_old_entry => $4::varchar, a_new_entry => $5::varchar);"
+        "SELECT * FROM api.fun_watcher_upsert_expert_listened_wallet_asset_ledger(a_address => $1::varchar, a_blockchain => $2::enum_block_chain, a_token_id => $3::bigint, a_old_entry => $4::varchar, a_new_entry => $5::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -2594,6 +2603,35 @@ impl DatabaseRequest for FunWatcherUpsertExpertListenedWalletAssetLedgerReq {
             &self.token_id as &(dyn ToSql + Sync),
             &self.old_entry as &(dyn ToSql + Sync),
             &self.new_entry as &(dyn ToSql + Sync),
+        ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunWatcherListExpertListenedWalletAssetLedgerReq {
+    pub limit: i64,
+    pub offset: i64,
+    #[serde(default)]
+    pub address: Option<String>,
+    #[serde(default)]
+    pub blockchain: Option<EnumBlockChain>,
+    #[serde(default)]
+    pub token_id: Option<i64>,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunWatcherListExpertListenedWalletAssetLedgerReq {
+    type ResponseRow = FunWatcherListExpertListenedWalletAssetLedgerRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_watcher_list_expert_listened_wallet_asset_ledger(a_limit => $1::bigint, a_offset => $2::bigint, a_address => $3::varchar, a_blockchain => $4::enum_block_chain, a_token_id => $5::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.limit as &(dyn ToSql + Sync),
+            &self.offset as &(dyn ToSql + Sync),
+            &self.address as &(dyn ToSql + Sync),
+            &self.blockchain as &(dyn ToSql + Sync),
+            &self.token_id as &(dyn ToSql + Sync),
         ]
     }
 }

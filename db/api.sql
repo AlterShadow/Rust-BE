@@ -2567,7 +2567,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_watcher_upsert_expert_listened_wallet_asset_ledger(a_address varchar, a_blockchain enum_block_chain, a_token_id varchar, a_old_entry varchar, a_new_entry varchar)
+CREATE OR REPLACE FUNCTION api.fun_watcher_upsert_expert_listened_wallet_asset_ledger(a_address varchar, a_blockchain enum_block_chain, a_token_id bigint, a_old_entry varchar, a_new_entry varchar)
 RETURNS table (
     "expert_listened_wallet_asset_ledger_id" bigint
 )
@@ -2612,6 +2612,39 @@ BEGIN
     RETURNING pkey_id
         INTO _pkey_id;
     RETURN QUERY SELECT _pkey_id;
+END
+
+        
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_watcher_list_expert_listened_wallet_asset_ledger(a_limit bigint, a_offset bigint, a_address varchar DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL, a_token_id bigint DEFAULT NULL)
+RETURNS table (
+    "pkey_id" bigint,
+    "address" varchar,
+    "blockchain" enum_block_chain,
+    "token_id" bigint,
+    "entry" varchar
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY SELECT 
+        elwal.pkey_id,
+        eww.address,
+        eww.blockchain,
+        elwal.fkey_token_id,
+        elwal.entry
+    FROM tbl.expert_listened_wallet_asset_ledger AS elwal
+            JOIN tbl.expert_watched_wallet AS eww ON eww.pkey_id = elwal.expert_watched_wallet_pkey_id
+    WHERE (a_token_id ISNULL OR elwal.fkey_token_id = a_token_id)
+     AND (a_address ISNULL OR eww.address = a_address)
+     AND (a_blockchain ISNULL OR blockchain = a_blockchain)
+     ORDER BY elwal.pkey_id DESC
+    LIMIT a_limit
+    OFFSET a_offset;
+     ;
 END
 
         

@@ -244,7 +244,7 @@ END
             vec![
                 Field::new("address", Type::String),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
-                Field::new("token_id", Type::String),
+                Field::new("token_id", Type::BigInt),
                 Field::new("old_entry", Type::String),
                 Field::new("new_entry", Type::String),
             ],
@@ -291,6 +291,43 @@ BEGIN
     RETURNING pkey_id
         INTO _pkey_id;
     RETURN QUERY SELECT _pkey_id;
+END
+
+        "#,
+        ),
+        ProceduralFunction::new(
+            "fun_watcher_list_expert_listened_wallet_asset_ledger",
+            vec![
+                Field::new("limit", Type::BigInt),
+                Field::new("offset", Type::BigInt),
+                Field::new("address", Type::optional(Type::String)),
+                Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
+                Field::new("token_id", Type::optional(Type::BigInt)),
+            ],
+            vec![
+                Field::new("pkey_id", Type::BigInt),
+                Field::new("address", Type::String),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("token_id", Type::BigInt),
+                Field::new("entry", Type::String),
+            ],
+            r#"
+BEGIN
+    RETURN QUERY SELECT 
+        elwal.pkey_id,
+        eww.address,
+        eww.blockchain,
+        elwal.fkey_token_id,
+        elwal.entry
+    FROM tbl.expert_listened_wallet_asset_ledger AS elwal
+            JOIN tbl.expert_watched_wallet AS eww ON eww.pkey_id = elwal.expert_watched_wallet_pkey_id
+    WHERE (a_token_id ISNULL OR elwal.fkey_token_id = a_token_id)
+     AND (a_address ISNULL OR eww.address = a_address)
+     AND (a_blockchain ISNULL OR blockchain = a_blockchain)
+     ORDER BY elwal.pkey_id DESC
+    LIMIT a_limit
+    OFFSET a_offset;
+     ;
 END
 
         "#,

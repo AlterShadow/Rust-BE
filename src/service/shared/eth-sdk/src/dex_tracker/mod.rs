@@ -375,52 +375,41 @@ pub async fn update_expert_listened_wallet_asset_ledger(
     db: &DbClient,
     strategy_id: i64,
     trade: &DexTrade,
+    token_id: i64,
     blockchain: EnumBlockChain,
 ) -> Result<()> {
     // correctly adding wallet balance to tbl.strategy_initial_token ratio is not possible because expert can have multiple watching wallets in one chain
     // TODO: use fun_watcher_get_expert_listened_wallet_asset_ledger and fun_watcher_upsert_expert_listened_wallet_asset_ledger
+    let expert_watched_wallet_address = trade."caller";
+
     match db
-        .execute(FunUserGetStrategyInitialTokenRatioByAddressAndChainReq {
-            strategy_id: strategy_id,
-            token_address: format!("{:?}", trade.token_in),
-            blockchain: blockchain,
+        .execute(FunWatcherListExpertListenedWalletAssetLedgerReq {
+            limit: 1,
+            blockchain: Some(blockchain),
+            address: Some(expert_watched_wallet_address),
+            token_id: Some(token_id),
+            offset: 0,
         })
         .await?
         .into_result()
     {
-        Some(database_token) => {
+        Some(tk) => {
             /* if token_in is already in the database, update it's amount, or remove it new amount is 0 */
-            let old_amount = U256::from_dec_str(&database_token.quantity)?;
+            let old_amount = U256::from_dec_str(&tk.entry)?;
             let new_amount = old_amount.try_checked_sub(trade.amount_in)?;
-            if new_amount == U256::zero() {
-                db.execute(FunUserRemoveStrategyInitialTokenRatioReq {
-                    strategy_initial_token_ratio_id: database_token.strategy_initial_token_ratio_id,
-                    strategy_id: strategy_id,
-                })
-                .await?;
-            } else {
-                db.execute(FunUserUpdateStrategyInitialTokenRatioReq {
-                    strategy_initial_token_ratio_id: database_token.strategy_initial_token_ratio_id,
-                    new_quantity: format!("{:?}", new_amount),
-                })
-                .await?;
-            }
+            db.execute(FunWatcherUpsertExpertListenedWalletAssetLedgerReq {
+                address: format!("{:?}", expert_watched_wallet_address),
+                blockchain,
+                token_id,
+                old_entry: tk.entry,
+                new_entry: format!("{:?}", new_amount),
+            })
+            .await?;
         }
-        None => {
-            /* if token_in is not in the database, add it with wallet balance */
-            // TODO: find out if we should count token_in balance as a strategy token
-            // let token_in = Erc20Token::new(conn.clone(), trade.token_in)?;
-            // db.execute(FunUserAddStrategyInitialTokenRatioReq {
-            //     strategy_id: strategy_id,
-            //     token_address: format!("{:?}", trade.token_in),
-            //     token_name: token_in.symbol().await?,
-            //     quantity: format!("{:?}", token_in.balance_of(trade.caller).await?),
-            //     blockchain: blockchain,
-            // })
-            // .await?;
-        }
+        None => {}
     };
 
+    let expert_watched_wallet_address = trade.receiver;
     match db
         .execute(FunUserGetStrategyInitialTokenRatioByAddressAndChainReq {
             strategy_id: strategy_id,
@@ -430,25 +419,28 @@ pub async fn update_expert_listened_wallet_asset_ledger(
         .await?
         .into_result()
     {
-        Some(database_token) => {
-            /* if token_out is already in the database, update it's amount */
-            let old_amount = U256::from_dec_str(&database_token.quantity)?;
-            let new_amount = old_amount.try_checked_add(trade.amount_out)?;
-            db.execute(FunUserUpdateStrategyInitialTokenRatioReq {
-                strategy_initial_token_ratio_id: database_token.strategy_initial_token_ratio_id,
-                new_quantity: format!("{:?}", new_amount),
+        Some(tk) => {
+            /* if token_in is already in the database, update it's amount, or remove it new amount is 0 */
+            let old_amount = U256::from_dec_str(&tk.entry)?;
+            let new_amount = old_amount.try_checked_sub(trade.amount_out)?;
+            db.execute(FunWatcherUpsertExpertListenedWalletAssetLedgerReq {
+                address: format!("{:?}", expert_watched_wallet_address),
+                blockchain,
+                token_id,
+                old_entry: tk.entry,
+                new_entry: format!("{:?}", new_amount),
             })
             .await?;
         }
         None => {
-            /* if token_out is not in the database, add it with wallet balance */
-            let token_out = Erc20Token::new(conn.clone(), trade.token_out)?;
-            db.execute(FunUserAddStrategyInitialTokenRatioReq {
-                strategy_id: strategy_id,
-                token_address: format!("{:?}", trade.token_out),
-                token_name: token_out.symbol().await?,
-                quantity: format!("{:?}", trade.amount_out),
-                blockchain: blockchain,
+            let old_amount = U256::from(0);
+            let new_amount = trade.amount_out;
+            db.execute(FunWatcherUpsertExpertListenedWalletAssetLedgerReq {
+                address: format!("{:?}", expert_watched_wallet_address),
+                blockchain,
+                token_id,
+                old_entry: format!("{:?}", old_amount),
+                new_entry: format!("{:?}", new_amount),
             })
             .await?;
         }
