@@ -59,62 +59,73 @@ END
         "#,
         ),
         ProceduralFunction::new(
-            "fun_watcher_save_wallet_activity_history",
+            "fun_watcher_save_strategy_watching_wallet_trade_history",
             vec![
                 Field::new("address", Type::String),
                 Field::new("transaction_hash", Type::String),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("contract_address", Type::String),
-                Field::new("caller_address", Type::String),
                 Field::new("dex", Type::optional(Type::String)),
                 Field::new("token_in_address", Type::optional(Type::String)),
                 Field::new("token_out_address", Type::optional(Type::String)),
                 Field::new("amount_in", Type::optional(Type::String)),
                 Field::new("amount_out", Type::optional(Type::String)),
-                Field::new("swap_calls", Type::optional(Type::Object)),
-                Field::new("paths", Type::optional(Type::Object)),
-                Field::new("dex_versions", Type::optional(Type::Object)),
-                Field::new("created_at", Type::optional(Type::BigInt)),
+                Field::new("happened_at", Type::optional(Type::BigInt)),
             ],
-            vec![Field::new("wallet_activity_history_id", Type::BigInt)],
+            vec![
+                Field::new(
+                    "strategy_watching_wallet_trade_history_id",
+                    Type::optional(Type::BigInt),
+                ),
+                Field::new("expert_watched_wallet_id", Type::optional(Type::BigInt)),
+                Field::new("fkey_token_in", Type::optional(Type::BigInt)),
+                Field::new("fkey_token_in_name", Type::optional(Type::String)),
+                Field::new("fkey_token_out", Type::optional(Type::BigInt)),
+                Field::new("fkey_token_out_name", Type::optional(Type::String)),
+            ],
             r#"
+DECLARE
+    _strategy_watching_wallet_trade_history_id bigint;
+    _expert_watched_wallet_id bigint;
+    _fkey_token_in            bigint;
+    _fkey_token_in_name       varchar;
+    _fkey_token_out           bigint;
+    _fkey_token_out_name      varchar;
 BEGIN
-    RETURN QUERY INSERT INTO tbl.wallet_activity_history(
-        address,
-        transaction_hash,
-        blockchain,
-        dex,
-        contract_address,
-        token_in_address,
-        token_out_address,
-        caller_address,
-        amount_in,
-        amount_out,
-        swap_calls,
-        paths,
-        dex_versions,
-        created_at
-    )
-    VALUES (
-        a_address,
-        a_transaction_hash,
-        a_blockchain,
-        a_dex,
-        a_contract_address,
-        a_token_in_address,
-        a_token_out_address,
-        a_caller_address,
-        a_amount_in,
-        a_amount_out,
-        a_swap_calls,
-        a_paths,
-        a_dex_versions,
-        COALESCE(a_created_at, extract(Epoch FROM (NOW()))::bigint)
-    )
-    RETURNING pkey_id;
+    SELECT pkey_id
+    INTO _expert_watched_wallet_id
+    FROM tbl.expert_watched_wallet
+    WHERE address = a_address
+      AND blockchain = a_blockchain;
+    SELECT pkey_id
+    INTO _fkey_token_in
+    FROM tbl.escrow_token_contract_address
+    WHERE address = a_token_in_address
+      AND blockchain = a_blockchain;
+    SELECT pkey_id
+    INTO _fkey_token_out
+    FROM tbl.escrow_token_contract_address
+    WHERE address = a_token_out_address
+      AND blockchain = a_blockchain;
+    IF _expert_watched_wallet_id ISNULL AND _fkey_token_in ISNULL AND _fkey_token_out ISNULL THEN
+        INSERT INTO tbl.strategy_watching_wallet_trade_history
+            (
+             expert_watched_wallet_id, blockchain,
+             transaction_hash, dex, contract_address,
+             fkey_token_in, fkey_token_out, amount_in,
+             amount_out, heppened_at
+                )
+        VALUES (_expert_watched_wallet_id, a_blockchain, a_transaction_hash, a_dex, a_contract_address,
+                _fkey_token_in, _fkey_token_out, a_amount_in, a_amount_out, a_happened_at)
+        RETURNING pkey_id
+        INTO _strategy_watching_wallet_trade_history;
+        RETURN QUERY SELECT _strategy_watching_wallet_trade_history_id, _expert_watched_wallet_id,
+                            _fkey_token_in, _fkey_token_in_name, _fkey_token_out, _fkey_token_out_name;
+    END IF;
 END
         "#,
         ),
+        // depcreated
         ProceduralFunction::new(
             "fun_watcher_list_wallet_activity_history",
             vec![
@@ -158,6 +169,114 @@ BEGIN
                  FROM tbl.wallet_activity_history AS a
                  WHERE a.address = a_address
                    AND a.blockchain = a_blockchain;
+END
+        "#,
+        ),
+        ProceduralFunction::new(
+            "fun_watcher_list_strategy_escrow_pending_wallet_ledger",
+            vec![Field::new("strategy_id", Type::optional(Type::BigInt))],
+            vec![
+                Field::new("strategy_id", Type::BigInt),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("address", Type::String),
+                Field::new("token_id", Type::BigInt),
+                Field::new("token_address", Type::String),
+                Field::new("token_name", Type::String),
+                Field::new("token_symbol", Type::String),
+                Field::new("entry", Type::String),
+            ],
+            r#"
+BEGIN
+    RETURN QUERY SELECT w.strategy_id,
+                        l.blockchain,
+                        w.address,
+                        t.pkey_id,
+                        t.address,
+                        t.name,
+                        t.symbol,
+                        l.entry
+                 FROM tbl.strategy_escrow_pending_wallet_ledger AS l
+                 JOIN tbl.strategy_escrow_pending_wallet_address AS w ON l.fkey_strategy_pending_wallet_address_id = w.pkey_id
+                 JOIN tbl.escrow_token_contract_address AS t ON l.fkey_token_id = t.pkey_id
+                 WHERE strategy_id = a_strategy_id;
+END
+        "#,
+        ),
+        ProceduralFunction::new(
+            "fun_watcher_list_user_strategy_ledger",
+            vec![
+                Field::new("limit", Type::BigInt),
+                Field::new("offset", Type::BigInt),
+                Field::new("strategy_id", Type::optional(Type::BigInt)),
+                Field::new("user_id", Type::optional(Type::BigInt)),
+                Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
+            ],
+            vec![
+                Field::new("strategy_id", Type::BigInt),
+                Field::new("user_id", Type::BigInt),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("strategy_pool_contract_address", Type::String),
+                Field::new("user_strategy_wallet_address", Type::String),
+                Field::new("entry", Type::String),
+            ],
+            r#"
+BEGIN
+    RETURN QUERY SELECT spc.fkey_strategy_id,
+                        usw.user_id,
+                        spc.blockchain,
+                        spc.address,
+                        usw.address,
+                        usl.entry
+                 FROM tbl.user_strategy_ledger AS usl
+                 JOIN tbl.user_strategy_wallet AS usw ON usw.pkey_id = usl.fkey_user_strategy_wallet_id
+                 JOIN tbl.strategy_pool_contract AS spc ON spc.pkey_id = usl.fkey_strategy_pool_contract_id
+                 WHERE (a_strategy_id ISNULL OR spc.fkey_strategy_id = a_strategy_id)
+                   AND (a_user_id ISNULL OR usw.user_id = a_user_id)
+                   AND (a_blockchain ISNULL OR spc.blockchain = a_blockchain)
+                 ORDER BY usl.pkey_id DESC
+                 LIMIT a_limit
+                 OFFSET a_offset;
+END
+        "#,
+        ),
+        // TODO: has to perform a lot of joins. do it when I have time
+        ProceduralFunction::new(
+            "fun_watcher_upsert_expert_listened_wallet_asset_ledger",
+            vec![
+                Field::new("strategy_id", Type::BigInt),
+                Field::new("token_id", Type::String),
+                Field::new("old_entry", Type::String),
+                Field::new("new_entry", Type::String),
+            ],
+            vec![Field::new("pkey_id", Type::BigInt)],
+            r#"
+DECLARE
+    _pkey_id bigint;
+BEGIN
+    -- insert new entry if not exist
+    IF NOT EXISTS (SELECT 1
+                   FROM tbl.expert_listened_wallet_asset_ledger AS elwal
+                   JOIN tbl.strategy_watched_wallet AS w ON w.pkey_id = elwal.fkey_strategy_watched_wallet_id
+                   JOIN tbl.strategy AS s ON s.pkey_id = w.fkey_strategy_id
+                   WHERE w.fkey_strategy_id = a_strategy_id
+                     AND fkey_token_id = a_token_id
+                     AND w.blockchain = a_blockchain
+                     ) THEN
+        INSERT INTO tbl.expert_listened_wallet_asset_ledger (fkey_strategy_id, fkey_token_id, entry)
+        VALUES (a_strategy_id, a_token_id, a_new_entry)
+        RETURNING pkey_id
+        INTO _pkey_id;
+    END IF;
+    
+    -- update old entry if exist and equals to old entry
+    UPDATE tbl.expert_listened_wallet_asset_ledger
+    SET entry = a_new_entry
+    WHERE fkey_strategy_id = a_strategy_id
+      AND fkey_token_id = a_token_id
+      AND entry = a_old_entry
+    RETURNING pkey_id
+    INTO _pkey_id;
+    RETURN QUERY SELECT _pkey_id;
 END
         "#,
         ),

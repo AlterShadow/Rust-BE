@@ -439,44 +439,7 @@ impl RequestHandler for MethodAdminRejectStrategy {
         .boxed()
     }
 }
-pub struct MethodAdminAddWalletActivityHistory;
-impl RequestHandler for MethodAdminAddWalletActivityHistory {
-    type Request = AdminAddWalletActivityHistoryRequest;
 
-    fn handle(
-        &self,
-        toolbox: &Toolbox,
-        ctx: RequestContext,
-        req: Self::Request,
-    ) -> FutureResponse<Self::Request> {
-        let db: DbClient = toolbox.get_db();
-        async move {
-            ensure_user_role(ctx, EnumRole::Admin)?;
-
-            let _ret = db
-                .execute(FunWatcherSaveWalletActivityHistoryReq {
-                    address: req.wallet_address,
-                    transaction_hash: req.transaction_hash,
-                    blockchain: req.blockchain,
-                    dex: req.dex,
-                    contract_address: req.contract_address,
-                    token_in_address: req.token_in_address,
-                    token_out_address: req.token_out_address,
-                    caller_address: req.caller_address,
-                    amount_in: req.amount_in,
-                    amount_out: req.amount_out,
-                    swap_calls: req.swap_calls,
-                    paths: req.paths,
-                    dex_versions: req.dex_versions,
-                    created_at: req.created_at,
-                })
-                .await?;
-
-            Ok(AdminAddWalletActivityHistoryResponse {})
-        }
-        .boxed()
-    }
-}
 pub struct MethodAdminAddAuditRule;
 impl RequestHandler for MethodAdminAddAuditRule {
     type Request = AdminAddAuditRuleRequest;

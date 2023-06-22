@@ -6,7 +6,7 @@ use crate::{
 };
 use bytes::Bytes;
 use eyre::*;
-use gen::database::{FunWatcherSaveRawTransactionReq, FunWatcherSaveWalletActivityHistoryReq};
+use gen::database::FunWatcherSaveRawTransactionReq;
 use gen::model::{EnumBlockChain, EnumDex, EnumDexVersion};
 use lib::database::DbClient;
 use serde::{Deserialize, Serialize};
@@ -104,45 +104,6 @@ pub fn parse_quickalert_payload(payload: Bytes) -> Result<Vec<H256>> {
     }
 }
 
-pub async fn save_trade(
-    hash: H256,
-    trade: &DexTrade,
-    db: &DbClient,
-    blockchain: EnumBlockChain,
-) -> Result<()> {
-    if let Err(err) = async {
-        db.execute(FunWatcherSaveWalletActivityHistoryReq {
-            address: format!("{:?}", trade.caller),
-            transaction_hash: format!("{:?}", hash),
-            blockchain,
-            dex: Some(trade.dex.to_string()),
-            contract_address: format!("{:?}", trade.contract),
-            token_in_address: Some(format!("{:?}", trade.token_in)),
-            token_out_address: Some(format!("{:?}", trade.token_out)),
-            caller_address: format!("{:?}", trade.caller),
-            amount_in: Some(format!("{:?}", trade.amount_in)),
-            amount_out: Some(format!("{:?}", trade.amount_out)),
-            swap_calls: Some(serde_json::to_value(&trade.swap_calls)?),
-            paths: Some(serde_json::to_value(&trade.paths)?),
-            dex_versions: Some(serde_json::to_value(&trade.dex_versions)?),
-            // TODO: fetch block time
-            created_at: Some(
-                SystemTime::now()
-                    .duration_since(SystemTime::UNIX_EPOCH)?
-                    .as_secs() as _,
-            ),
-        })
-        .await?;
-
-        Ok::<_, Error>(())
-    }
-    .await
-    {
-        return Err(eyre!("failed to save trade: {:?}", err));
-    }
-
-    Ok(())
-}
 pub async fn cache_ethereum_transaction(
     tx: &TransactionReady,
     db: &DbClient,

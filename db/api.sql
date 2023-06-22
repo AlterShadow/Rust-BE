@@ -2402,47 +2402,56 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_watcher_save_wallet_activity_history(a_address varchar, a_transaction_hash varchar, a_blockchain enum_block_chain, a_contract_address varchar, a_caller_address varchar, a_dex varchar DEFAULT NULL, a_token_in_address varchar DEFAULT NULL, a_token_out_address varchar DEFAULT NULL, a_amount_in varchar DEFAULT NULL, a_amount_out varchar DEFAULT NULL, a_swap_calls jsonb DEFAULT NULL, a_paths jsonb DEFAULT NULL, a_dex_versions jsonb DEFAULT NULL, a_created_at bigint DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_watcher_save_strategy_watching_wallet_trade_history(a_address varchar, a_transaction_hash varchar, a_blockchain enum_block_chain, a_contract_address varchar, a_dex varchar DEFAULT NULL, a_token_in_address varchar DEFAULT NULL, a_token_out_address varchar DEFAULT NULL, a_amount_in varchar DEFAULT NULL, a_amount_out varchar DEFAULT NULL, a_happened_at bigint DEFAULT NULL)
 RETURNS table (
-    "wallet_activity_history_id" bigint
+    "strategy_watching_wallet_trade_history_id" bigint,
+    "expert_watched_wallet_id" bigint,
+    "fkey_token_in" bigint,
+    "fkey_token_in_name" varchar,
+    "fkey_token_out" bigint,
+    "fkey_token_out_name" varchar
 )
 LANGUAGE plpgsql
 AS $$
     
+DECLARE
+    _strategy_watching_wallet_trade_history_id bigint;
+    _expert_watched_wallet_id bigint;
+    _fkey_token_in            bigint;
+    _fkey_token_in_name       varchar;
+    _fkey_token_out           bigint;
+    _fkey_token_out_name      varchar;
 BEGIN
-    RETURN QUERY INSERT INTO tbl.wallet_activity_history(
-        address,
-        transaction_hash,
-        blockchain,
-        dex,
-        contract_address,
-        token_in_address,
-        token_out_address,
-        caller_address,
-        amount_in,
-        amount_out,
-        swap_calls,
-        paths,
-        dex_versions,
-        created_at
-    )
-    VALUES (
-        a_address,
-        a_transaction_hash,
-        a_blockchain,
-        a_dex,
-        a_contract_address,
-        a_token_in_address,
-        a_token_out_address,
-        a_caller_address,
-        a_amount_in,
-        a_amount_out,
-        a_swap_calls,
-        a_paths,
-        a_dex_versions,
-        COALESCE(a_created_at, extract(Epoch FROM (NOW()))::bigint)
-    )
-    RETURNING pkey_id;
+    SELECT pkey_id
+    INTO _expert_watched_wallet_id
+    FROM tbl.expert_watched_wallet
+    WHERE address = a_address
+      AND blockchain = a_blockchain;
+    SELECT pkey_id
+    INTO _fkey_token_in
+    FROM tbl.escrow_token_contract_address
+    WHERE address = a_token_in_address
+      AND blockchain = a_blockchain;
+    SELECT pkey_id
+    INTO _fkey_token_out
+    FROM tbl.escrow_token_contract_address
+    WHERE address = a_token_out_address
+      AND blockchain = a_blockchain;
+    IF _expert_watched_wallet_id ISNULL AND _fkey_token_in ISNULL AND _fkey_token_out ISNULL THEN
+        INSERT INTO tbl.strategy_watching_wallet_trade_history
+            (
+             expert_watched_wallet_id, blockchain,
+             transaction_hash, dex, contract_address,
+             fkey_token_in, fkey_token_out, amount_in,
+             amount_out, heppened_at
+                )
+        VALUES (_expert_watched_wallet_id, a_blockchain, a_transaction_hash, a_dex, a_contract_address,
+                _fkey_token_in, _fkey_token_out, a_amount_in, a_amount_out, a_happened_at)
+        RETURNING pkey_id
+        INTO _strategy_watching_wallet_trade_history;
+        RETURN QUERY SELECT _strategy_watching_wallet_trade_history_id, _expert_watched_wallet_id,
+                            _fkey_token_in, _fkey_token_in_name, _fkey_token_out, _fkey_token_out_name;
+    END IF;
 END
         
 $$;
@@ -2488,6 +2497,71 @@ BEGIN
                  FROM tbl.wallet_activity_history AS a
                  WHERE a.address = a_address
                    AND a.blockchain = a_blockchain;
+END
+        
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_watcher_list_strategy_escrow_pending_wallet_ledger(a_strategy_id bigint DEFAULT NULL)
+RETURNS table (
+    "strategy_id" bigint,
+    "blockchain" enum_block_chain,
+    "address" varchar,
+    "token_id" bigint,
+    "token_address" varchar,
+    "token_name" varchar,
+    "token_symbol" varchar,
+    "entry" varchar
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY SELECT w.strategy_id,
+                        l.blockchain,
+                        w.address,
+                        t.pkey_id,
+                        t.address,
+                        t.name,
+                        t.symbol,
+                        l.entry
+                 FROM tbl.strategy_escrow_pending_wallet_ledger AS l
+                 JOIN tbl.strategy_escrow_pending_wallet_address AS w ON l.fkey_strategy_pending_wallet_address_id = w.pkey_id
+                 JOIN tbl.escrow_token_contract_address AS t ON l.fkey_token_id = t.pkey_id
+                 WHERE strategy_id = a_strategy_id;
+END
+        
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_watcher_list_user_strategy_ledger(a_limit bigint, a_offset bigint, a_strategy_id bigint DEFAULT NULL, a_user_id bigint DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL)
+RETURNS table (
+    "strategy_id" bigint,
+    "user_id" bigint,
+    "blockchain" enum_block_chain,
+    "strategy_pool_contract_address" varchar,
+    "user_strategy_wallet_address" varchar,
+    "entry" varchar
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY SELECT spc.fkey_strategy_id,
+                        usw.user_id,
+                        spc.blockchain,
+                        spc.address,
+                        usw.address,
+                        usl.entry
+                 FROM tbl.user_strategy_ledger AS usl
+                 JOIN tbl.user_strategy_wallet AS usw ON usw.pkey_id = usl.fkey_user_strategy_wallet_id
+                 JOIN tbl.strategy_pool_contract AS spc ON spc.pkey_id = usl.fkey_strategy_pool_contract_id
+                 WHERE (a_strategy_id ISNULL OR spc.fkey_strategy_id = a_strategy_id)
+                   AND (a_user_id ISNULL OR usw.user_id = a_user_id)
+                   AND (a_blockchain ISNULL OR spc.blockchain = a_blockchain)
+                 ORDER BY usl.pkey_id DESC
+                 LIMIT a_limit
+                 OFFSET a_offset;
 END
         
 $$;

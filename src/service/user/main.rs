@@ -136,7 +136,6 @@ async fn main() -> Result<()> {
     server.add_handler(MethodAdminApproveStrategy);
     server.add_handler(MethodAdminRejectStrategy);
 
-    server.add_handler(MethodAdminAddWalletActivityHistory); // only for mocking purpose
     server.add_handler(MethodAdminAddAuditRule);
     let eth_pool = EthereumRpcConnectionPool::from_conns(config.ethereum_urls);
     let coin_addresses = Arc::new(BlockchainCoinAddresses::new());

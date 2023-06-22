@@ -555,6 +555,28 @@ pub struct FunWatcherGetRawTransactionRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunWatcherListStrategyEscrowPendingWalletLedgerRespRow {
+    pub strategy_id: i64,
+    pub blockchain: EnumBlockChain,
+    pub address: String,
+    pub token_id: i64,
+    pub token_address: String,
+    pub token_name: String,
+    pub token_symbol: String,
+    pub entry: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunWatcherListUserStrategyLedgerRespRow {
+    pub strategy_id: i64,
+    pub user_id: i64,
+    pub blockchain: EnumBlockChain,
+    pub strategy_pool_contract_address: String,
+    pub user_strategy_wallet_address: String,
+    pub entry: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunWatcherListWalletActivityHistoryRespRow {
     pub wallet_activity_history_id: i64,
     pub address: String,
@@ -588,8 +610,19 @@ pub struct FunWatcherSaveRawTransactionRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
-pub struct FunWatcherSaveWalletActivityHistoryRespRow {
-    pub wallet_activity_history_id: i64,
+pub struct FunWatcherSaveStrategyWatchingWalletTradeHistoryRespRow {
+    #[serde(default)]
+    pub strategy_watching_wallet_trade_history_id: Option<i64>,
+    #[serde(default)]
+    pub expert_watched_wallet_id: Option<i64>,
+    #[serde(default)]
+    pub fkey_token_in: Option<i64>,
+    #[serde(default)]
+    pub fkey_token_in_name: Option<String>,
+    #[serde(default)]
+    pub fkey_token_out: Option<i64>,
+    #[serde(default)]
+    pub fkey_token_out_name: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -2427,12 +2460,11 @@ impl DatabaseRequest for FunWatcherGetRawTransactionReq {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunWatcherSaveWalletActivityHistoryReq {
+pub struct FunWatcherSaveStrategyWatchingWalletTradeHistoryReq {
     pub address: String,
     pub transaction_hash: String,
     pub blockchain: EnumBlockChain,
     pub contract_address: String,
-    pub caller_address: String,
     #[serde(default)]
     pub dex: Option<String>,
     #[serde(default)]
@@ -2444,20 +2476,14 @@ pub struct FunWatcherSaveWalletActivityHistoryReq {
     #[serde(default)]
     pub amount_out: Option<String>,
     #[serde(default)]
-    pub swap_calls: Option<serde_json::Value>,
-    #[serde(default)]
-    pub paths: Option<serde_json::Value>,
-    #[serde(default)]
-    pub dex_versions: Option<serde_json::Value>,
-    #[serde(default)]
-    pub created_at: Option<i64>,
+    pub happened_at: Option<i64>,
 }
 
 #[allow(unused_variables)]
-impl DatabaseRequest for FunWatcherSaveWalletActivityHistoryReq {
-    type ResponseRow = FunWatcherSaveWalletActivityHistoryRespRow;
+impl DatabaseRequest for FunWatcherSaveStrategyWatchingWalletTradeHistoryReq {
+    type ResponseRow = FunWatcherSaveStrategyWatchingWalletTradeHistoryRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_watcher_save_wallet_activity_history(a_address => $1::varchar, a_transaction_hash => $2::varchar, a_blockchain => $3::enum_block_chain, a_contract_address => $4::varchar, a_caller_address => $5::varchar, a_dex => $6::varchar, a_token_in_address => $7::varchar, a_token_out_address => $8::varchar, a_amount_in => $9::varchar, a_amount_out => $10::varchar, a_swap_calls => $11::jsonb, a_paths => $12::jsonb, a_dex_versions => $13::jsonb, a_created_at => $14::bigint);"
+        "SELECT * FROM api.fun_watcher_save_strategy_watching_wallet_trade_history(a_address => $1::varchar, a_transaction_hash => $2::varchar, a_blockchain => $3::enum_block_chain, a_contract_address => $4::varchar, a_dex => $5::varchar, a_token_in_address => $6::varchar, a_token_out_address => $7::varchar, a_amount_in => $8::varchar, a_amount_out => $9::varchar, a_happened_at => $10::bigint);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -2465,16 +2491,12 @@ impl DatabaseRequest for FunWatcherSaveWalletActivityHistoryReq {
             &self.transaction_hash as &(dyn ToSql + Sync),
             &self.blockchain as &(dyn ToSql + Sync),
             &self.contract_address as &(dyn ToSql + Sync),
-            &self.caller_address as &(dyn ToSql + Sync),
             &self.dex as &(dyn ToSql + Sync),
             &self.token_in_address as &(dyn ToSql + Sync),
             &self.token_out_address as &(dyn ToSql + Sync),
             &self.amount_in as &(dyn ToSql + Sync),
             &self.amount_out as &(dyn ToSql + Sync),
-            &self.swap_calls as &(dyn ToSql + Sync),
-            &self.paths as &(dyn ToSql + Sync),
-            &self.dex_versions as &(dyn ToSql + Sync),
-            &self.created_at as &(dyn ToSql + Sync),
+            &self.happened_at as &(dyn ToSql + Sync),
         ]
     }
 }
@@ -2494,6 +2516,52 @@ impl DatabaseRequest for FunWatcherListWalletActivityHistoryReq {
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
             &self.address as &(dyn ToSql + Sync),
+            &self.blockchain as &(dyn ToSql + Sync),
+        ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunWatcherListStrategyEscrowPendingWalletLedgerReq {
+    #[serde(default)]
+    pub strategy_id: Option<i64>,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunWatcherListStrategyEscrowPendingWalletLedgerReq {
+    type ResponseRow = FunWatcherListStrategyEscrowPendingWalletLedgerRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_watcher_list_strategy_escrow_pending_wallet_ledger(a_strategy_id => $1::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![&self.strategy_id as &(dyn ToSql + Sync)]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunWatcherListUserStrategyLedgerReq {
+    pub limit: i64,
+    pub offset: i64,
+    #[serde(default)]
+    pub strategy_id: Option<i64>,
+    #[serde(default)]
+    pub user_id: Option<i64>,
+    #[serde(default)]
+    pub blockchain: Option<EnumBlockChain>,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunWatcherListUserStrategyLedgerReq {
+    type ResponseRow = FunWatcherListUserStrategyLedgerRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_watcher_list_user_strategy_ledger(a_limit => $1::bigint, a_offset => $2::bigint, a_strategy_id => $3::bigint, a_user_id => $4::bigint, a_blockchain => $5::enum_block_chain);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.limit as &(dyn ToSql + Sync),
+            &self.offset as &(dyn ToSql + Sync),
+            &self.strategy_id as &(dyn ToSql + Sync),
+            &self.user_id as &(dyn ToSql + Sync),
             &self.blockchain as &(dyn ToSql + Sync),
         ]
     }
