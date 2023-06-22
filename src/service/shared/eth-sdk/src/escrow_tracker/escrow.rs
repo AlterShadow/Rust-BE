@@ -61,6 +61,7 @@ pub fn parse_escrow(
 
             EscrowTransfer {
                 token,
+                token_address: called_contract,
                 amount,
                 recipient,
                 owner: sender,
@@ -92,6 +93,7 @@ pub fn parse_escrow(
 
             EscrowTransfer {
                 token,
+                token_address: called_contract,
                 amount,
                 recipient,
                 owner,
