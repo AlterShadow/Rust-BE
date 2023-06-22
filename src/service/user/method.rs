@@ -985,7 +985,7 @@ impl RequestHandler for MethodUserBackStrategy {
         let master_key = self.master_key.clone();
         async move {
             let escrow_contract = escrow_contract.get(&pool, req.blockchain).await?;
-            let eth_conn = pool.get(EnumBlockChain::LocalNet).await?;
+            let eth_conn = pool.get(req.blockchain).await?;
             ensure_user_role(ctx, EnumRole::User)?;
 
             user_back_strategy(
