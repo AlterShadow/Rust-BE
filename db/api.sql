@@ -2567,6 +2567,57 @@ END
 $$;
         
 
+CREATE OR REPLACE FUNCTION api.fun_watcher_upsert_expert_listened_wallet_asset_ledger(a_address varchar, a_blockchain enum_block_chain, a_token_id varchar, a_old_entry varchar, a_new_entry varchar)
+RETURNS table (
+    "expert_listened_wallet_asset_ledger_id" bigint
+)
+LANGUAGE plpgsql
+AS $$
+    
+
+DECLARE
+    _expert_watched_wallet_id bigint;
+    _expert_listened_wallet_asset_ledger_id bigint;
+    _expert_listened_wallet_asset_ledger_old_entry bigint;
+    _pkey_id bigint;
+BEGIN
+    SELECT pkey_id INTO _expert_watched_wallet_id
+    FROM tbl.expert_watched_wallet
+    WHERE address = a_address
+      AND blockchain = a_blockchain;
+    ASSERT _expert_watched_wallet_id NOTNULL;
+    SELECT elwal.pkey_id, elwal.entry INTO _expert_listened_wallet_asset_ledger_id, _expert_listened_wallet_asset_ledger_old_entry
+        FROM tbl.expert_listened_wallet_asset_ledger AS elwal
+                JOIN tbl.expert_watched_wallet AS eww ON eww.pkey_id = elwal.expert_watched_wallet_pkey_id
+        WHERE elwal.fkey_token_id = a_token_id
+         AND eww.pkey_id = _expert_watched_wallet_id;
+         
+    -- insert new entry if not exist
+    IF _expert_listened_wallet_asset_ledger_id ISNULL THEN
+        INSERT INTO tbl.expert_listened_wallet_asset_ledger (fkey_token_id, entry, expert_watched_wallet_pkey_id)
+        VALUES (fkey_token_id, a_new_entry, _expert_listened_wallet_asset_ledger_id)
+        RETURNING pkey_id
+            INTO _pkey_id;
+    END IF;
+
+    -- update old entry if exist and equals to old entry
+    IF _expert_listened_wallet_asset_ledger_old_entry != a_old_entry THEN
+        RETURN QUERY SELECT _pkey_id;
+    END IF;
+    UPDATE tbl.expert_listened_wallet_asset_ledger
+    SET entry = a_new_entry
+    WHERE expert_watched_wallet_pkey_id = _expert_listened_wallet_asset_ledger_id
+      AND fkey_token_id = a_token_id
+      AND entry = a_old_entry
+    RETURNING pkey_id
+        INTO _pkey_id;
+    RETURN QUERY SELECT _pkey_id;
+END
+
+        
+$$;
+        
+
 CREATE OR REPLACE FUNCTION api.AUTH_SERVICE()
 RETURNS table (
     "code" int

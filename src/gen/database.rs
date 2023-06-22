@@ -625,6 +625,11 @@ pub struct FunWatcherSaveStrategyWatchingWalletTradeHistoryRespRow {
     pub fkey_token_out_name: Option<String>,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunWatcherUpsertExpertListenedWalletAssetLedgerRespRow {
+    pub expert_listened_wallet_asset_ledger_id: i64,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAuthSignupReq {
     pub address: String,
@@ -2563,6 +2568,32 @@ impl DatabaseRequest for FunWatcherListUserStrategyLedgerReq {
             &self.strategy_id as &(dyn ToSql + Sync),
             &self.user_id as &(dyn ToSql + Sync),
             &self.blockchain as &(dyn ToSql + Sync),
+        ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunWatcherUpsertExpertListenedWalletAssetLedgerReq {
+    pub address: String,
+    pub blockchain: EnumBlockChain,
+    pub token_id: String,
+    pub old_entry: String,
+    pub new_entry: String,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunWatcherUpsertExpertListenedWalletAssetLedgerReq {
+    type ResponseRow = FunWatcherUpsertExpertListenedWalletAssetLedgerRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_watcher_upsert_expert_listened_wallet_asset_ledger(a_address => $1::varchar, a_blockchain => $2::enum_block_chain, a_token_id => $3::varchar, a_old_entry => $4::varchar, a_new_entry => $5::varchar);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.address as &(dyn ToSql + Sync),
+            &self.blockchain as &(dyn ToSql + Sync),
+            &self.token_id as &(dyn ToSql + Sync),
+            &self.old_entry as &(dyn ToSql + Sync),
+            &self.new_entry as &(dyn ToSql + Sync),
         ]
     }
 }

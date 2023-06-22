@@ -377,8 +377,8 @@ pub async fn update_expert_listened_wallet_asset_ledger(
     trade: &DexTrade,
     blockchain: EnumBlockChain,
 ) -> Result<()> {
-    // TODO: add fkey_strategy_watching_wallet to tbl.strategy_initial_token_ratio so that we can always add current balance of token_in and token_out
     // correctly adding wallet balance to tbl.strategy_initial_token ratio is not possible because expert can have multiple watching wallets in one chain
+    // TODO: use fun_watcher_get_expert_listened_wallet_asset_ledger and fun_watcher_upsert_expert_listened_wallet_asset_ledger
     match db
         .execute(FunUserGetStrategyInitialTokenRatioByAddressAndChainReq {
             strategy_id: strategy_id,

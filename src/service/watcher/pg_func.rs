@@ -239,45 +239,60 @@ BEGIN
 END
         "#,
         ),
-        // TODO: has to perform a lot of joins. do it when I have time
         ProceduralFunction::new(
             "fun_watcher_upsert_expert_listened_wallet_asset_ledger",
             vec![
-                Field::new("strategy_id", Type::BigInt),
+                Field::new("address", Type::String),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("token_id", Type::String),
                 Field::new("old_entry", Type::String),
                 Field::new("new_entry", Type::String),
             ],
-            vec![Field::new("pkey_id", Type::BigInt)],
+            vec![Field::new(
+                "expert_listened_wallet_asset_ledger_id",
+                Type::BigInt,
+            )],
             r#"
+
 DECLARE
+    _expert_watched_wallet_id bigint;
+    _expert_listened_wallet_asset_ledger_id bigint;
+    _expert_listened_wallet_asset_ledger_old_entry bigint;
     _pkey_id bigint;
 BEGIN
+    SELECT pkey_id INTO _expert_watched_wallet_id
+    FROM tbl.expert_watched_wallet
+    WHERE address = a_address
+      AND blockchain = a_blockchain;
+    ASSERT _expert_watched_wallet_id NOTNULL;
+    SELECT elwal.pkey_id, elwal.entry INTO _expert_listened_wallet_asset_ledger_id, _expert_listened_wallet_asset_ledger_old_entry
+        FROM tbl.expert_listened_wallet_asset_ledger AS elwal
+                JOIN tbl.expert_watched_wallet AS eww ON eww.pkey_id = elwal.expert_watched_wallet_pkey_id
+        WHERE elwal.fkey_token_id = a_token_id
+         AND eww.pkey_id = _expert_watched_wallet_id;
+         
     -- insert new entry if not exist
-    IF NOT EXISTS (SELECT 1
-                   FROM tbl.expert_listened_wallet_asset_ledger AS elwal
-                   JOIN tbl.strategy_watched_wallet AS w ON w.pkey_id = elwal.fkey_strategy_watched_wallet_id
-                   JOIN tbl.strategy AS s ON s.pkey_id = w.fkey_strategy_id
-                   WHERE w.fkey_strategy_id = a_strategy_id
-                     AND fkey_token_id = a_token_id
-                     AND w.blockchain = a_blockchain
-                     ) THEN
-        INSERT INTO tbl.expert_listened_wallet_asset_ledger (fkey_strategy_id, fkey_token_id, entry)
-        VALUES (a_strategy_id, a_token_id, a_new_entry)
+    IF _expert_listened_wallet_asset_ledger_id ISNULL THEN
+        INSERT INTO tbl.expert_listened_wallet_asset_ledger (fkey_token_id, entry, expert_watched_wallet_pkey_id)
+        VALUES (fkey_token_id, a_new_entry, _expert_listened_wallet_asset_ledger_id)
         RETURNING pkey_id
-        INTO _pkey_id;
+            INTO _pkey_id;
     END IF;
-    
+
     -- update old entry if exist and equals to old entry
+    IF _expert_listened_wallet_asset_ledger_old_entry != a_old_entry THEN
+        RETURN QUERY SELECT _pkey_id;
+    END IF;
     UPDATE tbl.expert_listened_wallet_asset_ledger
     SET entry = a_new_entry
-    WHERE fkey_strategy_id = a_strategy_id
+    WHERE expert_watched_wallet_pkey_id = _expert_listened_wallet_asset_ledger_id
       AND fkey_token_id = a_token_id
       AND entry = a_old_entry
     RETURNING pkey_id
-    INTO _pkey_id;
+        INTO _pkey_id;
     RETURN QUERY SELECT _pkey_id;
 END
+
         "#,
         ),
     ]
