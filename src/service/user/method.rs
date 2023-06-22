@@ -2416,6 +2416,53 @@ impl RequestHandler for MethodUserListStrategyWallets {
         .boxed()
     }
 }
+
+pub struct MethodUserCreateStrategyWallet {
+    pub pool: EthereumRpcConnectionPool,
+    pub master_key: Secp256k1SecretKey,
+}
+impl RequestHandler for MethodUserCreateStrategyWallet {
+    type Request = UserCreateStrategyWalletRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db: DbClient = toolbox.get_db();
+        let pool = self.pool.clone();
+        let master_key = self.master_key.clone();
+        async move {
+            let conn = pool.get(req.blockchain).await?;
+            let strategy_wallet = deploy_wallet_contract(
+                &conn,
+                master_key.clone(),
+                Address::from_str(&req.wallet_address)?,
+                match req.adminship {
+                    true => master_key.address(),
+                    false => Address::zero(),
+                },
+            )
+            .await?;
+
+            db.execute(FunUserAddStrategyWalletReq {
+                // TODO: add opt in adminship in database for each strategy wallet
+                // TODO: add backer wallet address registered in strategy wallet in database
+                user_id: ctx.user_id,
+                blockchain: req.blockchain,
+                address: format!("{:?}", strategy_wallet.address()),
+            })
+            .await?;
+            Ok(UserCreateStrategyWalletResponse {
+                blockchain: req.blockchain,
+                address: format!("{:?}", strategy_wallet.address()),
+            })
+        }
+        .boxed()
+    }
+}
+
 pub struct MethodUserListStrategyAuditRules;
 
 impl RequestHandler for MethodUserListStrategyAuditRules {

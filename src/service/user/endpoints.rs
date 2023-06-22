@@ -773,6 +773,19 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
             )],
         ),
         EndpointSchema::new(
+            "UserCreateStrategyWallet",
+            20391,
+            vec![
+                Field::new("wallet_address", Type::String),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("adminship", Type::Boolean),
+            ],
+            vec![
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("address", Type::String),
+            ],
+        ),
+        EndpointSchema::new(
             "UserListStrategyAuditRules",
             20400,
             vec![Field::new("strategy_id", Type::optional(Type::BigInt))],

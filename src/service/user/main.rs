@@ -142,6 +142,10 @@ async fn main() -> Result<()> {
     let escrow_contract = Arc::new(AbstractEscrowContract::new2(escrow_contract_addresses));
     let master_key = Secp256k1SecretKey::from_str(config.god_key.expose_secret())?;
 
+    server.add_handler(MethodUserCreateStrategyWallet {
+        pool: eth_pool.clone(),
+        master_key: master_key.clone(),
+    });
     server.add_handler(MethodUserBackStrategy {
         pool: eth_pool.clone(),
         stablecoin_addresses: coin_addresses.clone(),

@@ -372,6 +372,9 @@ pub enum EnumEndpoint {
     #[postgres(name = "UserListStrategyWallets")]
     UserListStrategyWallets = 20390,
     ///
+    #[postgres(name = "UserCreateStrategyWallet")]
+    UserCreateStrategyWallet = 20391,
+    ///
     #[postgres(name = "UserListStrategyAuditRules")]
     UserListStrategyAuditRules = 20400,
     ///
@@ -1462,6 +1465,19 @@ pub struct UserBackStrategyRequest {
 #[serde(rename_all = "camelCase")]
 pub struct UserBackStrategyResponse {
     pub success: bool,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserCreateStrategyWalletRequest {
+    pub wallet_address: String,
+    pub blockchain: EnumBlockChain,
+    pub adminship: bool,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserCreateStrategyWalletResponse {
+    pub blockchain: EnumBlockChain,
+    pub address: String,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -5882,6 +5898,49 @@ impl WsRequest for UserListStrategyWalletsRequest {
 }
 impl WsResponse for UserListStrategyWalletsResponse {
     type Request = UserListStrategyWalletsRequest;
+}
+
+impl WsRequest for UserCreateStrategyWalletRequest {
+    type Response = UserCreateStrategyWalletResponse;
+    const METHOD_ID: u32 = 20391;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserCreateStrategyWallet",
+  "code": 20391,
+  "parameters": [
+    {
+      "name": "wallet_address",
+      "ty": "String"
+    },
+    {
+      "name": "blockchain",
+      "ty": {
+        "EnumRef": "block_chain"
+      }
+    },
+    {
+      "name": "adminship",
+      "ty": "Boolean"
+    }
+  ],
+  "returns": [
+    {
+      "name": "blockchain",
+      "ty": {
+        "EnumRef": "block_chain"
+      }
+    },
+    {
+      "name": "address",
+      "ty": "String"
+    }
+  ],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for UserCreateStrategyWalletResponse {
+    type Request = UserCreateStrategyWalletRequest;
 }
 
 impl WsRequest for UserListStrategyAuditRulesRequest {

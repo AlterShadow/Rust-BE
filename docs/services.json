@@ -3479,6 +3479,41 @@
           "json_schema": null
         },
         {
+          "name": "UserCreateStrategyWallet",
+          "code": 20391,
+          "parameters": [
+            {
+              "name": "wallet_address",
+              "ty": "String"
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
+            },
+            {
+              "name": "adminship",
+              "ty": "Boolean"
+            }
+          ],
+          "returns": [
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
+            },
+            {
+              "name": "address",
+              "ty": "String"
+            }
+          ],
+          "stream_response": [],
+          "description": "",
+          "json_schema": null
+        },
+        {
           "name": "UserListStrategyAuditRules",
           "code": 20400,
           "parameters": [
