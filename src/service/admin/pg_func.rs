@@ -311,7 +311,6 @@ DECLARE
 BEGIN
     RETURN QUERY SELECT {strategy}
                  FROM tbl.strategy AS s
-                      LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = {linked_wallet}
                       JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id
                           
                 WHERE (a_strategy_id ISNULL OR s.pkey_id = a_strategy_id)
@@ -327,7 +326,6 @@ BEGIN
 END
             "#,
                 strategy = get_strategy(check_if_user_follows_strategy()),
-                linked_wallet = get_first_linked_wallet()
             ),
         ),
         ProceduralFunction::new(

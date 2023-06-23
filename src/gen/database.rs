@@ -975,26 +975,6 @@ impl DatabaseRequest for FunUserListTopPerformingStrategiesReq {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunUserGetStrategyReq {
-    pub strategy_id: i64,
-    pub user_id: i64,
-}
-
-#[allow(unused_variables)]
-impl DatabaseRequest for FunUserGetStrategyReq {
-    type ResponseRow = FunUserStrategyRowType;
-    fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_get_strategy(a_strategy_id => $1::bigint, a_user_id => $2::bigint);"
-    }
-    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
-        vec![
-            &self.strategy_id as &(dyn ToSql + Sync),
-            &self.user_id as &(dyn ToSql + Sync),
-        ]
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserGetStrategyStatisticsNetValueReq {
     pub strategy_id: i64,
 }

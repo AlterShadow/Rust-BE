@@ -4,9 +4,7 @@ pub fn check_if_user_follows_strategy() -> &'static str {
 pub fn check_if_user_follows_expert() -> &'static str {
     "EXISTS(SELECT * FROM tbl.user_follow_expert AS ufe WHERE ufe.fkey_expert_id = e.pkey_id AND ufe.fkey_user_id = a_user_id AND unfollowed = FALSE)"
 }
-pub fn get_first_linked_wallet() -> &'static str {
-    "(SELECT distinct w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id LIMIT 1)"
-}
+
 pub fn get_strategy_followers_count() -> &'static str {
     "(SELECT count(*) FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.unfollowed = FALSE)"
 }

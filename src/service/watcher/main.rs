@@ -18,7 +18,7 @@ use lib::config::load_config;
 use lib::database::{connect_to_database, DatabaseConfig};
 use lib::log::{setup_logs, LogLevel};
 use secrecy::{ExposeSecret, SecretString};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::sync::Arc;
 use tracing::*;
 

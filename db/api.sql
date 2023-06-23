@@ -402,7 +402,6 @@ BEGIN
       (SELECT balance FROM tbl.user_strategy_ledger AS spt WHERE spt.fkey_strategy_id = s.pkey_id AND spt.fkey_user_id = a_user_id) as strategy_pool_token
       
                  FROM tbl.strategy AS s
-                     LEFT JOIN tbl.strategy_watching_wallet AS w ON w.fkey_strategy_id = (SELECT distinct w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id LIMIT 1)
                      JOIN tbl.user_follow_strategy AS b ON b.fkey_strategy_id = s.pkey_id
                      JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id
                  WHERE b.fkey_user_id = a_user_id AND unfollowed = FALSE
@@ -479,7 +478,6 @@ BEGIN
       
                  FROM tbl.strategy AS s
                         JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id
-                        LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = (SELECT distinct w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id LIMIT 1)
                  WHERE (a_strategy_id ISNULL OR s.pkey_id = a_strategy_id)
                     AND (a_strategy_name ISNULL OR s.name ILIKE a_strategy_name || '%')
                     AND (a_expert_public_id ISNULL OR u.public_id = a_expert_public_id)
@@ -518,7 +516,7 @@ BEGIN
                           a.description AS strategy_description,
                           0.0::double precision AS net_value,
                           (SELECT COUNT(*) FROM tbl.user_follow_strategy WHERE fkey_strategy_id = a.pkey_id AND unfollowed = FALSE) AS followers,
-                          (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_strategy_history AS h WHERE fkey_strategy_id = a.pkey_id) AS backers,
+                          (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_exit_strategy_history AS h WHERE fkey_strategy_id = a.pkey_id) AS backers,
                           a.risk_score as risk_score,
                           a.aum as aum
                  FROM tbl.strategy AS a 
@@ -526,78 +524,6 @@ BEGIN
                 LIMIT a_limit
                 OFFSET a_offset;
 
-END
-            
-$$;
-        
-
-CREATE OR REPLACE FUNCTION api.fun_user_get_strategy(a_strategy_id bigint, a_user_id bigint)
-RETURNS table (
-    "total" bigint,
-    "strategy_id" bigint,
-    "strategy_name" varchar,
-    "strategy_description" varchar,
-    "current_usdc" varchar,
-    "total_backed_usdc" varchar,
-    "total_exited_usdc" varchar,
-    "risk_score" double precision,
-    "aum" double precision,
-    "followers" bigint,
-    "backers" bigint,
-    "followed" boolean,
-    "requested_at" bigint,
-    "approved" boolean,
-    "approved_at" bigint,
-    "pending_approval" boolean,
-    "linked_wallet" varchar,
-    "linked_wallet_blockchain" enum_block_chain,
-    "created_at" bigint,
-    "creator_public_id" bigint,
-    "creator_id" bigint,
-    "creator_username" varchar,
-    "creator_family_name" varchar,
-    "creator_given_name" varchar,
-    "social_media" varchar,
-    "immutable_audit_rules" boolean,
-    "strategy_pool_token" varchar
-)
-LANGUAGE plpgsql
-AS $$
-    
-BEGIN
-    RETURN QUERY SELECT count(*) OVER() AS total,
-      s.pkey_id AS strategy_id,
-      s.name AS strategy_name,
-      s.description AS strategy_description,
-      s.current_usdc,
-      s.total_backed_usdc,
-      s.total_exited_usdc,
-      s.risk_score as risk_score,
-      s.aum as aum,
-      (SELECT count(*) FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.unfollowed = FALSE) AS followers,
-      (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_exit_strategy_history AS h WHERE fkey_strategy_id = s.pkey_id) AS backers,
-      EXISTS(SELECT * FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.fkey_user_id = a_user_id AND ufs.unfollowed = FALSE) as followed,
-      s.requested_at as requested_at,
-      s.approved as approved,
-      s.approved_at as approved_at,
-      s.pending_approval as pending_approval,
-      w.address as linked_wallet,
-      w.blockchain as linked_wallet_blockchain,
-      s.created_at as created_at,
-      u.public_id as creator_public_id,
-      u.pkey_id as creator_id,
-      u.username as creator_username,
-      u.family_name as creator_family_name,
-      u.given_name as creator_given_name,
-      s.social_media as social_media,
-      s.immutable_audit_rules as immutable_audit_rules,
-      (SELECT balance FROM tbl.user_strategy_ledger AS spt WHERE spt.fkey_strategy_id = s.pkey_id AND spt.fkey_user_id = a_user_id) as strategy_pool_token
-      
-                 FROM tbl.strategy AS s
-                    LEFT JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id
-                    LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = (SELECT distinct w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id LIMIT 1)
-
-                 WHERE s.pkey_id = a_strategy_id;
 END
             
 $$;
@@ -784,7 +710,6 @@ BEGIN
                  FROM tbl.strategy AS s
                       JOIN tbl.user_back_strategy_history AS b ON b.fkey_strategy_id = s.pkey_id AND b.fkey_user_id = a_user_id
                       JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id
-                    LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = (SELECT distinct w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id LIMIT 1)
                  WHERE b.fkey_user_id = a_user_id
                  ORDER BY s.pkey_id
                  LIMIT a_limit
@@ -2275,7 +2200,6 @@ BEGIN
       (SELECT balance FROM tbl.user_strategy_ledger AS spt WHERE spt.fkey_strategy_id = s.pkey_id AND spt.fkey_user_id = a_user_id) as strategy_pool_token
       
                  FROM tbl.strategy AS s
-                      LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = (SELECT distinct w.pkey_id FROM tbl.strategy_watching_wallet AS w WHERE w.fkey_strategy_id = s.pkey_id ORDER BY w.pkey_id LIMIT 1)
                       JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id
                           
                 WHERE (a_strategy_id ISNULL OR s.pkey_id = a_strategy_id)
@@ -2653,7 +2577,7 @@ BEGIN
     VALUES (a_strategy_id, a_blockchain, a_address, EXTRACT(EPOCH FROM NOW()))
     RETURNING pkey_id;
 END
-"
+
 $$;
         
 

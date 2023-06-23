@@ -501,7 +501,7 @@ ALTER TABLE tbl.strategy_escrow_pending_wallet_ledger ADD CONSTRAINT strategy_es
 
 -- Reference: strategy_pool_contract_strategy (table: strategy_pool_contract)
 ALTER TABLE tbl.strategy_pool_contract ADD CONSTRAINT strategy_pool_contract_strategy
-    FOREIGN KEY (pkey_strategy_id)
+    FOREIGN KEY (fkey_strategy_id)
     REFERENCES tbl.strategy (pkey_id)  
     NOT DEFERRABLE 
     INITIALLY IMMEDIATE

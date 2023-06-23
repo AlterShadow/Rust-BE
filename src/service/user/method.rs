@@ -22,7 +22,7 @@ use futures::FutureExt;
 use gen::database::*;
 use gen::model::*;
 use itertools::Itertools;
-use lib::database::{DbClient, ToSql};
+use lib::database::DbClient;
 use lib::handler::{FutureResponse, RequestHandler};
 use lib::toolbox::*;
 use lib::utils::hex_decode;
@@ -546,9 +546,17 @@ async fn user_back_strategy(
 
     /* fetch strategy */
     let strategy = db
-        .execute(FunUserGetStrategyReq {
-            strategy_id,
+        .execute(FunUserListStrategiesReq {
+            strategy_id: Some(strategy_id),
+            strategy_name: None,
+            expert_public_id: None,
+            expert_name: None,
+            description: None,
+            blockchain: None,
             user_id: ctx.user_id,
+            limit: 1,
+            offset: 0,
+            wallet_address: None,
         })
         .await?
         .into_result()
@@ -1028,15 +1036,6 @@ async fn user_exit_strategy(
         bail!("strategy wallet has another or no admin");
     }
 
-    /* fetch strategy */
-    let strategy = db
-        .execute(FunUserGetStrategyReq {
-            strategy_id,
-            user_id: ctx.user_id,
-        })
-        .await?
-        .into_result()
-        .context("strategy is not registered in the database")?;
     let strategy_pool = db
         .execute(FunWatcherListStrategyPoolContractReq {
             limit: 1,
@@ -1893,9 +1892,17 @@ impl RequestHandler for MethodExpertUpdateStrategy {
             ensure_user_role(ctx, EnumRole::Expert)?;
             validate_audit_rule_immutable_tokens(&logger, &db, req.strategy_id).await?;
             let strategy = db
-                .execute(FunUserGetStrategyReq {
+                .execute(FunUserListStrategiesReq {
+                    strategy_id: Some(req.strategy_id),
+                    strategy_name: None,
+                    expert_public_id: None,
+                    expert_name: None,
+                    description: None,
+                    blockchain: None,
                     user_id: ctx.user_id,
-                    strategy_id: req.strategy_id,
+                    limit: 1,
+                    offset: 0,
+                    wallet_address: None,
                 })
                 .await?
                 .into_result()
@@ -1946,9 +1953,17 @@ impl RequestHandler for MethodExpertAddStrategyWatchingWallet {
 
             validate_audit_rule_immutable_tokens(&logger, &db, req.strategy_id).await?;
             let strategy = db
-                .execute(FunUserGetStrategyReq {
+                .execute(FunUserListStrategiesReq {
+                    strategy_id: Some(req.strategy_id),
+                    strategy_name: None,
+                    expert_public_id: None,
+                    expert_name: None,
+                    description: None,
+                    blockchain: None,
                     user_id: ctx.user_id,
-                    strategy_id: req.strategy_id,
+                    limit: 1,
+                    offset: 0,
+                    wallet_address: None,
                 })
                 .await?
                 .into_result()
@@ -2142,9 +2157,17 @@ impl RequestHandler for MethodExpertAddStrategyInitialTokenRatio {
 
             validate_audit_rule_immutable_tokens(&logger, &db, req.strategy_id).await?;
             let strategy = db
-                .execute(FunUserGetStrategyReq {
+                .execute(FunUserListStrategiesReq {
+                    strategy_id: Some(req.strategy_id),
+                    strategy_name: None,
+                    expert_public_id: None,
+                    expert_name: None,
+                    description: None,
+                    blockchain: None,
                     user_id: ctx.user_id,
-                    strategy_id: req.strategy_id,
+                    limit: 1,
+                    offset: 0,
+                    wallet_address: None,
                 })
                 .await?
                 .into_result()
@@ -2512,9 +2535,17 @@ impl RequestHandler for MethodUserAddStrategyAuditRule {
         let db: DbClient = toolbox.get_db();
         async move {
             let strategy = db
-                .execute(FunUserGetStrategyReq {
+                .execute(FunUserListStrategiesReq {
+                    strategy_id: Some(req.strategy_id),
+                    strategy_name: None,
+                    expert_public_id: None,
+                    expert_name: None,
+                    description: None,
+                    blockchain: None,
                     user_id: ctx.user_id,
-                    strategy_id: req.strategy_id,
+                    limit: 1,
+                    offset: 0,
+                    wallet_address: None,
                 })
                 .await?
                 .into_result()
@@ -2552,9 +2583,17 @@ impl RequestHandler for MethodUserRemoveStrategyAuditRule {
         let db: DbClient = toolbox.get_db();
         async move {
             let strategy = db
-                .execute(FunUserGetStrategyReq {
+                .execute(FunUserListStrategiesReq {
+                    strategy_id: Some(req.strategy_id),
+                    strategy_name: None,
+                    expert_public_id: None,
+                    expert_name: None,
+                    description: None,
+                    blockchain: None,
                     user_id: ctx.user_id,
-                    strategy_id: req.strategy_id,
+                    limit: 1,
+                    offset: 0,
+                    wallet_address: None,
                 })
                 .await?
                 .into_result()

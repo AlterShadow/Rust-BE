@@ -177,21 +177,7 @@ pub async fn handle_swap(
         /* check if token_in was a strategy token */
         if let Some(total_strategy_token_in_amount) = strategy_token_ledger.get(&token_in) {
             /* if token_in was already a strategy token trade it from SPs in ratio traded_amount / old_amount */
-            /* if token_in was not known to the strategy we can't calculate how much to spend */
 
-            /* fetch user_id from strategy */
-            let user_id = get_user_id_from_strategy(&state.db, strategy_id).await?;
-
-            /* fetch strategy */
-            let _strategy = state
-                .db
-                .execute(FunUserGetStrategyReq {
-                    strategy_id,
-                    user_id,
-                })
-                .await?
-                .into_result()
-                .context("strategy is not registered in the database")?;
             let strategy_pool = state
                 .db
                 .execute(FunWatcherListStrategyPoolContractReq {

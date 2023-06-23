@@ -343,7 +343,7 @@ BEGIN
     VALUES (a_strategy_id, a_blockchain, a_address, EXTRACT(EPOCH FROM NOW()))
     RETURNING pkey_id;
 END
-""#,
+"#,
         ),
         ProceduralFunction::new(
             "fun_watcher_add_strategy_pool_contract",

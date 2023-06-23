@@ -64,7 +64,6 @@ END
 BEGIN
     RETURN QUERY SELECT {strategy}
                  FROM tbl.strategy AS s
-                     LEFT JOIN tbl.strategy_watching_wallet AS w ON w.fkey_strategy_id = {linked_wallet}
                      JOIN tbl.user_follow_strategy AS b ON b.fkey_strategy_id = s.pkey_id
                      JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id
                  WHERE b.fkey_user_id = a_user_id AND unfollowed = FALSE
@@ -75,7 +74,6 @@ BEGIN
 END
             "#,
                 strategy = get_strategy("TRUE"),
-                linked_wallet = get_first_linked_wallet()
             ),
         ),
         ProceduralFunction::new_with_row_type(
@@ -99,7 +97,6 @@ BEGIN
     RETURN QUERY SELECT {strategy}
                  FROM tbl.strategy AS s
                         JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id
-                        LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = {linked_wallet}
                  WHERE (a_strategy_id ISNULL OR s.pkey_id = a_strategy_id)
                     AND (a_strategy_name ISNULL OR s.name ILIKE a_strategy_name || '%')
                     AND (a_expert_public_id ISNULL OR u.public_id = a_expert_public_id)
@@ -115,7 +112,6 @@ BEGIN
 END
             "#,
                 strategy = get_strategy(check_if_user_follows_strategy()),
-                linked_wallet = get_first_linked_wallet()
             ),
         ),
         ProceduralFunction::new(
@@ -142,7 +138,7 @@ BEGIN
                           a.description AS strategy_description,
                           0.0::double precision AS net_value,
                           (SELECT COUNT(*) FROM tbl.user_follow_strategy WHERE fkey_strategy_id = a.pkey_id AND unfollowed = FALSE) AS followers,
-                          (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_strategy_history AS h WHERE fkey_strategy_id = a.pkey_id) AS backers,
+                          (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_exit_strategy_history AS h WHERE fkey_strategy_id = a.pkey_id) AS backers,
                           a.risk_score as risk_score,
                           a.aum as aum
                  FROM tbl.strategy AS a 
@@ -152,29 +148,6 @@ BEGIN
 
 END
             "#,
-        ),
-        ProceduralFunction::new_with_row_type(
-            "fun_user_get_strategy",
-            // TODO search options
-            vec![
-                Field::new("strategy_id", Type::BigInt),
-                Field::new("user_id", Type::BigInt),
-            ],
-            strategy_row_type(),
-            format!(
-                r#"
-BEGIN
-    RETURN QUERY SELECT {strategy}
-                 FROM tbl.strategy AS s
-                    LEFT JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id
-                    LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = {linked_wallet}
-
-                 WHERE s.pkey_id = a_strategy_id;
-END
-            "#,
-                strategy = get_strategy(check_if_user_follows_strategy()),
-                linked_wallet = get_first_linked_wallet()
-            ),
         ),
         ProceduralFunction::new(
             "fun_user_get_strategy_statistics_net_value",
@@ -312,7 +285,6 @@ BEGIN
                  FROM tbl.strategy AS s
                       JOIN tbl.user_back_strategy_history AS b ON b.fkey_strategy_id = s.pkey_id AND b.fkey_user_id = a_user_id
                       JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id
-                    LEFT JOIN tbl.strategy_watching_wallet AS w ON w.pkey_id = {linked_wallet}
                  WHERE b.fkey_user_id = a_user_id
                  ORDER BY s.pkey_id
                  LIMIT a_limit
@@ -320,7 +292,6 @@ BEGIN
 END
 "#,
                 strategy = get_strategy(check_if_user_follows_strategy()),
-                linked_wallet = get_first_linked_wallet()
             ),
         ),
         ProceduralFunction::new(
