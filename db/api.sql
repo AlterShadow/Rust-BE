@@ -1473,7 +1473,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_list_request_refund_history(a_user_id bigint)
+CREATE OR REPLACE FUNCTION api.fun_user_list_request_refund_history(a_user_id bigint, a_limit bigint, a_offset bigint)
 RETURNS table (
     "request_refund_id" bigint,
     "user_id" bigint,
@@ -1487,7 +1487,10 @@ AS $$
 BEGIN
     RETURN QUERY SELECT a.pkey_id, a.fkey_user_id, a.blockchain, a.quantity, a.user_address
 		FROM tbl.user_deposit_withdraw_history AS a
-		WHERE fkey_user_id = a_user_id AND is_deposit = FALSE;
+		WHERE fkey_user_id = a_user_id AND is_deposit = FALSE
+		ORDER BY a.pkey_id DESC
+		LIMIT a_limit
+		OFFSET a_offset;
 END
 
 $$;

@@ -930,7 +930,11 @@ END
         ),
         ProceduralFunction::new(
             "fun_user_list_request_refund_history",
-            vec![Field::new("user_id", Type::BigInt)],
+            vec![
+                Field::new("user_id", Type::BigInt),
+                Field::new("limit", Type::BigInt),
+                Field::new("offset", Type::BigInt),
+            ],
             vec![
                 Field::new("request_refund_id", Type::BigInt),
                 Field::new("user_id", Type::BigInt),
@@ -942,7 +946,10 @@ END
 BEGIN
     RETURN QUERY SELECT a.pkey_id, a.fkey_user_id, a.blockchain, a.quantity, a.user_address
 		FROM tbl.user_deposit_withdraw_history AS a
-		WHERE fkey_user_id = a_user_id AND is_deposit = FALSE;
+		WHERE fkey_user_id = a_user_id AND is_deposit = FALSE
+		ORDER BY a.pkey_id DESC
+		LIMIT a_limit
+		OFFSET a_offset;
 END
 "#,
         ),

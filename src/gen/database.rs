@@ -1639,16 +1639,22 @@ impl DatabaseRequest for FunUserRequestRefundReq {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserListRequestRefundHistoryReq {
     pub user_id: i64,
+    pub limit: i64,
+    pub offset: i64,
 }
 
 #[allow(unused_variables)]
 impl DatabaseRequest for FunUserListRequestRefundHistoryReq {
     type ResponseRow = FunUserListRequestRefundHistoryRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_list_request_refund_history(a_user_id => $1::bigint);"
+        "SELECT * FROM api.fun_user_list_request_refund_history(a_user_id => $1::bigint, a_limit => $2::bigint, a_offset => $3::bigint);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
-        vec![&self.user_id as &(dyn ToSql + Sync)]
+        vec![
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.limit as &(dyn ToSql + Sync),
+            &self.offset as &(dyn ToSql + Sync),
+        ]
     }
 }
 
