@@ -657,10 +657,24 @@ BEGIN
     UPDATE tbl.strategy SET current_usdc = a_new_current_quantity WHERE pkey_id = a_strategy_id;
     
     -- save record
-    INSERT INTO tbl.user_back_strategy_history (fkey_user_id, fkey_strategy_id, quantity, blockchain,
-                                                transaction_hash, earn_sp_tokens, back_time)
-    VALUES (a_user_id, a_strategy_id, a_quantity, a_blockchain, a_transaction_hash, a_earn_sp_tokens,
-            extract(epoch from now())::bigint);
+    INSERT INTO tbl.user_back_exit_strategy_history (
+			fkey_user_id,
+			fkey_strategy_id,
+			blockchain,
+			quantity_of_usdc,
+			quantity_sp_tokens,
+			transaction_hash,
+			happened_at,
+			is_back
+		) VALUES (
+			a_user_id,
+			a_strategy_id,
+			a_blockchain,
+			a_quantity,
+			a_earn_sp_tokens,
+			a_transaction_hash,
+			extract(epoch from now())::bigint,
+			TRUE);
     RETURN QUERY SELECT TRUE;
 END
             
