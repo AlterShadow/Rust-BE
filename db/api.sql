@@ -601,18 +601,19 @@ AS $$
     
  
 BEGIN
-    IF EXISTS( SELECT * FROM  tbl.user_deposit_history WHERE transaction_hash = a_transaction_hash) THEN
+    IF EXISTS( SELECT * FROM  tbl.user_deposit_withdraw_history WHERE transaction_hash = a_transaction_hash) THEN
         RETURN QUERY SELECT FALSE;
     END IF;
-    INSERT INTO tbl.user_deposit_history (
+    INSERT INTO tbl.user_deposit_withdraw_history (
         fkey_user_id,
         blockchain,
         user_address,
-        contract_address,
+        escrow_contract_address,
         receiver_address,
         quantity,
         transaction_hash,
-        created_at
+				is_deposit,
+        happened_at
     ) VALUES (
      a_user_id,
      a_blockchain,
@@ -621,6 +622,7 @@ BEGIN
      a_receiver_address,
      a_quantity,
      a_transaction_hash,
+		 TRUE,
      EXTRACT(EPOCH FROM NOW())::bigint
     );
     RETURN QUERY SELECT TRUE;
