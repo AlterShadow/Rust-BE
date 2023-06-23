@@ -1133,6 +1133,7 @@ pub struct FunUserExitStrategyReq {
     pub user_id: i64,
     pub strategy_id: i64,
     pub quantity: String,
+    pub redeem_sp_tokens: String,
     pub blockchain: EnumBlockChain,
     pub transaction_hash: String,
 }
@@ -1141,13 +1142,14 @@ pub struct FunUserExitStrategyReq {
 impl DatabaseRequest for FunUserExitStrategyReq {
     type ResponseRow = FunUserExitStrategyRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_exit_strategy(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_quantity => $3::varchar, a_blockchain => $4::enum_block_chain, a_transaction_hash => $5::varchar);"
+        "SELECT * FROM api.fun_user_exit_strategy(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_quantity => $3::varchar, a_redeem_sp_tokens => $4::varchar, a_blockchain => $5::enum_block_chain, a_transaction_hash => $6::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
             &self.user_id as &(dyn ToSql + Sync),
             &self.strategy_id as &(dyn ToSql + Sync),
             &self.quantity as &(dyn ToSql + Sync),
+            &self.redeem_sp_tokens as &(dyn ToSql + Sync),
             &self.blockchain as &(dyn ToSql + Sync),
             &self.transaction_hash as &(dyn ToSql + Sync),
         ]

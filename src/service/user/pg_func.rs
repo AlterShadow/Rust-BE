@@ -352,18 +352,42 @@ END
                 Field::new("user_id", Type::BigInt),
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("quantity", Type::String),
+                Field::new("redeem_sp_tokens", Type::String),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("transaction_hash", Type::String),
             ],
             vec![Field::new("success", Type::Boolean)],
             r#"
 BEGIN
-    INSERT INTO tbl.user_exit_strategy_history (fkey_user_id, fkey_strategy_id, exit_quantity,
-                                                exit_time, blockchain, transaction_hash)
-    VALUES (a_user_id, a_strategy_id, a_quantity, extract(epoch from now()),
-            a_blockchain,
-            a_transaction_hash);
-    RETURN QUERY SELECT TRUE;
+
+		-- update strategy total backed quantity
+		UPDATE tbl.strategy AS s SET total_exited_usdc = CAST(s.total_exited_usdc AS NUMERIC) + CAST(a_quantity AS NUMERIC)
+		WHERE pkey_id = a_strategy_id;
+
+		-- update strategy current quantity
+		UPDATE tbl.strategy AS s SET current_usdc = CAST(s.current_usdc AS NUMERIC) - CAST(a_quantity AS NUMERIC)
+		WHERE pkey_id = a_strategy_id;
+
+		-- save record
+		INSERT INTO tbl.user_back_exit_strategy_history (
+			fkey_user_id,
+			fkey_strategy_id,
+			blockchain,
+			quantity_of_usdc,
+			quantity_sp_tokens,
+			transaction_hash,
+			happened_at,
+			is_back
+		) VALUES (
+			a_user_id,
+			a_strategy_id,
+			a_blockchain,
+			a_quantity,
+			a_redeem_sp_tokens,
+			a_transaction_hash,
+			extract(epoch from now())::bigint,
+			FALSE);
+		RETURN QUERY SELECT TRUE;
 END
 "#,
         ),

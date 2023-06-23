@@ -791,7 +791,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_exit_strategy(a_user_id bigint, a_strategy_id bigint, a_quantity varchar, a_blockchain enum_block_chain, a_transaction_hash varchar)
+CREATE OR REPLACE FUNCTION api.fun_user_exit_strategy(a_user_id bigint, a_strategy_id bigint, a_quantity varchar, a_redeem_sp_tokens varchar, a_blockchain enum_block_chain, a_transaction_hash varchar)
 RETURNS table (
     "success" boolean
 )
@@ -799,12 +799,35 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    INSERT INTO tbl.user_exit_strategy_history (fkey_user_id, fkey_strategy_id, exit_quantity,
-                                                exit_time, blockchain, transaction_hash)
-    VALUES (a_user_id, a_strategy_id, a_quantity, extract(epoch from now()),
-            a_blockchain,
-            a_transaction_hash);
-    RETURN QUERY SELECT TRUE;
+
+		-- update strategy total backed quantity
+		UPDATE tbl.strategy AS s SET total_exited_usdc = CAST(s.total_exited_usdc AS NUMERIC) + CAST(a_quantity AS NUMERIC)
+		WHERE pkey_id = a_strategy_id;
+
+		-- update strategy current quantity
+		UPDATE tbl.strategy AS s SET current_usdc = CAST(s.current_usdc AS NUMERIC) - CAST(a_quantity AS NUMERIC)
+		WHERE pkey_id = a_strategy_id;
+
+		-- save record
+		INSERT INTO tbl.user_back_exit_strategy_history (
+			fkey_user_id,
+			fkey_strategy_id,
+			blockchain,
+			quantity_of_usdc,
+			quantity_sp_tokens,
+			transaction_hash,
+			happened_at,
+			is_back
+		) VALUES (
+			a_user_id,
+			a_strategy_id,
+			a_blockchain,
+			a_quantity,
+			a_redeem_sp_tokens,
+			a_transaction_hash,
+			extract(epoch from now())::bigint,
+			FALSE);
+		RETURN QUERY SELECT TRUE;
 END
 
 $$;
