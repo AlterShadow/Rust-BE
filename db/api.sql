@@ -1493,21 +1493,6 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_update_request_refund_history(a_request_refund_id bigint, a_transaction_hash varchar)
-RETURNS void
-LANGUAGE plpgsql
-AS $$
-    
-BEGIN
-    UPDATE tbl.user_request_refund_history SET
-            transaction_hash = a_transaction_hash, 
-            updated_at = EXTRACT(EPOCH FROM NOW())::bigint
-    WHERE pkey_id = a_request_refund_id;
-END
-
-$$;
-        
-
 CREATE OR REPLACE FUNCTION api.fun_user_add_strategy_initial_token_ratio(a_strategy_id bigint, a_token_name varchar, a_token_address varchar, a_blockchain enum_block_chain, a_quantity varchar)
 RETURNS table (
     "strategy_initial_token_ratio_id" bigint

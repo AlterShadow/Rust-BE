@@ -526,9 +526,6 @@ pub struct FunUserUnfollowStrategyRespRow {
 pub struct FunUserUpdateExpertProfileRespRow {}
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
-pub struct FunUserUpdateRequestRefundHistoryRespRow {}
-
-#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserUpdateStrategyInitialTokenRatioRespRow {}
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -1652,26 +1649,6 @@ impl DatabaseRequest for FunUserListRequestRefundHistoryReq {
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![&self.user_id as &(dyn ToSql + Sync)]
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunUserUpdateRequestRefundHistoryReq {
-    pub request_refund_id: i64,
-    pub transaction_hash: String,
-}
-
-#[allow(unused_variables)]
-impl DatabaseRequest for FunUserUpdateRequestRefundHistoryReq {
-    type ResponseRow = FunUserUpdateRequestRefundHistoryRespRow;
-    fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_update_request_refund_history(a_request_refund_id => $1::bigint, a_transaction_hash => $2::varchar);"
-    }
-    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
-        vec![
-            &self.request_refund_id as &(dyn ToSql + Sync),
-            &self.transaction_hash as &(dyn ToSql + Sync),
-        ]
     }
 }
 

@@ -947,22 +947,6 @@ END
 "#,
         ),
         ProceduralFunction::new(
-            "fun_user_update_request_refund_history",
-            vec![
-                Field::new("request_refund_id", Type::BigInt),
-                Field::new("transaction_hash", Type::String),
-            ],
-            vec![],
-            r#"
-BEGIN
-    UPDATE tbl.user_request_refund_history SET
-            transaction_hash = a_transaction_hash, 
-            updated_at = EXTRACT(EPOCH FROM NOW())::bigint
-    WHERE pkey_id = a_request_refund_id;
-END
-"#,
-        ),
-        ProceduralFunction::new(
             "fun_user_add_strategy_initial_token_ratio",
             vec![
                 Field::new("strategy_id", Type::BigInt),
