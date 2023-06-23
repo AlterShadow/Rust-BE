@@ -3595,6 +3595,31 @@
           "stream_response": [],
           "description": "",
           "json_schema": null
+        },
+        {
+          "name": "UserGetEscrowAddressForStrategy",
+          "code": 20500,
+          "parameters": [
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "name": "address",
+              "ty": "String"
+            }
+          ],
+          "stream_response": [],
+          "description": "",
+          "json_schema": null
         }
       ]
     },

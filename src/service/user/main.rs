@@ -116,10 +116,14 @@ async fn main() -> Result<()> {
     });
     server.add_handler(MethodUserListStrategyInitialTokenRatio);
     server.add_handler(MethodUserGetDepositTokens);
+    server.add_handler(MethodUserListStrategyAuditRules);
+    // they are basically the same but MethodUserGetEscrowAddressForStrategy is more user friendly
     server.add_handler(MethodUserGetDepositAddresses {
+        addresses: config.escrow_addresses.clone(),
+    });
+    server.add_handler(MethodUserGetEscrowAddressForStrategy {
         addresses: config.escrow_addresses,
     });
-    server.add_handler(MethodUserListStrategyAuditRules);
 
     server.add_handler(MethodAdminListUsers);
     server.add_handler(MethodAdminSetUserRole);

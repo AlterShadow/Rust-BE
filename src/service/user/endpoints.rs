@@ -821,5 +821,15 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
             ],
             vec![],
         ),
+        EndpointSchema::new(
+            "UserGetEscrowAddressForStrategy",
+            20500,
+            // will be expanded later
+            vec![
+                Field::new("strategy_id", Type::BigInt),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+            ],
+            vec![Field::new("address", Type::String)],
+        ),
     ]
 }

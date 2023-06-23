@@ -2616,6 +2616,34 @@ impl RequestHandler for MethodUserRemoveStrategyAuditRule {
         .boxed()
     }
 }
+pub struct MethodUserGetEscrowAddressForStrategy {
+    pub addresses: Vec<UserGetDepositAddressesRow>,
+}
+impl RequestHandler for MethodUserGetEscrowAddressForStrategy {
+    type Request = UserGetEscrowAddressForStrategyRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let address = self
+            .addresses
+            .iter()
+            .find(|x| x.blockchain == req.blockchain)
+            .cloned();
+        async move {
+            let address = address.with_context(|| {
+                CustomError::new(EnumErrorCode::InvalidArgument, "blockchain not recognized")
+            })?;
+            Ok(UserGetEscrowAddressForStrategyResponse {
+                address: format!("{:?}", address),
+            })
+        }
+        .boxed()
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;

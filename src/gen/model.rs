@@ -384,6 +384,9 @@ pub enum EnumEndpoint {
     #[postgres(name = "UserRemoveStrategyAuditRule")]
     UserRemoveStrategyAuditRule = 20420,
     ///
+    #[postgres(name = "UserGetEscrowAddressForStrategy")]
+    UserGetEscrowAddressForStrategy = 20500,
+    ///
     #[postgres(name = "AdminListUsers")]
     AdminListUsers = 30010,
     ///
@@ -1555,6 +1558,17 @@ pub struct UserGetDepositTokensRow {
     pub short_name: String,
     pub icon_url: String,
     pub conversion: f64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserGetEscrowAddressForStrategyRequest {
+    pub strategy_id: i64,
+    pub blockchain: EnumBlockChain,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserGetEscrowAddressForStrategyResponse {
+    pub address: String,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -6048,6 +6062,39 @@ impl WsRequest for UserRemoveStrategyAuditRuleRequest {
 }
 impl WsResponse for UserRemoveStrategyAuditRuleResponse {
     type Request = UserRemoveStrategyAuditRuleRequest;
+}
+
+impl WsRequest for UserGetEscrowAddressForStrategyRequest {
+    type Response = UserGetEscrowAddressForStrategyResponse;
+    const METHOD_ID: u32 = 20500;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserGetEscrowAddressForStrategy",
+  "code": 20500,
+  "parameters": [
+    {
+      "name": "strategy_id",
+      "ty": "BigInt"
+    },
+    {
+      "name": "blockchain",
+      "ty": {
+        "EnumRef": "block_chain"
+      }
+    }
+  ],
+  "returns": [
+    {
+      "name": "address",
+      "ty": "String"
+    }
+  ],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for UserGetEscrowAddressForStrategyResponse {
+    type Request = UserGetEscrowAddressForStrategyRequest;
 }
 
 impl WsRequest for AdminListUsersRequest {
