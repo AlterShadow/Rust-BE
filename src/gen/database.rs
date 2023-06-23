@@ -334,7 +334,6 @@ pub struct FunUserListBackStrategyHistoryRespRow {
     pub back_history_id: i64,
     pub strategy_id: i64,
     pub quantity: String,
-    pub wallet_address: String,
     pub blockchain: EnumBlockChain,
     pub transaction_hash: String,
     pub time: i64,

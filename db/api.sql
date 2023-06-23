@@ -768,7 +768,6 @@ RETURNS table (
     "back_history_id" bigint,
     "strategy_id" bigint,
     "quantity" varchar,
-    "wallet_address" varchar,
     "blockchain" enum_block_chain,
     "transaction_hash" varchar,
     "time" bigint
@@ -779,13 +778,15 @@ AS $$
 BEGIN
     RETURN QUERY SELECT a.pkey_id          AS back_history_id,
                         a.fkey_strategy_id AS strategy_id,
-                        a.quantity         AS quantity,
+                        a.quantity_of_usdc         AS quantity,
                         a.blockchain       AS blockchain,
                         a.transaction_hash AS transaction_hash,
-                        a.back_time             AS time
-                 FROM tbl.user_back_strategy_history AS a
+                        a.happened_at             AS time
+                 FROM tbl.user_back_exit_strategy_history AS a
                  WHERE a.fkey_user_id = a_user_id
-                  AND (a_strategy_id NOTNULL OR a_strategy_id = a.fkey_strategy_id);
+                  AND (a_strategy_id NOTNULL OR a_strategy_id = a.fkey_strategy_id)
+									AND a.is_back = TRUE
+								 ORDER BY a.happened_at DESC;
 END
 
 $$;
