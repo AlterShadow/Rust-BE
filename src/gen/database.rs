@@ -497,8 +497,6 @@ pub struct FunUserStrategyRowType {
     pub linked_wallet: Option<String>,
     #[serde(default)]
     pub linked_wallet_blockchain: Option<EnumBlockChain>,
-    #[serde(default)]
-    pub evm_contract_address: Option<String>,
     pub created_at: i64,
     pub creator_public_id: i64,
     pub creator_id: i64,
@@ -544,6 +542,11 @@ pub struct FunUserUpdateUserStrategyLedgerRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunWatcherAddStrategyPoolContractRespRow {
+    pub pkey_id: i64,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunWatcherGetRawTransactionRespRow {
     pub transaction_cache_id: i64,
     pub transaction_hash: String,
@@ -573,6 +576,15 @@ pub struct FunWatcherListStrategyEscrowPendingWalletLedgerRespRow {
     pub token_name: String,
     pub token_symbol: String,
     pub entry: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunWatcherListStrategyPoolContractRespRow {
+    pub pkey_id: i64,
+    pub strategy_id: i64,
+    pub blockchain: EnumBlockChain,
+    pub address: String,
+    pub created_at: i64,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -616,6 +628,11 @@ pub struct FunWatcherListWalletActivityHistoryRespRow {
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunWatcherSaveRawTransactionRespRow {
     pub transaction_cache_id: i64,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunWatcherSaveStrategyPoolContractRespRow {
+    pub pkey_id: i64,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -2626,6 +2643,79 @@ impl DatabaseRequest for FunWatcherListExpertListenedWalletAssetLedgerReq {
             &self.address as &(dyn ToSql + Sync),
             &self.blockchain as &(dyn ToSql + Sync),
             &self.token_id as &(dyn ToSql + Sync),
+        ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunWatcherSaveStrategyPoolContractReq {
+    pub strategy_id: i64,
+    pub blockchain: EnumBlockChain,
+    pub address: String,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunWatcherSaveStrategyPoolContractReq {
+    type ResponseRow = FunWatcherSaveStrategyPoolContractRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_watcher_save_strategy_pool_contract(a_strategy_id => $1::bigint, a_blockchain => $2::enum_block_chain, a_address => $3::varchar);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.strategy_id as &(dyn ToSql + Sync),
+            &self.blockchain as &(dyn ToSql + Sync),
+            &self.address as &(dyn ToSql + Sync),
+        ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunWatcherAddStrategyPoolContractReq {
+    pub strategy_id: i64,
+    pub blockchain: EnumBlockChain,
+    pub address: String,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunWatcherAddStrategyPoolContractReq {
+    type ResponseRow = FunWatcherAddStrategyPoolContractRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_watcher_add_strategy_pool_contract(a_strategy_id => $1::bigint, a_blockchain => $2::enum_block_chain, a_address => $3::varchar);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.strategy_id as &(dyn ToSql + Sync),
+            &self.blockchain as &(dyn ToSql + Sync),
+            &self.address as &(dyn ToSql + Sync),
+        ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunWatcherListStrategyPoolContractReq {
+    pub limit: i64,
+    pub offset: i64,
+    #[serde(default)]
+    pub strategy_id: Option<i64>,
+    #[serde(default)]
+    pub blockchain: Option<EnumBlockChain>,
+    #[serde(default)]
+    pub address: Option<String>,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunWatcherListStrategyPoolContractReq {
+    type ResponseRow = FunWatcherListStrategyPoolContractRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_watcher_list_strategy_pool_contract(a_limit => $1::bigint, a_offset => $2::bigint, a_strategy_id => $3::bigint, a_blockchain => $4::enum_block_chain, a_address => $5::varchar);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.limit as &(dyn ToSql + Sync),
+            &self.offset as &(dyn ToSql + Sync),
+            &self.strategy_id as &(dyn ToSql + Sync),
+            &self.blockchain as &(dyn ToSql + Sync),
+            &self.address as &(dyn ToSql + Sync),
         ]
     }
 }

@@ -269,17 +269,11 @@ async fn test_handle_eth_swap_mainnet() -> Result<()> {
     .await?;
 
     /* add strategy contract address to the database */
-    db.query(
-        "
-			UPDATE tbl.strategy
-			SET evm_contract_address = $1
-			WHERE pkey_id = $2;
-			",
-        &[
-            &format!("{:?}", sp_contract.address()) as &(dyn ToSql + Sync),
-            &strategy.strategy_id as &(dyn ToSql + Sync),
-        ],
-    )
+    db.execute(FunWatcherSaveStrategyPoolContractReq {
+        strategy_id: strategy.strategy_id,
+        blockchain: EnumBlockChain::BscMainnet,
+        address: format!("{:?}", sp_contract.address()),
+    })
     .await?;
 
     /* approve strategy pool for 1 BUSD deposit */

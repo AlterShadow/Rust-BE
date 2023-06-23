@@ -11,7 +11,7 @@ pub fn get_strategy_followers_count() -> &'static str {
     "(SELECT count(*) FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.unfollowed = FALSE)"
 }
 pub fn get_strategy_backers_count() -> &'static str {
-    "(SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_strategy_history AS h WHERE fkey_strategy_id = s.pkey_id)"
+    "(SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_exit_strategy_history AS h WHERE fkey_strategy_id = s.pkey_id)"
 }
 pub fn strategy_row_type() -> Type {
     Type::struct_(
@@ -38,7 +38,6 @@ pub fn strategy_row_type() -> Type {
                 "linked_wallet_blockchain",
                 Type::optional(Type::enum_ref("block_chain")),
             ),
-            Field::new("evm_contract_address", Type::optional(Type::String)),
             Field::new("created_at", Type::BigInt),
             Field::new("creator_public_id", Type::BigInt),
             Field::new("creator_id", Type::BigInt),
@@ -71,7 +70,6 @@ pub fn get_strategy(followed: &str) -> String {
       s.pending_approval as pending_approval,
       w.address as linked_wallet,
       w.blockchain as linked_wallet_blockchain,
-      s.evm_contract_address as evm_contract_address,
       s.created_at as created_at,
       u.public_id as creator_public_id,
       u.pkey_id as creator_id,

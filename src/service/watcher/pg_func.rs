@@ -329,5 +329,71 @@ END
 
         "#,
         ),
+        ProceduralFunction::new(
+            "fun_watcher_save_strategy_pool_contract",
+            vec![
+                Field::new("strategy_id", Type::BigInt),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("address", Type::String),
+            ],
+            vec![Field::new("pkey_id", Type::BigInt)],
+            r#"
+BEGIN
+    RETURN QUERY INSERT INTO tbl.strategy_pool_contract (fkey_strategy_id, blockchain, address, created_at)
+    VALUES (a_strategy_id, a_blockchain, a_address, EXTRACT(EPOCH FROM NOW()))
+    RETURNING pkey_id;
+END
+""#,
+        ),
+        ProceduralFunction::new(
+            "fun_watcher_add_strategy_pool_contract",
+            vec![
+                Field::new("strategy_id", Type::BigInt),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("address", Type::String),
+            ],
+            vec![Field::new("pkey_id", Type::BigInt)],
+            r#"
+BEGIN
+    RETURN QUERY INSERT INTO tbl.strategy_pool_contract (fkey_strategy_id, blockchain, address, created_at)
+    VALUES (a_strategy_id, a_blockchain, a_address, EXTRACT(EPOCH FROM NOW()))
+    RETURNING pkey_id;
+END
+        "#,
+        ),
+        ProceduralFunction::new(
+            "fun_watcher_list_strategy_pool_contract",
+            vec![
+                Field::new("limit", Type::BigInt),
+                Field::new("offset", Type::BigInt),
+                Field::new("strategy_id", Type::optional(Type::BigInt)),
+                Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
+                Field::new("address", Type::optional(Type::String)),
+            ],
+            vec![
+                Field::new("pkey_id", Type::BigInt),
+                Field::new("strategy_id", Type::BigInt),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("address", Type::String),
+                Field::new("created_at", Type::BigInt),
+            ],
+            r#"
+BEGIN
+    RETURN QUERY SELECT
+        spc.pkey_id,
+        spc.fkey_strategy_id,
+        spc.blockchain,
+        spc.address,
+        spc.created_at
+    FROM tbl.strategy_pool_contract AS spc
+    WHERE (a_strategy_id ISNULL OR spc.fkey_strategy_id = a_strategy_id)
+        AND (a_blockchain ISNULL OR spc.blockchain = a_blockchain)
+        AND (a_address ISNULL OR spc.address = a_address)
+    ORDER BY spc.pkey_id
+    LIMIT a_limit
+    OFFSET a_offset;
+END
+        "#,
+        ),
     ]
 }

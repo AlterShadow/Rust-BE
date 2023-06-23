@@ -208,11 +208,11 @@ CREATE TABLE tbl.strategy_initial_token_ratio (
 -- Table: strategy_pool_contract
 CREATE TABLE tbl.strategy_pool_contract (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.strategy_pool_contract_id'),
-    pkey_strategy_id bigint  NOT NULL,
+    fkey_strategy_id bigint  NOT NULL,
     blockchain enum_block_chain  NOT NULL,
     address varchar(64)  NOT NULL,
     created_at bigint  NOT NULL,
-    CONSTRAINT strategy_pool_contract_ak_1 UNIQUE (pkey_strategy_id, blockchain) NOT DEFERRABLE  INITIALLY IMMEDIATE,
+    CONSTRAINT strategy_pool_contract_ak_1 UNIQUE (fkey_strategy_id, blockchain) NOT DEFERRABLE  INITIALLY IMMEDIATE,
     CONSTRAINT strategy_pool_contract_pk PRIMARY KEY (pkey_id)
 );
 

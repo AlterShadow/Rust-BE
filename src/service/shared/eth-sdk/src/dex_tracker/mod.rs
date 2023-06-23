@@ -183,7 +183,7 @@ pub async fn handle_swap(
             let user_id = get_user_id_from_strategy(&state.db, strategy_id).await?;
 
             /* fetch strategy */
-            let strategy = state
+            let _strategy = state
                 .db
                 .execute(FunUserGetStrategyReq {
                     strategy_id,
@@ -192,10 +192,20 @@ pub async fn handle_swap(
                 .await?
                 .into_result()
                 .context("strategy is not registered in the database")?;
-            if let Some(address) = strategy.evm_contract_address {
-                // TODO: make SPs on multiple chains possible
-                /* if there is an SP contract for this strategy,  */
-
+            let strategy_pool = state
+                .db
+                .execute(FunWatcherListStrategyPoolContractReq {
+                    limit: 1,
+                    offset: 0,
+                    strategy_id: Some(strategy_id),
+                    blockchain: Some(blockchain),
+                    address: None,
+                })
+                .await?
+                .into_result();
+            /* if there is an SP contract for this strategy,  */
+            if let Some(address_row) = strategy_pool {
+                let address = address_row.address;
                 /* check if SP contract holds token_in */
                 let sp_contract =
                     StrategyPoolContract::new(conn.clone(), Address::from_str(&address)?)?;
@@ -242,8 +252,6 @@ pub async fn handle_swap(
                         .ok_or_else(|| eyre!("pancake swap not available on this chain"))?,
                 )?;
 
-                /* acquire token_in from strategy pool */
-                // TODO: treat case where strategy pool started trading, and we can't acquire tokens
                 acquire_asset_before_trade_and_ensure_success(
                     sp_contract.clone(),
                     &conn,

@@ -472,7 +472,7 @@ async fn user_back_strategy(
     conn: &EthereumRpcConnection,
     ctx: &RequestContext,
     db: &DbClient,
-    chain: EnumBlockChain,
+    blockchain: EnumBlockChain,
     back_usdc_amount: U256,
     token_addresses: &BlockchainCoinAddresses,
     strategy_id: i64,
@@ -509,7 +509,7 @@ async fn user_back_strategy(
     let strategy_wallet_contract = match db
         .execute(FunUserListStrategyWalletsReq {
             user_id: ctx.user_id,
-            blockchain: Some(chain),
+            blockchain: Some(blockchain),
         })
         .await?
         .into_result()
@@ -535,7 +535,7 @@ async fn user_back_strategy(
             /* save wallet to database */
             db.execute(FunUserAddStrategyWalletReq {
                 user_id: ctx.user_id,
-                blockchain: chain,
+                blockchain,
                 address: format!("{:?}", strategy_wallet_contract.address()),
             })
             .await?;
@@ -573,7 +573,7 @@ async fn user_back_strategy(
     // TODO: replace this when we have non-hardcoded known tokens and a "tokens" table
     // TODO: fetch each token amount accross chains and address on this chain directly from database
     let strategy_tokens_and_amounts_on_this_chain: HashMap<Address, U256> =
-        merge_multichain_strategy_tokens(chain, token_addresses, all_strategy_tokens)?;
+        merge_multichain_strategy_tokens(blockchain, token_addresses, all_strategy_tokens)?;
 
     /* deduce fees from back amount */
     // TODO: fetch fees from strategy
@@ -590,11 +590,20 @@ async fn user_back_strategy(
     )?;
 
     /* instantiate strategy contract wrapper */
-    // TODO: add addresses for strategy contract on multiple chains to database
+    let strategy_pool = db
+        .execute(FunWatcherListStrategyPoolContractReq {
+            limit: 1,
+            offset: 0,
+            strategy_id: Some(strategy_id),
+            blockchain: Some(blockchain),
+            address: None,
+        })
+        .await?
+        .into_result();
     let sp_contract: StrategyPoolContract<EitherTransport>;
-    match strategy.evm_contract_address {
+    match strategy_pool {
         Some(addr) => {
-            let address = Address::from_str(&addr)?;
+            let address = Address::from_str(&addr.address)?;
             sp_contract = StrategyPoolContract::new(conn.clone(), address)?;
         }
         None => {
@@ -607,18 +616,13 @@ async fn user_back_strategy(
             )
             .await?;
             /* insert strategy contract address in the database */
-            db.query(
-                "
-						UPDATE tbl.strategy
-						SET evm_contract_address = $1
-						WHERE pkey_id = $2;
-						",
-                &[
-                    &format!("{:?}", contract.address()) as &(dyn ToSql + Sync),
-                    &strategy_id as &(dyn ToSql + Sync),
-                ],
-            )
+            db.execute(FunWatcherAddStrategyPoolContractReq {
+                strategy_id,
+                blockchain,
+                address: format!("{:?}", contract.address()),
+            })
             .await?;
+
             sp_contract = contract;
         }
     };
@@ -646,7 +650,7 @@ async fn user_back_strategy(
         .ok_or_else(|| eyre!("failed to query strategy pool assets and amounts"))?;
 
     let escrow_token_address = token_addresses
-        .get(chain, escrow_coin)
+        .get(blockchain, escrow_coin)
         .ok_or_else(|| eyre!("usdc address not available on this chain"))?;
     let escrow_token_contract = Erc20Token::new(conn.clone(), escrow_token_address)?;
     let shares_to_mint = calculate_shares(
@@ -665,7 +669,7 @@ async fn user_back_strategy(
     let pancake_contract = PancakeSmartRouterV3Contract::new(
         conn.clone(),
         dex_addresses
-            .get(chain, EnumDex::PancakeSwap)
+            .get(blockchain, EnumDex::PancakeSwap)
             .ok_or_else(|| eyre!("pancake swap not available on this chain"))?,
     )?;
 
@@ -702,7 +706,7 @@ async fn user_back_strategy(
     let (tokens_to_deposit, amounts_to_deposit) = trade_escrow_for_strategy_tokens(
         &conn,
         master_key.clone(),
-        chain,
+        blockchain,
         escrow_token_address,
         &pancake_contract,
         escrow_allocations_for_tokens,
@@ -754,7 +758,7 @@ async fn user_back_strategy(
                 strategy.current_usdc.parse::<U256>()? + back_usdc_amount
             ),
             old_current_quantity: strategy.current_usdc,
-            blockchain: chain,
+            blockchain,
             transaction_hash: format!("{:?}", deposit_transaction_hash),
             earn_sp_tokens: format!("{:?}", shares_to_mint),
         })
@@ -1033,17 +1037,21 @@ async fn user_exit_strategy(
         .await?
         .into_result()
         .context("strategy is not registered in the database")?;
+    let strategy_pool = db
+        .execute(FunWatcherListStrategyPoolContractReq {
+            limit: 1,
+            offset: 0,
+            strategy_id: Some(strategy_id),
+            blockchain: Some(blockchain),
+            address: None,
+        })
+        .await?
+        .into_result()
+        .context("strategy pool is not registered in the database")?;
 
     /* instantiate strategy pool contract wrapper */
-    // TODO: fetch the address of the strategy pool in this chain
-    let sp_contract = StrategyPoolContract::new(
-        conn.clone(),
-        Address::from_str(
-            &strategy
-                .evm_contract_address
-                .context("redeem from unexisting strategy pool")?,
-        )?,
-    )?;
+    let sp_contract =
+        StrategyPoolContract::new(conn.clone(), Address::from_str(&strategy_pool.address)?)?;
 
     /* check if strategy is trading */
     if sp_contract.is_paused().await? {
@@ -2904,19 +2912,11 @@ mod tests {
             "TEST".to_string(),
         )
         .await?;
-
-        /* insert strategy contract address in the database */
-        db.query(
-            "
-					UPDATE tbl.strategy
-					SET evm_contract_address = $1
-					WHERE pkey_id = $2;
-					",
-            &[
-                &format!("{:?}", strategy_contract.address()) as &(dyn ToSql + Sync),
-                &strategy.strategy_id as &(dyn ToSql + Sync),
-            ],
-        )
+        db.execute(FunWatcherSaveStrategyPoolContractReq {
+            strategy_id: strategy.strategy_id,
+            blockchain: EnumBlockChain::LocalNet,
+            address: format!("{:?}", strategy_contract.address()),
+        })
         .await?;
 
         /* deploy token contract */

@@ -359,7 +359,6 @@ RETURNS table (
     "pending_approval" boolean,
     "linked_wallet" varchar,
     "linked_wallet_blockchain" enum_block_chain,
-    "evm_contract_address" varchar,
     "created_at" bigint,
     "creator_public_id" bigint,
     "creator_id" bigint,
@@ -384,7 +383,7 @@ BEGIN
       s.risk_score as risk_score,
       s.aum as aum,
       (SELECT count(*) FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.unfollowed = FALSE) AS followers,
-      (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_strategy_history AS h WHERE fkey_strategy_id = s.pkey_id) AS backers,
+      (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_exit_strategy_history AS h WHERE fkey_strategy_id = s.pkey_id) AS backers,
       TRUE as followed,
       s.requested_at as requested_at,
       s.approved as approved,
@@ -392,7 +391,6 @@ BEGIN
       s.pending_approval as pending_approval,
       w.address as linked_wallet,
       w.blockchain as linked_wallet_blockchain,
-      s.evm_contract_address as evm_contract_address,
       s.created_at as created_at,
       u.public_id as creator_public_id,
       u.pkey_id as creator_id,
@@ -437,7 +435,6 @@ RETURNS table (
     "pending_approval" boolean,
     "linked_wallet" varchar,
     "linked_wallet_blockchain" enum_block_chain,
-    "evm_contract_address" varchar,
     "created_at" bigint,
     "creator_public_id" bigint,
     "creator_id" bigint,
@@ -462,7 +459,7 @@ BEGIN
       s.risk_score as risk_score,
       s.aum as aum,
       (SELECT count(*) FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.unfollowed = FALSE) AS followers,
-      (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_strategy_history AS h WHERE fkey_strategy_id = s.pkey_id) AS backers,
+      (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_exit_strategy_history AS h WHERE fkey_strategy_id = s.pkey_id) AS backers,
       EXISTS(SELECT * FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.fkey_user_id = a_user_id AND ufs.unfollowed = FALSE) as followed,
       s.requested_at as requested_at,
       s.approved as approved,
@@ -470,7 +467,6 @@ BEGIN
       s.pending_approval as pending_approval,
       w.address as linked_wallet,
       w.blockchain as linked_wallet_blockchain,
-      s.evm_contract_address as evm_contract_address,
       s.created_at as created_at,
       u.public_id as creator_public_id,
       u.pkey_id as creator_id,
@@ -555,7 +551,6 @@ RETURNS table (
     "pending_approval" boolean,
     "linked_wallet" varchar,
     "linked_wallet_blockchain" enum_block_chain,
-    "evm_contract_address" varchar,
     "created_at" bigint,
     "creator_public_id" bigint,
     "creator_id" bigint,
@@ -580,7 +575,7 @@ BEGIN
       s.risk_score as risk_score,
       s.aum as aum,
       (SELECT count(*) FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.unfollowed = FALSE) AS followers,
-      (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_strategy_history AS h WHERE fkey_strategy_id = s.pkey_id) AS backers,
+      (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_exit_strategy_history AS h WHERE fkey_strategy_id = s.pkey_id) AS backers,
       EXISTS(SELECT * FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.fkey_user_id = a_user_id AND ufs.unfollowed = FALSE) as followed,
       s.requested_at as requested_at,
       s.approved as approved,
@@ -588,7 +583,6 @@ BEGIN
       s.pending_approval as pending_approval,
       w.address as linked_wallet,
       w.blockchain as linked_wallet_blockchain,
-      s.evm_contract_address as evm_contract_address,
       s.created_at as created_at,
       u.public_id as creator_public_id,
       u.pkey_id as creator_id,
@@ -745,7 +739,6 @@ RETURNS table (
     "pending_approval" boolean,
     "linked_wallet" varchar,
     "linked_wallet_blockchain" enum_block_chain,
-    "evm_contract_address" varchar,
     "created_at" bigint,
     "creator_public_id" bigint,
     "creator_id" bigint,
@@ -770,7 +763,7 @@ BEGIN
       s.risk_score as risk_score,
       s.aum as aum,
       (SELECT count(*) FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.unfollowed = FALSE) AS followers,
-      (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_strategy_history AS h WHERE fkey_strategy_id = s.pkey_id) AS backers,
+      (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_exit_strategy_history AS h WHERE fkey_strategy_id = s.pkey_id) AS backers,
       EXISTS(SELECT * FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.fkey_user_id = a_user_id AND ufs.unfollowed = FALSE) as followed,
       s.requested_at as requested_at,
       s.approved as approved,
@@ -778,7 +771,6 @@ BEGIN
       s.pending_approval as pending_approval,
       w.address as linked_wallet,
       w.blockchain as linked_wallet_blockchain,
-      s.evm_contract_address as evm_contract_address,
       s.created_at as created_at,
       u.public_id as creator_public_id,
       u.pkey_id as creator_id,
@@ -2238,7 +2230,6 @@ RETURNS table (
     "pending_approval" boolean,
     "linked_wallet" varchar,
     "linked_wallet_blockchain" enum_block_chain,
-    "evm_contract_address" varchar,
     "created_at" bigint,
     "creator_public_id" bigint,
     "creator_id" bigint,
@@ -2265,7 +2256,7 @@ BEGIN
       s.risk_score as risk_score,
       s.aum as aum,
       (SELECT count(*) FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.unfollowed = FALSE) AS followers,
-      (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_strategy_history AS h WHERE fkey_strategy_id = s.pkey_id) AS backers,
+      (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_exit_strategy_history AS h WHERE fkey_strategy_id = s.pkey_id) AS backers,
       EXISTS(SELECT * FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.fkey_user_id = a_user_id AND ufs.unfollowed = FALSE) as followed,
       s.requested_at as requested_at,
       s.approved as approved,
@@ -2273,7 +2264,6 @@ BEGIN
       s.pending_approval as pending_approval,
       w.address as linked_wallet,
       w.blockchain as linked_wallet_blockchain,
-      s.evm_contract_address as evm_contract_address,
       s.created_at as created_at,
       u.public_id as creator_public_id,
       u.pkey_id as creator_id,
@@ -2647,6 +2637,68 @@ BEGIN
      ;
 END
 
+        
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_watcher_save_strategy_pool_contract(a_strategy_id bigint, a_blockchain enum_block_chain, a_address varchar)
+RETURNS table (
+    "pkey_id" bigint
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY INSERT INTO tbl.strategy_pool_contract (fkey_strategy_id, blockchain, address, created_at)
+    VALUES (a_strategy_id, a_blockchain, a_address, EXTRACT(EPOCH FROM NOW()))
+    RETURNING pkey_id;
+END
+"
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_watcher_add_strategy_pool_contract(a_strategy_id bigint, a_blockchain enum_block_chain, a_address varchar)
+RETURNS table (
+    "pkey_id" bigint
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY INSERT INTO tbl.strategy_pool_contract (fkey_strategy_id, blockchain, address, created_at)
+    VALUES (a_strategy_id, a_blockchain, a_address, EXTRACT(EPOCH FROM NOW()))
+    RETURNING pkey_id;
+END
+        
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_watcher_list_strategy_pool_contract(a_limit bigint, a_offset bigint, a_strategy_id bigint DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL, a_address varchar DEFAULT NULL)
+RETURNS table (
+    "pkey_id" bigint,
+    "strategy_id" bigint,
+    "blockchain" enum_block_chain,
+    "address" varchar,
+    "created_at" bigint
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY SELECT
+        spc.pkey_id,
+        spc.fkey_strategy_id,
+        spc.blockchain,
+        spc.address,
+        spc.created_at
+    FROM tbl.strategy_pool_contract AS spc
+    WHERE (a_strategy_id ISNULL OR spc.fkey_strategy_id = a_strategy_id)
+        AND (a_blockchain ISNULL OR spc.blockchain = a_blockchain)
+        AND (a_address ISNULL OR spc.address = a_address)
+    ORDER BY spc.pkey_id
+    LIMIT a_limit
+    OFFSET a_offset;
+END
         
 $$;
         
