@@ -1396,10 +1396,10 @@ AS $$
     
 BEGIN
     RETURN QUERY SELECT a.pkey_id            AS watch_wallet_id,
-                        a.address            AS wallet_address,
-                        a.blockchain         AS blockchain,
+												(SELECT address FROM tbl.expert_watched_wallet WHERE pkey_id = a.fkey_expert_watched_wallet_id) AS wallet_address,
+												(SELECT w.blockchain FROM tbl.expert_watched_wallet AS w WHERE pkey_id = a.fkey_expert_watched_wallet_id) AS blockchain,
                         a.ratio_distribution AS ratio
-                 FROM tbl.strategy_watching_wallet AS a
+                 FROM tbl.strategy_watched_wallet AS a
                  WHERE a.fkey_strategy_id = a_strategy_id;
 END
 
