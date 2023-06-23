@@ -207,7 +207,10 @@ END
             r#"
  
 BEGIN
-    IF EXISTS( SELECT * FROM  tbl.user_deposit_withdraw_history WHERE transaction_hash = a_transaction_hash) THEN
+    IF EXISTS(SELECT * FROM  tbl.user_deposit_withdraw_history
+			WHERE transaction_hash = a_transaction_hash AND
+			blockchain = a_blockchain
+		) THEN
         RETURN QUERY SELECT FALSE;
     END IF;
     INSERT INTO tbl.user_deposit_withdraw_history (
