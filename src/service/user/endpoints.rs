@@ -825,11 +825,20 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
             "UserGetEscrowAddressForStrategy",
             20500,
             // will be expanded later
-            vec![
-                Field::new("strategy_id", Type::BigInt),
-                Field::new("blockchain", Type::enum_ref("block_chain")),
-            ],
-            vec![Field::new("address", Type::String)],
+            vec![Field::new("strategy_id", Type::BigInt)],
+            vec![Field::new(
+                "tokens",
+                Type::datatable(
+                    "UserAllowedEscrowTransferInfo",
+                    vec![
+                        Field::new("receiver_address", Type::String),
+                        Field::new("token_id", Type::BigInt),
+                        Field::new("token_symbol", Type::String),
+                        Field::new("token_name", Type::String),
+                        Field::new("token_address", Type::String),
+                    ],
+                ),
+            )],
         ),
     ]
 }

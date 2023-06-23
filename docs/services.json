@@ -3603,18 +3603,38 @@
             {
               "name": "strategy_id",
               "ty": "BigInt"
-            },
-            {
-              "name": "blockchain",
-              "ty": {
-                "EnumRef": "block_chain"
-              }
             }
           ],
           "returns": [
             {
-              "name": "address",
-              "ty": "String"
+              "name": "tokens",
+              "ty": {
+                "DataTable": {
+                  "name": "UserAllowedEscrowTransferInfo",
+                  "fields": [
+                    {
+                      "name": "receiver_address",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "token_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "token_symbol",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "token_name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "token_address",
+                      "ty": "String"
+                    }
+                  ]
+                }
+              }
             }
           ],
           "stream_response": [],

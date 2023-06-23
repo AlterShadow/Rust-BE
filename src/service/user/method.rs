@@ -2618,6 +2618,7 @@ impl RequestHandler for MethodUserRemoveStrategyAuditRule {
 }
 pub struct MethodUserGetEscrowAddressForStrategy {
     pub addresses: Vec<UserGetDepositAddressesRow>,
+    pub token_addresses: Arc<BlockchainCoinAddresses>,
 }
 impl RequestHandler for MethodUserGetEscrowAddressForStrategy {
     type Request = UserGetEscrowAddressForStrategyRequest;
@@ -2628,17 +2629,25 @@ impl RequestHandler for MethodUserGetEscrowAddressForStrategy {
         ctx: RequestContext,
         req: Self::Request,
     ) -> FutureResponse<Self::Request> {
-        let address = self
-            .addresses
-            .iter()
-            .find(|x| x.blockchain == req.blockchain)
-            .cloned();
+        let addresses = self.addresses.clone();
+        let token_addresses = self.token_addresses.clone();
         async move {
-            let address = address.with_context(|| {
-                CustomError::new(EnumErrorCode::InvalidArgument, "blockchain not recognized")
-            })?;
             Ok(UserGetEscrowAddressForStrategyResponse {
-                address: format!("{:?}", address),
+                tokens: addresses
+                    .into_iter()
+                    .map(|x| {
+                        let usdc = token_addresses
+                            .get(x.blockchain, EnumBlockchainCoin::USDC)
+                            .unwrap();
+                        UserAllowedEscrowTransferInfo {
+                            receiver_address: x.address,
+                            token_id: 0,
+                            token_symbol: "USDC".to_string(),
+                            token_name: "USDC".to_string(),
+                            token_address: format!("{:?}", usdc),
+                        }
+                    })
+                    .collect(),
             })
         }
         .boxed()

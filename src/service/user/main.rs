@@ -123,6 +123,7 @@ async fn main() -> Result<()> {
     });
     server.add_handler(MethodUserGetEscrowAddressForStrategy {
         addresses: config.escrow_addresses,
+        token_addresses: Arc::new(BlockchainCoinAddresses::new()),
     });
 
     server.add_handler(MethodAdminListUsers);

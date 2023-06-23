@@ -1450,6 +1450,15 @@ pub struct UserAddStrategyAuditRuleRequest {
 pub struct UserAddStrategyAuditRuleResponse {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct UserAllowedEscrowTransferInfo {
+    pub receiver_address: String,
+    pub token_id: i64,
+    pub token_symbol: String,
+    pub token_name: String,
+    pub token_address: String,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct UserApplyBecomeExpertRequest {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1563,12 +1572,11 @@ pub struct UserGetDepositTokensRow {
 #[serde(rename_all = "camelCase")]
 pub struct UserGetEscrowAddressForStrategyRequest {
     pub strategy_id: i64,
-    pub blockchain: EnumBlockChain,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserGetEscrowAddressForStrategyResponse {
-    pub address: String,
+    pub tokens: Vec<UserAllowedEscrowTransferInfo>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -6074,18 +6082,38 @@ impl WsRequest for UserGetEscrowAddressForStrategyRequest {
     {
       "name": "strategy_id",
       "ty": "BigInt"
-    },
-    {
-      "name": "blockchain",
-      "ty": {
-        "EnumRef": "block_chain"
-      }
     }
   ],
   "returns": [
     {
-      "name": "address",
-      "ty": "String"
+      "name": "tokens",
+      "ty": {
+        "DataTable": {
+          "name": "UserAllowedEscrowTransferInfo",
+          "fields": [
+            {
+              "name": "receiver_address",
+              "ty": "String"
+            },
+            {
+              "name": "token_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "token_symbol",
+              "ty": "String"
+            },
+            {
+              "name": "token_name",
+              "ty": "String"
+            },
+            {
+              "name": "token_address",
+              "ty": "String"
+            }
+          ]
+        }
+      }
     }
   ],
   "stream_response": [],
