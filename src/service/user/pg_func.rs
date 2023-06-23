@@ -66,6 +66,8 @@ BEGIN
                  FROM tbl.strategy AS s
                      JOIN tbl.user_follow_strategy AS b ON b.fkey_strategy_id = s.pkey_id
                      JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id
+										 -- TODO: should "linked_wallet" be the expert watched wallet linked to the strategy?
+										 JOIN tbl.expert_watched_wallet AS w ON w.fkey_user_id = u.pkey_id
                  WHERE b.fkey_user_id = a_user_id AND unfollowed = FALSE
                  -- TODO: filter only approved strategies
                 ORDER BY s.pkey_id
