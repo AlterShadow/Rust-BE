@@ -2099,16 +2099,6 @@ pub async fn on_user_request_refund(
         token,
         wallet_address
     );
-    let row = db
-        .execute(FunUserRequestRefundReq {
-            user_id: ctx.user_id,
-            quantity: format!("{:?}", quantity),
-            blockchain: chain,
-            wallet_address: format!("{:?}", wallet_address),
-        })
-        .await?
-        .into_result()
-        .context("No result")?;
 
     let token_address = stablecoin_addresses
         .get(chain, token)
@@ -2117,7 +2107,7 @@ pub async fn on_user_request_refund(
     // TODO: check user balance before transfer
 
     let hash = transfer_token_to_and_ensure_success(
-        escrow_contract,
+        escrow_contract.clone(),
         &_conn,
         14,
         10,
@@ -2129,11 +2119,18 @@ pub async fn on_user_request_refund(
     )
     .await?;
 
-    db.execute(FunUserUpdateRequestRefundHistoryReq {
-        request_refund_id: row.request_refund_id,
+    db.execute(FunUserRequestRefundReq {
+        user_id: ctx.user_id,
+        quantity: format!("{:?}", quantity),
+        blockchain: chain,
+        user_address: format!("{:?}", wallet_address),
+        receiver_address: format!("{:?}", wallet_address),
+        contract_address: format!("{:?}", escrow_contract.address()),
         transaction_hash: format!("{:?}", hash),
     })
-    .await?;
+    .await?
+    .into_result()
+    .context("No result")?;
 
     Ok(hash)
 }
