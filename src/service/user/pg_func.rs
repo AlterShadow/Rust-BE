@@ -1105,14 +1105,14 @@ END
             ],
             r#"
 BEGIN
-    RETURN QUERY SELECT a.blockchain, a.user_address, a.contract_address, a.receiver_address, a.quantity, a.transaction_hash, a.created_at
-            FROM tbl.user_deposit_history AS a
-            WHERE a.fkey_user_id = a_user_id
-            ORDER BY a.pkey_id DESC
-            LIMIT a_limit
-            OFFSET a_offset;
+    RETURN QUERY SELECT a.blockchain, a.user_address, a.escrow_contract_address, a.receiver_address, a.quantity, a.transaction_hash, a.happened_at
+		FROM tbl.user_deposit_withdraw_history AS a
+		WHERE fkey_user_id = a_user_id AND is_deposit = TRUE
+		ORDER BY a.pkey_id DESC
+		LIMIT a_limit
+		OFFSET a_offset;
 END
-            "#,
+"#,
         ),
         ProceduralFunction::new(
             "fun_user_get_user_by_address",
