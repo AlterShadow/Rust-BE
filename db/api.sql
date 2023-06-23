@@ -1659,7 +1659,7 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY SELECT b.pkey_id, b.username, b.family_name, b.given_name, a.back_time, b.created_at FROM tbl.user_back_strategy_history AS a
+    RETURN QUERY SELECT b.pkey_id, b.username, b.family_name, b.given_name, a.happened_at, b.created_at FROM tbl.user_back_exit_strategy_history AS a
             INNER JOIN tbl.user AS b ON a.fkey_user_id = b.pkey_id
             WHERE a.fkey_user_id = a_user_id
             ORDER BY a.pkey_id
