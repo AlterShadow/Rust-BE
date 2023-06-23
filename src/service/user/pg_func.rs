@@ -835,10 +835,10 @@ END
             vec![Field::new("success", Type::Boolean)],
             r#"
 BEGIN
-    DELETE FROM tbl.strategy_watching_wallet
-    WHERE fkey_user_id = a_user_id
+    DELETE FROM tbl.strategy_watched_wallet AS sww
+    WHERE (SELECT fkey_user_id from tbl.expert_watched_wallet WHERE pkey_id = sww.fkey_expert_watched_wallet_id) = a_user_id
       AND pkey_id = a_watch_wallet_id
-        AND fkey_strategy_id = a_strategy_id;
+			AND fkey_strategy_id = a_strategy_id;
     RETURN QUERY SELECT TRUE;
 END
 "#,
