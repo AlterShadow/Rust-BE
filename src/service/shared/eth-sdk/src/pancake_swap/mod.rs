@@ -7,7 +7,6 @@ use super::v3::{
     multi_hop::{exact_input, exact_output},
     single_hop::{exact_input_single, exact_output_single},
 };
-use crate::erc20::build_erc_20;
 use crate::evm::DexPath;
 use crate::evm::{DexTrade, PancakeV3SingleHopPath};
 use crate::v3::multi_hop::MultiHopPath;

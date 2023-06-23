@@ -10,7 +10,6 @@ use gen::database::FunWatcherSaveRawTransactionReq;
 use gen::model::{EnumBlockChain, EnumDex, EnumDexVersion};
 use lib::database::DbClient;
 use serde::{Deserialize, Serialize};
-use std::time::SystemTime;
 use tracing::error;
 use web3::ethabi::Contract;
 use web3::types::{Address, H160, H256, U256};

@@ -73,15 +73,12 @@ END
                 Field::new("happened_at", Type::optional(Type::BigInt)),
             ],
             vec![
-                Field::new(
-                    "strategy_watching_wallet_trade_history_id",
-                    Type::optional(Type::BigInt),
-                ),
-                Field::new("expert_watched_wallet_id", Type::optional(Type::BigInt)),
-                Field::new("fkey_token_in", Type::optional(Type::BigInt)),
-                Field::new("fkey_token_in_name", Type::optional(Type::String)),
-                Field::new("fkey_token_out", Type::optional(Type::BigInt)),
-                Field::new("fkey_token_out_name", Type::optional(Type::String)),
+                Field::new("strategy_watching_wallet_trade_history_id", Type::BigInt),
+                Field::new("expert_watched_wallet_id", Type::BigInt),
+                Field::new("fkey_token_in", Type::BigInt),
+                Field::new("fkey_token_in_name", Type::String),
+                Field::new("fkey_token_out", Type::BigInt),
+                Field::new("fkey_token_out_name", Type::String),
             ],
             r#"
 DECLARE

@@ -2,7 +2,6 @@ use bytes::Bytes;
 use eyre::*;
 use http::StatusCode;
 use lib::database::{DbClient, ToSql};
-use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -24,7 +23,7 @@ use crate::strategy_pool::{
 use crate::utils::wait_for_confirmations_simple;
 use crate::v3::smart_router::{copy_trade_and_ensure_success, PancakeSmartRouterV3Contract};
 use crate::TransactionReady;
-use crate::{evm, EthereumRpcConnection, TransactionFetcher};
+use crate::{evm, TransactionFetcher};
 use gen::database::*;
 use gen::model::EnumBlockchainCoin;
 use gen::model::{EnumBlockChain, EnumDex};
@@ -127,11 +126,9 @@ pub async fn handle_swap(
             .get_by_address(blockchain, trade.token_out)
             .context("token out is unknown")?;
 
-        /* fetch strategy's tokens */
+        /* get all strategy tokens */
 
-        /* count all strategy tokens */
-
-        let mut all_strategy_tokens = state
+        let all_strategy_tokens = state
             .db
             .execute(
                 // fun_watcher_list_user_strategy_ledger
@@ -141,8 +138,8 @@ pub async fn handle_swap(
             )
             .await?;
 
-        /* merge multichain tokens */
-        let mut merged_strategy_tokens: HashMap<EnumBlockchainCoin, U256> = HashMap::new();
+        /* build up multichain token map */
+        let mut strategy_token_ledger: HashMap<EnumBlockchainCoin, U256> = HashMap::new();
         for row in all_strategy_tokens.into_iter() {
             let (token_chain, token_address, token_amount) = (
                 row.blockchain,
@@ -153,30 +150,32 @@ pub async fn handle_swap(
                 .token_addresses
                 .get_by_address(token_chain, token_address)
                 .context("strategy token is unknown")?;
-            match merged_strategy_tokens.entry(strategy_token) {
-                Entry::Vacant(e) => {
-                    e.insert(token_amount);
-                }
-                Entry::Occupied(mut e) => {
-                    let balance = e.get_mut();
-                    *balance = balance.try_checked_add(token_amount)?;
-                }
+            if strategy_token_ledger
+                .insert(strategy_token, token_amount)
+                .is_some()
+            {
+                bail!(
+                    "Duplicate entry in strategy token list for {:?} {:?}",
+                    strategy_token,
+                    token_address
+                );
             }
         }
 
         /* update database with watched wallet's tokens */
         let conn = state.eth_pool.get(blockchain).await?;
         update_expert_listened_wallet_asset_ledger(
-            &conn,
             &state.db,
             strategy_id,
             &trade,
+            saved.fkey_token_out,
+            saved.fkey_token_in,
             blockchain,
         )
         .await?;
 
         /* check if token_in was a strategy token */
-        if let Some(total_strategy_token_in_amount) = merged_strategy_tokens.get(&token_in) {
+        if let Some(total_strategy_token_in_amount) = strategy_token_ledger.get(&token_in) {
             /* if token_in was already a strategy token trade it from SPs in ratio traded_amount / old_amount */
             /* if token_in was not known to the strategy we can't calculate how much to spend */
 
@@ -371,23 +370,51 @@ pub async fn get_user_id_from_strategy(db: &DbClient, strategy_id: i64) -> Resul
 }
 
 pub async fn update_expert_listened_wallet_asset_ledger(
-    conn: &EthereumRpcConnection,
     db: &DbClient,
-    strategy_id: i64,
+    _strategy_id: i64,
     trade: &DexTrade,
-    token_id: i64,
+    token_out_id: i64,
+    token_in_id: i64,
     blockchain: EnumBlockChain,
 ) -> Result<()> {
     // correctly adding wallet balance to tbl.strategy_initial_token ratio is not possible because expert can have multiple watching wallets in one chain
-    // TODO: use fun_watcher_get_expert_listened_wallet_asset_ledger and fun_watcher_upsert_expert_listened_wallet_asset_ledger
-    let expert_watched_wallet_address = trade."caller";
+    let expert_watched_wallet_address = trade.caller;
 
     match db
         .execute(FunWatcherListExpertListenedWalletAssetLedgerReq {
             limit: 1,
             blockchain: Some(blockchain),
-            address: Some(expert_watched_wallet_address),
-            token_id: Some(token_id),
+            address: Some(format!("{:?}", expert_watched_wallet_address)),
+            token_id: Some(token_out_id),
+            offset: 0,
+        })
+        .await?
+        .into_result()
+    {
+        Some(tk) => {
+            /* if token_in is already in the database, update it's amount */
+            let old_amount = U256::from_dec_str(&tk.entry)?;
+            let new_amount = old_amount.try_checked_sub(trade.amount_out)?;
+            db.execute(FunWatcherUpsertExpertListenedWalletAssetLedgerReq {
+                address: format!("{:?}", expert_watched_wallet_address),
+                blockchain,
+                token_id: token_out_id,
+                old_entry: tk.entry,
+                new_entry: format!("{:?}", new_amount),
+            })
+            .await?;
+        }
+        None => {
+            // what should we do when we have nothing to subtract from?
+        }
+    };
+
+    match db
+        .execute(FunWatcherListExpertListenedWalletAssetLedgerReq {
+            limit: 1,
+            blockchain: Some(blockchain),
+            address: Some(format!("{:?}", expert_watched_wallet_address)),
+            token_id: Some(token_in_id),
             offset: 0,
         })
         .await?
@@ -396,37 +423,11 @@ pub async fn update_expert_listened_wallet_asset_ledger(
         Some(tk) => {
             /* if token_in is already in the database, update it's amount, or remove it new amount is 0 */
             let old_amount = U256::from_dec_str(&tk.entry)?;
-            let new_amount = old_amount.try_checked_sub(trade.amount_in)?;
+            let new_amount = old_amount.try_checked_add(trade.amount_in)?;
             db.execute(FunWatcherUpsertExpertListenedWalletAssetLedgerReq {
                 address: format!("{:?}", expert_watched_wallet_address),
                 blockchain,
-                token_id,
-                old_entry: tk.entry,
-                new_entry: format!("{:?}", new_amount),
-            })
-            .await?;
-        }
-        None => {}
-    };
-
-    let expert_watched_wallet_address = trade.receiver;
-    match db
-        .execute(FunUserGetStrategyInitialTokenRatioByAddressAndChainReq {
-            strategy_id: strategy_id,
-            token_address: format!("{:?}", trade.token_out),
-            blockchain: blockchain,
-        })
-        .await?
-        .into_result()
-    {
-        Some(tk) => {
-            /* if token_in is already in the database, update it's amount, or remove it new amount is 0 */
-            let old_amount = U256::from_dec_str(&tk.entry)?;
-            let new_amount = old_amount.try_checked_sub(trade.amount_out)?;
-            db.execute(FunWatcherUpsertExpertListenedWalletAssetLedgerReq {
-                address: format!("{:?}", expert_watched_wallet_address),
-                blockchain,
-                token_id,
+                token_id: token_in_id,
                 old_entry: tk.entry,
                 new_entry: format!("{:?}", new_amount),
             })
@@ -434,11 +435,11 @@ pub async fn update_expert_listened_wallet_asset_ledger(
         }
         None => {
             let old_amount = U256::from(0);
-            let new_amount = trade.amount_out;
+            let new_amount = trade.amount_in;
             db.execute(FunWatcherUpsertExpertListenedWalletAssetLedgerReq {
                 address: format!("{:?}", expert_watched_wallet_address),
                 blockchain,
-                token_id,
+                token_id: token_in_id,
                 old_entry: format!("{:?}", old_amount),
                 new_entry: format!("{:?}", new_amount),
             })

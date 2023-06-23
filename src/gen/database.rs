@@ -620,18 +620,12 @@ pub struct FunWatcherSaveRawTransactionRespRow {
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunWatcherSaveStrategyWatchingWalletTradeHistoryRespRow {
-    #[serde(default)]
-    pub strategy_watching_wallet_trade_history_id: Option<i64>,
-    #[serde(default)]
-    pub expert_watched_wallet_id: Option<i64>,
-    #[serde(default)]
-    pub fkey_token_in: Option<i64>,
-    #[serde(default)]
-    pub fkey_token_in_name: Option<String>,
-    #[serde(default)]
-    pub fkey_token_out: Option<i64>,
-    #[serde(default)]
-    pub fkey_token_out_name: Option<String>,
+    pub strategy_watching_wallet_trade_history_id: i64,
+    pub expert_watched_wallet_id: i64,
+    pub fkey_token_in: i64,
+    pub fkey_token_in_name: String,
+    pub fkey_token_out: i64,
+    pub fkey_token_out_name: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
