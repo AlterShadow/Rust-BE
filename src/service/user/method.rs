@@ -1113,9 +1113,11 @@ async fn user_exit_strategy(
     db.execute(FunUserExitStrategyReq {
         user_id: ctx.user_id,
         strategy_id,
-        quantity: format!("{:?}", shares_redeemed),
+        // TODO: calculate value of sp tokens exit in usdc
+        quantity: format!("{:?}", 0),
         blockchain,
         transaction_hash: format!("{:?}", tx_hash),
+        redeem_sp_tokens: format!("{:?}", shares_redeemed),
     })
     .await?;
 
