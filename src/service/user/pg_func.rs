@@ -904,11 +904,10 @@ BEGIN
                         b.public_id    AS user_public_id,
                         b.address      AS wallet_address,
                         b.username     AS username,
-                        a.back_time  AS followed_at
-                 FROM tbl.user_back_strategy_history AS a
+                        a.happened_at  AS backed_at
+                 FROM tbl.user_back_exit_strategy_history AS a
                           INNER JOIN tbl.user AS b ON a.fkey_user_id = b.pkey_id
-                 WHERE a.fkey_strategy_id = a_strategy_id
-                 ;
+                 WHERE a.fkey_strategy_id = a_strategy_id AND a.is_back = TRUE;
 END
 "#,
         ),
