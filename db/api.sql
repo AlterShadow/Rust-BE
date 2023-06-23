@@ -1473,7 +1473,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_list_request_refund_history()
+CREATE OR REPLACE FUNCTION api.fun_user_list_request_refund_history(a_user_id bigint)
 RETURNS table (
     "request_refund_id" bigint,
     "user_id" bigint,
@@ -1485,7 +1485,9 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY SELECT pkey_id, fkey_user_id, blockchain, quantity, wallet_address FROM tbl.user_request_refund_history;
+    RETURN QUERY SELECT a.pkey_id, a.fkey_user_id, a.blockchain, a.quantity, a.user_address
+		FROM tbl.user_deposit_withdraw_history AS a
+		WHERE fkey_user_id = a_user_id AND is_deposit = FALSE;
 END
 
 $$;

@@ -1640,16 +1640,18 @@ impl DatabaseRequest for FunUserRequestRefundReq {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunUserListRequestRefundHistoryReq {}
+pub struct FunUserListRequestRefundHistoryReq {
+    pub user_id: i64,
+}
 
 #[allow(unused_variables)]
 impl DatabaseRequest for FunUserListRequestRefundHistoryReq {
     type ResponseRow = FunUserListRequestRefundHistoryRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_list_request_refund_history();"
+        "SELECT * FROM api.fun_user_list_request_refund_history(a_user_id => $1::bigint);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
-        vec![]
+        vec![&self.user_id as &(dyn ToSql + Sync)]
     }
 }
 
