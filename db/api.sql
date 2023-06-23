@@ -732,8 +732,9 @@ BEGIN
 			WHERE spc.fkey_strategy_id = s.pkey_id AND usw.fkey_user_id = a_user_id) AS strategy_pool_token
       
                  FROM tbl.strategy AS s
-                      JOIN tbl.user_back_strategy_history AS b ON b.fkey_strategy_id = s.pkey_id AND b.fkey_user_id = a_user_id
+                      JOIN tbl.user_back_exit_strategy_history AS b ON b.fkey_strategy_id = s.pkey_id AND b.fkey_user_id = a_user_id
                       JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id
+											JOIN tbl.expert_watched_wallet AS w ON w.fkey_user_id = u.pkey_id
                  WHERE b.fkey_user_id = a_user_id
                  ORDER BY s.pkey_id
                  LIMIT a_limit
