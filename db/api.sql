@@ -1137,6 +1137,7 @@ AS $$
     
 DECLARE
     a_strategy_id BIGINT;
+		a_expert_watched_wallet_id BIGINT;
 BEGIN
     INSERT INTO tbl.strategy (
         fkey_user_id, 
@@ -1172,21 +1173,40 @@ BEGIN
         TRUE,
         FALSE
     ) RETURNING pkey_id INTO a_strategy_id;
-    INSERT INTO tbl.strategy_watching_wallet(
-        fkey_user_id,
-        fkey_strategy_id,
-        blockchain,
-        address,
-        dex,
+
+		-- if expert watched wallet already exists, fetch it's id
+		-- TODO: add unique constraint to blockchain + address
+		-- TODO: find out if one expert wallet can be watched for multiple strategies
+    SELECT pkey_id
+    INTO a_expert_watched_wallet_id
+    FROM tbl.expert_watched_wallet
+    WHERE fkey_user_id = a_user_id AND blockchain = a_blockchain AND address = a_wallet_address;
+
+		-- if not, insert it and fetch it's id
+    IF a_expert_watched_wallet_id IS NULL THEN
+        INSERT INTO tbl.expert_watched_wallet(
+            fkey_user_id,
+            blockchain,
+            address,
+            created_at
+        )
+        VALUES (
+            a_user_id,
+            a_blockchain,
+            a_wallet_address,
+            EXTRACT(EPOCH FROM NOW())::bigint
+        ) RETURNING pkey_id INTO a_expert_watched_wallet_id;
+    END IF;
+
+    INSERT INTO tbl.strategy_watched_wallet(
+        fkey_expert_watched_wallet_id,
+				fkey_strategy_id,
         ratio_distribution,
         updated_at,
         created_at
     ) VALUES (
-        a_user_id,
+				a_expert_watched_wallet_id,
         a_strategy_id,
-        a_blockchain,
-        a_wallet_address,
-        'PANCAKESWAP',
         1.0,
         EXTRACT(EPOCH FROM NOW())::bigint,
         EXTRACT(EPOCH FROM NOW())::bigint
