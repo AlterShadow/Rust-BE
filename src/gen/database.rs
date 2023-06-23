@@ -1613,22 +1613,28 @@ impl DatabaseRequest for FunUserListRegisteredWalletsReq {
 pub struct FunUserRequestRefundReq {
     pub user_id: i64,
     pub blockchain: EnumBlockChain,
+    pub user_address: String,
+    pub contract_address: String,
+    pub receiver_address: String,
     pub quantity: String,
-    pub wallet_address: String,
+    pub transaction_hash: String,
 }
 
 #[allow(unused_variables)]
 impl DatabaseRequest for FunUserRequestRefundReq {
     type ResponseRow = FunUserRequestRefundRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_request_refund(a_user_id => $1::bigint, a_blockchain => $2::enum_block_chain, a_quantity => $3::varchar, a_wallet_address => $4::varchar);"
+        "SELECT * FROM api.fun_user_request_refund(a_user_id => $1::bigint, a_blockchain => $2::enum_block_chain, a_user_address => $3::varchar, a_contract_address => $4::varchar, a_receiver_address => $5::varchar, a_quantity => $6::varchar, a_transaction_hash => $7::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
             &self.user_id as &(dyn ToSql + Sync),
             &self.blockchain as &(dyn ToSql + Sync),
+            &self.user_address as &(dyn ToSql + Sync),
+            &self.contract_address as &(dyn ToSql + Sync),
+            &self.receiver_address as &(dyn ToSql + Sync),
             &self.quantity as &(dyn ToSql + Sync),
-            &self.wallet_address as &(dyn ToSql + Sync),
+            &self.transaction_hash as &(dyn ToSql + Sync),
         ]
     }
 }

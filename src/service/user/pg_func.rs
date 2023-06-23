@@ -880,14 +880,48 @@ END
             vec![
                 Field::new("user_id", Type::BigInt),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("user_address", Type::String),
+                Field::new("contract_address", Type::String),
+                Field::new("receiver_address", Type::String),
                 Field::new("quantity", Type::String),
-                Field::new("wallet_address", Type::String),
+                Field::new("transaction_hash", Type::String),
             ],
             vec![Field::new("request_refund_id", Type::BigInt)],
             r#"
+DECLARE
+    existing_id bigint;
 BEGIN
-    RETURN QUERY INSERT INTO tbl.user_request_refund_history (fkey_user_id, blockchain, quantity, wallet_address, updated_at, created_at)
-            VALUES ( a_user_id, a_blockchain, a_quantity, a_wallet_address, EXTRACT(EPOCH FROM NOW())::bigint, EXTRACT(EPOCH FROM NOW())::bigint) RETURNING pkey_id;
+		SELECT pkey_id INTO existing_id
+		FROM tbl.user_deposit_withdraw_history
+		WHERE transaction_hash = a_transaction_hash AND
+		blockchain = a_blockchain
+		LIMIT 1;
+
+		IF existing_id IS NOT NULL THEN
+				RETURN QUERY SELECT existing_id;
+		END IF;
+
+    RETURN QUERY INSERT INTO tbl.user_deposit_withdraw_history (
+        fkey_user_id,
+        blockchain,
+        user_address,
+        escrow_contract_address,
+        receiver_address,
+        quantity,
+        transaction_hash,
+				is_deposit,
+        happened_at
+    ) VALUES (
+     a_user_id,
+     a_blockchain,
+     a_user_address,
+     a_contract_address,
+     a_receiver_address,
+     a_quantity,
+     a_transaction_hash,
+		 FALSE,
+     EXTRACT(EPOCH FROM NOW())::bigint
+    ) RETURNING pkey_id;
 END
 "#,
         ),
