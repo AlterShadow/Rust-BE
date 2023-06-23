@@ -848,12 +848,15 @@ AS $$
 BEGIN
 
     RETURN QUERY SELECT a.pkey_id AS exit_history_id,
-                          a.fkey_strategy_id AS strategy_id,
-                          a.exit_quantity AS exit_quantity,
-                          a.blockchain AS blockchain,
-                          a.exit_time AS exit_time
-                 FROM tbl.user_exit_strategy_history AS a
-                 WHERE a.fkey_user_id = a_user_id AND (a.fkey_strategy_id = a_strategy_id OR a_strategy_id IS NULL);
+												a.fkey_strategy_id			AS strategy_id,
+												a.quantity_sp_tokens 		AS exit_quantity,
+												a.blockchain 						AS blockchain,
+												a.happened_at       		AS exit_time
+				FROM tbl.user_back_exit_strategy_history AS a
+				WHERE a.fkey_user_id = a_user_id
+					AND (a_strategy_id NOTNULL OR a_strategy_id = a.fkey_strategy_id)
+					AND a.is_back = FALSE
+				ORDER BY a.happened_at DESC;
 END
 
 $$;
