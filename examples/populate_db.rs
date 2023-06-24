@@ -2,12 +2,12 @@
 pub mod audit;
 pub mod tools;
 use crate::audit::get_audit_rules;
-use chrono::Utc;
 use eth_sdk::signer::Secp256k1SecretKey;
 use eth_sdk::utils::get_signed_text;
 use eyre::*;
 use futures::future::join_all;
 use gen::model::*;
+use lib::database::drop_and_recreate_database;
 use lib::log::{setup_logs, LogLevel};
 use rand::random;
 use std::future::Future;
@@ -237,7 +237,8 @@ async fn populate_audit_rules() -> Result<()> {
     }
     Ok(())
 }
-async fn populate_user_registered_wallets() -> Result<()> {
+#[allow(unused)]
+async fn populate_user_register_wallets() -> Result<()> {
     let mut tasks = vec![];
     for i in 0..KEYS.len() {
         tasks.push(spawn_task(async move {
@@ -246,7 +247,7 @@ async fn populate_user_registered_wallets() -> Result<()> {
             let mut client = connect_user(format!("user-{}", i), &signer.key).await?;
             let (txt, sig) =
                 get_signed_text(format!("User register wallet request {}", i), &signer.key)?;
-            let resp = client
+            let _resp = client
                 .request(UserRegisterWalletRequest {
                     blockchain: EnumBlockChain::LocalNet,
                     wallet_address: format!("{:?}", signer.address),
@@ -283,6 +284,7 @@ async fn populate_user_apply_become_experts() -> Result<()> {
                         user_id: login_info.user_id,
                     })
                     .await?;
+                let mut client = connect_user(format!("user-{}", i), &signer.key).await?;
 
                 let create_strategy_resp = client
                     .request(ExpertCreateStrategyRequest {
@@ -300,7 +302,7 @@ async fn populate_user_apply_become_experts() -> Result<()> {
                     .await?;
                 info!("User Create Strategy {:?}", create_strategy_resp);
 
-                let resp = client
+                let _resp = client
                     .request(UserFollowStrategyRequest {
                         strategy_id: create_strategy_resp.strategy_id,
                     })
@@ -317,40 +319,15 @@ async fn populate_user_apply_become_experts() -> Result<()> {
     join_all(tasks).await;
     Ok(())
 }
-async fn populate_wallet_activity_ledger() -> Result<()> {
-    let admin_signer = get_admin_key();
-    let mut admin_client = connect_user("dev-0", &admin_signer.key).await?;
-    for _ in 0..100 {
-        admin_client
-            .request(AdminAddWalletActivityLedgerRequest {
-                wallet_address: format!("0x0000000{}", random::<u64>()),
-                blockchain: EnumBlockChain::LocalNet,
-                transaction_hash: format!("0x0000000{}", random::<u64>()),
-                dex: None,
-                contract_address: format!("0x0000000{}", random::<u64>()),
-                token_in_address: None,
-                token_out_address: None,
-                caller_address: format!("0x0000000{}", random::<u64>()),
-                amount_in: None,
-                amount_out: None,
-                swap_calls: None,
-                paths: None,
-                dex_versions: None,
-                created_at: Some(Utc::now().timestamp()),
-            })
-            .await?;
-    }
-    Ok(())
-}
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<()> {
     setup_logs(LogLevel::Debug)?;
+    drop_and_recreate_database()?;
     populate_users().await?;
     populate_audit_rules().await?;
-    populate_user_registered_wallets().await?;
+    // populate_user_register_wallets().await?;
     populate_user_apply_become_experts().await?;
-    populate_wallet_activity_ledger().await?;
 
     Ok(())
 }

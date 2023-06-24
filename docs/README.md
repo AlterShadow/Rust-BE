@@ -85,7 +85,6 @@ ID: 3
 |30110|AdminListStrategies|offset, limit, strategy_id, strategy_name, expert_public_id, expert_name, description, pending_approval, approved|strategies||
 |30120|AdminApproveStrategy|strategy_id|success|Admin approves strategy|
 |30130|AdminRejectStrategy|strategy_id|success||
-|31001|AdminAddWalletActivityLedger|wallet_address, blockchain, transaction_hash, dex, contract_address, token_in_address, token_out_address, caller_address, amount_in, amount_out, swap_calls, paths, dex_versions, created_at||Admin adds wallet activity Ledger. for mocking purpose|
 |31002|AdminAddAuditRule|rule_id, name, description|||
 |32010|AdminNotifyEscrowLedgerChange|pkey_id, user_id, balance|||
 

@@ -38,8 +38,8 @@
   "UserGetStrategyStatistics",
   "UserGetUserProfile",
   "UserListBackedStrategies",
-  "UserListDepositHistory",
-  "UserListExitStrategyHistory",
+  "UserListDepositLedger",
+  "UserListExitStrategyLedger",
   "UserListExperts",
   "UserListFeaturedExperts",
   "UserListFollowedExperts",
@@ -55,6 +55,7 @@
   "UserListTopPerformingStrategies",
   "UserRegisterWallet",
   "UserRequestRefund",
+  "UserSubscribeDepositLedger",
   "UserUnfollowExpert",
   "UserUnfollowStrategy",
   "UserUpdateUserProfile"

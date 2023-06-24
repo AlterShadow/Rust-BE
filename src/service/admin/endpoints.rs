@@ -202,28 +202,6 @@ pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
             vec![Field::new("success", Type::Boolean)],
         ),
         EndpointSchema::new(
-            "AdminAddWalletActivityLedger",
-            31001,
-            vec![
-                Field::new("wallet_address", Type::String),
-                Field::new("blockchain", Type::enum_ref("block_chain")),
-                Field::new("transaction_hash", Type::String),
-                Field::new("dex", Type::optional(Type::String)),
-                Field::new("contract_address", Type::String),
-                Field::new("token_in_address", Type::optional(Type::String)),
-                Field::new("token_out_address", Type::optional(Type::String)),
-                Field::new("caller_address", Type::String),
-                Field::new("amount_in", Type::optional(Type::String)),
-                Field::new("amount_out", Type::optional(Type::String)),
-                Field::new("swap_calls", Type::optional(Type::Object)),
-                Field::new("paths", Type::optional(Type::Object)),
-                Field::new("dex_versions", Type::optional(Type::Object)),
-                Field::new("created_at", Type::optional(Type::BigInt)),
-            ],
-            vec![],
-        )
-        .with_description("Admin adds wallet activity Ledger. for mocking purpose"),
-        EndpointSchema::new(
             "AdminAddAuditRule",
             31002,
             vec![

@@ -429,9 +429,6 @@ pub enum EnumEndpoint {
     #[postgres(name = "AdminRejectStrategy")]
     AdminRejectStrategy = 30130,
     ///
-    #[postgres(name = "AdminAddWalletActivityLedger")]
-    AdminAddWalletActivityLedger = 31001,
-    ///
     #[postgres(name = "AdminAddAuditRule")]
     AdminAddAuditRule = 31002,
     ///
@@ -787,36 +784,6 @@ pub struct AdminAddAuditRuleRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminAddAuditRuleResponse {}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct AdminAddWalletActivityLedgerRequest {
-    pub wallet_address: String,
-    pub blockchain: EnumBlockChain,
-    pub transaction_hash: String,
-    #[serde(default)]
-    pub dex: Option<String>,
-    pub contract_address: String,
-    #[serde(default)]
-    pub token_in_address: Option<String>,
-    #[serde(default)]
-    pub token_out_address: Option<String>,
-    pub caller_address: String,
-    #[serde(default)]
-    pub amount_in: Option<String>,
-    #[serde(default)]
-    pub amount_out: Option<String>,
-    #[serde(default)]
-    pub swap_calls: Option<serde_json::Value>,
-    #[serde(default)]
-    pub paths: Option<serde_json::Value>,
-    #[serde(default)]
-    pub dex_versions: Option<serde_json::Value>,
-    #[serde(default)]
-    pub created_at: Option<i64>,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct AdminAddWalletActivityLedgerResponse {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminApproveStrategyRequest {
@@ -7065,100 +7032,6 @@ impl WsRequest for AdminRejectStrategyRequest {
 }
 impl WsResponse for AdminRejectStrategyResponse {
     type Request = AdminRejectStrategyRequest;
-}
-
-impl WsRequest for AdminAddWalletActivityLedgerRequest {
-    type Response = AdminAddWalletActivityLedgerResponse;
-    const METHOD_ID: u32 = 31001;
-    const SCHEMA: &'static str = r#"{
-  "name": "AdminAddWalletActivityLedger",
-  "code": 31001,
-  "parameters": [
-    {
-      "name": "wallet_address",
-      "ty": "String"
-    },
-    {
-      "name": "blockchain",
-      "ty": {
-        "EnumRef": "block_chain"
-      }
-    },
-    {
-      "name": "transaction_hash",
-      "ty": "String"
-    },
-    {
-      "name": "dex",
-      "ty": {
-        "Optional": "String"
-      }
-    },
-    {
-      "name": "contract_address",
-      "ty": "String"
-    },
-    {
-      "name": "token_in_address",
-      "ty": {
-        "Optional": "String"
-      }
-    },
-    {
-      "name": "token_out_address",
-      "ty": {
-        "Optional": "String"
-      }
-    },
-    {
-      "name": "caller_address",
-      "ty": "String"
-    },
-    {
-      "name": "amount_in",
-      "ty": {
-        "Optional": "String"
-      }
-    },
-    {
-      "name": "amount_out",
-      "ty": {
-        "Optional": "String"
-      }
-    },
-    {
-      "name": "swap_calls",
-      "ty": {
-        "Optional": "Object"
-      }
-    },
-    {
-      "name": "paths",
-      "ty": {
-        "Optional": "Object"
-      }
-    },
-    {
-      "name": "dex_versions",
-      "ty": {
-        "Optional": "Object"
-      }
-    },
-    {
-      "name": "created_at",
-      "ty": {
-        "Optional": "BigInt"
-      }
-    }
-  ],
-  "returns": [],
-  "stream_response": [],
-  "description": "Admin adds wallet activity Ledger. for mocking purpose",
-  "json_schema": null
-}"#;
-}
-impl WsResponse for AdminAddWalletActivityLedgerResponse {
-    type Request = AdminAddWalletActivityLedgerRequest;
 }
 
 impl WsRequest for AdminAddAuditRuleRequest {

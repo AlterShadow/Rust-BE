@@ -276,7 +276,6 @@ BEGIN
      ORDER BY elwal.pkey_id DESC
     LIMIT a_limit
     OFFSET a_offset;
-     ;
 END
 
         "#,
