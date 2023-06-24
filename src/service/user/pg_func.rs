@@ -1464,6 +1464,9 @@ END
                 Field::new("balance", Type::String),
             ],
             r#"
+DECLARE
+    _token_id bigint;
+    _escrow_contract_address_id bigint;
 BEGIN
     SELECT pkey_id INTO _token_id FROM tbl.escrow_token_contract_address WHERE address = a_token_address AND blockchain = a_blockchain;
     SELECT pkey_id INTO _escrow_contract_address_id FROM tbl.escrow_contract_address WHERE address = escrow_contract_address AND blockchain = a_blockchain;

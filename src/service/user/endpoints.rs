@@ -834,7 +834,6 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
             )],
         ),
         EndpointSchema::new(
-            // "fun_user_list_user_deposit_withdraw_balance"
             "UserListDepositWithdrawBalances",
             20510,
             vec![],
