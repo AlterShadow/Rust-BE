@@ -203,24 +203,25 @@ END
                 Type::BigInt,
             )],
             r#"
-
 DECLARE
-    _expert_watched_wallet_id bigint;
-    _expert_listened_wallet_asset_balance_id bigint;
+    _expert_watched_wallet_id                         bigint;
+    _expert_listened_wallet_asset_balance_id          bigint;
     _expert_listened_wallet_asset_balance_old_balance bigint;
-    _pkey_id bigint;
+    _pkey_id                                          bigint;
 BEGIN
-    SELECT pkey_id INTO _expert_watched_wallet_id
+    SELECT pkey_id
+    INTO _expert_watched_wallet_id
     FROM tbl.expert_watched_wallet
     WHERE address = a_address
       AND blockchain = a_blockchain;
     ASSERT _expert_watched_wallet_id NOTNULL;
-    SELECT elwal.pkey_id, elwal.balance INTO _expert_listened_wallet_asset_balance_id, _expert_listened_wallet_asset_balance_old_balance
-        FROM tbl.expert_listened_wallet_asset_balance AS elwal
-                JOIN tbl.expert_watched_wallet AS eww ON eww.pkey_id = elwal.fkey_expert_watched_wallet_id
-        WHERE elwal.fkey_token_id = a_token_id
-         AND eww.pkey_id = _expert_watched_wallet_id;
-         
+    SELECT elwal.pkey_id, elwal.balance
+    INTO _expert_listened_wallet_asset_balance_id, _expert_listened_wallet_asset_balance_old_balance
+    FROM tbl.expert_listened_wallet_asset_balance AS elwal
+             JOIN tbl.expert_watched_wallet AS eww ON eww.pkey_id = elwal.fkey_expert_watched_wallet_id
+    WHERE elwal.fkey_token_id = a_token_id
+      AND eww.pkey_id = _expert_watched_wallet_id;
+
     -- insert new entry if not exist
     IF _expert_listened_wallet_asset_balance_id ISNULL THEN
         INSERT INTO tbl.expert_listened_wallet_asset_balance (fkey_token_id, balance, fkey_expert_watched_wallet_id)
@@ -235,9 +236,7 @@ BEGIN
     END IF;
     UPDATE tbl.expert_listened_wallet_asset_balance
     SET balance = a_new_balance
-    WHERE fkey_expert_watched_wallet_id = _expert_listened_wallet_asset_balance_id
-      AND fkey_token_id = a_token_id
-      AND balance = a_old_balance
+    WHERE pkey_id = _expert_listened_wallet_asset_balance_id
     RETURNING pkey_id
         INTO _pkey_id;
     RETURN QUERY SELECT _pkey_id;

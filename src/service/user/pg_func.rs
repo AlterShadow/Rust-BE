@@ -194,7 +194,7 @@ END
             "#,
         ),
         ProceduralFunction::new(
-            "fun_user_deposit_to_escrow",
+            "fun_user_save_user_deposit_withdraw_ledger",
             vec![
                 Field::new("user_id", Type::BigInt),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
@@ -206,7 +206,8 @@ END
             ],
             vec![Field::new("success", Type::Boolean)],
             r#"
- 
+DECLARE
+    _token_id bigint;
 BEGIN
     IF EXISTS(SELECT * FROM  tbl.user_deposit_withdraw_ledger
 			WHERE transaction_hash = a_transaction_hash AND
@@ -214,28 +215,81 @@ BEGIN
 		) THEN
         RETURN QUERY SELECT FALSE;
     END IF;
+    SELECT pkey_id INTO _token_id FROM tbl.escrow_token_contract_address WHERE address = a_contract_address AND blockchain = a_blockchain;
     INSERT INTO tbl.user_deposit_withdraw_ledger (
         fkey_user_id,
+        fkey_token_id,
         blockchain,
         user_address,
         escrow_contract_address,
         receiver_address,
         quantity,
         transaction_hash,
-				is_deposit,
+        is_deposit,
         happened_at
     ) VALUES (
      a_user_id,
+     _token_id,
      a_blockchain,
      a_user_address,
      a_contract_address,
      a_receiver_address,
      a_quantity,
      a_transaction_hash,
-		 TRUE,
+     TRUE,
      EXTRACT(EPOCH FROM NOW())::bigint
     );
     RETURN QUERY SELECT TRUE;
+END
+            "#,
+        ),
+        ProceduralFunction::new(
+            "fun_watcher_upsert_user_deposit_withdraw_balance",
+            vec![
+                Field::new("user_id", Type::BigInt),
+                Field::new("token_address", Type::String),
+                Field::new("escrow_contract_address", Type::String),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("old_balance", Type::String),
+                Field::new("new_balance", Type::String),
+            ],
+            vec![Field::new("pkey_id", Type::BigInt)],
+            r#"
+DECLARE
+    _token_id bigint;
+    _escrow_contract_address_id bigint;
+    _user_deposit_withdraw_balance_id          bigint;
+    _user_deposit_withdraw_balance_old_balance bigint;
+    _pkey_id                                   bigint;
+BEGIN
+    SELECT pkey_id INTO _token_id FROM tbl.escrow_token_contract_address WHERE address = a_token_address AND blockchain = a_blockchain;
+    SELECT pkey_id INTO _escrow_contract_address_id FROM tbl.escrow_contract_address WHERE address = escrow_contract_address AND blockchain = a_blockchain;
+    ASSERT _token_id NOTNULL AND _escrow_contract_address_id NOTNUL;
+    SELECT elwal.pkey_id, elwal.balance
+    INTO _user_deposit_withdraw_balance_id, _user_deposit_withdraw_balance_old_balance
+    FROM tbl.user_deposit_withdraw_balance AS elwal
+    WHERE elwal.fkey_token_id = a_token_id
+      AND elwal.fkey_user_id = a_user_id
+      AND elwal.fkey_escrow_contract_address_id = a_escrow_contract_address_id;
+
+    -- insert new entry if not exist
+    IF _user_deposit_withdraw_balance_id ISNULL THEN
+        INSERT INTO tbl.user_deposit_withdraw_balance (fkey_user_id, fkey_escrow_contract_address_id, fkey_token_id, balance)
+        VALUES (a_user_id, a_escrow_contract_address_id, a_token_id, a_new_balance)
+        RETURNING pkey_id
+            INTO _pkey_id;
+    END IF;
+
+    -- update old balance if exist and equals to old balance
+    IF _user_deposit_withdraw_balance_old_balance != a_old_balance THEN
+        RETURN;
+    END IF;
+    UPDATE tbl.user_deposit_withdraw_balance
+    SET balance = a_new_balance
+    WHERE pkey_id = _user_deposit_withdraw_balance_id
+    RETURNING pkey_id
+        INTO _pkey_id;
+    RETURN QUERY SELECT _pkey_id;
 END
             "#,
         ),
@@ -680,7 +734,8 @@ BEGIN
         updated_at, 
         created_at,
         pending_approval,
-        approved
+        approved,
+        blockchain
     )
     VALUES (
         a_user_id, 
@@ -697,18 +752,19 @@ BEGIN
         EXTRACT(EPOCH FROM NOW())::bigint, 
         EXTRACT(EPOCH FROM NOW())::bigint,
         TRUE,
-        FALSE
+        FALSE,
+        a_blockchain
     ) RETURNING pkey_id INTO a_strategy_id;
 
-		-- if expert watched wallet already exists, fetch it's id
-		-- TODO: add unique constraint to blockchain + address
-		-- TODO: find out if one expert wallet can be watched for multiple strategies
+    -- if expert watched wallet already exists, fetch it's id
+    -- TODO: add unique constraint to blockchain + address
+    -- TODO: find out if one expert wallet can be watched for multiple strategies
     SELECT pkey_id
     INTO a_expert_watched_wallet_id
     FROM tbl.expert_watched_wallet
     WHERE fkey_user_id = a_user_id AND blockchain = a_blockchain AND address = a_wallet_address;
 
-		-- if not, insert it and fetch it's id
+    -- if not, insert it and fetch it's id
     IF a_expert_watched_wallet_id IS NULL THEN
         INSERT INTO tbl.expert_watched_wallet(
             fkey_user_id,
@@ -726,12 +782,12 @@ BEGIN
 
     INSERT INTO tbl.strategy_watched_wallet(
         fkey_expert_watched_wallet_id,
-				fkey_strategy_id,
+        fkey_strategy_id,
         ratio_distribution,
         updated_at,
         created_at
     ) VALUES (
-				a_expert_watched_wallet_id,
+        a_expert_watched_wallet_id,
         a_strategy_id,
         1.0,
         EXTRACT(EPOCH FROM NOW())::bigint,
@@ -1396,6 +1452,8 @@ END
             vec![
                 Field::new("user_id", Type::BigInt),
                 Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
+                Field::new("token_address", Type::optional(Type::String)),
+                Field::new("escrow_contract_address", Type::optional(Type::String)),
             ],
             vec![
                 Field::new("user_id", Type::BigInt),
@@ -1407,6 +1465,9 @@ END
             ],
             r#"
 BEGIN
+    SELECT pkey_id INTO _token_id FROM tbl.escrow_token_contract_address WHERE address = a_token_address AND blockchain = a_blockchain;
+    SELECT pkey_id INTO _escrow_contract_address_id FROM tbl.escrow_contract_address WHERE address = escrow_contract_address AND blockchain = a_blockchain;
+   
     RETURN QUERY SELECT
         a.fkey_user_id,
         etc.blockchain,
@@ -1416,8 +1477,12 @@ BEGIN
         a.balance
     FROM tbl.user_deposit_withdraw_balance AS a
     JOIN tbl.escrow_token_contract_address AS etc ON etc.pkey_id = a.fkey_token_id
+    JOIN tbl.escrow_contract_address AS eca ON eca.pkey_id = a.fkey_escrow_contract_address_id
     WHERE a.fkey_user_id = a_user_id
-        AND (a_blockchain ISNULL OR etc.blockchain = a_blockchain);
+        AND (a_blockchain ISNULL OR etc.blockchain = a_blockchain)
+        AND (a_token_address iSNULL OR etc.address = a_token_address)
+        AND (a_escrow_contract_address ISNULL OR eca.address = a_escrow_contract_address)
+    ;
 END
 "#,
         ),

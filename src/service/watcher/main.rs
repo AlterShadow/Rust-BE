@@ -14,7 +14,6 @@ use mc2fi_auth::{connect_user, signup};
 use mc2fi_watcher::{method, AppState};
 use secrecy::{ExposeSecret, SecretString};
 use serde::Deserialize;
-use std::str::FromStr;
 use std::sync::Arc;
 use tracing::*;
 

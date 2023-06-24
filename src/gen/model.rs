@@ -1283,6 +1283,8 @@ pub struct ListStrategiesRow {
     pub swap_price: f64,
     pub price_change: f64,
     pub wallet_address: String,
+    #[serde(default)]
+    pub strategy_pool_address: Option<String>,
     pub approved: bool,
     #[serde(default)]
     pub approved_at: Option<i64>,
@@ -2398,6 +2400,12 @@ impl WsRequest for UserListFollowedStrategiesRequest {
                 "ty": "String"
               },
               {
+                "name": "strategy_pool_address",
+                "ty": {
+                  "Optional": "String"
+                }
+              },
+              {
                 "name": "approved",
                 "ty": "Boolean"
               },
@@ -2610,6 +2618,12 @@ impl WsRequest for UserListStrategiesRequest {
                 "ty": "String"
               },
               {
+                "name": "strategy_pool_address",
+                "ty": {
+                  "Optional": "String"
+                }
+              },
+              {
                 "name": "approved",
                 "ty": "Boolean"
               },
@@ -2749,6 +2763,12 @@ impl WsRequest for UserListTopPerformingStrategiesRequest {
               {
                 "name": "wallet_address",
                 "ty": "String"
+              },
+              {
+                "name": "strategy_pool_address",
+                "ty": {
+                  "Optional": "String"
+                }
               },
               {
                 "name": "approved",
@@ -3003,6 +3023,12 @@ impl WsRequest for UserGetStrategyRequest {
             {
               "name": "wallet_address",
               "ty": "String"
+            },
+            {
+              "name": "strategy_pool_address",
+              "ty": {
+                "Optional": "String"
+              }
             },
             {
               "name": "approved",
@@ -3559,6 +3585,12 @@ impl WsRequest for UserListBackedStrategiesRequest {
               {
                 "name": "wallet_address",
                 "ty": "String"
+              },
+              {
+                "name": "strategy_pool_address",
+                "ty": {
+                  "Optional": "String"
+                }
               },
               {
                 "name": "approved",
@@ -4492,6 +4524,12 @@ impl WsRequest for UserGetExpertProfileRequest {
                 "ty": "String"
               },
               {
+                "name": "strategy_pool_address",
+                "ty": {
+                  "Optional": "String"
+                }
+              },
+              {
                 "name": "approved",
                 "ty": "Boolean"
               },
@@ -4742,6 +4780,12 @@ impl WsRequest for UserGetUserProfileRequest {
                 "ty": "String"
               },
               {
+                "name": "strategy_pool_address",
+                "ty": {
+                  "Optional": "String"
+                }
+              },
+              {
                 "name": "approved",
                 "ty": "Boolean"
               },
@@ -4850,6 +4894,12 @@ impl WsRequest for UserGetUserProfileRequest {
               {
                 "name": "wallet_address",
                 "ty": "String"
+              },
+              {
+                "name": "strategy_pool_address",
+                "ty": {
+                  "Optional": "String"
+                }
               },
               {
                 "name": "approved",
@@ -6980,6 +7030,12 @@ impl WsRequest for AdminListStrategiesRequest {
               {
                 "name": "wallet_address",
                 "ty": "String"
+              },
+              {
+                "name": "strategy_pool_address",
+                "ty": {
+                  "Optional": "String"
+                }
               },
               {
                 "name": "approved",

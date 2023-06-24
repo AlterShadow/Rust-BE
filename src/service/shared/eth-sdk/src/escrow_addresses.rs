@@ -14,6 +14,7 @@ impl EscrowAddresses {
     pub fn new() -> Self {
         let mut this = MultiChainAddressTable::empty();
 
+        // TODO: populate these addresses to database
         this.insert(
             EnumBlockChain::EthereumMainnet,
             (),

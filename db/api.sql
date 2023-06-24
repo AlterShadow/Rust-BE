@@ -365,7 +365,9 @@ RETURNS table (
     "creator_given_name" varchar,
     "social_media" varchar,
     "immutable_audit_rules" boolean,
-    "strategy_pool_token" varchar
+    "strategy_pool_token" varchar,
+    "blockchain" enum_block_chain,
+    "strategy_pool_address" varchar
 )
 LANGUAGE plpgsql
 AS $$
@@ -402,7 +404,9 @@ BEGIN
 			ON spt.fkey_strategy_pool_contract_id = spc.pkey_id
 			JOIN tbl.user_strategy_wallet AS usw
 			ON spt.fkey_user_strategy_wallet_id = usw.pkey_id
-			WHERE spc.fkey_strategy_id = s.pkey_id AND usw.fkey_user_id = a_user_id) AS strategy_pool_token
+			WHERE spc.fkey_strategy_id = s.pkey_id AND usw.fkey_user_id = a_user_id) AS strategy_pool_token,
+      s.blockchain,
+      s.strategy_pool_address
       
                  FROM tbl.strategy AS s
                      JOIN tbl.user_follow_strategy AS b ON b.fkey_strategy_id = s.pkey_id
@@ -445,7 +449,9 @@ RETURNS table (
     "creator_given_name" varchar,
     "social_media" varchar,
     "immutable_audit_rules" boolean,
-    "strategy_pool_token" varchar
+    "strategy_pool_token" varchar,
+    "blockchain" enum_block_chain,
+    "strategy_pool_address" varchar
 )
 LANGUAGE plpgsql
 AS $$
@@ -482,7 +488,9 @@ BEGIN
 			ON spt.fkey_strategy_pool_contract_id = spc.pkey_id
 			JOIN tbl.user_strategy_wallet AS usw
 			ON spt.fkey_user_strategy_wallet_id = usw.pkey_id
-			WHERE spc.fkey_strategy_id = s.pkey_id AND usw.fkey_user_id = a_user_id) AS strategy_pool_token
+			WHERE spc.fkey_strategy_id = s.pkey_id AND usw.fkey_user_id = a_user_id) AS strategy_pool_token,
+      s.blockchain,
+      s.strategy_pool_address
       
                  FROM tbl.strategy AS s
                         JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id
@@ -585,14 +593,15 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_deposit_to_escrow(a_user_id bigint, a_blockchain enum_block_chain, a_user_address varchar, a_contract_address varchar, a_receiver_address varchar, a_quantity varchar, a_transaction_hash varchar)
+CREATE OR REPLACE FUNCTION api.fun_user_save_user_deposit_withdraw_ledger(a_user_id bigint, a_blockchain enum_block_chain, a_user_address varchar, a_contract_address varchar, a_receiver_address varchar, a_quantity varchar, a_transaction_hash varchar)
 RETURNS table (
     "success" boolean
 )
 LANGUAGE plpgsql
 AS $$
     
- 
+DECLARE
+    _token_id bigint;
 BEGIN
     IF EXISTS(SELECT * FROM  tbl.user_deposit_withdraw_ledger
 			WHERE transaction_hash = a_transaction_hash AND
@@ -600,28 +609,78 @@ BEGIN
 		) THEN
         RETURN QUERY SELECT FALSE;
     END IF;
+    SELECT pkey_id INTO _token_id FROM tbl.escrow_token_contract_address WHERE address = a_contract_address AND blockchain = a_blockchain;
     INSERT INTO tbl.user_deposit_withdraw_ledger (
         fkey_user_id,
+        fkey_token_id,
         blockchain,
         user_address,
         escrow_contract_address,
         receiver_address,
         quantity,
         transaction_hash,
-				is_deposit,
+        is_deposit,
         happened_at
     ) VALUES (
      a_user_id,
+     _token_id,
      a_blockchain,
      a_user_address,
      a_contract_address,
      a_receiver_address,
      a_quantity,
      a_transaction_hash,
-		 TRUE,
+     TRUE,
      EXTRACT(EPOCH FROM NOW())::bigint
     );
     RETURN QUERY SELECT TRUE;
+END
+            
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_watcher_upsert_user_deposit_withdraw_balance(a_user_id bigint, a_token_address varchar, a_escrow_contract_address varchar, a_blockchain enum_block_chain, a_old_balance varchar, a_new_balance varchar)
+RETURNS table (
+    "pkey_id" bigint
+)
+LANGUAGE plpgsql
+AS $$
+    
+DECLARE
+    _token_id bigint;
+    _escrow_contract_address_id bigint;
+    _user_deposit_withdraw_balance_id          bigint;
+    _user_deposit_withdraw_balance_old_balance bigint;
+    _pkey_id                                   bigint;
+BEGIN
+    SELECT pkey_id INTO _token_id FROM tbl.escrow_token_contract_address WHERE address = a_token_address AND blockchain = a_blockchain;
+    SELECT pkey_id INTO _escrow_contract_address_id FROM tbl.escrow_contract_address WHERE address = escrow_contract_address AND blockchain = a_blockchain;
+    ASSERT _token_id NOTNULL AND _escrow_contract_address_id NOTNUL;
+    SELECT elwal.pkey_id, elwal.balance
+    INTO _user_deposit_withdraw_balance_id, _user_deposit_withdraw_balance_old_balance
+    FROM tbl.user_deposit_withdraw_balance AS elwal
+    WHERE elwal.fkey_token_id = a_token_id
+      AND elwal.fkey_user_id = a_user_id
+      AND elwal.fkey_escrow_contract_address_id = a_escrow_contract_address_id;
+
+    -- insert new entry if not exist
+    IF _user_deposit_withdraw_balance_id ISNULL THEN
+        INSERT INTO tbl.user_deposit_withdraw_balance (fkey_user_id, fkey_escrow_contract_address_id, fkey_token_id, balance)
+        VALUES (a_user_id, a_escrow_contract_address_id, a_token_id, a_new_balance)
+        RETURNING pkey_id
+            INTO _pkey_id;
+    END IF;
+
+    -- update old balance if exist and equals to old balance
+    IF _user_deposit_withdraw_balance_old_balance != a_old_balance THEN
+        RETURN;
+    END IF;
+    UPDATE tbl.user_deposit_withdraw_balance
+    SET balance = a_new_balance
+    WHERE pkey_id = _user_deposit_withdraw_balance_id
+    RETURNING pkey_id
+        INTO _pkey_id;
+    RETURN QUERY SELECT _pkey_id;
 END
             
 $$;
@@ -700,7 +759,9 @@ RETURNS table (
     "creator_given_name" varchar,
     "social_media" varchar,
     "immutable_audit_rules" boolean,
-    "strategy_pool_token" varchar
+    "strategy_pool_token" varchar,
+    "blockchain" enum_block_chain,
+    "strategy_pool_address" varchar
 )
 LANGUAGE plpgsql
 AS $$
@@ -737,7 +798,9 @@ BEGIN
 			ON spt.fkey_strategy_pool_contract_id = spc.pkey_id
 			JOIN tbl.user_strategy_wallet AS usw
 			ON spt.fkey_user_strategy_wallet_id = usw.pkey_id
-			WHERE spc.fkey_strategy_id = s.pkey_id AND usw.fkey_user_id = a_user_id) AS strategy_pool_token
+			WHERE spc.fkey_strategy_id = s.pkey_id AND usw.fkey_user_id = a_user_id) AS strategy_pool_token,
+      s.blockchain,
+      s.strategy_pool_address
       
                  FROM tbl.strategy AS s
                       JOIN tbl.user_back_exit_strategy_ledger AS b ON b.fkey_strategy_id = s.pkey_id AND b.fkey_user_id = a_user_id
@@ -1214,7 +1277,8 @@ BEGIN
         updated_at, 
         created_at,
         pending_approval,
-        approved
+        approved,
+        blockchain
     )
     VALUES (
         a_user_id, 
@@ -1231,18 +1295,19 @@ BEGIN
         EXTRACT(EPOCH FROM NOW())::bigint, 
         EXTRACT(EPOCH FROM NOW())::bigint,
         TRUE,
-        FALSE
+        FALSE,
+        a_blockchain
     ) RETURNING pkey_id INTO a_strategy_id;
 
-		-- if expert watched wallet already exists, fetch it's id
-		-- TODO: add unique constraint to blockchain + address
-		-- TODO: find out if one expert wallet can be watched for multiple strategies
+    -- if expert watched wallet already exists, fetch it's id
+    -- TODO: add unique constraint to blockchain + address
+    -- TODO: find out if one expert wallet can be watched for multiple strategies
     SELECT pkey_id
     INTO a_expert_watched_wallet_id
     FROM tbl.expert_watched_wallet
     WHERE fkey_user_id = a_user_id AND blockchain = a_blockchain AND address = a_wallet_address;
 
-		-- if not, insert it and fetch it's id
+    -- if not, insert it and fetch it's id
     IF a_expert_watched_wallet_id IS NULL THEN
         INSERT INTO tbl.expert_watched_wallet(
             fkey_user_id,
@@ -1260,12 +1325,12 @@ BEGIN
 
     INSERT INTO tbl.strategy_watched_wallet(
         fkey_expert_watched_wallet_id,
-				fkey_strategy_id,
+        fkey_strategy_id,
         ratio_distribution,
         updated_at,
         created_at
     ) VALUES (
-				a_expert_watched_wallet_id,
+        a_expert_watched_wallet_id,
         a_strategy_id,
         1.0,
         EXTRACT(EPOCH FROM NOW())::bigint,
@@ -1913,7 +1978,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_list_user_deposit_withdraw_balance(a_user_id bigint, a_blockchain enum_block_chain DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_user_list_user_deposit_withdraw_balance(a_user_id bigint, a_blockchain enum_block_chain DEFAULT NULL, a_token_address varchar DEFAULT NULL, a_escrow_contract_address varchar DEFAULT NULL)
 RETURNS table (
     "user_id" bigint,
     "blockchain" enum_block_chain,
@@ -1926,6 +1991,9 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
+    SELECT pkey_id INTO _token_id FROM tbl.escrow_token_contract_address WHERE address = a_token_address AND blockchain = a_blockchain;
+    SELECT pkey_id INTO _escrow_contract_address_id FROM tbl.escrow_contract_address WHERE address = escrow_contract_address AND blockchain = a_blockchain;
+   
     RETURN QUERY SELECT
         a.fkey_user_id,
         etc.blockchain,
@@ -1935,8 +2003,12 @@ BEGIN
         a.balance
     FROM tbl.user_deposit_withdraw_balance AS a
     JOIN tbl.escrow_token_contract_address AS etc ON etc.pkey_id = a.fkey_token_id
+    JOIN tbl.escrow_contract_address AS eca ON eca.pkey_id = a.fkey_escrow_contract_address_id
     WHERE a.fkey_user_id = a_user_id
-        AND (a_blockchain ISNULL OR etc.blockchain = a_blockchain);
+        AND (a_blockchain ISNULL OR etc.blockchain = a_blockchain)
+        AND (a_token_address iSNULL OR etc.address = a_token_address)
+        AND (a_escrow_contract_address ISNULL OR eca.address = a_escrow_contract_address)
+    ;
 END
 
 $$;
@@ -2280,7 +2352,9 @@ RETURNS table (
     "creator_given_name" varchar,
     "social_media" varchar,
     "immutable_audit_rules" boolean,
-    "strategy_pool_token" varchar
+    "strategy_pool_token" varchar,
+    "blockchain" enum_block_chain,
+    "strategy_pool_address" varchar
 )
 LANGUAGE plpgsql
 AS $$
@@ -2319,7 +2393,9 @@ BEGIN
 			ON spt.fkey_strategy_pool_contract_id = spc.pkey_id
 			JOIN tbl.user_strategy_wallet AS usw
 			ON spt.fkey_user_strategy_wallet_id = usw.pkey_id
-			WHERE spc.fkey_strategy_id = s.pkey_id AND usw.fkey_user_id = a_user_id) AS strategy_pool_token
+			WHERE spc.fkey_strategy_id = s.pkey_id AND usw.fkey_user_id = a_user_id) AS strategy_pool_token,
+      s.blockchain,
+      s.strategy_pool_address
       
                  FROM tbl.strategy AS s
                       JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id
@@ -2565,24 +2641,25 @@ RETURNS table (
 LANGUAGE plpgsql
 AS $$
     
-
 DECLARE
-    _expert_watched_wallet_id bigint;
-    _expert_listened_wallet_asset_balance_id bigint;
+    _expert_watched_wallet_id                         bigint;
+    _expert_listened_wallet_asset_balance_id          bigint;
     _expert_listened_wallet_asset_balance_old_balance bigint;
-    _pkey_id bigint;
+    _pkey_id                                          bigint;
 BEGIN
-    SELECT pkey_id INTO _expert_watched_wallet_id
+    SELECT pkey_id
+    INTO _expert_watched_wallet_id
     FROM tbl.expert_watched_wallet
     WHERE address = a_address
       AND blockchain = a_blockchain;
     ASSERT _expert_watched_wallet_id NOTNULL;
-    SELECT elwal.pkey_id, elwal.balance INTO _expert_listened_wallet_asset_balance_id, _expert_listened_wallet_asset_balance_old_balance
-        FROM tbl.expert_listened_wallet_asset_balance AS elwal
-                JOIN tbl.expert_watched_wallet AS eww ON eww.pkey_id = elwal.fkey_expert_watched_wallet_id
-        WHERE elwal.fkey_token_id = a_token_id
-         AND eww.pkey_id = _expert_watched_wallet_id;
-         
+    SELECT elwal.pkey_id, elwal.balance
+    INTO _expert_listened_wallet_asset_balance_id, _expert_listened_wallet_asset_balance_old_balance
+    FROM tbl.expert_listened_wallet_asset_balance AS elwal
+             JOIN tbl.expert_watched_wallet AS eww ON eww.pkey_id = elwal.fkey_expert_watched_wallet_id
+    WHERE elwal.fkey_token_id = a_token_id
+      AND eww.pkey_id = _expert_watched_wallet_id;
+
     -- insert new entry if not exist
     IF _expert_listened_wallet_asset_balance_id ISNULL THEN
         INSERT INTO tbl.expert_listened_wallet_asset_balance (fkey_token_id, balance, fkey_expert_watched_wallet_id)
@@ -2597,9 +2674,7 @@ BEGIN
     END IF;
     UPDATE tbl.expert_listened_wallet_asset_balance
     SET balance = a_new_balance
-    WHERE fkey_expert_watched_wallet_id = _expert_listened_wallet_asset_balance_id
-      AND fkey_token_id = a_token_id
-      AND balance = a_old_balance
+    WHERE pkey_id = _expert_listened_wallet_asset_balance_id
     RETURNING pkey_id
         INTO _pkey_id;
     RETURN QUERY SELECT _pkey_id;

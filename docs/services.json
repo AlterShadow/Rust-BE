@@ -293,6 +293,12 @@
                         "ty": "String"
                       },
                       {
+                        "name": "strategy_pool_address",
+                        "ty": {
+                          "Optional": "String"
+                        }
+                      },
+                      {
                         "name": "approved",
                         "ty": "Boolean"
                       },
@@ -489,6 +495,12 @@
                         "ty": "String"
                       },
                       {
+                        "name": "strategy_pool_address",
+                        "ty": {
+                          "Optional": "String"
+                        }
+                      },
+                      {
                         "name": "approved",
                         "ty": "Boolean"
                       },
@@ -620,6 +632,12 @@
                       {
                         "name": "wallet_address",
                         "ty": "String"
+                      },
+                      {
+                        "name": "strategy_pool_address",
+                        "ty": {
+                          "Optional": "String"
+                        }
                       },
                       {
                         "name": "approved",
@@ -850,6 +868,12 @@
                     {
                       "name": "wallet_address",
                       "ty": "String"
+                    },
+                    {
+                      "name": "strategy_pool_address",
+                      "ty": {
+                        "Optional": "String"
+                      }
                     },
                     {
                       "name": "approved",
@@ -1350,6 +1374,12 @@
                       {
                         "name": "wallet_address",
                         "ty": "String"
+                      },
+                      {
+                        "name": "strategy_pool_address",
+                        "ty": {
+                          "Optional": "String"
+                        }
                       },
                       {
                         "name": "approved",
@@ -2211,6 +2241,12 @@
                         "ty": "String"
                       },
                       {
+                        "name": "strategy_pool_address",
+                        "ty": {
+                          "Optional": "String"
+                        }
+                      },
+                      {
                         "name": "approved",
                         "ty": "Boolean"
                       },
@@ -2453,6 +2489,12 @@
                         "ty": "String"
                       },
                       {
+                        "name": "strategy_pool_address",
+                        "ty": {
+                          "Optional": "String"
+                        }
+                      },
+                      {
                         "name": "approved",
                         "ty": "Boolean"
                       },
@@ -2561,6 +2603,12 @@
                       {
                         "name": "wallet_address",
                         "ty": "String"
+                      },
+                      {
+                        "name": "strategy_pool_address",
+                        "ty": {
+                          "Optional": "String"
+                        }
                       },
                       {
                         "name": "approved",
@@ -4393,6 +4441,12 @@
                       {
                         "name": "wallet_address",
                         "ty": "String"
+                      },
+                      {
+                        "name": "strategy_pool_address",
+                        "ty": {
+                          "Optional": "String"
+                        }
                       },
                       {
                         "name": "approved",

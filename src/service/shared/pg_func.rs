@@ -40,6 +40,8 @@ pub fn strategy_row_type() -> Type {
             Field::new("social_media", Type::optional(Type::String)),
             Field::new("immutable_audit_rules", Type::Boolean),
             Field::new("strategy_pool_token", Type::optional(Type::String)),
+            Field::new("blockchain", Type::enum_ref("block_chain")),
+            Field::new("strategy_pool_address", Type::optional(Type::String)),
         ],
     )
 }
@@ -76,7 +78,9 @@ pub fn get_strategy(followed: &str) -> String {
 			ON spt.fkey_strategy_pool_contract_id = spc.pkey_id
 			JOIN tbl.user_strategy_wallet AS usw
 			ON spt.fkey_user_strategy_wallet_id = usw.pkey_id
-			WHERE spc.fkey_strategy_id = s.pkey_id AND usw.fkey_user_id = a_user_id) AS strategy_pool_token
+			WHERE spc.fkey_strategy_id = s.pkey_id AND usw.fkey_user_id = a_user_id) AS strategy_pool_token,
+      s.blockchain,
+      s.strategy_pool_address
       ",
         followers = get_strategy_followers_count(),
         backers = get_strategy_backers_count(),

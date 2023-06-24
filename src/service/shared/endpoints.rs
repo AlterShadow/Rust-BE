@@ -17,6 +17,7 @@ pub fn strategy_row() -> Type {
             Field::new("swap_price", Type::Numeric),
             Field::new("price_change", Type::Numeric),
             Field::new("wallet_address", Type::String),
+            Field::new("strategy_pool_address", Type::optional(Type::String)),
             Field::new("approved", Type::Boolean),
             Field::new("approved_at", Type::optional(Type::BigInt)),
             Field::new("blockchain", Type::enum_ref("block_chain")),

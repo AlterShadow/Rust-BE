@@ -1,5 +1,5 @@
 -- Created by Vertabelo (http://vertabelo.com)
--- Last modification date: 2023-06-24 13:13:44.685
+-- Last modification date: 2023-06-24 13:54:28.706
 
 CREATE SCHEMA IF NOT EXISTS tbl;;
 
@@ -158,6 +158,8 @@ CREATE TABLE tbl.strategy (
     approved boolean  NOT NULL DEFAULT FALSE,
     approved_at bigint  NULL,
     immutable_audit_rules boolean  NOT NULL DEFAULT FALSE,
+    blockchain enum_block_chain  NOT NULL,
+    strategy_pool_address int  NULL,
     CONSTRAINT strategy_pk PRIMARY KEY (pkey_id)
 );
 
@@ -332,6 +334,7 @@ CREATE TABLE tbl.user_deposit_withdraw_balance (
 CREATE TABLE tbl.user_deposit_withdraw_ledger (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_user_deposit_withdraw_strategy_ledger_id'),
     fkey_user_id bigint  NOT NULL,
+    fkey_token_id bigint  NOT NULL,
     blockchain enum_block_chain  NOT NULL,
     user_address varchar(64)  NOT NULL,
     escrow_contract_address varchar(64)  NOT NULL,
@@ -627,6 +630,14 @@ ALTER TABLE tbl.user_deposit_withdraw_balance ADD CONSTRAINT user_deposit_exit_s
 ALTER TABLE tbl.user_deposit_withdraw_ledger ADD CONSTRAINT user_deposit_withdraw_ledger_escrow_contract_address
     FOREIGN KEY (fkey_escrow_contract_address_id)
     REFERENCES tbl.escrow_contract_address (pkey_id)  
+    NOT DEFERRABLE 
+    INITIALLY IMMEDIATE
+;
+
+-- Reference: user_deposit_withdraw_ledger_escrow_token_contract_address (table: user_deposit_withdraw_ledger)
+ALTER TABLE tbl.user_deposit_withdraw_ledger ADD CONSTRAINT user_deposit_withdraw_ledger_escrow_token_contract_address
+    FOREIGN KEY (fkey_token_id)
+    REFERENCES tbl.escrow_token_contract_address (pkey_id)  
     NOT DEFERRABLE 
     INITIALLY IMMEDIATE
 ;

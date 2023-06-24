@@ -203,11 +203,6 @@ pub struct FunUserCreateStrategyRespRow {
 pub struct FunUserDelStrategyAuditRuleRespRow {}
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
-pub struct FunUserDepositToEscrowRespRow {
-    pub success: bool,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserExitStrategyRespRow {
     pub success: bool,
 }
@@ -477,6 +472,11 @@ pub struct FunUserRequestRefundRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunUserSaveUserDepositWithdrawLedgerRespRow {
+    pub success: bool,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserStrategyRowType {
     pub total: i64,
     pub strategy_id: i64,
@@ -511,6 +511,9 @@ pub struct FunUserStrategyRowType {
     pub immutable_audit_rules: bool,
     #[serde(default)]
     pub strategy_pool_token: Option<String>,
+    pub blockchain: EnumBlockChain,
+    #[serde(default)]
+    pub strategy_pool_address: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -613,6 +616,11 @@ pub struct FunWatcherSaveStrategyWatchingWalletTradeLedgerRespRow {
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunWatcherUpsertExpertListenedWalletAssetBalanceRespRow {
     pub expert_listened_wallet_asset_balance_id: i64,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunWatcherUpsertUserDepositWithdrawBalanceRespRow {
+    pub pkey_id: i64,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -988,7 +996,7 @@ impl DatabaseRequest for FunUserGetStrategyStatisticsBackLedgerReq {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunUserDepositToEscrowReq {
+pub struct FunUserSaveUserDepositWithdrawLedgerReq {
     pub user_id: i64,
     pub blockchain: EnumBlockChain,
     pub user_address: String,
@@ -999,10 +1007,10 @@ pub struct FunUserDepositToEscrowReq {
 }
 
 #[allow(unused_variables)]
-impl DatabaseRequest for FunUserDepositToEscrowReq {
-    type ResponseRow = FunUserDepositToEscrowRespRow;
+impl DatabaseRequest for FunUserSaveUserDepositWithdrawLedgerReq {
+    type ResponseRow = FunUserSaveUserDepositWithdrawLedgerRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_deposit_to_escrow(a_user_id => $1::bigint, a_blockchain => $2::enum_block_chain, a_user_address => $3::varchar, a_contract_address => $4::varchar, a_receiver_address => $5::varchar, a_quantity => $6::varchar, a_transaction_hash => $7::varchar);"
+        "SELECT * FROM api.fun_user_save_user_deposit_withdraw_ledger(a_user_id => $1::bigint, a_blockchain => $2::enum_block_chain, a_user_address => $3::varchar, a_contract_address => $4::varchar, a_receiver_address => $5::varchar, a_quantity => $6::varchar, a_transaction_hash => $7::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -1013,6 +1021,34 @@ impl DatabaseRequest for FunUserDepositToEscrowReq {
             &self.receiver_address as &(dyn ToSql + Sync),
             &self.quantity as &(dyn ToSql + Sync),
             &self.transaction_hash as &(dyn ToSql + Sync),
+        ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunWatcherUpsertUserDepositWithdrawBalanceReq {
+    pub user_id: i64,
+    pub token_address: String,
+    pub escrow_contract_address: String,
+    pub blockchain: EnumBlockChain,
+    pub old_balance: String,
+    pub new_balance: String,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunWatcherUpsertUserDepositWithdrawBalanceReq {
+    type ResponseRow = FunWatcherUpsertUserDepositWithdrawBalanceRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_watcher_upsert_user_deposit_withdraw_balance(a_user_id => $1::bigint, a_token_address => $2::varchar, a_escrow_contract_address => $3::varchar, a_blockchain => $4::enum_block_chain, a_old_balance => $5::varchar, a_new_balance => $6::varchar);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.token_address as &(dyn ToSql + Sync),
+            &self.escrow_contract_address as &(dyn ToSql + Sync),
+            &self.blockchain as &(dyn ToSql + Sync),
+            &self.old_balance as &(dyn ToSql + Sync),
+            &self.new_balance as &(dyn ToSql + Sync),
         ]
     }
 }
@@ -2016,18 +2052,24 @@ pub struct FunUserListUserDepositWithdrawBalanceReq {
     pub user_id: i64,
     #[serde(default)]
     pub blockchain: Option<EnumBlockChain>,
+    #[serde(default)]
+    pub token_address: Option<String>,
+    #[serde(default)]
+    pub escrow_contract_address: Option<String>,
 }
 
 #[allow(unused_variables)]
 impl DatabaseRequest for FunUserListUserDepositWithdrawBalanceReq {
     type ResponseRow = FunUserListUserDepositWithdrawBalanceRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_list_user_deposit_withdraw_balance(a_user_id => $1::bigint, a_blockchain => $2::enum_block_chain);"
+        "SELECT * FROM api.fun_user_list_user_deposit_withdraw_balance(a_user_id => $1::bigint, a_blockchain => $2::enum_block_chain, a_token_address => $3::varchar, a_escrow_contract_address => $4::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
             &self.user_id as &(dyn ToSql + Sync),
             &self.blockchain as &(dyn ToSql + Sync),
+            &self.token_address as &(dyn ToSql + Sync),
+            &self.escrow_contract_address as &(dyn ToSql + Sync),
         ]
     }
 }

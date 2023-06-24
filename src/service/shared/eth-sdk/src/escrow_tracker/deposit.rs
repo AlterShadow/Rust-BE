@@ -32,7 +32,7 @@ pub async fn on_user_deposit(
     //TODO: call "transferTokenTo" on escrow contract wrapper and transfer tokens to our EOA
 
     // USER just deposits to our service
-    db.execute(FunUserDepositToEscrowReq {
+    db.execute(FunUserSaveUserDepositWithdrawLedgerReq {
         user_id: ctx.user_id,
         quantity: format!("{:?}", esc.amount),
         blockchain: chain,
