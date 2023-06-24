@@ -19,7 +19,8 @@ pub fn convert_strategy_db_to_api(x: FunUserStrategyRowType) -> ListStrategiesRo
         risk_score: x.risk_score.unwrap_or_default(),
         aum: x.aum.unwrap_or_default(),
         followed: x.followed,
-        wallet_address: x.linked_wallet.unwrap_or_default(),
+        // FIXME: this is a hack to get the value
+        wallet_address: "0x000".to_string(),
         approved: x.approved,
         approved_at: x.approved_at,
         requested_at: x.requested_at,
@@ -28,9 +29,7 @@ pub fn convert_strategy_db_to_api(x: FunUserStrategyRowType) -> ListStrategiesRo
         expert_username: x.creator_username,
         expert_family_name: x.creator_family_name.unwrap_or_default(),
         expert_given_name: x.creator_given_name.unwrap_or_default(),
-        blockchain: x
-            .linked_wallet_blockchain
-            .unwrap_or(EnumBlockChain::LocalNet),
+        blockchain: EnumBlockChain::LocalNet,
         net_value: 0.0,
         swap_price: 233.0,
         price_change: 0.97,

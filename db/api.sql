@@ -492,8 +492,9 @@ BEGIN
                     AND (a_expert_public_id ISNULL OR u.public_id = a_expert_public_id)
                     AND (a_expert_name ISNULL OR u.username ILIKE a_expert_name || '%')
                     AND (a_description ISNULL OR s.description ILIKE a_description || '%')
-                    AND (a_blockchain ISNULL OR linked_wallet_blockchain ISNULL OR linked_wallet_blockchain = a_blockchain)
-                    AND (a_wallet_address ISNULL OR linked_wallet ISNULL OR linked_wallet ILIKE a_wallet_address || '%')
+                    -- TODO: support search of strategies by blockchain and wallet address
+                    -- AND (a_blockchain ISNULL OR linked_wallet_blockchain ISNULL OR linked_wallet_blockchain = a_blockchain)
+                    -- AND (a_wallet_address ISNULL OR linked_wallet ISNULL OR linked_wallet ILIKE a_wallet_address || '%')
                 ORDER BY s.pkey_id
                 LIMIT a_limit
                 OFFSET a_offset;
@@ -1902,10 +1903,11 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY SELECT a.fkey_strategy_id
-    FROM tbl.strategy_watching_wallet AS a
-    WHERE a.blockchain = a_blockchain
-        AND a.address = a_address;
+    RETURN QUERY SELECT sww.fkey_strategy_id
+    FROM tbl.strategy_watched_wallet AS sww
+    JOIN tbl.expert_watched_wallet AS eww ON sww.fkey_expert_watched_wallet_id = eww.pkey_id
+    WHERE eww.blockchain = a_blockchain
+        AND eww.address = a_address;
 END
             
 $$;
