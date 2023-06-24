@@ -37,7 +37,6 @@ use tokio::sync::Mutex;
 use tokio::time::sleep;
 use tracing::*;
 use web3::ethabi::{Address, Contract};
-use web3::signing::Key;
 use web3::types::U256;
 
 #[derive(Debug, Clone, Deserialize)]
@@ -144,21 +143,21 @@ pub async fn handle_eth_swap_mainnet(
     state: State<Arc<AppState>>,
     body: Bytes,
 ) -> Result<(), StatusCode> {
-    handle_eth_swap(state.0, body, EnumBlockChain::EthereumMainnet).await
+    handle_ethereum_dex_transactions(state.0, body, EnumBlockChain::EthereumMainnet).await
 }
 
 pub async fn handle_eth_swap_goerli(
     state: State<Arc<AppState>>,
     body: Bytes,
 ) -> Result<(), StatusCode> {
-    handle_eth_swap(state.0, body, EnumBlockChain::EthereumGoerli).await
+    handle_ethereum_dex_transactions(state.0, body, EnumBlockChain::EthereumGoerli).await
 }
 
 pub async fn handle_bsc_swap_mainnet(
     state: State<Arc<AppState>>,
     body: Bytes,
 ) -> Result<(), StatusCode> {
-    handle_eth_swap(state.0, body, EnumBlockChain::BscMainnet).await
+    handle_ethereum_dex_transactions(state.0, body, EnumBlockChain::BscMainnet).await
 }
 
 pub async fn handle_eth_escrows_mainnet(
@@ -182,7 +181,7 @@ pub async fn handle_bsc_escrows_mainnet(
     handle_eth_escrows(state.0, body, EnumBlockChain::BscMainnet).await
 }
 
-pub async fn handle_eth_swap(
+pub async fn handle_ethereum_dex_transactions(
     state: Arc<AppState>,
     body: Bytes,
     blockchain: EnumBlockChain,
@@ -220,7 +219,7 @@ pub async fn handle_eth_swap(
             if let Err(e) = evm::cache_ethereum_transaction(&tx, &state.db, blockchain).await {
                 error!("error caching transaction: {:?}", e);
             };
-            match handle_swap(state.clone(), blockchain, tx).await {
+            match handle_pancake_swap_transaction(state.clone(), blockchain, tx).await {
                 Ok(_) => {}
                 Err(e) => {
                     error!("error handling swap: {:?}", e);
@@ -232,7 +231,7 @@ pub async fn handle_eth_swap(
     Ok(())
 }
 
-pub async fn handle_swap(
+pub async fn handle_pancake_swap_transaction(
     state: Arc<AppState>,
     blockchain: EnumBlockChain,
     tx: TransactionReady,
@@ -285,7 +284,7 @@ pub async fn handle_swap(
             .db
             .execute(
                 // fun_watcher_list_user_strategy_ledger
-                FunWatcherListStrategyEscrowPendingWalletLedgerReq {
+                FunWatcherListStrategyEscrowPendingWalletBalanceReq {
                     strategy_id: Some(strategy_id),
                 },
             )
@@ -297,7 +296,7 @@ pub async fn handle_swap(
             let (token_chain, token_address, token_amount) = (
                 row.blockchain,
                 row.token_address.parse::<Address>()?,
-                row.entry.parse::<U256>()?,
+                row.balance.parse::<U256>()?,
             );
             let strategy_token = state
                 .token_addresses
