@@ -2686,6 +2686,7 @@ impl RequestHandler for MethodUserGetEscrowAddressForStrategy {
                             .unwrap();
                         UserAllowedEscrowTransferInfo {
                             receiver_address: x.address,
+                            blockchain: x.blockchain,
                             token_id: 0,
                             token_symbol: "USDC".to_string(),
                             token_name: "USDC".to_string(),

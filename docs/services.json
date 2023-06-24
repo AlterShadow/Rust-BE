@@ -3628,6 +3628,12 @@
                       "ty": "String"
                     },
                     {
+                      "name": "blockchain",
+                      "ty": {
+                        "EnumRef": "block_chain"
+                      }
+                    },
+                    {
                       "name": "token_id",
                       "ty": "BigInt"
                     },

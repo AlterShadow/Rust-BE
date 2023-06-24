@@ -1468,6 +1468,7 @@ pub struct UserAddStrategyAuditRuleResponse {}
 #[serde(rename_all = "camelCase")]
 pub struct UserAllowedEscrowTransferInfo {
     pub receiver_address: String,
+    pub blockchain: EnumBlockChain,
     pub token_id: i64,
     pub token_symbol: String,
     pub token_name: String,
@@ -6135,6 +6136,12 @@ impl WsRequest for UserGetEscrowAddressForStrategyRequest {
             {
               "name": "receiver_address",
               "ty": "String"
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
             },
             {
               "name": "token_id",

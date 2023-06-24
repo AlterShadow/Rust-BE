@@ -824,6 +824,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                     "UserAllowedEscrowTransferInfo",
                     vec![
                         Field::new("receiver_address", Type::String),
+                        Field::new("blockchain", Type::enum_ref("block_chain")),
                         Field::new("token_id", Type::BigInt),
                         Field::new("token_symbol", Type::String),
                         Field::new("token_name", Type::String),
