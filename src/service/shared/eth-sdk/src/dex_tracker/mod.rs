@@ -68,7 +68,7 @@ pub async fn update_expert_listened_wallet_asset_ledger(
     let expert_watched_wallet_address = trade.caller;
 
     match db
-        .execute(FunWatcherListExpertListenedWalletAssetLedgerReq {
+        .execute(FunWatcherListExpertListenedWalletAssetBalanceReq {
             limit: 1,
             blockchain: Some(blockchain),
             address: Some(format!("{:?}", expert_watched_wallet_address)),
@@ -82,7 +82,7 @@ pub async fn update_expert_listened_wallet_asset_ledger(
             /* if token_in is already in the database, update it's amount */
             let old_amount = U256::from_dec_str(&tk.entry)?;
             let new_amount = old_amount.try_checked_sub(trade.amount_out)?;
-            db.execute(FunWatcherUpsertExpertListenedWalletAssetLedgerReq {
+            db.execute(FunWatcherUpsertExpertListenedWalletAssetBalanceReq {
                 address: format!("{:?}", expert_watched_wallet_address),
                 blockchain,
                 token_id: token_out_id,
@@ -97,7 +97,7 @@ pub async fn update_expert_listened_wallet_asset_ledger(
     };
 
     match db
-        .execute(FunWatcherListExpertListenedWalletAssetLedgerReq {
+        .execute(FunWatcherListExpertListenedWalletAssetBalanceReq {
             limit: 1,
             blockchain: Some(blockchain),
             address: Some(format!("{:?}", expert_watched_wallet_address)),
@@ -111,7 +111,7 @@ pub async fn update_expert_listened_wallet_asset_ledger(
             /* if token_in is already in the database, update it's amount, or remove it new amount is 0 */
             let old_amount = U256::from_dec_str(&tk.entry)?;
             let new_amount = old_amount.try_checked_add(trade.amount_in)?;
-            db.execute(FunWatcherUpsertExpertListenedWalletAssetLedgerReq {
+            db.execute(FunWatcherUpsertExpertListenedWalletAssetBalanceReq {
                 address: format!("{:?}", expert_watched_wallet_address),
                 blockchain,
                 token_id: token_in_id,
@@ -123,7 +123,7 @@ pub async fn update_expert_listened_wallet_asset_ledger(
         None => {
             let old_amount = U256::from(0);
             let new_amount = trade.amount_in;
-            db.execute(FunWatcherUpsertExpertListenedWalletAssetLedgerReq {
+            db.execute(FunWatcherUpsertExpertListenedWalletAssetBalanceReq {
                 address: format!("{:?}", expert_watched_wallet_address),
                 blockchain,
                 token_id: token_in_id,

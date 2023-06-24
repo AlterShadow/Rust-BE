@@ -1,5 +1,5 @@
 -- Created by Vertabelo (http://vertabelo.com)
--- Last modification date: 2023-06-22 12:26:47.23
+-- Last modification date: 2023-06-24 05:31:16.038
 
 CREATE SCHEMA IF NOT EXISTS tbl;;
 
@@ -76,13 +76,13 @@ CREATE TABLE tbl.escrow_token_contract_address (
     CONSTRAINT escrow_token_contract_address_pk PRIMARY KEY (pkey_id)
 );
 
--- Table: expert_listened_wallet_asset_ledger
-CREATE TABLE tbl.expert_listened_wallet_asset_ledger (
+-- Table: expert_listened_wallet_asset_balance
+CREATE TABLE tbl.expert_listened_wallet_asset_balance (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_expert_listened_wallet_asset_ledger_id'),
+    fkey_expert_watched_wallet_id bigint  NOT NULL,
     fkey_token_id bigint  NOT NULL,
     entry varchar(64)  NOT NULL,
-    expert_watched_wallet_pkey_id bigint  NOT NULL,
-    CONSTRAINT expert_listened_wallet_asset_ledger_pk PRIMARY KEY (pkey_id)
+    CONSTRAINT expert_listened_wallet_asset_balance_pk PRIMARY KEY (pkey_id)
 );
 
 -- Table: expert_profile
@@ -181,15 +181,15 @@ CREATE TABLE tbl.strategy_escrow_pending_wallet_address (
     CONSTRAINT strategy_escrow_pending_wallet_address_pk PRIMARY KEY (pkey_id)
 );
 
--- Table: strategy_escrow_pending_wallet_ledger
-CREATE TABLE tbl.strategy_escrow_pending_wallet_ledger (
+-- Table: strategy_escrow_pending_wallet_balance
+CREATE TABLE tbl.strategy_escrow_pending_wallet_balance (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_strategy_escrow_pending_wallet_ledger_id'),
     fkey_strategy_pending_wallet_address_id bigint  NOT NULL,
     blockchain enum_block_chain  NOT NULL,
     fkey_token_id bigint  NOT NULL,
     entry varchar(64)  NOT NULL,
     CONSTRAINT strategy_escrow_pending_wallet_ledger_ak_1 UNIQUE (fkey_strategy_pending_wallet_address_id, blockchain, fkey_token_id) NOT DEFERRABLE  INITIALLY IMMEDIATE,
-    CONSTRAINT strategy_escrow_pending_wallet_ledger_pk PRIMARY KEY (pkey_id)
+    CONSTRAINT strategy_escrow_pending_wallet_balance_pk PRIMARY KEY (pkey_id)
 );
 
 -- Table: strategy_initial_token_ratio
@@ -250,7 +250,7 @@ CREATE INDEX strategy_watching_wallet_trade_history_idx_1 on tbl.strategy_watchi
 CREATE TABLE tbl.strategy_whitelisted_token (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_strategy_whitelisted_token_id'),
     fkey_strategy_id bigint  NOT NULL,
-    token_name varchar(32) NOT NULL,
+    token_name varchar(32)  NOT NULL,
     CONSTRAINT strategy_whitelisted_token_pk PRIMARY KEY (pkey_id)
 );
 
@@ -367,13 +367,13 @@ CREATE TABLE tbl.user_registered_wallet (
     CONSTRAINT user_registered_wallet_pk PRIMARY KEY (pkey_id)
 );
 
--- Table: user_strategy_ledger
-CREATE TABLE tbl.user_strategy_ledger (
+-- Table: user_strategy_balance
+CREATE TABLE tbl.user_strategy_balance (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_user_strategy_ledger_id'),
     fkey_strategy_pool_contract_id bigint  NOT NULL,
     fkey_user_strategy_wallet_id bigint  NOT NULL,
     entry varchar(64)  NOT NULL,
-    CONSTRAINT user_strategy_ledger_pk PRIMARY KEY (pkey_id)
+    CONSTRAINT user_strategy_balance_pk PRIMARY KEY (pkey_id)
 );
 
 -- Table: user_strategy_wallet
@@ -412,18 +412,10 @@ ALTER TABLE tbl.bad_request ADD CONSTRAINT bad_request_user
     INITIALLY IMMEDIATE
 ;
 
--- Reference: expert_listened_wallet_asset_ledger_escrow_token_contract_address (table: expert_listened_wallet_asset_ledger)
-ALTER TABLE tbl.expert_listened_wallet_asset_ledger ADD CONSTRAINT expert_listened_wallet_asset_ledger_escrow_token_contract_address
+-- Reference: expert_listened_wallet_asset_balance_fkey (table: expert_listened_wallet_asset_balance)
+ALTER TABLE tbl.expert_listened_wallet_asset_balance ADD CONSTRAINT expert_listened_wallet_asset_balance_fkey
     FOREIGN KEY (fkey_token_id)
     REFERENCES tbl.escrow_token_contract_address (pkey_id)  
-    NOT DEFERRABLE 
-    INITIALLY IMMEDIATE
-;
-
--- Reference: expert_listened_wallet_asset_ledger_expert_watched_wallet (table: expert_listened_wallet_asset_ledger)
-ALTER TABLE tbl.expert_listened_wallet_asset_ledger ADD CONSTRAINT expert_listened_wallet_asset_ledger_expert_watched_wallet
-    FOREIGN KEY (expert_watched_wallet_pkey_id)
-    REFERENCES tbl.expert_watched_wallet (pkey_id)  
     NOT DEFERRABLE 
     INITIALLY IMMEDIATE
 ;
@@ -440,6 +432,14 @@ ALTER TABLE tbl.user_follow_expert ADD CONSTRAINT expert_profile_user_follow_exp
 ALTER TABLE tbl.expert_watched_wallet ADD CONSTRAINT expert_watched_wallet_user
     FOREIGN KEY (fkey_user_id)
     REFERENCES tbl."user" (pkey_id)  
+    NOT DEFERRABLE 
+    INITIALLY IMMEDIATE
+;
+
+-- Reference: fkey_expert_listened_wallet_asset_balance (table: expert_listened_wallet_asset_balance)
+ALTER TABLE tbl.expert_listened_wallet_asset_balance ADD CONSTRAINT fkey_expert_listened_wallet_asset_balance
+    FOREIGN KEY (fkey_expert_watched_wallet_id)
+    REFERENCES tbl.expert_watched_wallet (pkey_id)  
     NOT DEFERRABLE 
     INITIALLY IMMEDIATE
 ;
@@ -484,16 +484,16 @@ ALTER TABLE tbl.strategy_escrow_pending_wallet_address ADD CONSTRAINT strategy_e
     INITIALLY IMMEDIATE
 ;
 
--- Reference: strategy_escrow_pending_ledger_strategy (table: strategy_escrow_pending_wallet_ledger)
-ALTER TABLE tbl.strategy_escrow_pending_wallet_ledger ADD CONSTRAINT strategy_escrow_pending_ledger_strategy
+-- Reference: strategy_escrow_pending_ledger_strategy (table: strategy_escrow_pending_wallet_balance)
+ALTER TABLE tbl.strategy_escrow_pending_wallet_balance ADD CONSTRAINT strategy_escrow_pending_ledger_strategy
     FOREIGN KEY (fkey_strategy_pending_wallet_address_id)
     REFERENCES tbl.strategy (pkey_id)  
     NOT DEFERRABLE 
     INITIALLY IMMEDIATE
 ;
 
--- Reference: strategy_escrow_pending_wallet_ledger_reference (table: strategy_escrow_pending_wallet_ledger)
-ALTER TABLE tbl.strategy_escrow_pending_wallet_ledger ADD CONSTRAINT strategy_escrow_pending_wallet_ledger_reference
+-- Reference: strategy_escrow_pending_wallet_balance (table: strategy_escrow_pending_wallet_balance)
+ALTER TABLE tbl.strategy_escrow_pending_wallet_balance ADD CONSTRAINT strategy_escrow_pending_wallet_balance
     FOREIGN KEY (fkey_strategy_pending_wallet_address_id)
     REFERENCES tbl.strategy_escrow_pending_wallet_address (pkey_id)  
     NOT DEFERRABLE 
@@ -636,16 +636,16 @@ ALTER TABLE tbl.strategy ADD CONSTRAINT user_strategy
     INITIALLY IMMEDIATE
 ;
 
--- Reference: user_strategy_ledger_strategy_pool_contract (table: user_strategy_ledger)
-ALTER TABLE tbl.user_strategy_ledger ADD CONSTRAINT user_strategy_ledger_strategy_pool_contract
+-- Reference: user_strategy_balance_strategy_pool_contract (table: user_strategy_balance)
+ALTER TABLE tbl.user_strategy_balance ADD CONSTRAINT user_strategy_balance_strategy_pool_contract
     FOREIGN KEY (fkey_strategy_pool_contract_id)
     REFERENCES tbl.strategy_pool_contract (pkey_id)  
     NOT DEFERRABLE 
     INITIALLY IMMEDIATE
 ;
 
--- Reference: user_strategy_ledger_user_strategy_wallet (table: user_strategy_ledger)
-ALTER TABLE tbl.user_strategy_ledger ADD CONSTRAINT user_strategy_ledger_user_strategy_wallet
+-- Reference: user_strategy_ledger_user_strategy_wallet (table: user_strategy_balance)
+ALTER TABLE tbl.user_strategy_balance ADD CONSTRAINT user_strategy_ledger_user_strategy_wallet
     FOREIGN KEY (fkey_user_strategy_wallet_id)
     REFERENCES tbl.user_strategy_wallet (pkey_id)  
     NOT DEFERRABLE 

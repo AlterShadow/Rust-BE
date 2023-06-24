@@ -76,7 +76,7 @@ pub fn get_strategy(followed: &str) -> String {
       s.immutable_audit_rules as immutable_audit_rules,
 			-- sum all strategy pool tokens that user owns for this strategy on all chains
 			(SELECT CAST(SUM(CAST(spt.entry AS NUMERIC)) AS VARCHAR)
-			FROM tbl.user_strategy_ledger AS spt
+			FROM tbl.user_strategy_balance AS spt
 			JOIN tbl.strategy_pool_contract AS spc
 			ON spt.fkey_strategy_pool_contract_id = spc.pkey_id
 			JOIN tbl.user_strategy_wallet AS usw

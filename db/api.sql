@@ -399,7 +399,7 @@ BEGIN
       s.immutable_audit_rules as immutable_audit_rules,
 			-- sum all strategy pool tokens that user owns for this strategy on all chains
 			(SELECT CAST(SUM(CAST(spt.entry AS NUMERIC)) AS VARCHAR)
-			FROM tbl.user_strategy_ledger AS spt
+			FROM tbl.user_strategy_balance AS spt
 			JOIN tbl.strategy_pool_contract AS spc
 			ON spt.fkey_strategy_pool_contract_id = spc.pkey_id
 			JOIN tbl.user_strategy_wallet AS usw
@@ -481,7 +481,7 @@ BEGIN
       s.immutable_audit_rules as immutable_audit_rules,
 			-- sum all strategy pool tokens that user owns for this strategy on all chains
 			(SELECT CAST(SUM(CAST(spt.entry AS NUMERIC)) AS VARCHAR)
-			FROM tbl.user_strategy_ledger AS spt
+			FROM tbl.user_strategy_balance AS spt
 			JOIN tbl.strategy_pool_contract AS spc
 			ON spt.fkey_strategy_pool_contract_id = spc.pkey_id
 			JOIN tbl.user_strategy_wallet AS usw
@@ -737,7 +737,7 @@ BEGIN
       s.immutable_audit_rules as immutable_audit_rules,
 			-- sum all strategy pool tokens that user owns for this strategy on all chains
 			(SELECT CAST(SUM(CAST(spt.entry AS NUMERIC)) AS VARCHAR)
-			FROM tbl.user_strategy_ledger AS spt
+			FROM tbl.user_strategy_balance AS spt
 			JOIN tbl.strategy_pool_contract AS spc
 			ON spt.fkey_strategy_pool_contract_id = spc.pkey_id
 			JOIN tbl.user_strategy_wallet AS usw
@@ -2274,7 +2274,7 @@ BEGIN
       s.immutable_audit_rules as immutable_audit_rules,
 			-- sum all strategy pool tokens that user owns for this strategy on all chains
 			(SELECT CAST(SUM(CAST(spt.entry AS NUMERIC)) AS VARCHAR)
-			FROM tbl.user_strategy_ledger AS spt
+			FROM tbl.user_strategy_balance AS spt
 			JOIN tbl.strategy_pool_contract AS spc
 			ON spt.fkey_strategy_pool_contract_id = spc.pkey_id
 			JOIN tbl.user_strategy_wallet AS usw
@@ -2453,7 +2453,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_watcher_list_strategy_escrow_pending_wallet_ledger(a_strategy_id bigint DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_watcher_list_strategy_escrow_pending_wallet_balance(a_strategy_id bigint DEFAULT NULL)
 RETURNS table (
     "strategy_id" bigint,
     "blockchain" enum_block_chain,
@@ -2476,7 +2476,7 @@ BEGIN
                         t.name,
                         t.symbol,
                         l.entry
-                 FROM tbl.strategy_escrow_pending_wallet_ledger AS l
+                 FROM tbl.strategy_escrow_pending_wallet_balance AS l
                  JOIN tbl.strategy_escrow_pending_wallet_address AS w ON l.fkey_strategy_pending_wallet_address_id = w.pkey_id
                  JOIN tbl.escrow_token_contract_address AS t ON l.fkey_token_id = t.pkey_id
                  WHERE strategy_id = a_strategy_id;
@@ -2485,7 +2485,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_watcher_list_user_strategy_ledger(a_limit bigint, a_offset bigint, a_strategy_id bigint DEFAULT NULL, a_user_id bigint DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_watcher_list_user_strategy_balance(a_limit bigint, a_offset bigint, a_strategy_id bigint DEFAULT NULL, a_user_id bigint DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL)
 RETURNS table (
     "strategy_id" bigint,
     "user_id" bigint,
@@ -2504,7 +2504,7 @@ BEGIN
                         spc.address,
                         usw.address,
                         usl.entry
-                 FROM tbl.user_strategy_ledger AS usl
+                 FROM tbl.user_strategy_balance AS usl
                  JOIN tbl.user_strategy_wallet AS usw ON usw.pkey_id = usl.fkey_user_strategy_wallet_id
                  JOIN tbl.strategy_pool_contract AS spc ON spc.pkey_id = usl.fkey_strategy_pool_contract_id
                  WHERE (a_strategy_id ISNULL OR spc.fkey_strategy_id = a_strategy_id)
@@ -2518,9 +2518,9 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_watcher_upsert_expert_listened_wallet_asset_ledger(a_address varchar, a_blockchain enum_block_chain, a_token_id bigint, a_old_entry varchar, a_new_entry varchar)
+CREATE OR REPLACE FUNCTION api.fun_watcher_upsert_expert_listened_wallet_asset_balance(a_address varchar, a_blockchain enum_block_chain, a_token_id bigint, a_old_entry varchar, a_new_entry varchar)
 RETURNS table (
-    "expert_listened_wallet_asset_ledger_id" bigint
+    "expert_listened_wallet_asset_balance_id" bigint
 )
 LANGUAGE plpgsql
 AS $$
@@ -2528,8 +2528,8 @@ AS $$
 
 DECLARE
     _expert_watched_wallet_id bigint;
-    _expert_listened_wallet_asset_ledger_id bigint;
-    _expert_listened_wallet_asset_ledger_old_entry bigint;
+    _expert_listened_wallet_asset_balance_id bigint;
+    _expert_listened_wallet_asset_balance_old_entry bigint;
     _pkey_id bigint;
 BEGIN
     SELECT pkey_id INTO _expert_watched_wallet_id
@@ -2537,27 +2537,27 @@ BEGIN
     WHERE address = a_address
       AND blockchain = a_blockchain;
     ASSERT _expert_watched_wallet_id NOTNULL;
-    SELECT elwal.pkey_id, elwal.entry INTO _expert_listened_wallet_asset_ledger_id, _expert_listened_wallet_asset_ledger_old_entry
-        FROM tbl.expert_listened_wallet_asset_ledger AS elwal
+    SELECT elwal.pkey_id, elwal.entry INTO _expert_listened_wallet_asset_balance_id, _expert_listened_wallet_asset_balance_old_entry
+        FROM tbl.expert_listened_wallet_asset_balance AS elwal
                 JOIN tbl.expert_watched_wallet AS eww ON eww.pkey_id = elwal.expert_watched_wallet_pkey_id
         WHERE elwal.fkey_token_id = a_token_id
          AND eww.pkey_id = _expert_watched_wallet_id;
          
     -- insert new entry if not exist
-    IF _expert_listened_wallet_asset_ledger_id ISNULL THEN
-        INSERT INTO tbl.expert_listened_wallet_asset_ledger (fkey_token_id, entry, expert_watched_wallet_pkey_id)
-        VALUES (fkey_token_id, a_new_entry, _expert_listened_wallet_asset_ledger_id)
+    IF _expert_listened_wallet_asset_balance_id ISNULL THEN
+        INSERT INTO tbl.expert_listened_wallet_asset_balance (fkey_token_id, entry, expert_watched_wallet_pkey_id)
+        VALUES (fkey_token_id, a_new_entry, _expert_listened_wallet_asset_balance_id)
         RETURNING pkey_id
             INTO _pkey_id;
     END IF;
 
     -- update old entry if exist and equals to old entry
-    IF _expert_listened_wallet_asset_ledger_old_entry != a_old_entry THEN
+    IF _expert_listened_wallet_asset_balance_old_entry != a_old_entry THEN
         RETURN QUERY SELECT _pkey_id;
     END IF;
-    UPDATE tbl.expert_listened_wallet_asset_ledger
+    UPDATE tbl.expert_listened_wallet_asset_balance
     SET entry = a_new_entry
-    WHERE expert_watched_wallet_pkey_id = _expert_listened_wallet_asset_ledger_id
+    WHERE expert_watched_wallet_pkey_id = _expert_listened_wallet_asset_balance_id
       AND fkey_token_id = a_token_id
       AND entry = a_old_entry
     RETURNING pkey_id
@@ -2569,7 +2569,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_watcher_list_expert_listened_wallet_asset_ledger(a_limit bigint, a_offset bigint, a_address varchar DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL, a_token_id bigint DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_watcher_list_expert_listened_wallet_asset_balance(a_limit bigint, a_offset bigint, a_address varchar DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL, a_token_id bigint DEFAULT NULL)
 RETURNS table (
     "pkey_id" bigint,
     "address" varchar,
@@ -2587,7 +2587,7 @@ BEGIN
         eww.blockchain,
         elwal.fkey_token_id,
         elwal.entry
-    FROM tbl.expert_listened_wallet_asset_ledger AS elwal
+    FROM tbl.expert_listened_wallet_asset_balance AS elwal
             JOIN tbl.expert_watched_wallet AS eww ON eww.pkey_id = elwal.expert_watched_wallet_pkey_id
     WHERE (a_token_id ISNULL OR elwal.fkey_token_id = a_token_id)
      AND (a_address ISNULL OR eww.address = a_address)
