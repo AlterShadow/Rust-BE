@@ -4,7 +4,6 @@ use dashmap::DashMap;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::hash::Hash;
-use tracing::info;
 
 pub struct SubscriberContext {
     pub ctx: RequestContext,

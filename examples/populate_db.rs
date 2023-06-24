@@ -1,4 +1,4 @@
-#[path = "../../shared/audit/mod.rs"]
+#[path = "../src/service/shared/audit/mod.rs"]
 pub mod audit;
 pub mod tools;
 use crate::audit::get_audit_rules;
@@ -16,7 +16,6 @@ use tokio::sync::Mutex;
 use tokio::task::JoinHandle;
 use tools::*;
 use tracing::*;
-use web3::types::U256;
 
 const ADMIN_KEY: (&str, &str) = (
     "d34ffbe32eea1de01e30f5cccb3f9863b07c1ac600c09bae80370fc14c899913",

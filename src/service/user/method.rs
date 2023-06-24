@@ -3,6 +3,7 @@ use crate::audit::{
     get_audit_rules, validate_audit_rule_immutable_tokens, AuditLogger, AUDIT_TOP25_TOKENS,
 };
 use api::cmc::CoinMarketCap;
+use chrono::Utc;
 use eth_sdk::erc20::approve_and_ensure_success;
 use eth_sdk::erc20::Erc20Token;
 use eth_sdk::escrow::transfer_token_to_and_ensure_success;
@@ -2398,7 +2399,7 @@ impl RequestHandler for MethodUserSubscribeDepositLedger {
         ctx: RequestContext,
         _req: Self::Request,
     ) -> FutureResponse<Self::Request> {
-        let manger = self.manger.clone();
+        let manager = self.manger.clone();
         let toolbox = toolbox.clone();
         async move {
             manager.subscribe(AdminSubscribeTopic::AdminNotifyEscrowLedgerChange, ctx);
@@ -2412,7 +2413,7 @@ impl RequestHandler for MethodUserSubscribeDepositLedger {
                     manager.publish_to_all(
                         &toolbox,
                         AdminSubscribeTopic::AdminNotifyEscrowLedgerChange,
-                        &UserListDepositHistoryRow {
+                        &UserListDepositLedgerRow {
                             quantity: format!("{:?}", amount),
                             blockchain: EnumBlockChain::EthereumMainnet,
                             user_address: format!("{:?}", key.address),

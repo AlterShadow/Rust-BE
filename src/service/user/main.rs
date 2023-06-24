@@ -146,7 +146,7 @@ async fn main() -> Result<()> {
         manager: Arc::clone(&sub_manager),
     });
 
-    server.add_handler(MethodUserSubscribeDepositHistory {
+    server.add_handler(MethodUserSubscribeDepositLedger {
         manger: sub_manager,
     });
 
