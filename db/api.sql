@@ -2463,8 +2463,8 @@ BEGIN
 END
             
 $$;
+        
 
-DROP FUNCTION api.fun_admin_add_escrow_token_contract_address;
 CREATE OR REPLACE FUNCTION api.fun_admin_add_escrow_token_contract_address(a_pkey_id bigint, a_symbol varchar, a_short_name varchar, a_description varchar, a_address varchar, a_blockchain enum_block_chain, a_is_stablecoin boolean)
 RETURNS void
 LANGUAGE plpgsql
