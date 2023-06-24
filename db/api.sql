@@ -389,8 +389,6 @@ BEGIN
       s.approved as approved,
       s.approved_at as approved_at,
       s.pending_approval as pending_approval,
-      w.address as linked_wallet,
-      w.blockchain as linked_wallet_blockchain,
       s.created_at as created_at,
       u.public_id as creator_public_id,
       u.pkey_id as creator_id,
@@ -473,8 +471,6 @@ BEGIN
       s.approved as approved,
       s.approved_at as approved_at,
       s.pending_approval as pending_approval,
-      w.address as linked_wallet,
-      w.blockchain as linked_wallet_blockchain,
       s.created_at as created_at,
       u.public_id as creator_public_id,
       u.pkey_id as creator_id,
@@ -731,8 +727,6 @@ BEGIN
       s.approved as approved,
       s.approved_at as approved_at,
       s.pending_approval as pending_approval,
-      w.address as linked_wallet,
-      w.blockchain as linked_wallet_blockchain,
       s.created_at as created_at,
       u.public_id as creator_public_id,
       u.pkey_id as creator_id,
@@ -1906,68 +1900,6 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_list_user_strategy_ledger(a_user_id bigint, a_strategy_id bigint DEFAULT NULL)
-RETURNS table (
-    "ledger_id" bigint,
-    "user_id" bigint,
-    "strategy_id" bigint,
-    "balance" varchar,
-    "updated_at" varchar
-)
-LANGUAGE plpgsql
-AS $$
-    
-BEGIN
-    RETURN QUERY SELECT a.pkey_id, a.fkey_user_id, a.fkey_strategy_id, a.balance, a.updated_at
-    FROM tbl.user_strategy_ledger AS a
-    WHERE a.fkey_user_id = a_user_id
-        AND (a_strategy_id ISNULL OR a.fkey_strategy_id = a_strategy_id);
-END
-            
-$$;
-        
-
-CREATE OR REPLACE FUNCTION api.fun_user_update_user_strategy_ledger(a_user_id bigint, a_strategy_id bigint, a_old_balance varchar, a_new_balance varchar)
-RETURNS table (
-    "success" boolean
-)
-LANGUAGE plpgsql
-AS $$
-    
-BEGIN
-    -- if no records, create one
-    IF NOT EXISTS(
-        SELECT 1
-        FROM tbl.user_strategy_ledger AS a
-        WHERE a.fkey_user_id = a_user_id
-            AND a.fkey_strategy_id = a_strategy_id
-    ) THEN
-        INSERT INTO tbl.user_strategy_ledger (fkey_user_id, fkey_strategy_id, balance, updated_at)
-        VALUES (a_user_id, a_strategy_id, a_new_balance, EXTRACT(EPOCH FROM NOW())::BIGINT);
-        RETURN QUERY SELECT TRUE;
-    END IF;
-    -- if old balance does not equal to balance, return FALSE
-    IF EXISTS(
-        SELECT 1
-        FROM tbl.user_strategy_ledger AS a
-        WHERE a.fkey_user_id = a_user_id
-            AND a.fkey_strategy_id = a_strategy_id
-            AND a.balance != a_old_balance
-    ) THEN
-        RETURN QUERY SELECT FALSE;
-        RETURN;
-    END IF;
-    -- update balance
-    UPDATE tbl.user_strategy_ledger AS a
-    SET balance = a_new_balance, updated_at = EXTRACT(EPOCH FROM NOW())::BIGINT
-    WHERE a.fkey_user_id = a_user_id
-        AND a.fkey_strategy_id = a_strategy_id;
-    RETURN QUERY SELECT TRUE;
-END
-            
-$$;
-        
-
 CREATE OR REPLACE FUNCTION api.fun_admin_list_users(a_limit bigint, a_offset bigint, a_user_id bigint DEFAULT NULL, a_address varchar DEFAULT NULL, a_username varchar DEFAULT NULL, a_email varchar DEFAULT NULL, a_role enum_role DEFAULT NULL)
 RETURNS table (
     "total" bigint,
@@ -2332,8 +2264,6 @@ BEGIN
       s.approved as approved,
       s.approved_at as approved_at,
       s.pending_approval as pending_approval,
-      w.address as linked_wallet,
-      w.blockchain as linked_wallet_blockchain,
       s.created_at as created_at,
       u.public_id as creator_public_id,
       u.pkey_id as creator_id,
@@ -2514,55 +2444,10 @@ BEGIN
         VALUES (_expert_watched_wallet_id, a_blockchain, a_transaction_hash, a_dex, a_contract_address,
                 _fkey_token_in, _fkey_token_out, a_amount_in, a_amount_out, a_happened_at)
         RETURNING pkey_id
-        INTO _strategy_watching_wallet_trade_history;
+        INTO _strategy_watching_wallet_trade_history_id;
         RETURN QUERY SELECT _strategy_watching_wallet_trade_history_id, _expert_watched_wallet_id,
                             _fkey_token_in, _fkey_token_in_name, _fkey_token_out, _fkey_token_out_name;
     END IF;
-END
-        
-$$;
-        
-
-CREATE OR REPLACE FUNCTION api.fun_watcher_list_wallet_activity_history(a_address varchar, a_blockchain enum_block_chain)
-RETURNS table (
-    "wallet_activity_history_id" bigint,
-    "address" varchar,
-    "transaction_hash" varchar,
-    "blockchain" enum_block_chain,
-    "dex" varchar,
-    "contract_address" varchar,
-    "token_in_address" varchar,
-    "token_out_address" varchar,
-    "caller_address" varchar,
-    "amount_in" varchar,
-    "amount_out" varchar,
-    "swap_calls" jsonb,
-    "paths" jsonb,
-    "dex_versions" jsonb,
-    "created_at" bigint
-)
-LANGUAGE plpgsql
-AS $$
-    
-BEGIN
-    RETURN QUERY SELECT a.pkey_id,
-                      a.address,
-                      a.transaction_hash,
-                      a.blockchain,
-                      a.dex,
-                      a.contract_address,
-                      a.token_in_address,
-                      a.token_out_address,
-                      a.caller_address,
-                      a.amount_in,
-                      a.amount_out,
-                      a.swap_calls,
-                      a.paths,
-                      a.dex_versions,
-                      a.created_at
-                 FROM tbl.wallet_activity_history AS a
-                 WHERE a.address = a_address
-                   AND a.blockchain = a_blockchain;
 END
         
 $$;

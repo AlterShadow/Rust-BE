@@ -114,7 +114,6 @@ async fn main() -> Result<()> {
     server.add_handler(MethodExpertRemoveStrategyWatchingWallet {
         logger: audit_logger.clone(),
     });
-    server.add_handler(MethodUserListWalletActivityHistory);
     server.add_handler(MethodUserListStrategyInitialTokenRatio);
     server.add_handler(MethodUserGetDepositTokens);
     server.add_handler(MethodUserGetDepositAddresses {

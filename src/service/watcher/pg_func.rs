@@ -115,57 +115,10 @@ BEGIN
         VALUES (_expert_watched_wallet_id, a_blockchain, a_transaction_hash, a_dex, a_contract_address,
                 _fkey_token_in, _fkey_token_out, a_amount_in, a_amount_out, a_happened_at)
         RETURNING pkey_id
-        INTO _strategy_watching_wallet_trade_history;
+        INTO _strategy_watching_wallet_trade_history_id;
         RETURN QUERY SELECT _strategy_watching_wallet_trade_history_id, _expert_watched_wallet_id,
                             _fkey_token_in, _fkey_token_in_name, _fkey_token_out, _fkey_token_out_name;
     END IF;
-END
-        "#,
-        ),
-        // depcreated
-        ProceduralFunction::new(
-            "fun_watcher_list_wallet_activity_history",
-            vec![
-                Field::new("address", Type::String),
-                Field::new("blockchain", Type::enum_ref("block_chain")),
-            ],
-            vec![
-                Field::new("wallet_activity_history_id", Type::BigInt),
-                Field::new("address", Type::String),
-                Field::new("transaction_hash", Type::String),
-                Field::new("blockchain", Type::enum_ref("block_chain")),
-                Field::new("dex", Type::optional(Type::String)),
-                Field::new("contract_address", Type::String),
-                Field::new("token_in_address", Type::optional(Type::String)),
-                Field::new("token_out_address", Type::optional(Type::String)),
-                Field::new("caller_address", Type::String),
-                Field::new("amount_in", Type::optional(Type::String)),
-                Field::new("amount_out", Type::optional(Type::String)),
-                Field::new("swap_calls", Type::optional(Type::Object)),
-                Field::new("paths", Type::optional(Type::Object)),
-                Field::new("dex_versions", Type::optional(Type::Object)),
-                Field::new("created_at", Type::optional(Type::BigInt)),
-            ],
-            r#"
-BEGIN
-    RETURN QUERY SELECT a.pkey_id,
-                      a.address,
-                      a.transaction_hash,
-                      a.blockchain,
-                      a.dex,
-                      a.contract_address,
-                      a.token_in_address,
-                      a.token_out_address,
-                      a.caller_address,
-                      a.amount_in,
-                      a.amount_out,
-                      a.swap_calls,
-                      a.paths,
-                      a.dex_versions,
-                      a.created_at
-                 FROM tbl.wallet_activity_history AS a
-                 WHERE a.address = a_address
-                   AND a.blockchain = a_blockchain;
 END
         "#,
         ),

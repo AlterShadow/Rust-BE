@@ -446,15 +446,6 @@ pub struct FunUserListTopPerformingStrategiesRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
-pub struct FunUserListUserStrategyLedgerRespRow {
-    pub ledger_id: i64,
-    pub user_id: i64,
-    pub strategy_id: i64,
-    pub balance: String,
-    pub updated_at: String,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserRemoveRegisteredWalletRespRow {}
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -533,11 +524,6 @@ pub struct FunUserUpdateStrategyRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
-pub struct FunUserUpdateUserStrategyLedgerRespRow {
-    pub success: bool,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunWatcherAddStrategyPoolContractRespRow {
     pub pkey_id: i64,
 }
@@ -591,34 +577,6 @@ pub struct FunWatcherListUserStrategyLedgerRespRow {
     pub strategy_pool_contract_address: String,
     pub user_strategy_wallet_address: String,
     pub entry: String,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
-pub struct FunWatcherListWalletActivityHistoryRespRow {
-    pub wallet_activity_history_id: i64,
-    pub address: String,
-    pub transaction_hash: String,
-    pub blockchain: EnumBlockChain,
-    #[serde(default)]
-    pub dex: Option<String>,
-    pub contract_address: String,
-    #[serde(default)]
-    pub token_in_address: Option<String>,
-    #[serde(default)]
-    pub token_out_address: Option<String>,
-    pub caller_address: String,
-    #[serde(default)]
-    pub amount_in: Option<String>,
-    #[serde(default)]
-    pub amount_out: Option<String>,
-    #[serde(default)]
-    pub swap_calls: Option<serde_json::Value>,
-    #[serde(default)]
-    pub paths: Option<serde_json::Value>,
-    #[serde(default)]
-    pub dex_versions: Option<serde_json::Value>,
-    #[serde(default)]
-    pub created_at: Option<i64>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -2023,51 +1981,6 @@ impl DatabaseRequest for FunUserListAuditRulesReq {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunUserListUserStrategyLedgerReq {
-    pub user_id: i64,
-    #[serde(default)]
-    pub strategy_id: Option<i64>,
-}
-
-#[allow(unused_variables)]
-impl DatabaseRequest for FunUserListUserStrategyLedgerReq {
-    type ResponseRow = FunUserListUserStrategyLedgerRespRow;
-    fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_list_user_strategy_ledger(a_user_id => $1::bigint, a_strategy_id => $2::bigint);"
-    }
-    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
-        vec![
-            &self.user_id as &(dyn ToSql + Sync),
-            &self.strategy_id as &(dyn ToSql + Sync),
-        ]
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunUserUpdateUserStrategyLedgerReq {
-    pub user_id: i64,
-    pub strategy_id: i64,
-    pub old_balance: String,
-    pub new_balance: String,
-}
-
-#[allow(unused_variables)]
-impl DatabaseRequest for FunUserUpdateUserStrategyLedgerReq {
-    type ResponseRow = FunUserUpdateUserStrategyLedgerRespRow;
-    fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_update_user_strategy_ledger(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_old_balance => $3::varchar, a_new_balance => $4::varchar);"
-    }
-    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
-        vec![
-            &self.user_id as &(dyn ToSql + Sync),
-            &self.strategy_id as &(dyn ToSql + Sync),
-            &self.old_balance as &(dyn ToSql + Sync),
-            &self.new_balance as &(dyn ToSql + Sync),
-        ]
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAdminListUsersReq {
     pub limit: i64,
     pub offset: i64,
@@ -2494,26 +2407,6 @@ impl DatabaseRequest for FunWatcherSaveStrategyWatchingWalletTradeHistoryReq {
             &self.amount_in as &(dyn ToSql + Sync),
             &self.amount_out as &(dyn ToSql + Sync),
             &self.happened_at as &(dyn ToSql + Sync),
-        ]
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunWatcherListWalletActivityHistoryReq {
-    pub address: String,
-    pub blockchain: EnumBlockChain,
-}
-
-#[allow(unused_variables)]
-impl DatabaseRequest for FunWatcherListWalletActivityHistoryReq {
-    type ResponseRow = FunWatcherListWalletActivityHistoryRespRow;
-    fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_watcher_list_wallet_activity_history(a_address => $1::varchar, a_blockchain => $2::enum_block_chain);"
-    }
-    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
-        vec![
-            &self.address as &(dyn ToSql + Sync),
-            &self.blockchain as &(dyn ToSql + Sync),
         ]
     }
 }

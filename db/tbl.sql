@@ -250,6 +250,7 @@ CREATE INDEX strategy_watching_wallet_trade_history_idx_1 on tbl.strategy_watchi
 CREATE TABLE tbl.strategy_whitelisted_token (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_strategy_whitelisted_token_id'),
     fkey_strategy_id bigint  NOT NULL,
+    token_name varchar(32) NOT NULL,
     CONSTRAINT strategy_whitelisted_token_pk PRIMARY KEY (pkey_id)
 );
 

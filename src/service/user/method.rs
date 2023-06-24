@@ -2033,54 +2033,6 @@ impl RequestHandler for MethodExpertRemoveStrategyWatchingWallet {
     }
 }
 
-pub struct MethodUserListWalletActivityHistory;
-
-impl RequestHandler for MethodUserListWalletActivityHistory {
-    type Request = UserListWalletActivityHistoryRequest;
-
-    fn handle(
-        &self,
-        toolbox: &Toolbox,
-        ctx: RequestContext,
-
-        req: Self::Request,
-    ) -> FutureResponse<Self::Request> {
-        let db: DbClient = toolbox.get_db();
-
-        async move {
-            let ret = db
-                .execute(FunWatcherListWalletActivityHistoryReq {
-                    address: req.wallet_address,
-                    blockchain: req.blockchain,
-                })
-                .await?;
-
-            Ok(UserListWalletActivityHistoryResponse {
-                wallet_activities: ret
-                    .into_iter()
-                    .map(|x| ListWalletActivityHistoryRow {
-                        record_id: x.wallet_activity_history_id,
-                        wallet_address: x.address,
-                        blockchain: x.blockchain,
-                        contract_address: x.contract_address,
-                        token_in_address: x.token_in_address.unwrap_or_default(),
-                        token_out_address: x.token_out_address.unwrap_or_default(),
-                        caller_address: x.caller_address,
-                        amount_in: x.amount_in.unwrap_or_default(),
-                        amount_out: x.amount_out.unwrap_or_default(),
-                        swap_calls: x.swap_calls.unwrap_or_default(),
-                        paths: x.paths.unwrap_or_default(),
-                        dex_versions: x.dex_versions.unwrap_or_default(),
-                        dex: x.dex.unwrap_or_default(),
-                        transaction_hash: x.transaction_hash,
-                        created_at: x.created_at.unwrap_or_default(),
-                    })
-                    .collect(),
-            })
-        }
-        .boxed()
-    }
-}
 pub async fn on_user_request_refund(
     _conn: &EthereumRpcConnection,
     ctx: &RequestContext,

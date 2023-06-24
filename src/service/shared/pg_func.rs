@@ -66,8 +66,6 @@ pub fn get_strategy(followed: &str) -> String {
       s.approved as approved,
       s.approved_at as approved_at,
       s.pending_approval as pending_approval,
-      w.address as linked_wallet,
-      w.blockchain as linked_wallet_blockchain,
       s.created_at as created_at,
       u.public_id as creator_public_id,
       u.pkey_id as creator_id,
