@@ -278,7 +278,7 @@ BEGIN
                         a.address AS login_wallet_address,
                         a.created_at AS joined_at
                  FROM tbl.user AS a
-                 JOIN tbl.user_back_strategy_history AS b ON b.fkey_user_id = a.pkey_id
+                 JOIN tbl.user_back_exit_strategy_ledger AS b ON b.fkey_user_id = a.pkey_id
                 WHERE (a_user_id ISNULL OR a.pkey_id = a_user_id)
                         AND (a_user_public_id ISNULL OR a.public_id = a_user_public_id)
                         AND (a_username ISNULL OR a.username ILIKE a_username || '%')

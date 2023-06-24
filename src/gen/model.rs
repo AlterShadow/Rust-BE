@@ -282,11 +282,11 @@ pub enum EnumEndpoint {
     #[postgres(name = "UserListBackedStrategies")]
     UserListBackedStrategies = 20090,
     ///
-    #[postgres(name = "UserListBackStrategyHistory")]
-    UserListBackStrategyHistory = 20100,
+    #[postgres(name = "UserListBackStrategyLedger")]
+    UserListBackStrategyLedger = 20100,
     ///
-    #[postgres(name = "UserListExitStrategyHistory")]
-    UserListExitStrategyHistory = 20120,
+    #[postgres(name = "UserListExitStrategyLedger")]
+    UserListExitStrategyLedger = 20120,
     ///
     #[postgres(name = "UserFollowExpert")]
     UserFollowExpert = 20130,
@@ -342,8 +342,8 @@ pub enum EnumEndpoint {
     #[postgres(name = "UserListStrategyWatchingWallets")]
     UserListStrategyWatchingWallets = 20290,
     ///
-    #[postgres(name = "UserListWalletActivityHistory")]
-    UserListWalletActivityHistory = 20300,
+    #[postgres(name = "UserListWalletActivityLedger")]
+    UserListWalletActivityLedger = 20300,
     ///
     #[postgres(name = "ExpertAddStrategyInitialTokenRatio")]
     ExpertAddStrategyInitialTokenRatio = 20310,
@@ -366,11 +366,11 @@ pub enum EnumEndpoint {
     #[postgres(name = "UserGetDepositAddresses")]
     UserGetDepositAddresses = 20370,
     ///
-    #[postgres(name = "UserListDepositHistory")]
-    UserListDepositHistory = 20380,
+    #[postgres(name = "UserListDepositLedger")]
+    UserListDepositLedger = 20380,
     ///
-    #[postgres(name = "UserSubscribeDepositHistory")]
-    UserSubscribeDepositHistory = 20381,
+    #[postgres(name = "UserSubscribeDepositLedger")]
+    UserSubscribeDepositLedger = 20381,
     ///
     #[postgres(name = "UserListStrategyWallets")]
     UserListStrategyWallets = 20390,
@@ -429,8 +429,8 @@ pub enum EnumEndpoint {
     #[postgres(name = "AdminRejectStrategy")]
     AdminRejectStrategy = 30130,
     ///
-    #[postgres(name = "AdminAddWalletActivityHistory")]
-    AdminAddWalletActivityHistory = 31001,
+    #[postgres(name = "AdminAddWalletActivityLedger")]
+    AdminAddWalletActivityLedger = 31001,
     ///
     #[postgres(name = "AdminAddAuditRule")]
     AdminAddAuditRule = 31002,
@@ -789,7 +789,7 @@ pub struct AdminAddAuditRuleRequest {
 pub struct AdminAddAuditRuleResponse {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct AdminAddWalletActivityHistoryRequest {
+pub struct AdminAddWalletActivityLedgerRequest {
     pub wallet_address: String,
     pub blockchain: EnumBlockChain,
     pub transaction_hash: String,
@@ -816,7 +816,7 @@ pub struct AdminAddWalletActivityHistoryRequest {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct AdminAddWalletActivityHistoryResponse {}
+pub struct AdminAddWalletActivityLedgerResponse {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminApproveStrategyRequest {
@@ -977,7 +977,7 @@ pub struct AdminListUsersResponse {
 pub struct AdminNotifyEscrowLedgerChangeRequest {
     pub pkey_id: i64,
     pub user_id: i64,
-    pub entry: UserListDepositHistoryRow,
+    pub balance: UserListDepositLedgerRow,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1035,8 +1035,8 @@ pub struct AdminUpdateSystemConfigResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct AumHistoryRow {
-    pub aum_history_id: i64,
+pub struct AumLedgerRow {
+    pub aum_ledger_id: i64,
     pub base_token: String,
     pub quote_token: String,
     pub blockchain: EnumBlockChain,
@@ -1065,15 +1065,15 @@ pub struct AuthorizeResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct BackHistoryPoint {
+pub struct BackLedgerPoint {
     pub time: i64,
     pub backer_count: f64,
     pub backer_quantity_usd: f64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct BackStrategyHistoryRow {
-    pub back_history_id: i64,
+pub struct BackStrategyLedgerRow {
+    pub back_ledger_id: i64,
     pub strategy_id: i64,
     pub quantity: String,
     pub blockchain: EnumBlockChain,
@@ -1096,8 +1096,8 @@ pub struct ChangeLoginWalletRequest {
 pub struct ChangeLoginWalletResponse {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct ExitStrategyHistoryRow {
-    pub exit_history_id: i64,
+pub struct ExitStrategyLedgerRow {
+    pub exit_ledger_id: i64,
     pub strategy_id: i64,
     pub exit_quantity: String,
     pub blockchain: EnumBlockChain,
@@ -1253,7 +1253,7 @@ pub struct ExpertUpdateStrategyResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct FollowHistoryPoint {
+pub struct FollowLedgerPoint {
     pub time: i64,
     pub follower_count: f64,
 }
@@ -1381,7 +1381,7 @@ pub struct ListUserRow {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct ListWalletActivityHistoryRow {
+pub struct ListWalletActivityLedgerRow {
     pub record_id: i64,
     pub wallet_address: String,
     pub transaction_hash: String,
@@ -1636,7 +1636,7 @@ pub struct UserGetStrategyRequest {
 pub struct UserGetStrategyResponse {
     pub strategy: ListStrategiesRow,
     pub watching_wallets: Vec<WatchingWalletRow>,
-    pub aum_history: Vec<AumHistoryRow>,
+    pub aum_ledger: Vec<AumLedgerRow>,
     pub audit_rules: Vec<UserListStrategyAuditRulesRow>,
     pub whitelisted_tokens: Vec<String>,
 }
@@ -1650,8 +1650,8 @@ pub struct UserGetStrategyStatisticsRequest {
 pub struct UserGetStrategyStatisticsResponse {
     pub strategy_id: i64,
     pub net_value: Vec<NetValuePoint>,
-    pub follow_history: Vec<FollowHistoryPoint>,
-    pub back_history: Vec<BackHistoryPoint>,
+    pub follow_ledger: Vec<FollowLedgerPoint>,
+    pub back_ledger: Vec<BackLedgerPoint>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1671,7 +1671,7 @@ pub struct UserGetUserProfileResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserListBackStrategyHistoryRequest {
+pub struct UserListBackStrategyLedgerRequest {
     #[serde(default)]
     pub limit: Option<i64>,
     #[serde(default)]
@@ -1679,8 +1679,8 @@ pub struct UserListBackStrategyHistoryRequest {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserListBackStrategyHistoryResponse {
-    pub back_history: Vec<BackStrategyHistoryRow>,
+pub struct UserListBackStrategyLedgerResponse {
+    pub back_ledger: Vec<BackStrategyLedgerRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1697,7 +1697,7 @@ pub struct UserListBackedStrategiesResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserListDepositHistoryRequest {
+pub struct UserListDepositLedgerRequest {
     #[serde(default)]
     pub limit: Option<i64>,
     #[serde(default)]
@@ -1705,12 +1705,12 @@ pub struct UserListDepositHistoryRequest {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserListDepositHistoryResponse {
-    pub history: Vec<UserListDepositHistoryRow>,
+pub struct UserListDepositLedgerResponse {
+    pub ledger: Vec<UserListDepositLedgerRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserListDepositHistoryRow {
+pub struct UserListDepositLedgerRow {
     pub blockchain: EnumBlockChain,
     pub user_address: String,
     pub contract_address: String,
@@ -1721,7 +1721,7 @@ pub struct UserListDepositHistoryRow {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserListExitStrategyHistoryRequest {
+pub struct UserListExitStrategyLedgerRequest {
     #[serde(default)]
     pub strategy_id: Option<i64>,
     #[serde(default)]
@@ -1731,8 +1731,8 @@ pub struct UserListExitStrategyHistoryRequest {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserListExitStrategyHistoryResponse {
-    pub exit_history: Vec<ExitStrategyHistoryRow>,
+pub struct UserListExitStrategyLedgerResponse {
+    pub exit_ledger: Vec<ExitStrategyLedgerRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1981,14 +1981,14 @@ pub struct UserListTopPerformingStrategiesResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserListWalletActivityHistoryRequest {
+pub struct UserListWalletActivityLedgerRequest {
     pub wallet_address: String,
     pub blockchain: EnumBlockChain,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserListWalletActivityHistoryResponse {
-    pub wallet_activities: Vec<ListWalletActivityHistoryRow>,
+pub struct UserListWalletActivityLedgerResponse {
+    pub wallet_activities: Vec<ListWalletActivityLedgerRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -2027,10 +2027,10 @@ pub struct UserRequestRefundResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserSubscribeDepositHistoryRequest {}
+pub struct UserSubscribeDepositLedgerRequest {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserSubscribeDepositHistoryResponse {}
+pub struct UserSubscribeDepositLedgerResponse {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserUnfollowExpertRequest {
@@ -3103,13 +3103,13 @@ impl WsRequest for UserGetStrategyRequest {
       }
     },
     {
-      "name": "aum_history",
+      "name": "aum_ledger",
       "ty": {
         "DataTable": {
-          "name": "AumHistoryRow",
+          "name": "AumLedgerRow",
           "fields": [
             {
-              "name": "aum_history_id",
+              "name": "aum_ledger_id",
               "ty": "BigInt"
             },
             {
@@ -3244,10 +3244,10 @@ impl WsRequest for UserGetStrategyStatisticsRequest {
       }
     },
     {
-      "name": "follow_history",
+      "name": "follow_ledger",
       "ty": {
         "DataTable": {
-          "name": "FollowHistoryPoint",
+          "name": "FollowLedgerPoint",
           "fields": [
             {
               "name": "time",
@@ -3262,10 +3262,10 @@ impl WsRequest for UserGetStrategyStatisticsRequest {
       }
     },
     {
-      "name": "back_history",
+      "name": "back_ledger",
       "ty": {
         "DataTable": {
-          "name": "BackHistoryPoint",
+          "name": "BackLedgerPoint",
           "fields": [
             {
               "name": "time",
@@ -3641,11 +3641,11 @@ impl WsResponse for UserListBackedStrategiesResponse {
     type Request = UserListBackedStrategiesRequest;
 }
 
-impl WsRequest for UserListBackStrategyHistoryRequest {
-    type Response = UserListBackStrategyHistoryResponse;
+impl WsRequest for UserListBackStrategyLedgerRequest {
+    type Response = UserListBackStrategyLedgerResponse;
     const METHOD_ID: u32 = 20100;
     const SCHEMA: &'static str = r#"{
-  "name": "UserListBackStrategyHistory",
+  "name": "UserListBackStrategyLedger",
   "code": 20100,
   "parameters": [
     {
@@ -3663,13 +3663,13 @@ impl WsRequest for UserListBackStrategyHistoryRequest {
   ],
   "returns": [
     {
-      "name": "back_history",
+      "name": "back_ledger",
       "ty": {
         "DataTable": {
-          "name": "BackStrategyHistoryRow",
+          "name": "BackStrategyLedgerRow",
           "fields": [
             {
-              "name": "back_history_id",
+              "name": "back_ledger_id",
               "ty": "BigInt"
             },
             {
@@ -3708,15 +3708,15 @@ impl WsRequest for UserListBackStrategyHistoryRequest {
   "json_schema": null
 }"#;
 }
-impl WsResponse for UserListBackStrategyHistoryResponse {
-    type Request = UserListBackStrategyHistoryRequest;
+impl WsResponse for UserListBackStrategyLedgerResponse {
+    type Request = UserListBackStrategyLedgerRequest;
 }
 
-impl WsRequest for UserListExitStrategyHistoryRequest {
-    type Response = UserListExitStrategyHistoryResponse;
+impl WsRequest for UserListExitStrategyLedgerRequest {
+    type Response = UserListExitStrategyLedgerResponse;
     const METHOD_ID: u32 = 20120;
     const SCHEMA: &'static str = r#"{
-  "name": "UserListExitStrategyHistory",
+  "name": "UserListExitStrategyLedger",
   "code": 20120,
   "parameters": [
     {
@@ -3740,13 +3740,13 @@ impl WsRequest for UserListExitStrategyHistoryRequest {
   ],
   "returns": [
     {
-      "name": "exit_history",
+      "name": "exit_ledger",
       "ty": {
         "DataTable": {
-          "name": "ExitStrategyHistoryRow",
+          "name": "ExitStrategyLedgerRow",
           "fields": [
             {
-              "name": "exit_history_id",
+              "name": "exit_ledger_id",
               "ty": "BigInt"
             },
             {
@@ -3777,8 +3777,8 @@ impl WsRequest for UserListExitStrategyHistoryRequest {
   "json_schema": null
 }"#;
 }
-impl WsResponse for UserListExitStrategyHistoryResponse {
-    type Request = UserListExitStrategyHistoryRequest;
+impl WsResponse for UserListExitStrategyLedgerResponse {
+    type Request = UserListExitStrategyLedgerRequest;
 }
 
 impl WsRequest for UserFollowExpertRequest {
@@ -5348,11 +5348,11 @@ impl WsResponse for UserListStrategyWatchingWalletsResponse {
     type Request = UserListStrategyWatchingWalletsRequest;
 }
 
-impl WsRequest for UserListWalletActivityHistoryRequest {
-    type Response = UserListWalletActivityHistoryResponse;
+impl WsRequest for UserListWalletActivityLedgerRequest {
+    type Response = UserListWalletActivityLedgerResponse;
     const METHOD_ID: u32 = 20300;
     const SCHEMA: &'static str = r#"{
-  "name": "UserListWalletActivityHistory",
+  "name": "UserListWalletActivityLedger",
   "code": 20300,
   "parameters": [
     {
@@ -5371,7 +5371,7 @@ impl WsRequest for UserListWalletActivityHistoryRequest {
       "name": "wallet_activities",
       "ty": {
         "DataTable": {
-          "name": "ListWalletActivityHistoryRow",
+          "name": "ListWalletActivityLedgerRow",
           "fields": [
             {
               "name": "record_id",
@@ -5445,8 +5445,8 @@ impl WsRequest for UserListWalletActivityHistoryRequest {
   "json_schema": null
 }"#;
 }
-impl WsResponse for UserListWalletActivityHistoryResponse {
-    type Request = UserListWalletActivityHistoryRequest;
+impl WsResponse for UserListWalletActivityLedgerResponse {
+    type Request = UserListWalletActivityLedgerRequest;
 }
 
 impl WsRequest for ExpertAddStrategyInitialTokenRatioRequest {
@@ -5822,11 +5822,11 @@ impl WsResponse for UserGetDepositAddressesResponse {
     type Request = UserGetDepositAddressesRequest;
 }
 
-impl WsRequest for UserListDepositHistoryRequest {
-    type Response = UserListDepositHistoryResponse;
+impl WsRequest for UserListDepositLedgerRequest {
+    type Response = UserListDepositLedgerResponse;
     const METHOD_ID: u32 = 20380;
     const SCHEMA: &'static str = r#"{
-  "name": "UserListDepositHistory",
+  "name": "UserListDepositLedger",
   "code": 20380,
   "parameters": [
     {
@@ -5844,11 +5844,11 @@ impl WsRequest for UserListDepositHistoryRequest {
   ],
   "returns": [
     {
-      "name": "history",
+      "name": "ledger",
       "ty": {
         "Vec": {
           "Struct": {
-            "name": "UserListDepositHistoryRow",
+            "name": "UserListDepositLedgerRow",
             "fields": [
               {
                 "name": "blockchain",
@@ -5891,15 +5891,15 @@ impl WsRequest for UserListDepositHistoryRequest {
   "json_schema": null
 }"#;
 }
-impl WsResponse for UserListDepositHistoryResponse {
-    type Request = UserListDepositHistoryRequest;
+impl WsResponse for UserListDepositLedgerResponse {
+    type Request = UserListDepositLedgerRequest;
 }
 
-impl WsRequest for UserSubscribeDepositHistoryRequest {
-    type Response = UserSubscribeDepositHistoryResponse;
+impl WsRequest for UserSubscribeDepositLedgerRequest {
+    type Response = UserSubscribeDepositLedgerResponse;
     const METHOD_ID: u32 = 20381;
     const SCHEMA: &'static str = r#"{
-  "name": "UserSubscribeDepositHistory",
+  "name": "UserSubscribeDepositLedger",
   "code": 20381,
   "parameters": [],
   "returns": [],
@@ -5908,8 +5908,8 @@ impl WsRequest for UserSubscribeDepositHistoryRequest {
   "json_schema": null
 }"#;
 }
-impl WsResponse for UserSubscribeDepositHistoryResponse {
-    type Request = UserSubscribeDepositHistoryRequest;
+impl WsResponse for UserSubscribeDepositLedgerResponse {
+    type Request = UserSubscribeDepositLedgerRequest;
 }
 
 impl WsRequest for UserListStrategyWalletsRequest {
@@ -7060,11 +7060,11 @@ impl WsResponse for AdminRejectStrategyResponse {
     type Request = AdminRejectStrategyRequest;
 }
 
-impl WsRequest for AdminAddWalletActivityHistoryRequest {
-    type Response = AdminAddWalletActivityHistoryResponse;
+impl WsRequest for AdminAddWalletActivityLedgerRequest {
+    type Response = AdminAddWalletActivityLedgerResponse;
     const METHOD_ID: u32 = 31001;
     const SCHEMA: &'static str = r#"{
-  "name": "AdminAddWalletActivityHistory",
+  "name": "AdminAddWalletActivityLedger",
   "code": 31001,
   "parameters": [
     {
@@ -7146,12 +7146,12 @@ impl WsRequest for AdminAddWalletActivityHistoryRequest {
   ],
   "returns": [],
   "stream_response": [],
-  "description": "Admin adds wallet activity history. for mocking purpose",
+  "description": "Admin adds wallet activity Ledger. for mocking purpose",
   "json_schema": null
 }"#;
 }
-impl WsResponse for AdminAddWalletActivityHistoryResponse {
-    type Request = AdminAddWalletActivityHistoryRequest;
+impl WsResponse for AdminAddWalletActivityLedgerResponse {
+    type Request = AdminAddWalletActivityLedgerRequest;
 }
 
 impl WsRequest for AdminAddAuditRuleRequest {
@@ -7200,10 +7200,10 @@ impl WsRequest for AdminNotifyEscrowLedgerChangeRequest {
       "ty": "BigInt"
     },
     {
-      "name": "entry",
+      "name": "balance",
       "ty": {
         "Struct": {
-          "name": "UserListDepositHistoryRow",
+          "name": "UserListDepositLedgerRow",
           "fields": [
             {
               "name": "blockchain",

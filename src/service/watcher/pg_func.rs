@@ -59,7 +59,7 @@ END
         "#,
         ),
         ProceduralFunction::new(
-            "fun_watcher_save_strategy_watching_wallet_trade_history",
+            "fun_watcher_save_strategy_watching_wallet_trade_ledger",
             vec![
                 Field::new("address", Type::String),
                 Field::new("transaction_hash", Type::String),
@@ -73,7 +73,7 @@ END
                 Field::new("happened_at", Type::optional(Type::BigInt)),
             ],
             vec![
-                Field::new("strategy_watching_wallet_trade_history_id", Type::BigInt),
+                Field::new("strategy_watching_wallet_trade_ledger_id", Type::BigInt),
                 Field::new("expert_watched_wallet_id", Type::BigInt),
                 Field::new("fkey_token_in", Type::BigInt),
                 Field::new("fkey_token_in_name", Type::String),
@@ -82,7 +82,7 @@ END
             ],
             r#"
 DECLARE
-    _strategy_watching_wallet_trade_history_id bigint;
+    _strategy_watching_wallet_trade_ledger_id bigint;
     _expert_watched_wallet_id bigint;
     _fkey_token_in            bigint;
     _fkey_token_in_name       varchar;
@@ -105,7 +105,7 @@ BEGIN
     WHERE address = a_token_out_address
       AND blockchain = a_blockchain;
     IF _expert_watched_wallet_id ISNULL AND _fkey_token_in ISNULL AND _fkey_token_out ISNULL THEN
-        INSERT INTO tbl.strategy_watching_wallet_trade_history
+        INSERT INTO tbl.strategy_watching_wallet_trade_ledger
             (
              expert_watched_wallet_id, blockchain,
              transaction_hash, dex, contract_address,
@@ -115,8 +115,8 @@ BEGIN
         VALUES (_expert_watched_wallet_id, a_blockchain, a_transaction_hash, a_dex, a_contract_address,
                 _fkey_token_in, _fkey_token_out, a_amount_in, a_amount_out, a_happened_at)
         RETURNING pkey_id
-        INTO _strategy_watching_wallet_trade_history_id;
-        RETURN QUERY SELECT _strategy_watching_wallet_trade_history_id, _expert_watched_wallet_id,
+        INTO _strategy_watching_wallet_trade_ledger_id;
+        RETURN QUERY SELECT _strategy_watching_wallet_trade_ledger_id, _expert_watched_wallet_id,
                             _fkey_token_in, _fkey_token_in_name, _fkey_token_out, _fkey_token_out_name;
     END IF;
 END
@@ -133,18 +133,18 @@ END
                 Field::new("token_address", Type::String),
                 Field::new("token_name", Type::String),
                 Field::new("token_symbol", Type::String),
-                Field::new("entry", Type::String),
+                Field::new("balance", Type::String),
             ],
             r#"
 BEGIN
-    RETURN QUERY SELECT w.strategy_id,
+    RETURN QUERY SELECT w.fkey_strategy_id,
                         l.blockchain,
                         w.address,
                         t.pkey_id,
                         t.address,
                         t.name,
                         t.symbol,
-                        l.entry
+                        l.balance
                  FROM tbl.strategy_escrow_pending_wallet_balance AS l
                  JOIN tbl.strategy_escrow_pending_wallet_address AS w ON l.fkey_strategy_pending_wallet_address_id = w.pkey_id
                  JOIN tbl.escrow_token_contract_address AS t ON l.fkey_token_id = t.pkey_id
@@ -167,21 +167,21 @@ END
                 Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("strategy_pool_contract_address", Type::String),
                 Field::new("user_strategy_wallet_address", Type::String),
-                Field::new("entry", Type::String),
+                Field::new("balance", Type::String),
             ],
             r#"
 BEGIN
     RETURN QUERY SELECT spc.fkey_strategy_id,
-                        usw.user_id,
+                        usw.fkey_user_id,
                         spc.blockchain,
                         spc.address,
                         usw.address,
-                        usl.entry
+                        usl.balance
                  FROM tbl.user_strategy_balance AS usl
                  JOIN tbl.user_strategy_wallet AS usw ON usw.pkey_id = usl.fkey_user_strategy_wallet_id
                  JOIN tbl.strategy_pool_contract AS spc ON spc.pkey_id = usl.fkey_strategy_pool_contract_id
                  WHERE (a_strategy_id ISNULL OR spc.fkey_strategy_id = a_strategy_id)
-                   AND (a_user_id ISNULL OR usw.user_id = a_user_id)
+                   AND (a_user_id ISNULL OR usw.fkey_user_id = a_user_id)
                    AND (a_blockchain ISNULL OR spc.blockchain = a_blockchain)
                  ORDER BY usl.pkey_id DESC
                  LIMIT a_limit
@@ -195,8 +195,8 @@ END
                 Field::new("address", Type::String),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("token_id", Type::BigInt),
-                Field::new("old_entry", Type::String),
-                Field::new("new_entry", Type::String),
+                Field::new("old_balance", Type::String),
+                Field::new("new_balance", Type::String),
             ],
             vec![Field::new(
                 "expert_listened_wallet_asset_balance_id",
@@ -207,7 +207,7 @@ END
 DECLARE
     _expert_watched_wallet_id bigint;
     _expert_listened_wallet_asset_balance_id bigint;
-    _expert_listened_wallet_asset_balance_old_entry bigint;
+    _expert_listened_wallet_asset_balance_old_balance bigint;
     _pkey_id bigint;
 BEGIN
     SELECT pkey_id INTO _expert_watched_wallet_id
@@ -215,34 +215,33 @@ BEGIN
     WHERE address = a_address
       AND blockchain = a_blockchain;
     ASSERT _expert_watched_wallet_id NOTNULL;
-    SELECT elwal.pkey_id, elwal.entry INTO _expert_listened_wallet_asset_balance_id, _expert_listened_wallet_asset_balance_old_entry
+    SELECT elwal.pkey_id, elwal.balance INTO _expert_listened_wallet_asset_balance_id, _expert_listened_wallet_asset_balance_old_balance
         FROM tbl.expert_listened_wallet_asset_balance AS elwal
-                JOIN tbl.expert_watched_wallet AS eww ON eww.pkey_id = elwal.expert_watched_wallet_pkey_id
+                JOIN tbl.expert_watched_wallet AS eww ON eww.pkey_id = elwal.fkey_expert_watched_wallet_id
         WHERE elwal.fkey_token_id = a_token_id
          AND eww.pkey_id = _expert_watched_wallet_id;
          
     -- insert new entry if not exist
     IF _expert_listened_wallet_asset_balance_id ISNULL THEN
-        INSERT INTO tbl.expert_listened_wallet_asset_balance (fkey_token_id, entry, expert_watched_wallet_pkey_id)
-        VALUES (fkey_token_id, a_new_entry, _expert_listened_wallet_asset_balance_id)
+        INSERT INTO tbl.expert_listened_wallet_asset_balance (fkey_token_id, balance, fkey_expert_watched_wallet_id)
+        VALUES (fkey_token_id, a_new_balance, _expert_listened_wallet_asset_balance_id)
         RETURNING pkey_id
             INTO _pkey_id;
     END IF;
 
-    -- update old entry if exist and equals to old entry
-    IF _expert_listened_wallet_asset_balance_old_entry != a_old_entry THEN
-        RETURN QUERY SELECT _pkey_id;
+    -- update old balance if exist and equals to old balance
+    IF _expert_listened_wallet_asset_balance_old_balance != a_old_balance THEN
+        RETURN;
     END IF;
     UPDATE tbl.expert_listened_wallet_asset_balance
-    SET entry = a_new_entry
-    WHERE expert_watched_wallet_pkey_id = _expert_listened_wallet_asset_balance_id
+    SET balance = a_new_balance
+    WHERE fkey_expert_watched_wallet_id = _expert_listened_wallet_asset_balance_id
       AND fkey_token_id = a_token_id
-      AND entry = a_old_entry
+      AND balance = a_old_balance
     RETURNING pkey_id
         INTO _pkey_id;
     RETURN QUERY SELECT _pkey_id;
 END
-
         "#,
         ),
         ProceduralFunction::new(
@@ -259,7 +258,7 @@ END
                 Field::new("address", Type::String),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("token_id", Type::BigInt),
-                Field::new("entry", Type::String),
+                Field::new("balance", Type::String),
             ],
             r#"
 BEGIN
@@ -268,9 +267,9 @@ BEGIN
         eww.address,
         eww.blockchain,
         elwal.fkey_token_id,
-        elwal.entry
+        elwal.balance
     FROM tbl.expert_listened_wallet_asset_balance AS elwal
-            JOIN tbl.expert_watched_wallet AS eww ON eww.pkey_id = elwal.expert_watched_wallet_pkey_id
+            JOIN tbl.expert_watched_wallet AS eww ON eww.pkey_id = elwal.fkey_expert_watched_wallet_id
     WHERE (a_token_id ISNULL OR elwal.fkey_token_id = a_token_id)
      AND (a_address ISNULL OR eww.address = a_address)
      AND (a_blockchain ISNULL OR blockchain = a_blockchain)

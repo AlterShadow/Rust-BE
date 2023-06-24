@@ -290,7 +290,7 @@ impl RequestHandler for MethodUserGetStrategy {
                         blockchain: x.blockchain,
                         ratio_distribution: x.ratio,
                     }),
-                aum_history: vec![],
+                aum_ledger: vec![],
                 audit_rules: db
                     .execute(FunUserListStrategyAuditRulesReq {
                         strategy_id: req.strategy_id,
@@ -342,12 +342,12 @@ impl RequestHandler for MethodUserGetStrategyStatistics {
                 })
                 .await?;
             let follow_hist = db
-                .execute(FunUserGetStrategyStatisticsFollowHistoryReq {
+                .execute(FunUserGetStrategyStatisticsFollowLedgerReq {
                     strategy_id: req.strategy_id,
                 })
                 .await?;
             let back_hist = db
-                .execute(FunUserGetStrategyStatisticsBackHistoryReq {
+                .execute(FunUserGetStrategyStatisticsBackLedgerReq {
                     strategy_id: req.strategy_id,
                 })
                 .await?;
@@ -361,16 +361,16 @@ impl RequestHandler for MethodUserGetStrategyStatistics {
                         net_value: 0.0,
                     })
                     .collect(),
-                follow_history: follow_hist
+                follow_ledger: follow_hist
                     .into_iter()
-                    .map(|x| FollowHistoryPoint {
+                    .map(|x| FollowLedgerPoint {
                         time: x.time,
                         follower_count: x.follower_count,
                     })
                     .collect(),
-                back_history: back_hist
+                back_ledger: back_hist
                     .into_iter()
-                    .map(|x| BackHistoryPoint {
+                    .map(|x| BackLedgerPoint {
                         time: x.time,
                         backer_count: x.backer_count,
                         backer_quantity_usd: x.backer_quantity_usd,
@@ -1246,9 +1246,9 @@ impl RequestHandler for MethodUserUnfollowStrategy {
     }
 }
 
-pub struct MethodUserListExitStrategyHistory;
-impl RequestHandler for MethodUserListExitStrategyHistory {
-    type Request = UserListExitStrategyHistoryRequest;
+pub struct MethodUserListExitStrategyLedger;
+impl RequestHandler for MethodUserListExitStrategyLedger {
+    type Request = UserListExitStrategyLedgerRequest;
 
     fn handle(
         &self,
@@ -1260,16 +1260,16 @@ impl RequestHandler for MethodUserListExitStrategyHistory {
         async move {
             ensure_user_role(ctx, EnumRole::User)?;
             let ret = db
-                .execute(FunUserListExitStrategyHistoryReq {
+                .execute(FunUserListExitStrategyLedgerReq {
                     user_id: ctx.user_id,
                     strategy_id: None,
                 })
                 .await?;
-            Ok(UserListExitStrategyHistoryResponse {
-                exit_history: ret
+            Ok(UserListExitStrategyLedgerResponse {
+                exit_ledger: ret
                     .into_iter()
-                    .map(|x| ExitStrategyHistoryRow {
-                        exit_history_id: x.exit_history_id,
+                    .map(|x| ExitStrategyLedgerRow {
+                        exit_ledger_id: x.exit_ledger_id,
                         strategy_id: x.strategy_id,
                         exit_quantity: x.exit_quantity,
                         blockchain: x.blockchain,
@@ -2349,9 +2349,9 @@ impl RequestHandler for MethodUserGetDepositAddresses {
         async move { Ok(UserGetDepositAddressesResponse { addresses }) }.boxed()
     }
 }
-pub struct MethodUserListDepositHistory;
-impl RequestHandler for MethodUserListDepositHistory {
-    type Request = UserListDepositHistoryRequest;
+pub struct MethodUserListDepositLedger;
+impl RequestHandler for MethodUserListDepositLedger {
+    type Request = UserListDepositLedgerRequest;
 
     fn handle(
         &self,
@@ -2362,16 +2362,16 @@ impl RequestHandler for MethodUserListDepositHistory {
         let db: DbClient = toolbox.get_db();
         async move {
             let resp = db
-                .execute(FunUserListDepositHistoryReq {
+                .execute(FunUserListDepositLedgerReq {
                     user_id: ctx.user_id,
                     limit: req.limit.unwrap_or(DEFAULT_LIMIT),
                     offset: req.offset.unwrap_or(DEFAULT_OFFSET),
                 })
                 .await?;
-            Ok(UserListDepositHistoryResponse {
-                history: resp
+            Ok(UserListDepositLedgerResponse {
+                ledger: resp
                     .into_iter()
-                    .map(|x| UserListDepositHistoryRow {
+                    .map(|x| UserListDepositLedgerRow {
                         blockchain: x.blockchain,
                         user_address: x.user_address,
                         contract_address: x.contract_address,
@@ -2386,11 +2386,11 @@ impl RequestHandler for MethodUserListDepositHistory {
         .boxed()
     }
 }
-pub struct MethodUserSubscribeDepositHistory {
+pub struct MethodUserSubscribeDepositLedger {
     pub manger: Arc<SubscribeManager<AdminSubscribeTopic>>,
 }
-impl RequestHandler for MethodUserSubscribeDepositHistory {
-    type Request = UserSubscribeDepositHistoryRequest;
+impl RequestHandler for MethodUserSubscribeDepositLedger {
+    type Request = UserSubscribeDepositLedgerRequest;
 
     fn handle(
         &self,
@@ -2401,7 +2401,7 @@ impl RequestHandler for MethodUserSubscribeDepositHistory {
         let manger = self.manger.clone();
         async move {
             manger.subscribe(AdminSubscribeTopic::AdminNotifyEscrowLedgerChange, ctx);
-            Ok(UserSubscribeDepositHistoryResponse {})
+            Ok(UserSubscribeDepositLedgerResponse {})
         }
         .boxed()
     }
@@ -3064,7 +3064,7 @@ mod tests {
         wait_for_confirmations_simple(&conn.eth(), deposit_hash, Duration::from_secs(1), 10)
             .await?;
 
-        /* insert into back strategy history */
+        /* insert into back strategy Ledger */
         /* here ends the back strategy simulation */
         db.execute(FunUserBackStrategyReq {
             user_id: ret.user_id,
@@ -3109,7 +3109,7 @@ mod tests {
 
         /* check user exit strategy is in database */
         let exit_strategy = db
-            .execute(FunUserListExitStrategyHistoryReq {
+            .execute(FunUserListExitStrategyLedgerReq {
                 user_id: ret.user_id,
                 strategy_id: Some(strategy.strategy_id),
             })

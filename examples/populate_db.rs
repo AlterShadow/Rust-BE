@@ -318,12 +318,12 @@ async fn populate_user_apply_become_experts() -> Result<()> {
     join_all(tasks).await;
     Ok(())
 }
-async fn populate_wallet_activity_history() -> Result<()> {
+async fn populate_wallet_activity_ledger() -> Result<()> {
     let admin_signer = get_admin_key();
     let mut admin_client = connect_user("dev-0", &admin_signer.key).await?;
     for _ in 0..100 {
         admin_client
-            .request(AdminAddWalletActivityHistoryRequest {
+            .request(AdminAddWalletActivityLedgerRequest {
                 wallet_address: format!("0x0000000{}", random::<u64>()),
                 blockchain: EnumBlockChain::LocalNet,
                 transaction_hash: format!("0x0000000{}", random::<u64>()),
@@ -351,7 +351,7 @@ async fn main() -> Result<()> {
     populate_audit_rules().await?;
     populate_user_registered_wallets().await?;
     populate_user_apply_become_experts().await?;
-    populate_wallet_activity_history().await?;
+    populate_wallet_activity_ledger().await?;
 
     Ok(())
 }

@@ -1,7 +1,7 @@
 use model::endpoint::*;
 use model::types::{Field, Type};
 use shared_endpoints::{
-    list_experts_datatable, list_strategies_datatable, strategy_row, user_deposit_history_entry,
+    list_experts_datatable, list_strategies_datatable, strategy_row, user_deposit_ledger_entry,
 };
 
 #[path = "../shared/endpoints.rs"]
@@ -122,11 +122,11 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                     ),
                 ),
                 Field::new(
-                    "aum_history",
+                    "aum_ledger",
                     Type::datatable(
-                        "AumHistoryRow",
+                        "AumLedgerRow",
                         vec![
-                            Field::new("aum_history_id", Type::BigInt),
+                            Field::new("aum_ledger_id", Type::BigInt),
                             Field::new("base_token", Type::String),
                             Field::new("quote_token", Type::String),
                             Field::new("blockchain", Type::enum_ref("block_chain")),
@@ -175,9 +175,9 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                     ),
                 ),
                 Field::new(
-                    "follow_history",
+                    "follow_ledger",
                     Type::datatable(
-                        "FollowHistoryPoint",
+                        "FollowLedgerPoint",
                         vec![
                             Field::new("time", Type::BigInt),
                             Field::new("follower_count", Type::Numeric),
@@ -185,9 +185,9 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                     ),
                 ),
                 Field::new(
-                    "back_history",
+                    "back_ledger",
                     Type::datatable(
-                        "BackHistoryPoint",
+                        "BackLedgerPoint",
                         vec![
                             Field::new("time", Type::BigInt),
                             Field::new("backer_count", Type::Numeric),
@@ -268,18 +268,18 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
             vec![Field::new("strategies", list_strategies_datatable())],
         ),
         EndpointSchema::new(
-            "UserListBackStrategyHistory",
+            "UserListBackStrategyLedger",
             20100,
             vec![
                 Field::new("limit", Type::optional(Type::BigInt)),
                 Field::new("offset", Type::optional(Type::BigInt)),
             ],
             vec![Field::new(
-                "back_history",
+                "back_ledger",
                 Type::datatable(
-                    "BackStrategyHistoryRow",
+                    "BackStrategyLedgerRow",
                     vec![
-                        Field::new("back_history_id", Type::BigInt),
+                        Field::new("back_ledger_id", Type::BigInt),
                         Field::new("strategy_id", Type::BigInt),
                         Field::new("quantity", Type::String),
                         Field::new("blockchain", Type::enum_ref("block_chain")),
@@ -292,7 +292,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
         ),
         // endpoint_user_exit_strategy(),
         EndpointSchema::new(
-            "UserListExitStrategyHistory",
+            "UserListExitStrategyLedger",
             20120,
             vec![
                 Field::new("strategy_id", Type::optional(Type::BigInt)),
@@ -300,11 +300,11 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 Field::new("offset", Type::optional(Type::BigInt)),
             ],
             vec![Field::new(
-                "exit_history",
+                "exit_ledger",
                 Type::datatable(
-                    "ExitStrategyHistoryRow",
+                    "ExitStrategyLedgerRow",
                     vec![
-                        Field::new("exit_history_id", Type::BigInt),
+                        Field::new("exit_ledger_id", Type::BigInt),
                         Field::new("strategy_id", Type::BigInt),
                         Field::new("exit_quantity", Type::String),
                         Field::new("blockchain", Type::enum_ref("block_chain")),
@@ -583,7 +583,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
             )],
         ),
         EndpointSchema::new(
-            "UserListWalletActivityHistory",
+            "UserListWalletActivityLedger",
             20300,
             vec![
                 Field::new("wallet_address", Type::String),
@@ -592,7 +592,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
             vec![Field::new(
                 "wallet_activities",
                 Type::datatable(
-                    "ListWalletActivityHistoryRow",
+                    "ListWalletActivityLedgerRow",
                     vec![
                         Field::new("record_id", Type::BigInt),
                         Field::new("wallet_address", Type::String),
@@ -736,18 +736,15 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
             )],
         ),
         EndpointSchema::new(
-            "UserListDepositHistory",
+            "UserListDepositLedger",
             20380,
             vec![
                 Field::new("limit", Type::optional(Type::BigInt)),
                 Field::new("offset", Type::optional(Type::BigInt)),
             ],
-            vec![Field::new(
-                "history",
-                Type::vec(user_deposit_history_entry()),
-            )],
+            vec![Field::new("ledger", Type::vec(user_deposit_ledger_entry()))],
         ),
-        EndpointSchema::new("UserSubscribeDepositHistory", 20381, vec![], vec![]),
+        EndpointSchema::new("UserSubscribeDepositLedger", 20381, vec![], vec![]),
         EndpointSchema::new(
             "UserListStrategyWallets",
             20390,

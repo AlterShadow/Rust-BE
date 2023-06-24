@@ -253,7 +253,7 @@ pub async fn handle_swap(
     /* update wallet activity ledger & make sure this transaction is not a duplicate */
     let saved = state
         .db
-        .execute(FunWatcherSaveStrategyWatchingWalletTradeHistoryReq {
+        .execute(FunWatcherSaveStrategyWatchingWalletTradeLedgerReq {
             address: format!("{:?}", caller.clone()),
             transaction_hash: format!("{:?}", tx.get_hash()),
             blockchain,
@@ -598,7 +598,7 @@ pub async fn handle_eth_escrows(
                 .request(AdminNotifyEscrowLedgerChangeRequest {
                     pkey_id: 0,
                     user_id: user.user_id,
-                    entry: UserListDepositHistoryRow {
+                    entry: UserListDepositLedgerRow {
                         quantity: format!("{:?}", escrow.amount),
                         blockchain,
                         user_address: format!("{:?}", escrow.owner),

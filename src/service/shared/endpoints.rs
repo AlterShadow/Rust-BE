@@ -65,9 +65,9 @@ pub fn expert_row() -> Type {
 pub fn list_experts_datatable() -> Type {
     Type::vec(expert_row())
 }
-pub fn user_deposit_history_entry() -> Type {
+pub fn user_deposit_ledger_entry() -> Type {
     Type::struct_(
-        "UserListDepositHistoryRow",
+        "UserListDepositLedgerRow",
         vec![
             Field::new("blockchain", Type::enum_ref("block_chain")),
             Field::new("user_address", Type::String),

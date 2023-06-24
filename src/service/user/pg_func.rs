@@ -141,7 +141,7 @@ BEGIN
                           a.description AS strategy_description,
                           0.0::double precision AS net_value,
                           (SELECT COUNT(*) FROM tbl.user_follow_strategy WHERE fkey_strategy_id = a.pkey_id AND unfollowed = FALSE) AS followers,
-                          (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_exit_strategy_history AS h WHERE fkey_strategy_id = a.pkey_id) AS backers,
+                          (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_exit_strategy_ledger AS h WHERE fkey_strategy_id = a.pkey_id) AS backers,
                           a.risk_score as risk_score,
                           a.aum as aum
                  FROM tbl.strategy AS a 
@@ -166,7 +166,7 @@ END
             "#,
         ),
         ProceduralFunction::new(
-            "fun_user_get_strategy_statistics_follow_history",
+            "fun_user_get_strategy_statistics_follow_ledger",
             vec![Field::new("strategy_id", Type::BigInt)],
             vec![
                 Field::new("time", Type::BigInt),
@@ -179,7 +179,7 @@ END
             "#,
         ),
         ProceduralFunction::new(
-            "fun_user_get_strategy_statistics_back_history",
+            "fun_user_get_strategy_statistics_back_ledger",
             vec![Field::new("strategy_id", Type::BigInt)],
             vec![
                 Field::new("time", Type::BigInt),
@@ -207,13 +207,13 @@ END
             r#"
  
 BEGIN
-    IF EXISTS(SELECT * FROM  tbl.user_deposit_withdraw_history
+    IF EXISTS(SELECT * FROM  tbl.user_deposit_withdraw_ledger
 			WHERE transaction_hash = a_transaction_hash AND
 			blockchain = a_blockchain
 		) THEN
         RETURN QUERY SELECT FALSE;
     END IF;
-    INSERT INTO tbl.user_deposit_withdraw_history (
+    INSERT INTO tbl.user_deposit_withdraw_ledger (
         fkey_user_id,
         blockchain,
         user_address,
@@ -270,7 +270,7 @@ BEGIN
     UPDATE tbl.strategy SET current_usdc = a_new_current_quantity WHERE pkey_id = a_strategy_id;
     
     -- save record
-    INSERT INTO tbl.user_back_exit_strategy_history (
+    INSERT INTO tbl.user_back_exit_strategy_ledger (
 			fkey_user_id,
 			fkey_strategy_id,
 			blockchain,
@@ -305,7 +305,7 @@ END
 BEGIN
     RETURN QUERY SELECT {strategy}
                  FROM tbl.strategy AS s
-                      JOIN tbl.user_back_exit_strategy_history AS b ON b.fkey_strategy_id = s.pkey_id AND b.fkey_user_id = a_user_id
+                      JOIN tbl.user_back_exit_strategy_ledger AS b ON b.fkey_strategy_id = s.pkey_id AND b.fkey_user_id = a_user_id
                       JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id
 											JOIN tbl.expert_watched_wallet AS w ON w.fkey_user_id = u.pkey_id
                  WHERE b.fkey_user_id = a_user_id
@@ -318,13 +318,13 @@ END
             ),
         ),
         ProceduralFunction::new(
-            "fun_user_list_back_strategy_history",
+            "fun_user_list_back_strategy_ledger",
             vec![
                 Field::new("user_id", Type::BigInt),
                 Field::new("strategy_id", Type::optional(Type::BigInt)),
             ],
             vec![
-                Field::new("back_history_id", Type::BigInt),
+                Field::new("back_ledger_id", Type::BigInt),
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("quantity", Type::String),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
@@ -333,13 +333,13 @@ END
             ],
             r#"
 BEGIN
-    RETURN QUERY SELECT a.pkey_id          AS back_history_id,
+    RETURN QUERY SELECT a.pkey_id          AS back_ledger_id,
                         a.fkey_strategy_id AS strategy_id,
                         a.quantity_of_usdc         AS quantity,
                         a.blockchain       AS blockchain,
                         a.transaction_hash AS transaction_hash,
                         a.happened_at             AS time
-                 FROM tbl.user_back_exit_strategy_history AS a
+                 FROM tbl.user_back_exit_strategy_ledger AS a
                  WHERE a.fkey_user_id = a_user_id
                   AND (a_strategy_id NOTNULL OR a_strategy_id = a.fkey_strategy_id)
 									AND a.is_back = TRUE
@@ -370,7 +370,7 @@ BEGIN
 		WHERE pkey_id = a_strategy_id;
 
 		-- save record
-		INSERT INTO tbl.user_back_exit_strategy_history (
+		INSERT INTO tbl.user_back_exit_strategy_ledger (
 			fkey_user_id,
 			fkey_strategy_id,
 			blockchain,
@@ -393,13 +393,13 @@ END
 "#,
         ),
         ProceduralFunction::new(
-            "fun_user_list_exit_strategy_history",
+            "fun_user_list_exit_strategy_ledger",
             vec![
                 Field::new("user_id", Type::BigInt),
                 Field::new("strategy_id", Type::optional(Type::BigInt)),
             ],
             vec![
-                Field::new("exit_history_id", Type::BigInt),
+                Field::new("exit_ledger_id", Type::BigInt),
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("exit_quantity", Type::String),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
@@ -408,12 +408,12 @@ END
             r#"
 BEGIN
 
-    RETURN QUERY SELECT a.pkey_id AS exit_history_id,
+    RETURN QUERY SELECT a.pkey_id AS exit_ledger_id,
 												a.fkey_strategy_id			AS strategy_id,
 												a.quantity_sp_tokens 		AS exit_quantity,
 												a.blockchain 						AS blockchain,
 												a.happened_at       		AS exit_time
-				FROM tbl.user_back_exit_strategy_history AS a
+				FROM tbl.user_back_exit_strategy_ledger AS a
 				WHERE a.fkey_user_id = a_user_id
 					AND (a_strategy_id NOTNULL OR a_strategy_id = a.fkey_strategy_id)
 					AND a.is_back = FALSE
@@ -905,7 +905,7 @@ BEGIN
                         b.address      AS wallet_address,
                         b.username     AS username,
                         a.happened_at  AS backed_at
-                 FROM tbl.user_back_exit_strategy_history AS a
+                 FROM tbl.user_back_exit_strategy_ledger AS a
                           INNER JOIN tbl.user AS b ON a.fkey_user_id = b.pkey_id
                  WHERE a.fkey_strategy_id = a_strategy_id AND a.is_back = TRUE;
 END
@@ -970,7 +970,7 @@ DECLARE
     existing_id bigint;
 BEGIN
 		SELECT pkey_id INTO existing_id
-		FROM tbl.user_deposit_withdraw_history
+		FROM tbl.user_deposit_withdraw_ledger
 		WHERE transaction_hash = a_transaction_hash AND
 		blockchain = a_blockchain
 		LIMIT 1;
@@ -979,7 +979,7 @@ BEGIN
 				RETURN QUERY SELECT existing_id;
 		END IF;
 
-    RETURN QUERY INSERT INTO tbl.user_deposit_withdraw_history (
+    RETURN QUERY INSERT INTO tbl.user_deposit_withdraw_ledger (
         fkey_user_id,
         blockchain,
         user_address,
@@ -1004,7 +1004,7 @@ END
 "#,
         ),
         ProceduralFunction::new(
-            "fun_user_list_request_refund_history",
+            "fun_user_list_request_refund_ledger",
             vec![
                 Field::new("user_id", Type::BigInt),
                 Field::new("limit", Type::BigInt),
@@ -1020,7 +1020,7 @@ END
             r#"
 BEGIN
     RETURN QUERY SELECT a.pkey_id, a.fkey_user_id, a.blockchain, a.quantity, a.user_address
-		FROM tbl.user_deposit_withdraw_history AS a
+		FROM tbl.user_deposit_withdraw_ledger AS a
 		WHERE fkey_user_id = a_user_id AND is_deposit = FALSE
 		ORDER BY a.pkey_id DESC
 		LIMIT a_limit
@@ -1160,7 +1160,7 @@ END
             ],
             r#"
 BEGIN
-    RETURN QUERY SELECT b.pkey_id, b.username, b.family_name, b.given_name, a.happened_at, b.created_at FROM tbl.user_back_exit_strategy_history AS a
+    RETURN QUERY SELECT b.pkey_id, b.username, b.family_name, b.given_name, a.happened_at, b.created_at FROM tbl.user_back_exit_strategy_ledger AS a
             INNER JOIN tbl.user AS b ON a.fkey_user_id = b.pkey_id
             WHERE a.fkey_user_id = a_user_id
             ORDER BY a.pkey_id
@@ -1170,7 +1170,7 @@ END
             "#,
         ),
         ProceduralFunction::new(
-            "fun_user_list_deposit_history",
+            "fun_user_list_deposit_ledger",
             vec![
                 Field::new("user_id", Type::BigInt),
                 Field::new("limit", Type::BigInt),
@@ -1188,7 +1188,7 @@ END
             r#"
 BEGIN
     RETURN QUERY SELECT a.blockchain, a.user_address, a.escrow_contract_address, a.receiver_address, a.quantity, a.transaction_hash, a.happened_at
-		FROM tbl.user_deposit_withdraw_history AS a
+		FROM tbl.user_deposit_withdraw_ledger AS a
 		WHERE fkey_user_id = a_user_id AND is_deposit = TRUE
 		ORDER BY a.pkey_id DESC
 		LIMIT a_limit

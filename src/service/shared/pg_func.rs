@@ -9,7 +9,7 @@ pub fn get_strategy_followers_count() -> &'static str {
     "(SELECT count(*) FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.unfollowed = FALSE)"
 }
 pub fn get_strategy_backers_count() -> &'static str {
-    "(SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_exit_strategy_history AS h WHERE fkey_strategy_id = s.pkey_id)"
+    "(SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_exit_strategy_ledger AS h WHERE fkey_strategy_id = s.pkey_id)"
 }
 pub fn strategy_row_type() -> Type {
     Type::struct_(
@@ -75,7 +75,7 @@ pub fn get_strategy(followed: &str) -> String {
       s.social_media as social_media,
       s.immutable_audit_rules as immutable_audit_rules,
 			-- sum all strategy pool tokens that user owns for this strategy on all chains
-			(SELECT CAST(SUM(CAST(spt.entry AS NUMERIC)) AS VARCHAR)
+			(SELECT CAST(SUM(CAST(spt.balance AS NUMERIC)) AS VARCHAR)
 			FROM tbl.user_strategy_balance AS spt
 			JOIN tbl.strategy_pool_contract AS spc
 			ON spt.fkey_strategy_pool_contract_id = spc.pkey_id
@@ -129,7 +129,7 @@ pub fn get_expert(followed: &str) -> String {
         u.family_name                                             AS family_name,
         u.given_name                                              AS given_name,
         (SELECT COUNT(DISTINCT d.fkey_user_id) FROM tbl.user_follow_expert AS d WHERE d.fkey_expert_id = e.pkey_id AND unfollowed = FALSE) AS follower_count,
-        (SELECT COUNT(DISTINCT d.fkey_user_id) FROM tbl.user_back_exit_strategy_history AS d JOIN tbl.strategy AS e ON e.pkey_id = d.fkey_strategy_id WHERE e.fkey_user_id = u.pkey_id) AS backer_count,
+        (SELECT COUNT(DISTINCT d.fkey_user_id) FROM tbl.user_back_exit_strategy_ledger AS d JOIN tbl.strategy AS e ON e.pkey_id = d.fkey_strategy_id WHERE e.fkey_user_id = u.pkey_id) AS backer_count,
         e.description                                             AS description,
         e.social_media                                            AS social_media,
         e.risk_score                                              AS risk_score,

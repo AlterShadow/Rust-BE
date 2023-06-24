@@ -495,7 +495,7 @@ impl RequestHandler for MethodAdminNotifyEscrowLedgerChange {
         async move {
             manager.publish_with_filter(
                 AdminSubscribeTopic::AdminNotifyEscrowLedgerChange,
-                &req.entry,
+                &req.balance,
                 |ctx| ctx.user_id == req.user_id,
             );
 

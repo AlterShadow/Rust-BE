@@ -22,16 +22,16 @@ ID: 2
 |20063|UserListTopPerformingStrategies|limit, offset|strategies|User lists top performing strategies|
 |20064|UserListStrategyBackers|strategy_id, limit, offset|backers||
 |20065|UserListStrategyFollowers|strategy_id, limit, offset|followers||
-|20062|UserGetStrategy|strategy_id|strategy, watching_wallets, aum_history, audit_rules, whitelisted_tokens|User gets a strategy|
-|20070|UserGetStrategyStatistics|strategy_id|strategy_id, net_value, follow_history, back_history|User gets a strategy statistics|
+|20062|UserGetStrategy|strategy_id|strategy, watching_wallets, aum_ledger, audit_rules, whitelisted_tokens|User gets a strategy|
+|20070|UserGetStrategyStatistics|strategy_id|strategy_id, net_value, follow_ledger, back_ledger|User gets a strategy statistics|
 |20071|UserGetStrategiesStatistics||tracking_amount_usd, backing_amount_usd, difference_amount_usd, aum_value_usd, current_value_usd, withdrawable_value_usd|User gets statistics of all strategies related to the user|
 |20172|UserUpdateUserProfile|username, family_name, given_name, description, social_media||User update its expert profile|
 |20080|UserBackStrategy|strategy_id, quantity, blockchain|success||
 |20110|UserExitStrategy|strategy_id, quantity, blockchain|success, transaction_hash||
 |20081|UserRequestRefund|quantity, wallet_address, blockchain|success||
 |20090|UserListBackedStrategies|limit, offset|strategies||
-|20100|UserListBackStrategyHistory|limit, offset|back_history||
-|20120|UserListExitStrategyHistory|strategy_id, limit, offset|exit_history||
+|20100|UserListBackStrategyLedger|limit, offset|back_ledger||
+|20120|UserListExitStrategyLedger|strategy_id, limit, offset|exit_ledger||
 |20130|UserFollowExpert|expert_id|success|User follows an expert|
 |20140|UserListFollowedExperts|limit, offset|experts|User lists followed experts|
 |20150|UserUnfollowExpert|expert_id|success|User unfollows an expert|
@@ -50,7 +50,7 @@ ID: 2
 |20270|ExpertAddStrategyWatchingWallet|strategy_id, blockchain, wallet_address, ratio|success, wallet_id||
 |20280|ExpertRemoveStrategyWatchingWallet|strategy_id, wallet_id|success||
 |20290|UserListStrategyWatchingWallets|strategy_id|wallets||
-|20300|UserListWalletActivityHistory|wallet_address, blockchain|wallet_activities||
+|20300|UserListWalletActivityLedger|wallet_address, blockchain|wallet_activities||
 |20310|ExpertAddStrategyInitialTokenRatio|strategy_id, token_name, token_address, blockchain, quantity|success, token_id||
 |20320|ExpertRemoveStrategyInitialTokenRatio|strategy_id, token_id|success||
 |20330|UserListStrategyInitialTokenRatio|strategy_id|token_ratios||
@@ -58,8 +58,8 @@ ID: 2
 |20350|ExpertListBackers|limit, offset|backers||
 |20360|UserGetDepositTokens||tokens||
 |20370|UserGetDepositAddresses||addresses||
-|20380|UserListDepositHistory|limit, offset|history||
-|20381|UserSubscribeDepositHistory||||
+|20380|UserListDepositLedger|limit, offset|ledger||
+|20381|UserSubscribeDepositLedger||||
 |20390|UserListStrategyWallets|blockchain|wallets||
 |20391|UserCreateStrategyWallet|wallet_address, blockchain, adminship|blockchain, address||
 |20400|UserListStrategyAuditRules|strategy_id|audit_rules||
@@ -85,9 +85,9 @@ ID: 3
 |30110|AdminListStrategies|offset, limit, strategy_id, strategy_name, expert_public_id, expert_name, description, pending_approval, approved|strategies||
 |30120|AdminApproveStrategy|strategy_id|success|Admin approves strategy|
 |30130|AdminRejectStrategy|strategy_id|success||
-|31001|AdminAddWalletActivityHistory|wallet_address, blockchain, transaction_hash, dex, contract_address, token_in_address, token_out_address, caller_address, amount_in, amount_out, swap_calls, paths, dex_versions, created_at||Admin adds wallet activity history. for mocking purpose|
+|31001|AdminAddWalletActivityLedger|wallet_address, blockchain, transaction_hash, dex, contract_address, token_in_address, token_out_address, caller_address, amount_in, amount_out, swap_calls, paths, dex_versions, created_at||Admin adds wallet activity Ledger. for mocking purpose|
 |31002|AdminAddAuditRule|rule_id, name, description|||
-|32010|AdminNotifyEscrowLedgerChange|pkey_id, user_id, entry|||
+|32010|AdminNotifyEscrowLedgerChange|pkey_id, user_id, balance|||
 
 # watcher Server
 ID: 4

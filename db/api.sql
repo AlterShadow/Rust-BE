@@ -383,7 +383,7 @@ BEGIN
       s.risk_score as risk_score,
       s.aum as aum,
       (SELECT count(*) FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.unfollowed = FALSE) AS followers,
-      (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_exit_strategy_history AS h WHERE fkey_strategy_id = s.pkey_id) AS backers,
+      (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_exit_strategy_ledger AS h WHERE fkey_strategy_id = s.pkey_id) AS backers,
       TRUE as followed,
       s.requested_at as requested_at,
       s.approved as approved,
@@ -398,7 +398,7 @@ BEGIN
       s.social_media as social_media,
       s.immutable_audit_rules as immutable_audit_rules,
 			-- sum all strategy pool tokens that user owns for this strategy on all chains
-			(SELECT CAST(SUM(CAST(spt.entry AS NUMERIC)) AS VARCHAR)
+			(SELECT CAST(SUM(CAST(spt.balance AS NUMERIC)) AS VARCHAR)
 			FROM tbl.user_strategy_balance AS spt
 			JOIN tbl.strategy_pool_contract AS spc
 			ON spt.fkey_strategy_pool_contract_id = spc.pkey_id
@@ -465,7 +465,7 @@ BEGIN
       s.risk_score as risk_score,
       s.aum as aum,
       (SELECT count(*) FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.unfollowed = FALSE) AS followers,
-      (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_exit_strategy_history AS h WHERE fkey_strategy_id = s.pkey_id) AS backers,
+      (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_exit_strategy_ledger AS h WHERE fkey_strategy_id = s.pkey_id) AS backers,
       EXISTS(SELECT * FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.fkey_user_id = a_user_id AND ufs.unfollowed = FALSE) as followed,
       s.requested_at as requested_at,
       s.approved as approved,
@@ -480,7 +480,7 @@ BEGIN
       s.social_media as social_media,
       s.immutable_audit_rules as immutable_audit_rules,
 			-- sum all strategy pool tokens that user owns for this strategy on all chains
-			(SELECT CAST(SUM(CAST(spt.entry AS NUMERIC)) AS VARCHAR)
+			(SELECT CAST(SUM(CAST(spt.balance AS NUMERIC)) AS VARCHAR)
 			FROM tbl.user_strategy_balance AS spt
 			JOIN tbl.strategy_pool_contract AS spc
 			ON spt.fkey_strategy_pool_contract_id = spc.pkey_id
@@ -529,7 +529,7 @@ BEGIN
                           a.description AS strategy_description,
                           0.0::double precision AS net_value,
                           (SELECT COUNT(*) FROM tbl.user_follow_strategy WHERE fkey_strategy_id = a.pkey_id AND unfollowed = FALSE) AS followers,
-                          (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_exit_strategy_history AS h WHERE fkey_strategy_id = a.pkey_id) AS backers,
+                          (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_exit_strategy_ledger AS h WHERE fkey_strategy_id = a.pkey_id) AS backers,
                           a.risk_score as risk_score,
                           a.aum as aum
                  FROM tbl.strategy AS a 
@@ -557,7 +557,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_get_strategy_statistics_follow_history(a_strategy_id bigint)
+CREATE OR REPLACE FUNCTION api.fun_user_get_strategy_statistics_follow_ledger(a_strategy_id bigint)
 RETURNS table (
     "time" bigint,
     "follower_count" double precision
@@ -572,7 +572,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_get_strategy_statistics_back_history(a_strategy_id bigint)
+CREATE OR REPLACE FUNCTION api.fun_user_get_strategy_statistics_back_ledger(a_strategy_id bigint)
 RETURNS table (
     "time" bigint,
     "backer_count" double precision,
@@ -597,13 +597,13 @@ AS $$
     
  
 BEGIN
-    IF EXISTS(SELECT * FROM  tbl.user_deposit_withdraw_history
+    IF EXISTS(SELECT * FROM  tbl.user_deposit_withdraw_ledger
 			WHERE transaction_hash = a_transaction_hash AND
 			blockchain = a_blockchain
 		) THEN
         RETURN QUERY SELECT FALSE;
     END IF;
-    INSERT INTO tbl.user_deposit_withdraw_history (
+    INSERT INTO tbl.user_deposit_withdraw_ledger (
         fkey_user_id,
         blockchain,
         user_address,
@@ -653,7 +653,7 @@ BEGIN
     UPDATE tbl.strategy SET current_usdc = a_new_current_quantity WHERE pkey_id = a_strategy_id;
     
     -- save record
-    INSERT INTO tbl.user_back_exit_strategy_history (
+    INSERT INTO tbl.user_back_exit_strategy_ledger (
 			fkey_user_id,
 			fkey_strategy_id,
 			blockchain,
@@ -721,7 +721,7 @@ BEGIN
       s.risk_score as risk_score,
       s.aum as aum,
       (SELECT count(*) FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.unfollowed = FALSE) AS followers,
-      (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_exit_strategy_history AS h WHERE fkey_strategy_id = s.pkey_id) AS backers,
+      (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_exit_strategy_ledger AS h WHERE fkey_strategy_id = s.pkey_id) AS backers,
       EXISTS(SELECT * FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.fkey_user_id = a_user_id AND ufs.unfollowed = FALSE) as followed,
       s.requested_at as requested_at,
       s.approved as approved,
@@ -736,7 +736,7 @@ BEGIN
       s.social_media as social_media,
       s.immutable_audit_rules as immutable_audit_rules,
 			-- sum all strategy pool tokens that user owns for this strategy on all chains
-			(SELECT CAST(SUM(CAST(spt.entry AS NUMERIC)) AS VARCHAR)
+			(SELECT CAST(SUM(CAST(spt.balance AS NUMERIC)) AS VARCHAR)
 			FROM tbl.user_strategy_balance AS spt
 			JOIN tbl.strategy_pool_contract AS spc
 			ON spt.fkey_strategy_pool_contract_id = spc.pkey_id
@@ -745,7 +745,7 @@ BEGIN
 			WHERE spc.fkey_strategy_id = s.pkey_id AND usw.fkey_user_id = a_user_id) AS strategy_pool_token
       
                  FROM tbl.strategy AS s
-                      JOIN tbl.user_back_exit_strategy_history AS b ON b.fkey_strategy_id = s.pkey_id AND b.fkey_user_id = a_user_id
+                      JOIN tbl.user_back_exit_strategy_ledger AS b ON b.fkey_strategy_id = s.pkey_id AND b.fkey_user_id = a_user_id
                       JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id
 											JOIN tbl.expert_watched_wallet AS w ON w.fkey_user_id = u.pkey_id
                  WHERE b.fkey_user_id = a_user_id
@@ -757,9 +757,9 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_list_back_strategy_history(a_user_id bigint, a_strategy_id bigint DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_user_list_back_strategy_ledger(a_user_id bigint, a_strategy_id bigint DEFAULT NULL)
 RETURNS table (
-    "back_history_id" bigint,
+    "back_ledger_id" bigint,
     "strategy_id" bigint,
     "quantity" varchar,
     "blockchain" enum_block_chain,
@@ -770,13 +770,13 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY SELECT a.pkey_id          AS back_history_id,
+    RETURN QUERY SELECT a.pkey_id          AS back_ledger_id,
                         a.fkey_strategy_id AS strategy_id,
                         a.quantity_of_usdc         AS quantity,
                         a.blockchain       AS blockchain,
                         a.transaction_hash AS transaction_hash,
                         a.happened_at             AS time
-                 FROM tbl.user_back_exit_strategy_history AS a
+                 FROM tbl.user_back_exit_strategy_ledger AS a
                  WHERE a.fkey_user_id = a_user_id
                   AND (a_strategy_id NOTNULL OR a_strategy_id = a.fkey_strategy_id)
 									AND a.is_back = TRUE
@@ -804,7 +804,7 @@ BEGIN
 		WHERE pkey_id = a_strategy_id;
 
 		-- save record
-		INSERT INTO tbl.user_back_exit_strategy_history (
+		INSERT INTO tbl.user_back_exit_strategy_ledger (
 			fkey_user_id,
 			fkey_strategy_id,
 			blockchain,
@@ -828,9 +828,9 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_list_exit_strategy_history(a_user_id bigint, a_strategy_id bigint DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_user_list_exit_strategy_ledger(a_user_id bigint, a_strategy_id bigint DEFAULT NULL)
 RETURNS table (
-    "exit_history_id" bigint,
+    "exit_ledger_id" bigint,
     "strategy_id" bigint,
     "exit_quantity" varchar,
     "blockchain" enum_block_chain,
@@ -841,12 +841,12 @@ AS $$
     
 BEGIN
 
-    RETURN QUERY SELECT a.pkey_id AS exit_history_id,
+    RETURN QUERY SELECT a.pkey_id AS exit_ledger_id,
 												a.fkey_strategy_id			AS strategy_id,
 												a.quantity_sp_tokens 		AS exit_quantity,
 												a.blockchain 						AS blockchain,
 												a.happened_at       		AS exit_time
-				FROM tbl.user_back_exit_strategy_history AS a
+				FROM tbl.user_back_exit_strategy_ledger AS a
 				WHERE a.fkey_user_id = a_user_id
 					AND (a_strategy_id NOTNULL OR a_strategy_id = a.fkey_strategy_id)
 					AND a.is_back = FALSE
@@ -927,7 +927,7 @@ AS $$
         u.family_name                                             AS family_name,
         u.given_name                                              AS given_name,
         (SELECT COUNT(DISTINCT d.fkey_user_id) FROM tbl.user_follow_expert AS d WHERE d.fkey_expert_id = e.pkey_id AND unfollowed = FALSE) AS follower_count,
-        (SELECT COUNT(DISTINCT d.fkey_user_id) FROM tbl.user_back_exit_strategy_history AS d JOIN tbl.strategy AS e ON e.pkey_id = d.fkey_strategy_id WHERE e.fkey_user_id = u.pkey_id) AS backer_count,
+        (SELECT COUNT(DISTINCT d.fkey_user_id) FROM tbl.user_back_exit_strategy_ledger AS d JOIN tbl.strategy AS e ON e.pkey_id = d.fkey_strategy_id WHERE e.fkey_user_id = u.pkey_id) AS backer_count,
         e.description                                             AS description,
         e.social_media                                            AS social_media,
         e.risk_score                                              AS risk_score,
@@ -993,7 +993,7 @@ BEGIN
         u.family_name                                             AS family_name,
         u.given_name                                              AS given_name,
         (SELECT COUNT(DISTINCT d.fkey_user_id) FROM tbl.user_follow_expert AS d WHERE d.fkey_expert_id = e.pkey_id AND unfollowed = FALSE) AS follower_count,
-        (SELECT COUNT(DISTINCT d.fkey_user_id) FROM tbl.user_back_exit_strategy_history AS d JOIN tbl.strategy AS e ON e.pkey_id = d.fkey_strategy_id WHERE e.fkey_user_id = u.pkey_id) AS backer_count,
+        (SELECT COUNT(DISTINCT d.fkey_user_id) FROM tbl.user_back_exit_strategy_ledger AS d JOIN tbl.strategy AS e ON e.pkey_id = d.fkey_strategy_id WHERE e.fkey_user_id = u.pkey_id) AS backer_count,
         e.description                                             AS description,
         e.social_media                                            AS social_media,
         e.risk_score                                              AS risk_score,
@@ -1068,7 +1068,7 @@ BEGIN
         u.family_name                                             AS family_name,
         u.given_name                                              AS given_name,
         (SELECT COUNT(DISTINCT d.fkey_user_id) FROM tbl.user_follow_expert AS d WHERE d.fkey_expert_id = e.pkey_id AND unfollowed = FALSE) AS follower_count,
-        (SELECT COUNT(DISTINCT d.fkey_user_id) FROM tbl.user_back_exit_strategy_history AS d JOIN tbl.strategy AS e ON e.pkey_id = d.fkey_strategy_id WHERE e.fkey_user_id = u.pkey_id) AS backer_count,
+        (SELECT COUNT(DISTINCT d.fkey_user_id) FROM tbl.user_back_exit_strategy_ledger AS d JOIN tbl.strategy AS e ON e.pkey_id = d.fkey_strategy_id WHERE e.fkey_user_id = u.pkey_id) AS backer_count,
         e.description                                             AS description,
         e.social_media                                            AS social_media,
         e.risk_score                                              AS risk_score,
@@ -1444,7 +1444,7 @@ BEGIN
                         b.address      AS wallet_address,
                         b.username     AS username,
                         a.happened_at  AS backed_at
-                 FROM tbl.user_back_exit_strategy_history AS a
+                 FROM tbl.user_back_exit_strategy_ledger AS a
                           INNER JOIN tbl.user AS b ON a.fkey_user_id = b.pkey_id
                  WHERE a.fkey_strategy_id = a_strategy_id AND a.is_back = TRUE;
 END
@@ -1506,7 +1506,7 @@ DECLARE
     existing_id bigint;
 BEGIN
 		SELECT pkey_id INTO existing_id
-		FROM tbl.user_deposit_withdraw_history
+		FROM tbl.user_deposit_withdraw_ledger
 		WHERE transaction_hash = a_transaction_hash AND
 		blockchain = a_blockchain
 		LIMIT 1;
@@ -1515,7 +1515,7 @@ BEGIN
 				RETURN QUERY SELECT existing_id;
 		END IF;
 
-    RETURN QUERY INSERT INTO tbl.user_deposit_withdraw_history (
+    RETURN QUERY INSERT INTO tbl.user_deposit_withdraw_ledger (
         fkey_user_id,
         blockchain,
         user_address,
@@ -1541,7 +1541,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_list_request_refund_history(a_user_id bigint, a_limit bigint, a_offset bigint)
+CREATE OR REPLACE FUNCTION api.fun_user_list_request_refund_ledger(a_user_id bigint, a_limit bigint, a_offset bigint)
 RETURNS table (
     "request_refund_id" bigint,
     "user_id" bigint,
@@ -1554,7 +1554,7 @@ AS $$
     
 BEGIN
     RETURN QUERY SELECT a.pkey_id, a.fkey_user_id, a.blockchain, a.quantity, a.user_address
-		FROM tbl.user_deposit_withdraw_history AS a
+		FROM tbl.user_deposit_withdraw_ledger AS a
 		WHERE fkey_user_id = a_user_id AND is_deposit = FALSE
 		ORDER BY a.pkey_id DESC
 		LIMIT a_limit
@@ -1686,7 +1686,7 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY SELECT b.pkey_id, b.username, b.family_name, b.given_name, a.happened_at, b.created_at FROM tbl.user_back_exit_strategy_history AS a
+    RETURN QUERY SELECT b.pkey_id, b.username, b.family_name, b.given_name, a.happened_at, b.created_at FROM tbl.user_back_exit_strategy_ledger AS a
             INNER JOIN tbl.user AS b ON a.fkey_user_id = b.pkey_id
             WHERE a.fkey_user_id = a_user_id
             ORDER BY a.pkey_id
@@ -1697,7 +1697,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_list_deposit_history(a_user_id bigint, a_limit bigint, a_offset bigint)
+CREATE OR REPLACE FUNCTION api.fun_user_list_deposit_ledger(a_user_id bigint, a_limit bigint, a_offset bigint)
 RETURNS table (
     "blockchain" enum_block_chain,
     "user_address" varchar,
@@ -1712,7 +1712,7 @@ AS $$
     
 BEGIN
     RETURN QUERY SELECT a.blockchain, a.user_address, a.escrow_contract_address, a.receiver_address, a.quantity, a.transaction_hash, a.happened_at
-		FROM tbl.user_deposit_withdraw_history AS a
+		FROM tbl.user_deposit_withdraw_ledger AS a
 		WHERE fkey_user_id = a_user_id AND is_deposit = TRUE
 		ORDER BY a.pkey_id DESC
 		LIMIT a_limit
@@ -2148,7 +2148,7 @@ BEGIN
         u.family_name                                             AS family_name,
         u.given_name                                              AS given_name,
         (SELECT COUNT(DISTINCT d.fkey_user_id) FROM tbl.user_follow_expert AS d WHERE d.fkey_expert_id = e.pkey_id AND unfollowed = FALSE) AS follower_count,
-        (SELECT COUNT(DISTINCT d.fkey_user_id) FROM tbl.user_back_exit_strategy_history AS d JOIN tbl.strategy AS e ON e.pkey_id = d.fkey_strategy_id WHERE e.fkey_user_id = u.pkey_id) AS backer_count,
+        (SELECT COUNT(DISTINCT d.fkey_user_id) FROM tbl.user_back_exit_strategy_ledger AS d JOIN tbl.strategy AS e ON e.pkey_id = d.fkey_strategy_id WHERE e.fkey_user_id = u.pkey_id) AS backer_count,
         e.description                                             AS description,
         e.social_media                                            AS social_media,
         e.risk_score                                              AS risk_score,
@@ -2198,7 +2198,7 @@ BEGIN
                         a.address AS login_wallet_address,
                         a.created_at AS joined_at
                  FROM tbl.user AS a
-                 JOIN tbl.user_back_strategy_history AS b ON b.fkey_user_id = a.pkey_id
+                 JOIN tbl.user_back_exit_strategy_ledger AS b ON b.fkey_user_id = a.pkey_id
                 WHERE (a_user_id ISNULL OR a.pkey_id = a_user_id)
                         AND (a_user_public_id ISNULL OR a.public_id = a_user_public_id)
                         AND (a_username ISNULL OR a.username ILIKE a_username || '%')
@@ -2258,7 +2258,7 @@ BEGIN
       s.risk_score as risk_score,
       s.aum as aum,
       (SELECT count(*) FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.unfollowed = FALSE) AS followers,
-      (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_exit_strategy_history AS h WHERE fkey_strategy_id = s.pkey_id) AS backers,
+      (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_exit_strategy_ledger AS h WHERE fkey_strategy_id = s.pkey_id) AS backers,
       EXISTS(SELECT * FROM tbl.user_follow_strategy AS ufs WHERE ufs.fkey_strategy_id = s.pkey_id AND ufs.fkey_user_id = a_user_id AND ufs.unfollowed = FALSE) as followed,
       s.requested_at as requested_at,
       s.approved as approved,
@@ -2273,7 +2273,7 @@ BEGIN
       s.social_media as social_media,
       s.immutable_audit_rules as immutable_audit_rules,
 			-- sum all strategy pool tokens that user owns for this strategy on all chains
-			(SELECT CAST(SUM(CAST(spt.entry AS NUMERIC)) AS VARCHAR)
+			(SELECT CAST(SUM(CAST(spt.balance AS NUMERIC)) AS VARCHAR)
 			FROM tbl.user_strategy_balance AS spt
 			JOIN tbl.strategy_pool_contract AS spc
 			ON spt.fkey_strategy_pool_contract_id = spc.pkey_id
@@ -2398,9 +2398,9 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_watcher_save_strategy_watching_wallet_trade_history(a_address varchar, a_transaction_hash varchar, a_blockchain enum_block_chain, a_contract_address varchar, a_dex varchar DEFAULT NULL, a_token_in_address varchar DEFAULT NULL, a_token_out_address varchar DEFAULT NULL, a_amount_in varchar DEFAULT NULL, a_amount_out varchar DEFAULT NULL, a_happened_at bigint DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_watcher_save_strategy_watching_wallet_trade_ledger(a_address varchar, a_transaction_hash varchar, a_blockchain enum_block_chain, a_contract_address varchar, a_dex varchar DEFAULT NULL, a_token_in_address varchar DEFAULT NULL, a_token_out_address varchar DEFAULT NULL, a_amount_in varchar DEFAULT NULL, a_amount_out varchar DEFAULT NULL, a_happened_at bigint DEFAULT NULL)
 RETURNS table (
-    "strategy_watching_wallet_trade_history_id" bigint,
+    "strategy_watching_wallet_trade_ledger_id" bigint,
     "expert_watched_wallet_id" bigint,
     "fkey_token_in" bigint,
     "fkey_token_in_name" varchar,
@@ -2411,7 +2411,7 @@ LANGUAGE plpgsql
 AS $$
     
 DECLARE
-    _strategy_watching_wallet_trade_history_id bigint;
+    _strategy_watching_wallet_trade_ledger_id bigint;
     _expert_watched_wallet_id bigint;
     _fkey_token_in            bigint;
     _fkey_token_in_name       varchar;
@@ -2434,7 +2434,7 @@ BEGIN
     WHERE address = a_token_out_address
       AND blockchain = a_blockchain;
     IF _expert_watched_wallet_id ISNULL AND _fkey_token_in ISNULL AND _fkey_token_out ISNULL THEN
-        INSERT INTO tbl.strategy_watching_wallet_trade_history
+        INSERT INTO tbl.strategy_watching_wallet_trade_ledger
             (
              expert_watched_wallet_id, blockchain,
              transaction_hash, dex, contract_address,
@@ -2444,8 +2444,8 @@ BEGIN
         VALUES (_expert_watched_wallet_id, a_blockchain, a_transaction_hash, a_dex, a_contract_address,
                 _fkey_token_in, _fkey_token_out, a_amount_in, a_amount_out, a_happened_at)
         RETURNING pkey_id
-        INTO _strategy_watching_wallet_trade_history_id;
-        RETURN QUERY SELECT _strategy_watching_wallet_trade_history_id, _expert_watched_wallet_id,
+        INTO _strategy_watching_wallet_trade_ledger_id;
+        RETURN QUERY SELECT _strategy_watching_wallet_trade_ledger_id, _expert_watched_wallet_id,
                             _fkey_token_in, _fkey_token_in_name, _fkey_token_out, _fkey_token_out_name;
     END IF;
 END
@@ -2462,20 +2462,20 @@ RETURNS table (
     "token_address" varchar,
     "token_name" varchar,
     "token_symbol" varchar,
-    "entry" varchar
+    "balance" varchar
 )
 LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY SELECT w.strategy_id,
+    RETURN QUERY SELECT w.fkey_strategy_id,
                         l.blockchain,
                         w.address,
                         t.pkey_id,
                         t.address,
                         t.name,
                         t.symbol,
-                        l.entry
+                        l.balance
                  FROM tbl.strategy_escrow_pending_wallet_balance AS l
                  JOIN tbl.strategy_escrow_pending_wallet_address AS w ON l.fkey_strategy_pending_wallet_address_id = w.pkey_id
                  JOIN tbl.escrow_token_contract_address AS t ON l.fkey_token_id = t.pkey_id
@@ -2492,23 +2492,23 @@ RETURNS table (
     "blockchain" enum_block_chain,
     "strategy_pool_contract_address" varchar,
     "user_strategy_wallet_address" varchar,
-    "entry" varchar
+    "balance" varchar
 )
 LANGUAGE plpgsql
 AS $$
     
 BEGIN
     RETURN QUERY SELECT spc.fkey_strategy_id,
-                        usw.user_id,
+                        usw.fkey_user_id,
                         spc.blockchain,
                         spc.address,
                         usw.address,
-                        usl.entry
+                        usl.balance
                  FROM tbl.user_strategy_balance AS usl
                  JOIN tbl.user_strategy_wallet AS usw ON usw.pkey_id = usl.fkey_user_strategy_wallet_id
                  JOIN tbl.strategy_pool_contract AS spc ON spc.pkey_id = usl.fkey_strategy_pool_contract_id
                  WHERE (a_strategy_id ISNULL OR spc.fkey_strategy_id = a_strategy_id)
-                   AND (a_user_id ISNULL OR usw.user_id = a_user_id)
+                   AND (a_user_id ISNULL OR usw.fkey_user_id = a_user_id)
                    AND (a_blockchain ISNULL OR spc.blockchain = a_blockchain)
                  ORDER BY usl.pkey_id DESC
                  LIMIT a_limit
@@ -2518,7 +2518,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_watcher_upsert_expert_listened_wallet_asset_balance(a_address varchar, a_blockchain enum_block_chain, a_token_id bigint, a_old_entry varchar, a_new_entry varchar)
+CREATE OR REPLACE FUNCTION api.fun_watcher_upsert_expert_listened_wallet_asset_balance(a_address varchar, a_blockchain enum_block_chain, a_token_id bigint, a_old_balance varchar, a_new_balance varchar)
 RETURNS table (
     "expert_listened_wallet_asset_balance_id" bigint
 )
@@ -2529,7 +2529,7 @@ AS $$
 DECLARE
     _expert_watched_wallet_id bigint;
     _expert_listened_wallet_asset_balance_id bigint;
-    _expert_listened_wallet_asset_balance_old_entry bigint;
+    _expert_listened_wallet_asset_balance_old_balance bigint;
     _pkey_id bigint;
 BEGIN
     SELECT pkey_id INTO _expert_watched_wallet_id
@@ -2537,34 +2537,33 @@ BEGIN
     WHERE address = a_address
       AND blockchain = a_blockchain;
     ASSERT _expert_watched_wallet_id NOTNULL;
-    SELECT elwal.pkey_id, elwal.entry INTO _expert_listened_wallet_asset_balance_id, _expert_listened_wallet_asset_balance_old_entry
+    SELECT elwal.pkey_id, elwal.balance INTO _expert_listened_wallet_asset_balance_id, _expert_listened_wallet_asset_balance_old_balance
         FROM tbl.expert_listened_wallet_asset_balance AS elwal
-                JOIN tbl.expert_watched_wallet AS eww ON eww.pkey_id = elwal.expert_watched_wallet_pkey_id
+                JOIN tbl.expert_watched_wallet AS eww ON eww.pkey_id = elwal.fkey_expert_watched_wallet_id
         WHERE elwal.fkey_token_id = a_token_id
          AND eww.pkey_id = _expert_watched_wallet_id;
          
     -- insert new entry if not exist
     IF _expert_listened_wallet_asset_balance_id ISNULL THEN
-        INSERT INTO tbl.expert_listened_wallet_asset_balance (fkey_token_id, entry, expert_watched_wallet_pkey_id)
-        VALUES (fkey_token_id, a_new_entry, _expert_listened_wallet_asset_balance_id)
+        INSERT INTO tbl.expert_listened_wallet_asset_balance (fkey_token_id, balance, fkey_expert_watched_wallet_id)
+        VALUES (fkey_token_id, a_new_balance, _expert_listened_wallet_asset_balance_id)
         RETURNING pkey_id
             INTO _pkey_id;
     END IF;
 
-    -- update old entry if exist and equals to old entry
-    IF _expert_listened_wallet_asset_balance_old_entry != a_old_entry THEN
-        RETURN QUERY SELECT _pkey_id;
+    -- update old balance if exist and equals to old balance
+    IF _expert_listened_wallet_asset_balance_old_balance != a_old_balance THEN
+        RETURN;
     END IF;
     UPDATE tbl.expert_listened_wallet_asset_balance
-    SET entry = a_new_entry
-    WHERE expert_watched_wallet_pkey_id = _expert_listened_wallet_asset_balance_id
+    SET balance = a_new_balance
+    WHERE fkey_expert_watched_wallet_id = _expert_listened_wallet_asset_balance_id
       AND fkey_token_id = a_token_id
-      AND entry = a_old_entry
+      AND balance = a_old_balance
     RETURNING pkey_id
         INTO _pkey_id;
     RETURN QUERY SELECT _pkey_id;
 END
-
         
 $$;
         
@@ -2575,7 +2574,7 @@ RETURNS table (
     "address" varchar,
     "blockchain" enum_block_chain,
     "token_id" bigint,
-    "entry" varchar
+    "balance" varchar
 )
 LANGUAGE plpgsql
 AS $$
@@ -2586,9 +2585,9 @@ BEGIN
         eww.address,
         eww.blockchain,
         elwal.fkey_token_id,
-        elwal.entry
+        elwal.balance
     FROM tbl.expert_listened_wallet_asset_balance AS elwal
-            JOIN tbl.expert_watched_wallet AS eww ON eww.pkey_id = elwal.expert_watched_wallet_pkey_id
+            JOIN tbl.expert_watched_wallet AS eww ON eww.pkey_id = elwal.fkey_expert_watched_wallet_id
     WHERE (a_token_id ISNULL OR elwal.fkey_token_id = a_token_id)
      AND (a_address ISNULL OR eww.address = a_address)
      AND (a_blockchain ISNULL OR blockchain = a_blockchain)

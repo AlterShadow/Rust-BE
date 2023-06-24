@@ -202,7 +202,7 @@ pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
             vec![Field::new("success", Type::Boolean)],
         ),
         EndpointSchema::new(
-            "AdminAddWalletActivityHistory",
+            "AdminAddWalletActivityLedger",
             31001,
             vec![
                 Field::new("wallet_address", Type::String),
@@ -222,7 +222,7 @@ pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
             ],
             vec![],
         )
-        .with_description("Admin adds wallet activity history. for mocking purpose"),
+        .with_description("Admin adds wallet activity Ledger. for mocking purpose"),
         EndpointSchema::new(
             "AdminAddAuditRule",
             31002,
@@ -239,7 +239,7 @@ pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
             vec![
                 Field::new("pkey_id", Type::BigInt),
                 Field::new("user_id", Type::BigInt),
-                Field::new("entry", user_deposit_history_entry()),
+                Field::new("balance", user_deposit_ledger_entry()),
             ],
             vec![],
         ),

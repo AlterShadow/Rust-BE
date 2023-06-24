@@ -163,16 +163,16 @@ async fn test_handle_eth_escrows_anvil() -> Result<()> {
     // TODO: call async function instead of handler directly and remove this sleep
     tokio::time::sleep(Duration::from_secs(20)).await;
 
-    /* check database for user_deposit_history */
+    /* check database for user_deposit_ledger */
     let resp = db
-        .execute(FunUserListDepositHistoryReq {
+        .execute(FunUserListDepositLedgerReq {
             user_id: signup_ret.user_id,
             limit: 1,
             offset: 0,
         })
         .await?
         .into_result()
-        .ok_or_else(|| eyre!("no user deposit history"))?;
+        .ok_or_else(|| eyre!("no user deposit Ledger"))?;
 
     assert_eq!(resp.blockchain, EnumBlockChain::LocalNet);
     assert_eq!(resp.quantity, "1000000000000000".to_string());
@@ -375,7 +375,7 @@ async fn test_handle_eth_swap_mainnet() -> Result<()> {
 
     /* check entry in wallet activity ledger */
     let wallet_activity = db
-        .execute(FunWatcherListWalletActivityHistoryReq {
+        .execute(FunWatcherListWalletActivityLedgerReq {
             address: format!("{:?}", master_key.address()),
             blockchain: EnumBlockChain::BscMainnet,
         })

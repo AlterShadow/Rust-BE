@@ -80,14 +80,14 @@ pub async fn update_expert_listened_wallet_asset_ledger(
     {
         Some(tk) => {
             /* if token_in is already in the database, update it's amount */
-            let old_amount = U256::from_dec_str(&tk.entry)?;
+            let old_amount = U256::from_dec_str(&tk.balance)?;
             let new_amount = old_amount.try_checked_sub(trade.amount_out)?;
             db.execute(FunWatcherUpsertExpertListenedWalletAssetBalanceReq {
                 address: format!("{:?}", expert_watched_wallet_address),
                 blockchain,
                 token_id: token_out_id,
-                old_entry: tk.entry,
-                new_entry: format!("{:?}", new_amount),
+                old_balance: tk.balance,
+                new_balance: format!("{:?}", new_amount),
             })
             .await?;
         }
@@ -109,14 +109,14 @@ pub async fn update_expert_listened_wallet_asset_ledger(
     {
         Some(tk) => {
             /* if token_in is already in the database, update it's amount, or remove it new amount is 0 */
-            let old_amount = U256::from_dec_str(&tk.entry)?;
+            let old_amount = U256::from_dec_str(&tk.balance)?;
             let new_amount = old_amount.try_checked_add(trade.amount_in)?;
             db.execute(FunWatcherUpsertExpertListenedWalletAssetBalanceReq {
                 address: format!("{:?}", expert_watched_wallet_address),
                 blockchain,
                 token_id: token_in_id,
-                old_entry: tk.entry,
-                new_entry: format!("{:?}", new_amount),
+                old_balance: tk.balance,
+                new_balance: format!("{:?}", new_amount),
             })
             .await?;
         }
@@ -127,8 +127,8 @@ pub async fn update_expert_listened_wallet_asset_ledger(
                 address: format!("{:?}", expert_watched_wallet_address),
                 blockchain,
                 token_id: token_in_id,
-                old_entry: format!("{:?}", old_amount),
-                new_entry: format!("{:?}", new_amount),
+                old_balance: format!("{:?}", old_amount),
+                new_balance: format!("{:?}", new_amount),
             })
             .await?;
         }
