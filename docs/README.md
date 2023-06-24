@@ -59,6 +59,7 @@ ID: 2
 |20360|UserGetDepositTokens||tokens||
 |20370|UserGetDepositAddresses||addresses||
 |20380|UserListDepositHistory|limit, offset|history||
+|20381|UserSubscribeDepositHistory||||
 |20390|UserListStrategyWallets|blockchain|wallets||
 |20391|UserCreateStrategyWallet|wallet_address, blockchain, adminship|blockchain, address||
 |20400|UserListStrategyAuditRules|strategy_id|audit_rules||
@@ -86,6 +87,7 @@ ID: 3
 |30130|AdminRejectStrategy|strategy_id|success||
 |31001|AdminAddWalletActivityHistory|wallet_address, blockchain, transaction_hash, dex, contract_address, token_in_address, token_out_address, caller_address, amount_in, amount_out, swap_calls, paths, dex_versions, created_at||Admin adds wallet activity history. for mocking purpose|
 |31002|AdminAddAuditRule|rule_id, name, description|||
+|32010|AdminNotifyEscrowLedgerChange|pkey_id, user_id, entry|||
 
 # watcher Server
 ID: 4

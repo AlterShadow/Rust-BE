@@ -1,5 +1,7 @@
 // TODO: rework Type::datatable to be more ergonomic
 
+use model::types::*;
+
 pub fn strategy_row() -> Type {
     Type::struct_(
         "ListStrategiesRow",
@@ -62,4 +64,18 @@ pub fn expert_row() -> Type {
 }
 pub fn list_experts_datatable() -> Type {
     Type::vec(expert_row())
+}
+pub fn user_deposit_history_entry() -> Type {
+    Type::struct_(
+        "UserListDepositHistoryRow",
+        vec![
+            Field::new("blockchain", Type::enum_ref("block_chain")),
+            Field::new("user_address", Type::String),
+            Field::new("contract_address", Type::String),
+            Field::new("receiver_address", Type::String),
+            Field::new("quantity", Type::String),
+            Field::new("transaction_hash", Type::String),
+            Field::new("created_at", Type::BigInt),
+        ],
+    )
 }

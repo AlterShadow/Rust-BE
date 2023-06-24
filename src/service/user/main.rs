@@ -21,7 +21,7 @@ use gen::model::{EnumService, UserGetDepositAddressesRow};
 use lib::config::{load_config, WsServerConfig};
 use lib::database::{connect_to_database, DatabaseConfig};
 use lib::log::{setup_logs, LogLevel};
-use lib::ws::{EndpointAuthController, WebsocketServer};
+use lib::ws::{EndpointAuthController, SubscribeManager, WebsocketServer};
 use mc2fi_auth::endpoints::endpoint_auth_authorize;
 use mc2fi_auth::method::MethodAuthAuthorize;
 use secrecy::{ExposeSecret, SecretString};
@@ -139,6 +139,11 @@ async fn main() -> Result<()> {
     server.add_handler(MethodAdminListStrategies);
     server.add_handler(MethodAdminApproveStrategy);
     server.add_handler(MethodAdminRejectStrategy);
+    let sub = SubscribeManager::new(server.toolbox.clone());
+    sub.add_topic(AdminSubscribeTopic::AdminNotifyEscrowLedgerChange);
+    server.add_handler(MethodAdminNotifyEscrowLedgerChange {
+        manager: Arc::new(sub),
+    });
 
     server.add_handler(MethodAdminAddAuditRule);
     let eth_pool = EthereumRpcConnectionPool::from_conns(config.ethereum_urls);

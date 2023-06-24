@@ -6,7 +6,9 @@ use gen::model::*;
 use lib::database::DbClient;
 use lib::handler::{FutureResponse, RequestHandler};
 use lib::toolbox::{RequestContext, Toolbox};
+use lib::ws::SubscribeManager;
 use lib::{DEFAULT_LIMIT, DEFAULT_OFFSET};
+use std::sync::Arc;
 
 pub struct MethodAdminListUsers;
 impl RequestHandler for MethodAdminListUsers {
@@ -464,6 +466,40 @@ impl RequestHandler for MethodAdminAddAuditRule {
                 .await?;
 
             Ok(AdminAddAuditRuleResponse {})
+        }
+        .boxed()
+    }
+}
+#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
+pub enum AdminSubscribeTopic {
+    AdminNotifyEscrowLedgerChange = 1,
+}
+impl Into<u32> for AdminSubscribeTopic {
+    fn into(self) -> u32 {
+        self as _
+    }
+}
+pub struct MethodAdminNotifyEscrowLedgerChange {
+    pub manager: Arc<SubscribeManager<AdminSubscribeTopic>>,
+}
+impl RequestHandler for MethodAdminNotifyEscrowLedgerChange {
+    type Request = AdminNotifyEscrowLedgerChangeRequest;
+
+    fn handle(
+        &self,
+        _toolbox: &Toolbox,
+        _ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let manager = self.manager.clone();
+        async move {
+            manager.publish_with_filter(
+                AdminSubscribeTopic::AdminNotifyEscrowLedgerChange,
+                &req.entry,
+                |ctx| ctx.user_id == req.user_id,
+            );
+
+            Ok(AdminNotifyEscrowLedgerChangeResponse {})
         }
         .boxed()
     }

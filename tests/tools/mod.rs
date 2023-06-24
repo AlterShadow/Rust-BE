@@ -131,7 +131,7 @@ pub async fn prepare_expert() -> Result<(Secp256k1SecretKey, WsClient, Secp256k1
         .await?;
     info!("Approve {:?}", resp);
     // reconnect user to refresh role cache on server side
-    let mut client = connect_user("user1", &user.key).await?;
+    let client = connect_user("user1", &user.key).await?;
 
     Ok((admin, admin_client, user, client))
 }

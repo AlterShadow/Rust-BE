@@ -1,6 +1,11 @@
 use model::endpoint::*;
 use model::types::{Field, Type};
-include!("../shared/endpoints.rs");
+use shared_endpoints::{
+    list_experts_datatable, list_strategies_datatable, strategy_row, user_deposit_history_entry,
+};
+
+#[path = "../shared/endpoints.rs"]
+pub mod shared_endpoints;
 pub fn get_user_endpoints() -> Vec<EndpointSchema> {
     vec![
         EndpointSchema::new(
@@ -739,20 +744,10 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
             ],
             vec![Field::new(
                 "history",
-                Type::datatable(
-                    "UserListDepositHistoryRow",
-                    vec![
-                        Field::new("blockchain", Type::enum_ref("block_chain")),
-                        Field::new("user_address", Type::String),
-                        Field::new("contract_address", Type::String),
-                        Field::new("receiver_address", Type::String),
-                        Field::new("quantity", Type::String),
-                        Field::new("transaction_hash", Type::String),
-                        Field::new("created_at", Type::BigInt),
-                    ],
-                ),
+                Type::vec(user_deposit_history_entry()),
             )],
         ),
+        EndpointSchema::new("UserSubscribeDepositHistory", 20381, vec![], vec![]),
         EndpointSchema::new(
             "UserListStrategyWallets",
             20390,

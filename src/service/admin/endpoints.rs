@@ -1,7 +1,9 @@
 use model::endpoint::*;
 use model::types::{Field, Type};
-include!("../shared/endpoints.rs");
+use shared_endpoints::*;
 
+#[path = "../shared/endpoints.rs"]
+mod shared_endpoints;
 pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
     vec![
         EndpointSchema::new(
@@ -228,6 +230,16 @@ pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
                 Field::new("rule_id", Type::BigInt),
                 Field::new("name", Type::String),
                 Field::new("description", Type::String),
+            ],
+            vec![],
+        ),
+        EndpointSchema::new(
+            "AdminNotifyEscrowLedgerChange",
+            32010,
+            vec![
+                Field::new("pkey_id", Type::BigInt),
+                Field::new("user_id", Type::BigInt),
+                Field::new("entry", user_deposit_history_entry()),
             ],
             vec![],
         ),

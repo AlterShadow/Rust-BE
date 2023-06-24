@@ -3393,44 +3393,55 @@
             {
               "name": "history",
               "ty": {
-                "DataTable": {
-                  "name": "UserListDepositHistoryRow",
-                  "fields": [
-                    {
-                      "name": "blockchain",
-                      "ty": {
-                        "EnumRef": "block_chain"
+                "Vec": {
+                  "Struct": {
+                    "name": "UserListDepositHistoryRow",
+                    "fields": [
+                      {
+                        "name": "blockchain",
+                        "ty": {
+                          "EnumRef": "block_chain"
+                        }
+                      },
+                      {
+                        "name": "user_address",
+                        "ty": "String"
+                      },
+                      {
+                        "name": "contract_address",
+                        "ty": "String"
+                      },
+                      {
+                        "name": "receiver_address",
+                        "ty": "String"
+                      },
+                      {
+                        "name": "quantity",
+                        "ty": "String"
+                      },
+                      {
+                        "name": "transaction_hash",
+                        "ty": "String"
+                      },
+                      {
+                        "name": "created_at",
+                        "ty": "BigInt"
                       }
-                    },
-                    {
-                      "name": "user_address",
-                      "ty": "String"
-                    },
-                    {
-                      "name": "contract_address",
-                      "ty": "String"
-                    },
-                    {
-                      "name": "receiver_address",
-                      "ty": "String"
-                    },
-                    {
-                      "name": "quantity",
-                      "ty": "String"
-                    },
-                    {
-                      "name": "transaction_hash",
-                      "ty": "String"
-                    },
-                    {
-                      "name": "created_at",
-                      "ty": "BigInt"
-                    }
-                  ]
+                    ]
+                  }
                 }
               }
             }
           ],
+          "stream_response": [],
+          "description": "",
+          "json_schema": null
+        },
+        {
+          "name": "UserSubscribeDepositHistory",
+          "code": 20381,
+          "parameters": [],
+          "returns": [],
           "stream_response": [],
           "description": "",
           "json_schema": null
@@ -4538,6 +4549,64 @@
             {
               "name": "description",
               "ty": "String"
+            }
+          ],
+          "returns": [],
+          "stream_response": [],
+          "description": "",
+          "json_schema": null
+        },
+        {
+          "name": "AdminNotifyEscrowLedgerChange",
+          "code": 32010,
+          "parameters": [
+            {
+              "name": "pkey_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "user_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "entry",
+              "ty": {
+                "Struct": {
+                  "name": "UserListDepositHistoryRow",
+                  "fields": [
+                    {
+                      "name": "blockchain",
+                      "ty": {
+                        "EnumRef": "block_chain"
+                      }
+                    },
+                    {
+                      "name": "user_address",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "contract_address",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "receiver_address",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "quantity",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "transaction_hash",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "created_at",
+                      "ty": "BigInt"
+                    }
+                  ]
+                }
+              }
             }
           ],
           "returns": [],

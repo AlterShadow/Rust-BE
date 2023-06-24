@@ -43,7 +43,7 @@ mod tests {
     use super::*;
     use crate::signer::Secp256k1SecretKey;
     use crate::{
-        EthereumRpcConnectionPool, TxChecker, TxStatus, ANVIL_PRIV_KEY_1, ANVIL_PRIV_KEY_2,
+        EthereumRpcConnectionPool, TxChecker, ANVIL_PRIV_KEY_1, ANVIL_PRIV_KEY_2,
         ANVIL_PRIV_KEY_3, ANVIL_PRIV_KEY_4,
     };
     use gen::model::EnumBlockChain;
@@ -55,7 +55,7 @@ mod tests {
         let conn_pool = EthereumRpcConnectionPool::new();
         let conn = conn_pool.get(EnumBlockChain::LocalNet).await?;
         let mock_erc20 = deploy_mock_erc20(conn.clone(), key.clone()).await?;
-        let tx_checker = TxChecker::new(conn.eth());
+        let _tx_checker = TxChecker::new(conn.eth());
 
         let alice = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_2)?;
         let bob = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_3)?;

@@ -1,3 +1,4 @@
+use crate::admin_method::AdminSubscribeTopic;
 use crate::audit::{
     get_audit_rules, validate_audit_rule_immutable_tokens, AuditLogger, AUDIT_TOP25_TOKENS,
 };
@@ -26,6 +27,7 @@ use lib::database::DbClient;
 use lib::handler::{FutureResponse, RequestHandler};
 use lib::toolbox::*;
 use lib::utils::hex_decode;
+use lib::ws::SubscribeManager;
 use lib::{DEFAULT_LIMIT, DEFAULT_OFFSET};
 use num_traits::cast::FromPrimitive;
 use std::collections::hash_map::Entry;
@@ -385,9 +387,9 @@ impl RequestHandler for MethodUserGetStrategiesStatistics {
 
     fn handle(
         &self,
-        toolbox: &Toolbox,
+        _toolbox: &Toolbox,
         ctx: RequestContext,
-        req: Self::Request,
+        _req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         async move {
             ensure_user_role(ctx, EnumRole::User)?;
@@ -1581,7 +1583,7 @@ impl RequestHandler for MethodUserUpdateUserProfile {
                 .into_result()
                 .context("Failed to get user profile")?;
             if let Some(expert_id) = expert.expert_id {
-                let ret = db
+                let _ret = db
                     .execute(FunUserUpdateExpertProfileReq {
                         expert_id,
                         description: req.description,
@@ -1591,7 +1593,7 @@ impl RequestHandler for MethodUserUpdateUserProfile {
                     .into_result()
                     .context("failed to update expert profile")?;
             } else {
-                let ret = db
+                let _ret = db
                     .execute(FunUserCreateExpertProfileReq {
                         user_id: ctx.user_id,
                         description: req.description,
@@ -2307,9 +2309,9 @@ impl RequestHandler for MethodUserGetDepositTokens {
 
     fn handle(
         &self,
-        toolbox: &Toolbox,
-        ctx: RequestContext,
-        req: Self::Request,
+        _toolbox: &Toolbox,
+        _ctx: RequestContext,
+        _req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         async move {
             let tokens = BlockchainCoinAddresses::new();
@@ -2339,9 +2341,9 @@ impl RequestHandler for MethodUserGetDepositAddresses {
 
     fn handle(
         &self,
-        toolbox: &Toolbox,
-        ctx: RequestContext,
-        req: Self::Request,
+        _toolbox: &Toolbox,
+        _ctx: RequestContext,
+        _req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         let addresses = self.addresses.clone();
         async move { Ok(UserGetDepositAddressesResponse { addresses }) }.boxed()
@@ -2380,6 +2382,26 @@ impl RequestHandler for MethodUserListDepositHistory {
                     })
                     .collect(),
             })
+        }
+        .boxed()
+    }
+}
+pub struct MethodUserSubscribeDepositHistory {
+    pub manger: Arc<SubscribeManager<AdminSubscribeTopic>>,
+}
+impl RequestHandler for MethodUserSubscribeDepositHistory {
+    type Request = UserSubscribeDepositHistoryRequest;
+
+    fn handle(
+        &self,
+        _toolbox: &Toolbox,
+        ctx: RequestContext,
+        _req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let manger = self.manger.clone();
+        async move {
+            manger.subscribe(AdminSubscribeTopic::AdminNotifyEscrowLedgerChange, ctx);
+            Ok(UserSubscribeDepositHistoryResponse {})
         }
         .boxed()
     }
@@ -2471,7 +2493,7 @@ impl RequestHandler for MethodUserListStrategyAuditRules {
     fn handle(
         &self,
         toolbox: &Toolbox,
-        ctx: RequestContext,
+        _ctx: RequestContext,
         req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
@@ -2625,9 +2647,9 @@ impl RequestHandler for MethodUserGetEscrowAddressForStrategy {
 
     fn handle(
         &self,
-        toolbox: &Toolbox,
-        ctx: RequestContext,
-        req: Self::Request,
+        _toolbox: &Toolbox,
+        _ctx: RequestContext,
+        _req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         let addresses = self.addresses.clone();
         let token_addresses = self.token_addresses.clone();
@@ -2687,11 +2709,9 @@ mod tests {
     use eth_sdk::mock_erc20::deploy_mock_erc20;
     use eth_sdk::signer::Secp256k1SecretKey;
     use eth_sdk::utils::wait_for_confirmations_simple;
-    use lib::database::{
-        connect_to_database, database_test_config, drop_and_recreate_database, DatabaseConfig,
-    };
+    use lib::database::{connect_to_database, database_test_config, drop_and_recreate_database};
     use lib::log::{setup_logs, LogLevel};
-    use std::net::{IpAddr, Ipv4Addr};
+    use std::net::Ipv4Addr;
     use std::{format, vec};
 
     /*
@@ -3070,7 +3090,7 @@ mod tests {
             ip_addr: Ipv4Addr::new(127, 0, 0, 1).into(),
             role: EnumRole::User as u32,
         };
-        let exit_hash = user_exit_strategy(
+        let _exit_hash = user_exit_strategy(
             &conn,
             &ctx,
             &db,
@@ -3185,7 +3205,7 @@ mod tests {
         )
         .await?;
 
-        let strategy = db
+        let _strategy = db
             .execute(FunUserCreateStrategyReq {
                 user_id: ctx.user_id,
                 name: "TEST".to_string(),

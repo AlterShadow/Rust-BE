@@ -369,6 +369,9 @@ pub enum EnumEndpoint {
     #[postgres(name = "UserListDepositHistory")]
     UserListDepositHistory = 20380,
     ///
+    #[postgres(name = "UserSubscribeDepositHistory")]
+    UserSubscribeDepositHistory = 20381,
+    ///
     #[postgres(name = "UserListStrategyWallets")]
     UserListStrategyWallets = 20390,
     ///
@@ -431,6 +434,9 @@ pub enum EnumEndpoint {
     ///
     #[postgres(name = "AdminAddAuditRule")]
     AdminAddAuditRule = 31002,
+    ///
+    #[postgres(name = "AdminNotifyEscrowLedgerChange")]
+    AdminNotifyEscrowLedgerChange = 32010,
 }
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -966,6 +972,16 @@ pub struct AdminListUsersResponse {
     pub users_total: i64,
     pub users: Vec<ListUserRow>,
 }
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminNotifyEscrowLedgerChangeRequest {
+    pub pkey_id: i64,
+    pub user_id: i64,
+    pub entry: UserListDepositHistoryRow,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminNotifyEscrowLedgerChangeResponse {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminRejectStrategyRequest {
@@ -2009,6 +2025,12 @@ pub struct UserRequestRefundRequest {
 pub struct UserRequestRefundResponse {
     pub success: bool,
 }
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserSubscribeDepositHistoryRequest {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserSubscribeDepositHistoryResponse {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserUnfollowExpertRequest {
@@ -5824,40 +5846,42 @@ impl WsRequest for UserListDepositHistoryRequest {
     {
       "name": "history",
       "ty": {
-        "DataTable": {
-          "name": "UserListDepositHistoryRow",
-          "fields": [
-            {
-              "name": "blockchain",
-              "ty": {
-                "EnumRef": "block_chain"
+        "Vec": {
+          "Struct": {
+            "name": "UserListDepositHistoryRow",
+            "fields": [
+              {
+                "name": "blockchain",
+                "ty": {
+                  "EnumRef": "block_chain"
+                }
+              },
+              {
+                "name": "user_address",
+                "ty": "String"
+              },
+              {
+                "name": "contract_address",
+                "ty": "String"
+              },
+              {
+                "name": "receiver_address",
+                "ty": "String"
+              },
+              {
+                "name": "quantity",
+                "ty": "String"
+              },
+              {
+                "name": "transaction_hash",
+                "ty": "String"
+              },
+              {
+                "name": "created_at",
+                "ty": "BigInt"
               }
-            },
-            {
-              "name": "user_address",
-              "ty": "String"
-            },
-            {
-              "name": "contract_address",
-              "ty": "String"
-            },
-            {
-              "name": "receiver_address",
-              "ty": "String"
-            },
-            {
-              "name": "quantity",
-              "ty": "String"
-            },
-            {
-              "name": "transaction_hash",
-              "ty": "String"
-            },
-            {
-              "name": "created_at",
-              "ty": "BigInt"
-            }
-          ]
+            ]
+          }
         }
       }
     }
@@ -5869,6 +5893,23 @@ impl WsRequest for UserListDepositHistoryRequest {
 }
 impl WsResponse for UserListDepositHistoryResponse {
     type Request = UserListDepositHistoryRequest;
+}
+
+impl WsRequest for UserSubscribeDepositHistoryRequest {
+    type Response = UserSubscribeDepositHistoryResponse;
+    const METHOD_ID: u32 = 20381;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserSubscribeDepositHistory",
+  "code": 20381,
+  "parameters": [],
+  "returns": [],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for UserSubscribeDepositHistoryResponse {
+    type Request = UserSubscribeDepositHistoryRequest;
 }
 
 impl WsRequest for UserListStrategyWalletsRequest {
@@ -7141,4 +7182,70 @@ impl WsRequest for AdminAddAuditRuleRequest {
 }
 impl WsResponse for AdminAddAuditRuleResponse {
     type Request = AdminAddAuditRuleRequest;
+}
+
+impl WsRequest for AdminNotifyEscrowLedgerChangeRequest {
+    type Response = AdminNotifyEscrowLedgerChangeResponse;
+    const METHOD_ID: u32 = 32010;
+    const SCHEMA: &'static str = r#"{
+  "name": "AdminNotifyEscrowLedgerChange",
+  "code": 32010,
+  "parameters": [
+    {
+      "name": "pkey_id",
+      "ty": "BigInt"
+    },
+    {
+      "name": "user_id",
+      "ty": "BigInt"
+    },
+    {
+      "name": "entry",
+      "ty": {
+        "Struct": {
+          "name": "UserListDepositHistoryRow",
+          "fields": [
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
+            },
+            {
+              "name": "user_address",
+              "ty": "String"
+            },
+            {
+              "name": "contract_address",
+              "ty": "String"
+            },
+            {
+              "name": "receiver_address",
+              "ty": "String"
+            },
+            {
+              "name": "quantity",
+              "ty": "String"
+            },
+            {
+              "name": "transaction_hash",
+              "ty": "String"
+            },
+            {
+              "name": "created_at",
+              "ty": "BigInt"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "returns": [],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for AdminNotifyEscrowLedgerChangeResponse {
+    type Request = AdminNotifyEscrowLedgerChangeRequest;
 }

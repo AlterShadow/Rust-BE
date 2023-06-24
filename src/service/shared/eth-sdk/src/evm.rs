@@ -1,8 +1,7 @@
-use crate::erc20::build_erc_20;
-use crate::signer::Secp256k1SecretKey;
+
+
 use crate::{
-    build_pancake_swap, BlockchainCoinAddresses, ContractCall, DexAddresses, EscrowAddresses,
-    EthereumRpcConnectionPool, PancakePairPathSet, PancakeSwap, TransactionReady,
+    ContractCall, PancakePairPathSet, TransactionReady,
 };
 use bytes::Bytes;
 use eyre::*;
@@ -11,37 +10,9 @@ use gen::model::{EnumBlockChain, EnumDex, EnumDexVersion};
 use lib::database::DbClient;
 use serde::{Deserialize, Serialize};
 use tracing::error;
-use web3::ethabi::Contract;
+
 use web3::types::{Address, H160, H256, U256};
 
-pub struct AppState {
-    pub dex_addresses: DexAddresses,
-    pub eth_pool: EthereumRpcConnectionPool,
-    pub pancake_swap: PancakeSwap,
-    pub db: DbClient,
-    pub token_addresses: BlockchainCoinAddresses,
-    pub escrow_addresses: EscrowAddresses,
-    pub erc_20: Contract,
-    pub master_key: Secp256k1SecretKey,
-}
-impl AppState {
-    pub fn new(
-        db: DbClient,
-        eth_pool: EthereumRpcConnectionPool,
-        master_key: Secp256k1SecretKey,
-    ) -> Result<Self> {
-        Ok(Self {
-            dex_addresses: DexAddresses::new(),
-            eth_pool,
-            pancake_swap: build_pancake_swap()?,
-            db,
-            token_addresses: BlockchainCoinAddresses::new(),
-            erc_20: build_erc_20()?,
-            escrow_addresses: EscrowAddresses::new(),
-            master_key,
-        })
-    }
-}
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum DexPath {
     /* every path for every token_in token_out pair in every dex in every chain must be recorded in the database */

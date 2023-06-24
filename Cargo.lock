@@ -2003,6 +2003,7 @@ dependencies = [
  "hex",
  "itertools",
  "lib",
+ "mc2fi_auth",
  "model",
  "num",
  "peroxide",
