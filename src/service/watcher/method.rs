@@ -413,7 +413,7 @@ pub async fn handle_eth_escrows(
                     })
                     .await?
                     .into_result()
-                    .map(|x| U256::from_str(&x.balance))
+                    .map(|x| U256::from_dec_str(&x.balance))
                     .unwrap_or_else(|| Ok(0.into()))?;
                 let new_balance = old_balance + escrow.amount;
                 state
