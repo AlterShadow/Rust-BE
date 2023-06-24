@@ -1468,15 +1468,15 @@ DECLARE
     _token_id bigint;
     _escrow_contract_address_id bigint;
 BEGIN
-    SELECT pkey_id INTO _token_id FROM tbl.escrow_token_contract_address WHERE address = a_token_address AND blockchain = a_blockchain;
-    SELECT pkey_id INTO _escrow_contract_address_id FROM tbl.escrow_contract_address WHERE address = escrow_contract_address AND blockchain = a_blockchain;
+    SELECT pkey_id INTO _token_id FROM tbl.escrow_token_contract_address AS a WHERE a.address = a_token_address AND a.blockchain = a_blockchain;
+    SELECT pkey_id INTO _escrow_contract_address_id FROM tbl.escrow_contract_address AS a WHERE a.address = a_escrow_contract_address AND a.blockchain = a_blockchain;
    
     RETURN QUERY SELECT
         a.fkey_user_id,
         etc.blockchain,
         etc.pkey_id,
         etc.symbol,
-        etc.name,
+        etc.short_name,
         a.balance
     FROM tbl.user_deposit_withdraw_balance AS a
     JOIN tbl.escrow_token_contract_address AS etc ON etc.pkey_id = a.fkey_token_id

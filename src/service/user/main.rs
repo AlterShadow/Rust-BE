@@ -117,6 +117,7 @@ async fn main() -> Result<()> {
     server.add_handler(MethodUserListStrategyInitialTokenRatio);
     server.add_handler(MethodUserGetDepositTokens);
     server.add_handler(MethodUserListStrategyAuditRules);
+    server.add_handler(MethodUserListDepositWithdrawBalances);
     // they are basically the same but MethodUserGetEscrowAddressForStrategy is more user friendly
     server.add_handler(MethodUserGetDepositAddresses {
         addresses: config.escrow_addresses.clone(),
@@ -151,6 +152,8 @@ async fn main() -> Result<()> {
     });
 
     server.add_handler(MethodAdminAddAuditRule);
+    server.add_handler(MethodAdminAddEscrowTokenContractAddress);
+
     let eth_pool = EthereumRpcConnectionPool::from_conns(config.ethereum_urls);
     let coin_addresses = Arc::new(BlockchainCoinAddresses::new());
     let escrow_contract_addresses = EscrowAddresses::new();

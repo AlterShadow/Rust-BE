@@ -506,3 +506,36 @@ impl RequestHandler for MethodAdminNotifyEscrowLedgerChange {
         .boxed()
     }
 }
+
+pub struct MethodAdminAddEscrowTokenContractAddress;
+impl RequestHandler for MethodAdminAddEscrowTokenContractAddress {
+    type Request = AdminAddEscrowTokenContractAddressRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db: DbClient = toolbox.get_db();
+
+        async move {
+            ensure_user_role(ctx, EnumRole::Admin)?;
+
+            let _ret = db
+                .execute(FunAdminAddEscrowTokenContractAddressReq {
+                    pkey_id: req.pkey_id,
+                    symbol: req.symbol,
+                    short_name: req.short_name,
+                    description: req.description,
+                    address: req.address,
+                    blockchain: req.blockchain,
+                    is_stablecoin: req.is_stablecoin,
+                })
+                .await?;
+
+            Ok(AdminAddEscrowTokenContractAddressResponse {})
+        }
+        .boxed()
+    }
+}

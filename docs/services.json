@@ -4635,6 +4635,46 @@
           "stream_response": [],
           "description": "",
           "json_schema": null
+        },
+        {
+          "name": "AdminAddEscrowTokenContractAddress",
+          "code": 32020,
+          "parameters": [
+            {
+              "name": "pkey_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "symbol",
+              "ty": "String"
+            },
+            {
+              "name": "short_name",
+              "ty": "String"
+            },
+            {
+              "name": "description",
+              "ty": "String"
+            },
+            {
+              "name": "address",
+              "ty": "String"
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
+            },
+            {
+              "name": "is_stablecoin",
+              "ty": "Boolean"
+            }
+          ],
+          "returns": [],
+          "stream_response": [],
+          "description": "",
+          "json_schema": null
         }
       ]
     },

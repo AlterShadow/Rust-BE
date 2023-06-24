@@ -437,6 +437,9 @@ pub enum EnumEndpoint {
     ///
     #[postgres(name = "AdminNotifyEscrowLedgerChange")]
     AdminNotifyEscrowLedgerChange = 32010,
+    ///
+    #[postgres(name = "AdminAddEscrowTokenContractAddress")]
+    AdminAddEscrowTokenContractAddress = 32020,
 }
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -787,6 +790,20 @@ pub struct AdminAddAuditRuleRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminAddAuditRuleResponse {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminAddEscrowTokenContractAddressRequest {
+    pub pkey_id: i64,
+    pub symbol: String,
+    pub short_name: String,
+    pub description: String,
+    pub address: String,
+    pub blockchain: EnumBlockChain,
+    pub is_stablecoin: bool,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminAddEscrowTokenContractAddressResponse {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminApproveStrategyRequest {
@@ -7262,4 +7279,52 @@ impl WsRequest for AdminNotifyEscrowLedgerChangeRequest {
 }
 impl WsResponse for AdminNotifyEscrowLedgerChangeResponse {
     type Request = AdminNotifyEscrowLedgerChangeRequest;
+}
+
+impl WsRequest for AdminAddEscrowTokenContractAddressRequest {
+    type Response = AdminAddEscrowTokenContractAddressResponse;
+    const METHOD_ID: u32 = 32020;
+    const SCHEMA: &'static str = r#"{
+  "name": "AdminAddEscrowTokenContractAddress",
+  "code": 32020,
+  "parameters": [
+    {
+      "name": "pkey_id",
+      "ty": "BigInt"
+    },
+    {
+      "name": "symbol",
+      "ty": "String"
+    },
+    {
+      "name": "short_name",
+      "ty": "String"
+    },
+    {
+      "name": "description",
+      "ty": "String"
+    },
+    {
+      "name": "address",
+      "ty": "String"
+    },
+    {
+      "name": "blockchain",
+      "ty": {
+        "EnumRef": "block_chain"
+      }
+    },
+    {
+      "name": "is_stablecoin",
+      "ty": "Boolean"
+    }
+  ],
+  "returns": [],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for AdminAddEscrowTokenContractAddressResponse {
+    type Request = AdminAddEscrowTokenContractAddressRequest;
 }

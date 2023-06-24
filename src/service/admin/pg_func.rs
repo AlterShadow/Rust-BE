@@ -373,5 +373,26 @@ BEGIN
 END
             "#,
         ),
+        ProceduralFunction::new(
+            "fun_admin_add_escrow_token_contract_address",
+            vec![
+                Field::new("pkey_id", Type::BigInt),
+                Field::new("symbol", Type::String),
+                Field::new("short_name", Type::String),
+                Field::new("description", Type::String),
+                Field::new("address", Type::String),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("is_stablecoin", Type::Boolean),
+            ],
+            vec![],
+            r#"
+BEGIN
+    INSERT INTO tbl.escrow_token_contract_address (pkey_id, symbol, short_name, description, address, blockchain, is_stablecoin)
+         VALUES (a_pkey_id, a_symbol, a_short_name, a_description, a_address, a_blockchain, a_is_stablecoin)
+;
+END
+            "#,
+        ),
+        // TODO: import escrow contract address
     ]
 }

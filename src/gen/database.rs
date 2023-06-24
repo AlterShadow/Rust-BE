@@ -7,6 +7,9 @@ use serde::*;
 pub struct FunAdminAddAuditRuleRespRow {}
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunAdminAddEscrowTokenContractAddressRespRow {}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunAdminApproveStrategyRespRow {}
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -2411,6 +2414,36 @@ impl DatabaseRequest for FunAdminAddAuditRuleReq {
             &self.rule_id as &(dyn ToSql + Sync),
             &self.name as &(dyn ToSql + Sync),
             &self.description as &(dyn ToSql + Sync),
+        ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAdminAddEscrowTokenContractAddressReq {
+    pub pkey_id: i64,
+    pub symbol: String,
+    pub short_name: String,
+    pub description: String,
+    pub address: String,
+    pub blockchain: EnumBlockChain,
+    pub is_stablecoin: bool,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunAdminAddEscrowTokenContractAddressReq {
+    type ResponseRow = FunAdminAddEscrowTokenContractAddressRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_admin_add_escrow_token_contract_address(a_pkey_id => $1::bigint, a_symbol => $2::varchar, a_short_name => $3::varchar, a_description => $4::varchar, a_address => $5::varchar, a_blockchain => $6::enum_block_chain, a_is_stablecoin => $7::boolean);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.pkey_id as &(dyn ToSql + Sync),
+            &self.symbol as &(dyn ToSql + Sync),
+            &self.short_name as &(dyn ToSql + Sync),
+            &self.description as &(dyn ToSql + Sync),
+            &self.address as &(dyn ToSql + Sync),
+            &self.blockchain as &(dyn ToSql + Sync),
+            &self.is_stablecoin as &(dyn ToSql + Sync),
         ]
     }
 }
