@@ -139,10 +139,15 @@ async fn main() -> Result<()> {
     server.add_handler(MethodAdminListStrategies);
     server.add_handler(MethodAdminApproveStrategy);
     server.add_handler(MethodAdminRejectStrategy);
-    let sub = SubscribeManager::new(server.toolbox.clone());
-    sub.add_topic(AdminSubscribeTopic::AdminNotifyEscrowLedgerChange);
+    let sub_manager = SubscribeManager::new(server.toolbox.clone());
+    sub_manager.add_topic(AdminSubscribeTopic::AdminNotifyEscrowLedgerChange);
+    let sub_manager = Arc::new(sub_manager);
     server.add_handler(MethodAdminNotifyEscrowLedgerChange {
-        manager: Arc::new(sub),
+        manager: Arc::clone(&sub_manager),
+    });
+
+    server.add_handler(MethodUserSubscribeDepositHistory {
+        manger: sub_manager,
     });
 
     server.add_handler(MethodAdminAddAuditRule);
