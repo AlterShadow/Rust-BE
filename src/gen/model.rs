@@ -1561,6 +1561,8 @@ pub struct UserGetDepositTokensRow {
 #[serde(rename_all = "camelCase")]
 pub struct UserGetEscrowAddressForStrategyRequest {
     pub strategy_id: i64,
+    #[serde(default)]
+    pub token_id: Option<i64>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -6161,6 +6163,12 @@ impl WsRequest for UserGetEscrowAddressForStrategyRequest {
     {
       "name": "strategy_id",
       "ty": "BigInt"
+    },
+    {
+      "name": "token_id",
+      "ty": {
+        "Optional": "BigInt"
+      }
     }
   ],
   "returns": [

@@ -451,6 +451,8 @@ impl RequestHandler for MethodUserListDepositWithdrawBalances {
                 .execute(FunUserListUserDepositWithdrawBalanceReq {
                     user_id: ctx.user_id,
                     blockchain: None,
+                    token_address: None,
+                    escrow_contract_address: None,
                 })
                 .await?;
             Ok(UserListDepositWithdrawBalancesResponse {
@@ -2708,16 +2710,37 @@ impl RequestHandler for MethodUserGetEscrowAddressForStrategy {
 
     fn handle(
         &self,
-        _toolbox: &Toolbox,
-        _ctx: RequestContext,
-        _req: Self::Request,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         let addresses = self.addresses.clone();
         let token_addresses = self.token_addresses.clone();
+        let db = toolbox.get_db();
         async move {
+            let strategy = db
+                .execute(FunUserListStrategiesReq {
+                    user_id: ctx.user_id,
+                    limit: 1,
+                    offset: 0,
+                    strategy_id: Some(req.strategy_id),
+                    strategy_name: None,
+                    expert_public_id: None,
+                    expert_name: None,
+                    description: None,
+                    blockchain: None,
+                    wallet_address: None,
+                })
+                .await?
+                .into_result()
+                .with_context(|| {
+                    CustomError::new(EnumErrorCode::NotFound, "Could not find strategy")
+                })?;
             Ok(UserGetEscrowAddressForStrategyResponse {
                 tokens: addresses
                     .into_iter()
+                    .filter(|x| x.blockchain == strategy.blockchain)
+                    // TODO: filter by token id
                     .map(|x| {
                         let usdc = token_addresses
                             .get(x.blockchain, EnumBlockchainCoin::USDC)

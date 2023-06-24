@@ -817,7 +817,10 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
             "UserGetEscrowAddressForStrategy",
             20500,
             // will be expanded later
-            vec![Field::new("strategy_id", Type::BigInt)],
+            vec![
+                Field::new("strategy_id", Type::BigInt),
+                Field::new("token_id", Type::optional(Type::BigInt)),
+            ],
             vec![Field::new(
                 "tokens",
                 Type::datatable(

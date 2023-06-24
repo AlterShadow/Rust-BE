@@ -3662,6 +3662,12 @@
             {
               "name": "strategy_id",
               "ty": "BigInt"
+            },
+            {
+              "name": "token_id",
+              "ty": {
+                "Optional": "BigInt"
+              }
             }
           ],
           "returns": [
