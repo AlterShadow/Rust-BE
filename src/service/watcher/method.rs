@@ -409,6 +409,7 @@ pub async fn handle_eth_escrows(
                         user_id: user.user_id,
                         blockchain: Some(blockchain),
                         token_address: Some(format!("{:?}", called_address)),
+                        token_id: None,
                         escrow_contract_address: Some(format!("{:?}", escrow.recipient)),
                     })
                     .await?

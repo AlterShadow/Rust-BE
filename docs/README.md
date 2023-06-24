@@ -67,6 +67,7 @@ ID: 2
 |20420|UserRemoveStrategyAuditRule|strategy_id, rule_id|||
 |20500|UserGetEscrowAddressForStrategy|strategy_id, token_id|tokens||
 |20510|UserListDepositWithdrawBalances||balances||
+|20511|UserGetDepositWithdrawBalance|token_id|balance||
 
 # admin Server
 ID: 3

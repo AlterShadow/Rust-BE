@@ -3753,6 +3753,25 @@
           "stream_response": [],
           "description": "",
           "json_schema": null
+        },
+        {
+          "name": "UserGetDepositWithdrawBalance",
+          "code": 20511,
+          "parameters": [
+            {
+              "name": "token_id",
+              "ty": "BigInt"
+            }
+          ],
+          "returns": [
+            {
+              "name": "balance",
+              "ty": "String"
+            }
+          ],
+          "stream_response": [],
+          "description": "",
+          "json_schema": null
         }
       ]
     },

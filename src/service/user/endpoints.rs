@@ -854,5 +854,11 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 ),
             )],
         ),
+        EndpointSchema::new(
+            "UserGetDepositWithdrawBalance",
+            20511,
+            vec![Field::new("token_id", Type::BigInt)],
+            vec![Field::new("balance", Type::String)],
+        ),
     ]
 }

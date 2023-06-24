@@ -393,6 +393,9 @@ pub enum EnumEndpoint {
     #[postgres(name = "UserListDepositWithdrawBalances")]
     UserListDepositWithdrawBalances = 20510,
     ///
+    #[postgres(name = "UserGetDepositWithdrawBalance")]
+    UserGetDepositWithdrawBalance = 20511,
+    ///
     #[postgres(name = "AdminListUsers")]
     AdminListUsers = 30010,
     ///
@@ -1573,6 +1576,16 @@ pub struct UserGetDepositTokensRow {
     pub short_name: String,
     pub icon_url: String,
     pub conversion: f64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserGetDepositWithdrawBalanceRequest {
+    pub token_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserGetDepositWithdrawBalanceResponse {
+    pub balance: String,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -6283,6 +6296,33 @@ impl WsRequest for UserListDepositWithdrawBalancesRequest {
 }
 impl WsResponse for UserListDepositWithdrawBalancesResponse {
     type Request = UserListDepositWithdrawBalancesRequest;
+}
+
+impl WsRequest for UserGetDepositWithdrawBalanceRequest {
+    type Response = UserGetDepositWithdrawBalanceResponse;
+    const METHOD_ID: u32 = 20511;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserGetDepositWithdrawBalance",
+  "code": 20511,
+  "parameters": [
+    {
+      "name": "token_id",
+      "ty": "BigInt"
+    }
+  ],
+  "returns": [
+    {
+      "name": "balance",
+      "ty": "String"
+    }
+  ],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for UserGetDepositWithdrawBalanceResponse {
+    type Request = UserGetDepositWithdrawBalanceRequest;
 }
 
 impl WsRequest for AdminListUsersRequest {

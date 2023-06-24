@@ -1453,6 +1453,7 @@ END
                 Field::new("user_id", Type::BigInt),
                 Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
                 Field::new("token_address", Type::optional(Type::String)),
+                Field::new("token_id", Type::optional(Type::BigInt)),
                 Field::new("escrow_contract_address", Type::optional(Type::String)),
             ],
             vec![
@@ -1468,7 +1469,11 @@ DECLARE
     _token_id bigint;
     _escrow_contract_address_id bigint;
 BEGIN
-    SELECT pkey_id INTO _token_id FROM tbl.escrow_token_contract_address AS a WHERE a.address = a_token_address AND a.blockchain = a_blockchain;
+    IF a_token_address ISNULL THEN
+        SELECT pkey_id INTO _token_id FROM tbl.escrow_token_contract_address AS a WHERE a.address = a_token_address AND a.blockchain = a_blockchain;
+    ELSE
+        _token_id := a_token_id;
+    END IF;
     SELECT pkey_id INTO _escrow_contract_address_id FROM tbl.escrow_contract_address AS a WHERE a.address = a_escrow_contract_address AND a.blockchain = a_blockchain;
    
     RETURN QUERY SELECT

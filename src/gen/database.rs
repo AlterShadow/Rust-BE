@@ -2058,6 +2058,8 @@ pub struct FunUserListUserDepositWithdrawBalanceReq {
     #[serde(default)]
     pub token_address: Option<String>,
     #[serde(default)]
+    pub token_id: Option<i64>,
+    #[serde(default)]
     pub escrow_contract_address: Option<String>,
 }
 
@@ -2065,13 +2067,14 @@ pub struct FunUserListUserDepositWithdrawBalanceReq {
 impl DatabaseRequest for FunUserListUserDepositWithdrawBalanceReq {
     type ResponseRow = FunUserListUserDepositWithdrawBalanceRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_list_user_deposit_withdraw_balance(a_user_id => $1::bigint, a_blockchain => $2::enum_block_chain, a_token_address => $3::varchar, a_escrow_contract_address => $4::varchar);"
+        "SELECT * FROM api.fun_user_list_user_deposit_withdraw_balance(a_user_id => $1::bigint, a_blockchain => $2::enum_block_chain, a_token_address => $3::varchar, a_token_id => $4::bigint, a_escrow_contract_address => $5::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
             &self.user_id as &(dyn ToSql + Sync),
             &self.blockchain as &(dyn ToSql + Sync),
             &self.token_address as &(dyn ToSql + Sync),
+            &self.token_id as &(dyn ToSql + Sync),
             &self.escrow_contract_address as &(dyn ToSql + Sync),
         ]
     }

@@ -452,6 +452,7 @@ impl RequestHandler for MethodUserListDepositWithdrawBalances {
                     user_id: ctx.user_id,
                     blockchain: None,
                     token_address: None,
+                    token_id: None,
                     escrow_contract_address: None,
                 })
                 .await?;
@@ -464,6 +465,36 @@ impl RequestHandler for MethodUserListDepositWithdrawBalances {
                     balance: x.balance,
                 }),
             })
+        }
+        .boxed()
+    }
+}
+
+pub struct MethodUserGetDepositWithdrawBalance;
+impl RequestHandler for MethodUserGetDepositWithdrawBalance {
+    type Request = UserGetDepositWithdrawBalanceRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db: DbClient = toolbox.get_db();
+        async move {
+            let balance = db
+                .execute(FunUserListUserDepositWithdrawBalanceReq {
+                    user_id: ctx.user_id,
+                    blockchain: None,
+                    token_address: None,
+                    token_id: Some(req.token_id),
+                    escrow_contract_address: None,
+                })
+                .await?
+                .into_result()
+                .map(|x| x.balance)
+                .unwrap_or_default();
+            Ok(UserGetDepositWithdrawBalanceResponse { balance })
         }
         .boxed()
     }
