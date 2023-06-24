@@ -487,13 +487,15 @@ impl RequestHandler for MethodAdminNotifyEscrowLedgerChange {
 
     fn handle(
         &self,
-        _toolbox: &Toolbox,
+        toolbox: &Toolbox,
         _ctx: RequestContext,
         req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         let manager = self.manager.clone();
+        let toolbox = toolbox.clone();
         async move {
             manager.publish_with_filter(
+                &toolbox,
                 AdminSubscribeTopic::AdminNotifyEscrowLedgerChange,
                 &req.balance,
                 |ctx| ctx.user_id == req.user_id,

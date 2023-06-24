@@ -40,7 +40,7 @@ pub struct WebsocketServer {
     pub auth_controller: Arc<dyn AuthController>,
     pub handlers: HashMap<u32, WsEndpoint>,
     pub message_receiver: Option<mpsc::Receiver<ConnectionId>>,
-    pub toolbox: Toolbox,
+    toolbox: Toolbox,
     pub config: WsServerConfig,
 }
 

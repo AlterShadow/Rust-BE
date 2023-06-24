@@ -4,6 +4,7 @@ use dashmap::DashMap;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::hash::Hash;
+use tracing::info;
 
 pub struct SubscriberContext {
     pub ctx: RequestContext,
@@ -16,13 +17,11 @@ pub struct Subscribers {
 
 pub struct SubscribeManager<Key: Eq + Hash> {
     pub topics: DashMap<Key, Subscribers>,
-    pub toolbox: Toolbox,
 }
 impl<Key: Hash + Eq + Into<u32>> SubscribeManager<Key> {
-    pub fn new(toolbox: Toolbox) -> Self {
+    pub fn new() -> Self {
         Self {
             topics: DashMap::new(),
-            toolbox,
         }
     }
 
@@ -57,6 +56,7 @@ impl<Key: Hash + Eq + Into<u32>> SubscribeManager<Key> {
     }
     pub fn publish_with_filter(
         &self,
+        toolbox: &Toolbox,
         topic: Key,
         msg: &impl Serialize,
         filter: impl Fn(&RequestContext) -> bool,
@@ -75,7 +75,7 @@ impl<Key: Hash + Eq + Into<u32>> SubscribeManager<Key> {
                     data: data.clone(),
                 });
                 sub.stream_seq += 1;
-                if !self.toolbox.send(sub.ctx.connection_id, msg) {
+                if !toolbox.send(sub.ctx.connection_id, msg) {
                     dead_connections.push(sub.ctx.connection_id);
                 }
             }
@@ -84,7 +84,7 @@ impl<Key: Hash + Eq + Into<u32>> SubscribeManager<Key> {
             }
         }
     }
-    pub fn publish_to_all(&self, topic: Key, msg: &impl Serialize) {
-        self.publish_with_filter(topic, msg, |_| true)
+    pub fn publish_to_all(&self, toolbox: &Toolbox, topic: Key, msg: &impl Serialize) {
+        self.publish_with_filter(toolbox, topic, msg, |_| true)
     }
 }

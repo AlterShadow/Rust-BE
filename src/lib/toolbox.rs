@@ -70,6 +70,7 @@ pub struct RequestContext {
     pub ip_addr: IpAddr,
 }
 
+// TODO: make it shared and cloneable
 #[derive(Clone)]
 pub struct Toolbox {
     db: Vec<DbClient>,
