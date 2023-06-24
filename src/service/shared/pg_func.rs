@@ -31,11 +31,6 @@ pub fn strategy_row_type() -> Type {
             Field::new("approved", Type::Boolean),
             Field::new("approved_at", Type::optional(Type::BigInt)),
             Field::new("pending_approval", Type::Boolean),
-            Field::new("linked_wallet", Type::optional(Type::String)),
-            Field::new(
-                "linked_wallet_blockchain",
-                Type::optional(Type::enum_ref("block_chain")),
-            ),
             Field::new("created_at", Type::BigInt),
             Field::new("creator_public_id", Type::BigInt),
             Field::new("creator_id", Type::BigInt),

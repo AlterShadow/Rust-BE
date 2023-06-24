@@ -357,8 +357,6 @@ RETURNS table (
     "approved" boolean,
     "approved_at" bigint,
     "pending_approval" boolean,
-    "linked_wallet" varchar,
-    "linked_wallet_blockchain" enum_block_chain,
     "created_at" bigint,
     "creator_public_id" bigint,
     "creator_id" bigint,
@@ -439,8 +437,6 @@ RETURNS table (
     "approved" boolean,
     "approved_at" bigint,
     "pending_approval" boolean,
-    "linked_wallet" varchar,
-    "linked_wallet_blockchain" enum_block_chain,
     "created_at" bigint,
     "creator_public_id" bigint,
     "creator_id" bigint,
@@ -695,8 +691,6 @@ RETURNS table (
     "approved" boolean,
     "approved_at" bigint,
     "pending_approval" boolean,
-    "linked_wallet" varchar,
-    "linked_wallet_blockchain" enum_block_chain,
     "created_at" bigint,
     "creator_public_id" bigint,
     "creator_id" bigint,
@@ -1900,6 +1894,23 @@ END
 $$;
         
 
+CREATE OR REPLACE FUNCTION api.fun_user_get_strategy_id_from_watching_wallet(a_blockchain enum_block_chain, a_address varchar)
+RETURNS table (
+    "strategy_id" bigint
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY SELECT a.fkey_strategy_id
+    FROM tbl.strategy_watching_wallet AS a
+    WHERE a.blockchain = a_blockchain
+        AND a.address = a_address;
+END
+            
+$$;
+        
+
 CREATE OR REPLACE FUNCTION api.fun_admin_list_users(a_limit bigint, a_offset bigint, a_user_id bigint DEFAULT NULL, a_address varchar DEFAULT NULL, a_username varchar DEFAULT NULL, a_email varchar DEFAULT NULL, a_role enum_role DEFAULT NULL)
 RETURNS table (
     "total" bigint,
@@ -2230,8 +2241,6 @@ RETURNS table (
     "approved" boolean,
     "approved_at" bigint,
     "pending_approval" boolean,
-    "linked_wallet" varchar,
-    "linked_wallet_blockchain" enum_block_chain,
     "created_at" bigint,
     "creator_public_id" bigint,
     "creator_id" bigint,

@@ -1,57 +1,50 @@
+use crate::calc::ScaledMath;
+use crate::evm::DexTrade;
 use eyre::*;
-
-use lib::database::{DbClient, ToSql};
-
+use gen::database::*;
+use gen::model::EnumBlockChain;
+use lib::database::DbClient;
 use web3::types::{Address, U256};
 
 mod parse;
-use crate::calc::ScaledMath;
-use crate::evm::DexTrade;
-use gen::database::*;
-use gen::model::EnumBlockChain;
+
 pub use parse::*;
 
 pub async fn get_strategy_id_from_watching_wallet(
     db: &DbClient,
-    chain: &EnumBlockChain,
-    wallet: &Address,
+    blockchain: EnumBlockChain,
+    wallet_address: Address,
 ) -> Result<i64> {
     let strategy_id: i64 = db
-        .query(
-            "
-				SELECT fkey_strategy_id
-				FROM tbl.strategy_watching_wallet
-				WHERE address = $1 AND blockchain = $2
-			",
-            &vec![
-                &format!("{:?}", wallet) as &(dyn ToSql + Sync),
-                chain as &(dyn ToSql + Sync),
-            ],
-        )
+        .execute(FunUserGetStrategyIdFromWatchingWalletReq {
+            blockchain,
+            address: format!("{:?}", wallet_address),
+        })
         .await?
-        .first()
-        .context("error fetching fkey_strategy_id from tbl.strategy_watching_wallet")?
-        .try_get("fkey_strategy_id")
-        .context("error parsing fkey_strategy_id from tbl.strategy_watching_wallet")?;
+        .into_result()
+        .context("error fetching strategy_id from tbl.strategy")?
+        .strategy_id;
 
     Ok(strategy_id)
 }
 
 pub async fn get_user_id_from_strategy(db: &DbClient, strategy_id: i64) -> Result<i64> {
     let strategy_id: i64 = db
-        .query(
-            "
-				SELECT fkey_user_id
-				FROM tbl.strategy
-				WHERE pkey_id = $1
-			",
-            &vec![&strategy_id as &(dyn ToSql + Sync)],
-        )
+        .execute(FunAdminListStrategiesReq {
+            limit: 1,
+            offset: 0,
+            strategy_id: Some(strategy_id),
+            strategy_name: None,
+            expert_public_id: None,
+            expert_name: None,
+            description: None,
+            approved: None,
+            pending_approval: None,
+        })
         .await?
-        .first()
-        .context("error fetching fkey_user_id from tbl.strategy")?
-        .try_get("fkey_user_id")
-        .context("error parsing fkey_user_id from tbl.strategy")?;
+        .into_result()
+        .context("error fetching strategy_id from tbl.strategy")?
+        .creator_id;
 
     Ok(strategy_id)
 }

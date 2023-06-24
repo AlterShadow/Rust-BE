@@ -87,6 +87,7 @@ pub struct DbClient {
     conn_hash: u64,
 }
 impl DbClient {
+    #[deprecated]
     pub async fn query<T>(
         &self,
         statement: &T,

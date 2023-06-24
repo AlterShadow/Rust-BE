@@ -60,6 +60,9 @@ features = [
 default = []
 no-github-ci-tests = []
 
+[lib]
+name = "mc2fi_watcher"
+path = "lib.rs"
 
 [[bin]]
 name = "mc2fi_watcher"

@@ -42,6 +42,7 @@ crypto = { path = "src/service/shared/crypto" }
 eth-sdk = { path = "src/service/shared/eth-sdk" }
 api = { path = "src/service/shared/api" }
 mc2fi_auth = { path = "src/service/auth" }
+mc2fi_watcher = { path = "src/service/watcher" }
 tracing-appender = "0.2"
 
 [workspace]

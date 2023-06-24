@@ -1,21 +1,17 @@
 pub mod tools;
 
-use eth_sdk::signer::Secp256k1SecretKey;
-use eth_sdk::utils::encode_signature;
 use eyre::*;
 use gen::model::*;
 use lib::database::drop_and_recreate_database;
 use lib::log::{setup_logs, LogLevel};
-use tokio_tungstenite::tungstenite::client;
 use tools::*;
 use tracing::*;
-use web3::signing::{hash_message, Key};
 
 #[tokio::test]
 async fn test_admin_list_strategies() -> Result<()> {
     let _ = setup_logs(LogLevel::Info);
     drop_and_recreate_database()?;
-    let (admin, mut admin_client, user, mut client) = prepare_expert().await?;
+    let (_admin, mut admin_client, user, mut client) = prepare_expert().await?;
 
     let create_strategy_resp = client
         .request(ExpertCreateStrategyRequest {
@@ -27,6 +23,8 @@ async fn test_admin_list_strategies() -> Result<()> {
             expert_fee: 0.0,
             agreed_tos: true,
             wallet_address: format!("{:?}", user.address),
+            wallet_blockchain: EnumBlockChain::EthereumMainnet,
+            audit_rules: None,
         })
         .await?;
     info!("User Create Strategy {:?}", create_strategy_resp);

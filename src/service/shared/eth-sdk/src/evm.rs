@@ -1,8 +1,4 @@
-
-
-use crate::{
-    ContractCall, PancakePairPathSet, TransactionReady,
-};
+use crate::{ContractCall, PancakePairPathSet, TransactionReady};
 use bytes::Bytes;
 use eyre::*;
 use gen::database::FunWatcherSaveRawTransactionReq;

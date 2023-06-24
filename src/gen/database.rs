@@ -258,6 +258,11 @@ pub struct FunUserFollowStrategyRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunUserGetStrategyIdFromWatchingWalletRespRow {
+    pub strategy_id: i64,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserGetStrategyInitialTokenRatioByAddressAndChainRespRow {
     pub strategy_initial_token_ratio_id: i64,
     pub blockchain: EnumBlockChain,
@@ -483,10 +488,6 @@ pub struct FunUserStrategyRowType {
     #[serde(default)]
     pub approved_at: Option<i64>,
     pub pending_approval: bool,
-    #[serde(default)]
-    pub linked_wallet: Option<String>,
-    #[serde(default)]
-    pub linked_wallet_blockchain: Option<EnumBlockChain>,
     pub created_at: i64,
     pub creator_public_id: i64,
     pub creator_id: i64,
@@ -1977,6 +1978,26 @@ impl DatabaseRequest for FunUserListAuditRulesReq {
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![&self.audit_rule_id as &(dyn ToSql + Sync)]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserGetStrategyIdFromWatchingWalletReq {
+    pub blockchain: EnumBlockChain,
+    pub address: String,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunUserGetStrategyIdFromWatchingWalletReq {
+    type ResponseRow = FunUserGetStrategyIdFromWatchingWalletRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_get_strategy_id_from_watching_wallet(a_blockchain => $1::enum_block_chain, a_address => $2::varchar);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.blockchain as &(dyn ToSql + Sync),
+            &self.address as &(dyn ToSql + Sync),
+        ]
     }
 }
 

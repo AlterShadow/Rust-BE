@@ -1373,5 +1373,21 @@ BEGIN
 END
             "#,
         ),
+        ProceduralFunction::new(
+            "fun_user_get_strategy_id_from_watching_wallet",
+            vec![
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("address", Type::String),
+            ],
+            vec![Field::new("strategy_id", Type::BigInt)],
+            r#"
+BEGIN
+    RETURN QUERY SELECT a.fkey_strategy_id
+    FROM tbl.strategy_watching_wallet AS a
+    WHERE a.blockchain = a_blockchain
+        AND a.address = a_address;
+END
+            "#,
+        ),
     ]
 }

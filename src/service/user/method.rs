@@ -500,12 +500,19 @@ async fn user_back_strategy(
     // since users can have multiple addresses, this information is critical
     // for now, we fetch the "address" field from the user table
     let user_wallet_address_to_receive_shares_on_this_chain = Address::from_str(
-        db.query(
-            "SELECT address FROM tbl.user WHERE pkey_id = $1",
-            &[&ctx.user_id],
-        )
-        .await?[0]
-            .try_get("address")?,
+        &db.execute(FunAdminListUsersReq {
+            limit: 1,
+            offset: 0,
+            user_id: Some(ctx.user_id),
+            address: None,
+            username: None,
+            email: None,
+            role: None,
+        })
+        .await?
+        .into_result()
+        .context("No such user")?
+        .address,
     )?;
 
     /* instantiate strategy wallet contract wrapper */
