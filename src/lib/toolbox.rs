@@ -105,11 +105,11 @@ impl Toolbox {
     pub fn add_db(&mut self, db: DbClient) {
         self.db.push(db);
     }
-    pub fn get_db<T: From<DbClient>>(&self) -> T {
+    pub fn get_db(&self) -> DbClient {
         self.get_nth_db(0)
     }
-    pub fn get_nth_db<T: From<DbClient>>(&self, index: usize) -> T {
-        T::from(self.db.get(index).expect("Db not Initialized").clone())
+    pub fn get_nth_db(&self, index: usize) -> DbClient {
+        self.db.get(index).expect("Db not Initialized").clone()
     }
 
     pub fn send_ws_msg(

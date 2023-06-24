@@ -3657,6 +3657,48 @@
           "stream_response": [],
           "description": "",
           "json_schema": null
+        },
+        {
+          "name": "UserListDepositWithdrawBalances",
+          "code": 20510,
+          "parameters": [],
+          "returns": [
+            {
+              "name": "balances",
+              "ty": {
+                "DataTable": {
+                  "name": "UserListDepositWithdrawBalance",
+                  "fields": [
+                    {
+                      "name": "blockchain",
+                      "ty": {
+                        "EnumRef": "block_chain"
+                      }
+                    },
+                    {
+                      "name": "token_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "token_symbol",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "token_name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "balance",
+                      "ty": "String"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "stream_response": [],
+          "description": "",
+          "json_schema": null
         }
       ]
     },

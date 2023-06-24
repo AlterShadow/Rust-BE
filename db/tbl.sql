@@ -1,5 +1,5 @@
 -- Created by Vertabelo (http://vertabelo.com)
--- Last modification date: 2023-06-24 06:29:15.224
+-- Last modification date: 2023-06-24 13:13:44.685
 
 CREATE SCHEMA IF NOT EXISTS tbl;;
 
@@ -207,7 +207,7 @@ CREATE TABLE tbl.strategy_initial_token_ratio (
 
 -- Table: strategy_pool_contract
 CREATE TABLE tbl.strategy_pool_contract (
-    pkey_id bigint  NOT NULL DEFAULT nextval('tbl.strategy_pool_contract_id'),
+    pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_strategy_pool_contract_id'),
     fkey_strategy_id bigint  NOT NULL,
     blockchain enum_block_chain  NOT NULL,
     address varchar(64)  NOT NULL,
@@ -318,6 +318,16 @@ CREATE TABLE tbl.user_back_exit_strategy_ledger (
     CONSTRAINT user_back_exit_strategy_ledger_pk PRIMARY KEY (pkey_id)
 );
 
+-- Table: user_deposit_withdraw_balance
+CREATE TABLE tbl.user_deposit_withdraw_balance (
+    pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_user_deposit_exit_strategy_balance_id'),
+    fkey_user_id bigint  NOT NULL,
+    fkey_escrow_contract_address_id bigint  NOT NULL,
+    fkey_token_id bigint  NOT NULL,
+    balance varchar(64)  NOT NULL,
+    CONSTRAINT user_deposit_withdraw_balance_pk PRIMARY KEY (pkey_id)
+);
+
 -- Table: user_deposit_withdraw_ledger
 CREATE TABLE tbl.user_deposit_withdraw_ledger (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_user_deposit_withdraw_strategy_ledger_id'),
@@ -325,6 +335,7 @@ CREATE TABLE tbl.user_deposit_withdraw_ledger (
     blockchain enum_block_chain  NOT NULL,
     user_address varchar(64)  NOT NULL,
     escrow_contract_address varchar(64)  NOT NULL,
+    fkey_escrow_contract_address_id bigint  NOT NULL,
     receiver_address varchar(64)  NOT NULL,
     quantity varchar(64)  NOT NULL,
     transaction_hash varchar(80)  NOT NULL,
@@ -588,6 +599,38 @@ ALTER TABLE tbl.user_back_exit_strategy_ledger ADD CONSTRAINT user_back_strategy
     INITIALLY IMMEDIATE
 ;
 
+-- Reference: user_deposit_exit_strategy_balance_escrow_contract_address (table: user_deposit_withdraw_balance)
+ALTER TABLE tbl.user_deposit_withdraw_balance ADD CONSTRAINT user_deposit_exit_strategy_balance_escrow_contract_address
+    FOREIGN KEY (fkey_escrow_contract_address_id)
+    REFERENCES tbl.escrow_contract_address (pkey_id)  
+    NOT DEFERRABLE 
+    INITIALLY IMMEDIATE
+;
+
+-- Reference: user_deposit_exit_strategy_balance_escrow_token_contract_address (table: user_deposit_withdraw_balance)
+ALTER TABLE tbl.user_deposit_withdraw_balance ADD CONSTRAINT user_deposit_exit_strategy_balance_escrow_token_contract_address
+    FOREIGN KEY (fkey_token_id)
+    REFERENCES tbl.escrow_token_contract_address (pkey_id)  
+    NOT DEFERRABLE 
+    INITIALLY IMMEDIATE
+;
+
+-- Reference: user_deposit_exit_strategy_balance_user (table: user_deposit_withdraw_balance)
+ALTER TABLE tbl.user_deposit_withdraw_balance ADD CONSTRAINT user_deposit_exit_strategy_balance_user
+    FOREIGN KEY (fkey_user_id)
+    REFERENCES tbl."user" (pkey_id)  
+    NOT DEFERRABLE 
+    INITIALLY IMMEDIATE
+;
+
+-- Reference: user_deposit_withdraw_ledger_escrow_contract_address (table: user_deposit_withdraw_ledger)
+ALTER TABLE tbl.user_deposit_withdraw_ledger ADD CONSTRAINT user_deposit_withdraw_ledger_escrow_contract_address
+    FOREIGN KEY (fkey_escrow_contract_address_id)
+    REFERENCES tbl.escrow_contract_address (pkey_id)  
+    NOT DEFERRABLE 
+    INITIALLY IMMEDIATE
+;
+
 -- Reference: user_follow_expert_user (table: user_follow_expert)
 ALTER TABLE tbl.user_follow_expert ADD CONSTRAINT user_follow_expert_user
     FOREIGN KEY (fkey_user_id)
@@ -740,6 +783,13 @@ CREATE SEQUENCE tbl.seq_strategy_initial_token_ratio_id
       NO CYCLE
 ;
 
+-- Sequence: seq_strategy_pool_contract_id
+CREATE SEQUENCE tbl.seq_strategy_pool_contract_id
+      NO MINVALUE
+      NO MAXVALUE
+      NO CYCLE
+;
+
 -- Sequence: seq_strategy_wallet_id
 CREATE SEQUENCE tbl.seq_strategy_wallet_id
       NO MINVALUE
@@ -784,6 +834,13 @@ CREATE SEQUENCE tbl.seq_transaction_cache_id
 
 -- Sequence: seq_user_back_exit_strategy_ledger_id
 CREATE SEQUENCE tbl.seq_user_back_exit_strategy_ledger_id
+      NO MINVALUE
+      NO MAXVALUE
+      NO CYCLE
+;
+
+-- Sequence: seq_user_deposit_exit_strategy_balance_id
+CREATE SEQUENCE tbl.seq_user_deposit_exit_strategy_balance_id
       NO MINVALUE
       NO MAXVALUE
       NO CYCLE
@@ -849,13 +906,6 @@ CREATE SEQUENCE tbl.seq_ver_id
 
 -- Sequence: seq_wallet_activity_ledger_id
 CREATE SEQUENCE tbl.seq_wallet_activity_ledger_id
-      NO MINVALUE
-      NO MAXVALUE
-      NO CYCLE
-;
-
--- Sequence: strategy_pool_contract_id
-CREATE SEQUENCE tbl.strategy_pool_contract_id
       NO MINVALUE
       NO MAXVALUE
       NO CYCLE

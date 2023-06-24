@@ -833,5 +833,24 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 ),
             )],
         ),
+        EndpointSchema::new(
+            // "fun_user_list_user_deposit_withdraw_balance"
+            "UserListDepositWithdrawBalances",
+            20510,
+            vec![],
+            vec![Field::new(
+                "balances",
+                Type::datatable(
+                    "UserListDepositWithdrawBalance",
+                    vec![
+                        Field::new("blockchain", Type::enum_ref("block_chain")),
+                        Field::new("token_id", Type::BigInt),
+                        Field::new("token_symbol", Type::String),
+                        Field::new("token_name", Type::String),
+                        Field::new("balance", Type::String),
+                    ],
+                ),
+            )],
+        ),
     ]
 }

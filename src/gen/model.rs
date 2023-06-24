@@ -390,6 +390,9 @@ pub enum EnumEndpoint {
     #[postgres(name = "UserGetEscrowAddressForStrategy")]
     UserGetEscrowAddressForStrategy = 20500,
     ///
+    #[postgres(name = "UserListDepositWithdrawBalances")]
+    UserListDepositWithdrawBalances = 20510,
+    ///
     #[postgres(name = "AdminListUsers")]
     AdminListUsers = 30010,
     ///
@@ -1686,6 +1689,23 @@ pub struct UserListDepositLedgerRow {
     pub quantity: String,
     pub transaction_hash: String,
     pub created_at: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListDepositWithdrawBalance {
+    pub blockchain: EnumBlockChain,
+    pub token_id: i64,
+    pub token_symbol: String,
+    pub token_name: String,
+    pub balance: String,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListDepositWithdrawBalancesRequest {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListDepositWithdrawBalancesResponse {
+    pub balances: Vec<UserListDepositWithdrawBalance>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -6138,6 +6158,56 @@ impl WsRequest for UserGetEscrowAddressForStrategyRequest {
 }
 impl WsResponse for UserGetEscrowAddressForStrategyResponse {
     type Request = UserGetEscrowAddressForStrategyRequest;
+}
+
+impl WsRequest for UserListDepositWithdrawBalancesRequest {
+    type Response = UserListDepositWithdrawBalancesResponse;
+    const METHOD_ID: u32 = 20510;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserListDepositWithdrawBalances",
+  "code": 20510,
+  "parameters": [],
+  "returns": [
+    {
+      "name": "balances",
+      "ty": {
+        "DataTable": {
+          "name": "UserListDepositWithdrawBalance",
+          "fields": [
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
+            },
+            {
+              "name": "token_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "token_symbol",
+              "ty": "String"
+            },
+            {
+              "name": "token_name",
+              "ty": "String"
+            },
+            {
+              "name": "balance",
+              "ty": "String"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for UserListDepositWithdrawBalancesResponse {
+    type Request = UserListDepositWithdrawBalancesRequest;
 }
 
 impl WsRequest for AdminListUsersRequest {

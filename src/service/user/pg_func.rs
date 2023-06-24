@@ -1391,5 +1391,35 @@ BEGIN
 END
             "#,
         ),
+        ProceduralFunction::new(
+            "fun_user_list_user_deposit_withdraw_balance",
+            vec![
+                Field::new("user_id", Type::BigInt),
+                Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
+            ],
+            vec![
+                Field::new("user_id", Type::BigInt),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("token_id", Type::BigInt),
+                Field::new("token_symbol", Type::String),
+                Field::new("token_name", Type::String),
+                Field::new("balance", Type::String),
+            ],
+            r#"
+BEGIN
+    RETURN QUERY SELECT
+        a.fkey_user_id,
+        etc.blockchain,
+        etc.pkey_id,
+        etc.symbol,
+        etc.name,
+        a.balance
+    FROM tbl.user_deposit_withdraw_balance AS a
+    JOIN tbl.escrow_token_contract_address AS etc ON etc.pkey_id = a.fkey_token_id
+    WHERE a.fkey_user_id = a_user_id
+        AND (a_blockchain ISNULL OR etc.blockchain = a_blockchain);
+END
+"#,
+        ),
     ]
 }

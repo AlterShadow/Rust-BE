@@ -435,7 +435,37 @@ impl RequestHandler for MethodUserListBackedStrategies {
         .boxed()
     }
 }
+pub struct MethodUserListDepositWithdrawBalances;
+impl RequestHandler for MethodUserListDepositWithdrawBalances {
+    type Request = UserListDepositWithdrawBalancesRequest;
 
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        _req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db: DbClient = toolbox.get_db();
+        async move {
+            let balances = db
+                .execute(FunUserListUserDepositWithdrawBalanceReq {
+                    user_id: ctx.user_id,
+                    blockchain: None,
+                })
+                .await?;
+            Ok(UserListDepositWithdrawBalancesResponse {
+                balances: balances.map(|x| UserListDepositWithdrawBalance {
+                    blockchain: x.blockchain,
+                    token_id: x.token_id,
+                    token_symbol: x.token_symbol,
+                    token_name: x.token_name,
+                    balance: x.balance,
+                }),
+            })
+        }
+        .boxed()
+    }
+}
 async fn deploy_wallet_contract(
     conn: &EthereumRpcConnection,
     key: impl Key + Clone,

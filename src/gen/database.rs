@@ -451,6 +451,16 @@ pub struct FunUserListTopPerformingStrategiesRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunUserListUserDepositWithdrawBalanceRespRow {
+    pub user_id: i64,
+    pub blockchain: EnumBlockChain,
+    pub token_id: i64,
+    pub token_symbol: String,
+    pub token_name: String,
+    pub balance: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserRemoveRegisteredWalletRespRow {}
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -1997,6 +2007,27 @@ impl DatabaseRequest for FunUserGetStrategyIdFromWatchingWalletReq {
         vec![
             &self.blockchain as &(dyn ToSql + Sync),
             &self.address as &(dyn ToSql + Sync),
+        ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserListUserDepositWithdrawBalanceReq {
+    pub user_id: i64,
+    #[serde(default)]
+    pub blockchain: Option<EnumBlockChain>,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunUserListUserDepositWithdrawBalanceReq {
+    type ResponseRow = FunUserListUserDepositWithdrawBalanceRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_list_user_deposit_withdraw_balance(a_user_id => $1::bigint, a_blockchain => $2::enum_block_chain);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.blockchain as &(dyn ToSql + Sync),
         ]
     }
 }

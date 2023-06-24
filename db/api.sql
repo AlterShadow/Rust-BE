@@ -1913,6 +1913,35 @@ END
 $$;
         
 
+CREATE OR REPLACE FUNCTION api.fun_user_list_user_deposit_withdraw_balance(a_user_id bigint, a_blockchain enum_block_chain DEFAULT NULL)
+RETURNS table (
+    "user_id" bigint,
+    "blockchain" enum_block_chain,
+    "token_id" bigint,
+    "token_symbol" varchar,
+    "token_name" varchar,
+    "balance" varchar
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY SELECT
+        a.fkey_user_id,
+        etc.blockchain,
+        etc.pkey_id,
+        etc.symbol,
+        etc.name,
+        a.balance
+    FROM tbl.user_deposit_withdraw_balance AS a
+    JOIN tbl.escrow_token_contract_address AS etc ON etc.pkey_id = a.fkey_token_id
+    WHERE a.fkey_user_id = a_user_id
+        AND (a_blockchain ISNULL OR etc.blockchain = a_blockchain);
+END
+
+$$;
+        
+
 CREATE OR REPLACE FUNCTION api.fun_admin_list_users(a_limit bigint, a_offset bigint, a_user_id bigint DEFAULT NULL, a_address varchar DEFAULT NULL, a_username varchar DEFAULT NULL, a_email varchar DEFAULT NULL, a_role enum_role DEFAULT NULL)
 RETURNS table (
     "total" bigint,
