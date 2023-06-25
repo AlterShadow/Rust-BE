@@ -206,7 +206,7 @@ END
 DECLARE
     _expert_watched_wallet_id                         bigint;
     _expert_listened_wallet_asset_balance_id          bigint;
-    _expert_listened_wallet_asset_balance_old_balance bigint;
+    _expert_listened_wallet_asset_balance_old_balance varchar;
     _pkey_id                                          bigint;
 BEGIN
     SELECT pkey_id
