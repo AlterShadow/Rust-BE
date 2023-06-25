@@ -155,6 +155,13 @@ async fn main() -> Result<()> {
         manger: Arc::clone(&sub_manager),
     });
 
+    server.add_handler(MethodAdminSubscribeDepositLedger {
+        manger: Arc::clone(&sub_manager),
+    });
+    server.add_handler(MethodAdminUnsubscribeDepositLedger {
+        manger: Arc::clone(&sub_manager),
+    });
+
     server.add_handler(MethodAdminAddAuditRule);
     server.add_handler(MethodAdminAddEscrowTokenContractAddress);
     server.add_handler(MethodAdminAddEscrowContractAddress);

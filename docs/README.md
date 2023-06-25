@@ -90,6 +90,8 @@ ID: 3
 |30130|AdminRejectStrategy|strategy_id|success||
 |31002|AdminAddAuditRule|rule_id, name, description|||
 |32010|AdminNotifyEscrowLedgerChange|pkey_id, user_id, balance|||
+|32011|AdminSubscribeDepositLedger||||
+|32012|AdminUnsubscribeDepositLedger||||
 |32020|AdminAddEscrowTokenContractAddress|pkey_id, symbol, short_name, description, address, blockchain, is_stablecoin|||
 |32030|AdminAddEscrowContractAddress|pkey_id, address, blockchain|||
 

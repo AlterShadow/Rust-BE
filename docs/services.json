@@ -4665,6 +4665,24 @@
           "json_schema": null
         },
         {
+          "name": "AdminSubscribeDepositLedger",
+          "code": 32011,
+          "parameters": [],
+          "returns": [],
+          "stream_response": [],
+          "description": "",
+          "json_schema": null
+        },
+        {
+          "name": "AdminUnsubscribeDepositLedger",
+          "code": 32012,
+          "parameters": [],
+          "returns": [],
+          "stream_response": [],
+          "description": "",
+          "json_schema": null
+        },
+        {
           "name": "AdminAddEscrowTokenContractAddress",
           "code": 32020,
           "parameters": [

@@ -1,4 +1,6 @@
 use crate::method::{convert_expert_db_to_api, convert_strategy_db_to_api, ensure_user_role};
+use chrono::Utc;
+use eth_sdk::signer::Secp256k1SecretKey;
 use eyre::ContextCompat;
 use futures::FutureExt;
 use gen::database::*;
@@ -9,6 +11,10 @@ use lib::toolbox::{RequestContext, Toolbox};
 use lib::ws::SubscribeManager;
 use lib::{DEFAULT_LIMIT, DEFAULT_OFFSET};
 use std::sync::Arc;
+use std::time::Duration;
+use tokio::time::sleep;
+use tracing::info;
+use web3::types::U256;
 
 pub struct MethodAdminListUsers;
 impl RequestHandler for MethodAdminListUsers {
@@ -473,6 +479,7 @@ impl RequestHandler for MethodAdminAddAuditRule {
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub enum AdminSubscribeTopic {
     AdminNotifyEscrowLedgerChange = 1,
+    AdminNotifyEscrowLedgerChangeAll = 2,
 }
 impl Into<u32> for AdminSubscribeTopic {
     fn into(self) -> u32 {
@@ -500,13 +507,86 @@ impl RequestHandler for MethodAdminNotifyEscrowLedgerChange {
                 &req.balance,
                 |ctx| ctx.user_id == req.user_id,
             );
+            manager.publish_to_all(
+                &toolbox,
+                AdminSubscribeTopic::AdminNotifyEscrowLedgerChangeAll,
+                &req.balance,
+            );
 
             Ok(AdminNotifyEscrowLedgerChangeResponse {})
         }
         .boxed()
     }
 }
+pub struct MethodAdminSubscribeDepositLedger {
+    pub manger: Arc<SubscribeManager<AdminSubscribeTopic>>,
+}
+impl RequestHandler for MethodAdminSubscribeDepositLedger {
+    type Request = AdminSubscribeDepositLedgerRequest;
 
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        _req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let manager = self.manger.clone();
+        let toolbox = toolbox.clone();
+        async move {
+            ensure_user_role(ctx, EnumRole::Admin)?;
+            manager.subscribe(AdminSubscribeTopic::AdminNotifyEscrowLedgerChangeAll, ctx);
+            // TODO: this is to provide mock data to FE. Remove this when we have real data
+            tokio::spawn(async move {
+                for i in 0..10 {
+                    sleep(Duration::from_secs(3)).await;
+                    let amount = U256::from(i);
+                    let key = Secp256k1SecretKey::new_random();
+                    info!("Sending mock data to FE, {}..", i);
+                    manager.publish_to_all(
+                        &toolbox,
+                        AdminSubscribeTopic::AdminNotifyEscrowLedgerChangeAll,
+                        &UserListDepositLedgerRow {
+                            quantity: format!("{:?}", amount),
+                            blockchain: EnumBlockChain::EthereumMainnet,
+                            user_address: format!("{:?}", key.address),
+                            contract_address: format!("{:?}", key.address),
+                            transaction_hash: format!("{:?}", key.address),
+                            receiver_address: format!("{:?}", key.address),
+                            created_at: Utc::now().timestamp(),
+                        },
+                    )
+                }
+            });
+            Ok(AdminSubscribeDepositLedgerResponse {})
+        }
+        .boxed()
+    }
+}
+
+pub struct MethodAdminUnsubscribeDepositLedger {
+    pub manger: Arc<SubscribeManager<AdminSubscribeTopic>>,
+}
+impl RequestHandler for MethodAdminUnsubscribeDepositLedger {
+    type Request = AdminUnsubscribeDepositLedgerRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        _req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let manager = self.manger.clone();
+        async move {
+            manager.unsubscribe(
+                AdminSubscribeTopic::AdminNotifyEscrowLedgerChangeAll,
+                ctx.connection_id,
+            );
+
+            Ok(AdminUnsubscribeDepositLedgerResponse {})
+        }
+        .boxed()
+    }
+}
 pub struct MethodAdminAddEscrowTokenContractAddress;
 impl RequestHandler for MethodAdminAddEscrowTokenContractAddress {
     type Request = AdminAddEscrowTokenContractAddressRequest;

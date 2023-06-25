@@ -444,6 +444,12 @@ pub enum EnumEndpoint {
     #[postgres(name = "AdminNotifyEscrowLedgerChange")]
     AdminNotifyEscrowLedgerChange = 32010,
     ///
+    #[postgres(name = "AdminSubscribeDepositLedger")]
+    AdminSubscribeDepositLedger = 32011,
+    ///
+    #[postgres(name = "AdminUnsubscribeDepositLedger")]
+    AdminUnsubscribeDepositLedger = 32012,
+    ///
     #[postgres(name = "AdminAddEscrowTokenContractAddress")]
     AdminAddEscrowTokenContractAddress = 32020,
     ///
@@ -1026,6 +1032,18 @@ pub struct AdminSetUserRoleRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminSetUserRoleResponse {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminSubscribeDepositLedgerRequest {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminSubscribeDepositLedgerResponse {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminUnsubscribeDepositLedgerRequest {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminUnsubscribeDepositLedgerResponse {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminUpdateSystemConfigRequest {
@@ -7358,6 +7376,40 @@ impl WsRequest for AdminNotifyEscrowLedgerChangeRequest {
 }
 impl WsResponse for AdminNotifyEscrowLedgerChangeResponse {
     type Request = AdminNotifyEscrowLedgerChangeRequest;
+}
+
+impl WsRequest for AdminSubscribeDepositLedgerRequest {
+    type Response = AdminSubscribeDepositLedgerResponse;
+    const METHOD_ID: u32 = 32011;
+    const SCHEMA: &'static str = r#"{
+  "name": "AdminSubscribeDepositLedger",
+  "code": 32011,
+  "parameters": [],
+  "returns": [],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for AdminSubscribeDepositLedgerResponse {
+    type Request = AdminSubscribeDepositLedgerRequest;
+}
+
+impl WsRequest for AdminUnsubscribeDepositLedgerRequest {
+    type Response = AdminUnsubscribeDepositLedgerResponse;
+    const METHOD_ID: u32 = 32012;
+    const SCHEMA: &'static str = r#"{
+  "name": "AdminUnsubscribeDepositLedger",
+  "code": 32012,
+  "parameters": [],
+  "returns": [],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for AdminUnsubscribeDepositLedgerResponse {
+    type Request = AdminUnsubscribeDepositLedgerRequest;
 }
 
 impl WsRequest for AdminAddEscrowTokenContractAddressRequest {

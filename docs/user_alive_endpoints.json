@@ -15,6 +15,8 @@
   "AdminRejectUserBecomeExpert",
   "AdminSetBlockUser",
   "AdminSetUserRole",
+  "AdminSubscribeDepositLedger",
+  "AdminUnsubscribeDepositLedger",
   "AdminUpdateSystemConfig",
   "ExpertAddStrategyInitialTokenRatio",
   "ExpertAddStrategyWatchingWallet",
