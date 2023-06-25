@@ -1412,5 +1412,45 @@ BEGIN
 END
         "#,
         ),
+        ProceduralFunction::new(
+            "fun_user_list_escrow_token_contract_address",
+            vec![
+                Field::new("limit", Type::BigInt),
+                Field::new("offset", Type::BigInt),
+                Field::new("token_id", Type::optional(Type::BigInt)),
+                Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
+                Field::new("address", Type::optional(Type::String)),
+                Field::new("symbol", Type::optional(Type::String)),
+            ],
+            vec![
+                Field::new("token_id", Type::BigInt),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("address", Type::String),
+                Field::new("symbol", Type::String),
+                Field::new("short_name", Type::String),
+                Field::new("description", Type::String),
+                Field::new("is_stablecoin", Type::Boolean),
+            ],
+            r#"
+BEGIN
+    RETURN QUERY SELECT
+        a.pkey_id,
+        a.blockchain,
+        a.address,
+        a.symbol,
+        a.short_name,
+        a.description,
+        a.is_stablecoin
+    FROM tbl.escrow_token_contract_address AS a
+    WHERE (a_token_id ISNULL OR a.pkey_id = a_token_id)
+        AND (a_blockchain ISNULL OR a.blockchain = a_blockchain)
+        AND (a_address ISNULL OR a.address = a_address)
+        AND (a_symbol ISNULL OR a.symbol = a_symbol)
+    ORDER BY a.pkey_id
+    LIMIT a_limit
+    OFFSET a_offset;
+END
+            "#,
+        ),
     ]
 }

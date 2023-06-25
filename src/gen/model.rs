@@ -1515,7 +1515,7 @@ pub struct UserApplyBecomeExpertResponse {
 pub struct UserBackStrategyRequest {
     pub strategy_id: i64,
     pub quantity: String,
-    pub blockchain: EnumBlockChain,
+    pub token_id: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -3486,10 +3486,8 @@ impl WsRequest for UserBackStrategyRequest {
       "ty": "String"
     },
     {
-      "name": "blockchain",
-      "ty": {
-        "EnumRef": "block_chain"
-      }
+      "name": "token_id",
+      "ty": "BigInt"
     }
   ],
   "returns": [

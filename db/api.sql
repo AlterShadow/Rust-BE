@@ -1946,6 +1946,41 @@ END
 $$;
         
 
+CREATE OR REPLACE FUNCTION api.fun_user_list_escrow_token_contract_address(a_limit bigint, a_offset bigint, a_token_id bigint DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL, a_address varchar DEFAULT NULL, a_symbol varchar DEFAULT NULL)
+RETURNS table (
+    "token_id" bigint,
+    "blockchain" enum_block_chain,
+    "address" varchar,
+    "symbol" varchar,
+    "short_name" varchar,
+    "description" varchar,
+    "is_stablecoin" boolean
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY SELECT
+        a.pkey_id,
+        a.blockchain,
+        a.address,
+        a.symbol,
+        a.short_name,
+        a.description,
+        a.is_stablecoin
+    FROM tbl.escrow_token_contract_address AS a
+    WHERE (a_token_id ISNULL OR a.pkey_id = a_token_id)
+        AND (a_blockchain ISNULL OR a.blockchain = a_blockchain)
+        AND (a_address ISNULL OR a.address = a_address)
+        AND (a_symbol ISNULL OR a.symbol = a_symbol)
+    ORDER BY a.pkey_id
+    LIMIT a_limit
+    OFFSET a_offset;
+END
+            
+$$;
+        
+
 CREATE OR REPLACE FUNCTION api.fun_admin_list_users(a_limit bigint, a_offset bigint, a_user_id bigint DEFAULT NULL, a_address varchar DEFAULT NULL, a_username varchar DEFAULT NULL, a_email varchar DEFAULT NULL, a_role enum_role DEFAULT NULL)
 RETURNS table (
     "total" bigint,

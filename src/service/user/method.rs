@@ -1057,18 +1057,31 @@ impl RequestHandler for MethodUserBackStrategy {
         let escrow_contract = self.escrow_contract.clone();
         let master_key = self.master_key.clone();
         async move {
-            let escrow_contract = escrow_contract.get(&pool, req.blockchain).await?;
-            let eth_conn = pool.get(req.blockchain).await?;
+            let token = db
+                .execute(FunUserListEscrowTokenContractAddressReq {
+                    limit: 1,
+                    offset: 0,
+                    blockchain: None,
+                    token_id: Some(req.token_id),
+                    address: None,
+                    symbol: None,
+                })
+                .await?
+                .into_result()
+                .with_context(|| CustomError::new(EnumErrorCode::NotFound, "Token not found"))?;
+            let escrow_contract = escrow_contract.get(&pool, token.blockchain).await?;
+            let eth_conn = pool.get(token.blockchain).await?;
             ensure_user_role(ctx, EnumRole::User)?;
 
             user_back_strategy(
                 &eth_conn,
                 &ctx,
                 &db,
-                req.blockchain,
+                token.blockchain,
                 req.quantity.parse()?,
                 &token_addresses,
                 req.strategy_id,
+                // TODO: pass in token instead of hardcoded USDC
                 EnumBlockchainCoin::USDC,
                 escrow_contract,
                 &dex_addresses,
@@ -2759,7 +2772,6 @@ impl RequestHandler for MethodUserRemoveStrategyAuditRule {
 }
 pub struct MethodUserGetEscrowAddressForStrategy {
     pub addresses: Vec<UserGetDepositAddressesRow>,
-    pub token_addresses: Arc<BlockchainCoinAddresses>,
 }
 impl RequestHandler for MethodUserGetEscrowAddressForStrategy {
     type Request = UserGetEscrowAddressForStrategyRequest;
@@ -2770,8 +2782,7 @@ impl RequestHandler for MethodUserGetEscrowAddressForStrategy {
         ctx: RequestContext,
         req: Self::Request,
     ) -> FutureResponse<Self::Request> {
-        let addresses = self.addresses.clone();
-        let token_addresses = self.token_addresses.clone();
+        let escrow_addresses = self.addresses.clone();
         let db = toolbox.get_db();
         async move {
             let strategy = db
@@ -2792,26 +2803,37 @@ impl RequestHandler for MethodUserGetEscrowAddressForStrategy {
                 .with_context(|| {
                     CustomError::new(EnumErrorCode::NotFound, "Could not find strategy")
                 })?;
-            Ok(UserGetEscrowAddressForStrategyResponse {
-                tokens: addresses
-                    .into_iter()
-                    .filter(|x| x.blockchain == strategy.blockchain)
-                    // TODO: filter by token id
-                    .map(|x| {
-                        let usdc = token_addresses
-                            .get(x.blockchain, EnumBlockchainCoin::USDC)
-                            .unwrap();
-                        UserAllowedEscrowTransferInfo {
-                            receiver_address: x.address,
-                            blockchain: x.blockchain,
-                            token_id: 0,
-                            token_symbol: "USDC".to_string(),
-                            token_name: "USDC".to_string(),
-                            token_address: format!("{:?}", usdc),
-                        }
-                    })
-                    .collect(),
-            })
+            let tokens_contracts = db
+                .execute(FunUserListEscrowTokenContractAddressReq {
+                    limit: 100,
+                    offset: 0,
+                    token_id: None,
+                    blockchain: Some(strategy.blockchain),
+                    address: None,
+                    // TODO: support other symbols
+                    symbol: Some("USDC".to_string()),
+                })
+                .await?
+                .into_rows();
+            let mut tokens = vec![];
+            for token in tokens_contracts {
+                for address in &escrow_addresses {
+                    if address.blockchain != strategy.blockchain {
+                        continue;
+                    }
+
+                    let tk = UserAllowedEscrowTransferInfo {
+                        receiver_address: address.address.clone(),
+                        blockchain: token.blockchain,
+                        token_id: token.token_id,
+                        token_symbol: token.symbol.clone(),
+                        token_name: token.short_name.clone(),
+                        token_address: token.address.clone(),
+                    };
+                    tokens.push(tk);
+                }
+            }
+            Ok(UserGetEscrowAddressForStrategyResponse { tokens })
         }
         .boxed()
     }

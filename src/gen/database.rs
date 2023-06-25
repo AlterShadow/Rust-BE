@@ -380,6 +380,17 @@ pub struct FunUserListDepositLedgerRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunUserListEscrowTokenContractAddressRespRow {
+    pub token_id: i64,
+    pub blockchain: EnumBlockChain,
+    pub address: String,
+    pub symbol: String,
+    pub short_name: String,
+    pub description: String,
+    pub is_stablecoin: bool,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserListExitStrategyLedgerRespRow {
     pub exit_ledger_id: i64,
     pub strategy_id: i64,
@@ -2061,6 +2072,38 @@ impl DatabaseRequest for FunUserAddStrategyPoolContractReq {
             &self.strategy_id as &(dyn ToSql + Sync),
             &self.blockchain as &(dyn ToSql + Sync),
             &self.address as &(dyn ToSql + Sync),
+        ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserListEscrowTokenContractAddressReq {
+    pub limit: i64,
+    pub offset: i64,
+    #[serde(default)]
+    pub token_id: Option<i64>,
+    #[serde(default)]
+    pub blockchain: Option<EnumBlockChain>,
+    #[serde(default)]
+    pub address: Option<String>,
+    #[serde(default)]
+    pub symbol: Option<String>,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunUserListEscrowTokenContractAddressReq {
+    type ResponseRow = FunUserListEscrowTokenContractAddressRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_list_escrow_token_contract_address(a_limit => $1::bigint, a_offset => $2::bigint, a_token_id => $3::bigint, a_blockchain => $4::enum_block_chain, a_address => $5::varchar, a_symbol => $6::varchar);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.limit as &(dyn ToSql + Sync),
+            &self.offset as &(dyn ToSql + Sync),
+            &self.token_id as &(dyn ToSql + Sync),
+            &self.blockchain as &(dyn ToSql + Sync),
+            &self.address as &(dyn ToSql + Sync),
+            &self.symbol as &(dyn ToSql + Sync),
         ]
     }
 }
