@@ -571,7 +571,7 @@ impl RequestHandler for MethodAdminUnsubscribeDepositLedger {
 
     fn handle(
         &self,
-        toolbox: &Toolbox,
+        _toolbox: &Toolbox,
         ctx: RequestContext,
         _req: Self::Request,
     ) -> FutureResponse<Self::Request> {

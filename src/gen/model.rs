@@ -1162,7 +1162,8 @@ pub struct ExpertCreateStrategyRequest {
     pub name: String,
     pub description: String,
     pub strategy_thesis_url: String,
-    pub minimum_backing_amount_usd: f64,
+    #[serde(default)]
+    pub minimum_backing_amount_usd: Option<f64>,
     pub strategy_fee: f64,
     pub expert_fee: f64,
     pub agreed_tos: bool,
@@ -5207,7 +5208,9 @@ impl WsRequest for ExpertCreateStrategyRequest {
     },
     {
       "name": "minimum_backing_amount_usd",
-      "ty": "Numeric"
+      "ty": {
+        "Optional": "Numeric"
+      }
     },
     {
       "name": "strategy_fee",

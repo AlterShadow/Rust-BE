@@ -2804,7 +2804,9 @@
             },
             {
               "name": "minimum_backing_amount_usd",
-              "ty": "Numeric"
+              "ty": {
+                "Optional": "Numeric"
+              }
             },
             {
               "name": "strategy_fee",

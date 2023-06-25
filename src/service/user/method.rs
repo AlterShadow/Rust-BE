@@ -1906,7 +1906,7 @@ impl RequestHandler for MethodExpertCreateStrategy {
                     name: req.name,
                     description: req.description,
                     strategy_thesis_url: req.strategy_thesis_url,
-                    minimum_backing_amount_usd: req.minimum_backing_amount_usd,
+                    minimum_backing_amount_usd: req.minimum_backing_amount_usd.unwrap_or_default(),
                     strategy_fee: req.strategy_fee,
                     expert_fee: req.expert_fee,
                     agreed_tos: req.agreed_tos,
@@ -2509,7 +2509,7 @@ impl RequestHandler for MethodUserUnsubscribeDepositLedger {
 
     fn handle(
         &self,
-        toolbox: &Toolbox,
+        _toolbox: &Toolbox,
         ctx: RequestContext,
         _req: Self::Request,
     ) -> FutureResponse<Self::Request> {
