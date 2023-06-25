@@ -482,7 +482,7 @@ BEGIN
         RETURN QUERY SELECT FALSE;
     END IF;
     SELECT pkey_id INTO _token_id FROM tbl.escrow_token_contract_address WHERE address = a_contract_address AND blockchain = a_blockchain;
-    SELECT pkey_id INTO _fkey_escrow_contract_address_id FROM tbl.escrow_contract_address WHERE address = a_contract_address AND blockchain = a_blockchain;
+    SELECT pkey_id INTO _fkey_escrow_contract_address_id FROM tbl.escrow_contract_address WHERE address = a_receiver_address AND blockchain = a_blockchain;
     INSERT INTO tbl.user_deposit_withdraw_ledger (
         fkey_user_id,
         fkey_token_id,
