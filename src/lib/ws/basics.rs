@@ -61,6 +61,8 @@ pub struct WsSuccessResponseGeneric<Params> {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct WsStreamResponseGeneric<Params> {
+    pub original_seq: u32,
+    pub method: u32,
     pub stream_seq: u32,
     pub stream_code: u32,
     pub data: Params,

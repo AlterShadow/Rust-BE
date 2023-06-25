@@ -69,6 +69,8 @@ impl<Key: Hash + Eq + Into<u32>> SubscribeManager<Key> {
                     continue;
                 }
                 let msg = WsResponseGeneric::Stream(WsStreamResponseGeneric {
+                    original_seq: sub.ctx.seq,
+                    method: sub.ctx.method,
                     stream_seq: sub.stream_seq,
                     stream_code,
                     data: data.clone(),
