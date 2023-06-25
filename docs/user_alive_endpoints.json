@@ -1,5 +1,7 @@
 [
   "AdminAddAuditRule",
+  "AdminAddEscrowContractAddress",
+  "AdminAddEscrowTokenContractAddress",
   "AdminApproveStrategy",
   "AdminApproveUserBecomeExpert",
   "AdminGetSystemConfig",
@@ -31,6 +33,7 @@
   "UserFollowStrategy",
   "UserGetDepositAddresses",
   "UserGetDepositTokens",
+  "UserGetDepositWithdrawBalance",
   "UserGetEscrowAddressForStrategy",
   "UserGetExpertProfile",
   "UserGetStrategiesStatistics",
@@ -39,6 +42,7 @@
   "UserGetUserProfile",
   "UserListBackedStrategies",
   "UserListDepositLedger",
+  "UserListDepositWithdrawBalances",
   "UserListExitStrategyLedger",
   "UserListExperts",
   "UserListFeaturedExperts",
@@ -58,5 +62,6 @@
   "UserSubscribeDepositLedger",
   "UserUnfollowExpert",
   "UserUnfollowStrategy",
+  "UserUnsubscribeDepositLedger",
   "UserUpdateUserProfile"
 ]

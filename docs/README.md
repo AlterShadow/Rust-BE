@@ -60,6 +60,7 @@ ID: 2
 |20370|UserGetDepositAddresses||addresses||
 |20380|UserListDepositLedger|limit, offset|ledger||
 |20381|UserSubscribeDepositLedger||||
+|20382|UserUnsubscribeDepositLedger||||
 |20390|UserListStrategyWallets|blockchain|wallets||
 |20391|UserCreateStrategyWallet|wallet_address, blockchain, adminship|blockchain, address||
 |20400|UserListStrategyAuditRules|strategy_id|audit_rules||

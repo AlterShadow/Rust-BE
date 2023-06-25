@@ -745,6 +745,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
             vec![Field::new("ledger", Type::vec(user_deposit_ledger_entry()))],
         ),
         EndpointSchema::new("UserSubscribeDepositLedger", 20381, vec![], vec![]),
+        EndpointSchema::new("UserUnsubscribeDepositLedger", 20382, vec![], vec![]),
         EndpointSchema::new(
             "UserListStrategyWallets",
             20390,

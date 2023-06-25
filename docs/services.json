@@ -3495,6 +3495,15 @@
           "json_schema": null
         },
         {
+          "name": "UserUnsubscribeDepositLedger",
+          "code": 20382,
+          "parameters": [],
+          "returns": [],
+          "stream_response": [],
+          "description": "",
+          "json_schema": null
+        },
+        {
           "name": "UserListStrategyWallets",
           "code": 20390,
           "parameters": [

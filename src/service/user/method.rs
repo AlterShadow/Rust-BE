@@ -2500,6 +2500,31 @@ impl RequestHandler for MethodUserSubscribeDepositLedger {
         .boxed()
     }
 }
+
+pub struct MethodUserUnsubscribeDepositLedger {
+    pub manger: Arc<SubscribeManager<AdminSubscribeTopic>>,
+}
+impl RequestHandler for MethodUserUnsubscribeDepositLedger {
+    type Request = UserUnsubscribeDepositLedgerRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        _req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let manager = self.manger.clone();
+        async move {
+            manager.unsubscribe(
+                AdminSubscribeTopic::AdminNotifyEscrowLedgerChange,
+                ctx.connection_id,
+            );
+
+            Ok(UserUnsubscribeDepositLedgerResponse {})
+        }
+        .boxed()
+    }
+}
 pub struct MethodUserListStrategyWallets;
 impl RequestHandler for MethodUserListStrategyWallets {
     type Request = UserListStrategyWalletsRequest;

@@ -372,6 +372,9 @@ pub enum EnumEndpoint {
     #[postgres(name = "UserSubscribeDepositLedger")]
     UserSubscribeDepositLedger = 20381,
     ///
+    #[postgres(name = "UserUnsubscribeDepositLedger")]
+    UserUnsubscribeDepositLedger = 20382,
+    ///
     #[postgres(name = "UserListStrategyWallets")]
     UserListStrategyWallets = 20390,
     ///
@@ -2086,6 +2089,12 @@ pub struct UserUnfollowStrategyRequest {
 pub struct UserUnfollowStrategyResponse {
     pub success: bool,
 }
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserUnsubscribeDepositLedgerRequest {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserUnsubscribeDepositLedgerResponse {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserUpdateUserProfileRequest {
@@ -5993,6 +6002,23 @@ impl WsRequest for UserSubscribeDepositLedgerRequest {
 }
 impl WsResponse for UserSubscribeDepositLedgerResponse {
     type Request = UserSubscribeDepositLedgerRequest;
+}
+
+impl WsRequest for UserUnsubscribeDepositLedgerRequest {
+    type Response = UserUnsubscribeDepositLedgerResponse;
+    const METHOD_ID: u32 = 20382;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserUnsubscribeDepositLedger",
+  "code": 20382,
+  "parameters": [],
+  "returns": [],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for UserUnsubscribeDepositLedgerResponse {
+    type Request = UserUnsubscribeDepositLedgerRequest;
 }
 
 impl WsRequest for UserListStrategyWalletsRequest {

@@ -149,7 +149,10 @@ async fn main() -> Result<()> {
     });
 
     server.add_handler(MethodUserSubscribeDepositLedger {
-        manger: sub_manager,
+        manger: Arc::clone(&sub_manager),
+    });
+    server.add_handler(MethodUserUnsubscribeDepositLedger {
+        manger: Arc::clone(&sub_manager),
     });
 
     server.add_handler(MethodAdminAddAuditRule);

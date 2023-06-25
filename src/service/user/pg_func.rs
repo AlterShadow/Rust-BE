@@ -264,18 +264,18 @@ DECLARE
 BEGIN
     SELECT pkey_id INTO _token_id FROM tbl.escrow_token_contract_address WHERE address = a_token_address AND blockchain = a_blockchain;
     SELECT pkey_id INTO _escrow_contract_address_id FROM tbl.escrow_contract_address WHERE address = escrow_contract_address AND blockchain = a_blockchain;
-    ASSERT _token_id NOTNULL AND _escrow_contract_address_id NOTNUL;
+    ASSERT _token_id NOTNULL AND _escrow_contract_address_id NOTNULL;
     SELECT elwal.pkey_id, elwal.balance
     INTO _user_deposit_withdraw_balance_id, _user_deposit_withdraw_balance_old_balance
     FROM tbl.user_deposit_withdraw_balance AS elwal
-    WHERE elwal.fkey_token_id = a_token_id
+    WHERE elwal.fkey_token_id = _token_id
       AND elwal.fkey_user_id = a_user_id
-      AND elwal.fkey_escrow_contract_address_id = a_escrow_contract_address_id;
+      AND elwal.fkey_escrow_contract_address_id = _escrow_contract_address_id;
 
     -- insert new entry if not exist
     IF _user_deposit_withdraw_balance_id ISNULL THEN
         INSERT INTO tbl.user_deposit_withdraw_balance (fkey_user_id, fkey_escrow_contract_address_id, fkey_token_id, balance)
-        VALUES (a_user_id, a_escrow_contract_address_id, a_token_id, a_new_balance)
+        VALUES (a_user_id, _escrow_contract_address_id, _token_id, a_new_balance)
         RETURNING pkey_id
             INTO _pkey_id;
     END IF;
@@ -1288,7 +1288,7 @@ END
             vec![],
             r#"
 BEGIN
-    INSERT INTO tbl.user_registered_wallet (fkey_user_id, blockchain, address, created_at) 
+    INSERT INTO tbl.user_strategy_wallet (fkey_user_id, blockchain, address, created_at) 
     VALUES (a_user_id, a_blockchain, a_address, EXTRACT(EPOCH FROM NOW())::BIGINT);
 END
             "#,
@@ -1307,7 +1307,7 @@ END
             r#"
 BEGIN
     RETURN QUERY SELECT a.blockchain, a.address, a.created_at 
-    FROM tbl.user_registered_wallet AS a 
+    FROM tbl.user_strategy_wallet AS a 
     WHERE a.fkey_user_id = a_user_id 
         AND (a_blockchain ISNULL OR a.blockchain = a_blockchain);
 END
