@@ -194,56 +194,6 @@ END
             "#,
         ),
         ProceduralFunction::new(
-            "fun_user_save_user_deposit_withdraw_ledger",
-            vec![
-                Field::new("user_id", Type::BigInt),
-                Field::new("blockchain", Type::enum_ref("block_chain")),
-                Field::new("user_address", Type::String),
-                Field::new("contract_address", Type::String),
-                Field::new("receiver_address", Type::String),
-                Field::new("quantity", Type::String),
-                Field::new("transaction_hash", Type::String),
-            ],
-            vec![Field::new("success", Type::Boolean)],
-            r#"
-DECLARE
-    _token_id bigint;
-BEGIN
-    IF EXISTS(SELECT * FROM  tbl.user_deposit_withdraw_ledger
-			WHERE transaction_hash = a_transaction_hash AND
-			blockchain = a_blockchain
-		) THEN
-        RETURN QUERY SELECT FALSE;
-    END IF;
-    SELECT pkey_id INTO _token_id FROM tbl.escrow_token_contract_address WHERE address = a_contract_address AND blockchain = a_blockchain;
-    INSERT INTO tbl.user_deposit_withdraw_ledger (
-        fkey_user_id,
-        fkey_token_id,
-        blockchain,
-        user_address,
-        escrow_contract_address,
-        receiver_address,
-        quantity,
-        transaction_hash,
-        is_deposit,
-        happened_at
-    ) VALUES (
-     a_user_id,
-     _token_id,
-     a_blockchain,
-     a_user_address,
-     a_contract_address,
-     a_receiver_address,
-     a_quantity,
-     a_transaction_hash,
-     TRUE,
-     EXTRACT(EPOCH FROM NOW())::bigint
-    );
-    RETURN QUERY SELECT TRUE;
-END
-            "#,
-        ),
-        ProceduralFunction::new(
             "fun_watcher_upsert_user_deposit_withdraw_balance",
             vec![
                 Field::new("user_id", Type::BigInt),

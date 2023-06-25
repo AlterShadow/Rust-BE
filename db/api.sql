@@ -593,52 +593,6 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_save_user_deposit_withdraw_ledger(a_user_id bigint, a_blockchain enum_block_chain, a_user_address varchar, a_contract_address varchar, a_receiver_address varchar, a_quantity varchar, a_transaction_hash varchar)
-RETURNS table (
-    "success" boolean
-)
-LANGUAGE plpgsql
-AS $$
-    
-DECLARE
-    _token_id bigint;
-BEGIN
-    IF EXISTS(SELECT * FROM  tbl.user_deposit_withdraw_ledger
-			WHERE transaction_hash = a_transaction_hash AND
-			blockchain = a_blockchain
-		) THEN
-        RETURN QUERY SELECT FALSE;
-    END IF;
-    SELECT pkey_id INTO _token_id FROM tbl.escrow_token_contract_address WHERE address = a_contract_address AND blockchain = a_blockchain;
-    INSERT INTO tbl.user_deposit_withdraw_ledger (
-        fkey_user_id,
-        fkey_token_id,
-        blockchain,
-        user_address,
-        escrow_contract_address,
-        receiver_address,
-        quantity,
-        transaction_hash,
-        is_deposit,
-        happened_at
-    ) VALUES (
-     a_user_id,
-     _token_id,
-     a_blockchain,
-     a_user_address,
-     a_contract_address,
-     a_receiver_address,
-     a_quantity,
-     a_transaction_hash,
-     TRUE,
-     EXTRACT(EPOCH FROM NOW())::bigint
-    );
-    RETURN QUERY SELECT TRUE;
-END
-            
-$$;
-        
-
 CREATE OR REPLACE FUNCTION api.fun_watcher_upsert_user_deposit_withdraw_balance(a_user_id bigint, a_token_address varchar, a_escrow_contract_address varchar, a_blockchain enum_block_chain, a_old_balance varchar, a_new_balance varchar)
 RETURNS table (
     "pkey_id" bigint
@@ -2537,6 +2491,52 @@ BEGIN
                  ORDER BY pkey_id
                  OFFSET a_offset
                  LIMIT a_limit;
+END
+            
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_watcher_save_user_deposit_withdraw_ledger(a_user_id bigint, a_blockchain enum_block_chain, a_user_address varchar, a_contract_address varchar, a_receiver_address varchar, a_quantity varchar, a_transaction_hash varchar)
+RETURNS table (
+    "success" boolean
+)
+LANGUAGE plpgsql
+AS $$
+    
+DECLARE
+    _token_id bigint;
+BEGIN
+    IF EXISTS(SELECT * FROM  tbl.user_deposit_withdraw_ledger
+			WHERE transaction_hash = a_transaction_hash AND
+			blockchain = a_blockchain
+		) THEN
+        RETURN QUERY SELECT FALSE;
+    END IF;
+    SELECT pkey_id INTO _token_id FROM tbl.escrow_token_contract_address WHERE address = a_contract_address AND blockchain = a_blockchain;
+    INSERT INTO tbl.user_deposit_withdraw_ledger (
+        fkey_user_id,
+        fkey_token_id,
+        blockchain,
+        user_address,
+        escrow_contract_address,
+        receiver_address,
+        quantity,
+        transaction_hash,
+        is_deposit,
+        happened_at
+    ) VALUES (
+     a_user_id,
+     _token_id,
+     a_blockchain,
+     a_user_address,
+     a_contract_address,
+     a_receiver_address,
+     a_quantity,
+     a_transaction_hash,
+     TRUE,
+     EXTRACT(EPOCH FROM NOW())::bigint
+    );
+    RETURN QUERY SELECT TRUE;
 END
             
 $$;

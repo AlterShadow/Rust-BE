@@ -386,12 +386,12 @@ pub async fn handle_eth_escrows(
                 /* get token address that was transferred */
                 let called_address = tx.get_to().with_context(|| {
                     format!("no called address found for tx: {:?}", tx.get_hash())
-                });
+                })?;
 
                 /* insert escrow in ledger */
                 state
                     .db
-                    .execute(FunUserSaveUserDepositWithdrawLedgerReq {
+                    .execute(FunWatcherSaveUserDepositWithdrawLedgerReq {
                         user_id: user.user_id,
                         quantity: format!("{:?}", escrow.amount),
                         blockchain,

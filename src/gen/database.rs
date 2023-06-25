@@ -496,11 +496,6 @@ pub struct FunUserRequestRefundRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
-pub struct FunUserSaveUserDepositWithdrawLedgerRespRow {
-    pub success: bool,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserStrategyRowType {
     pub total: i64,
     pub strategy_id: i64,
@@ -635,6 +630,11 @@ pub struct FunWatcherSaveStrategyWatchingWalletTradeLedgerRespRow {
     pub fkey_token_in_name: String,
     pub fkey_token_out: i64,
     pub fkey_token_out_name: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunWatcherSaveUserDepositWithdrawLedgerRespRow {
+    pub success: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -1016,36 +1016,6 @@ impl DatabaseRequest for FunUserGetStrategyStatisticsBackLedgerReq {
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![&self.strategy_id as &(dyn ToSql + Sync)]
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunUserSaveUserDepositWithdrawLedgerReq {
-    pub user_id: i64,
-    pub blockchain: EnumBlockChain,
-    pub user_address: String,
-    pub contract_address: String,
-    pub receiver_address: String,
-    pub quantity: String,
-    pub transaction_hash: String,
-}
-
-#[allow(unused_variables)]
-impl DatabaseRequest for FunUserSaveUserDepositWithdrawLedgerReq {
-    type ResponseRow = FunUserSaveUserDepositWithdrawLedgerRespRow;
-    fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_save_user_deposit_withdraw_ledger(a_user_id => $1::bigint, a_blockchain => $2::enum_block_chain, a_user_address => $3::varchar, a_contract_address => $4::varchar, a_receiver_address => $5::varchar, a_quantity => $6::varchar, a_transaction_hash => $7::varchar);"
-    }
-    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
-        vec![
-            &self.user_id as &(dyn ToSql + Sync),
-            &self.blockchain as &(dyn ToSql + Sync),
-            &self.user_address as &(dyn ToSql + Sync),
-            &self.contract_address as &(dyn ToSql + Sync),
-            &self.receiver_address as &(dyn ToSql + Sync),
-            &self.quantity as &(dyn ToSql + Sync),
-            &self.transaction_hash as &(dyn ToSql + Sync),
-        ]
     }
 }
 
@@ -2536,6 +2506,36 @@ impl DatabaseRequest for FunAdminListEscrowContractAddressReq {
             &self.limit as &(dyn ToSql + Sync),
             &self.offset as &(dyn ToSql + Sync),
             &self.blockchain as &(dyn ToSql + Sync),
+        ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunWatcherSaveUserDepositWithdrawLedgerReq {
+    pub user_id: i64,
+    pub blockchain: EnumBlockChain,
+    pub user_address: String,
+    pub contract_address: String,
+    pub receiver_address: String,
+    pub quantity: String,
+    pub transaction_hash: String,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunWatcherSaveUserDepositWithdrawLedgerReq {
+    type ResponseRow = FunWatcherSaveUserDepositWithdrawLedgerRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_watcher_save_user_deposit_withdraw_ledger(a_user_id => $1::bigint, a_blockchain => $2::enum_block_chain, a_user_address => $3::varchar, a_contract_address => $4::varchar, a_receiver_address => $5::varchar, a_quantity => $6::varchar, a_transaction_hash => $7::varchar);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.blockchain as &(dyn ToSql + Sync),
+            &self.user_address as &(dyn ToSql + Sync),
+            &self.contract_address as &(dyn ToSql + Sync),
+            &self.receiver_address as &(dyn ToSql + Sync),
+            &self.quantity as &(dyn ToSql + Sync),
+            &self.transaction_hash as &(dyn ToSql + Sync),
         ]
     }
 }
