@@ -539,3 +539,32 @@ impl RequestHandler for MethodAdminAddEscrowTokenContractAddress {
         .boxed()
     }
 }
+
+pub struct MethodAdminAddEscrowContractAddress;
+impl RequestHandler for MethodAdminAddEscrowContractAddress {
+    type Request = AdminAddEscrowContractAddressRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db: DbClient = toolbox.get_db();
+
+        async move {
+            ensure_user_role(ctx, EnumRole::Admin)?;
+
+            let _ret = db
+                .execute(FunAdminAddEscrowContractAddressReq {
+                    pkey_id: req.pkey_id,
+                    address: req.address,
+                    blockchain: req.blockchain,
+                })
+                .await?;
+
+            Ok(AdminAddEscrowContractAddressResponse {})
+        }
+        .boxed()
+    }
+}

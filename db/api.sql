@@ -2483,6 +2483,65 @@ END
 $$;
         
 
+CREATE OR REPLACE FUNCTION api.fun_admin_list_escrow_token_contract_address(a_limit bigint, a_offset bigint, a_blockchain enum_block_chain DEFAULT NULL)
+RETURNS table (
+    "pkey_id" bigint,
+    "symbol" varchar,
+    "short_name" varchar,
+    "description" varchar,
+    "address" varchar,
+    "blockchain" enum_block_chain,
+    "is_stablecoin" boolean
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY SELECT pkey_id, symbol, short_name, description, address, blockchain, is_stablecoin
+                 FROM tbl.escrow_token_contract_address
+                WHERE (a_blockchain ISNULL OR blockchain = a_blockchain)
+                 ORDER BY pkey_id
+                 OFFSET a_offset
+                 LIMIT a_limit;
+END
+            
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_admin_add_escrow_contract_address(a_pkey_id bigint, a_blockchain enum_block_chain, a_address varchar)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    INSERT INTO tbl.escrow_contract_address (pkey_id, blockchain, address)
+         VALUES (a_pkey_id, a_blockchain, a_address);
+END
+            
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_admin_list_escrow_contract_address(a_limit bigint, a_offset bigint, a_blockchain enum_block_chain DEFAULT NULL)
+RETURNS table (
+    "pkey_id" bigint,
+    "blockchain" enum_block_chain,
+    "address" varchar
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY SELECT pkey_id, blockchain, address
+                 FROM tbl.escrow_contract_address
+                WHERE (a_blockchain ISNULL OR blockchain = a_blockchain)
+                 ORDER BY pkey_id
+                 OFFSET a_offset
+                 LIMIT a_limit;
+END
+            
+$$;
+        
+
 CREATE OR REPLACE FUNCTION api.fun_watcher_save_raw_transaction(a_transaction_hash varchar, a_chain varchar, a_raw_transaction varchar, a_dex varchar DEFAULT NULL)
 RETURNS table (
     "transaction_cache_id" bigint

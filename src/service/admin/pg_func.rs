@@ -393,6 +393,70 @@ BEGIN
 END
             "#,
         ),
-        // TODO: import escrow contract address
+        ProceduralFunction::new(
+            "fun_admin_list_escrow_token_contract_address",
+            vec![
+                Field::new("limit", Type::BigInt),
+                Field::new("offset", Type::BigInt),
+                Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
+            ],
+            vec![
+                Field::new("pkey_id", Type::BigInt),
+                Field::new("symbol", Type::String),
+                Field::new("short_name", Type::String),
+                Field::new("description", Type::String),
+                Field::new("address", Type::String),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("is_stablecoin", Type::Boolean),
+            ],
+            r#"
+BEGIN
+    RETURN QUERY SELECT pkey_id, symbol, short_name, description, address, blockchain, is_stablecoin
+                 FROM tbl.escrow_token_contract_address
+                WHERE (a_blockchain ISNULL OR blockchain = a_blockchain)
+                 ORDER BY pkey_id
+                 OFFSET a_offset
+                 LIMIT a_limit;
+END
+            "#,
+        ),
+        ProceduralFunction::new(
+            "fun_admin_add_escrow_contract_address",
+            vec![
+                Field::new("pkey_id", Type::BigInt),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("address", Type::String),
+            ],
+            vec![],
+            r#"
+BEGIN
+    INSERT INTO tbl.escrow_contract_address (pkey_id, blockchain, address)
+         VALUES (a_pkey_id, a_blockchain, a_address);
+END
+            "#,
+        ),
+        ProceduralFunction::new(
+            "fun_admin_list_escrow_contract_address",
+            vec![
+                Field::new("limit", Type::BigInt),
+                Field::new("offset", Type::BigInt),
+                Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
+            ],
+            vec![
+                Field::new("pkey_id", Type::BigInt),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("address", Type::String),
+            ],
+            r#"
+BEGIN
+    RETURN QUERY SELECT pkey_id, blockchain, address
+                 FROM tbl.escrow_contract_address
+                WHERE (a_blockchain ISNULL OR blockchain = a_blockchain)
+                 ORDER BY pkey_id
+                 OFFSET a_offset
+                 LIMIT a_limit;
+END
+            "#,
+        ),
     ]
 }

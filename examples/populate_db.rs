@@ -4,7 +4,7 @@ pub mod tools;
 use crate::audit::get_audit_rules;
 use eth_sdk::signer::Secp256k1SecretKey;
 use eth_sdk::utils::get_signed_text;
-use eth_sdk::BlockchainCoinAddresses;
+use eth_sdk::{BlockchainCoinAddresses, EscrowAddresses};
 use eyre::*;
 use futures::future::join_all;
 use gen::model::*;
@@ -265,6 +265,24 @@ async fn populate_escrow_token_contract_address() -> Result<()> {
     }
     Ok(())
 }
+async fn populate_escrow_contract_address() -> Result<()> {
+    let admin_signer = get_admin_key();
+    let mut admin_client = connect_user("dev-0", &admin_signer.key).await?;
+    let addresses = EscrowAddresses::new();
+    for (i, (blockchain, _, address)) in addresses.iter().enumerate() {
+        if let Err(err) = admin_client
+            .request(AdminAddEscrowContractAddressRequest {
+                pkey_id: i as _,
+                address: format!("{:?}", address),
+                blockchain,
+            })
+            .await
+        {
+            warn!("Error when inserting token: {:?}", err);
+        }
+    }
+    Ok(())
+}
 #[allow(unused)]
 async fn populate_user_register_wallets() -> Result<()> {
     let mut tasks = vec![];
@@ -353,6 +371,7 @@ async fn main() -> Result<()> {
     setup_logs(LogLevel::Debug)?;
     drop_and_recreate_database()?;
     populate_escrow_token_contract_address().await?;
+    populate_escrow_contract_address().await?;
     populate_users().await?;
     populate_audit_rules().await?;
     populate_user_apply_become_experts().await?;

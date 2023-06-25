@@ -154,6 +154,7 @@ async fn main() -> Result<()> {
 
     server.add_handler(MethodAdminAddAuditRule);
     server.add_handler(MethodAdminAddEscrowTokenContractAddress);
+    server.add_handler(MethodAdminAddEscrowContractAddress);
 
     let eth_pool = EthereumRpcConnectionPool::from_conns(config.ethereum_urls);
     let coin_addresses = Arc::new(BlockchainCoinAddresses::new());

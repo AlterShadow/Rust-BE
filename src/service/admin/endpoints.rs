@@ -235,5 +235,15 @@ pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
             ],
             vec![],
         ),
+        EndpointSchema::new(
+            "AdminAddEscrowContractAddress",
+            32030,
+            vec![
+                Field::new("pkey_id", Type::BigInt),
+                Field::new("address", Type::String),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+            ],
+            vec![],
+        ),
     ]
 }

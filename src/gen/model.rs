@@ -443,6 +443,9 @@ pub enum EnumEndpoint {
     ///
     #[postgres(name = "AdminAddEscrowTokenContractAddress")]
     AdminAddEscrowTokenContractAddress = 32020,
+    ///
+    #[postgres(name = "AdminAddEscrowContractAddress")]
+    AdminAddEscrowContractAddress = 32030,
 }
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -793,6 +796,16 @@ pub struct AdminAddAuditRuleRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminAddAuditRuleResponse {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminAddEscrowContractAddressRequest {
+    pub pkey_id: i64,
+    pub address: String,
+    pub blockchain: EnumBlockChain,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminAddEscrowContractAddressResponse {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminAddEscrowTokenContractAddressRequest {
@@ -7367,4 +7380,36 @@ impl WsRequest for AdminAddEscrowTokenContractAddressRequest {
 }
 impl WsResponse for AdminAddEscrowTokenContractAddressResponse {
     type Request = AdminAddEscrowTokenContractAddressRequest;
+}
+
+impl WsRequest for AdminAddEscrowContractAddressRequest {
+    type Response = AdminAddEscrowContractAddressResponse;
+    const METHOD_ID: u32 = 32030;
+    const SCHEMA: &'static str = r#"{
+  "name": "AdminAddEscrowContractAddress",
+  "code": 32030,
+  "parameters": [
+    {
+      "name": "pkey_id",
+      "ty": "BigInt"
+    },
+    {
+      "name": "address",
+      "ty": "String"
+    },
+    {
+      "name": "blockchain",
+      "ty": {
+        "EnumRef": "block_chain"
+      }
+    }
+  ],
+  "returns": [],
+  "stream_response": [],
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for AdminAddEscrowContractAddressResponse {
+    type Request = AdminAddEscrowContractAddressRequest;
 }

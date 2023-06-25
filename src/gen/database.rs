@@ -7,6 +7,9 @@ use serde::*;
 pub struct FunAdminAddAuditRuleRespRow {}
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunAdminAddEscrowContractAddressRespRow {}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunAdminAddEscrowTokenContractAddressRespRow {}
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -32,6 +35,24 @@ pub struct FunAdminListBackersRespRow {
     pub username: String,
     pub login_wallet_address: String,
     pub joined_at: i64,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunAdminListEscrowContractAddressRespRow {
+    pub pkey_id: i64,
+    pub blockchain: EnumBlockChain,
+    pub address: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunAdminListEscrowTokenContractAddressRespRow {
+    pub pkey_id: i64,
+    pub symbol: String,
+    pub short_name: String,
+    pub description: String,
+    pub address: String,
+    pub blockchain: EnumBlockChain,
+    pub is_stablecoin: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -2447,6 +2468,74 @@ impl DatabaseRequest for FunAdminAddEscrowTokenContractAddressReq {
             &self.address as &(dyn ToSql + Sync),
             &self.blockchain as &(dyn ToSql + Sync),
             &self.is_stablecoin as &(dyn ToSql + Sync),
+        ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAdminListEscrowTokenContractAddressReq {
+    pub limit: i64,
+    pub offset: i64,
+    #[serde(default)]
+    pub blockchain: Option<EnumBlockChain>,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunAdminListEscrowTokenContractAddressReq {
+    type ResponseRow = FunAdminListEscrowTokenContractAddressRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_admin_list_escrow_token_contract_address(a_limit => $1::bigint, a_offset => $2::bigint, a_blockchain => $3::enum_block_chain);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.limit as &(dyn ToSql + Sync),
+            &self.offset as &(dyn ToSql + Sync),
+            &self.blockchain as &(dyn ToSql + Sync),
+        ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAdminAddEscrowContractAddressReq {
+    pub pkey_id: i64,
+    pub blockchain: EnumBlockChain,
+    pub address: String,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunAdminAddEscrowContractAddressReq {
+    type ResponseRow = FunAdminAddEscrowContractAddressRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_admin_add_escrow_contract_address(a_pkey_id => $1::bigint, a_blockchain => $2::enum_block_chain, a_address => $3::varchar);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.pkey_id as &(dyn ToSql + Sync),
+            &self.blockchain as &(dyn ToSql + Sync),
+            &self.address as &(dyn ToSql + Sync),
+        ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAdminListEscrowContractAddressReq {
+    pub limit: i64,
+    pub offset: i64,
+    #[serde(default)]
+    pub blockchain: Option<EnumBlockChain>,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunAdminListEscrowContractAddressReq {
+    type ResponseRow = FunAdminListEscrowContractAddressRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_admin_list_escrow_contract_address(a_limit => $1::bigint, a_offset => $2::bigint, a_blockchain => $3::enum_block_chain);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.limit as &(dyn ToSql + Sync),
+            &self.offset as &(dyn ToSql + Sync),
+            &self.blockchain as &(dyn ToSql + Sync),
         ]
     }
 }

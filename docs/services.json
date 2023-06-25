@@ -4694,6 +4694,30 @@
           "stream_response": [],
           "description": "",
           "json_schema": null
+        },
+        {
+          "name": "AdminAddEscrowContractAddress",
+          "code": 32030,
+          "parameters": [
+            {
+              "name": "pkey_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "address",
+              "ty": "String"
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
+            }
+          ],
+          "returns": [],
+          "stream_response": [],
+          "description": "",
+          "json_schema": null
         }
       ]
     },
