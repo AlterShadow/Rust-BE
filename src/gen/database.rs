@@ -644,7 +644,7 @@ pub struct FunWatcherUpsertExpertListenedWalletAssetBalanceRespRow {
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunWatcherUpsertUserDepositWithdrawBalanceRespRow {
-    pub pkey_id: i64,
+    pub ret_pkey_id: i64,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

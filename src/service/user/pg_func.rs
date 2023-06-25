@@ -1367,14 +1367,12 @@ END
             r#"
 DECLARE
     _token_id bigint;
-    _escrow_contract_address_id bigint;
 BEGIN
     IF a_token_address ISNULL THEN
         SELECT pkey_id INTO _token_id FROM tbl.escrow_token_contract_address AS a WHERE a.address = a_token_address AND a.blockchain = a_blockchain;
     ELSE
         _token_id := a_token_id;
     END IF;
-    SELECT pkey_id INTO _escrow_contract_address_id FROM tbl.escrow_contract_address AS a WHERE a.address = a_escrow_contract_address AND a.blockchain = a_blockchain;
    
     RETURN QUERY SELECT
         a.fkey_user_id,

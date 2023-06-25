@@ -231,7 +231,7 @@ BEGIN
     END IF;
 
     -- update old balance if exist and equals to old balance
-    IF _expert_listened_wallet_asset_balance_old_balance != a_old_balance THEN
+    IF _expert_listened_wallet_asset_balance_old_balance NOTNULL AND _expert_listened_wallet_asset_balance_old_balance != a_old_balance THEN
         RETURN;
     END IF;
     UPDATE tbl.expert_listened_wallet_asset_balance
@@ -305,17 +305,17 @@ END
                 Field::new("old_balance", Type::String),
                 Field::new("new_balance", Type::String),
             ],
-            vec![Field::new("pkey_id", Type::BigInt)],
+            vec![Field::new("ret_pkey_id", Type::BigInt)],
             r#"
 DECLARE
     _token_id bigint;
     _escrow_contract_address_id bigint;
     _user_deposit_withdraw_balance_id          bigint;
-    _user_deposit_withdraw_balance_old_balance bigint;
+    _user_deposit_withdraw_balance_old_balance varchar;
     _pkey_id                                   bigint;
 BEGIN
     SELECT pkey_id INTO _token_id FROM tbl.escrow_token_contract_address WHERE address = a_token_address AND blockchain = a_blockchain;
-    SELECT pkey_id INTO _escrow_contract_address_id FROM tbl.escrow_contract_address WHERE address = escrow_contract_address AND blockchain = a_blockchain;
+    SELECT pkey_id INTO _escrow_contract_address_id FROM tbl.escrow_contract_address WHERE address = a_escrow_contract_address AND blockchain = a_blockchain;
     ASSERT _token_id NOTNULL AND _escrow_contract_address_id NOTNULL;
     SELECT elwal.pkey_id, elwal.balance
     INTO _user_deposit_withdraw_balance_id, _user_deposit_withdraw_balance_old_balance
@@ -333,7 +333,7 @@ BEGIN
     END IF;
 
     -- update old balance if exist and equals to old balance
-    IF _user_deposit_withdraw_balance_old_balance != a_old_balance THEN
+    IF _user_deposit_withdraw_balance_old_balance NOTNULL AND _user_deposit_withdraw_balance_old_balance != a_old_balance THEN
         RETURN;
     END IF;
     UPDATE tbl.user_deposit_withdraw_balance

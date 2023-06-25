@@ -1899,14 +1899,12 @@ AS $$
     
 DECLARE
     _token_id bigint;
-    _escrow_contract_address_id bigint;
 BEGIN
     IF a_token_address ISNULL THEN
         SELECT pkey_id INTO _token_id FROM tbl.escrow_token_contract_address AS a WHERE a.address = a_token_address AND a.blockchain = a_blockchain;
     ELSE
         _token_id := a_token_id;
     END IF;
-    SELECT pkey_id INTO _escrow_contract_address_id FROM tbl.escrow_contract_address AS a WHERE a.address = a_escrow_contract_address AND a.blockchain = a_blockchain;
    
     RETURN QUERY SELECT
         a.fkey_user_id,
@@ -2726,7 +2724,7 @@ BEGIN
     END IF;
 
     -- update old balance if exist and equals to old balance
-    IF _expert_listened_wallet_asset_balance_old_balance != a_old_balance THEN
+    IF _expert_listened_wallet_asset_balance_old_balance NOTNULL AND _expert_listened_wallet_asset_balance_old_balance != a_old_balance THEN
         RETURN;
     END IF;
     UPDATE tbl.expert_listened_wallet_asset_balance
@@ -2790,7 +2788,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION api.fun_watcher_upsert_user_deposit_withdraw_balance(a_user_id bigint, a_token_address varchar, a_escrow_contract_address varchar, a_blockchain enum_block_chain, a_old_balance varchar, a_new_balance varchar)
 RETURNS table (
-    "pkey_id" bigint
+    "ret_pkey_id" bigint
 )
 LANGUAGE plpgsql
 AS $$
@@ -2799,11 +2797,11 @@ DECLARE
     _token_id bigint;
     _escrow_contract_address_id bigint;
     _user_deposit_withdraw_balance_id          bigint;
-    _user_deposit_withdraw_balance_old_balance bigint;
+    _user_deposit_withdraw_balance_old_balance varchar;
     _pkey_id                                   bigint;
 BEGIN
     SELECT pkey_id INTO _token_id FROM tbl.escrow_token_contract_address WHERE address = a_token_address AND blockchain = a_blockchain;
-    SELECT pkey_id INTO _escrow_contract_address_id FROM tbl.escrow_contract_address WHERE address = escrow_contract_address AND blockchain = a_blockchain;
+    SELECT pkey_id INTO _escrow_contract_address_id FROM tbl.escrow_contract_address WHERE address = a_escrow_contract_address AND blockchain = a_blockchain;
     ASSERT _token_id NOTNULL AND _escrow_contract_address_id NOTNULL;
     SELECT elwal.pkey_id, elwal.balance
     INTO _user_deposit_withdraw_balance_id, _user_deposit_withdraw_balance_old_balance
@@ -2821,7 +2819,7 @@ BEGIN
     END IF;
 
     -- update old balance if exist and equals to old balance
-    IF _user_deposit_withdraw_balance_old_balance != a_old_balance THEN
+    IF _user_deposit_withdraw_balance_old_balance NOTNULL AND _user_deposit_withdraw_balance_old_balance != a_old_balance THEN
         RETURN;
     END IF;
     UPDATE tbl.user_deposit_withdraw_balance

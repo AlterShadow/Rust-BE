@@ -1,5 +1,5 @@
 -- Created by Vertabelo (http://vertabelo.com)
--- Last modification date: 2023-06-24 15:54:49.658
+-- Last modification date: 2023-06-25 15:39:03.914
 
 CREATE SCHEMA IF NOT EXISTS tbl;;
 
@@ -317,6 +317,7 @@ CREATE TABLE tbl.user_back_exit_strategy_ledger (
     quantity_sp_tokens varchar(64)  NOT NULL,
     is_back boolean  NOT NULL,
     happened_at bigint  NOT NULL,
+    CONSTRAINT user_back_exit_strategy_ledger_ak_1 UNIQUE (transaction_hash) NOT DEFERRABLE  INITIALLY IMMEDIATE,
     CONSTRAINT user_back_exit_strategy_ledger_pk PRIMARY KEY (pkey_id)
 );
 
@@ -344,7 +345,7 @@ CREATE TABLE tbl.user_deposit_withdraw_ledger (
     transaction_hash varchar(80)  NOT NULL,
     is_deposit boolean  NOT NULL,
     happened_at bigint  NOT NULL,
-    CONSTRAINT uidx_user_username UNIQUE (user_address) NOT DEFERRABLE  INITIALLY IMMEDIATE,
+    CONSTRAINT user_deposit_withdraw_ledger_ak_1 UNIQUE (transaction_hash) NOT DEFERRABLE  INITIALLY IMMEDIATE,
     CONSTRAINT user_deposit_withdraw_ledger_pk PRIMARY KEY (pkey_id)
 );
 
@@ -395,7 +396,7 @@ CREATE TABLE tbl.user_strategy_wallet (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_strategy_wallet_id'),
     fkey_user_id bigint  NOT NULL,
     address varchar(64)  NOT NULL,
-    blockchain enum_block_chain NOT NULL,
+    blockchain enum_block_chain  NOT NULL,
     created_at bigint  NOT NULL,
     CONSTRAINT user_strategy_wallet_ak_1 UNIQUE (address) NOT DEFERRABLE  INITIALLY IMMEDIATE,
     CONSTRAINT user_strategy_wallet_ak_2 UNIQUE (fkey_user_id) NOT DEFERRABLE  INITIALLY IMMEDIATE,
