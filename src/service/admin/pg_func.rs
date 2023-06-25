@@ -473,6 +473,7 @@ END
             r#"
 DECLARE
     _token_id bigint;
+    _fkey_escrow_contract_address_id bigint;
 BEGIN
     IF EXISTS(SELECT * FROM  tbl.user_deposit_withdraw_ledger
 			WHERE transaction_hash = a_transaction_hash AND
@@ -481,12 +482,14 @@ BEGIN
         RETURN QUERY SELECT FALSE;
     END IF;
     SELECT pkey_id INTO _token_id FROM tbl.escrow_token_contract_address WHERE address = a_contract_address AND blockchain = a_blockchain;
+    SELECT pkey_id INTO _fkey_escrow_contract_address_id FROM tbl.escrow_contract_address WHERE address = a_contract_address AND blockchain = a_blockchain;
     INSERT INTO tbl.user_deposit_withdraw_ledger (
         fkey_user_id,
         fkey_token_id,
         blockchain,
         user_address,
         escrow_contract_address,
+        fkey_escrow_contract_address_id,
         receiver_address,
         quantity,
         transaction_hash,
@@ -498,6 +501,7 @@ BEGIN
      a_blockchain,
      a_user_address,
      a_contract_address,
+     _fkey_escrow_contract_address_id,
      a_receiver_address,
      a_quantity,
      a_transaction_hash,

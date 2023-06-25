@@ -194,56 +194,6 @@ END
             "#,
         ),
         ProceduralFunction::new(
-            "fun_watcher_upsert_user_deposit_withdraw_balance",
-            vec![
-                Field::new("user_id", Type::BigInt),
-                Field::new("token_address", Type::String),
-                Field::new("escrow_contract_address", Type::String),
-                Field::new("blockchain", Type::enum_ref("block_chain")),
-                Field::new("old_balance", Type::String),
-                Field::new("new_balance", Type::String),
-            ],
-            vec![Field::new("pkey_id", Type::BigInt)],
-            r#"
-DECLARE
-    _token_id bigint;
-    _escrow_contract_address_id bigint;
-    _user_deposit_withdraw_balance_id          bigint;
-    _user_deposit_withdraw_balance_old_balance bigint;
-    _pkey_id                                   bigint;
-BEGIN
-    SELECT pkey_id INTO _token_id FROM tbl.escrow_token_contract_address WHERE address = a_token_address AND blockchain = a_blockchain;
-    SELECT pkey_id INTO _escrow_contract_address_id FROM tbl.escrow_contract_address WHERE address = escrow_contract_address AND blockchain = a_blockchain;
-    ASSERT _token_id NOTNULL AND _escrow_contract_address_id NOTNULL;
-    SELECT elwal.pkey_id, elwal.balance
-    INTO _user_deposit_withdraw_balance_id, _user_deposit_withdraw_balance_old_balance
-    FROM tbl.user_deposit_withdraw_balance AS elwal
-    WHERE elwal.fkey_token_id = _token_id
-      AND elwal.fkey_user_id = a_user_id
-      AND elwal.fkey_escrow_contract_address_id = _escrow_contract_address_id;
-
-    -- insert new entry if not exist
-    IF _user_deposit_withdraw_balance_id ISNULL THEN
-        INSERT INTO tbl.user_deposit_withdraw_balance (fkey_user_id, fkey_escrow_contract_address_id, fkey_token_id, balance)
-        VALUES (a_user_id, _escrow_contract_address_id, _token_id, a_new_balance)
-        RETURNING pkey_id
-            INTO _pkey_id;
-    END IF;
-
-    -- update old balance if exist and equals to old balance
-    IF _user_deposit_withdraw_balance_old_balance != a_old_balance THEN
-        RETURN;
-    END IF;
-    UPDATE tbl.user_deposit_withdraw_balance
-    SET balance = a_new_balance
-    WHERE pkey_id = _user_deposit_withdraw_balance_id
-    RETURNING pkey_id
-        INTO _pkey_id;
-    RETURN QUERY SELECT _pkey_id;
-END
-            "#,
-        ),
-        ProceduralFunction::new(
             "fun_user_back_strategy",
             vec![
                 Field::new("user_id", Type::BigInt),
@@ -1443,6 +1393,26 @@ BEGIN
     ;
 END
 "#,
+        ),
+        ProceduralFunction::new(
+            "fun_user_add_strategy_pool_contract",
+            vec![
+                Field::new("strategy_id", Type::BigInt),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("address", Type::String),
+            ],
+            vec![Field::new("pkey_id", Type::BigInt)],
+            r#"
+BEGIN
+    UPDATE tbl.strategy
+    SET strategy_pool_address = a_address
+    WHERE pkey_id = a_strategy_id
+        AND strategy_pool_address ISNULL;
+    RETURN QUERY INSERT INTO tbl.strategy_pool_contract (fkey_strategy_id, blockchain, address, created_at)
+    VALUES (a_strategy_id, a_blockchain, a_address, EXTRACT(EPOCH FROM NOW()))
+    RETURNING pkey_id;
+END
+        "#,
         ),
     ]
 }

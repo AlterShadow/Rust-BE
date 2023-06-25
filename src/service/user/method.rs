@@ -697,7 +697,7 @@ async fn user_back_strategy(
             )
             .await?;
             /* insert strategy contract address in the database */
-            db.execute(FunWatcherAddStrategyPoolContractReq {
+            db.execute(FunUserAddStrategyPoolContractReq {
                 strategy_id,
                 blockchain,
                 address: format!("{:?}", contract.address()),

@@ -593,53 +593,6 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_watcher_upsert_user_deposit_withdraw_balance(a_user_id bigint, a_token_address varchar, a_escrow_contract_address varchar, a_blockchain enum_block_chain, a_old_balance varchar, a_new_balance varchar)
-RETURNS table (
-    "pkey_id" bigint
-)
-LANGUAGE plpgsql
-AS $$
-    
-DECLARE
-    _token_id bigint;
-    _escrow_contract_address_id bigint;
-    _user_deposit_withdraw_balance_id          bigint;
-    _user_deposit_withdraw_balance_old_balance bigint;
-    _pkey_id                                   bigint;
-BEGIN
-    SELECT pkey_id INTO _token_id FROM tbl.escrow_token_contract_address WHERE address = a_token_address AND blockchain = a_blockchain;
-    SELECT pkey_id INTO _escrow_contract_address_id FROM tbl.escrow_contract_address WHERE address = escrow_contract_address AND blockchain = a_blockchain;
-    ASSERT _token_id NOTNULL AND _escrow_contract_address_id NOTNULL;
-    SELECT elwal.pkey_id, elwal.balance
-    INTO _user_deposit_withdraw_balance_id, _user_deposit_withdraw_balance_old_balance
-    FROM tbl.user_deposit_withdraw_balance AS elwal
-    WHERE elwal.fkey_token_id = _token_id
-      AND elwal.fkey_user_id = a_user_id
-      AND elwal.fkey_escrow_contract_address_id = _escrow_contract_address_id;
-
-    -- insert new entry if not exist
-    IF _user_deposit_withdraw_balance_id ISNULL THEN
-        INSERT INTO tbl.user_deposit_withdraw_balance (fkey_user_id, fkey_escrow_contract_address_id, fkey_token_id, balance)
-        VALUES (a_user_id, _escrow_contract_address_id, _token_id, a_new_balance)
-        RETURNING pkey_id
-            INTO _pkey_id;
-    END IF;
-
-    -- update old balance if exist and equals to old balance
-    IF _user_deposit_withdraw_balance_old_balance != a_old_balance THEN
-        RETURN;
-    END IF;
-    UPDATE tbl.user_deposit_withdraw_balance
-    SET balance = a_new_balance
-    WHERE pkey_id = _user_deposit_withdraw_balance_id
-    RETURNING pkey_id
-        INTO _pkey_id;
-    RETURN QUERY SELECT _pkey_id;
-END
-            
-$$;
-        
-
 CREATE OR REPLACE FUNCTION api.fun_user_back_strategy(a_user_id bigint, a_strategy_id bigint, a_quantity varchar, a_new_total_backed_quantity varchar, a_old_total_backed_quantity varchar, a_new_current_quantity varchar, a_old_current_quantity varchar, a_blockchain enum_block_chain, a_transaction_hash varchar, a_earn_sp_tokens varchar)
 RETURNS table (
     "success" boolean
@@ -1975,6 +1928,26 @@ END
 $$;
         
 
+CREATE OR REPLACE FUNCTION api.fun_user_add_strategy_pool_contract(a_strategy_id bigint, a_blockchain enum_block_chain, a_address varchar)
+RETURNS table (
+    "pkey_id" bigint
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    UPDATE tbl.strategy
+    SET strategy_pool_address = a_address
+    WHERE pkey_id = a_strategy_id
+        AND strategy_pool_address ISNULL;
+    RETURN QUERY INSERT INTO tbl.strategy_pool_contract (fkey_strategy_id, blockchain, address, created_at)
+    VALUES (a_strategy_id, a_blockchain, a_address, EXTRACT(EPOCH FROM NOW()))
+    RETURNING pkey_id;
+END
+        
+$$;
+        
+
 CREATE OR REPLACE FUNCTION api.fun_admin_list_users(a_limit bigint, a_offset bigint, a_user_id bigint DEFAULT NULL, a_address varchar DEFAULT NULL, a_username varchar DEFAULT NULL, a_email varchar DEFAULT NULL, a_role enum_role DEFAULT NULL)
 RETURNS table (
     "total" bigint,
@@ -2505,6 +2478,7 @@ AS $$
     
 DECLARE
     _token_id bigint;
+    _fkey_escrow_contract_address_id bigint;
 BEGIN
     IF EXISTS(SELECT * FROM  tbl.user_deposit_withdraw_ledger
 			WHERE transaction_hash = a_transaction_hash AND
@@ -2513,12 +2487,14 @@ BEGIN
         RETURN QUERY SELECT FALSE;
     END IF;
     SELECT pkey_id INTO _token_id FROM tbl.escrow_token_contract_address WHERE address = a_contract_address AND blockchain = a_blockchain;
+    SELECT pkey_id INTO _fkey_escrow_contract_address_id FROM tbl.escrow_contract_address WHERE address = a_contract_address AND blockchain = a_blockchain;
     INSERT INTO tbl.user_deposit_withdraw_ledger (
         fkey_user_id,
         fkey_token_id,
         blockchain,
         user_address,
         escrow_contract_address,
+        fkey_escrow_contract_address_id,
         receiver_address,
         quantity,
         transaction_hash,
@@ -2530,6 +2506,7 @@ BEGIN
      a_blockchain,
      a_user_address,
      a_contract_address,
+     _fkey_escrow_contract_address_id,
      a_receiver_address,
      a_quantity,
      a_transaction_hash,
@@ -2811,23 +2788,50 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_watcher_add_strategy_pool_contract(a_strategy_id bigint, a_blockchain enum_block_chain, a_address varchar)
+CREATE OR REPLACE FUNCTION api.fun_watcher_upsert_user_deposit_withdraw_balance(a_user_id bigint, a_token_address varchar, a_escrow_contract_address varchar, a_blockchain enum_block_chain, a_old_balance varchar, a_new_balance varchar)
 RETURNS table (
     "pkey_id" bigint
 )
 LANGUAGE plpgsql
 AS $$
     
+DECLARE
+    _token_id bigint;
+    _escrow_contract_address_id bigint;
+    _user_deposit_withdraw_balance_id          bigint;
+    _user_deposit_withdraw_balance_old_balance bigint;
+    _pkey_id                                   bigint;
 BEGIN
-    UPDATE tbl.strategy
-    SET contract_pool_address = a_address
-    WHERE pkey_id = a_strategy_id
-        AND contract_pool_address ISNULL;
-    RETURN QUERY INSERT INTO tbl.strategy_pool_contract (fkey_strategy_id, blockchain, address, created_at)
-    VALUES (a_strategy_id, a_blockchain, a_address, EXTRACT(EPOCH FROM NOW()))
-    RETURNING pkey_id;
+    SELECT pkey_id INTO _token_id FROM tbl.escrow_token_contract_address WHERE address = a_token_address AND blockchain = a_blockchain;
+    SELECT pkey_id INTO _escrow_contract_address_id FROM tbl.escrow_contract_address WHERE address = escrow_contract_address AND blockchain = a_blockchain;
+    ASSERT _token_id NOTNULL AND _escrow_contract_address_id NOTNULL;
+    SELECT elwal.pkey_id, elwal.balance
+    INTO _user_deposit_withdraw_balance_id, _user_deposit_withdraw_balance_old_balance
+    FROM tbl.user_deposit_withdraw_balance AS elwal
+    WHERE elwal.fkey_token_id = _token_id
+      AND elwal.fkey_user_id = a_user_id
+      AND elwal.fkey_escrow_contract_address_id = _escrow_contract_address_id;
+
+    -- insert new entry if not exist
+    IF _user_deposit_withdraw_balance_id ISNULL THEN
+        INSERT INTO tbl.user_deposit_withdraw_balance (fkey_user_id, fkey_escrow_contract_address_id, fkey_token_id, balance)
+        VALUES (a_user_id, _escrow_contract_address_id, _token_id, a_new_balance)
+        RETURNING pkey_id
+            INTO _pkey_id;
+    END IF;
+
+    -- update old balance if exist and equals to old balance
+    IF _user_deposit_withdraw_balance_old_balance != a_old_balance THEN
+        RETURN;
+    END IF;
+    UPDATE tbl.user_deposit_withdraw_balance
+    SET balance = a_new_balance
+    WHERE pkey_id = _user_deposit_withdraw_balance_id
+    RETURNING pkey_id
+        INTO _pkey_id;
+    RETURN QUERY SELECT _pkey_id;
 END
-        
+            
 $$;
         
 
