@@ -2480,34 +2480,35 @@ impl RequestHandler for MethodUserSubscribeDepositLedger {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        _req: Self::Request,
+        req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         let manager = self.manger.clone();
         let toolbox = toolbox.clone();
         async move {
             manager.subscribe(AdminSubscribeTopic::AdminNotifyEscrowLedgerChange, ctx);
-            // TODO: this is to provide mock data to FE. Remove this when we have real data
-            tokio::spawn(async move {
-                for i in 0..10 {
-                    sleep(Duration::from_secs(3)).await;
-                    let amount = U256::from(i);
-                    let key = Secp256k1SecretKey::new_random();
-                    info!("Sending mock data to FE, {}..", i);
-                    manager.publish_to_all(
-                        &toolbox,
-                        AdminSubscribeTopic::AdminNotifyEscrowLedgerChange,
-                        &UserListDepositLedgerRow {
-                            quantity: format!("{:?}", amount),
-                            blockchain: EnumBlockChain::EthereumMainnet,
-                            user_address: format!("{:?}", key.address),
-                            contract_address: format!("{:?}", key.address),
-                            transaction_hash: format!("{:?}", key.address),
-                            receiver_address: format!("{:?}", key.address),
-                            created_at: Utc::now().timestamp(),
-                        },
-                    )
-                }
-            });
+            if req.mock_data.unwrap_or_default() {
+                tokio::spawn(async move {
+                    for i in 0..10 {
+                        sleep(Duration::from_secs(3)).await;
+                        let amount = U256::from(i);
+                        let key = Secp256k1SecretKey::new_random();
+                        info!("Sending mock data to FE, {}..", i);
+                        manager.publish_to_all(
+                            &toolbox,
+                            AdminSubscribeTopic::AdminNotifyEscrowLedgerChange,
+                            &UserListDepositLedgerRow {
+                                quantity: format!("{:?}", amount),
+                                blockchain: EnumBlockChain::EthereumMainnet,
+                                user_address: format!("{:?}", key.address),
+                                contract_address: format!("{:?}", key.address),
+                                transaction_hash: format!("{:?}", key.address),
+                                receiver_address: format!("{:?}", key.address),
+                                created_at: Utc::now().timestamp(),
+                            },
+                        )
+                    }
+                });
+            }
             Ok(UserSubscribeDepositLedgerResponse {})
         }
         .boxed()

@@ -1034,7 +1034,10 @@ pub struct AdminSetUserRoleRequest {
 pub struct AdminSetUserRoleResponse {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct AdminSubscribeDepositLedgerRequest {}
+pub struct AdminSubscribeDepositLedgerRequest {
+    #[serde(default)]
+    pub mock_data: Option<bool>,
+}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminSubscribeDepositLedgerResponse {}
@@ -2084,7 +2087,10 @@ pub struct UserRequestRefundResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserSubscribeDepositLedgerRequest {}
+pub struct UserSubscribeDepositLedgerRequest {
+    #[serde(default)]
+    pub mock_data: Option<bool>,
+}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserSubscribeDepositLedgerResponse {}
@@ -6012,7 +6018,14 @@ impl WsRequest for UserSubscribeDepositLedgerRequest {
     const SCHEMA: &'static str = r#"{
   "name": "UserSubscribeDepositLedger",
   "code": 20381,
-  "parameters": [],
+  "parameters": [
+    {
+      "name": "mock_data",
+      "ty": {
+        "Optional": "Boolean"
+      }
+    }
+  ],
   "returns": [],
   "stream_response": [],
   "description": "",
@@ -7385,7 +7398,14 @@ impl WsRequest for AdminSubscribeDepositLedgerRequest {
     const SCHEMA: &'static str = r#"{
   "name": "AdminSubscribeDepositLedger",
   "code": 32011,
-  "parameters": [],
+  "parameters": [
+    {
+      "name": "mock_data",
+      "ty": {
+        "Optional": "Boolean"
+      }
+    }
+  ],
   "returns": [],
   "stream_response": [],
   "description": "",

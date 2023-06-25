@@ -3488,7 +3488,14 @@
         {
           "name": "UserSubscribeDepositLedger",
           "code": 20381,
-          "parameters": [],
+          "parameters": [
+            {
+              "name": "mock_data",
+              "ty": {
+                "Optional": "Boolean"
+              }
+            }
+          ],
           "returns": [],
           "stream_response": [],
           "description": "",
@@ -4667,7 +4674,14 @@
         {
           "name": "AdminSubscribeDepositLedger",
           "code": 32011,
-          "parameters": [],
+          "parameters": [
+            {
+              "name": "mock_data",
+              "ty": {
+                "Optional": "Boolean"
+              }
+            }
+          ],
           "returns": [],
           "stream_response": [],
           "description": "",
