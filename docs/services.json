@@ -2872,6 +2872,26 @@
               }
             },
             {
+              "name": "initial_tokens",
+              "ty": {
+                "Optional": {
+                  "DataTable": {
+                    "name": "UserCreateStrategyInitialTokenRow",
+                    "fields": [
+                      {
+                        "name": "token_id",
+                        "ty": "BigInt"
+                      },
+                      {
+                        "name": "quantity",
+                        "ty": "String"
+                      }
+                    ]
+                  }
+                }
+              }
+            },
+            {
               "name": "audit_rules",
               "ty": {
                 "Optional": {

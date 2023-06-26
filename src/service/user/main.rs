@@ -101,12 +101,13 @@ async fn main() -> Result<()> {
     server.add_handler(MethodExpertUpdateStrategy {
         logger: audit_logger.clone(),
     });
-    server.add_handler(MethodExpertAddStrategyInitialTokenRatio {
-        logger: audit_logger.clone(),
-    });
-    server.add_handler(MethodExpertRemoveStrategyInitialTokenRatio {
-        logger: audit_logger.clone(),
-    });
+    // TODO: move them to MethodExpertUpdateStrategy
+    // server.add_handler(MethodExpertAddStrategyInitialTokenRatio {
+    //     logger: audit_logger.clone(),
+    // });
+    // server.add_handler(MethodExpertRemoveStrategyInitialTokenRatio {
+    //     logger: audit_logger.clone(),
+    // });
 
     server.add_handler(MethodExpertAddStrategyWatchingWallet {
         logger: audit_logger.clone(),
@@ -119,6 +120,7 @@ async fn main() -> Result<()> {
     server.add_handler(MethodUserListStrategyAuditRules);
     server.add_handler(MethodUserListDepositWithdrawBalances);
     server.add_handler(MethodUserGetDepositWithdrawBalance);
+    server.add_handler(MethodUserListEscrowTokenContractAddresses);
     // they are basically the same but MethodUserGetEscrowAddressForStrategy is more user friendly
     server.add_handler(MethodUserGetDepositAddresses {
         addresses: config.escrow_addresses.clone(),
