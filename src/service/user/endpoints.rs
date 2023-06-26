@@ -749,7 +749,8 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
             20381,
             vec![Field::new("mock_data", Type::optional(Type::Boolean))],
             vec![],
-        ),
+        )
+        .with_stream_response_type(user_deposit_ledger_entry()),
         EndpointSchema::new("UserUnsubscribeDepositLedger", 20382, vec![], vec![]),
         EndpointSchema::new(
             "UserListStrategyWallets",

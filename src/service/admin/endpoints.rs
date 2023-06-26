@@ -226,7 +226,8 @@ pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
             32011,
             vec![Field::new("mock_data", Type::optional(Type::Boolean))],
             vec![],
-        ),
+        )
+        .with_stream_response_type(user_deposit_ledger_entry()),
         EndpointSchema::new("AdminUnsubscribeDepositLedger", 32012, vec![], vec![]),
         EndpointSchema::new(
             "AdminAddEscrowTokenContractAddress",

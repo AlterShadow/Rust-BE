@@ -2203,7 +2203,7 @@ impl WsRequest for LoginRequest {
       "ty": "UUID"
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -2262,7 +2262,7 @@ impl WsRequest for SignupRequest {
       "ty": "BigInt"
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -2307,7 +2307,7 @@ impl WsRequest for AuthorizeRequest {
       "ty": "Boolean"
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -2324,7 +2324,7 @@ impl WsRequest for LogoutRequest {
   "code": 10040,
   "parameters": [],
   "returns": [],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -2366,7 +2366,7 @@ impl WsRequest for ChangeLoginWalletRequest {
     }
   ],
   "returns": [],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -2393,7 +2393,7 @@ impl WsRequest for UserFollowStrategyRequest {
       "ty": "Boolean"
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "User follows a strategy",
   "json_schema": null
 }"#;
@@ -2544,7 +2544,7 @@ impl WsRequest for UserListFollowedStrategiesRequest {
       }
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "User lists followed strategies",
   "json_schema": null
 }"#;
@@ -2571,7 +2571,7 @@ impl WsRequest for UserUnfollowStrategyRequest {
       "ty": "Boolean"
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -2762,7 +2762,7 @@ impl WsRequest for UserListStrategiesRequest {
       }
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "User lists strategies",
   "json_schema": null
 }"#;
@@ -2909,7 +2909,7 @@ impl WsRequest for UserListTopPerformingStrategiesRequest {
       }
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "User lists top performing strategies",
   "json_schema": null
 }"#;
@@ -2970,7 +2970,7 @@ impl WsRequest for UserListStrategyBackersRequest {
       }
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -3031,7 +3031,7 @@ impl WsRequest for UserListStrategyFollowersRequest {
       }
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -3292,7 +3292,7 @@ impl WsRequest for UserGetStrategyRequest {
       }
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "User gets a strategy",
   "json_schema": null
 }"#;
@@ -3377,7 +3377,7 @@ impl WsRequest for UserGetStrategyStatisticsRequest {
       }
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "User gets a strategy statistics",
   "json_schema": null
 }"#;
@@ -3419,7 +3419,7 @@ impl WsRequest for UserGetStrategiesStatisticsRequest {
       "ty": "Numeric"
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "User gets statistics of all strategies related to the user",
   "json_schema": null
 }"#;
@@ -3467,7 +3467,7 @@ impl WsRequest for UserUpdateUserProfileRequest {
     }
   ],
   "returns": [],
-  "stream_response": [],
+  "stream_response": null,
   "description": "User update its expert profile",
   "json_schema": null
 }"#;
@@ -3502,7 +3502,7 @@ impl WsRequest for UserBackStrategyRequest {
       "ty": "Boolean"
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -3545,7 +3545,7 @@ impl WsRequest for UserExitStrategyRequest {
       "ty": "String"
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -3582,7 +3582,7 @@ impl WsRequest for UserRequestRefundRequest {
       "ty": "Boolean"
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -3729,7 +3729,7 @@ impl WsRequest for UserListBackedStrategiesRequest {
       }
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -3800,7 +3800,7 @@ impl WsRequest for UserListBackStrategyLedgerRequest {
       }
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -3869,7 +3869,7 @@ impl WsRequest for UserListExitStrategyLedgerRequest {
       }
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -3896,7 +3896,7 @@ impl WsRequest for UserFollowExpertRequest {
       "ty": "Boolean"
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "User follows an expert",
   "json_schema": null
 }"#;
@@ -4015,7 +4015,7 @@ impl WsRequest for UserListFollowedExpertsRequest {
       }
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "User lists followed experts",
   "json_schema": null
 }"#;
@@ -4042,7 +4042,7 @@ impl WsRequest for UserUnfollowExpertRequest {
       "ty": "Boolean"
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "User unfollows an expert",
   "json_schema": null
 }"#;
@@ -4225,7 +4225,7 @@ impl WsRequest for UserListExpertsRequest {
       }
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "User lists experts",
   "json_schema": null
 }"#;
@@ -4358,7 +4358,7 @@ impl WsRequest for UserListTopPerformingExpertsRequest {
       }
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "User lists experts",
   "json_schema": null
 }"#;
@@ -4491,7 +4491,7 @@ impl WsRequest for UserListFeaturedExpertsRequest {
       }
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "User lists experts",
   "json_schema": null
 }"#;
@@ -4666,7 +4666,7 @@ impl WsRequest for UserGetExpertProfileRequest {
       }
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "User gets an expert profile",
   "json_schema": null
 }"#;
@@ -5038,7 +5038,7 @@ impl WsRequest for UserGetUserProfileRequest {
       }
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "User gets an user profile",
   "json_schema": null
 }"#;
@@ -5083,7 +5083,7 @@ impl WsRequest for UserRegisterWalletRequest {
       "ty": "BigInt"
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "User registers a wallet",
   "json_schema": null
 }"#;
@@ -5129,7 +5129,7 @@ impl WsRequest for UserListRegisteredWalletsRequest {
       }
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "User lists wallets",
   "json_schema": null
 }"#;
@@ -5156,7 +5156,7 @@ impl WsRequest for UserDeregisterWalletRequest {
       "ty": "Boolean"
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "User deregisters a wallet",
   "json_schema": null
 }"#;
@@ -5182,7 +5182,7 @@ impl WsRequest for UserApplyBecomeExpertRequest {
       "ty": "BigInt"
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "User applies to become an expert",
   "json_schema": null
 }"#;
@@ -5257,7 +5257,7 @@ impl WsRequest for ExpertCreateStrategyRequest {
       "ty": "BigInt"
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "User makes a strategy",
   "json_schema": null
 }"#;
@@ -5302,7 +5302,7 @@ impl WsRequest for ExpertUpdateStrategyRequest {
       "ty": "Boolean"
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "Expert updates a strategy",
   "json_schema": null
 }"#;
@@ -5329,7 +5329,7 @@ impl WsRequest for ExpertFreezeStrategyRequest {
       "ty": "Boolean"
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "Expert freezes a strategy, by making it immutable",
   "json_schema": null
 }"#;
@@ -5374,7 +5374,7 @@ impl WsRequest for ExpertAddStrategyWatchingWalletRequest {
       "ty": "BigInt"
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -5405,7 +5405,7 @@ impl WsRequest for ExpertRemoveStrategyWatchingWalletRequest {
       "ty": "Boolean"
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -5456,7 +5456,7 @@ impl WsRequest for UserListStrategyWatchingWalletsRequest {
       }
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -5557,7 +5557,7 @@ impl WsRequest for UserListWalletActivityLedgerRequest {
       }
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -5606,7 +5606,7 @@ impl WsRequest for ExpertAddStrategyInitialTokenRatioRequest {
       "ty": "BigInt"
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -5637,7 +5637,7 @@ impl WsRequest for ExpertRemoveStrategyInitialTokenRatioRequest {
       "ty": "Boolean"
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -5694,7 +5694,7 @@ impl WsRequest for UserListStrategyInitialTokenRatioRequest {
       }
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -5763,7 +5763,7 @@ impl WsRequest for ExpertListFollowersRequest {
       }
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -5832,7 +5832,7 @@ impl WsRequest for ExpertListBackersRequest {
       }
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -5888,7 +5888,7 @@ impl WsRequest for UserGetDepositTokensRequest {
       }
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -5930,7 +5930,7 @@ impl WsRequest for UserGetDepositAddressesRequest {
       }
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -6003,7 +6003,7 @@ impl WsRequest for UserListDepositLedgerRequest {
       }
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -6027,7 +6027,43 @@ impl WsRequest for UserSubscribeDepositLedgerRequest {
     }
   ],
   "returns": [],
-  "stream_response": [],
+  "stream_response": {
+    "Struct": {
+      "name": "UserListDepositLedgerRow",
+      "fields": [
+        {
+          "name": "blockchain",
+          "ty": {
+            "EnumRef": "block_chain"
+          }
+        },
+        {
+          "name": "user_address",
+          "ty": "String"
+        },
+        {
+          "name": "contract_address",
+          "ty": "String"
+        },
+        {
+          "name": "receiver_address",
+          "ty": "String"
+        },
+        {
+          "name": "quantity",
+          "ty": "String"
+        },
+        {
+          "name": "transaction_hash",
+          "ty": "String"
+        },
+        {
+          "name": "created_at",
+          "ty": "BigInt"
+        }
+      ]
+    }
+  },
   "description": "",
   "json_schema": null
 }"#;
@@ -6044,7 +6080,7 @@ impl WsRequest for UserUnsubscribeDepositLedgerRequest {
   "code": 20382,
   "parameters": [],
   "returns": [],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -6095,7 +6131,7 @@ impl WsRequest for UserListStrategyWalletsRequest {
       }
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -6138,7 +6174,7 @@ impl WsRequest for UserCreateStrategyWalletRequest {
       "ty": "String"
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -6193,7 +6229,7 @@ impl WsRequest for UserListStrategyAuditRulesRequest {
       }
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -6219,7 +6255,7 @@ impl WsRequest for UserAddStrategyAuditRuleRequest {
     }
   ],
   "returns": [],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -6245,7 +6281,7 @@ impl WsRequest for UserRemoveStrategyAuditRuleRequest {
     }
   ],
   "returns": [],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -6310,7 +6346,7 @@ impl WsRequest for UserGetEscrowAddressForStrategyRequest {
       }
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -6360,7 +6396,7 @@ impl WsRequest for UserListDepositWithdrawBalancesRequest {
       }
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -6387,7 +6423,7 @@ impl WsRequest for UserGetDepositWithdrawBalanceRequest {
       "ty": "String"
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -6510,7 +6546,7 @@ impl WsRequest for AdminListUsersRequest {
       }
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -6538,7 +6574,7 @@ impl WsRequest for AdminSetUserRoleRequest {
     }
   ],
   "returns": [],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -6564,7 +6600,7 @@ impl WsRequest for AdminSetBlockUserRequest {
     }
   ],
   "returns": [],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -6649,7 +6685,7 @@ impl WsRequest for AdminListPendingExpertApplicationsRequest {
       }
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "Admin approves a user to become an expert",
   "json_schema": null
 }"#;
@@ -6676,7 +6712,7 @@ impl WsRequest for AdminApproveUserBecomeExpertRequest {
       "ty": "Boolean"
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "Admin approves a user to become an expert",
   "json_schema": null
 }"#;
@@ -6703,7 +6739,7 @@ impl WsRequest for AdminRejectUserBecomeExpertRequest {
       "ty": "Boolean"
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "Admin approves a user to become an expert",
   "json_schema": null
 }"#;
@@ -6729,7 +6765,7 @@ impl WsRequest for AdminGetSystemConfigRequest {
       "ty": "BigInt"
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "Admin get system config",
   "json_schema": null
 }"#;
@@ -6764,7 +6800,7 @@ impl WsRequest for AdminUpdateSystemConfigRequest {
       "ty": "Boolean"
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "Admin updates system config",
   "json_schema": null
 }"#;
@@ -6945,7 +6981,7 @@ impl WsRequest for AdminListExpertsRequest {
       }
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "Admin lists experts",
   "json_schema": null
 }"#;
@@ -7044,7 +7080,7 @@ impl WsRequest for AdminListBackersRequest {
       }
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -7233,7 +7269,7 @@ impl WsRequest for AdminListStrategiesRequest {
       }
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -7260,7 +7296,7 @@ impl WsRequest for AdminApproveStrategyRequest {
       "ty": "Boolean"
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "Admin approves strategy",
   "json_schema": null
 }"#;
@@ -7287,7 +7323,7 @@ impl WsRequest for AdminRejectStrategyRequest {
       "ty": "Boolean"
     }
   ],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -7317,7 +7353,7 @@ impl WsRequest for AdminAddAuditRuleRequest {
     }
   ],
   "returns": [],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -7383,7 +7419,7 @@ impl WsRequest for AdminNotifyEscrowLedgerChangeRequest {
     }
   ],
   "returns": [],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -7407,7 +7443,43 @@ impl WsRequest for AdminSubscribeDepositLedgerRequest {
     }
   ],
   "returns": [],
-  "stream_response": [],
+  "stream_response": {
+    "Struct": {
+      "name": "UserListDepositLedgerRow",
+      "fields": [
+        {
+          "name": "blockchain",
+          "ty": {
+            "EnumRef": "block_chain"
+          }
+        },
+        {
+          "name": "user_address",
+          "ty": "String"
+        },
+        {
+          "name": "contract_address",
+          "ty": "String"
+        },
+        {
+          "name": "receiver_address",
+          "ty": "String"
+        },
+        {
+          "name": "quantity",
+          "ty": "String"
+        },
+        {
+          "name": "transaction_hash",
+          "ty": "String"
+        },
+        {
+          "name": "created_at",
+          "ty": "BigInt"
+        }
+      ]
+    }
+  },
   "description": "",
   "json_schema": null
 }"#;
@@ -7424,7 +7496,7 @@ impl WsRequest for AdminUnsubscribeDepositLedgerRequest {
   "code": 32012,
   "parameters": [],
   "returns": [],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -7472,7 +7544,7 @@ impl WsRequest for AdminAddEscrowTokenContractAddressRequest {
     }
   ],
   "returns": [],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;
@@ -7504,7 +7576,7 @@ impl WsRequest for AdminAddEscrowContractAddressRequest {
     }
   ],
   "returns": [],
-  "stream_response": [],
+  "stream_response": null,
   "description": "",
   "json_schema": null
 }"#;

@@ -59,7 +59,7 @@
               "ty": "UUID"
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -110,7 +110,7 @@
               "ty": "BigInt"
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -147,7 +147,7 @@
               "ty": "Boolean"
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -156,7 +156,7 @@
           "code": 10040,
           "parameters": [],
           "returns": [],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -190,7 +190,7 @@
             }
           ],
           "returns": [],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         }
@@ -215,7 +215,7 @@
               "ty": "Boolean"
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "User follows a strategy",
           "json_schema": null
         },
@@ -358,7 +358,7 @@
               }
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "User lists followed strategies",
           "json_schema": null
         },
@@ -377,7 +377,7 @@
               "ty": "Boolean"
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -560,7 +560,7 @@
               }
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "User lists strategies",
           "json_schema": null
         },
@@ -699,7 +699,7 @@
               }
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "User lists top performing strategies",
           "json_schema": null
         },
@@ -752,7 +752,7 @@
               }
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -805,7 +805,7 @@
               }
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -1058,7 +1058,7 @@
               }
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "User gets a strategy",
           "json_schema": null
         },
@@ -1135,7 +1135,7 @@
               }
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "User gets a strategy statistics",
           "json_schema": null
         },
@@ -1169,7 +1169,7 @@
               "ty": "Numeric"
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "User gets statistics of all strategies related to the user",
           "json_schema": null
         },
@@ -1209,7 +1209,7 @@
             }
           ],
           "returns": [],
-          "stream_response": [],
+          "stream_response": null,
           "description": "User update its expert profile",
           "json_schema": null
         },
@@ -1236,7 +1236,7 @@
               "ty": "Boolean"
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -1271,7 +1271,7 @@
               "ty": "String"
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -1300,7 +1300,7 @@
               "ty": "Boolean"
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -1439,7 +1439,7 @@
               }
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -1502,7 +1502,7 @@
               }
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -1563,7 +1563,7 @@
               }
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -1582,7 +1582,7 @@
               "ty": "Boolean"
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "User follows an expert",
           "json_schema": null
         },
@@ -1693,7 +1693,7 @@
               }
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "User lists followed experts",
           "json_schema": null
         },
@@ -1712,7 +1712,7 @@
               "ty": "Boolean"
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "User unfollows an expert",
           "json_schema": null
         },
@@ -1887,7 +1887,7 @@
               }
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "User lists experts",
           "json_schema": null
         },
@@ -2012,7 +2012,7 @@
               }
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "User lists experts",
           "json_schema": null
         },
@@ -2137,7 +2137,7 @@
               }
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "User lists experts",
           "json_schema": null
         },
@@ -2304,7 +2304,7 @@
               }
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "User gets an expert profile",
           "json_schema": null
         },
@@ -2668,7 +2668,7 @@
               }
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "User gets an user profile",
           "json_schema": null
         },
@@ -2705,7 +2705,7 @@
               "ty": "BigInt"
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "User registers a wallet",
           "json_schema": null
         },
@@ -2743,7 +2743,7 @@
               }
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "User lists wallets",
           "json_schema": null
         },
@@ -2762,7 +2762,7 @@
               "ty": "Boolean"
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "User deregisters a wallet",
           "json_schema": null
         },
@@ -2780,7 +2780,7 @@
               "ty": "BigInt"
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "User applies to become an expert",
           "json_schema": null
         },
@@ -2847,7 +2847,7 @@
               "ty": "BigInt"
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "User makes a strategy",
           "json_schema": null
         },
@@ -2884,7 +2884,7 @@
               "ty": "Boolean"
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "Expert updates a strategy",
           "json_schema": null
         },
@@ -2903,7 +2903,7 @@
               "ty": "Boolean"
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "Expert freezes a strategy, by making it immutable",
           "json_schema": null
         },
@@ -2940,7 +2940,7 @@
               "ty": "BigInt"
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -2963,7 +2963,7 @@
               "ty": "Boolean"
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -3006,7 +3006,7 @@
               }
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -3099,7 +3099,7 @@
               }
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -3140,7 +3140,7 @@
               "ty": "BigInt"
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -3163,7 +3163,7 @@
               "ty": "Boolean"
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -3212,7 +3212,7 @@
               }
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -3273,7 +3273,7 @@
               }
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -3334,7 +3334,7 @@
               }
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -3382,7 +3382,7 @@
               }
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -3416,7 +3416,7 @@
               }
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -3481,7 +3481,7 @@
               }
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -3497,7 +3497,43 @@
             }
           ],
           "returns": [],
-          "stream_response": [],
+          "stream_response": {
+            "Struct": {
+              "name": "UserListDepositLedgerRow",
+              "fields": [
+                {
+                  "name": "blockchain",
+                  "ty": {
+                    "EnumRef": "block_chain"
+                  }
+                },
+                {
+                  "name": "user_address",
+                  "ty": "String"
+                },
+                {
+                  "name": "contract_address",
+                  "ty": "String"
+                },
+                {
+                  "name": "receiver_address",
+                  "ty": "String"
+                },
+                {
+                  "name": "quantity",
+                  "ty": "String"
+                },
+                {
+                  "name": "transaction_hash",
+                  "ty": "String"
+                },
+                {
+                  "name": "created_at",
+                  "ty": "BigInt"
+                }
+              ]
+            }
+          },
           "description": "",
           "json_schema": null
         },
@@ -3506,7 +3542,7 @@
           "code": 20382,
           "parameters": [],
           "returns": [],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -3549,7 +3585,7 @@
               }
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -3584,7 +3620,7 @@
               "ty": "String"
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -3631,7 +3667,7 @@
               }
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -3649,7 +3685,7 @@
             }
           ],
           "returns": [],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -3667,7 +3703,7 @@
             }
           ],
           "returns": [],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -3724,7 +3760,7 @@
               }
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -3766,7 +3802,7 @@
               }
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -3785,7 +3821,7 @@
               "ty": "String"
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         }
@@ -3906,7 +3942,7 @@
               }
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -3926,7 +3962,7 @@
             }
           ],
           "returns": [],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -3944,7 +3980,7 @@
             }
           ],
           "returns": [],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -4021,7 +4057,7 @@
               }
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "Admin approves a user to become an expert",
           "json_schema": null
         },
@@ -4040,7 +4076,7 @@
               "ty": "Boolean"
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "Admin approves a user to become an expert",
           "json_schema": null
         },
@@ -4059,7 +4095,7 @@
               "ty": "Boolean"
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "Admin approves a user to become an expert",
           "json_schema": null
         },
@@ -4077,7 +4113,7 @@
               "ty": "BigInt"
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "Admin get system config",
           "json_schema": null
         },
@@ -4104,7 +4140,7 @@
               "ty": "Boolean"
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "Admin updates system config",
           "json_schema": null
         },
@@ -4277,7 +4313,7 @@
               }
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "Admin lists experts",
           "json_schema": null
         },
@@ -4368,7 +4404,7 @@
               }
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -4549,7 +4585,7 @@
               }
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -4568,7 +4604,7 @@
               "ty": "Boolean"
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "Admin approves strategy",
           "json_schema": null
         },
@@ -4587,7 +4623,7 @@
               "ty": "Boolean"
             }
           ],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -4609,7 +4645,7 @@
             }
           ],
           "returns": [],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -4667,7 +4703,7 @@
             }
           ],
           "returns": [],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -4683,7 +4719,43 @@
             }
           ],
           "returns": [],
-          "stream_response": [],
+          "stream_response": {
+            "Struct": {
+              "name": "UserListDepositLedgerRow",
+              "fields": [
+                {
+                  "name": "blockchain",
+                  "ty": {
+                    "EnumRef": "block_chain"
+                  }
+                },
+                {
+                  "name": "user_address",
+                  "ty": "String"
+                },
+                {
+                  "name": "contract_address",
+                  "ty": "String"
+                },
+                {
+                  "name": "receiver_address",
+                  "ty": "String"
+                },
+                {
+                  "name": "quantity",
+                  "ty": "String"
+                },
+                {
+                  "name": "transaction_hash",
+                  "ty": "String"
+                },
+                {
+                  "name": "created_at",
+                  "ty": "BigInt"
+                }
+              ]
+            }
+          },
           "description": "",
           "json_schema": null
         },
@@ -4692,7 +4764,7 @@
           "code": 32012,
           "parameters": [],
           "returns": [],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -4732,7 +4804,7 @@
             }
           ],
           "returns": [],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         },
@@ -4756,7 +4828,7 @@
             }
           ],
           "returns": [],
-          "stream_response": [],
+          "stream_response": null,
           "description": "",
           "json_schema": null
         }
