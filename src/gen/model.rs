@@ -399,6 +399,9 @@ pub enum EnumEndpoint {
     #[postgres(name = "UserGetDepositWithdrawBalance")]
     UserGetDepositWithdrawBalance = 20511,
     ///
+    #[postgres(name = "UserListEscrowTokenContractAddresses")]
+    UserListEscrowTokenContractAddresses = 20520,
+    ///
     #[postgres(name = "AdminListUsers")]
     AdminListUsers = 30010,
     ///
@@ -1140,9 +1143,7 @@ pub struct ExitStrategyLedgerRow {
 #[serde(rename_all = "camelCase")]
 pub struct ExpertAddStrategyInitialTokenRatioRequest {
     pub strategy_id: i64,
-    pub token_name: String,
-    pub token_address: String,
-    pub blockchain: EnumBlockChain,
+    pub token_id: i64,
     pub quantity: String,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1785,6 +1786,34 @@ pub struct UserListDepositWithdrawBalancesRequest {}
 #[serde(rename_all = "camelCase")]
 pub struct UserListDepositWithdrawBalancesResponse {
     pub balances: Vec<UserListDepositWithdrawBalance>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListEscrowTokenContractAddressesRequest {
+    #[serde(default)]
+    pub limit: Option<i64>,
+    #[serde(default)]
+    pub offset: Option<i64>,
+    #[serde(default)]
+    pub blockchain: Option<EnumBlockChain>,
+    #[serde(default)]
+    pub is_stablecoin: Option<bool>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListEscrowTokenContractAddressesResponse {
+    pub tokens: Vec<UserListEscrowTokenContractAddressesRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListEscrowTokenContractAddressesRow {
+    pub token_id: i64,
+    pub token_symbol: String,
+    pub token_name: String,
+    pub token_address: String,
+    pub description: String,
+    pub blockchain: EnumBlockChain,
+    pub is_stablecoin: bool,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -5641,18 +5670,8 @@ impl WsRequest for ExpertAddStrategyInitialTokenRatioRequest {
       "ty": "BigInt"
     },
     {
-      "name": "token_name",
-      "ty": "String"
-    },
-    {
-      "name": "token_address",
-      "ty": "String"
-    },
-    {
-      "name": "blockchain",
-      "ty": {
-        "EnumRef": "block_chain"
-      }
+      "name": "token_id",
+      "ty": "BigInt"
     },
     {
       "name": "quantity",
@@ -6493,6 +6512,91 @@ impl WsRequest for UserGetDepositWithdrawBalanceRequest {
 }
 impl WsResponse for UserGetDepositWithdrawBalanceResponse {
     type Request = UserGetDepositWithdrawBalanceRequest;
+}
+
+impl WsRequest for UserListEscrowTokenContractAddressesRequest {
+    type Response = UserListEscrowTokenContractAddressesResponse;
+    const METHOD_ID: u32 = 20520;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserListEscrowTokenContractAddresses",
+  "code": 20520,
+  "parameters": [
+    {
+      "name": "limit",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "offset",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "blockchain",
+      "ty": {
+        "Optional": {
+          "EnumRef": "block_chain"
+        }
+      }
+    },
+    {
+      "name": "is_stablecoin",
+      "ty": {
+        "Optional": "Boolean"
+      }
+    }
+  ],
+  "returns": [
+    {
+      "name": "tokens",
+      "ty": {
+        "DataTable": {
+          "name": "UserListEscrowTokenContractAddressesRow",
+          "fields": [
+            {
+              "name": "token_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "token_symbol",
+              "ty": "String"
+            },
+            {
+              "name": "token_name",
+              "ty": "String"
+            },
+            {
+              "name": "token_address",
+              "ty": "String"
+            },
+            {
+              "name": "description",
+              "ty": "String"
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
+            },
+            {
+              "name": "is_stablecoin",
+              "ty": "Boolean"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": null,
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for UserListEscrowTokenContractAddressesResponse {
+    type Request = UserListEscrowTokenContractAddressesRequest;
 }
 
 impl WsRequest for AdminListUsersRequest {

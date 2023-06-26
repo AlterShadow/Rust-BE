@@ -513,16 +513,6 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 Field::new("agreed_tos", Type::Boolean),
                 Field::new("wallet_address", Type::String),
                 Field::new("wallet_blockchain", Type::enum_ref("block_chain")),
-                // Field::new(
-                //     "linked_wallets",
-                //     Type::datatable(
-                //         "LinkedWallet",
-                //         vec![
-                //             Field::new("wallet_address", Type::String),
-                //             TODO: verify ownership of the wallet by requiring signature
-                // ],
-                // ),
-                // ),
                 Field::new("audit_rules", Type::optional(Type::vec(Type::BigInt))),
             ],
             vec![
@@ -626,9 +616,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
             20310,
             vec![
                 Field::new("strategy_id", Type::BigInt),
-                Field::new("token_name", Type::String),
-                Field::new("token_address", Type::String),
-                Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("token_id", Type::BigInt),
                 Field::new("quantity", Type::String),
             ],
             vec![
@@ -874,6 +862,31 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
             20511,
             vec![Field::new("token_id", Type::BigInt)],
             vec![Field::new("balance", Type::String)],
+        ),
+        EndpointSchema::new(
+            "UserListEscrowTokenContractAddresses",
+            20520,
+            vec![
+                Field::new("limit", Type::optional(Type::BigInt)),
+                Field::new("offset", Type::optional(Type::BigInt)),
+                Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
+                Field::new("is_stablecoin", Type::optional(Type::Boolean)),
+            ],
+            vec![Field::new(
+                "tokens",
+                Type::datatable(
+                    "UserListEscrowTokenContractAddressesRow",
+                    vec![
+                        Field::new("token_id", Type::BigInt),
+                        Field::new("token_symbol", Type::String),
+                        Field::new("token_name", Type::String),
+                        Field::new("token_address", Type::String),
+                        Field::new("description", Type::String),
+                        Field::new("blockchain", Type::enum_ref("block_chain")),
+                        Field::new("is_stablecoin", Type::Boolean),
+                    ],
+                ),
+            )],
         ),
     ]
 }

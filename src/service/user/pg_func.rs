@@ -105,8 +105,7 @@ BEGIN
                     AND (a_expert_public_id ISNULL OR u.public_id = a_expert_public_id)
                     AND (a_expert_name ISNULL OR u.username ILIKE a_expert_name || '%')
                     AND (a_description ISNULL OR s.description ILIKE a_description || '%')
-                    -- TODO: support search of strategies by blockchain and wallet address
-                    -- AND (a_blockchain ISNULL OR linked_wallet_blockchain ISNULL OR linked_wallet_blockchain = a_blockchain)
+                    AND (a_blockchain ISNULL OR a.blockchain = a_blockchain)
                     -- AND (a_wallet_address ISNULL OR linked_wallet ISNULL OR linked_wallet ILIKE a_wallet_address || '%')
                 ORDER BY s.pkey_id
                 LIMIT a_limit
@@ -1005,23 +1004,22 @@ END
             "fun_user_add_strategy_initial_token_ratio",
             vec![
                 Field::new("strategy_id", Type::BigInt),
-                Field::new("token_name", Type::String),
-                Field::new("token_address", Type::String),
-                Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("token_id", Type::BigInt),
                 Field::new("quantity", Type::String),
             ],
             vec![Field::new("strategy_initial_token_ratio_id", Type::BigInt)],
             r#"
 BEGIN
-    RETURN QUERY INSERT INTO tbl.strategy_initial_token_ratio (fkey_strategy_id, token_name, token_address, blockchain, quantity, created_at, updated_at)
-            VALUES ( a_strategy_id, a_token_name, a_token_address, a_blockchain, a_quantity, EXTRACT(EPOCH FROM NOW())::bigint, EXTRACT(EPOCH FROM NOW())::bigint) RETURNING pkey_id;
+    RETURN QUERY INSERT INTO tbl.strategy_initial_token_ratio (fkey_strategy_id, token_id, quantity, created_at, updated_at)
+            VALUES ( a_strategy_id, a_token_id, a_quantity, EXTRACT(EPOCH FROM NOW())::bigint, EXTRACT(EPOCH FROM NOW())::bigint) RETURNING pkey_id;
 END
 "#,
         ),
         ProceduralFunction::new(
             "fun_user_update_strategy_initial_token_ratio",
             vec![
-                Field::new("strategy_initial_token_ratio_id", Type::BigInt),
+                Field::new("strategy_id", Type::BigInt),
+                Field::new("token_id", Type::BigInt),
                 Field::new("new_quantity", Type::String),
             ],
             vec![],
@@ -1029,63 +1027,59 @@ END
 BEGIN
 		UPDATE tbl.strategy_initial_token_ratio
 				SET quantity = a_new_quantity, updated_at = EXTRACT(EPOCH FROM NOW())::bigint
-				WHERE pkey_id = a_strategy_initial_token_ratio_id;
+				WHERE fkey_strategy_id = a_strategy_id AND token_id = a_token_id;
 END
 "#,
         ),
         ProceduralFunction::new(
             "fun_user_remove_strategy_initial_token_ratio",
             vec![
-                Field::new("strategy_initial_token_ratio_id", Type::BigInt),
                 Field::new("strategy_id", Type::BigInt),
+                Field::new("token_id", Type::BigInt),
             ],
             vec![],
             r#"
 BEGIN
-    DELETE FROM tbl.strategy_initial_token_ratio WHERE pkey_id = a_strategy_initial_token_ratio_id AND fkey_strategy_id = a_strategy_id;
+    DELETE FROM tbl.strategy_initial_token_ratio 
+    WHERE fkey_strategy_id = a_strategy_id AND token_id = a_token_id;
 END
 "#,
         ),
         ProceduralFunction::new(
             "fun_user_list_strategy_initial_token_ratios",
-            vec![Field::new("strategy_id", Type::BigInt)],
             vec![
-                Field::new("strategy_initial_token_ratio_id", Type::BigInt),
+                Field::new("strategy_id", Type::BigInt),
+                Field::new("token_address", Type::optional(Type::String)),
+                Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
+            ],
+            vec![
+                Field::new("strategy_id", Type::BigInt),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("token_id", Type::BigInt),
                 Field::new("token_name", Type::String),
                 Field::new("token_address", Type::String),
                 Field::new("quantity", Type::String),
-                Field::new("strategy_id", Type::BigInt),
                 Field::new("created_at", Type::BigInt),
                 Field::new("updated_at", Type::BigInt),
             ],
             r#"
 BEGIN
-    RETURN QUERY SELECT a.pkey_id, a.blockchain, a.token_name, a.token_address, a.quantity, a.fkey_strategy_id, a.updated_at, a.created_at FROM tbl.strategy_initial_token_ratio AS a WHERE fkey_strategy_id = a_strategy_id;
-END
-"#,
-        ),
-        ProceduralFunction::new(
-            "fun_user_get_strategy_initial_token_ratio_by_address_and_chain",
-            vec![
-                Field::new("strategy_id", Type::BigInt),
-                Field::new("token_address", Type::String),
-                Field::new("blockchain", Type::enum_ref("block_chain")),
-            ],
-            vec![
-                Field::new("strategy_initial_token_ratio_id", Type::BigInt),
-                Field::new("blockchain", Type::enum_ref("block_chain")),
-                Field::new("token_name", Type::String),
-                Field::new("token_address", Type::String),
-                Field::new("quantity", Type::String),
-                Field::new("strategy_id", Type::BigInt),
-                Field::new("created_at", Type::BigInt),
-                Field::new("updated_at", Type::BigInt),
-            ],
-            r#"
-BEGIN
-		RETURN QUERY SELECT a.pkey_id, a.blockchain, a.token_name, a.token_address, a.quantity, a.fkey_strategy_id, a.updated_at, a.created_at FROM tbl.strategy_initial_token_ratio AS a
-		WHERE a.fkey_strategy_id = a_strategy_id AND a.token_address = a_token_address AND a.blockchain = a_blockchain;
+    RETURN QUERY SELECT
+        a.pkey_id,
+        a.blockchain,
+        a.token_id,
+        b.short_name,
+        b.address,
+        a.quantity,
+        a.fkey_strategy_id,
+        a.updated_at,
+        a.created_at 
+    FROM tbl.strategy_initial_token_ratio AS a
+    JOIN tbl.escrow_token_contract_address AS b ON a.token_id = b.pkey_id
+    WHERE fkey_strategy_id = a_strategy_id
+    AND (b.address = a_token_address OR a_token_address IS NULL)
+    AND (a.blockchain = a_blockchain OR a_blockchain IS NULL);
+    
 END
 "#,
         ),
@@ -1437,6 +1431,7 @@ END
                 Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
                 Field::new("address", Type::optional(Type::String)),
                 Field::new("symbol", Type::optional(Type::String)),
+                Field::new("is_stablecoin", Type::optional(Type::Boolean)),
             ],
             vec![
                 Field::new("token_id", Type::BigInt),
@@ -1462,6 +1457,7 @@ BEGIN
         AND (a_blockchain ISNULL OR a.blockchain = a_blockchain)
         AND (a_address ISNULL OR a.address = a_address)
         AND (a_symbol ISNULL OR a.symbol = a_symbol)
+        AND (a_is_stablecoin ISNULL OR a.is_stablecoin = a_is_stablecoin)
     ORDER BY a.pkey_id
     LIMIT a_limit
     OFFSET a_offset;

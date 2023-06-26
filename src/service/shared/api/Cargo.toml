@@ -18,5 +18,8 @@ serde_json = "*"
 web3 = "*"
 tokio = { version = "1", features = ["full"] }
 serde = { version = "1", features = ["derive"] }
+tracing = "*"
+lib = { path = "../../../lib" }
+
 [lib]
 path = "lib.rs"

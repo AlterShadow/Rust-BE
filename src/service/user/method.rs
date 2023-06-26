@@ -637,7 +637,11 @@ async fn user_back_strategy(
 
     /* fetch strategy's tokens */
     let strategy_token_rows = db
-        .execute(FunUserListStrategyInitialTokenRatiosReq { strategy_id })
+        .execute(FunUserListStrategyInitialTokenRatiosReq {
+            strategy_id,
+            token_address: None,
+            blockchain: None,
+        })
         .await?
         .into_rows();
     let mut total_strategy_tokens = U256::zero();
@@ -1065,6 +1069,7 @@ impl RequestHandler for MethodUserBackStrategy {
                     token_id: Some(req.token_id),
                     address: None,
                     symbol: None,
+                    is_stablecoin: None,
                 })
                 .await?
                 .into_result()
@@ -2249,10 +2254,8 @@ impl RequestHandler for MethodExpertAddStrategyInitialTokenRatio {
             let ret = db
                 .execute(FunUserAddStrategyInitialTokenRatioReq {
                     strategy_id: req.strategy_id,
-                    token_name: req.token_name,
-                    token_address: req.token_address,
-                    blockchain: req.blockchain,
                     quantity: req.quantity,
+                    token_id: req.token_id,
                 })
                 .await?
                 .into_result()
@@ -2286,7 +2289,7 @@ impl RequestHandler for MethodExpertRemoveStrategyInitialTokenRatio {
             validate_audit_rule_immutable_tokens(&logger, &db, req.strategy_id).await?;
             let _ret = db
                 .execute(FunUserRemoveStrategyInitialTokenRatioReq {
-                    strategy_initial_token_ratio_id: req.token_id,
+                    token_id: req.token_id,
                     strategy_id: req.strategy_id,
                 })
                 .await?
@@ -2316,6 +2319,8 @@ impl RequestHandler for MethodUserListStrategyInitialTokenRatio {
             let ret = db
                 .execute(FunUserListStrategyInitialTokenRatiosReq {
                     strategy_id: req.strategy_id,
+                    token_address: None,
+                    blockchain: None,
                 })
                 .await?;
 
@@ -2323,7 +2328,7 @@ impl RequestHandler for MethodUserListStrategyInitialTokenRatio {
                 token_ratios: ret
                     .into_iter()
                     .map(|x| ListStrategyInitialTokenRatioRow {
-                        token_id: x.strategy_initial_token_ratio_id,
+                        token_id: x.token_id,
                         token_name: x.token_name,
                         token_address: x.token_address,
                         quantity: x.quantity,
@@ -2844,6 +2849,7 @@ impl RequestHandler for MethodUserGetEscrowAddressForStrategy {
                     address: None,
                     // TODO: support other symbols
                     symbol: Some("USDC".to_string()),
+                    is_stablecoin: None,
                 })
                 .await?
                 .into_rows();
@@ -2870,36 +2876,48 @@ impl RequestHandler for MethodUserGetEscrowAddressForStrategy {
         .boxed()
     }
 }
+pub struct MethodUserListEscrowTokenContractAddresses;
+impl RequestHandler for MethodUserListEscrowTokenContractAddresses {
+    type Request = UserListEscrowTokenContractAddressesRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db = toolbox.get_db();
+        async move {
+            ensure_user_role(&ctx, EnumUserRole::User)?;
+            let balances = db
+                .execute(FunUserListEscrowTokenContractAddressReq {
+                    limit: req.limit.unwrap_or(DEFAULT_LIMIT),
+                    offset: req.offset.unwrap_or(DEFAULT_OFFSET),
+                    token_id: None,
+                    blockchain: req.blockchain,
+                    address: None,
+                    symbol: None,
+                    is_stablecoin: req.is_stablecoin,
+                })
+                .await?;
+            Ok(UserListEscrowTokenContractAddressesResponse {
+                tokens: balances.map(|x| UserListEscrowTokenContractAddressesRow {
+                    blockchain: x.blockchain,
+                    token_id: x.token_id,
+                    token_symbol: x.symbol,
+                    token_name: x.short_name,
+                    token_address: x.address,
+                    description: x.description,
+                    is_stablecoin: x.is_stablecoin,
+                }),
+            })
+        }
+        .boxed()
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    pub async fn add_strategy_initial_token_ratio(
-        db: &DbClient,
-        strategy_id: i64,
-        wbnb_address_on_bsc_testnet: Address,
-        ts: i64,
-    ) -> Result<()> {
-        db.query(
-            "
-			INSERT INTO tbl.strategy_initial_token_ratio
-			(fkey_strategy_id, blockchain, token_name, token_address, quantity, updated_at, created_at)
-			VALUES
-			($1, $2, $3, $4, $5, $6, $7);
-			",
-            &[
-                &strategy_id as &(dyn ToSql + Sync),
-                &EnumBlockChain::BscTestnet as &(dyn ToSql + Sync),
-                &"WBNB".to_string() as &(dyn ToSql + Sync),
-                &format!("{:?}", wbnb_address_on_bsc_testnet) as &(dyn ToSql + Sync),
-                &"100000000".to_string() as &(dyn ToSql + Sync),
-                &ts as &(dyn ToSql + Sync),
-                &ts as &(dyn ToSql + Sync),
-            ],
-        )
-        .await?;
-        Ok(())
-    }
     use eth_sdk::escrow_tracker::escrow::parse_escrow;
     use eth_sdk::mock_erc20::deploy_mock_erc20;
     use eth_sdk::signer::Secp256k1SecretKey;
@@ -2907,8 +2925,32 @@ mod tests {
     use lib::database::{connect_to_database, database_test_config, drop_and_recreate_database};
     use lib::log::{setup_logs, LogLevel};
     use std::net::Ipv4Addr;
-    use std::{format, vec};
 
+    pub async fn add_strategy_initial_token_ratio(
+        db: &DbClient,
+        strategy_id: i64,
+        wbnb_address_on_bsc_testnet: Address,
+        ts: i64,
+    ) -> Result<()> {
+        db.execute(FunAdminAddEscrowTokenContractAddressReq {
+            pkey_id: 666,
+            symbol: "WBNB".to_string(),
+            short_name: "WBNB".to_string(),
+            description: "WBNB".to_string(),
+            address: format!("{:?}", wbnb_address_on_bsc_testnet),
+            blockchain: EnumBlockChain::BscTestnet,
+            is_stablecoin: false,
+        })
+        .await?;
+        db.execute(FunUserAddStrategyInitialTokenRatioReq {
+            strategy_id,
+            token_id: 666,
+            quantity: "100000000".to_string(),
+        })
+        .await?;
+
+        Ok(())
+    }
     /*
     1. He will transfer tokens C of USDC to escrow address B
     2. We track his transfer, calculate how much SP token user will have, and save the "deposit" information to database (this is for multi chain support)

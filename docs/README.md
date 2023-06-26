@@ -51,7 +51,7 @@ ID: 2
 |20280|ExpertRemoveStrategyWatchingWallet|strategy_id, wallet_id|success||
 |20290|UserListStrategyWatchingWallets|strategy_id|wallets||
 |20300|UserListWalletActivityLedger|wallet_address, blockchain|wallet_activities||
-|20310|ExpertAddStrategyInitialTokenRatio|strategy_id, token_name, token_address, blockchain, quantity|success, token_id||
+|20310|ExpertAddStrategyInitialTokenRatio|strategy_id, token_id, quantity|success, token_id||
 |20320|ExpertRemoveStrategyInitialTokenRatio|strategy_id, token_id|success||
 |20330|UserListStrategyInitialTokenRatio|strategy_id|token_ratios||
 |20340|ExpertListFollowers|limit, offset|followers||
@@ -69,6 +69,7 @@ ID: 2
 |20500|UserGetEscrowAddressForStrategy|strategy_id, token_id|tokens||
 |20510|UserListDepositWithdrawBalances||balances||
 |20511|UserGetDepositWithdrawBalance|token_id|balance||
+|20520|UserListEscrowTokenContractAddresses|limit, offset, blockchain, is_stablecoin|tokens||
 
 # admin Server
 ID: 3

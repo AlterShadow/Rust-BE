@@ -18,7 +18,7 @@ async fn test_admin_list_strategies() -> Result<()> {
             name: "test_strategy".to_string(),
             description: "this is a test strategy".to_string(),
             strategy_thesis_url: "".to_string(),
-            minimum_backing_amount_usd: 0.0,
+            minimum_backing_amount_usd: None,
             strategy_fee: 0.0,
             expert_fee: 0.0,
             agreed_tos: true,

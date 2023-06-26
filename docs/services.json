@@ -3155,18 +3155,8 @@
               "ty": "BigInt"
             },
             {
-              "name": "token_name",
-              "ty": "String"
-            },
-            {
-              "name": "token_address",
-              "ty": "String"
-            },
-            {
-              "name": "blockchain",
-              "ty": {
-                "EnumRef": "block_chain"
-              }
+              "name": "token_id",
+              "ty": "BigInt"
             },
             {
               "name": "quantity",
@@ -3862,6 +3852,83 @@
             {
               "name": "balance",
               "ty": "String"
+            }
+          ],
+          "stream_response": null,
+          "description": "",
+          "json_schema": null
+        },
+        {
+          "name": "UserListEscrowTokenContractAddresses",
+          "code": 20520,
+          "parameters": [
+            {
+              "name": "limit",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "offset",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "Optional": {
+                  "EnumRef": "block_chain"
+                }
+              }
+            },
+            {
+              "name": "is_stablecoin",
+              "ty": {
+                "Optional": "Boolean"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "name": "tokens",
+              "ty": {
+                "DataTable": {
+                  "name": "UserListEscrowTokenContractAddressesRow",
+                  "fields": [
+                    {
+                      "name": "token_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "token_symbol",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "token_name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "token_address",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "description",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "blockchain",
+                      "ty": {
+                        "EnumRef": "block_chain"
+                      }
+                    },
+                    {
+                      "name": "is_stablecoin",
+                      "ty": "Boolean"
+                    }
+                  ]
+                }
+              }
             }
           ],
           "stream_response": null,

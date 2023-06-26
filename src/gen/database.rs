@@ -287,18 +287,6 @@ pub struct FunUserGetStrategyIdFromWatchingWalletRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
-pub struct FunUserGetStrategyInitialTokenRatioByAddressAndChainRespRow {
-    pub strategy_initial_token_ratio_id: i64,
-    pub blockchain: EnumBlockChain,
-    pub token_name: String,
-    pub token_address: String,
-    pub quantity: String,
-    pub strategy_id: i64,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserGetStrategyStatisticsBackLedgerRespRow {
     pub time: i64,
     pub backer_count: f64,
@@ -441,12 +429,12 @@ pub struct FunUserListStrategyFollowersRespRow {
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserListStrategyInitialTokenRatiosRespRow {
-    pub strategy_initial_token_ratio_id: i64,
+    pub strategy_id: i64,
     pub blockchain: EnumBlockChain,
+    pub token_id: i64,
     pub token_name: String,
     pub token_address: String,
     pub quantity: String,
-    pub strategy_id: i64,
     pub created_at: i64,
     pub updated_at: i64,
 }
@@ -1657,9 +1645,7 @@ impl DatabaseRequest for FunUserListRequestRefundLedgerReq {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserAddStrategyInitialTokenRatioReq {
     pub strategy_id: i64,
-    pub token_name: String,
-    pub token_address: String,
-    pub blockchain: EnumBlockChain,
+    pub token_id: i64,
     pub quantity: String,
 }
 
@@ -1667,14 +1653,12 @@ pub struct FunUserAddStrategyInitialTokenRatioReq {
 impl DatabaseRequest for FunUserAddStrategyInitialTokenRatioReq {
     type ResponseRow = FunUserAddStrategyInitialTokenRatioRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_add_strategy_initial_token_ratio(a_strategy_id => $1::bigint, a_token_name => $2::varchar, a_token_address => $3::varchar, a_blockchain => $4::enum_block_chain, a_quantity => $5::varchar);"
+        "SELECT * FROM api.fun_user_add_strategy_initial_token_ratio(a_strategy_id => $1::bigint, a_token_id => $2::bigint, a_quantity => $3::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
             &self.strategy_id as &(dyn ToSql + Sync),
-            &self.token_name as &(dyn ToSql + Sync),
-            &self.token_address as &(dyn ToSql + Sync),
-            &self.blockchain as &(dyn ToSql + Sync),
+            &self.token_id as &(dyn ToSql + Sync),
             &self.quantity as &(dyn ToSql + Sync),
         ]
     }
@@ -1682,7 +1666,8 @@ impl DatabaseRequest for FunUserAddStrategyInitialTokenRatioReq {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserUpdateStrategyInitialTokenRatioReq {
-    pub strategy_initial_token_ratio_id: i64,
+    pub strategy_id: i64,
+    pub token_id: i64,
     pub new_quantity: String,
 }
 
@@ -1690,11 +1675,12 @@ pub struct FunUserUpdateStrategyInitialTokenRatioReq {
 impl DatabaseRequest for FunUserUpdateStrategyInitialTokenRatioReq {
     type ResponseRow = FunUserUpdateStrategyInitialTokenRatioRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_update_strategy_initial_token_ratio(a_strategy_initial_token_ratio_id => $1::bigint, a_new_quantity => $2::varchar);"
+        "SELECT * FROM api.fun_user_update_strategy_initial_token_ratio(a_strategy_id => $1::bigint, a_token_id => $2::bigint, a_new_quantity => $3::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
-            &self.strategy_initial_token_ratio_id as &(dyn ToSql + Sync),
+            &self.strategy_id as &(dyn ToSql + Sync),
+            &self.token_id as &(dyn ToSql + Sync),
             &self.new_quantity as &(dyn ToSql + Sync),
         ]
     }
@@ -1702,20 +1688,20 @@ impl DatabaseRequest for FunUserUpdateStrategyInitialTokenRatioReq {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserRemoveStrategyInitialTokenRatioReq {
-    pub strategy_initial_token_ratio_id: i64,
     pub strategy_id: i64,
+    pub token_id: i64,
 }
 
 #[allow(unused_variables)]
 impl DatabaseRequest for FunUserRemoveStrategyInitialTokenRatioReq {
     type ResponseRow = FunUserRemoveStrategyInitialTokenRatioRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_remove_strategy_initial_token_ratio(a_strategy_initial_token_ratio_id => $1::bigint, a_strategy_id => $2::bigint);"
+        "SELECT * FROM api.fun_user_remove_strategy_initial_token_ratio(a_strategy_id => $1::bigint, a_token_id => $2::bigint);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
-            &self.strategy_initial_token_ratio_id as &(dyn ToSql + Sync),
             &self.strategy_id as &(dyn ToSql + Sync),
+            &self.token_id as &(dyn ToSql + Sync),
         ]
     }
 }
@@ -1723,31 +1709,17 @@ impl DatabaseRequest for FunUserRemoveStrategyInitialTokenRatioReq {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserListStrategyInitialTokenRatiosReq {
     pub strategy_id: i64,
+    #[serde(default)]
+    pub token_address: Option<String>,
+    #[serde(default)]
+    pub blockchain: Option<EnumBlockChain>,
 }
 
 #[allow(unused_variables)]
 impl DatabaseRequest for FunUserListStrategyInitialTokenRatiosReq {
     type ResponseRow = FunUserListStrategyInitialTokenRatiosRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_list_strategy_initial_token_ratios(a_strategy_id => $1::bigint);"
-    }
-    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
-        vec![&self.strategy_id as &(dyn ToSql + Sync)]
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunUserGetStrategyInitialTokenRatioByAddressAndChainReq {
-    pub strategy_id: i64,
-    pub token_address: String,
-    pub blockchain: EnumBlockChain,
-}
-
-#[allow(unused_variables)]
-impl DatabaseRequest for FunUserGetStrategyInitialTokenRatioByAddressAndChainReq {
-    type ResponseRow = FunUserGetStrategyInitialTokenRatioByAddressAndChainRespRow;
-    fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_get_strategy_initial_token_ratio_by_address_and_chain(a_strategy_id => $1::bigint, a_token_address => $2::varchar, a_blockchain => $3::enum_block_chain);"
+        "SELECT * FROM api.fun_user_list_strategy_initial_token_ratios(a_strategy_id => $1::bigint, a_token_address => $2::varchar, a_blockchain => $3::enum_block_chain);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -2101,13 +2073,15 @@ pub struct FunUserListEscrowTokenContractAddressReq {
     pub address: Option<String>,
     #[serde(default)]
     pub symbol: Option<String>,
+    #[serde(default)]
+    pub is_stablecoin: Option<bool>,
 }
 
 #[allow(unused_variables)]
 impl DatabaseRequest for FunUserListEscrowTokenContractAddressReq {
     type ResponseRow = FunUserListEscrowTokenContractAddressRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_list_escrow_token_contract_address(a_limit => $1::bigint, a_offset => $2::bigint, a_token_id => $3::bigint, a_blockchain => $4::enum_block_chain, a_address => $5::varchar, a_symbol => $6::varchar);"
+        "SELECT * FROM api.fun_user_list_escrow_token_contract_address(a_limit => $1::bigint, a_offset => $2::bigint, a_token_id => $3::bigint, a_blockchain => $4::enum_block_chain, a_address => $5::varchar, a_symbol => $6::varchar, a_is_stablecoin => $7::boolean);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -2117,6 +2091,7 @@ impl DatabaseRequest for FunUserListEscrowTokenContractAddressReq {
             &self.blockchain as &(dyn ToSql + Sync),
             &self.address as &(dyn ToSql + Sync),
             &self.symbol as &(dyn ToSql + Sync),
+            &self.is_stablecoin as &(dyn ToSql + Sync),
         ]
     }
 }

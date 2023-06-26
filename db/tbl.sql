@@ -1,5 +1,5 @@
 -- Created by Vertabelo (http://vertabelo.com)
--- Last modification date: 2023-06-25 15:39:03.914
+-- Last modification date: 2023-06-26 14:03:49.764
 
 CREATE SCHEMA IF NOT EXISTS tbl;;
 
@@ -198,9 +198,7 @@ CREATE TABLE tbl.strategy_escrow_pending_wallet_balance (
 CREATE TABLE tbl.strategy_initial_token_ratio (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_strategy_initial_token_ratio_id'),
     fkey_strategy_id bigint  NOT NULL,
-    blockchain enum_block_chain  NOT NULL,
-    token_name varchar(20)  NOT NULL,
-    token_address varchar(64)  NOT NULL,
+    token_id bigint  NOT NULL,
     quantity varchar(64)  NOT NULL,
     updated_at bigint  NOT NULL,
     created_at bigint  NOT NULL,
@@ -242,7 +240,7 @@ CREATE TABLE tbl.strategy_watching_wallet_trade_ledger (
     amount_in varchar(64)  NULL,
     amount_out varchar(64)  NULL,
     heppened_at bigint  NOT NULL,
-    CONSTRAINT wallet_activity_history_ak_1 UNIQUE (transaction_hash, blockchain) NOT DEFERRABLE  INITIALLY IMMEDIATE,
+    CONSTRAINT wallet_activity_history_ak_1 UNIQUE (transaction_hash) NOT DEFERRABLE  INITIALLY IMMEDIATE,
     CONSTRAINT strategy_watching_wallet_trade_ledger_pk PRIMARY KEY (pkey_id)
 );
 
@@ -512,6 +510,14 @@ ALTER TABLE tbl.strategy_escrow_pending_wallet_balance ADD CONSTRAINT strategy_e
 ALTER TABLE tbl.strategy_escrow_pending_wallet_balance ADD CONSTRAINT strategy_escrow_pending_wallet_balance
     FOREIGN KEY (fkey_strategy_pending_wallet_address_id)
     REFERENCES tbl.strategy_escrow_pending_wallet_address (pkey_id)  
+    NOT DEFERRABLE 
+    INITIALLY IMMEDIATE
+;
+
+-- Reference: strategy_initial_token_ratio_escrow_token_contract_address (table: strategy_initial_token_ratio)
+ALTER TABLE tbl.strategy_initial_token_ratio ADD CONSTRAINT strategy_initial_token_ratio_escrow_token_contract_address
+    FOREIGN KEY (token_id)
+    REFERENCES tbl.escrow_token_contract_address (pkey_id)  
     NOT DEFERRABLE 
     INITIALLY IMMEDIATE
 ;

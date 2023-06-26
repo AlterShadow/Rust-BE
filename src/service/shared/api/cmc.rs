@@ -4,6 +4,7 @@ use reqwest::{Client, Response, Url};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::str::FromStr;
+use tracing::*;
 use web3::types::Address;
 
 const API_KEY: &str = "ec6c4b09-03e6-4bd6-84f9-95406fc2ce81";
@@ -52,7 +53,7 @@ pub struct MapCoinInfo {
     pub is_active: i32,
     pub first_historical_data: String,
     pub last_historical_data: String,
-    pub platform: Option<String>,
+    pub platform: Option<MapCoinPlatform>,
 }
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MapCoinResponse {
@@ -178,7 +179,9 @@ impl CoinMarketCap {
         self.append_url_params(&mut url, "limit", &vec!["25".to_string()]);
         self.append_url_params(&mut url, "sort", &vec!["cmc_rank".to_string()]);
         let result = self.client.get(url).send().await?;
-        let data: MapCoinResponse = result.json().await?;
+        let msg = result.text().await?;
+        info!("get_top_25_coins: {}", msg);
+        let data: MapCoinResponse = serde_json::from_str(&msg)?;
         Ok(data)
     }
     fn price_url(&self) -> Result<Url> {
@@ -219,6 +222,7 @@ impl CoinMarketCap {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use lib::log::{setup_logs, LogLevel};
 
     #[tokio::test]
     async fn test_get_usd_price_by_symbol() -> Result<()> {
@@ -242,6 +246,14 @@ mod tests {
         assert_eq!(infos[0].name, "Ethereum");
         assert_eq!(infos[0].symbol, "ETH");
         assert_eq!(infos[0].slug, "ethereum");
+        Ok(())
+    }
+    #[tokio::test]
+    async fn test_get_cmc_top_25_tokens() -> Result<()> {
+        setup_logs(LogLevel::Debug)?;
+        let cmc = CoinMarketCap::new_debug_key().unwrap();
+        let infos = cmc.get_top_25_coins().await?;
+        info!("{:?}", infos);
         Ok(())
     }
 }
