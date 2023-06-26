@@ -1989,6 +1989,14 @@ impl RequestHandler for MethodExpertCreateStrategy {
                     .await?;
                 }
             }
+            for token in req.initial_tokens.unwrap_or_default() {
+                db.execute(FunUserAddStrategyInitialTokenRatioReq {
+                    strategy_id: ret.strategy_id,
+                    token_id: token.token_id,
+                    quantity: token.quantity,
+                })
+                .await?;
+            }
 
             Ok(ExpertCreateStrategyResponse {
                 success: ret.success,
@@ -2888,7 +2896,7 @@ impl RequestHandler for MethodUserListEscrowTokenContractAddresses {
     ) -> FutureResponse<Self::Request> {
         let db = toolbox.get_db();
         async move {
-            ensure_user_role(&ctx, EnumUserRole::User)?;
+            ensure_user_role(ctx, EnumRole::User)?;
             let balances = db
                 .execute(FunUserListEscrowTokenContractAddressReq {
                     limit: req.limit.unwrap_or(DEFAULT_LIMIT),

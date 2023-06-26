@@ -105,7 +105,7 @@ BEGIN
                     AND (a_expert_public_id ISNULL OR u.public_id = a_expert_public_id)
                     AND (a_expert_name ISNULL OR u.username ILIKE a_expert_name || '%')
                     AND (a_description ISNULL OR s.description ILIKE a_description || '%')
-                    AND (a_blockchain ISNULL OR a.blockchain = a_blockchain)
+                    AND (a_blockchain ISNULL OR s.blockchain = a_blockchain)
                     -- AND (a_wallet_address ISNULL OR linked_wallet ISNULL OR linked_wallet ILIKE a_wallet_address || '%')
                 ORDER BY s.pkey_id
                 LIMIT a_limit

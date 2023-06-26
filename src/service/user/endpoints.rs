@@ -513,6 +513,16 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 Field::new("agreed_tos", Type::Boolean),
                 Field::new("wallet_address", Type::String),
                 Field::new("wallet_blockchain", Type::enum_ref("block_chain")),
+                Field::new(
+                    "initial_tokens",
+                    Type::optional(Type::datatable(
+                        "UserCreateStrategyInitialTokenRow",
+                        vec![
+                            Field::new("token_id", Type::BigInt),
+                            Field::new("quantity", Type::String),
+                        ],
+                    )),
+                ),
                 Field::new("audit_rules", Type::optional(Type::vec(Type::BigInt))),
             ],
             vec![

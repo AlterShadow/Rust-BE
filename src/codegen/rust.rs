@@ -214,6 +214,7 @@ pub fn collect_rust_recursive_types(t: Type) -> Vec<Type> {
             collect_rust_recursive_types(Type::struct_(name, fields))
         }
         Type::Vec(x) => collect_rust_recursive_types(*x),
+        Type::Optional(x) => collect_rust_recursive_types(*x),
         _ => vec![],
     }
 }

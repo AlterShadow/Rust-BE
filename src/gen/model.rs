@@ -1180,6 +1180,8 @@ pub struct ExpertCreateStrategyRequest {
     pub wallet_address: String,
     pub wallet_blockchain: EnumBlockChain,
     #[serde(default)]
+    pub initial_tokens: Option<Vec<UserCreateStrategyInitialTokenRow>>,
+    #[serde(default)]
     pub audit_rules: Option<Vec<i64>>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1532,6 +1534,12 @@ pub struct UserBackStrategyRequest {
 #[serde(rename_all = "camelCase")]
 pub struct UserBackStrategyResponse {
     pub success: bool,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserCreateStrategyInitialTokenRow {
+    pub token_id: i64,
+    pub quantity: String,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -5328,6 +5336,26 @@ impl WsRequest for ExpertCreateStrategyRequest {
       "name": "wallet_blockchain",
       "ty": {
         "EnumRef": "block_chain"
+      }
+    },
+    {
+      "name": "initial_tokens",
+      "ty": {
+        "Optional": {
+          "DataTable": {
+            "name": "UserCreateStrategyInitialTokenRow",
+            "fields": [
+              {
+                "name": "token_id",
+                "ty": "BigInt"
+              },
+              {
+                "name": "quantity",
+                "ty": "String"
+              }
+            ]
+          }
+        }
       }
     },
     {
