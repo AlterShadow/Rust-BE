@@ -898,7 +898,13 @@ END
         ),
         ProceduralFunction::new(
             "fun_user_list_registered_wallets",
-            vec![Field::new("user_id", Type::BigInt)],
+            vec![
+                Field::new("limit", Type::BigInt),
+                Field::new("offset", Type::BigInt),
+                Field::new("user_id", Type::optional(Type::BigInt)),
+                Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
+                Field::new("address", Type::optional(Type::String)),
+            ],
             vec![
                 Field::new("registered_wallet_id", Type::BigInt),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
@@ -906,7 +912,17 @@ END
             ],
             r#"
 BEGIN
-    RETURN QUERY SELECT a.pkey_id, a.blockchain, a.address FROM tbl.user_registered_wallet AS a WHERE fkey_user_id = a_user_id;
+    RETURN QUERY SELECT
+        a.pkey_id,
+        a.blockchain,
+        a.address 
+    FROM tbl.user_registered_wallet AS a 
+    WHERE (a.fkey_user_id = a_user_id OR a_user_id IS NULL) AND
+          (a.blockchain = a_blockchain OR a_blockchain IS NULL) AND
+          (a.address = a_address OR a_address IS NULL)
+    ORDER BY a.pkey_id
+    LIMIT a_limit
+    OFFSET a_offset;
 END
 "#,
         ),

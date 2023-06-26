@@ -500,6 +500,9 @@ pub struct ErrorTokenNotTop25 {}
 pub struct ErrorImmutableStrategy {}
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
+pub struct ErrorUserWhitelistedWalletNotSameNetworkAsStrategy {}
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct ErrorInvalidEnumLevel {}
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -673,6 +676,9 @@ pub enum EnumErrorCode {
     /// Audit Strategy is immutable
     #[postgres(name = "ImmutableStrategy")]
     ImmutableStrategy = 102603,
+    /// Audit User whitelisted wallet not same network as strategy
+    #[postgres(name = "UserWhitelistedWalletNotSameNetworkAsStrategy")]
+    UserWhitelistedWalletNotSameNetworkAsStrategy = 102604,
     /// SQL 22P02 InvalidEnumLevel
     #[postgres(name = "InvalidEnumLevel")]
     InvalidEnumLevel = 3484946,
@@ -1435,6 +1441,7 @@ pub struct ListWalletsRow {
     pub blockchain: EnumBlockChain,
     pub wallet_address: String,
     pub is_default: bool,
+    pub is_compatible: bool,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1893,7 +1900,20 @@ pub struct UserListFollowedStrategiesResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserListRegisteredWalletsRequest {}
+pub struct UserListRegisteredWalletsRequest {
+    #[serde(default)]
+    pub limit: Option<i64>,
+    #[serde(default)]
+    pub offset: Option<i64>,
+    #[serde(default)]
+    pub wallet_id: Option<i64>,
+    #[serde(default)]
+    pub blockchain: Option<EnumBlockChain>,
+    #[serde(default)]
+    pub wallet_address: Option<String>,
+    #[serde(default)]
+    pub strategy_id: Option<i64>,
+}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserListRegisteredWalletsResponse {
@@ -5098,7 +5118,46 @@ impl WsRequest for UserListRegisteredWalletsRequest {
     const SCHEMA: &'static str = r#"{
   "name": "UserListRegisteredWallets",
   "code": 20200,
-  "parameters": [],
+  "parameters": [
+    {
+      "name": "limit",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "offset",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "wallet_id",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "blockchain",
+      "ty": {
+        "Optional": {
+          "EnumRef": "block_chain"
+        }
+      }
+    },
+    {
+      "name": "wallet_address",
+      "ty": {
+        "Optional": "String"
+      }
+    },
+    {
+      "name": "strategy_id",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    }
+  ],
   "returns": [
     {
       "name": "wallets",
@@ -5122,6 +5181,10 @@ impl WsRequest for UserListRegisteredWalletsRequest {
             },
             {
               "name": "is_default",
+              "ty": "Boolean"
+            },
+            {
+              "name": "is_compatible",
               "ty": "Boolean"
             }
           ]

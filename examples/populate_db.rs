@@ -8,6 +8,7 @@ use eth_sdk::{BlockchainCoinAddresses, EscrowAddresses};
 use eyre::*;
 use futures::future::join_all;
 use gen::model::*;
+#[allow(unused_imports)]
 use lib::database::drop_and_recreate_database;
 use lib::log::{setup_logs, LogLevel};
 use rand::random;
@@ -212,7 +213,7 @@ fn spawn_task(f: impl Future<Output = Result<()>> + Send + 'static) -> JoinHandl
         }
     })
 }
-async fn populate_users() -> Result<()> {
+pub async fn populate_users() -> Result<()> {
     let admin_signer = get_admin_key();
     signup(format!("dev-{}", 0), &admin_signer.key).await?;
 
@@ -224,21 +225,24 @@ async fn populate_users() -> Result<()> {
     Ok(())
 }
 
-async fn populate_audit_rules() -> Result<()> {
+pub async fn populate_audit_rules() -> Result<()> {
     let admin_signer = get_admin_key();
     let mut admin_client = connect_user("dev-0", &admin_signer.key).await?;
     for rule in get_audit_rules() {
-        admin_client
+        if let Err(err) = admin_client
             .request(AdminAddAuditRuleRequest {
                 rule_id: rule.id,
                 name: rule.name.to_string(),
                 description: rule.description.to_string(),
             })
-            .await?;
+            .await
+        {
+            error!("Error populating audit rule {:?}: {:?}", rule, err);
+        }
     }
     Ok(())
 }
-async fn populate_escrow_token_contract_address() -> Result<()> {
+pub async fn populate_escrow_token_contract_address() -> Result<()> {
     let admin_signer = get_admin_key();
     let mut admin_client = connect_user("dev-0", &admin_signer.key).await?;
     let addresses = BlockchainCoinAddresses::new();
@@ -265,7 +269,7 @@ async fn populate_escrow_token_contract_address() -> Result<()> {
     }
     Ok(())
 }
-async fn populate_escrow_contract_address() -> Result<()> {
+pub async fn populate_escrow_contract_address() -> Result<()> {
     let admin_signer = get_admin_key();
     let mut admin_client = connect_user("dev-0", &admin_signer.key).await?;
     let addresses = EscrowAddresses::new();
@@ -283,8 +287,8 @@ async fn populate_escrow_contract_address() -> Result<()> {
     }
     Ok(())
 }
-#[allow(unused)]
-async fn populate_user_register_wallets() -> Result<()> {
+
+pub async fn populate_user_register_wallets() -> Result<()> {
     let mut tasks = vec![];
     for i in 0..KEYS.len() {
         tasks.push(spawn_task(async move {
@@ -293,14 +297,26 @@ async fn populate_user_register_wallets() -> Result<()> {
             let mut client = connect_user(format!("user-{}", i), &signer.key).await?;
             let (txt, sig) =
                 get_signed_text(format!("User register wallet request {}", i), &signer.key)?;
-            let _resp = client
-                .request(UserRegisterWalletRequest {
-                    blockchain: EnumBlockChain::LocalNet,
-                    wallet_address: format!("{:?}", signer.address),
-                    message_to_sign: txt,
-                    message_signature: sig,
-                })
-                .await?;
+
+            for blockchain in [
+                EnumBlockChain::EthereumMainnet,
+                EnumBlockChain::EthereumGoerli,
+                EnumBlockChain::BscMainnet,
+                EnumBlockChain::BscTestnet,
+                EnumBlockChain::LocalNet,
+            ] {
+                if let Err(err) = client
+                    .request(UserRegisterWalletRequest {
+                        blockchain,
+                        wallet_address: format!("{:?}", signer.address),
+                        message_to_sign: txt.clone(),
+                        message_signature: sig.clone(),
+                    })
+                    .await
+                {
+                    error!("Error when registering wallet: {:?}", err);
+                }
+            }
             Ok(())
         }))
     }
@@ -309,7 +325,7 @@ async fn populate_user_register_wallets() -> Result<()> {
     Ok(())
 }
 
-async fn populate_user_apply_become_experts() -> Result<()> {
+pub async fn populate_user_apply_become_experts() -> Result<()> {
     let mut tasks = vec![];
     let admin_signer = get_admin_key();
     let admin_client = Arc::new(Mutex::new(connect_user("dev-0", &admin_signer.key).await?));
@@ -337,7 +353,7 @@ async fn populate_user_apply_become_experts() -> Result<()> {
                         name: format!("test strategy {}", i),
                         description: "this is a test strategy".to_string(),
                         strategy_thesis_url: "".to_string(),
-                        minimum_backing_amount_usd: 0.0,
+                        minimum_backing_amount_usd: None,
                         strategy_fee: random(),
                         expert_fee: random(),
                         agreed_tos: true,
@@ -369,10 +385,11 @@ async fn populate_user_apply_become_experts() -> Result<()> {
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<()> {
     setup_logs(LogLevel::Debug)?;
-    drop_and_recreate_database()?;
+    // drop_and_recreate_database()?;
     populate_escrow_token_contract_address().await?;
     populate_escrow_contract_address().await?;
     populate_users().await?;
+    populate_user_register_wallets().await?;
     populate_audit_rules().await?;
     populate_user_apply_become_experts().await?;
 

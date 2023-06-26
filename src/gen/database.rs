@@ -1575,17 +1575,30 @@ impl DatabaseRequest for FunUserRemoveRegisteredWalletReq {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserListRegisteredWalletsReq {
-    pub user_id: i64,
+    pub limit: i64,
+    pub offset: i64,
+    #[serde(default)]
+    pub user_id: Option<i64>,
+    #[serde(default)]
+    pub blockchain: Option<EnumBlockChain>,
+    #[serde(default)]
+    pub address: Option<String>,
 }
 
 #[allow(unused_variables)]
 impl DatabaseRequest for FunUserListRegisteredWalletsReq {
     type ResponseRow = FunUserListRegisteredWalletsRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_list_registered_wallets(a_user_id => $1::bigint);"
+        "SELECT * FROM api.fun_user_list_registered_wallets(a_limit => $1::bigint, a_offset => $2::bigint, a_user_id => $3::bigint, a_blockchain => $4::enum_block_chain, a_address => $5::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
-        vec![&self.user_id as &(dyn ToSql + Sync)]
+        vec![
+            &self.limit as &(dyn ToSql + Sync),
+            &self.offset as &(dyn ToSql + Sync),
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.blockchain as &(dyn ToSql + Sync),
+            &self.address as &(dyn ToSql + Sync),
+        ]
     }
 }
 

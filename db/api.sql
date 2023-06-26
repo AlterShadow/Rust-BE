@@ -1446,7 +1446,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_list_registered_wallets(a_user_id bigint)
+CREATE OR REPLACE FUNCTION api.fun_user_list_registered_wallets(a_limit bigint, a_offset bigint, a_user_id bigint DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL, a_address varchar DEFAULT NULL)
 RETURNS table (
     "registered_wallet_id" bigint,
     "blockchain" enum_block_chain,
@@ -1456,7 +1456,17 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY SELECT a.pkey_id, a.blockchain, a.address FROM tbl.user_registered_wallet AS a WHERE fkey_user_id = a_user_id;
+    RETURN QUERY SELECT
+        a.pkey_id,
+        a.blockchain,
+        a.address 
+    FROM tbl.user_registered_wallet AS a 
+    WHERE (a.fkey_user_id = a_user_id OR a_user_id IS NULL) AND
+          (a.blockchain = a_blockchain OR a_blockchain IS NULL) AND
+          (a.address = a_address OR a_address IS NULL)
+    ORDER BY a.pkey_id
+    LIMIT a_limit
+    OFFSET a_offset;
 END
 
 $$;

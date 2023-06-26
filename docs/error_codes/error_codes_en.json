@@ -86,6 +86,12 @@
       "source": "Audit"
     },
     {
+      "code": 102604,
+      "symbol": "UserWhitelistedWalletNotSameNetworkAsStrategy",
+      "message": "User whitelisted wallet not same network as strategy",
+      "source": "Audit"
+    },
+    {
       "code": 3484946,
       "symbol": "InvalidEnumLevel",
       "message": "InvalidEnumLevel",

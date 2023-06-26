@@ -1812,15 +1812,41 @@ impl RequestHandler for MethodUserListRegisteredWallets {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        _req: Self::Request,
+        req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         async move {
             ensure_user_role(ctx, EnumRole::User)?;
-
+            let blockchain_filter = if let Some(strategy_id) = req.strategy_id {
+                let strategy = db
+                    .execute(FunUserListStrategiesReq {
+                        user_id: ctx.user_id,
+                        strategy_id: Some(strategy_id),
+                        strategy_name: None,
+                        expert_public_id: None,
+                        expert_name: None,
+                        description: None,
+                        blockchain: None,
+                        limit: 1,
+                        offset: 0,
+                        wallet_address: None,
+                    })
+                    .await?
+                    .into_result()
+                    .with_context(|| {
+                        CustomError::new(EnumErrorCode::NotFound, "Strategy not found")
+                    })?;
+                Some(strategy.blockchain)
+            } else {
+                None
+            };
             let ret = db
                 .execute(FunUserListRegisteredWalletsReq {
-                    user_id: ctx.user_id,
+                    limit: req.limit.unwrap_or(DEFAULT_LIMIT),
+                    offset: req.offset.unwrap_or(DEFAULT_OFFSET),
+                    user_id: Some(ctx.user_id),
+                    blockchain: req.blockchain,
+                    address: None,
                 })
                 .await?;
 
@@ -1832,6 +1858,11 @@ impl RequestHandler for MethodUserListRegisteredWallets {
                         blockchain: x.blockchain,
                         wallet_address: x.address,
                         is_default: false,
+                        is_compatible: if let Some(blockchain) = blockchain_filter {
+                            blockchain == x.blockchain
+                        } else {
+                            true
+                        },
                     })
                     .collect(),
             })

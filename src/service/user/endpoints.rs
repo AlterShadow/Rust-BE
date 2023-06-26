@@ -460,7 +460,14 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
         EndpointSchema::new(
             "UserListRegisteredWallets",
             20200,
-            vec![],
+            vec![
+                Field::new("limit", Type::optional(Type::BigInt)),
+                Field::new("offset", Type::optional(Type::BigInt)),
+                Field::new("wallet_id", Type::optional(Type::BigInt)),
+                Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
+                Field::new("wallet_address", Type::optional(Type::String)),
+                Field::new("strategy_id", Type::optional(Type::BigInt)),
+            ],
             vec![Field::new(
                 "wallets",
                 Type::datatable(
@@ -470,6 +477,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                         Field::new("blockchain", Type::enum_ref("block_chain")),
                         Field::new("wallet_address", Type::String),
                         Field::new("is_default", Type::Boolean),
+                        Field::new("is_compatible", Type::Boolean),
                     ],
                 ),
             )],

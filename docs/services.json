@@ -2712,7 +2712,46 @@
         {
           "name": "UserListRegisteredWallets",
           "code": 20200,
-          "parameters": [],
+          "parameters": [
+            {
+              "name": "limit",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "offset",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "wallet_id",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "Optional": {
+                  "EnumRef": "block_chain"
+                }
+              }
+            },
+            {
+              "name": "wallet_address",
+              "ty": {
+                "Optional": "String"
+              }
+            },
+            {
+              "name": "strategy_id",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            }
+          ],
           "returns": [
             {
               "name": "wallets",
@@ -2736,6 +2775,10 @@
                     },
                     {
                       "name": "is_default",
+                      "ty": "Boolean"
+                    },
+                    {
+                      "name": "is_compatible",
                       "ty": "Boolean"
                     }
                   ]

@@ -41,7 +41,7 @@ ID: 2
 |20170|UserGetExpertProfile|expert_id|expert_id, name, follower_count, description, social_media, risk_score, reputation_score, aum, strategies_total, strategies|User gets an expert profile|
 |20180|UserGetUserProfile||name, login_wallet, joined_at, follower_count, description, social_media, followed_experts, followed_strategies, backed_strategies|User gets an user profile|
 |20190|UserRegisterWallet|blockchain, wallet_address, message_to_sign, message_signature|success, wallet_id|User registers a wallet|
-|20200|UserListRegisteredWallets||wallets|User lists wallets|
+|20200|UserListRegisteredWallets|limit, offset, wallet_id, blockchain, wallet_address, strategy_id|wallets|User lists wallets|
 |20210|UserDeregisterWallet|wallet_id|success|User deregisters a wallet|
 |20220|UserApplyBecomeExpert||success, expert_id|User applies to become an expert|
 |20250|ExpertCreateStrategy|name, description, strategy_thesis_url, minimum_backing_amount_usd, strategy_fee, expert_fee, agreed_tos, wallet_address, wallet_blockchain, audit_rules|success, strategy_id|User makes a strategy|
