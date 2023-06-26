@@ -7,7 +7,6 @@ use eyre::*;
 use gen::model::EnumBlockChain;
 use std::fmt::{Debug, Formatter};
 use std::time::Duration;
-use tracing::warn;
 use web3::api::Web3;
 use web3::contract::{Contract, Options};
 use web3::signing::Key;
@@ -277,32 +276,23 @@ pub async fn approve_and_ensure_success(
     contract: Erc20Token,
     conn: &EthereumRpcConnection,
     confirmations: u64,
-    max_retry: usize,
-    wait_timeout: Duration,
+    max_retry: u64,
+    poll_interval: Duration,
     signer: impl Key + Clone,
     spender: Address,
     amount: U256,
 ) -> Result<H256> {
-    for retries in 0..max_retry {
-        /* publish transaction */
-        let tx_hash = contract
-            .approve(&conn, signer.clone(), spender, amount)
-            .await?;
-        match wait_for_confirmations(&conn.eth(), tx_hash, wait_timeout, 3, confirmations).await {
-            Ok(_ok) => {
-                /* transaction is confirmed, consider it canonical */
-                return Ok(tx_hash);
-            }
-            Err(err) => {
-                warn!(
-                    "Transaction {:?} failed to confirm after {:?} retries: {:?}",
-                    tx_hash, retries, err
-                );
-            }
-        }
-    }
-    bail!(
-        "Transaction failed to confirm after {:?} retries",
-        max_retry
+    /* publish transaction */
+    let tx_hash = contract
+        .approve(&conn, signer.clone(), spender, amount)
+        .await?;
+    wait_for_confirmations(
+        &conn.eth(),
+        tx_hash,
+        poll_interval,
+        max_retry,
+        confirmations,
     )
+    .await?;
+    Ok(tx_hash)
 }

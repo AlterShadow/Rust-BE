@@ -2874,20 +2874,18 @@
             {
               "name": "initial_tokens",
               "ty": {
-                "Optional": {
-                  "DataTable": {
-                    "name": "UserCreateStrategyInitialTokenRow",
-                    "fields": [
-                      {
-                        "name": "token_id",
-                        "ty": "BigInt"
-                      },
-                      {
-                        "name": "quantity",
-                        "ty": "String"
-                      }
-                    ]
-                  }
+                "DataTable": {
+                  "name": "UserCreateStrategyInitialTokenRow",
+                  "fields": [
+                    {
+                      "name": "token_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "quantity",
+                      "ty": "String"
+                    }
+                  ]
                 }
               }
             },

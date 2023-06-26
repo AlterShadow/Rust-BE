@@ -124,7 +124,10 @@ END
         ),
         ProceduralFunction::new(
             "fun_watcher_list_strategy_escrow_pending_wallet_balance",
-            vec![Field::new("strategy_id", Type::optional(Type::BigInt))],
+            vec![
+                Field::new("strategy_id", Type::optional(Type::BigInt)),
+                Field::new("token_address", Type::optional(Type::String)),
+            ],
             vec![
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
@@ -148,7 +151,9 @@ BEGIN
                  FROM tbl.strategy_escrow_pending_wallet_balance AS l
                  JOIN tbl.strategy_escrow_pending_wallet_address AS w ON l.fkey_strategy_pending_wallet_address_id = w.pkey_id
                  JOIN tbl.escrow_token_contract_address AS t ON l.fkey_token_id = t.pkey_id
-                 WHERE strategy_id = a_strategy_id;
+                 WHERE strategy_id = a_strategy_id
+                     AND (a_token_address ISNULL OR t.address = a_token_address);
+
 END
         "#,
         ),

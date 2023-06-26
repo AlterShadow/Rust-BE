@@ -34,7 +34,7 @@ pub async fn wait_for_confirmations_simple<T>(
     eth: &Eth<T>,
     hash: H256,
     poll_interval: Duration,
-    max_retry: usize,
+    max_retry: u64,
 ) -> Result<TransactionReceipt>
 where
     T: Transport,
@@ -55,7 +55,7 @@ pub async fn wait_for_confirmations<T>(
     eth: &Eth<T>,
     hash: H256,
     poll_interval: Duration,
-    max_retry: usize,
+    max_retry: u64,
     confirmations: u64,
 ) -> Result<TransactionReceipt>
 where

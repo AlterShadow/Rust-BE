@@ -4,7 +4,7 @@ use eth_sdk::erc20::{approve_and_ensure_success, build_erc_20, Erc20Token};
 use eth_sdk::escrow::EscrowContract;
 use eth_sdk::mock_erc20::deploy_mock_erc20;
 use eth_sdk::signer::Secp256k1SecretKey;
-use eth_sdk::strategy_pool::{deposit_and_ensure_success, StrategyPoolContract};
+use eth_sdk::strategy_pool::{sp_deposit_and_ensure_success, StrategyPoolContract};
 use eth_sdk::utils::wait_for_confirmations_simple;
 use eth_sdk::*;
 use eyre::*;
@@ -286,7 +286,7 @@ async fn test_handle_eth_swap_mainnet() -> Result<()> {
 
     /* deposit 1 BUSD to strategy pool */
     /* make sure dev wallet has enough BUSD */
-    deposit_and_ensure_success(
+    sp_deposit_and_ensure_success(
         sp_contract.clone(),
         &conn,
         12,

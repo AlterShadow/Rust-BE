@@ -1066,7 +1066,7 @@ END
 BEGIN
     RETURN QUERY SELECT
         a.pkey_id,
-        a.blockchain,
+        b.blockchain,
         a.token_id,
         b.short_name,
         b.address,
@@ -1078,7 +1078,7 @@ BEGIN
     JOIN tbl.escrow_token_contract_address AS b ON a.token_id = b.pkey_id
     WHERE fkey_strategy_id = a_strategy_id
     AND (b.address = a_token_address OR a_token_address IS NULL)
-    AND (a.blockchain = a_blockchain OR a_blockchain IS NULL);
+    AND (b.blockchain = a_blockchain OR a_blockchain IS NULL);
     
 END
 "#,

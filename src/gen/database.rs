@@ -2659,16 +2659,21 @@ impl DatabaseRequest for FunWatcherSaveStrategyWatchingWalletTradeLedgerReq {
 pub struct FunWatcherListStrategyEscrowPendingWalletBalanceReq {
     #[serde(default)]
     pub strategy_id: Option<i64>,
+    #[serde(default)]
+    pub token_address: Option<String>,
 }
 
 #[allow(unused_variables)]
 impl DatabaseRequest for FunWatcherListStrategyEscrowPendingWalletBalanceReq {
     type ResponseRow = FunWatcherListStrategyEscrowPendingWalletBalanceRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_watcher_list_strategy_escrow_pending_wallet_balance(a_strategy_id => $1::bigint);"
+        "SELECT * FROM api.fun_watcher_list_strategy_escrow_pending_wallet_balance(a_strategy_id => $1::bigint, a_token_address => $2::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
-        vec![&self.strategy_id as &(dyn ToSql + Sync)]
+        vec![
+            &self.strategy_id as &(dyn ToSql + Sync),
+            &self.token_address as &(dyn ToSql + Sync),
+        ]
     }
 }
 

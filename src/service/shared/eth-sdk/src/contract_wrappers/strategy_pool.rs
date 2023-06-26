@@ -1,19 +1,17 @@
-use std::time::Duration;
-
+use crate::contract::AbstractContract;
+use crate::utils::wait_for_confirmations;
+use crate::{
+    deploy_contract, EitherTransport, EthereumRpcConnection, EthereumRpcConnectionPool,
+    MultiChainAddressTable,
+};
 use eyre::*;
-use tokio::time::sleep;
+use gen::model::EnumBlockChain;
+use std::time::Duration;
 use tracing::info;
 use web3::contract::{Contract, Options};
 use web3::signing::Key;
 use web3::types::{Address, H256, U256};
 use web3::{ethabi, Transport, Web3};
-
-use crate::contract::AbstractContract;
-use crate::{
-    deploy_contract, wait_for_confirmations_simple, EitherTransport, EthereumRpcConnection,
-    EthereumRpcConnectionPool, MultiChainAddressTable, TransactionFetcher, TxStatus,
-};
-use gen::model::EnumBlockChain;
 
 const POOL_ABI_JSON: &str = include_str!("strategy_pool.json");
 pub struct AbstractStrategyPoolContract(AbstractContract<()>);
@@ -516,12 +514,12 @@ impl StrategyPoolFunctions {
     }
 }
 
-pub async fn deposit_and_ensure_success(
+pub async fn sp_deposit_and_ensure_success(
     contract: StrategyPoolContract<EitherTransport>,
     conn: &EthereumRpcConnection,
     confirmations: u64,
-    max_retry: usize,
-    wait_timeout: Duration,
+    max_retry: u64,
+    poll_interval: Duration,
     signer: impl Key + Clone,
     assets: Vec<Address>,
     amounts: Vec<U256>,
@@ -529,7 +527,7 @@ pub async fn deposit_and_ensure_success(
     receiver: Address,
 ) -> Result<H256> {
     /* publish transaction */
-    let mut tx_hash = contract
+    let tx_hash = contract
         .deposit(
             &conn,
             signer.clone(),
@@ -539,60 +537,15 @@ pub async fn deposit_and_ensure_success(
             receiver,
         )
         .await?;
-    let mut retries: usize = 0;
-    while retries < max_retry {
-        /* wait for transaction receipt */
-        /* after it has a receipt, it was included in a block */
-        let tx_receipt =
-            wait_for_confirmations_simple(&conn.eth(), tx_hash, wait_timeout, max_retry).await?;
+    let _tx_receipt = wait_for_confirmations(
+        &conn.eth(),
+        tx_hash,
+        poll_interval,
+        max_retry,
+        confirmations,
+    )
+    .await?;
 
-        /* get receipt block number */
-        let tx_block_number = tx_receipt
-            .block_number
-            .ok_or_else(|| eyre!("transaction has receipt but was not included in a block"))?
-            .as_u64();
-        let mut current_block_number = conn.eth().block_number().await?.as_u64();
-
-        while current_block_number - tx_block_number < confirmations {
-            /* wait for confirmations */
-            /* more confirmations = greater probability that the transaction status is canonical */
-            current_block_number = conn.eth().block_number().await?.as_u64();
-            sleep(wait_timeout).await;
-        }
-
-        /* after confirmations, find out transaction status */
-        let mut tx = TransactionFetcher::new(tx_hash);
-        tx.update(&conn).await?;
-
-        match tx.get_status() {
-            TxStatus::Successful => {
-                /* transaction is successful after confirmations, consider it canonical*/
-                break;
-            }
-            TxStatus::Pending => {
-                /* TODO: check if this is even possible */
-                /* transaction had a receipt (was included in a block) but has somehow returned to the mempool */
-                /* wait for the new receipt */
-                retries += 1;
-                continue;
-            }
-            TxStatus::Reverted | TxStatus::NotFound => {
-                /* transaction is reverted or doesn't exist after confirmations, try again */
-                retries += 1;
-                tx_hash = contract
-                    .deposit(
-                        &conn,
-                        signer.clone(),
-                        assets.clone(),
-                        amounts.clone(),
-                        shares,
-                        receiver,
-                    )
-                    .await?;
-            }
-            _ => continue,
-        }
-    }
     Ok(tx_hash)
 }
 
@@ -600,63 +553,25 @@ pub async fn acquire_asset_before_trade_and_ensure_success(
     contract: StrategyPoolContract<EitherTransport>,
     conn: &EthereumRpcConnection,
     confirmations: u64,
-    max_retry: usize,
-    wait_timeout: Duration,
+    max_retry: u64,
+    poll_interval: Duration,
     signer: impl Key + Clone,
     asset: Address,
     amount: U256,
 ) -> Result<H256> {
     /* publish transaction */
-    let mut tx_hash = contract
+    let tx_hash = contract
         .acquire_asset_before_trade(&conn, signer.clone(), asset, amount)
         .await?;
-    let mut retries: usize = 0;
-    while retries < max_retry {
-        /* wait for transaction receipt */
-        /* after it has a receipt, it was included in a block */
-        let tx_receipt =
-            wait_for_confirmations_simple(&conn.eth(), tx_hash, wait_timeout, max_retry).await?;
+    let _tx_receipt = wait_for_confirmations(
+        &conn.eth(),
+        tx_hash,
+        poll_interval,
+        max_retry,
+        confirmations,
+    )
+    .await?;
 
-        /* get receipt block number */
-        let tx_block_number = tx_receipt
-            .block_number
-            .ok_or_else(|| eyre!("transaction has receipt but was not included in a block"))?
-            .as_u64();
-        let mut current_block_number = conn.eth().block_number().await?.as_u64();
-
-        while current_block_number - tx_block_number < confirmations {
-            /* wait for confirmations */
-            /* more confirmations = greater probability that the transaction status is canonical */
-            current_block_number = conn.eth().block_number().await?.as_u64();
-            sleep(wait_timeout).await;
-        }
-
-        /* after confirmations, find out transaction status */
-        let mut tx = TransactionFetcher::new(tx_hash);
-        tx.update(&conn).await?;
-
-        match tx.get_status() {
-            TxStatus::Successful => {
-                /* transaction is successful after confirmations, consider it canonical*/
-                break;
-            }
-            TxStatus::Pending => {
-                /* TODO: check if this is even possible */
-                /* transaction had a receipt (was included in a block) but has somehow returned to the mempool */
-                /* wait for the new receipt */
-                retries += 1;
-                continue;
-            }
-            TxStatus::Reverted | TxStatus::NotFound => {
-                /* transaction is reverted or doesn't exist after confirmations, try again */
-                retries += 1;
-                tx_hash = contract
-                    .acquire_asset_before_trade(&conn, signer.clone(), asset, amount)
-                    .await?;
-            }
-            _ => continue,
-        }
-    }
     Ok(tx_hash)
 }
 
@@ -664,68 +579,25 @@ pub async fn give_back_assets_after_trade_and_ensure_success(
     contract: StrategyPoolContract<EitherTransport>,
     conn: &EthereumRpcConnection,
     confirmations: u64,
-    max_retry: usize,
-    wait_timeout: Duration,
+    max_retry: u64,
+    poll_interval: Duration,
     signer: impl Key + Clone,
     assets: Vec<Address>,
     amounts: Vec<U256>,
 ) -> Result<H256> {
     /* publish transaction */
-    let mut tx_hash = contract
+    let tx_hash = contract
         .give_back_assets_after_trade(&conn, signer.clone(), assets.clone(), amounts.clone())
         .await?;
-    let mut retries: usize = 0;
-    while retries < max_retry {
-        /* wait for transaction receipt */
-        /* after it has a receipt, it was included in a block */
-        let tx_receipt =
-            wait_for_confirmations_simple(&conn.eth(), tx_hash, wait_timeout, max_retry).await?;
+    let _tx_receipt = wait_for_confirmations(
+        &conn.eth(),
+        tx_hash,
+        poll_interval,
+        max_retry,
+        confirmations,
+    )
+    .await?;
 
-        /* get receipt block number */
-        let tx_block_number = tx_receipt
-            .block_number
-            .ok_or_else(|| eyre!("transaction has receipt but was not included in a block"))?
-            .as_u64();
-        let mut current_block_number = conn.eth().block_number().await?.as_u64();
-
-        while current_block_number - tx_block_number < confirmations {
-            /* wait for confirmations */
-            /* more confirmations = greater probability that the transaction status is canonical */
-            current_block_number = conn.eth().block_number().await?.as_u64();
-            sleep(wait_timeout).await;
-        }
-
-        /* after confirmations, find out transaction status */
-        let mut tx = TransactionFetcher::new(tx_hash);
-        tx.update(&conn).await?;
-
-        match tx.get_status() {
-            TxStatus::Successful => {
-                /* transaction is successful after confirmations, consider it canonical*/
-                break;
-            }
-            TxStatus::Pending => {
-                /* TODO: check if this is even possible */
-                /* transaction had a receipt (was included in a block) but has somehow returned to the mempool */
-                /* wait for the new receipt */
-                retries += 1;
-                continue;
-            }
-            TxStatus::Reverted | TxStatus::NotFound => {
-                /* transaction is reverted or doesn't exist after confirmations, try again */
-                retries += 1;
-                tx_hash = contract
-                    .give_back_assets_after_trade(
-                        &conn,
-                        signer.clone(),
-                        assets.clone(),
-                        amounts.clone(),
-                    )
-                    .await?;
-            }
-            _ => continue,
-        }
-    }
     Ok(tx_hash)
 }
 
@@ -733,62 +605,24 @@ pub async fn transfer_ownership_and_ensure_success(
     contract: StrategyPoolContract<EitherTransport>,
     conn: &EthereumRpcConnection,
     confirmations: u64,
-    max_retry: usize,
-    wait_timeout: Duration,
+    max_retry: u64,
+    poll_interval: Duration,
     signer: impl Key + Clone,
     new_owner: Address,
 ) -> Result<H256> {
     /* publish transaction */
-    let mut tx_hash = contract
+    let tx_hash = contract
         .transfer_ownership(&conn, signer.clone(), new_owner)
         .await?;
-    let mut retries: usize = 0;
-    while retries < max_retry {
-        /* wait for transaction receipt */
-        /* after it has a receipt, it was included in a block */
-        let tx_receipt =
-            wait_for_confirmations_simple(&conn.eth(), tx_hash, wait_timeout, max_retry).await?;
+    let _tx_receipt = wait_for_confirmations(
+        &conn.eth(),
+        tx_hash,
+        poll_interval,
+        max_retry,
+        confirmations,
+    )
+    .await?;
 
-        /* get receipt block number */
-        let tx_block_number = tx_receipt
-            .block_number
-            .ok_or_else(|| eyre!("transaction has receipt but was not included in a block"))?
-            .as_u64();
-        let mut current_block_number = conn.eth().block_number().await?.as_u64();
-
-        while current_block_number - tx_block_number < confirmations {
-            /* wait for confirmations */
-            /* more confirmations = greater probability that the transaction status is canonical */
-            current_block_number = conn.eth().block_number().await?.as_u64();
-            sleep(wait_timeout).await;
-        }
-
-        /* after confirmations, find out transaction status */
-        let mut tx = TransactionFetcher::new(tx_hash);
-        tx.update(&conn).await?;
-
-        match tx.get_status() {
-            TxStatus::Successful => {
-                /* transaction is successful after confirmations, consider it canonical*/
-                break;
-            }
-            TxStatus::Pending => {
-                /* TODO: check if this is even possible */
-                /* transaction had a receipt (was included in a block) but has somehow returned to the mempool */
-                /* wait for the new receipt */
-                retries += 1;
-                continue;
-            }
-            TxStatus::Reverted | TxStatus::NotFound => {
-                /* transaction is reverted or doesn't exist after confirmations, try again */
-                retries += 1;
-                tx_hash = contract
-                    .transfer_ownership(&conn, signer.clone(), new_owner)
-                    .await?;
-            }
-            _ => continue,
-        }
-    }
     Ok(tx_hash)
 }
 

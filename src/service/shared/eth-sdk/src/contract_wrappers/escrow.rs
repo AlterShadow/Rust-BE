@@ -8,7 +8,7 @@ use crate::{
 };
 use eyre::*;
 use gen::model::EnumBlockChain;
-use tracing::{info, warn};
+use tracing::info;
 use web3::api::Eth;
 use web3::contract::{Contract, Options};
 use web3::signing::Key;
@@ -186,68 +186,35 @@ pub async fn transfer_token_to_and_ensure_success(
     contract: EscrowContract<EitherTransport>,
     conn: &EthereumRpcConnection,
     confirmations: u64,
-    max_retry: usize,
+    max_retry: u64,
     wait_timeout: Duration,
     signer: impl Key + Clone,
     token_address: Address,
     recipient: Address,
     amount: U256,
 ) -> Result<H256> {
-    for retries in 0..max_retry {
-        /* publish transaction */
-        let tx_hash = contract
-            .transfer_token_to(&conn, signer.clone(), token_address, recipient, amount)
-            .await?;
-        match wait_for_confirmations(&conn.eth(), tx_hash, wait_timeout, 3, confirmations).await {
-            Ok(_ok) => {
-                /* transaction is confirmed, consider it canonical */
-                return Ok(tx_hash);
-            }
-            Err(err) => {
-                warn!(
-                    "Transaction {:?} failed to confirm after {:?} retries: {:?}",
-                    tx_hash, retries, err
-                );
-            }
-        }
-    }
-    bail!(
-        "Transaction failed to confirm after {:?} retries",
-        max_retry
-    )
+    let tx_hash = contract
+        .transfer_token_to(&conn, signer.clone(), token_address, recipient, amount)
+        .await?;
+    wait_for_confirmations(&conn.eth(), tx_hash, wait_timeout, max_retry, confirmations).await?;
+    Ok(tx_hash)
 }
 
 pub async fn transfer_ownership_and_ensure_success(
     contract: EscrowContract<EitherTransport>,
     conn: &EthereumRpcConnection,
     confirmations: u64,
-    max_retry: usize,
+    max_retry: u64,
     wait_timeout: Duration,
     signer: impl Key + Clone,
     new_owner: Address,
 ) -> Result<H256> {
-    for retries in 0..max_retry {
-        /* publish transaction */
-        let tx_hash = contract
-            .transfer_ownership(&conn, signer.clone(), new_owner)
-            .await?;
-        match wait_for_confirmations(&conn.eth(), tx_hash, wait_timeout, 3, confirmations).await {
-            Ok(_ok) => {
-                /* transaction is confirmed, consider it canonical */
-                return Ok(tx_hash);
-            }
-            Err(err) => {
-                warn!(
-                    "Transaction {:?} failed to confirm after {:?} retries: {:?}",
-                    tx_hash, retries, err
-                );
-            }
-        }
-    }
-    bail!(
-        "Transaction failed to confirm after {:?} retries",
-        max_retry
-    )
+    /* publish transaction */
+    let tx_hash = contract
+        .transfer_ownership(&conn, signer.clone(), new_owner)
+        .await?;
+    wait_for_confirmations(&conn.eth(), tx_hash, wait_timeout, max_retry, confirmations).await?;
+    Ok(tx_hash)
 }
 
 #[cfg(test)]

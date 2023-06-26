@@ -1179,8 +1179,7 @@ pub struct ExpertCreateStrategyRequest {
     pub agreed_tos: bool,
     pub wallet_address: String,
     pub wallet_blockchain: EnumBlockChain,
-    #[serde(default)]
-    pub initial_tokens: Option<Vec<UserCreateStrategyInitialTokenRow>>,
+    pub initial_tokens: Vec<UserCreateStrategyInitialTokenRow>,
     #[serde(default)]
     pub audit_rules: Option<Vec<i64>>,
 }
@@ -5341,20 +5340,18 @@ impl WsRequest for ExpertCreateStrategyRequest {
     {
       "name": "initial_tokens",
       "ty": {
-        "Optional": {
-          "DataTable": {
-            "name": "UserCreateStrategyInitialTokenRow",
-            "fields": [
-              {
-                "name": "token_id",
-                "ty": "BigInt"
-              },
-              {
-                "name": "quantity",
-                "ty": "String"
-              }
-            ]
-          }
+        "DataTable": {
+          "name": "UserCreateStrategyInitialTokenRow",
+          "fields": [
+            {
+              "name": "token_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "quantity",
+              "ty": "String"
+            }
+          ]
         }
       }
     },

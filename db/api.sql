@@ -1599,7 +1599,7 @@ AS $$
 BEGIN
     RETURN QUERY SELECT
         a.pkey_id,
-        a.blockchain,
+        b.blockchain,
         a.token_id,
         b.short_name,
         b.address,
@@ -1611,7 +1611,7 @@ BEGIN
     JOIN tbl.escrow_token_contract_address AS b ON a.token_id = b.pkey_id
     WHERE fkey_strategy_id = a_strategy_id
     AND (b.address = a_token_address OR a_token_address IS NULL)
-    AND (a.blockchain = a_blockchain OR a_blockchain IS NULL);
+    AND (b.blockchain = a_blockchain OR a_blockchain IS NULL);
     
 END
 
@@ -2663,7 +2663,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_watcher_list_strategy_escrow_pending_wallet_balance(a_strategy_id bigint DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_watcher_list_strategy_escrow_pending_wallet_balance(a_strategy_id bigint DEFAULT NULL, a_token_address varchar DEFAULT NULL)
 RETURNS table (
     "strategy_id" bigint,
     "blockchain" enum_block_chain,
@@ -2689,7 +2689,9 @@ BEGIN
                  FROM tbl.strategy_escrow_pending_wallet_balance AS l
                  JOIN tbl.strategy_escrow_pending_wallet_address AS w ON l.fkey_strategy_pending_wallet_address_id = w.pkey_id
                  JOIN tbl.escrow_token_contract_address AS t ON l.fkey_token_id = t.pkey_id
-                 WHERE strategy_id = a_strategy_id;
+                 WHERE strategy_id = a_strategy_id
+                     AND (a_token_address ISNULL OR t.address = a_token_address);
+
 END
         
 $$;

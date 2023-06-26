@@ -10,7 +10,7 @@ use eth_sdk::escrow::transfer_token_to_and_ensure_success;
 use eth_sdk::escrow::{AbstractEscrowContract, EscrowContract};
 use eth_sdk::pair_paths::WorkingPancakePairPaths;
 use eth_sdk::signer::Secp256k1SecretKey;
-use eth_sdk::strategy_pool::{deposit_and_ensure_success, StrategyPoolContract};
+use eth_sdk::strategy_pool::{sp_deposit_and_ensure_success, StrategyPoolContract};
 use eth_sdk::strategy_wallet::{
     full_redeem_from_strategy_and_ensure_success, redeem_from_strategy_and_ensure_success,
     StrategyWalletContract,
@@ -649,6 +649,7 @@ async fn user_back_strategy(
     for row in strategy_token_rows {
         let token_address = Address::from_str(&row.token_address)?;
         let token_amount = U256::from_dec_str(&row.quantity)?;
+        // FIXME: can't add total_strategy_tokens for different tokens
         total_strategy_tokens = total_strategy_tokens.try_checked_add(token_amount)?;
         all_strategy_tokens.push((row.blockchain, token_address, token_amount));
     }
@@ -716,23 +717,11 @@ async fn user_back_strategy(
     // TODO: find out if we use back amount with or without fees for share calculation
     // currently calculating with back amount minus fees
     let sp_total_shares = sp_contract.total_supply().await?;
-    let mut maybe_sp_assets_and_amounts: Option<(Vec<Address>, Vec<U256>)> = None;
-    let mut max_retries = 10;
-    while maybe_sp_assets_and_amounts.is_none() && max_retries > 0 {
-        match sp_contract.assets_and_balances().await {
-            Ok(assets_and_amounts) => {
-                maybe_sp_assets_and_amounts = Some(assets_and_amounts);
-            }
-            Err(_) => {
-                /* if we can't query the contract's assets, it's because it is currently trading */
-                /* wait a bit and try again */
-                sleep(Duration::from_secs(10)).await;
-                max_retries -= 1;
-            }
-        }
-    }
-    let sp_assets_and_amounts = maybe_sp_assets_and_amounts
-        .ok_or_else(|| eyre!("failed to query strategy pool assets and amounts"))?;
+
+    let sp_assets_and_amounts = sp_contract
+        .assets_and_balances()
+        .await
+        .context("failed to query strategy pool assets and amounts")?;
 
     let escrow_token_address = token_addresses
         .get(blockchain, escrow_coin)
@@ -764,9 +753,9 @@ async fn user_back_strategy(
     transfer_token_to_and_ensure_success(
         escrow_contract,
         &conn,
-        14,
-        10,
-        Duration::from_secs(10),
+        CONFIRMATIONS,
+        MAX_RETRIES,
+        POLL_INTERVAL,
         master_key.clone(),
         escrow_token_address,
         master_key.address(),
@@ -778,9 +767,9 @@ async fn user_back_strategy(
     approve_and_ensure_success(
         escrow_token_contract,
         &conn,
-        12,
-        10,
-        Duration::from_secs(10),
+        CONFIRMATIONS,
+        MAX_RETRIES,
+        POLL_INTERVAL,
         master_key.clone(),
         pancake_contract.address(),
         back_usdc_amount,
@@ -803,9 +792,9 @@ async fn user_back_strategy(
         approve_and_ensure_success(
             Erc20Token::new(conn.clone(), token.clone())?,
             &conn,
-            12,
-            10,
-            Duration::from_secs(10),
+            CONFIRMATIONS,
+            MAX_RETRIES,
+            POLL_INTERVAL,
             master_key.clone(),
             sp_contract.address(),
             amount.clone(),
@@ -814,12 +803,12 @@ async fn user_back_strategy(
     }
 
     /* deposit to strategy pool contract */
-    let deposit_transaction_hash = deposit_and_ensure_success(
+    let deposit_transaction_hash = sp_deposit_and_ensure_success(
         sp_contract,
         &conn,
-        12,
-        10,
-        Duration::from_secs(10),
+        CONFIRMATIONS,
+        MAX_RETRIES,
+        POLL_INTERVAL,
         master_key.clone(),
         tokens_to_deposit,
         amounts_to_deposit,
@@ -1017,9 +1006,9 @@ async fn trade_escrow_for_strategy_tokens(
         let trade_hash = copy_trade_and_ensure_success(
             dex_contract.clone(),
             &conn,
-            12,
-            10,
-            Duration::from_secs(10),
+            CONFIRMATIONS,
+            MAX_RETRIES,
+            POLL_INTERVAL,
             master_key.clone(),
             pancake_path_set,
             amount_to_spend_on_it,
@@ -1165,9 +1154,9 @@ async fn user_exit_strategy(
             redeem_from_strategy_and_ensure_success(
                 strategy_wallet_contract.clone(),
                 &conn,
-                12,
-                10,
-                Duration::from_secs(10),
+                CONFIRMATIONS,
+                MAX_RETRIES,
+                POLL_INTERVAL,
                 master_key.clone(),
                 sp_contract.address(),
                 shares,
@@ -1989,7 +1978,7 @@ impl RequestHandler for MethodExpertCreateStrategy {
                     .await?;
                 }
             }
-            for token in req.initial_tokens.unwrap_or_default() {
+            for token in req.initial_tokens {
                 db.execute(FunUserAddStrategyInitialTokenRatioReq {
                     strategy_id: ret.strategy_id,
                     token_id: token.token_id,
@@ -2689,7 +2678,7 @@ impl RequestHandler for MethodUserListStrategyAuditRules {
                         .map(|x| {
                             let rule = rules
                                 .iter()
-                                .find(|y| x.rule_id == y.id as i64)
+                                .find(|y| x.rule_id == y.id)
                                 .context("Could not find rule")?;
                             Ok::<_, Error>(UserListStrategyAuditRulesRow {
                                 rule_id: x.rule_id,

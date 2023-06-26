@@ -181,6 +181,8 @@ impl Toolbox {
             }
 
             Err(err0) if err0.is::<tokio_postgres::Error>() => {
+                error!("Database error: {:?}", err0);
+
                 let err = err0.downcast_ref::<tokio_postgres::Error>().unwrap();
                 if let Some(code) = err.code() {
                     if let Ok(err) = CustomError::from_sql_error(code.code(), &err0) {
@@ -201,6 +203,7 @@ impl Toolbox {
                 }
             }
             Err(err) if err.is::<CustomError>() => {
+                error!("CustomError: {:?}", err);
                 let err = err.downcast::<CustomError>().unwrap();
                 request_error_to_resp(&ctx, err.code, err.params)
             }

@@ -13,17 +13,17 @@ use eth_sdk::strategy_pool::{
     acquire_asset_before_trade_and_ensure_success, give_back_assets_after_trade_and_ensure_success,
     StrategyPoolContract,
 };
-use eth_sdk::utils::wait_for_confirmations_simple;
+use eth_sdk::utils::{wait_for_confirmations, wait_for_confirmations_simple};
 use eth_sdk::v3::smart_router::{copy_trade_and_ensure_success, PancakeSmartRouterV3Contract};
-use eth_sdk::{evm, ScaledMath, TransactionFetcher, TransactionReady};
+use eth_sdk::{
+    evm, ScaledMath, TransactionFetcher, TransactionReady, CONFIRMATIONS, MAX_RETRIES,
+    POLL_INTERVAL,
+};
 use eyre::*;
 use gen::database::*;
 use gen::model::*;
-use std::collections::HashMap;
-use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Duration;
-use tokio::time::sleep;
 use tracing::{error, info, warn};
 use web3::ethabi::Address;
 use web3::types::U256;
@@ -32,7 +32,7 @@ pub async fn handle_ethereum_dex_transactions(
     state: Arc<AppState>,
     body: Bytes,
     blockchain: EnumBlockChain,
-) -> eyre::Result<(), StatusCode> {
+) -> Result<(), StatusCode> {
     let hashes = parse_quickalert_payload(body).map_err(|e| {
         error!("failed to parse QuickAlerts payload: {:?}", e);
         StatusCode::BAD_REQUEST
@@ -82,7 +82,7 @@ pub async fn handle_pancake_swap_transaction(
     state: Arc<AppState>,
     blockchain: EnumBlockChain,
     tx: TransactionReady,
-) -> eyre::Result<()> {
+) -> Result<()> {
     /* check if caller is a strategy watching wallet & get strategy id */
     let caller = tx.get_from().context("no from address found")?;
     let strategy_id = get_strategy_id_from_watching_wallet(&state.db, blockchain, caller)
@@ -116,10 +116,7 @@ pub async fn handle_pancake_swap_transaction(
 
     if let Some(saved) = saved {
         /* check if tokens are known */
-        let token_in = state
-            .token_addresses
-            .get_by_address(blockchain, trade.token_in)
-            .context("token in is unknown")?;
+
         state
             .token_addresses
             .get_by_address(blockchain, trade.token_out)
@@ -127,39 +124,15 @@ pub async fn handle_pancake_swap_transaction(
 
         /* get all strategy tokens */
 
-        let all_strategy_tokens = state
+        let selected_strategy_initial_token = state
             .db
-            .execute(
-                // fun_watcher_list_user_strategy_ledger
-                FunWatcherListStrategyEscrowPendingWalletBalanceReq {
-                    strategy_id: Some(strategy_id),
-                },
-            )
-            .await?;
-
-        /* build up multichain token map */
-        let mut strategy_token_ledger: HashMap<EnumBlockchainCoin, U256> = HashMap::new();
-        for row in all_strategy_tokens.into_iter() {
-            let (token_chain, token_address, token_amount) = (
-                row.blockchain,
-                row.token_address.parse::<Address>()?,
-                row.balance.parse::<U256>()?,
-            );
-            let strategy_token = state
-                .token_addresses
-                .get_by_address(token_chain, token_address)
-                .context("strategy token is unknown")?;
-            if strategy_token_ledger
-                .insert(strategy_token, token_amount)
-                .is_some()
-            {
-                bail!(
-                    "Duplicate entry in strategy token list for {:?} {:?}",
-                    strategy_token,
-                    token_address
-                );
-            }
-        }
+            .execute(FunUserListStrategyInitialTokenRatiosReq {
+                strategy_id,
+                token_address: Some(format!("{:?}", trade.token_in)),
+                blockchain: Some(blockchain),
+            })
+            .await?
+            .into_result();
 
         /* update database with watched wallet's tokens */
         let conn = state.eth_pool.get(blockchain).await?;
@@ -174,7 +147,8 @@ pub async fn handle_pancake_swap_transaction(
         .await?;
 
         /* check if token_in was a strategy token */
-        if let Some(total_strategy_token_in_amount) = strategy_token_ledger.get(&token_in) {
+        if let Some(token) = selected_strategy_initial_token {
+            let strategy_initial_token_quantity: U256 = token.quantity.parse()?;
             /* if token_in was already a strategy token trade it from SPs in ratio traded_amount / old_amount */
 
             let strategy_pool = state
@@ -190,36 +164,30 @@ pub async fn handle_pancake_swap_transaction(
                 .into_result();
             /* if there is an SP contract for this strategy,  */
             if let Some(address_row) = strategy_pool {
-                let address = address_row.address;
+                let address: Address = address_row.address.parse()?;
                 /* check if SP contract holds token_in */
-                let sp_contract =
-                    StrategyPoolContract::new(conn.clone(), Address::from_str(&address)?)?;
-                let mut maybe_sp_token_in_amount: Option<U256> = None;
-                let mut max_retries = 10;
-                while maybe_sp_token_in_amount.is_none() && max_retries > 0 {
-                    match sp_contract.asset_balance(trade.token_in).await {
-                        Ok(token_in_amount) => {
-                            maybe_sp_token_in_amount = Some(token_in_amount);
-                        }
-                        Err(_) => {
-                            /* if we can't query the contract's assets, it's because it is currently trading */
-                            /* wait a bit and try again */
-                            sleep(Duration::from_secs(30)).await;
-                            max_retries -= 1;
-                        }
-                    }
-                }
-                let sp_token_in_amount = maybe_sp_token_in_amount
-                    .ok_or_else(|| eyre!("failed to query strategy pool token_in amount"))?;
-
-                if sp_token_in_amount == U256::zero() {
+                let sp_contract = StrategyPoolContract::new(conn.clone(), address)?;
+                // TODO: we want to save the balance to database, not from on-chain
+                // TODO: save this sp_escrow_token_in_amount to database somewhere
+                // let sp_escrow_token_in_amount = sp_contract.asset_balance(trade.token_in).await?;
+                let sp_escrow_token_in_amount_ret = state
+                    .db
+                    .execute(FunWatcherListStrategyEscrowPendingWalletBalanceReq {
+                        strategy_id: Some(strategy_id),
+                        token_address: Some(format!("{:?}", trade.token_in)),
+                    })
+                    .await?
+                    .into_result()
+                    .context("Could not fetch strategy escrow pending token amount")?;
+                let sp_escrow_token_in_amount: U256 =
+                    sp_escrow_token_in_amount_ret.balance.parse()?;
+                if sp_escrow_token_in_amount == U256::zero() {
                     bail!("strategy pool has no token_in");
                 }
-
                 /* calculate how much to spend */
                 let amount_to_spend = trade
                     .amount_in
-                    .mul_div(sp_token_in_amount, *total_strategy_token_in_amount)?;
+                    .mul_div(sp_escrow_token_in_amount, strategy_initial_token_quantity)?;
                 if amount_to_spend == U256::zero() {
                     bail!("spent ratio is too small to be represented in amount of token_in owned by strategy pool");
                 }
@@ -240,9 +208,9 @@ pub async fn handle_pancake_swap_transaction(
                 acquire_asset_before_trade_and_ensure_success(
                     sp_contract.clone(),
                     &conn,
-                    12,
-                    10,
-                    Duration::from_secs(10),
+                    CONFIRMATIONS,
+                    MAX_RETRIES,
+                    POLL_INTERVAL,
                     state.master_key.clone(),
                     trade.token_in,
                     amount_to_spend,
@@ -253,9 +221,9 @@ pub async fn handle_pancake_swap_transaction(
                 approve_and_ensure_success(
                     token_in_contract,
                     &conn,
-                    12,
-                    10,
-                    Duration::from_secs(10),
+                    CONFIRMATIONS,
+                    MAX_RETRIES,
+                    POLL_INTERVAL,
                     state.master_key.clone(),
                     pancake_contract.address(),
                     amount_to_spend,
@@ -266,9 +234,9 @@ pub async fn handle_pancake_swap_transaction(
                 let trade_hash = copy_trade_and_ensure_success(
                     pancake_contract,
                     &conn,
-                    12,
-                    10,
-                    Duration::from_secs(10),
+                    CONFIRMATIONS,
+                    MAX_RETRIES,
+                    POLL_INTERVAL,
                     state.master_key.clone(),
                     trade.get_pancake_pair_paths()?,
                     amount_to_spend,
@@ -289,9 +257,9 @@ pub async fn handle_pancake_swap_transaction(
                 approve_and_ensure_success(
                     token_out_contract,
                     &conn,
-                    12,
-                    10,
-                    Duration::from_secs(10),
+                    CONFIRMATIONS,
+                    MAX_RETRIES,
+                    POLL_INTERVAL,
                     state.master_key.clone(),
                     sp_contract.address(),
                     sp_trade.amount_out,
@@ -302,9 +270,9 @@ pub async fn handle_pancake_swap_transaction(
                 give_back_assets_after_trade_and_ensure_success(
                     sp_contract,
                     &conn,
-                    12,
-                    10,
-                    Duration::from_secs(10),
+                    CONFIRMATIONS,
+                    MAX_RETRIES,
+                    POLL_INTERVAL,
                     state.master_key.clone(),
                     vec![trade.token_out],
                     vec![sp_trade.amount_out],
@@ -336,10 +304,15 @@ pub async fn handle_eth_escrows(
         tokio::spawn(async move {
             let ret: Result<()> = async {
                 /* the transactions from the quickalerts payload might not be yet mined */
-                wait_for_confirmations_simple(&conn.eth(), hash, Duration::from_secs(10), 10)
-                    .await
-                    .context("escrow tx was not mined")?;
-                // TODO: wait for confirmations blocks before processing to properly handle ommer blocks & reorgs
+                wait_for_confirmations(
+                    &conn.eth(),
+                    hash,
+                    POLL_INTERVAL,
+                    MAX_RETRIES,
+                    CONFIRMATIONS,
+                )
+                .await
+                .context("escrow tx was not mined")?;
                 let tx = TransactionFetcher::new_and_assume_ready(hash, &conn)
                     .await
                     .context("error processing tx")?;
