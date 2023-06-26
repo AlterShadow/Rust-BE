@@ -27,6 +27,7 @@ pub struct ContractDeployer<T: Transport> {
     pub(crate) abi: ethabi::Contract,
     pub(crate) options: Options,
     pub(crate) max_retries: usize,
+    pub(crate) confirmations: usize,
     pub(crate) poll_interval: time::Duration,
     pub(crate) linker: HashMap<String, Address>,
     pub(crate) code: Option<String>,
@@ -39,8 +40,9 @@ impl<T: Transport> ContractDeployer<T> {
             eth,
             abi,
             options: Options::default(),
-            max_retries: 3,
-            poll_interval: time::Duration::from_secs(15),
+            max_retries: 1,
+            confirmations: 8, // not enough for ethereum. should be 14
+            poll_interval: time::Duration::from_secs(3),
             linker: HashMap::default(),
             code: None,
         })
@@ -91,10 +93,10 @@ impl<T: Transport> ContractDeployer<T> {
     {
         let transport = self.eth.transport().clone();
         let poll_interval = self.poll_interval;
-        let max_retries = self.max_retries;
         let chain_id = Some(self.eth.chain_id().await?.as_u64());
         let eth = self.eth.clone();
         let gas = self.options.gas;
+        let confirmations = self.confirmations;
         let contract = self
             .do_execute(
                 self.code.as_deref().context("Code is not provided")?,
@@ -126,7 +128,8 @@ impl<T: Transport> ContractDeployer<T> {
 
                         // TODO: buggy here
                         let tx_hash = eth.send_raw_transaction(signed_tx.raw_transaction).await?;
-                        wait_for_confirmations(&eth, tx_hash, poll_interval, max_retries, 14).await
+                        wait_for_confirmations(&eth, tx_hash, poll_interval, 3, confirmations as _)
+                            .await
                     }
                 },
             )

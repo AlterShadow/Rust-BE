@@ -198,9 +198,7 @@ pub async fn transfer_token_to_and_ensure_success(
         let tx_hash = contract
             .transfer_token_to(&conn, signer.clone(), token_address, recipient, amount)
             .await?;
-        match wait_for_confirmations(&conn.eth(), tx_hash, wait_timeout, max_retry, confirmations)
-            .await
-        {
+        match wait_for_confirmations(&conn.eth(), tx_hash, wait_timeout, 3, confirmations).await {
             Ok(_ok) => {
                 /* transaction is confirmed, consider it canonical */
                 return Ok(tx_hash);
@@ -233,9 +231,7 @@ pub async fn transfer_ownership_and_ensure_success(
         let tx_hash = contract
             .transfer_ownership(&conn, signer.clone(), new_owner)
             .await?;
-        match wait_for_confirmations(&conn.eth(), tx_hash, wait_timeout, max_retry, confirmations)
-            .await
-        {
+        match wait_for_confirmations(&conn.eth(), tx_hash, wait_timeout, 3, confirmations).await {
             Ok(_ok) => {
                 /* transaction is confirmed, consider it canonical */
                 return Ok(tx_hash);

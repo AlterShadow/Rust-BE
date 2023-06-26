@@ -288,9 +288,7 @@ pub async fn approve_and_ensure_success(
         let tx_hash = contract
             .approve(&conn, signer.clone(), spender, amount)
             .await?;
-        match wait_for_confirmations(&conn.eth(), tx_hash, wait_timeout, max_retry, confirmations)
-            .await
-        {
+        match wait_for_confirmations(&conn.eth(), tx_hash, wait_timeout, 3, confirmations).await {
             Ok(_ok) => {
                 /* transaction is confirmed, consider it canonical */
                 return Ok(tx_hash);
