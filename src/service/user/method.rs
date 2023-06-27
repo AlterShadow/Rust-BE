@@ -759,7 +759,7 @@ async fn user_back_strategy(
     // TODO: find out if we use back amount with or without fees for share calculation
     // currently calculating with back amount minus fees
     // TODO: get these values from database
-    let sp_total_shares = sp_contract.total_supply().await?;
+    let total_strategy_pool_tokens = sp_contract.total_supply().await?;
 
     let sp_assets_and_amounts = sp_contract
         .assets_and_balances()
@@ -775,7 +775,7 @@ async fn user_back_strategy(
     let shares_to_mint = calculate_sp_tokens_to_mint_easy_approach(
         &conn,
         &CoinMarketCap::new_debug_key()?,
-        sp_total_shares,
+        total_strategy_pool_tokens,
         sp_assets_and_amounts,
         sp_contract.decimals().await?,
         escrow_token_contract.symbol(),
@@ -811,7 +811,7 @@ async fn user_back_strategy(
     /* calculate how much of back amount to spend on each strategy token */
     let escrow_allocations_for_tokens = calculate_escrow_allocation_for_strategy_tokens(
         back_usdc_amount_minus_fees,
-        total_strategy_tokens,
+        total_strategy_pool_tokens,
         strategy_tokens_and_amounts_on_this_chain,
     )?;
     /* approve pancakeswap to trade escrow token */
