@@ -454,6 +454,8 @@ impl RequestHandler for MethodUserListDepositWithdrawBalances {
         async move {
             let balances = db
                 .execute(FunUserListUserDepositWithdrawBalanceReq {
+                    limit: 10000,
+                    offset: 0,
                     user_id: ctx.user_id,
                     blockchain: None,
                     token_address: None,
@@ -489,6 +491,8 @@ impl RequestHandler for MethodUserGetDepositWithdrawBalance {
         async move {
             let balance = db
                 .execute(FunUserListUserDepositWithdrawBalanceReq {
+                    limit: 1000,
+                    offset: 0,
                     user_id: ctx.user_id,
                     blockchain: None,
                     token_address: None,
@@ -538,16 +542,110 @@ async fn deploy_strategy_contract(
     info!("Deploy strategy contract success");
     Ok(strategy)
 }
+async fn user_get_or_deploy_strategy_wallet(
+    conn: &EthereumRpcConnection,
+    ctx: &RequestContext,
+    db: &DbClient,
+    master_key: impl Key + Clone,
+    blockchain: EnumBlockChain,
+    user_wallet_address_to_receive_shares_on_this_chain: Address,
+) -> Result<StrategyWalletContract<EitherTransport>> {
+    match db
+        .execute(FunUserListStrategyWalletsReq {
+            user_id: ctx.user_id,
+            blockchain: Some(blockchain),
+        })
+        .await?
+        .into_result()
+    {
+        Some(strategy_wallet_contract) => {
+            /* if user has wallet on this chain, use it */
+            StrategyWalletContract::new(
+                conn.clone(),
+                Address::from_str(&strategy_wallet_contract.address)?,
+            )
+        }
+        None => {
+            /* if user does not have a wallet on this chain, deploy it, and use it */
+            // TODO: add admin as Address::zero() if user has opted out of having an admin
+            let strategy_wallet_contract = deploy_wallet_contract(
+                &conn,
+                master_key.clone(),
+                user_wallet_address_to_receive_shares_on_this_chain,
+                master_key.address(),
+            )
+            .await?;
 
+            /* save wallet to database */
+            db.execute(FunUserAddStrategyWalletReq {
+                user_id: ctx.user_id,
+                blockchain,
+                address: format!("{:?}", strategy_wallet_contract.address()),
+            })
+            .await?;
+
+            Ok(strategy_wallet_contract)
+        }
+    }
+}
+async fn user_get_or_deploy_strategy_pool(
+    conn: &EthereumRpcConnection,
+    _ctx: &RequestContext,
+    db: &DbClient,
+    master_key: impl Key + Clone,
+    strategy_id: i64,
+    blockchain: EnumBlockChain,
+    strategy_token_name: String,
+    strategy_token_symbol: String,
+) -> Result<StrategyPoolContract<EitherTransport>> {
+    /* instantiate strategy contract wrapper */
+    let strategy_pool = db
+        .execute(FunWatcherListStrategyPoolContractReq {
+            limit: 1,
+            offset: 0,
+            strategy_id: Some(strategy_id),
+            blockchain: Some(blockchain),
+            address: None,
+        })
+        .await?
+        .into_result();
+    let sp_contract = match strategy_pool {
+        Some(addr) => {
+            let address = Address::from_str(&addr.address)?;
+            StrategyPoolContract::new(conn.clone(), address)?
+        }
+        None => {
+            /* if strategy pool doesn't exist in this chain, create it */
+            let contract = deploy_strategy_contract(
+                &conn,
+                master_key.clone(),
+                strategy_token_name,
+                strategy_token_symbol,
+            )
+            .await?;
+            /* insert strategy contract address in the database */
+            db.execute(FunUserAddStrategyPoolContractReq {
+                strategy_id,
+                blockchain,
+                address: format!("{:?}", contract.address()),
+            })
+            .await?;
+
+            contract
+        }
+    };
+    Ok(sp_contract)
+}
 async fn user_back_strategy(
     conn: &EthereumRpcConnection,
     ctx: &RequestContext,
     db: &DbClient,
     blockchain: EnumBlockChain,
+    user_id: i64,
     back_usdc_amount: U256,
-    token_addresses: &BlockchainCoinAddresses,
     strategy_id: i64,
-    escrow_coin: EnumBlockchainCoin,
+    token_id: i64,
+    token_address: Address,
     escrow_contract: EscrowContract<EitherTransport>,
     dex_addresses: &DexAddresses,
     master_key: impl Key + Clone,
@@ -558,9 +656,22 @@ async fn user_back_strategy(
 
     /* check if user has enough balance */
     // TODO: add user balance to the database
-    let user_balance = U256::max_value();
+    let user_balance = db
+        .execute(FunUserListUserDepositWithdrawBalanceReq {
+            limit: 1,
+            offset: 0,
+            user_id,
+            blockchain: Some(blockchain),
+            token_address: None,
+            token_id: Some(token_id),
+            escrow_contract_address: Some(format!("{:?}", escrow_contract.address())),
+        })
+        .await?
+        .into_result()
+        .context("insufficient balance")?;
+    let user_balance: U256 = user_balance.balance.parse()?;
     if user_balance < back_usdc_amount {
-        bail!("insuficient balance");
+        bail!("insufficient balance");
     }
 
     /* fetch user address to receive shares */
@@ -584,43 +695,14 @@ async fn user_back_strategy(
     )?;
 
     /* instantiate strategy wallet contract wrapper */
-    let strategy_wallet_contract = match db
-        .execute(FunUserListStrategyWalletsReq {
-            user_id: ctx.user_id,
-            blockchain: Some(blockchain),
-        })
-        .await?
-        .into_result()
-    {
-        Some(strategy_wallet_contract) => {
-            /* if user has wallet on this chain, use it */
-            StrategyWalletContract::new(
-                conn.clone(),
-                Address::from_str(&strategy_wallet_contract.address)?,
-            )?
-        }
-        None => {
-            /* if user does not have a wallet on this chain, deploy it, and use it */
-            // TODO: add admin as Address::zero() if user has opted out of having an admin
-            let strategy_wallet_contract = deploy_wallet_contract(
-                &conn,
-                master_key.clone(),
-                user_wallet_address_to_receive_shares_on_this_chain,
-                master_key.address(),
-            )
-            .await?;
-
-            /* save wallet to database */
-            db.execute(FunUserAddStrategyWalletReq {
-                user_id: ctx.user_id,
-                blockchain,
-                address: format!("{:?}", strategy_wallet_contract.address()),
-            })
-            .await?;
-
-            strategy_wallet_contract
-        }
-    };
+    let strategy_wallet_contract = user_get_or_deploy_strategy_wallet(
+        &conn,
+        &ctx,
+        &db,
+        master_key.clone(),
+        user_wallet_address_to_receive_shares_on_this_chain,
+    )
+    .await?;
 
     /* fetch strategy */
     let strategy = db
@@ -641,7 +723,7 @@ async fn user_back_strategy(
         .context("strategy is not registered in the database")?;
 
     /* fetch strategy's tokens */
-    let strategy_token_rows = db
+    let strategy_initial_ratios = db
         .execute(FunUserListStrategyInitialTokenRatiosReq {
             strategy_id,
             token_address: None,
@@ -649,97 +731,55 @@ async fn user_back_strategy(
         })
         .await?
         .into_rows();
-    let mut total_strategy_tokens = U256::zero();
-    let mut all_strategy_tokens: Vec<(EnumBlockChain, Address, U256)> = Vec::new();
-    for row in strategy_token_rows {
-        let token_address = Address::from_str(&row.token_address)?;
-        let token_amount = U256::from_dec_str(&row.quantity)?;
-        // FIXME: can't add total_strategy_tokens for different tokens
-        total_strategy_tokens = total_strategy_tokens.try_checked_add(token_amount)?;
-        all_strategy_tokens.push((row.blockchain, token_address, token_amount));
-    }
-
-    /* merge all token amounts to this chain's tokens */
-    /* this step will fail if any token address is from an unknown token from any chain */
-    // TODO: replace this when we have non-hardcoded known tokens and a "tokens" table
-    // TODO: fetch each token amount accross chains and address on this chain directly from database
-    let strategy_tokens_and_amounts_on_this_chain: HashMap<Address, U256> =
-        merge_multichain_strategy_tokens(blockchain, token_addresses, all_strategy_tokens)?;
-
+    ensure!(
+        !strategy_initial_ratios.is_empty(),
+        "strategy has no initial ratios"
+    );
     /* deduce fees from back amount */
     // TODO: fetch fees from strategy
-    // TODO: deduce fees from back amount
     // TODO: use (back amount - fees) to calculate trade spenditure and SP shares
     // TODO: register appropriate fees for the treasury and the strategy creator
-    let back_usdc_amount_minus_fees = back_usdc_amount;
-
-    /* calculate how much of back amount to spend on each strategy token */
-    let escrow_allocations_for_tokens = calculate_escrow_allocation_for_strategy_tokens(
-        back_usdc_amount_minus_fees,
-        total_strategy_tokens,
-        strategy_tokens_and_amounts_on_this_chain,
-    )?;
+    let fees = back_usdc_amount * 0.02;
+    let back_usdc_amount_minus_fees = back_usdc_amount - fees;
 
     /* instantiate strategy contract wrapper */
-    let strategy_pool = db
-        .execute(FunWatcherListStrategyPoolContractReq {
-            limit: 1,
-            offset: 0,
-            strategy_id: Some(strategy_id),
-            blockchain: Some(blockchain),
-            address: None,
-        })
-        .await?
-        .into_result();
-    let sp_contract: StrategyPoolContract<EitherTransport>;
-    match strategy_pool {
-        Some(addr) => {
-            let address = Address::from_str(&addr.address)?;
-            sp_contract = StrategyPoolContract::new(conn.clone(), address)?;
-        }
-        None => {
-            /* if strategy pool doesn't exist in this chain, create it */
-            let contract = deploy_strategy_contract(
-                &conn,
-                master_key.clone(),
-                strategy.strategy_name.clone(),
-                strategy.strategy_name, // strategy symbol
-            )
-            .await?;
-            /* insert strategy contract address in the database */
-            db.execute(FunUserAddStrategyPoolContractReq {
-                strategy_id,
-                blockchain,
-                address: format!("{:?}", contract.address()),
-            })
-            .await?;
-
-            sp_contract = contract;
-        }
-    };
+    let sp_contract = user_get_or_deploy_strategy_pool(
+        &conn,
+        &ctx,
+        &db,
+        master_key.clone(),
+        strategy_id,
+        blockchain,
+        strategy.name.clone(),
+        strategy.name,
+    )
+    .await?;
 
     /* calculate shares to mint for backer */
     // TODO: find out if we use back amount with or without fees for share calculation
     // currently calculating with back amount minus fees
+    // TODO: get these values from database
     let sp_total_shares = sp_contract.total_supply().await?;
 
     let sp_assets_and_amounts = sp_contract
         .assets_and_balances()
         .await
         .context("failed to query strategy pool assets and amounts")?;
-
-    let escrow_token_address = token_addresses
-        .get(blockchain, escrow_coin)
-        .ok_or_else(|| eyre!("usdc address not available on this chain"))?;
+    let sp_assets_and_amounts: HashMap<Address, U256> = sp_assets_and_amounts
+        .0
+        .into_iter()
+        .zip(sp_assets_and_amounts.1.into_iter())
+        .collect();
+    let escrow_token_address = token_address;
     let escrow_token_contract = Erc20Token::new(conn.clone(), escrow_token_address)?;
-    let shares_to_mint = calculate_shares(
+    let shares_to_mint = calculate_sp_tokens_to_mint_easy_approach(
         &conn,
         &CoinMarketCap::new_debug_key()?,
         sp_total_shares,
         sp_assets_and_amounts,
         sp_contract.decimals().await?,
+        escrow_token_contract.symbol(),
         back_usdc_amount_minus_fees,
-        escrow_coin,
         escrow_token_contract.decimals().await?,
     )
     .await?;
@@ -754,6 +794,7 @@ async fn user_back_strategy(
 
     //TODO: make some way of replaying the correct transactions in case of failure in the middle of the backing process
 
+    // FIXME: we should do it in escrow pending contract or somewhere
     /* transfer escrow to our EOA */
     transfer_token_to_and_ensure_success(
         escrow_contract,
@@ -767,7 +808,12 @@ async fn user_back_strategy(
         back_usdc_amount,
     )
     .await?;
-
+    /* calculate how much of back amount to spend on each strategy token */
+    let escrow_allocations_for_tokens = calculate_escrow_allocation_for_strategy_tokens(
+        back_usdc_amount_minus_fees,
+        total_strategy_tokens,
+        strategy_tokens_and_amounts_on_this_chain,
+    )?;
     /* approve pancakeswap to trade escrow token */
     approve_and_ensure_success(
         escrow_token_contract,
@@ -912,83 +958,147 @@ fn calculate_escrow_allocation_for_strategy_tokens(
     }
     Ok(escrow_allocations)
 }
+//
+// async fn calculate_buying_plan_with_initial_tokens(
+//     conn: &EthereumRpcConnection,
+//     cmc: &CoinMarketCap,
+//     sp_initial_token_ratio: HashMap<Address, U256>,
+//     sp_decimals: U256,
+//     escrow_symbol: String,
+//     escrow_amount: U256,
+//     escrow_decimals: U256,
+// ) -> Result<HashMap<Address, U256>> {
+//     /*
+//     From Rev:
+//     The amount deposited -> minus fees (Some goes to treasury)
+//     We look at the ratios of tokens for the SP (Strategy pool)
+//     We then calculate roughly what that means at the DEX $100 deposit.. 35% BTC -> We will plan to buy $35 (minus fees and gas shit) at the DEX
+//     We buy $35 BTC -> We probably receive $33 (slippage and other shit)
+//     .... we do this for all tokens
+//     We then calculate post-slippage actual amounts bought
+//     THEN we MINT SP tokens based on how much the SP was increased
+//     THEN we send them the tokens
+//      */
+//
+//     /* multiply the escrow amount by the price to get its value with no consideration for decimals */
+//     /* if escrow decimals > sp decimals, divide unconsidered value by 10^(escrow decimals - sp decimals) to account for decimal differences */
+//     /* if sp decimals > escrow decimals, multiply the unconsidered value by 10^(sp decimals - escrow decimals) to account for decimal differences */
+//     /* this is valid for all tokens, not just the escrow */
+//     let escrow_value: U256;
+//     if escrow_decimals > sp_decimals {
+//         escrow_value = escrow_amount
+//             .mul_f64(cmc.get_usd_prices_by_symbol(&vec![escrow_symbol]).await?[0])?
+//             .try_checked_div(U256::exp10(
+//                 escrow_decimals.as_usize() - sp_decimals.as_usize(),
+//             ))?;
+//     } else {
+//         escrow_value = escrow_amount
+//             .mul_f64(cmc.get_usd_prices_by_symbol(&vec![escrow_symbol]).await?[0])?
+//             .try_checked_mul(U256::exp10(
+//                 sp_decimals.as_usize() - escrow_decimals.as_usize(),
+//             ))?;
+//     }
+//     if sp_total_shares == U256::zero() {
+//         /* if strategy pool is empty, shares = escrow value */
+//         Ok(escrow_value)
+//     } else {
+//         /* if strategy pool is active, shares = (escrow_value * total_strategy_shares) / total_strategy_value */
+//         let sp_total_value: U256 = {
+//             let mut total_value = U256::zero();
+//             for (asset, amount) in sp_initial_token_ratio
+//                 .0
+//                 .iter()
+//                 .zip(sp_initial_token_ratio.1.iter())
+//             {
+//                 let erc20 = Erc20Token::new(conn.clone(), *asset)?;
+//                 let price = cmc
+//                     .get_usd_prices_by_symbol(&vec![erc20.symbol().await?])
+//                     .await?;
+//                 /* add to total value the value of each token accounting for decimal differences */
+//                 let token_decimals = erc20.decimals().await?;
+//                 if token_decimals > sp_decimals {
+//                     total_value =
+//                         total_value.try_checked_add(amount.mul_f64(price[0])?.try_checked_div(
+//                             U256::exp10(token_decimals.as_usize() - sp_decimals.as_usize()),
+//                         )?)?;
+//                 } else {
+//                     total_value =
+//                         total_value.try_checked_add(amount.mul_f64(price[0])?.try_checked_mul(
+//                             U256::exp10(sp_decimals.as_usize() - token_decimals.as_usize()),
+//                         )?)?;
+//                 }
+//             }
+//             total_value
+//         };
+//         Ok(escrow_value.mul_div(
+//             sp_total_shares,
+//             if sp_total_value == U256::zero() {
+//                 U256::one()
+//             } else {
+//                 sp_total_value
+//             },
+//         )?)
+//     }
+// }
 
-async fn calculate_shares(
+async fn calculate_sp_tokens_to_mint_easy_approach(
     conn: &EthereumRpcConnection,
     cmc: &CoinMarketCap,
     sp_total_shares: U256,
-    sp_tokens_and_amounts: (Vec<Address>, Vec<U256>),
+    sp_escrow_token_balances: HashMap<Address, U256>,
     sp_decimals: U256,
+    escrow_symbol: String,
     escrow_amount: U256,
-    escrow_coin: EnumBlockchainCoin,
     escrow_decimals: U256,
 ) -> Result<U256> {
-    /* calculate shares to mint based on the value of tokens held by strategy pool and the value of escrow */
-    let escrow_symbol = match escrow_coin {
-        EnumBlockchainCoin::USDC => "USDC".to_string(),
-        EnumBlockchainCoin::USDT => "USDT".to_string(),
-        EnumBlockchainCoin::BUSD => "BUSD".to_string(),
-        _ => bail!("unsupported escrow coin"),
-    };
     /* multiply the escrow amount by the price to get its value with no consideration for decimals */
     /* if escrow decimals > sp decimals, divide unconsidered value by 10^(escrow decimals - sp decimals) to account for decimal differences */
     /* if sp decimals > escrow decimals, multiply the unconsidered value by 10^(sp decimals - escrow decimals) to account for decimal differences */
     /* this is valid for all tokens, not just the escrow */
-    let escrow_value: U256;
-    if escrow_decimals > sp_decimals {
-        escrow_value = escrow_amount
-            .mul_f64(cmc.get_usd_prices_by_symbol(&vec![escrow_symbol]).await?[0])?
-            .try_checked_div(U256::exp10(
-                escrow_decimals.as_usize() - sp_decimals.as_usize(),
-            ))?;
+    let factor = cmc.get_usd_prices_by_symbol(&vec![escrow_symbol]).await?[0]?;
+    let escrow_value: U256 = if escrow_decimals > sp_decimals {
+        escrow_amount.mul_f64(factor)?.try_checked_div(U256::exp10(
+            escrow_decimals.as_usize() - sp_decimals.as_usize(),
+        ))?
     } else {
-        escrow_value = escrow_amount
-            .mul_f64(cmc.get_usd_prices_by_symbol(&vec![escrow_symbol]).await?[0])?
-            .try_checked_mul(U256::exp10(
-                sp_decimals.as_usize() - escrow_decimals.as_usize(),
-            ))?;
-    }
+        escrow_amount.mul_f64(factor)?.try_checked_mul(U256::exp10(
+            sp_decimals.as_usize() - escrow_decimals.as_usize(),
+        ))?
+    };
     if sp_total_shares == U256::zero() {
         /* if strategy pool is empty, shares = escrow value */
-        Ok(escrow_value)
-    } else {
-        /* if strategy pool is active, shares = (escrow_value * total_strategy_shares) / total_strategy_value */
-        let sp_total_value: U256 = {
-            let mut total_value = U256::zero();
-            for (asset, amount) in sp_tokens_and_amounts
-                .0
-                .iter()
-                .zip(sp_tokens_and_amounts.1.iter())
-            {
-                let erc20 = Erc20Token::new(conn.clone(), *asset)?;
-                let price = cmc
-                    .get_usd_prices_by_symbol(&vec![erc20.symbol().await?])
-                    .await?;
-                /* add to total value the value of each token accounting for decimal differences */
-                let token_decimals = erc20.decimals().await?;
-                if token_decimals > sp_decimals {
-                    total_value =
-                        total_value.try_checked_add(amount.mul_f64(price[0])?.try_checked_div(
-                            U256::exp10(token_decimals.as_usize() - sp_decimals.as_usize()),
-                        )?)?;
-                } else {
-                    total_value =
-                        total_value.try_checked_add(amount.mul_f64(price[0])?.try_checked_mul(
-                            U256::exp10(sp_decimals.as_usize() - token_decimals.as_usize()),
-                        )?)?;
-                }
-            }
-            total_value
-        };
-        Ok(escrow_value.mul_div(
-            sp_total_shares,
-            if sp_total_value == U256::zero() {
-                U256::one()
-            } else {
-                sp_total_value
-            },
-        )?)
+        return Ok(escrow_value);
     }
+    /* if strategy pool is active, shares = (escrow_value * total_strategy_shares) / total_strategy_value */
+    let mut sp_total_value = U256::zero();
+    for (asset, amount) in sp_escrow_token_balances.iter() {
+        let erc20 = Erc20Token::new(conn.clone(), *asset)?;
+        let price = cmc
+            .get_usd_prices_by_symbol(&vec![erc20.symbol().await?])
+            .await?;
+        /* add to total value the value of each token accounting for decimal differences */
+        let token_decimals = erc20.decimals().await?;
+        if token_decimals > sp_decimals {
+            sp_total_value =
+                sp_total_value.try_checked_add(amount.mul_f64(price[0])?.try_checked_div(
+                    U256::exp10(token_decimals.as_usize() - sp_decimals.as_usize()),
+                )?)?;
+        } else {
+            sp_total_value =
+                sp_total_value.try_checked_add(amount.mul_f64(price[0])?.try_checked_mul(
+                    U256::exp10(sp_decimals.as_usize() - token_decimals.as_usize()),
+                )?)?;
+        }
+    }
+
+    Ok(escrow_value.mul_div(
+        sp_total_shares,
+        if sp_total_value == U256::zero() {
+            U256::one()
+        } else {
+            sp_total_value
+        },
+    )?)
 }
 
 async fn trade_escrow_for_strategy_tokens(
@@ -1072,21 +1182,27 @@ impl RequestHandler for MethodUserBackStrategy {
             let eth_conn = pool.get(token.blockchain).await?;
             ensure_user_role(ctx, EnumRole::User)?;
 
-            user_back_strategy(
+            if let Err(err) = user_back_strategy(
                 &eth_conn,
                 &ctx,
                 &db,
                 token.blockchain,
+                ctx.user_id,
                 req.quantity.parse()?,
-                &token_addresses,
                 req.strategy_id,
-                // TODO: pass in token instead of hardcoded USDC
-                EnumBlockchainCoin::USDC,
+                token.token_id,
+                token.address.parse()?,
                 escrow_contract,
                 &dex_addresses,
                 master_key,
             )
-            .await?;
+            .await
+            {
+                return Err(CustomError::new(
+                    EnumErrorCode::InternalError,
+                    format!("{:?}", err),
+                ));
+            }
             Ok(UserBackStrategyResponse { success: true })
         }
         .boxed()

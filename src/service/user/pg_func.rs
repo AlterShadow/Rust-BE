@@ -1409,6 +1409,8 @@ END
         ProceduralFunction::new(
             "fun_user_list_user_deposit_withdraw_balance",
             vec![
+                Field::new("limit", Type::BigInt),
+                Field::new("offset", Type::BigInt),
                 Field::new("user_id", Type::BigInt),
                 Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
                 Field::new("token_address", Type::optional(Type::String)),
@@ -1447,7 +1449,9 @@ BEGIN
         AND (a_blockchain ISNULL OR etc.blockchain = a_blockchain)
         AND (a_token_address iSNULL OR etc.address = a_token_address)
         AND (a_escrow_contract_address ISNULL OR eca.address = a_escrow_contract_address)
-    ;
+    ORDER BY a.pkey_id
+    LIMIT a_limit
+    OFFSET a_offset;
 END
 "#,
         ),

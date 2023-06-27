@@ -1937,7 +1937,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_list_user_deposit_withdraw_balance(a_user_id bigint, a_blockchain enum_block_chain DEFAULT NULL, a_token_address varchar DEFAULT NULL, a_token_id bigint DEFAULT NULL, a_escrow_contract_address varchar DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_user_list_user_deposit_withdraw_balance(a_limit bigint, a_offset bigint, a_user_id bigint, a_blockchain enum_block_chain DEFAULT NULL, a_token_address varchar DEFAULT NULL, a_token_id bigint DEFAULT NULL, a_escrow_contract_address varchar DEFAULT NULL)
 RETURNS table (
     "user_id" bigint,
     "blockchain" enum_block_chain,
@@ -1972,7 +1972,9 @@ BEGIN
         AND (a_blockchain ISNULL OR etc.blockchain = a_blockchain)
         AND (a_token_address iSNULL OR etc.address = a_token_address)
         AND (a_escrow_contract_address ISNULL OR eca.address = a_escrow_contract_address)
-    ;
+    ORDER BY a.pkey_id
+    LIMIT a_limit
+    OFFSET a_offset;
 END
 
 $$;
