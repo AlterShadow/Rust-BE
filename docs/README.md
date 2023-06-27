@@ -18,10 +18,10 @@ ID: 2
 |20040|UserFollowStrategy|strategy_id|success|User follows a strategy|
 |20050|UserListFollowedStrategies|limit, offset|strategies_total, strategies|User lists followed strategies|
 |20060|UserUnfollowStrategy|strategy_id|success||
-|20061|UserListStrategies|limit, offset, strategy_id, strategy_name, expert_public_id, expert_name, description, blockchain, wallet_address|strategies|User lists strategies|
-|20063|UserListTopPerformingStrategies|limit, offset|strategies|User lists top performing strategies|
-|20064|UserListStrategyBackers|strategy_id, limit, offset|backers||
-|20065|UserListStrategyFollowers|strategy_id, limit, offset|followers||
+|20061|UserListStrategies|limit, offset, strategy_id, strategy_name, expert_public_id, expert_name, description, blockchain, wallet_address|strategies_total, strategies|User lists strategies|
+|20063|UserListTopPerformingStrategies|limit, offset|strategies_total, strategies|User lists top performing strategies|
+|20064|UserListStrategyBackers|strategy_id, limit, offset|backers_total, backers||
+|20065|UserListStrategyFollowers|strategy_id, limit, offset|followers_total, followers||
 |20062|UserGetStrategy|strategy_id|strategy, watching_wallets, aum_ledger, audit_rules, whitelisted_tokens|User gets a strategy|
 |20070|UserGetStrategyStatistics|strategy_id|strategy_id, net_value, follow_ledger, back_ledger|User gets a strategy statistics|
 |20071|UserGetStrategiesStatistics||tracking_amount_usd, backing_amount_usd, difference_amount_usd, aum_value_usd, current_value_usd, withdrawable_value_usd|User gets statistics of all strategies related to the user|
@@ -29,13 +29,12 @@ ID: 2
 |20080|UserBackStrategy|strategy_id, quantity, token_id|success||
 |20110|UserExitStrategy|strategy_id, quantity, blockchain|success, transaction_hash||
 |20081|UserRequestRefund|quantity, wallet_address, blockchain|success||
-|20090|UserListBackedStrategies|limit, offset|strategies||
-|20100|UserListBackStrategyLedger|limit, offset|back_ledger||
-|20120|UserListExitStrategyLedger|strategy_id, limit, offset|exit_ledger||
+|20090|UserListBackedStrategies|limit, offset|strategies_total, strategies||
+|20100|UserListBackStrategyLedger|limit, offset|back_ledger_total, back_ledger||
 |20130|UserFollowExpert|expert_id|success|User follows an expert|
-|20140|UserListFollowedExperts|limit, offset|experts|User lists followed experts|
+|20140|UserListFollowedExperts|limit, offset|experts_total, experts|User lists followed experts|
 |20150|UserUnfollowExpert|expert_id|success|User unfollows an expert|
-|20160|UserListExperts|limit, offset, expert_id, user_id, user_public_id, username, family_name, given_name, description, social_media, sort_by_followers|experts|User lists experts|
+|20160|UserListExperts|limit, offset, expert_id, user_id, user_public_id, username, family_name, given_name, description, social_media, sort_by_followers|experts_total, experts|User lists experts|
 |20161|UserListTopPerformingExperts|limit, offset|experts_total, experts|User lists experts|
 |20162|UserListFeaturedExperts|limit, offset|experts_total, experts|User lists experts|
 |20170|UserGetExpertProfile|expert_id|expert_id, name, follower_count, description, social_media, risk_score, reputation_score, aum, strategies_total, strategies|User gets an expert profile|
@@ -49,19 +48,19 @@ ID: 2
 |20265|ExpertFreezeStrategy|strategy_id|success|Expert freezes a strategy, by making it immutable|
 |20270|ExpertAddStrategyWatchingWallet|strategy_id, blockchain, wallet_address, ratio|success, wallet_id||
 |20280|ExpertRemoveStrategyWatchingWallet|strategy_id, wallet_id|success||
-|20290|UserListStrategyWatchingWallets|strategy_id|wallets||
-|20300|UserListWalletActivityLedger|wallet_address, blockchain|wallet_activities||
+|20290|UserListStrategyWatchingWallets|strategy_id|wallets_total, wallets||
+|20300|UserListWalletActivityLedger|wallet_address, blockchain|wallet_activities_total, wallet_activities||
 |20310|ExpertAddStrategyInitialTokenRatio|strategy_id, token_id, quantity|success, token_id||
 |20320|ExpertRemoveStrategyInitialTokenRatio|strategy_id, token_id|success||
-|20330|UserListStrategyInitialTokenRatio|strategy_id|token_ratios||
-|20340|ExpertListFollowers|limit, offset|followers||
-|20350|ExpertListBackers|limit, offset|backers||
+|20330|UserListStrategyInitialTokenRatio|strategy_id|token_ratios_total, token_ratios||
+|20340|ExpertListFollowers|limit, offset|followers_total, followers||
+|20350|ExpertListBackers|limit, offset|backers_total, backers||
 |20360|UserGetDepositTokens||tokens||
 |20370|UserGetDepositAddresses||addresses||
-|20380|UserListDepositLedger|limit, offset|ledger||
+|20380|UserListDepositLedger|limit, offset|ledger_total, ledger||
 |20381|UserSubscribeDepositLedger|mock_data|||
 |20382|UserUnsubscribeDepositLedger||||
-|20390|UserListStrategyWallets|blockchain|wallets||
+|20390|UserListStrategyWallets|blockchain|wallets_total, wallets||
 |20391|UserCreateStrategyWallet|wallet_address, blockchain, adminship|blockchain, address||
 |20400|UserListStrategyAuditRules|strategy_id|audit_rules||
 |20410|UserAddStrategyAuditRule|strategy_id, rule_id|||
@@ -69,7 +68,7 @@ ID: 2
 |20500|UserGetEscrowAddressForStrategy|strategy_id, token_id|tokens||
 |20510|UserListDepositWithdrawBalances||balances||
 |20511|UserGetDepositWithdrawBalance|token_id|balance||
-|20520|UserListEscrowTokenContractAddresses|limit, offset, blockchain, is_stablecoin|tokens||
+|20520|UserListEscrowTokenContractAddresses|limit, offset, blockchain, is_stablecoin|tokens_total, tokens||
 
 # admin Server
 ID: 3

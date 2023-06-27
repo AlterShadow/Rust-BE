@@ -829,6 +829,7 @@ END
             "fun_user_list_strategy_followers",
             vec![Field::new("strategy_id", Type::BigInt)],
             vec![
+                Field::new("total", Type::BigInt),
                 Field::new("user_id", Type::BigInt),
                 Field::new("user_public_id", Type::BigInt),
                 Field::new("username", Type::String),
@@ -837,7 +838,9 @@ END
             ],
             r#"
 BEGIN
-    RETURN QUERY SELECT a.fkey_user_id AS user_id,
+    RETURN QUERY SELECT 
+                        COUNT(*) OVER () AS total,
+                        a.fkey_user_id AS user_id,
                         b.public_id    AS user_public_id,
                         b.username     AS username,
                         b.address      AS wallet_address,
@@ -854,6 +857,7 @@ END
             vec![Field::new("strategy_id", Type::BigInt)],
             vec![
                 Field::new("user_id", Type::BigInt),
+                Field::new("total", Type::BigInt),
                 Field::new("user_public_id", Type::BigInt),
                 Field::new("username", Type::String),
                 Field::new("wallet_address", Type::String),
@@ -861,15 +865,17 @@ END
             ],
             r#"
 BEGIN
-    -- TODO: need to group by user_id
-    RETURN QUERY SELECT a.fkey_user_id AS user_id,
+    RETURN QUERY SELECT 
+                        DISTINCT ON(a.fkey_user_id) user_id,
+                        COUNT(*) OVER () AS total,
                         b.public_id    AS user_public_id,
                         b.address      AS wallet_address,
                         b.username     AS username,
                         a.happened_at  AS backed_at
                  FROM tbl.user_back_exit_strategy_ledger AS a
-                          INNER JOIN tbl.user AS b ON a.fkey_user_id = b.pkey_id
-                 WHERE a.fkey_strategy_id = a_strategy_id AND a.is_back = TRUE;
+                 JOIN tbl.user AS b ON a.fkey_user_id = b.pkey_id
+                 WHERE a.fkey_strategy_id = a_strategy_id 
+                     AND a.is_back = TRUE;
 END
 "#,
         ),
@@ -1059,6 +1065,7 @@ END
                 Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
             ],
             vec![
+                Field::new("total", Type::BigInt),
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("token_id", Type::BigInt),
@@ -1071,6 +1078,7 @@ END
             r#"
 BEGIN
     RETURN QUERY SELECT
+        COUNT(*) OVER() AS total,
         a.pkey_id,
         b.blockchain,
         a.token_id,
@@ -1097,6 +1105,7 @@ END
                 Field::new("offset", Type::BigInt),
             ],
             vec![
+                Field::new("total", Type::BigInt),
                 Field::new("public_id", Type::BigInt),
                 Field::new("username", Type::String),
                 Field::new("family_name", Type::optional(Type::String)),
@@ -1106,7 +1115,15 @@ END
             ],
             r#"
 BEGIN
-    RETURN QUERY SELECT b.pkey_id, b.username, b.family_name, b.given_name, a.created_at, b.created_at FROM tbl.user_follow_expert AS a
+    RETURN QUERY SELECT 
+                COUNT(*) OVER() AS total,
+                b.pkey_id, 
+                b.username, 
+                b.family_name,
+                b.given_name, 
+                a.created_at, 
+                b.created_at 
+            FROM tbl.user_follow_expert AS a
             INNER JOIN tbl.user AS b ON a.fkey_user_id = b.pkey_id
             WHERE a.fkey_user_id = a_user_id
             ORDER BY a.pkey_id
@@ -1124,6 +1141,7 @@ END
                 Field::new("offset", Type::BigInt),
             ],
             vec![
+                Field::new("total", Type::BigInt),
                 Field::new("public_id", Type::BigInt),
                 Field::new("username", Type::String),
                 Field::new("family_name", Type::optional(Type::String)),
@@ -1133,7 +1151,15 @@ END
             ],
             r#"
 BEGIN
-    RETURN QUERY SELECT b.pkey_id, b.username, b.family_name, b.given_name, a.happened_at, b.created_at FROM tbl.user_back_exit_strategy_ledger AS a
+    RETURN QUERY SELECT
+                COUNT(*) OVER() AS total,
+                b.pkey_id, 
+                b.username, 
+                b.family_name,
+                b.given_name,
+                a.happened_at,
+                b.created_at
+            FROM tbl.user_back_exit_strategy_ledger AS a
             INNER JOIN tbl.user AS b ON a.fkey_user_id = b.pkey_id
             WHERE a.fkey_user_id = a_user_id
             ORDER BY a.pkey_id
@@ -1150,6 +1176,7 @@ END
                 Field::new("offset", Type::BigInt),
             ],
             vec![
+                Field::new("total", Type::BigInt),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("user_address", Type::String),
                 Field::new("contract_address", Type::String),
@@ -1160,7 +1187,15 @@ END
             ],
             r#"
 BEGIN
-    RETURN QUERY SELECT a.blockchain, a.user_address, a.escrow_contract_address, a.receiver_address, a.quantity, a.transaction_hash, a.happened_at
+    RETURN QUERY SELECT
+            COUNT(*) OVER() AS total,
+            a.blockchain, 
+            a.user_address, 
+            a.escrow_contract_address, 
+            a.receiver_address, 
+            a.quantity, 
+            a.transaction_hash, 
+            a.happened_at
 		FROM tbl.user_deposit_withdraw_ledger AS a
 		WHERE fkey_user_id = a_user_id AND is_deposit = TRUE
 		ORDER BY a.pkey_id DESC
@@ -1216,13 +1251,18 @@ END
                 Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
             ],
             vec![
+                Field::new("total", Type::BigInt),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("address", Type::String),
                 Field::new("created_at", Type::BigInt),
             ],
             r#"
 BEGIN
-    RETURN QUERY SELECT a.blockchain, a.address, a.created_at 
+    RETURN QUERY SELECT 
+        COUNT(*) OVER() AS total,
+        a.blockchain,
+        a.address, 
+    a.created_at 
     FROM tbl.user_strategy_wallet AS a 
     WHERE a.fkey_user_id = a_user_id 
         AND (a_blockchain ISNULL OR a.blockchain = a_blockchain);
@@ -1440,6 +1480,7 @@ END
                 Field::new("is_stablecoin", Type::optional(Type::Boolean)),
             ],
             vec![
+                Field::new("total", Type::BigInt),
                 Field::new("token_id", Type::BigInt),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("address", Type::String),
@@ -1451,6 +1492,7 @@ END
             r#"
 BEGIN
     RETURN QUERY SELECT
+        COUNT(*) OVER() AS total,
         a.pkey_id,
         a.blockchain,
         a.address,

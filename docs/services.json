@@ -444,6 +444,10 @@
           ],
           "returns": [
             {
+              "name": "strategies_total",
+              "ty": "BigInt"
+            },
+            {
               "name": "strategies",
               "ty": {
                 "Vec": {
@@ -582,6 +586,10 @@
             }
           ],
           "returns": [
+            {
+              "name": "strategies_total",
+              "ty": "BigInt"
+            },
             {
               "name": "strategies",
               "ty": {
@@ -726,6 +734,10 @@
           ],
           "returns": [
             {
+              "name": "backers_total",
+              "ty": "BigInt"
+            },
+            {
               "name": "backers",
               "ty": {
                 "DataTable": {
@@ -778,6 +790,10 @@
             }
           ],
           "returns": [
+            {
+              "name": "followers_total",
+              "ty": "BigInt"
+            },
             {
               "name": "followers",
               "ty": {
@@ -1323,6 +1339,10 @@
           ],
           "returns": [
             {
+              "name": "strategies_total",
+              "ty": "BigInt"
+            },
+            {
               "name": "strategies",
               "ty": {
                 "Vec": {
@@ -1462,6 +1482,10 @@
           ],
           "returns": [
             {
+              "name": "back_ledger_total",
+              "ty": "BigInt"
+            },
+            {
               "name": "back_ledger",
               "ty": {
                 "DataTable": {
@@ -1490,72 +1514,15 @@
                       "ty": "String"
                     },
                     {
+                      "name": "is_back",
+                      "ty": "Boolean"
+                    },
+                    {
                       "name": "transaction_hash",
                       "ty": "String"
                     },
                     {
                       "name": "time",
-                      "ty": "BigInt"
-                    }
-                  ]
-                }
-              }
-            }
-          ],
-          "stream_response": null,
-          "description": "",
-          "json_schema": null
-        },
-        {
-          "name": "UserListExitStrategyLedger",
-          "code": 20120,
-          "parameters": [
-            {
-              "name": "strategy_id",
-              "ty": {
-                "Optional": "BigInt"
-              }
-            },
-            {
-              "name": "limit",
-              "ty": {
-                "Optional": "BigInt"
-              }
-            },
-            {
-              "name": "offset",
-              "ty": {
-                "Optional": "BigInt"
-              }
-            }
-          ],
-          "returns": [
-            {
-              "name": "exit_ledger",
-              "ty": {
-                "DataTable": {
-                  "name": "ExitStrategyLedgerRow",
-                  "fields": [
-                    {
-                      "name": "exit_ledger_id",
-                      "ty": "BigInt"
-                    },
-                    {
-                      "name": "strategy_id",
-                      "ty": "BigInt"
-                    },
-                    {
-                      "name": "exit_quantity",
-                      "ty": "String"
-                    },
-                    {
-                      "name": "blockchain",
-                      "ty": {
-                        "EnumRef": "block_chain"
-                      }
-                    },
-                    {
-                      "name": "exit_time",
                       "ty": "BigInt"
                     }
                   ]
@@ -1605,90 +1572,104 @@
           ],
           "returns": [
             {
+              "name": "experts_total",
+              "ty": "BigInt"
+            },
+            {
               "name": "experts",
               "ty": {
-                "DataTable": {
-                  "name": "UserListFollowedExpertsRow",
-                  "fields": [
-                    {
-                      "name": "expert_id",
-                      "ty": "BigInt"
-                    },
-                    {
-                      "name": "user_public_id",
-                      "ty": "BigInt"
-                    },
-                    {
-                      "name": "linked_wallet",
-                      "ty": "String"
-                    },
-                    {
-                      "name": "name",
-                      "ty": "String"
-                    },
-                    {
-                      "name": "family_name",
-                      "ty": {
-                        "Optional": "String"
+                "Vec": {
+                  "Struct": {
+                    "name": "ListExpertsRow",
+                    "fields": [
+                      {
+                        "name": "expert_id",
+                        "ty": "BigInt"
+                      },
+                      {
+                        "name": "user_public_id",
+                        "ty": "BigInt"
+                      },
+                      {
+                        "name": "linked_wallet",
+                        "ty": "String"
+                      },
+                      {
+                        "name": "name",
+                        "ty": "String"
+                      },
+                      {
+                        "name": "family_name",
+                        "ty": {
+                          "Optional": "String"
+                        }
+                      },
+                      {
+                        "name": "given_name",
+                        "ty": {
+                          "Optional": "String"
+                        }
+                      },
+                      {
+                        "name": "follower_count",
+                        "ty": "BigInt"
+                      },
+                      {
+                        "name": "backer_count",
+                        "ty": "BigInt"
+                      },
+                      {
+                        "name": "description",
+                        "ty": "String"
+                      },
+                      {
+                        "name": "social_media",
+                        "ty": "String"
+                      },
+                      {
+                        "name": "risk_score",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "reputation_score",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "consistent_score",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "aum",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "joined_at",
+                        "ty": "BigInt"
+                      },
+                      {
+                        "name": "requested_at",
+                        "ty": "BigInt"
+                      },
+                      {
+                        "name": "approved_at",
+                        "ty": {
+                          "Optional": "BigInt"
+                        }
+                      },
+                      {
+                        "name": "pending_expert",
+                        "ty": "Boolean"
+                      },
+                      {
+                        "name": "approved_expert",
+                        "ty": "Boolean"
+                      },
+                      {
+                        "name": "followed",
+                        "ty": "Boolean"
                       }
-                    },
-                    {
-                      "name": "given_name",
-                      "ty": {
-                        "Optional": "String"
-                      }
-                    },
-                    {
-                      "name": "follower_count",
-                      "ty": "BigInt"
-                    },
-                    {
-                      "name": "description",
-                      "ty": "String"
-                    },
-                    {
-                      "name": "social_media",
-                      "ty": "String"
-                    },
-                    {
-                      "name": "risk_score",
-                      "ty": "Numeric"
-                    },
-                    {
-                      "name": "reputation_score",
-                      "ty": "Numeric"
-                    },
-                    {
-                      "name": "aum",
-                      "ty": "Numeric"
-                    },
-                    {
-                      "name": "joined_at",
-                      "ty": "BigInt"
-                    },
-                    {
-                      "name": "requested_at",
-                      "ty": "BigInt"
-                    },
-                    {
-                      "name": "approved_at",
-                      "ty": {
-                        "Optional": "BigInt"
-                      }
-                    },
-                    {
-                      "name": "pending_expert",
-                      "ty": "Boolean"
-                    },
-                    {
-                      "name": "approved_expert",
-                      "ty": "Boolean"
-                    },
-                    {
-                      "name": "followed",
-                      "ty": "Boolean"
-                    }
-                  ]
+                    ]
+                  }
                 }
               }
             }
@@ -1788,6 +1769,10 @@
             }
           ],
           "returns": [
+            {
+              "name": "experts_total",
+              "ty": "BigInt"
+            },
             {
               "name": "experts",
               "ty": {
@@ -3039,6 +3024,10 @@
           ],
           "returns": [
             {
+              "name": "wallets_total",
+              "ty": "BigInt"
+            },
+            {
               "name": "wallets",
               "ty": {
                 "DataTable": {
@@ -3087,6 +3076,10 @@
             }
           ],
           "returns": [
+            {
+              "name": "wallet_activities_total",
+              "ty": "BigInt"
+            },
             {
               "name": "wallet_activities",
               "ty": {
@@ -3229,6 +3222,10 @@
           ],
           "returns": [
             {
+              "name": "token_ratios_total",
+              "ty": "BigInt"
+            },
+            {
               "name": "token_ratios",
               "ty": {
                 "DataTable": {
@@ -3285,6 +3282,10 @@
             }
           ],
           "returns": [
+            {
+              "name": "followers_total",
+              "ty": "BigInt"
+            },
             {
               "name": "followers",
               "ty": {
@@ -3346,6 +3347,10 @@
             }
           ],
           "returns": [
+            {
+              "name": "backers_total",
+              "ty": "BigInt"
+            },
             {
               "name": "backers",
               "ty": {
@@ -3490,6 +3495,10 @@
           ],
           "returns": [
             {
+              "name": "ledger_total",
+              "ty": "BigInt"
+            },
+            {
               "name": "ledger",
               "ty": {
                 "Vec": {
@@ -3611,6 +3620,10 @@
             }
           ],
           "returns": [
+            {
+              "name": "wallets_total",
+              "ty": "BigInt"
+            },
             {
               "name": "wallets",
               "ty": {
@@ -3908,6 +3921,10 @@
             }
           ],
           "returns": [
+            {
+              "name": "tokens_total",
+              "ty": "BigInt"
+            },
             {
               "name": "tokens",
               "ty": {

@@ -1374,6 +1374,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION api.fun_user_list_strategy_followers(a_strategy_id bigint)
 RETURNS table (
+    "total" bigint,
     "user_id" bigint,
     "user_public_id" bigint,
     "username" varchar,
@@ -1384,7 +1385,9 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY SELECT a.fkey_user_id AS user_id,
+    RETURN QUERY SELECT 
+                        COUNT(*) OVER () AS total,
+                        a.fkey_user_id AS user_id,
                         b.public_id    AS user_public_id,
                         b.username     AS username,
                         b.address      AS wallet_address,
@@ -1401,6 +1404,7 @@ $$;
 CREATE OR REPLACE FUNCTION api.fun_user_list_strategy_backers(a_strategy_id bigint)
 RETURNS table (
     "user_id" bigint,
+    "total" bigint,
     "user_public_id" bigint,
     "username" varchar,
     "wallet_address" varchar,
@@ -1410,15 +1414,17 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    -- TODO: need to group by user_id
-    RETURN QUERY SELECT a.fkey_user_id AS user_id,
+    RETURN QUERY SELECT 
+                        DISTINCT ON(a.fkey_user_id) user_id,
+                        COUNT(*) OVER () AS total,
                         b.public_id    AS user_public_id,
                         b.address      AS wallet_address,
                         b.username     AS username,
                         a.happened_at  AS backed_at
                  FROM tbl.user_back_exit_strategy_ledger AS a
-                          INNER JOIN tbl.user AS b ON a.fkey_user_id = b.pkey_id
-                 WHERE a.fkey_strategy_id = a_strategy_id AND a.is_back = TRUE;
+                 JOIN tbl.user AS b ON a.fkey_user_id = b.pkey_id
+                 WHERE a.fkey_strategy_id = a_strategy_id 
+                     AND a.is_back = TRUE;
 END
 
 $$;
@@ -1590,6 +1596,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION api.fun_user_list_strategy_initial_token_ratios(a_strategy_id bigint, a_token_address varchar DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL)
 RETURNS table (
+    "total" bigint,
     "strategy_id" bigint,
     "blockchain" enum_block_chain,
     "token_id" bigint,
@@ -1604,6 +1611,7 @@ AS $$
     
 BEGIN
     RETURN QUERY SELECT
+        COUNT(*) OVER() AS total,
         a.pkey_id,
         b.blockchain,
         a.token_id,
@@ -1626,6 +1634,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION api.fun_expert_list_followers(a_user_id bigint, a_limit bigint, a_offset bigint)
 RETURNS table (
+    "total" bigint,
     "public_id" bigint,
     "username" varchar,
     "family_name" varchar,
@@ -1637,7 +1646,15 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY SELECT b.pkey_id, b.username, b.family_name, b.given_name, a.created_at, b.created_at FROM tbl.user_follow_expert AS a
+    RETURN QUERY SELECT 
+                COUNT(*) OVER() AS total,
+                b.pkey_id, 
+                b.username, 
+                b.family_name,
+                b.given_name, 
+                a.created_at, 
+                b.created_at 
+            FROM tbl.user_follow_expert AS a
             INNER JOIN tbl.user AS b ON a.fkey_user_id = b.pkey_id
             WHERE a.fkey_user_id = a_user_id
             ORDER BY a.pkey_id
@@ -1651,6 +1668,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION api.fun_expert_list_backers(a_user_id bigint, a_limit bigint, a_offset bigint)
 RETURNS table (
+    "total" bigint,
     "public_id" bigint,
     "username" varchar,
     "family_name" varchar,
@@ -1662,7 +1680,15 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY SELECT b.pkey_id, b.username, b.family_name, b.given_name, a.happened_at, b.created_at FROM tbl.user_back_exit_strategy_ledger AS a
+    RETURN QUERY SELECT
+                COUNT(*) OVER() AS total,
+                b.pkey_id, 
+                b.username, 
+                b.family_name,
+                b.given_name,
+                a.happened_at,
+                b.created_at
+            FROM tbl.user_back_exit_strategy_ledger AS a
             INNER JOIN tbl.user AS b ON a.fkey_user_id = b.pkey_id
             WHERE a.fkey_user_id = a_user_id
             ORDER BY a.pkey_id
@@ -1675,6 +1701,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION api.fun_user_list_deposit_ledger(a_user_id bigint, a_limit bigint, a_offset bigint)
 RETURNS table (
+    "total" bigint,
     "blockchain" enum_block_chain,
     "user_address" varchar,
     "contract_address" varchar,
@@ -1687,7 +1714,15 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY SELECT a.blockchain, a.user_address, a.escrow_contract_address, a.receiver_address, a.quantity, a.transaction_hash, a.happened_at
+    RETURN QUERY SELECT
+            COUNT(*) OVER() AS total,
+            a.blockchain, 
+            a.user_address, 
+            a.escrow_contract_address, 
+            a.receiver_address, 
+            a.quantity, 
+            a.transaction_hash, 
+            a.happened_at
 		FROM tbl.user_deposit_withdraw_ledger AS a
 		WHERE fkey_user_id = a_user_id AND is_deposit = TRUE
 		ORDER BY a.pkey_id DESC
@@ -1739,6 +1774,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION api.fun_user_list_strategy_wallets(a_user_id bigint, a_blockchain enum_block_chain DEFAULT NULL)
 RETURNS table (
+    "total" bigint,
     "blockchain" enum_block_chain,
     "address" varchar,
     "created_at" bigint
@@ -1747,7 +1783,11 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY SELECT a.blockchain, a.address, a.created_at 
+    RETURN QUERY SELECT 
+        COUNT(*) OVER() AS total,
+        a.blockchain,
+        a.address, 
+    a.created_at 
     FROM tbl.user_strategy_wallet AS a 
     WHERE a.fkey_user_id = a_user_id 
         AND (a_blockchain ISNULL OR a.blockchain = a_blockchain);
@@ -1957,6 +1997,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION api.fun_user_list_escrow_token_contract_address(a_limit bigint, a_offset bigint, a_token_id bigint DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL, a_address varchar DEFAULT NULL, a_symbol varchar DEFAULT NULL, a_is_stablecoin boolean DEFAULT NULL)
 RETURNS table (
+    "total" bigint,
     "token_id" bigint,
     "blockchain" enum_block_chain,
     "address" varchar,
@@ -1970,6 +2011,7 @@ AS $$
     
 BEGIN
     RETURN QUERY SELECT
+        COUNT(*) OVER() AS total,
         a.pkey_id,
         a.blockchain,
         a.address,

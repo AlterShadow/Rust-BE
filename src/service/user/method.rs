@@ -136,6 +136,7 @@ impl RequestHandler for MethodUserListStrategies {
                 .await?;
 
             Ok(UserListStrategiesResponse {
+                strategies_total: ret.first(|x| x.total).unwrap_or_default(),
                 strategies: ret.map(convert_strategy_db_to_api),
             })
         }
@@ -174,6 +175,7 @@ impl RequestHandler for MethodUserListTopPerformingStrategies {
                 })
                 .await?;
             Ok(UserListTopPerformingStrategiesResponse {
+                strategies_total: ret.first(|x| x.total).unwrap_or_default(),
                 strategies: ret.map(convert_strategy_db_to_api),
             })
         }
@@ -200,6 +202,7 @@ impl RequestHandler for MethodUserListStrategyFollowers {
                 })
                 .await?;
             Ok(UserListStrategyFollowersResponse {
+                followers_total: ret.first(|x| x.total).unwrap_or_default(),
                 followers: ret
                     .into_iter()
                     .map(|x| ListStrategyFollowersRow {
@@ -234,6 +237,7 @@ impl RequestHandler for MethodUserListStrategyBackers {
                 })
                 .await?;
             Ok(UserListStrategyBackersResponse {
+                backers_total: ret.first(|x| x.total).unwrap_or_default(),
                 backers: ret
                     .into_iter()
                     .map(|x| ListStrategyBackersRow {
@@ -429,6 +433,7 @@ impl RequestHandler for MethodUserListBackedStrategies {
                 })
                 .await?;
             Ok(UserListBackedStrategiesResponse {
+                strategies_total: ret.first(|x| x.total).unwrap_or_default(),
                 strategies: ret.map(convert_strategy_db_to_api),
             })
         }
@@ -1324,41 +1329,6 @@ impl RequestHandler for MethodUserUnfollowStrategy {
     }
 }
 
-pub struct MethodUserListExitStrategyLedger;
-impl RequestHandler for MethodUserListExitStrategyLedger {
-    type Request = UserListExitStrategyLedgerRequest;
-
-    fn handle(
-        &self,
-        toolbox: &Toolbox,
-        ctx: RequestContext,
-        _req: Self::Request,
-    ) -> FutureResponse<Self::Request> {
-        let db: DbClient = toolbox.get_db();
-        async move {
-            ensure_user_role(ctx, EnumRole::User)?;
-            let ret = db
-                .execute(FunUserListExitStrategyLedgerReq {
-                    user_id: ctx.user_id,
-                    strategy_id: None,
-                })
-                .await?;
-            Ok(UserListExitStrategyLedgerResponse {
-                exit_ledger: ret
-                    .into_iter()
-                    .map(|x| ExitStrategyLedgerRow {
-                        exit_ledger_id: x.exit_ledger_id,
-                        strategy_id: x.strategy_id,
-                        exit_quantity: x.exit_quantity,
-                        blockchain: x.blockchain,
-                        exit_time: x.exit_time,
-                    })
-                    .collect(),
-            })
-        }
-        .boxed()
-    }
-}
 pub struct MethodUserFollowExpert;
 impl RequestHandler for MethodUserFollowExpert {
     type Request = UserFollowExpertRequest;
@@ -1411,29 +1381,8 @@ impl RequestHandler for MethodUserListFollowedExperts {
                 })
                 .await?;
             Ok(UserListFollowedExpertsResponse {
-                experts: ret
-                    .into_iter()
-                    .map(|x| UserListFollowedExpertsRow {
-                        expert_id: x.expert_id,
-                        user_public_id: x.user_public_id,
-                        name: x.username,
-                        linked_wallet: x.listening_wallet,
-                        family_name: x.family_name,
-                        given_name: x.given_name,
-                        follower_count: x.follower_count as _,
-                        description: x.description.unwrap_or_default(),
-                        social_media: x.social_media.unwrap_or_default(),
-                        risk_score: x.risk_score.unwrap_or_default(),
-                        reputation_score: x.reputation_score.unwrap_or_default(),
-                        aum: x.aum.unwrap_or_default(),
-                        joined_at: x.joined_at,
-                        requested_at: x.requested_at.unwrap_or_default(),
-                        approved_at: x.approved_at,
-                        pending_expert: x.pending_expert,
-                        approved_expert: x.approved_expert,
-                        followed: true,
-                    })
-                    .collect(),
+                experts_total: ret.first(|x| x.total).unwrap_or_default(),
+                experts: ret.into_iter().map(convert_expert_db_to_api).collect(),
             })
         }
         .boxed()
@@ -1499,6 +1448,7 @@ impl RequestHandler for MethodUserListExperts {
                 })
                 .await?;
             Ok(UserListExpertsResponse {
+                experts_total: ret.first(|x| x.total).unwrap_or_default(),
                 experts: ret.map(convert_expert_db_to_api),
             })
         }
@@ -2322,17 +2272,15 @@ impl RequestHandler for MethodUserListStrategyInitialTokenRatio {
                 .await?;
 
             Ok(UserListStrategyInitialTokenRatioResponse {
-                token_ratios: ret
-                    .into_iter()
-                    .map(|x| ListStrategyInitialTokenRatioRow {
-                        token_id: x.token_id,
-                        token_name: x.token_name,
-                        token_address: x.token_address,
-                        quantity: x.quantity,
-                        updated_at: x.updated_at,
-                        created_at: x.created_at,
-                    })
-                    .collect(),
+                token_ratios_total: ret.first(|x| x.total).unwrap_or_default(),
+                token_ratios: ret.map(|x| ListStrategyInitialTokenRatioRow {
+                    token_id: x.token_id,
+                    token_name: x.token_name,
+                    token_address: x.token_address,
+                    quantity: x.quantity,
+                    updated_at: x.updated_at,
+                    created_at: x.created_at,
+                }),
             })
         }
         .boxed()
@@ -2363,6 +2311,7 @@ impl RequestHandler for MethodExpertListFollowers {
                 .await?;
 
             Ok(ExpertListFollowersResponse {
+                followers_total: ret.first(|x| x.total).unwrap_or_default(),
                 followers: ret
                     .into_iter()
                     .map(|x| ExpertListFollowersRow {
@@ -2404,6 +2353,7 @@ impl RequestHandler for MethodExpertListBackers {
                 .await?;
 
             Ok(ExpertListBackersResponse {
+                backers_total: ret.first(|x| x.total).unwrap_or_default(),
                 backers: ret
                     .into_iter()
                     .map(|x| ExpertListBackersRow {
@@ -2486,6 +2436,7 @@ impl RequestHandler for MethodUserListDepositLedger {
                 })
                 .await?;
             Ok(UserListDepositLedgerResponse {
+                ledger_total: resp.first(|x| x.total).unwrap_or_default(),
                 ledger: resp
                     .into_iter()
                     .map(|x| UserListDepositLedgerRow {
@@ -2591,6 +2542,7 @@ impl RequestHandler for MethodUserListStrategyWallets {
                 })
                 .await?;
             Ok(UserListStrategyWalletsResponse {
+                wallets_total: resp.first(|x| x.total).unwrap_or_default(),
                 wallets: resp
                     .into_iter()
                     .map(|x| UserListStrategyWalletsRow {
@@ -2898,6 +2850,7 @@ impl RequestHandler for MethodUserListEscrowTokenContractAddresses {
                 })
                 .await?;
             Ok(UserListEscrowTokenContractAddressesResponse {
+                tokens_total: balances.first(|x| x.total).unwrap_or_default(),
                 tokens: balances.map(|x| UserListEscrowTokenContractAddressesRow {
                     blockchain: x.blockchain,
                     token_id: x.token_id,

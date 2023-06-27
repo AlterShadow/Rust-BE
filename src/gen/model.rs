@@ -285,9 +285,6 @@ pub enum EnumEndpoint {
     #[postgres(name = "UserListBackStrategyLedger")]
     UserListBackStrategyLedger = 20100,
     ///
-    #[postgres(name = "UserListExitStrategyLedger")]
-    UserListExitStrategyLedger = 20120,
-    ///
     #[postgres(name = "UserFollowExpert")]
     UserFollowExpert = 20130,
     ///
@@ -1114,6 +1111,7 @@ pub struct BackStrategyLedgerRow {
     pub quantity: String,
     pub blockchain: EnumBlockChain,
     pub dex: String,
+    pub is_back: bool,
     pub transaction_hash: String,
     pub time: i64,
 }
@@ -1130,15 +1128,6 @@ pub struct ChangeLoginWalletRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ChangeLoginWalletResponse {}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct ExitStrategyLedgerRow {
-    pub exit_ledger_id: i64,
-    pub strategy_id: i64,
-    pub exit_quantity: String,
-    pub blockchain: EnumBlockChain,
-    pub exit_time: i64,
-}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ExpertAddStrategyInitialTokenRatioRequest {
@@ -1210,6 +1199,7 @@ pub struct ExpertListBackersRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ExpertListBackersResponse {
+    pub backers_total: i64,
     pub backers: Vec<ExpertListBackersRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1235,6 +1225,7 @@ pub struct ExpertListFollowersRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ExpertListFollowersResponse {
+    pub followers_total: i64,
     pub followers: Vec<ExpertListFollowersRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1738,6 +1729,7 @@ pub struct UserListBackStrategyLedgerRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserListBackStrategyLedgerResponse {
+    pub back_ledger_total: i64,
     pub back_ledger: Vec<BackStrategyLedgerRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1751,6 +1743,7 @@ pub struct UserListBackedStrategiesRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserListBackedStrategiesResponse {
+    pub strategies_total: i64,
     pub strategies: Vec<ListStrategiesRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1764,6 +1757,7 @@ pub struct UserListDepositLedgerRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserListDepositLedgerResponse {
+    pub ledger_total: i64,
     pub ledger: Vec<UserListDepositLedgerRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1809,6 +1803,7 @@ pub struct UserListEscrowTokenContractAddressesRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserListEscrowTokenContractAddressesResponse {
+    pub tokens_total: i64,
     pub tokens: Vec<UserListEscrowTokenContractAddressesRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1821,21 +1816,6 @@ pub struct UserListEscrowTokenContractAddressesRow {
     pub description: String,
     pub blockchain: EnumBlockChain,
     pub is_stablecoin: bool,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserListExitStrategyLedgerRequest {
-    #[serde(default)]
-    pub strategy_id: Option<i64>,
-    #[serde(default)]
-    pub limit: Option<i64>,
-    #[serde(default)]
-    pub offset: Option<i64>,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserListExitStrategyLedgerResponse {
-    pub exit_ledger: Vec<ExitStrategyLedgerRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1866,6 +1846,7 @@ pub struct UserListExpertsRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserListExpertsResponse {
+    pub experts_total: i64,
     pub experts: Vec<ListExpertsRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1893,32 +1874,8 @@ pub struct UserListFollowedExpertsRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserListFollowedExpertsResponse {
-    pub experts: Vec<UserListFollowedExpertsRow>,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserListFollowedExpertsRow {
-    pub expert_id: i64,
-    pub user_public_id: i64,
-    pub linked_wallet: String,
-    pub name: String,
-    #[serde(default)]
-    pub family_name: Option<String>,
-    #[serde(default)]
-    pub given_name: Option<String>,
-    pub follower_count: i64,
-    pub description: String,
-    pub social_media: String,
-    pub risk_score: f64,
-    pub reputation_score: f64,
-    pub aum: f64,
-    pub joined_at: i64,
-    pub requested_at: i64,
-    #[serde(default)]
-    pub approved_at: Option<i64>,
-    pub pending_expert: bool,
-    pub approved_expert: bool,
-    pub followed: bool,
+    pub experts_total: i64,
+    pub experts: Vec<ListExpertsRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1980,6 +1937,7 @@ pub struct UserListStrategiesRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserListStrategiesResponse {
+    pub strategies_total: i64,
     pub strategies: Vec<ListStrategiesRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -2014,6 +1972,7 @@ pub struct UserListStrategyBackersRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserListStrategyBackersResponse {
+    pub backers_total: i64,
     pub backers: Vec<ListStrategyBackersRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -2028,6 +1987,7 @@ pub struct UserListStrategyFollowersRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserListStrategyFollowersResponse {
+    pub followers_total: i64,
     pub followers: Vec<ListStrategyFollowersRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -2038,6 +1998,7 @@ pub struct UserListStrategyInitialTokenRatioRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserListStrategyInitialTokenRatioResponse {
+    pub token_ratios_total: i64,
     pub token_ratios: Vec<ListStrategyInitialTokenRatioRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -2049,6 +2010,7 @@ pub struct UserListStrategyWalletsRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserListStrategyWalletsResponse {
+    pub wallets_total: i64,
     pub wallets: Vec<UserListStrategyWalletsRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -2066,6 +2028,7 @@ pub struct UserListStrategyWatchingWalletsRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserListStrategyWatchingWalletsResponse {
+    pub wallets_total: i64,
     pub wallets: Vec<ListStrategyWatchingWalletsRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -2093,6 +2056,7 @@ pub struct UserListTopPerformingStrategiesRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserListTopPerformingStrategiesResponse {
+    pub strategies_total: i64,
     pub strategies: Vec<ListStrategiesRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -2104,6 +2068,7 @@ pub struct UserListWalletActivityLedgerRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserListWalletActivityLedgerResponse {
+    pub wallet_activities_total: i64,
     pub wallet_activities: Vec<ListWalletActivityLedgerRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -2702,6 +2667,10 @@ impl WsRequest for UserListStrategiesRequest {
   ],
   "returns": [
     {
+      "name": "strategies_total",
+      "ty": "BigInt"
+    },
+    {
       "name": "strategies",
       "ty": {
         "Vec": {
@@ -2848,6 +2817,10 @@ impl WsRequest for UserListTopPerformingStrategiesRequest {
     }
   ],
   "returns": [
+    {
+      "name": "strategies_total",
+      "ty": "BigInt"
+    },
     {
       "name": "strategies",
       "ty": {
@@ -3000,6 +2973,10 @@ impl WsRequest for UserListStrategyBackersRequest {
   ],
   "returns": [
     {
+      "name": "backers_total",
+      "ty": "BigInt"
+    },
+    {
       "name": "backers",
       "ty": {
         "DataTable": {
@@ -3060,6 +3037,10 @@ impl WsRequest for UserListStrategyFollowersRequest {
     }
   ],
   "returns": [
+    {
+      "name": "followers_total",
+      "ty": "BigInt"
+    },
     {
       "name": "followers",
       "ty": {
@@ -3669,6 +3650,10 @@ impl WsRequest for UserListBackedStrategiesRequest {
   ],
   "returns": [
     {
+      "name": "strategies_total",
+      "ty": "BigInt"
+    },
+    {
       "name": "strategies",
       "ty": {
         "Vec": {
@@ -3816,6 +3801,10 @@ impl WsRequest for UserListBackStrategyLedgerRequest {
   ],
   "returns": [
     {
+      "name": "back_ledger_total",
+      "ty": "BigInt"
+    },
+    {
       "name": "back_ledger",
       "ty": {
         "DataTable": {
@@ -3844,6 +3833,10 @@ impl WsRequest for UserListBackStrategyLedgerRequest {
               "ty": "String"
             },
             {
+              "name": "is_back",
+              "ty": "Boolean"
+            },
+            {
               "name": "transaction_hash",
               "ty": "String"
             },
@@ -3863,75 +3856,6 @@ impl WsRequest for UserListBackStrategyLedgerRequest {
 }
 impl WsResponse for UserListBackStrategyLedgerResponse {
     type Request = UserListBackStrategyLedgerRequest;
-}
-
-impl WsRequest for UserListExitStrategyLedgerRequest {
-    type Response = UserListExitStrategyLedgerResponse;
-    const METHOD_ID: u32 = 20120;
-    const SCHEMA: &'static str = r#"{
-  "name": "UserListExitStrategyLedger",
-  "code": 20120,
-  "parameters": [
-    {
-      "name": "strategy_id",
-      "ty": {
-        "Optional": "BigInt"
-      }
-    },
-    {
-      "name": "limit",
-      "ty": {
-        "Optional": "BigInt"
-      }
-    },
-    {
-      "name": "offset",
-      "ty": {
-        "Optional": "BigInt"
-      }
-    }
-  ],
-  "returns": [
-    {
-      "name": "exit_ledger",
-      "ty": {
-        "DataTable": {
-          "name": "ExitStrategyLedgerRow",
-          "fields": [
-            {
-              "name": "exit_ledger_id",
-              "ty": "BigInt"
-            },
-            {
-              "name": "strategy_id",
-              "ty": "BigInt"
-            },
-            {
-              "name": "exit_quantity",
-              "ty": "String"
-            },
-            {
-              "name": "blockchain",
-              "ty": {
-                "EnumRef": "block_chain"
-              }
-            },
-            {
-              "name": "exit_time",
-              "ty": "BigInt"
-            }
-          ]
-        }
-      }
-    }
-  ],
-  "stream_response": null,
-  "description": "",
-  "json_schema": null
-}"#;
-}
-impl WsResponse for UserListExitStrategyLedgerResponse {
-    type Request = UserListExitStrategyLedgerRequest;
 }
 
 impl WsRequest for UserFollowExpertRequest {
@@ -3983,90 +3907,104 @@ impl WsRequest for UserListFollowedExpertsRequest {
   ],
   "returns": [
     {
+      "name": "experts_total",
+      "ty": "BigInt"
+    },
+    {
       "name": "experts",
       "ty": {
-        "DataTable": {
-          "name": "UserListFollowedExpertsRow",
-          "fields": [
-            {
-              "name": "expert_id",
-              "ty": "BigInt"
-            },
-            {
-              "name": "user_public_id",
-              "ty": "BigInt"
-            },
-            {
-              "name": "linked_wallet",
-              "ty": "String"
-            },
-            {
-              "name": "name",
-              "ty": "String"
-            },
-            {
-              "name": "family_name",
-              "ty": {
-                "Optional": "String"
+        "Vec": {
+          "Struct": {
+            "name": "ListExpertsRow",
+            "fields": [
+              {
+                "name": "expert_id",
+                "ty": "BigInt"
+              },
+              {
+                "name": "user_public_id",
+                "ty": "BigInt"
+              },
+              {
+                "name": "linked_wallet",
+                "ty": "String"
+              },
+              {
+                "name": "name",
+                "ty": "String"
+              },
+              {
+                "name": "family_name",
+                "ty": {
+                  "Optional": "String"
+                }
+              },
+              {
+                "name": "given_name",
+                "ty": {
+                  "Optional": "String"
+                }
+              },
+              {
+                "name": "follower_count",
+                "ty": "BigInt"
+              },
+              {
+                "name": "backer_count",
+                "ty": "BigInt"
+              },
+              {
+                "name": "description",
+                "ty": "String"
+              },
+              {
+                "name": "social_media",
+                "ty": "String"
+              },
+              {
+                "name": "risk_score",
+                "ty": "Numeric"
+              },
+              {
+                "name": "reputation_score",
+                "ty": "Numeric"
+              },
+              {
+                "name": "consistent_score",
+                "ty": "Numeric"
+              },
+              {
+                "name": "aum",
+                "ty": "Numeric"
+              },
+              {
+                "name": "joined_at",
+                "ty": "BigInt"
+              },
+              {
+                "name": "requested_at",
+                "ty": "BigInt"
+              },
+              {
+                "name": "approved_at",
+                "ty": {
+                  "Optional": "BigInt"
+                }
+              },
+              {
+                "name": "pending_expert",
+                "ty": "Boolean"
+              },
+              {
+                "name": "approved_expert",
+                "ty": "Boolean"
+              },
+              {
+                "name": "followed",
+                "ty": "Boolean"
               }
-            },
-            {
-              "name": "given_name",
-              "ty": {
-                "Optional": "String"
-              }
-            },
-            {
-              "name": "follower_count",
-              "ty": "BigInt"
-            },
-            {
-              "name": "description",
-              "ty": "String"
-            },
-            {
-              "name": "social_media",
-              "ty": "String"
-            },
-            {
-              "name": "risk_score",
-              "ty": "Numeric"
-            },
-            {
-              "name": "reputation_score",
-              "ty": "Numeric"
-            },
-            {
-              "name": "aum",
-              "ty": "Numeric"
-            },
-            {
-              "name": "joined_at",
-              "ty": "BigInt"
-            },
-            {
-              "name": "requested_at",
-              "ty": "BigInt"
-            },
-            {
-              "name": "approved_at",
-              "ty": {
-                "Optional": "BigInt"
-              }
-            },
-            {
-              "name": "pending_expert",
-              "ty": "Boolean"
-            },
-            {
-              "name": "approved_expert",
-              "ty": "Boolean"
-            },
-            {
-              "name": "followed",
-              "ty": "Boolean"
-            }
-          ]
+            ]
+          }
         }
       }
     }
@@ -4182,6 +4120,10 @@ impl WsRequest for UserListExpertsRequest {
     }
   ],
   "returns": [
+    {
+      "name": "experts_total",
+      "ty": "BigInt"
+    },
     {
       "name": "experts",
       "ty": {
@@ -5545,6 +5487,10 @@ impl WsRequest for UserListStrategyWatchingWalletsRequest {
   ],
   "returns": [
     {
+      "name": "wallets_total",
+      "ty": "BigInt"
+    },
+    {
       "name": "wallets",
       "ty": {
         "DataTable": {
@@ -5601,6 +5547,10 @@ impl WsRequest for UserListWalletActivityLedgerRequest {
     }
   ],
   "returns": [
+    {
+      "name": "wallet_activities_total",
+      "ty": "BigInt"
+    },
     {
       "name": "wallet_activities",
       "ty": {
@@ -5767,6 +5717,10 @@ impl WsRequest for UserListStrategyInitialTokenRatioRequest {
   ],
   "returns": [
     {
+      "name": "token_ratios_total",
+      "ty": "BigInt"
+    },
+    {
       "name": "token_ratios",
       "ty": {
         "DataTable": {
@@ -5831,6 +5785,10 @@ impl WsRequest for ExpertListFollowersRequest {
     }
   ],
   "returns": [
+    {
+      "name": "followers_total",
+      "ty": "BigInt"
+    },
     {
       "name": "followers",
       "ty": {
@@ -5900,6 +5858,10 @@ impl WsRequest for ExpertListBackersRequest {
     }
   ],
   "returns": [
+    {
+      "name": "backers_total",
+      "ty": "BigInt"
+    },
     {
       "name": "backers",
       "ty": {
@@ -6068,6 +6030,10 @@ impl WsRequest for UserListDepositLedgerRequest {
   ],
   "returns": [
     {
+      "name": "ledger_total",
+      "ty": "BigInt"
+    },
+    {
       "name": "ledger",
       "ty": {
         "Vec": {
@@ -6213,6 +6179,10 @@ impl WsRequest for UserListStrategyWalletsRequest {
     }
   ],
   "returns": [
+    {
+      "name": "wallets_total",
+      "ty": "BigInt"
+    },
     {
       "name": "wallets",
       "ty": {
@@ -6574,6 +6544,10 @@ impl WsRequest for UserListEscrowTokenContractAddressesRequest {
     }
   ],
   "returns": [
+    {
+      "name": "tokens_total",
+      "ty": "BigInt"
+    },
     {
       "name": "tokens",
       "ty": {

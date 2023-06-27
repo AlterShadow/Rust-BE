@@ -149,6 +149,7 @@ pub struct FunAuthUpdateUserTableRespRow {}
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunExpertListBackersRespRow {
+    pub total: i64,
     pub public_id: i64,
     pub username: String,
     #[serde(default)]
@@ -161,6 +162,7 @@ pub struct FunExpertListBackersRespRow {
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunExpertListFollowersRespRow {
+    pub total: i64,
     pub public_id: i64,
     pub username: String,
     #[serde(default)]
@@ -358,6 +360,7 @@ pub struct FunUserListBackStrategyLedgerRespRow {
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserListDepositLedgerRespRow {
+    pub total: i64,
     pub blockchain: EnumBlockChain,
     pub user_address: String,
     pub contract_address: String,
@@ -369,6 +372,7 @@ pub struct FunUserListDepositLedgerRespRow {
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserListEscrowTokenContractAddressRespRow {
+    pub total: i64,
     pub token_id: i64,
     pub blockchain: EnumBlockChain,
     pub address: String,
@@ -412,6 +416,7 @@ pub struct FunUserListStrategyAuditRulesRespRow {
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserListStrategyBackersRespRow {
     pub user_id: i64,
+    pub total: i64,
     pub user_public_id: i64,
     pub username: String,
     pub wallet_address: String,
@@ -420,6 +425,7 @@ pub struct FunUserListStrategyBackersRespRow {
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserListStrategyFollowersRespRow {
+    pub total: i64,
     pub user_id: i64,
     pub user_public_id: i64,
     pub username: String,
@@ -429,6 +435,7 @@ pub struct FunUserListStrategyFollowersRespRow {
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserListStrategyInitialTokenRatiosRespRow {
+    pub total: i64,
     pub strategy_id: i64,
     pub blockchain: EnumBlockChain,
     pub token_id: i64,
@@ -441,6 +448,7 @@ pub struct FunUserListStrategyInitialTokenRatiosRespRow {
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserListStrategyWalletsRespRow {
+    pub total: i64,
     pub blockchain: EnumBlockChain,
     pub address: String,
     pub created_at: i64,
