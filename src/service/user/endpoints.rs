@@ -311,6 +311,31 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
         ),
         // endpoint_user_exit_strategy(),
         EndpointSchema::new(
+            "UserListExitStrategyLedger",
+            20120,
+            vec![
+                Field::new("strategy_id", Type::optional(Type::BigInt)),
+                Field::new("limit", Type::optional(Type::BigInt)),
+                Field::new("offset", Type::optional(Type::BigInt)),
+            ],
+            vec![
+                Field::new("exit_ledger_total", Type::BigInt),
+                Field::new(
+                    "exit_ledger",
+                    Type::datatable(
+                        "ExitStrategyLedgerRow",
+                        vec![
+                            Field::new("exit_ledger_id", Type::BigInt),
+                            Field::new("strategy_id", Type::BigInt),
+                            Field::new("exit_quantity", Type::String),
+                            Field::new("blockchain", Type::enum_ref("block_chain")),
+                            Field::new("exit_time", Type::BigInt),
+                        ],
+                    ),
+                ),
+            ],
+        ),
+        EndpointSchema::new(
             "UserFollowExpert",
             20130,
             vec![Field::new("expert_id", Type::BigInt)],

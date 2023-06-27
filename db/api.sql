@@ -794,6 +794,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION api.fun_user_list_exit_strategy_ledger(a_user_id bigint, a_strategy_id bigint DEFAULT NULL)
 RETURNS table (
+    "total" bigint,
     "exit_ledger_id" bigint,
     "strategy_id" bigint,
     "exit_quantity" varchar,
@@ -805,11 +806,13 @@ AS $$
     
 BEGIN
 
-    RETURN QUERY SELECT a.pkey_id AS exit_ledger_id,
-												a.fkey_strategy_id			AS strategy_id,
-												a.quantity_sp_tokens 		AS exit_quantity,
-												a.blockchain 						AS blockchain,
-												a.happened_at       		AS exit_time
+    RETURN QUERY SELECT 
+                        COUNT(*) OVER() AS total,
+                        a.pkey_id AS exit_ledger_id,
+                        a.fkey_strategy_id			AS strategy_id,
+                        a.quantity_sp_tokens 		AS exit_quantity,
+                        a.blockchain 				AS blockchain,
+                        a.happened_at       		AS exit_time
 				FROM tbl.user_back_exit_strategy_ledger AS a
 				WHERE a.fkey_user_id = a_user_id
 					AND (a_strategy_id NOTNULL OR a_strategy_id = a.fkey_strategy_id)

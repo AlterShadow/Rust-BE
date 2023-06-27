@@ -384,6 +384,7 @@ pub struct FunUserListEscrowTokenContractAddressRespRow {
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserListExitStrategyLedgerRespRow {
+    pub total: i64,
     pub exit_ledger_id: i64,
     pub strategy_id: i64,
     pub exit_quantity: String,

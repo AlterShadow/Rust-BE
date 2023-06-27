@@ -285,6 +285,9 @@ pub enum EnumEndpoint {
     #[postgres(name = "UserListBackStrategyLedger")]
     UserListBackStrategyLedger = 20100,
     ///
+    #[postgres(name = "UserListExitStrategyLedger")]
+    UserListExitStrategyLedger = 20120,
+    ///
     #[postgres(name = "UserFollowExpert")]
     UserFollowExpert = 20130,
     ///
@@ -1130,6 +1133,15 @@ pub struct ChangeLoginWalletRequest {
 pub struct ChangeLoginWalletResponse {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct ExitStrategyLedgerRow {
+    pub exit_ledger_id: i64,
+    pub strategy_id: i64,
+    pub exit_quantity: String,
+    pub blockchain: EnumBlockChain,
+    pub exit_time: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct ExpertAddStrategyInitialTokenRatioRequest {
     pub strategy_id: i64,
     pub token_id: i64,
@@ -1816,6 +1828,22 @@ pub struct UserListEscrowTokenContractAddressesRow {
     pub description: String,
     pub blockchain: EnumBlockChain,
     pub is_stablecoin: bool,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListExitStrategyLedgerRequest {
+    #[serde(default)]
+    pub strategy_id: Option<i64>,
+    #[serde(default)]
+    pub limit: Option<i64>,
+    #[serde(default)]
+    pub offset: Option<i64>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListExitStrategyLedgerResponse {
+    pub exit_ledger_total: i64,
+    pub exit_ledger: Vec<ExitStrategyLedgerRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -3856,6 +3884,79 @@ impl WsRequest for UserListBackStrategyLedgerRequest {
 }
 impl WsResponse for UserListBackStrategyLedgerResponse {
     type Request = UserListBackStrategyLedgerRequest;
+}
+
+impl WsRequest for UserListExitStrategyLedgerRequest {
+    type Response = UserListExitStrategyLedgerResponse;
+    const METHOD_ID: u32 = 20120;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserListExitStrategyLedger",
+  "code": 20120,
+  "parameters": [
+    {
+      "name": "strategy_id",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "limit",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "offset",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    }
+  ],
+  "returns": [
+    {
+      "name": "exit_ledger_total",
+      "ty": "BigInt"
+    },
+    {
+      "name": "exit_ledger",
+      "ty": {
+        "DataTable": {
+          "name": "ExitStrategyLedgerRow",
+          "fields": [
+            {
+              "name": "exit_ledger_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "exit_quantity",
+              "ty": "String"
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
+            },
+            {
+              "name": "exit_time",
+              "ty": "BigInt"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": null,
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for UserListExitStrategyLedgerResponse {
+    type Request = UserListExitStrategyLedgerRequest;
 }
 
 impl WsRequest for UserFollowExpertRequest {

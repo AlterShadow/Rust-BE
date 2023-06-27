@@ -353,6 +353,7 @@ END
                 Field::new("strategy_id", Type::optional(Type::BigInt)),
             ],
             vec![
+                Field::new("total", Type::BigInt),
                 Field::new("exit_ledger_id", Type::BigInt),
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("exit_quantity", Type::String),
@@ -362,11 +363,13 @@ END
             r#"
 BEGIN
 
-    RETURN QUERY SELECT a.pkey_id AS exit_ledger_id,
-												a.fkey_strategy_id			AS strategy_id,
-												a.quantity_sp_tokens 		AS exit_quantity,
-												a.blockchain 						AS blockchain,
-												a.happened_at       		AS exit_time
+    RETURN QUERY SELECT 
+                        COUNT(*) OVER() AS total,
+                        a.pkey_id AS exit_ledger_id,
+                        a.fkey_strategy_id			AS strategy_id,
+                        a.quantity_sp_tokens 		AS exit_quantity,
+                        a.blockchain 				AS blockchain,
+                        a.happened_at       		AS exit_time
 				FROM tbl.user_back_exit_strategy_ledger AS a
 				WHERE a.fkey_user_id = a_user_id
 					AND (a_strategy_id NOTNULL OR a_strategy_id = a.fkey_strategy_id)

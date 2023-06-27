@@ -1328,7 +1328,42 @@ impl RequestHandler for MethodUserUnfollowStrategy {
         .boxed()
     }
 }
+pub struct MethodUserListExitStrategyLedger;
+impl RequestHandler for MethodUserListExitStrategyLedger {
+    type Request = UserListExitStrategyLedgerRequest;
 
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        _req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db: DbClient = toolbox.get_db();
+        async move {
+            ensure_user_role(ctx, EnumRole::User)?;
+            let ret = db
+                .execute(FunUserListExitStrategyLedgerReq {
+                    user_id: ctx.user_id,
+                    strategy_id: None,
+                })
+                .await?;
+            Ok(UserListExitStrategyLedgerResponse {
+                exit_ledger_total: ret.first(|x| x.total).unwrap_or_default(),
+                exit_ledger: ret
+                    .into_iter()
+                    .map(|x| ExitStrategyLedgerRow {
+                        exit_ledger_id: x.exit_ledger_id,
+                        strategy_id: x.strategy_id,
+                        exit_quantity: x.exit_quantity,
+                        blockchain: x.blockchain,
+                        exit_time: x.exit_time,
+                    })
+                    .collect(),
+            })
+        }
+        .boxed()
+    }
+}
 pub struct MethodUserFollowExpert;
 impl RequestHandler for MethodUserFollowExpert {
     type Request = UserFollowExpertRequest;

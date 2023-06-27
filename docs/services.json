@@ -1535,6 +1535,71 @@
           "json_schema": null
         },
         {
+          "name": "UserListExitStrategyLedger",
+          "code": 20120,
+          "parameters": [
+            {
+              "name": "strategy_id",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "limit",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "offset",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "name": "exit_ledger_total",
+              "ty": "BigInt"
+            },
+            {
+              "name": "exit_ledger",
+              "ty": {
+                "DataTable": {
+                  "name": "ExitStrategyLedgerRow",
+                  "fields": [
+                    {
+                      "name": "exit_ledger_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "strategy_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "exit_quantity",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "blockchain",
+                      "ty": {
+                        "EnumRef": "block_chain"
+                      }
+                    },
+                    {
+                      "name": "exit_time",
+                      "ty": "BigInt"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "stream_response": null,
+          "description": "",
+          "json_schema": null
+        },
+        {
           "name": "UserFollowExpert",
           "code": 20130,
           "parameters": [
