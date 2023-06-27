@@ -2954,9 +2954,9 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY INSERT INTO tbl.strategy_pool_contract (fkey_strategy_id, blockchain, address, created_at)
+    RETURN QUERY INSERT INTO tbl.strategy_pool_contract AS spc (fkey_strategy_id, blockchain, address, created_at)
     VALUES (a_strategy_id, a_blockchain, a_address, EXTRACT(EPOCH FROM NOW()))
-    RETURNING pkey_id;
+    RETURNING spc.pkey_id;
 END
 
 $$;
