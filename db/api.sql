@@ -1355,12 +1355,18 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY SELECT a.pkey_id            AS watch_wallet_id,
-												(SELECT address FROM tbl.expert_watched_wallet WHERE pkey_id = a.fkey_expert_watched_wallet_id) AS wallet_address,
-												(SELECT w.blockchain FROM tbl.expert_watched_wallet AS w WHERE pkey_id = a.fkey_expert_watched_wallet_id) AS blockchain,
-                        a.ratio_distribution AS ratio
-                 FROM tbl.strategy_watched_wallet AS a
-                 WHERE a.fkey_strategy_id = a_strategy_id;
+		RETURN QUERY
+		SELECT
+				sw.pkey_id AS watch_wallet_id,
+				ew.address AS wallet_address,
+				ew.blockchain AS blockchain,
+				sw.ratio_distribution AS ratio
+		FROM
+				tbl.strategy_watched_wallet AS sw
+		JOIN
+				tbl.expert_watched_wallet AS ew ON ew.pkey_id = sw.fkey_expert_watched_wallet_id
+		WHERE
+				sw.fkey_strategy_id = a_strategy_id;
 END
 
 $$;
