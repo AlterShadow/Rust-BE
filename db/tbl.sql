@@ -205,6 +205,16 @@ CREATE TABLE tbl.strategy_initial_token_ratio (
     CONSTRAINT strategy_initial_token_ratio_pk PRIMARY KEY (pkey_id)
 );
 
+-- Table: strategy_pool_contract_asset_balance
+CREATE TABLE tbl.strategy_pool_contract_asset_balance (
+	pkey_id bigint NOT NULL DEFAULT nextval('tbl.seq_strategy_pool_contract_asset_balance_id'),
+	fkey_strategy_pool_contract_id bigint NOT NULL,
+	fkey_token_id bigint NOT NULL,
+	balance varchar(64) NOT NULL,
+	CONSTRAINT strategy_pool_contract_asset_balance_ak_1 UNIQUE (fkey_strategy_pool_contract_id, fkey_token_id) NOT DEFERRABLE  INITIALLY IMMEDIATE,
+	CONSTRAINT strategy_pool_contract_asset_balance_pk PRIMARY KEY (pkey_id)
+);
+
 -- Table: strategy_pool_contract
 CREATE TABLE tbl.strategy_pool_contract (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_strategy_pool_contract_id'),
@@ -800,6 +810,13 @@ CREATE SEQUENCE tbl.seq_strategy_initial_token_ratio_id
       NO MINVALUE
       NO MAXVALUE
       NO CYCLE
+;
+
+-- Sequence: seq_strategy_pool_contract_asset_balance_id
+CREATE SEQUENCE tbl.seq_strategy_pool_contract_asset_balance_id
+			NO MINVALUE
+			NO MAXVALUE
+			NO CYCLE
 ;
 
 -- Sequence: seq_strategy_pool_contract_id
