@@ -124,6 +124,85 @@ END
         "#,
         ),
         ProceduralFunction::new(
+            "fun_watcher_get_strategy_tokens_from_ledger",
+            vec![Field::new("strategy_id", Type::BigInt)],
+            vec![
+                Field::new("token_id", Type::BigInt),
+                Field::new("token_name", Type::String),
+                Field::new("token_symbol", Type::String),
+                Field::new("token_address", Type::String),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("amount", Type::String),
+            ],
+            r#"
+BEGIN
+		RETURN QUERY
+		WITH wallet_ids AS (
+			SELECT fkey_expert_watched_wallet_id
+			FROM tbl.strategy_watched_wallet
+			WHERE fkey_strategy_id = a_strategy_id
+		),
+
+		token_symbols AS (
+			SELECT etca.pkey_id, etca.symbol, etca.blockchain AS etca_blockchain
+			FROM tbl.escrow_token_contract_address AS etca
+		),
+
+		token_out_balances AS (
+			SELECT
+				ts.symbol,
+				ts.etca_blockchain,
+				COALESCE(SUM(swwtl.amount_out::NUMERIC), 0) as amount_out
+			FROM tbl.strategy_watching_wallet_trade_ledger AS swwtl
+			INNER JOIN token_symbols AS ts ON swwtl.fkey_token_out = ts.pkey_id
+			WHERE swwtl.expert_watched_wallet_id IN (SELECT * FROM wallet_ids)
+			GROUP BY ts.symbol, ts.etca_blockchain
+		),
+
+		token_in_balances AS (
+			SELECT
+				ts.symbol,
+				ts.etca_blockchain,
+				COALESCE(SUM(swwtl.amount_in::NUMERIC), 0) as amount_in
+			FROM tbl.strategy_watching_wallet_trade_ledger AS swwtl
+			INNER JOIN token_symbols AS ts ON swwtl.fkey_token_in = ts.pkey_id
+			WHERE swwtl.expert_watched_wallet_id IN (SELECT * FROM wallet_ids)
+			GROUP BY ts.symbol, ts.etca_blockchain
+		),
+
+		token_balances AS (
+			SELECT
+				tob.symbol,
+				tob.etca_blockchain,
+				tob.amount_out - COALESCE(tib.amount_in, 0) AS token_balance
+			FROM token_out_balances as tob
+			LEFT JOIN token_in_balances as tib ON tob.symbol = tib.symbol AND tob.etca_blockchain = tib.etca_blockchain
+		),
+
+		token_contracts AS (
+			SELECT
+				etca.pkey_id AS token_id,
+				etca.symbol AS token_symbol,
+				etca.short_name AS token_name,
+				etca.address AS token_address,
+				etca.blockchain AS etca_blockchain
+			FROM tbl.escrow_token_contract_address AS etca
+		)
+
+		SELECT
+			tc.token_id,
+			tc.token_name,
+			tc.token_symbol,
+			tc.token_address,
+			tc.etca_blockchain AS blockchain,
+			CAST(tb.token_balance AS VARCHAR) AS amount
+		FROM token_balances AS tb
+		INNER JOIN token_contracts AS tc ON tb.symbol = tc.token_symbol AND tb.etca_blockchain = tc.etca_blockchain
+		WHERE tb.token_balance > 0;
+END
+"#,
+        ),
+        ProceduralFunction::new(
             "fun_watcher_list_strategy_escrow_pending_wallet_balance",
             vec![
                 Field::new("strategy_id", Type::optional(Type::BigInt)),
