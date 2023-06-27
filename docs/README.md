@@ -79,14 +79,14 @@ ID: 3
 |30010|AdminListUsers|limit, offset, user_id, address, username, email, role|users_total, users||
 |30020|AdminSetUserRole|user_id, role|||
 |30030|AdminSetBlockUser|user_id, blocked|||
-|30060|AdminListPendingExpertApplications|offset, limit|users|Admin approves a user to become an expert|
+|30060|AdminListPendingExpertApplications|offset, limit|users_total, users|Admin approves a user to become an expert|
 |30040|AdminApproveUserBecomeExpert|user_id|success|Admin approves a user to become an expert|
 |30050|AdminRejectUserBecomeExpert|user_id|success|Admin approves a user to become an expert|
 |30070|AdminGetSystemConfig||config_placeholder_1, config_placeholder_2|Admin get system config|
 |30080|AdminUpdateSystemConfig|config_placeholder_1, config_placeholder_2|success|Admin updates system config|
 |30090|AdminListExperts|limit, offset, expert_id, user_id, user_public_id, username, family_name, given_name, description, social_media|experts_total, experts|Admin lists experts|
-|30100|AdminListBackers|offset, limit, user_id, user_public_id, username, family_name, given_name|backers||
-|30110|AdminListStrategies|offset, limit, strategy_id, strategy_name, expert_public_id, expert_name, description, pending_approval, approved|strategies||
+|30100|AdminListBackers|offset, limit, user_id, user_public_id, username, family_name, given_name|backers_total, backers||
+|30110|AdminListStrategies|offset, limit, strategy_id, strategy_name, expert_public_id, expert_name, description, pending_approval, approved|strategies_total, strategies||
 |30120|AdminApproveStrategy|strategy_id|success|Admin approves strategy|
 |30130|AdminRejectStrategy|strategy_id|success||
 |31002|AdminAddAuditRule|rule_id, name, description|||

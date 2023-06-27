@@ -888,6 +888,7 @@ pub struct AdminListBackersRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminListBackersResponse {
+    pub backers_total: i64,
     pub backers: Vec<AdminListBackersRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -942,6 +943,7 @@ pub struct AdminListPendingExpertApplicationsRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminListPendingExpertApplicationsResponse {
+    pub users_total: i64,
     pub users: Vec<ListPendingExpertApplicationsRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -969,6 +971,7 @@ pub struct AdminListStrategiesRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminListStrategiesResponse {
+    pub strategies_total: i64,
     pub strategies: Vec<ListStrategiesRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -6898,6 +6901,10 @@ impl WsRequest for AdminListPendingExpertApplicationsRequest {
   ],
   "returns": [
     {
+      "name": "users_total",
+      "ty": "BigInt"
+    },
+    {
       "name": "users",
       "ty": {
         "DataTable": {
@@ -7309,6 +7316,10 @@ impl WsRequest for AdminListBackersRequest {
   ],
   "returns": [
     {
+      "name": "backers_total",
+      "ty": "BigInt"
+    },
+    {
       "name": "backers",
       "ty": {
         "DataTable": {
@@ -7419,6 +7430,10 @@ impl WsRequest for AdminListStrategiesRequest {
     }
   ],
   "returns": [
+    {
+      "name": "strategies_total",
+      "ty": "BigInt"
+    },
     {
       "name": "strategies",
       "ty": {

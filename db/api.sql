@@ -2161,6 +2161,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION api.fun_admin_list_pending_user_expert_applications(a_limit bigint, a_offset bigint)
 RETURNS table (
+    "total" bigint,
     "user_public_id" bigint,
     "name" varchar,
     "linked_wallet" varchar,
@@ -2179,7 +2180,8 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY SELECT a.public_id                AS user_public_id,
+    RETURN QUERY SELECT COUNT(*) OVER() AS total,
+                        a.public_id                AS user_public_id,
                         a.username                 AS name,
                         a.address                  AS linked_wallet,
                         (SELECT COUNT(*)
@@ -2320,6 +2322,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION api.fun_admin_list_backers(a_offset bigint, a_limit bigint, a_user_id bigint DEFAULT NULL, a_user_public_id bigint DEFAULT NULL, a_username varchar DEFAULT NULL, a_family_name varchar DEFAULT NULL, a_given_name varchar DEFAULT NULL)
 RETURNS table (
+    "total" bigint,
     "user_id" bigint,
     "user_public_id" bigint,
     "username" varchar,
@@ -2330,7 +2333,8 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY SELECT a.pkey_id AS user_id,
+    RETURN QUERY SELECT COUNT(*) OVER() AS total,
+                        a.pkey_id AS user_id,
                         a.public_id AS user_public_id,
                         a.username AS username,
                         a.address AS login_wallet_address,

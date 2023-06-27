@@ -4213,6 +4213,10 @@
           ],
           "returns": [
             {
+              "name": "users_total",
+              "ty": "BigInt"
+            },
+            {
               "name": "users",
               "ty": {
                 "DataTable": {
@@ -4576,6 +4580,10 @@
           ],
           "returns": [
             {
+              "name": "backers_total",
+              "ty": "BigInt"
+            },
+            {
               "name": "backers",
               "ty": {
                 "DataTable": {
@@ -4678,6 +4686,10 @@
             }
           ],
           "returns": [
+            {
+              "name": "strategies_total",
+              "ty": "BigInt"
+            },
             {
               "name": "strategies",
               "ty": {

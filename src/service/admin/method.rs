@@ -199,23 +199,20 @@ impl RequestHandler for MethodAdminListPendingExpertApplications {
                 .await?;
 
             Ok(AdminListPendingExpertApplicationsResponse {
-                users: ret
-                    .into_rows()
-                    .into_iter()
-                    .map(|x| ListPendingExpertApplicationsRow {
-                        user_id: x.user_public_id,
-                        name: x.name,
-                        linked_wallet: x.linked_wallet,
-                        joined_at: x.joined_at.unwrap_or_default(),
-                        requested_at: x.requested_at.unwrap_or_default(),
-                        follower_count: x.follower_count as _,
-                        description: x.description.unwrap_or_default(),
-                        social_media: x.social_media.unwrap_or_default(),
-                        risk_score: x.risk_score.unwrap_or_default(),
-                        reputation_score: x.reputation_score.unwrap_or_default(),
-                        aum: x.aum.unwrap_or_default(),
-                    })
-                    .collect(),
+                users_total: ret.first(|x| x.total).unwrap_or_default(),
+                users: ret.map(|x| ListPendingExpertApplicationsRow {
+                    user_id: x.user_public_id,
+                    name: x.name,
+                    linked_wallet: x.linked_wallet,
+                    joined_at: x.joined_at.unwrap_or_default(),
+                    requested_at: x.requested_at.unwrap_or_default(),
+                    follower_count: x.follower_count as _,
+                    description: x.description.unwrap_or_default(),
+                    social_media: x.social_media.unwrap_or_default(),
+                    risk_score: x.risk_score.unwrap_or_default(),
+                    reputation_score: x.reputation_score.unwrap_or_default(),
+                    aum: x.aum.unwrap_or_default(),
+                }),
             })
         }
         .boxed()
@@ -345,19 +342,17 @@ impl RequestHandler for MethodAdminListBackers {
                 .await?;
 
             Ok(AdminListBackersResponse {
-                backers: ret
-                    .into_iter()
-                    .map(|x| AdminListBackersRow {
-                        username: x.username,
-                        user_id: x.user_public_id,
-                        joined_at: x.joined_at,
-                        login_wallet_address: x.login_wallet_address,
-                        // TODO: calculate these fees and total backing amount
-                        total_platform_fee_paid: 0.0,
-                        total_strategy_fee_paid: 0.0,
-                        total_backing_amount: 0.0,
-                    })
-                    .collect(),
+                backers_total: ret.first(|x| x.total).unwrap_or_default(),
+                backers: ret.map(|x| AdminListBackersRow {
+                    username: x.username,
+                    user_id: x.user_public_id,
+                    joined_at: x.joined_at,
+                    login_wallet_address: x.login_wallet_address,
+                    // TODO: calculate these fees and total backing amount
+                    total_platform_fee_paid: 0.0,
+                    total_strategy_fee_paid: 0.0,
+                    total_backing_amount: 0.0,
+                }),
             })
         }
         .boxed()
@@ -392,6 +387,7 @@ impl RequestHandler for MethodAdminListStrategies {
                 .await?;
 
             Ok(AdminListStrategiesResponse {
+                strategies_total: ret.first(|x| x.total).unwrap_or_default(),
                 strategies: ret.map(convert_strategy_db_to_api),
             })
         }

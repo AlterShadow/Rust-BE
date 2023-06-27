@@ -30,6 +30,7 @@ pub struct FunAdminGetSystemConfigRespRow {
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunAdminListBackersRespRow {
+    pub total: i64,
     pub user_id: i64,
     pub user_public_id: i64,
     pub username: String,
@@ -57,6 +58,7 @@ pub struct FunAdminListEscrowTokenContractAddressRespRow {
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunAdminListPendingUserExpertApplicationsRespRow {
+    pub total: i64,
     pub user_public_id: i64,
     pub name: String,
     pub linked_wallet: String,

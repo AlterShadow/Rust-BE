@@ -132,6 +132,7 @@ END
                 Field::new("offset", Type::BigInt),
             ],
             vec![
+                Field::new("total", Type::BigInt),
                 Field::new("user_public_id", Type::BigInt),
                 Field::new("name", Type::String),
                 Field::new("linked_wallet", Type::String),
@@ -148,7 +149,8 @@ END
             ],
             r#"
 BEGIN
-    RETURN QUERY SELECT a.public_id                AS user_public_id,
+    RETURN QUERY SELECT COUNT(*) OVER() AS total,
+                        a.public_id                AS user_public_id,
                         a.username                 AS name,
                         a.address                  AS linked_wallet,
                         (SELECT COUNT(*)
@@ -264,6 +266,7 @@ END
                 Field::new("given_name", Type::optional(Type::String)),
             ],
             vec![
+                Field::new("total", Type::BigInt),
                 Field::new("user_id", Type::BigInt),
                 Field::new("user_public_id", Type::BigInt),
                 Field::new("username", Type::String),
@@ -272,7 +275,8 @@ END
             ],
             r#"
 BEGIN
-    RETURN QUERY SELECT a.pkey_id AS user_id,
+    RETURN QUERY SELECT COUNT(*) OVER() AS total,
+                        a.pkey_id AS user_id,
                         a.public_id AS user_public_id,
                         a.username AS username,
                         a.address AS login_wallet_address,
