@@ -2633,17 +2633,18 @@ BEGIN
     FROM tbl.expert_watched_wallet
     WHERE address = a_address
       AND blockchain = a_blockchain;
-    SELECT pkey_id
-    INTO _fkey_token_in
+    SELECT pkey_id, symbol
+    INTO _fkey_token_in, _fkey_token_in_name
     FROM tbl.escrow_token_contract_address
     WHERE address = a_token_in_address
       AND blockchain = a_blockchain;
-    SELECT pkey_id
-    INTO _fkey_token_out
+    SELECT pkey_id, symbol
+    INTO _fkey_token_out, _fkey_token_out_name
     FROM tbl.escrow_token_contract_address
     WHERE address = a_token_out_address
       AND blockchain = a_blockchain;
-    IF _expert_watched_wallet_id ISNULL AND _fkey_token_in ISNULL AND _fkey_token_out ISNULL THEN
+
+    IF _expert_watched_wallet_id IS NOT NULL AND _fkey_token_in IS NOT NULL AND _fkey_token_out IS NOT NULL THEN
         INSERT INTO tbl.strategy_watching_wallet_trade_ledger
             (
              expert_watched_wallet_id, blockchain,
@@ -2652,7 +2653,7 @@ BEGIN
              amount_out, heppened_at
                 )
         VALUES (_expert_watched_wallet_id, a_blockchain, a_transaction_hash, a_dex, a_contract_address,
-                _fkey_token_in, _fkey_token_out, a_amount_in, a_amount_out, a_happened_at)
+                _fkey_token_in, _fkey_token_out, a_amount_in, a_amount_out, COALESCE(a_happened_at, EXTRACT(EPOCH FROM NOW())::bigint))
         RETURNING pkey_id
         INTO _strategy_watching_wallet_trade_ledger_id;
         RETURN QUERY SELECT _strategy_watching_wallet_trade_ledger_id, _expert_watched_wallet_id,
