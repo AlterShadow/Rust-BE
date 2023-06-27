@@ -514,7 +514,7 @@ impl StrategyPoolFunctions {
     }
 }
 
-pub async fn sp_deposit_and_ensure_success(
+pub async fn sp_deposit_to_and_ensure_success(
     contract: StrategyPoolContract<EitherTransport>,
     conn: &EthereumRpcConnection,
     confirmations: u64,

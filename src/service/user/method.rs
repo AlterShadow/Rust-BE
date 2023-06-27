@@ -10,7 +10,7 @@ use eth_sdk::escrow::transfer_token_to_and_ensure_success;
 use eth_sdk::escrow::{AbstractEscrowContract, EscrowContract};
 use eth_sdk::pair_paths::WorkingPancakePairPaths;
 use eth_sdk::signer::Secp256k1SecretKey;
-use eth_sdk::strategy_pool::{sp_deposit_and_ensure_success, StrategyPoolContract};
+use eth_sdk::strategy_pool::{sp_deposit_to_and_ensure_success, StrategyPoolContract};
 use eth_sdk::strategy_wallet::{
     full_redeem_from_strategy_and_ensure_success, redeem_from_strategy_and_ensure_success,
     StrategyWalletContract,
@@ -656,6 +656,7 @@ async fn user_back_strategy(
 
     /* check if user has enough balance */
     // TODO: add user balance to the database
+    // TODO: might call balanceOf of these ERC20 contracts if database is not working correctly
     let user_balance = db
         .execute(FunUserListUserDepositWithdrawBalanceReq {
             limit: 1,
@@ -700,6 +701,7 @@ async fn user_back_strategy(
         &ctx,
         &db,
         master_key.clone(),
+        blockchain,
         user_wallet_address_to_receive_shares_on_this_chain,
     )
     .await?;
@@ -750,8 +752,8 @@ async fn user_back_strategy(
         master_key.clone(),
         strategy_id,
         blockchain,
-        strategy.name.clone(),
-        strategy.name,
+        strategy.strategy_name.clone(),
+        strategy.strategy_name,
     )
     .await?;
 
@@ -770,15 +772,14 @@ async fn user_back_strategy(
         .into_iter()
         .zip(sp_assets_and_amounts.1.into_iter())
         .collect();
-    let escrow_token_address = token_address;
-    let escrow_token_contract = Erc20Token::new(conn.clone(), escrow_token_address)?;
-    let shares_to_mint = calculate_sp_tokens_to_mint_easy_approach(
+    let escrow_token_contract = Erc20Token::new(conn.clone(), token_address)?;
+    let strategy_pool_token_to_mint = calculate_sp_tokens_to_mint_easy_approach(
         &conn,
         &CoinMarketCap::new_debug_key()?,
         total_strategy_pool_tokens,
         sp_assets_and_amounts,
         sp_contract.decimals().await?,
-        escrow_token_contract.symbol(),
+        escrow_token_contract.symbol().await?,
         back_usdc_amount_minus_fees,
         escrow_token_contract.decimals().await?,
     )
@@ -803,16 +804,17 @@ async fn user_back_strategy(
         MAX_RETRIES,
         POLL_INTERVAL,
         master_key.clone(),
-        escrow_token_address,
+        token_address,
         master_key.address(),
         back_usdc_amount,
     )
     .await?;
+
     /* calculate how much of back amount to spend on each strategy token */
     let escrow_allocations_for_tokens = calculate_escrow_allocation_for_strategy_tokens(
         back_usdc_amount_minus_fees,
         total_strategy_pool_tokens,
-        strategy_tokens_and_amounts_on_this_chain,
+        sp_assets_and_amounts,
     )?;
     /* approve pancakeswap to trade escrow token */
     approve_and_ensure_success(
@@ -832,7 +834,7 @@ async fn user_back_strategy(
         &conn,
         master_key.clone(),
         blockchain,
-        escrow_token_address,
+        token_address,
         &pancake_contract,
         escrow_allocations_for_tokens,
     )
@@ -853,8 +855,8 @@ async fn user_back_strategy(
         .await?;
     }
 
-    /* deposit to strategy pool contract */
-    let deposit_transaction_hash = sp_deposit_and_ensure_success(
+    /* mint strategy pool token to strategy wallet contract */
+    let deposit_transaction_hash = sp_deposit_to_and_ensure_success(
         sp_contract,
         &conn,
         CONFIRMATIONS,
@@ -863,11 +865,29 @@ async fn user_back_strategy(
         master_key.clone(),
         tokens_to_deposit,
         amounts_to_deposit,
-        shares_to_mint,
+        strategy_pool_token_to_mint,
         strategy_wallet_contract.address(),
     )
     .await?;
-
+    let user_strategy_wallet: Address = db
+        .execute(FunWatcherListUserStrategyBalanceReq {
+            limit: 1,
+            offset: 0,
+            strategy_id: Some(strategy_id),
+            user_id: Some(ctx.user_id),
+            blockchain: Some(blockchain),
+        })
+        .await?
+        .first(|x| x.balance.as_str())
+        .unwrap_or("0")
+        .parse()?;
+    db.execute(FunWatcherUpsertUserStrategyBalance {
+        user_id: ctx.user_id,
+        strategy_id: strategy.strategy_id,
+        blockchain,
+        balance: format!("{:?}", user_strategy_wallet + strategy_pool_token_to_mint),
+    })
+    .await?;
     let ret = db
         .execute(FunUserBackStrategyReq {
             user_id: ctx.user_id,
@@ -885,7 +905,7 @@ async fn user_back_strategy(
             old_current_quantity: strategy.current_usdc,
             blockchain,
             transaction_hash: format!("{:?}", deposit_transaction_hash),
-            earn_sp_tokens: format!("{:?}", shares_to_mint),
+            earn_sp_tokens: format!("{:?}", strategy_pool_token_to_mint),
         })
         .await?
         .into_result()
@@ -951,6 +971,7 @@ fn calculate_escrow_allocation_for_strategy_tokens(
 ) -> Result<HashMap<Address, U256>> {
     /* calculates how much of escrow to spend on each strategy token */
     /* allocation = (strategy_token_amount * escrow_amount) / total_strategy_token_amounts */
+    // TODO: do we really want to mixup these amounts instead of values?
     let mut escrow_allocations: HashMap<Address, U256> = HashMap::new();
     for (token_address, token_amount) in strategy_tokens_and_amounts {
         let escrow_allocation = token_amount.mul_div(escrow_amount, total_strategy_tokens)?;
@@ -1055,7 +1076,7 @@ async fn calculate_sp_tokens_to_mint_easy_approach(
     /* if escrow decimals > sp decimals, divide unconsidered value by 10^(escrow decimals - sp decimals) to account for decimal differences */
     /* if sp decimals > escrow decimals, multiply the unconsidered value by 10^(sp decimals - escrow decimals) to account for decimal differences */
     /* this is valid for all tokens, not just the escrow */
-    let factor = cmc.get_usd_prices_by_symbol(&vec![escrow_symbol]).await?[0]?;
+    let factor = cmc.get_usd_prices_by_symbol(&vec![escrow_symbol]).await?[0];
     let escrow_value: U256 = if escrow_decimals > sp_decimals {
         escrow_amount.mul_f64(factor)?.try_checked_div(U256::exp10(
             escrow_decimals.as_usize() - sp_decimals.as_usize(),
@@ -1198,10 +1219,10 @@ impl RequestHandler for MethodUserBackStrategy {
             )
             .await
             {
-                return Err(CustomError::new(
+                bail!(CustomError::new(
                     EnumErrorCode::InternalError,
                     format!("{:?}", err),
-                ));
+                ))
             }
             Ok(UserBackStrategyResponse { success: true })
         }
