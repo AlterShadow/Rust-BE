@@ -443,8 +443,8 @@ pub struct FunUserListStrategyInitialTokenRatiosRespRow {
     pub token_id: i64,
     pub token_name: String,
     pub token_address: String,
-    pub strategy_id: i64,
     pub quantity: String,
+    pub strategy_id: i64,
     pub created_at: i64,
     pub updated_at: i64,
 }

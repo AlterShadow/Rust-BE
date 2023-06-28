@@ -1604,8 +1604,8 @@ RETURNS table (
     "token_id" bigint,
     "token_name" varchar,
     "token_address" varchar,
-    "strategy_id" bigint,
     "quantity" varchar,
+    "strategy_id" bigint,
     "created_at" bigint,
     "updated_at" bigint
 )
