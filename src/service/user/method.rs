@@ -2479,9 +2479,10 @@ impl RequestHandler for MethodUserListDepositLedger {
         async move {
             let resp = db
                 .execute(FunUserListDepositLedgerReq {
-                    user_id: ctx.user_id,
+                    user_id: Some(ctx.user_id),
                     limit: req.limit.unwrap_or(DEFAULT_LIMIT),
                     offset: req.offset.unwrap_or(DEFAULT_OFFSET),
+                    blockchain: req.blockchain,
                 })
                 .await?;
             Ok(UserListDepositLedgerResponse {
@@ -2517,8 +2518,40 @@ impl RequestHandler for MethodUserSubscribeDepositLedger {
     ) -> FutureResponse<Self::Request> {
         let manager = self.manger.clone();
         let toolbox = toolbox.clone();
+        let db: DbClient = toolbox.get_db();
         async move {
             manager.subscribe(AdminSubscribeTopic::AdminNotifyEscrowLedgerChange, ctx);
+            if let Some(limit) = req.initial_data {
+                let resp = db
+                    .execute(FunUserListDepositLedgerReq {
+                        user_id: Some(ctx.user_id),
+                        limit,
+                        offset: 0,
+                        blockchain: req.blockchain,
+                    })
+                    .await?;
+                let manager = manager.clone();
+                let toolbox = toolbox.clone();
+                tokio::spawn(async move {
+                    sleep(Duration::from_secs_f32(0.05)).await;
+                    for row in resp.into_iter() {
+                        manager.publish_with_filter(
+                            &toolbox,
+                            AdminSubscribeTopic::AdminNotifyEscrowLedgerChange,
+                            &UserListDepositLedgerRow {
+                                quantity: row.quantity,
+                                blockchain: row.blockchain,
+                                user_address: row.user_address,
+                                contract_address: row.contract_address,
+                                transaction_hash: row.transaction_hash,
+                                receiver_address: row.receiver_address,
+                                created_at: row.created_at,
+                            },
+                            |x| x.connection_id == ctx.connection_id,
+                        )
+                    }
+                });
+            }
             if req.mock_data.unwrap_or_default() {
                 tokio::spawn(async move {
                     for i in 0..10 {
@@ -2526,7 +2559,7 @@ impl RequestHandler for MethodUserSubscribeDepositLedger {
                         let amount = U256::from(i);
                         let key = Secp256k1SecretKey::new_random();
                         info!("Sending mock data to FE, {}..", i);
-                        manager.publish_to_all(
+                        manager.publish_with_filter(
                             &toolbox,
                             AdminSubscribeTopic::AdminNotifyEscrowLedgerChange,
                             &UserListDepositLedgerRow {
@@ -2538,6 +2571,7 @@ impl RequestHandler for MethodUserSubscribeDepositLedger {
                                 receiver_address: format!("{:?}", key.address),
                                 created_at: Utc::now().timestamp(),
                             },
+                            |x| x.connection_id == ctx.connection_id,
                         )
                     }
                 });

@@ -3556,6 +3556,14 @@
               "ty": {
                 "Optional": "BigInt"
               }
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "Optional": {
+                  "EnumRef": "block_chain"
+                }
+              }
             }
           ],
           "returns": [
@@ -3614,6 +3622,20 @@
           "name": "UserSubscribeDepositLedger",
           "code": 20381,
           "parameters": [
+            {
+              "name": "initial_data",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "Optional": {
+                  "EnumRef": "block_chain"
+                }
+              }
+            },
             {
               "name": "mock_data",
               "ty": {
@@ -4933,6 +4955,20 @@
           "name": "AdminSubscribeDepositLedger",
           "code": 32011,
           "parameters": [
+            {
+              "name": "initial_data",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "Optional": {
+                  "EnumRef": "block_chain"
+                }
+              }
+            },
             {
               "name": "mock_data",
               "ty": {

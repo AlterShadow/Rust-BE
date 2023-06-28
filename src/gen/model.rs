@@ -1048,6 +1048,10 @@ pub struct AdminSetUserRoleResponse {}
 #[serde(rename_all = "camelCase")]
 pub struct AdminSubscribeDepositLedgerRequest {
     #[serde(default)]
+    pub initial_data: Option<i64>,
+    #[serde(default)]
+    pub blockchain: Option<EnumBlockChain>,
+    #[serde(default)]
     pub mock_data: Option<bool>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1768,6 +1772,8 @@ pub struct UserListDepositLedgerRequest {
     pub limit: Option<i64>,
     #[serde(default)]
     pub offset: Option<i64>,
+    #[serde(default)]
+    pub blockchain: Option<EnumBlockChain>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -2140,6 +2146,10 @@ pub struct UserRequestRefundResponse {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserSubscribeDepositLedgerRequest {
+    #[serde(default)]
+    pub initial_data: Option<i64>,
+    #[serde(default)]
+    pub blockchain: Option<EnumBlockChain>,
     #[serde(default)]
     pub mock_data: Option<bool>,
 }
@@ -6130,6 +6140,14 @@ impl WsRequest for UserListDepositLedgerRequest {
       "ty": {
         "Optional": "BigInt"
       }
+    },
+    {
+      "name": "blockchain",
+      "ty": {
+        "Optional": {
+          "EnumRef": "block_chain"
+        }
+      }
     }
   ],
   "returns": [
@@ -6196,6 +6214,20 @@ impl WsRequest for UserSubscribeDepositLedgerRequest {
   "name": "UserSubscribeDepositLedger",
   "code": 20381,
   "parameters": [
+    {
+      "name": "initial_data",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "blockchain",
+      "ty": {
+        "Optional": {
+          "EnumRef": "block_chain"
+        }
+      }
+    },
     {
       "name": "mock_data",
       "ty": {
@@ -7717,6 +7749,20 @@ impl WsRequest for AdminSubscribeDepositLedgerRequest {
   "name": "AdminSubscribeDepositLedger",
   "code": 32011,
   "parameters": [
+    {
+      "name": "initial_data",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "blockchain",
+      "ty": {
+        "Optional": {
+          "EnumRef": "block_chain"
+        }
+      }
+    },
     {
       "name": "mock_data",
       "ty": {

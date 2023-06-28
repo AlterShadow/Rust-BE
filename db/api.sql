@@ -1701,7 +1701,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_list_deposit_ledger(a_user_id bigint, a_limit bigint, a_offset bigint)
+CREATE OR REPLACE FUNCTION api.fun_user_list_deposit_ledger(a_limit bigint, a_offset bigint, a_user_id bigint DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL)
 RETURNS table (
     "total" bigint,
     "blockchain" enum_block_chain,
@@ -1726,7 +1726,9 @@ BEGIN
             a.transaction_hash, 
             a.happened_at
 		FROM tbl.user_deposit_withdraw_ledger AS a
-		WHERE fkey_user_id = a_user_id AND is_deposit = TRUE
+		WHERE  is_deposit = TRUE
+                AND (a.fkey_user_id = a_user_id OR a_user_id IS NULL)
+                AND (a.blockchain = a_blockchain OR a_blockchain IS NULL)
 		ORDER BY a.pkey_id DESC
 		LIMIT a_limit
 		OFFSET a_offset;

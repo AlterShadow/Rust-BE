@@ -765,6 +765,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
             vec![
                 Field::new("limit", Type::optional(Type::BigInt)),
                 Field::new("offset", Type::optional(Type::BigInt)),
+                Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
             ],
             vec![
                 Field::new("ledger_total", Type::BigInt),
@@ -774,7 +775,11 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
         EndpointSchema::new(
             "UserSubscribeDepositLedger",
             20381,
-            vec![Field::new("mock_data", Type::optional(Type::Boolean))],
+            vec![
+                Field::new("initial_data", Type::optional(Type::BigInt)),
+                Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
+                Field::new("mock_data", Type::optional(Type::Boolean)),
+            ],
             vec![],
         )
         .with_stream_response_type(user_deposit_ledger_entry()),

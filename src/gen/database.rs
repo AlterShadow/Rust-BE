@@ -1817,22 +1817,26 @@ impl DatabaseRequest for FunExpertListBackersReq {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserListDepositLedgerReq {
-    pub user_id: i64,
     pub limit: i64,
     pub offset: i64,
+    #[serde(default)]
+    pub user_id: Option<i64>,
+    #[serde(default)]
+    pub blockchain: Option<EnumBlockChain>,
 }
 
 #[allow(unused_variables)]
 impl DatabaseRequest for FunUserListDepositLedgerReq {
     type ResponseRow = FunUserListDepositLedgerRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_list_deposit_ledger(a_user_id => $1::bigint, a_limit => $2::bigint, a_offset => $3::bigint);"
+        "SELECT * FROM api.fun_user_list_deposit_ledger(a_limit => $1::bigint, a_offset => $2::bigint, a_user_id => $3::bigint, a_blockchain => $4::enum_block_chain);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
-            &self.user_id as &(dyn ToSql + Sync),
             &self.limit as &(dyn ToSql + Sync),
             &self.offset as &(dyn ToSql + Sync),
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.blockchain as &(dyn ToSql + Sync),
         ]
     }
 }

@@ -1173,9 +1173,10 @@ END
         ProceduralFunction::new(
             "fun_user_list_deposit_ledger",
             vec![
-                Field::new("user_id", Type::BigInt),
                 Field::new("limit", Type::BigInt),
                 Field::new("offset", Type::BigInt),
+                Field::new("user_id", Type::optional(Type::BigInt)),
+                Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
             ],
             vec![
                 Field::new("total", Type::BigInt),
@@ -1199,7 +1200,9 @@ BEGIN
             a.transaction_hash, 
             a.happened_at
 		FROM tbl.user_deposit_withdraw_ledger AS a
-		WHERE fkey_user_id = a_user_id AND is_deposit = TRUE
+		WHERE  is_deposit = TRUE
+                AND (a.fkey_user_id = a_user_id OR a_user_id IS NULL)
+                AND (a.blockchain = a_blockchain OR a_blockchain IS NULL)
 		ORDER BY a.pkey_id DESC
 		LIMIT a_limit
 		OFFSET a_offset;

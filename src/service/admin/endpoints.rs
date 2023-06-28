@@ -233,7 +233,11 @@ pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
         EndpointSchema::new(
             "AdminSubscribeDepositLedger",
             32011,
-            vec![Field::new("mock_data", Type::optional(Type::Boolean))],
+            vec![
+                Field::new("initial_data", Type::optional(Type::BigInt)),
+                Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
+                Field::new("mock_data", Type::optional(Type::Boolean)),
+            ],
             vec![],
         )
         .with_stream_response_type(user_deposit_ledger_entry()),

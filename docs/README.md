@@ -58,8 +58,8 @@ ID: 2
 |20350|ExpertListBackers|limit, offset|backers_total, backers||
 |20360|UserGetDepositTokens||tokens||
 |20370|UserGetDepositAddresses||addresses||
-|20380|UserListDepositLedger|limit, offset|ledger_total, ledger||
-|20381|UserSubscribeDepositLedger|mock_data|||
+|20380|UserListDepositLedger|limit, offset, blockchain|ledger_total, ledger||
+|20381|UserSubscribeDepositLedger|initial_data, blockchain, mock_data|||
 |20382|UserUnsubscribeDepositLedger||||
 |20390|UserListStrategyWallets|blockchain|wallets_total, wallets||
 |20391|UserCreateStrategyWallet|wallet_address, blockchain, adminship|blockchain, address||
@@ -91,7 +91,7 @@ ID: 3
 |30130|AdminRejectStrategy|strategy_id|success||
 |31002|AdminAddAuditRule|rule_id, name, description|||
 |32010|AdminNotifyEscrowLedgerChange|pkey_id, user_id, balance|||
-|32011|AdminSubscribeDepositLedger|mock_data|||
+|32011|AdminSubscribeDepositLedger|initial_data, blockchain, mock_data|||
 |32012|AdminUnsubscribeDepositLedger||||
 |32020|AdminAddEscrowTokenContractAddress|pkey_id, symbol, short_name, description, address, blockchain, is_stablecoin|||
 |32030|AdminAddEscrowContractAddress|pkey_id, address, blockchain|||
