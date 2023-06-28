@@ -193,7 +193,7 @@ pub async fn handle_pancake_swap_transaction(
                 .into_result()
                 .context("strategy pool contract does not hold asset to sell")?;
 
-            let sp_asset_token_in_amount: U256 = sp_asset_token_in.balance.parse()?;
+            let sp_asset_token_in_amount = U256::from_dec_str(&sp_asset_token_in.balance)?;
             if sp_asset_token_in_amount == U256::zero() {
                 bail!("strategy pool has no asset to sell");
             }
