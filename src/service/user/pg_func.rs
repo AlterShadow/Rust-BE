@@ -1464,7 +1464,7 @@ END
                 Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("address", Type::String),
             ],
-            vec![Field::new("pkey_id", Type::BigInt)],
+            vec![Field::new("strategy_pool_contract_id", Type::BigInt)],
             r#"
 BEGIN
     UPDATE tbl.strategy

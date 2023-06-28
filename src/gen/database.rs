@@ -190,7 +190,7 @@ pub struct FunUserAddStrategyInitialTokenRatioRespRow {
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserAddStrategyPoolContractRespRow {
-    pub pkey_id: i64,
+    pub strategy_pool_contract_id: i64,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]

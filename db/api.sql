@@ -1983,7 +1983,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION api.fun_user_add_strategy_pool_contract(a_strategy_id bigint, a_blockchain enum_block_chain, a_address varchar)
 RETURNS table (
-    "pkey_id" bigint
+    "strategy_pool_contract_id" bigint
 )
 LANGUAGE plpgsql
 AS $$
