@@ -185,7 +185,7 @@ async fn test_handle_eth_escrows_anvil() -> Result<()> {
 }
 
 #[tokio::test]
-async fn test_handle_eth_swap_testnet() -> Result<()> {
+async fn test_handle_eth_swap_goerli_testnet() -> Result<()> {
     drop_and_recreate_database()?;
 
     let fake_backer_strategy_wallet_key = Secp256k1SecretKey::new_random();
@@ -445,6 +445,36 @@ async fn test_handle_eth_swap_testnet() -> Result<()> {
         U256::from_dec_str(&strategy_pool_contract_weth.balance)?,
         sp_contract_weth_balance
     );
+
+    /* check expert listened wallet balance table now shows WETH */
+    let expert_listened_wallet = db
+        .execute(FunWatcherListExpertListenedWalletAssetBalanceReq {
+            limit: 1,
+            offset: 0,
+            address: Some(format!("{:?}", master_key.address())),
+            blockchain: None,
+            token_id: None,
+        })
+        .await?
+        .into_result()
+        .context("no entry found in expert listened wallet balance table")?;
+
+    let weth_id_on_goerli = db
+        .execute(FunUserListEscrowTokenContractAddressReq {
+            limit: 1,
+            offset: 0,
+            token_id: None,
+            blockchain: Some(EnumBlockChain::EthereumGoerli),
+            address: Some(format!("{:?}", weth_address_on_goerli)),
+            symbol: None,
+            is_stablecoin: None,
+        })
+        .await?
+        .into_result()
+        .context("no WETH found in escrow token contract address table")?;
+
+    assert_eq!(expert_listened_wallet.token_id, weth_id_on_goerli.token_id);
+    assert!(U256::from_dec_str(&expert_listened_wallet.balance)? > U256::one());
 
     Ok(())
 }
