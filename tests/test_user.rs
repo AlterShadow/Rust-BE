@@ -19,12 +19,13 @@ async fn test_create_update_strategy() -> Result<()> {
             name: "test_strategy".to_string(),
             description: "this is a test strategy".to_string(),
             strategy_thesis_url: "".to_string(),
-            minimum_backing_amount_usd: 0.0,
+            minimum_backing_amount_usd: None,
             strategy_fee: 0.0,
             expert_fee: 0.0,
             agreed_tos: true,
             wallet_address: format!("{:?}", user.address),
             wallet_blockchain: EnumBlockChain::EthereumMainnet,
+            initial_tokens: vec![],
             audit_rules: Some(vec![1]),
         })
         .await?;
@@ -67,12 +68,13 @@ async fn test_user_follow_strategy() -> Result<()> {
             name: "test_strategy".to_string(),
             description: "this is a test strategy".to_string(),
             strategy_thesis_url: "".to_string(),
-            minimum_backing_amount_usd: 0.0,
+            minimum_backing_amount_usd: None,
             strategy_fee: 0.0,
             expert_fee: 0.0,
             agreed_tos: true,
             wallet_address: format!("{:?}", user.address),
             wallet_blockchain: EnumBlockChain::EthereumMainnet,
+            initial_tokens: vec![],
             audit_rules: Some(vec![1]),
         })
         .await?;
@@ -134,12 +136,13 @@ async fn test_user_follow_strategy_get_user_profile() -> Result<()> {
             name: "test_strategy".to_string(),
             description: "this is a test strategy".to_string(),
             strategy_thesis_url: "".to_string(),
-            minimum_backing_amount_usd: 0.0,
+            minimum_backing_amount_usd: None,
             strategy_fee: 0.0,
             expert_fee: 0.0,
             agreed_tos: true,
             wallet_address: format!("{:?}", user.address),
             wallet_blockchain: EnumBlockChain::EthereumMainnet,
+            initial_tokens: vec![],
             audit_rules: Some(vec![1]),
         })
         .await?;
@@ -180,12 +183,13 @@ async fn test_user_list_strategies() -> Result<()> {
             name: "test_strategy".to_string(),
             description: "this is a test strategy".to_string(),
             strategy_thesis_url: "".to_string(),
-            minimum_backing_amount_usd: 0.0,
+            minimum_backing_amount_usd: None,
             strategy_fee: 0.0,
             expert_fee: 0.0,
             agreed_tos: true,
             wallet_address: format!("{:?}", user.address),
             wallet_blockchain: EnumBlockChain::EthereumMainnet,
+            initial_tokens: vec![],
             audit_rules: None,
         })
         .await?;
