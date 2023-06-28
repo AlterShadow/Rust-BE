@@ -198,8 +198,19 @@ pub async fn handle_pancake_swap_transaction(
                 bail!("strategy pool has no asset to sell");
             }
             /* calculate how much to spend */
-            let amount_to_spend = trade
-                .amount_in
+            let corrected_amount_in = if trade.amount_in > *strategy_token_in_previous_amount {
+                /* if the traded amount_in is larger than the total amount of token_in we know of the strategy,
+                     it means that the trader has acquired tokens from sources we have not read
+                     if we used an amount_in that is larger in the calculation, it would make amount_to_spend
+                     larger than the amount of token_in in the strategy pool contract, which would revert the transaction
+                     so we use the total amount of token_in we know of the strategy,
+                     which will result in a trade of all the strategy pool balance of this asset
+                */
+                *strategy_token_in_previous_amount
+            } else {
+                trade.amount_in
+            };
+            let amount_to_spend = corrected_amount_in
                 .mul_div(sp_asset_token_in_amount, *strategy_token_in_previous_amount)?;
             if amount_to_spend == U256::zero() {
                 bail!("spent ratio is too small to be represented in amount of token_in owned by strategy pool");
