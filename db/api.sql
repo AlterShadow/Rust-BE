@@ -3050,8 +3050,8 @@ BEGIN
     
     SELECT pkey_id INTO _user_strategy_wallet_id FROM tbl.user_strategy_wallet
     WHERE fkey_user_id = a_user_id
-        AND fkey_token_id = a_token_id;
-        
+        AND blockchain = a_blockchain;
+
     ASSERT _user_strategy_wallet_id NOTNULL;
     
     SELECT pkey_id, balance INTO _user_strategy_wallet_balance_id, _user_strategy_wallet_balance_old_balance
