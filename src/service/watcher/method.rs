@@ -22,6 +22,8 @@ use eth_sdk::{
 use eyre::*;
 use gen::database::*;
 use gen::model::*;
+use std::collections::hash_map::Entry;
+use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 use tracing::{error, info, warn};
@@ -95,6 +97,29 @@ pub async fn handle_pancake_swap_transaction(
     /* get called contract */
     let called_address = tx.get_to().context("no to address found")?;
 
+    /* get strategy tokens prior to the trade */
+    let strategy_tokens_before_trade_by_chain = state
+        .db
+        .execute(FunWatcherGetStrategyTokensFromLedgerReq { strategy_id })
+        .await?
+        .into_rows();
+
+    /* merge multichain strategy tokens before trade by symbol */
+    let mut strategy_tokens_before_trade_by_symbol: HashMap<String, U256> =
+        std::collections::HashMap::new();
+    for strategy_token_by_chain in strategy_tokens_before_trade_by_chain {
+        match strategy_tokens_before_trade_by_symbol.entry(strategy_token_by_chain.token_symbol) {
+            Entry::Vacant(e) => {
+                e.insert(U256::from_dec_str(&strategy_token_by_chain.amount)?);
+            }
+            Entry::Occupied(mut e) => {
+                let balance = e.get_mut();
+                *balance = balance
+                    .try_checked_add(U256::from_dec_str(&strategy_token_by_chain.amount)?)?;
+            }
+        }
+    }
+
     /* update wallet activity ledger & make sure this transaction is not a duplicate */
     let saved = state
         .db
@@ -115,25 +140,6 @@ pub async fn handle_pancake_swap_transaction(
         .into_result();
 
     if let Some(saved) = saved {
-        /* check if tokens are known */
-
-        state
-            .token_addresses
-            .get_by_address(blockchain, trade.token_out)
-            .context("token out is unknown")?;
-
-        /* get all strategy tokens */
-
-        let selected_strategy_initial_token = state
-            .db
-            .execute(FunUserListStrategyInitialTokenRatiosReq {
-                strategy_id,
-                token_address: Some(format!("{:?}", trade.token_in)),
-                blockchain: Some(blockchain),
-            })
-            .await?
-            .into_result();
-
         /* update database with watched wallet's tokens */
         let conn = state.eth_pool.get(blockchain).await?;
         update_expert_listened_wallet_asset_ledger(
@@ -146,139 +152,184 @@ pub async fn handle_pancake_swap_transaction(
         )
         .await?;
 
-        /* check if token_in was a strategy token */
-        if let Some(token) = selected_strategy_initial_token {
-            let strategy_initial_token_quantity: U256 = token.quantity.parse()?;
-            /* if token_in was already a strategy token trade it from SPs in ratio traded_amount / old_amount */
+        /* instantiate token_in and token_out contracts */
+        let token_in_contract = Erc20Token::new(conn.clone(), trade.token_in)?;
+        let token_out_contract = Erc20Token::new(conn.clone(), trade.token_out)?;
 
-            let strategy_pool = state
+        /* check if token_in was a strategy token */
+        let strategy_token_in_previous_amount = strategy_tokens_before_trade_by_symbol
+            .get(&token_in_contract.symbol().await?)
+            .context("sold token was not previously owned by strategy, there is no way to calculate the trade")?;
+
+        /* if token_in was already a strategy token trade it from SPs in ratio traded_amount / old_amount */
+        let strategy_pool = state
+            .db
+            .execute(FunWatcherListStrategyPoolContractReq {
+                limit: 1,
+                offset: 0,
+                strategy_id: Some(strategy_id),
+                blockchain: Some(blockchain),
+                address: None,
+            })
+            .await?
+            .into_result();
+
+        /* if there is an SP contract for this strategy,  */
+        if let Some(address_row) = strategy_pool {
+            let address: Address = address_row.address.parse()?;
+            /* check if SP contract holds token_in */
+            let sp_contract = StrategyPoolContract::new(conn.clone(), address)?;
+            // TODO: we want to save the balance to database, not from on-chain
+            // TODO: save this sp_asset_token_in_amount to database somewhere
+
+            let sp_asset_token_in = state
                 .db
-                .execute(FunWatcherListStrategyPoolContractReq {
-                    limit: 1,
-                    offset: 0,
-                    strategy_id: Some(strategy_id),
+                .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
+                    strategy_pool_contract_id: address_row.pkey_id,
+                    token_address: Some(format!("{:?}", trade.token_in)),
                     blockchain: Some(blockchain),
-                    address: None,
+                })
+                .await?
+                .into_result()
+                .context("strategy pool contract does not hold asset to sell")?;
+
+            let sp_asset_token_in_amount: U256 = sp_asset_token_in.balance.parse()?;
+            if sp_asset_token_in_amount == U256::zero() {
+                bail!("strategy pool has no asset to sell");
+            }
+            /* calculate how much to spend */
+            let amount_to_spend = trade
+                .amount_in
+                .mul_div(sp_asset_token_in_amount, *strategy_token_in_previous_amount)?;
+            if amount_to_spend == U256::zero() {
+                bail!("spent ratio is too small to be represented in amount of token_in owned by strategy pool");
+            }
+
+            /* instantiate pancake swap contract */
+            let pancake_contract = PancakeSmartRouterV3Contract::new(
+                conn.clone(),
+                state
+                    .dex_addresses
+                    .get(blockchain, EnumDex::PancakeSwap)
+                    .ok_or_else(|| eyre!("pancake swap not available on this chain"))?,
+            )?;
+
+            acquire_asset_before_trade_and_ensure_success(
+                sp_contract.clone(),
+                &conn,
+                CONFIRMATIONS,
+                MAX_RETRIES,
+                POLL_INTERVAL,
+                state.master_key.clone(),
+                trade.token_in,
+                amount_to_spend,
+            )
+            .await?;
+
+            /* approve pancakeswap to trade token_in */
+            approve_and_ensure_success(
+                token_in_contract,
+                &conn,
+                CONFIRMATIONS,
+                MAX_RETRIES,
+                POLL_INTERVAL,
+                state.master_key.clone(),
+                pancake_contract.address(),
+                amount_to_spend,
+            )
+            .await?;
+
+            /* trade token_in for token_out */
+            let trade_hash = copy_trade_and_ensure_success(
+                pancake_contract,
+                &conn,
+                CONFIRMATIONS,
+                MAX_RETRIES,
+                POLL_INTERVAL,
+                state.master_key.clone(),
+                trade.get_pancake_pair_paths()?,
+                amount_to_spend,
+                U256::from(1),
+            )
+            .await?;
+
+            /* parse trade to find amount_out */
+            let sp_trade = parse_dex_trade(
+                blockchain,
+                &TransactionFetcher::new_and_assume_ready(trade_hash, &conn).await?,
+                &state.dex_addresses,
+                &state.pancake_swap,
+            )
+            .await?;
+
+            /* approve strategy pool for amount_out */
+            approve_and_ensure_success(
+                token_out_contract,
+                &conn,
+                CONFIRMATIONS,
+                MAX_RETRIES,
+                POLL_INTERVAL,
+                state.master_key.clone(),
+                sp_contract.address(),
+                sp_trade.amount_out,
+            )
+            .await?;
+
+            /* give back traded assets */
+            give_back_assets_after_trade_and_ensure_success(
+                sp_contract,
+                &conn,
+                CONFIRMATIONS,
+                MAX_RETRIES,
+                POLL_INTERVAL,
+                state.master_key.clone(),
+                vec![trade.token_out],
+                vec![sp_trade.amount_out],
+            )
+            .await?;
+
+            /* write new strategy pool contract token balances to database */
+            state
+                .db
+                .execute(FunWatcherUpsertStrategyPoolContractAssetBalanceReq {
+                    strategy_pool_contract_id: address_row.pkey_id,
+                    token_address: format!("{:?}", trade.token_in),
+                    blockchain: blockchain,
+                    new_balance: format!(
+                        "{}",
+                        match sp_asset_token_in_amount.try_checked_sub(amount_to_spend) {
+                            Ok(new_balance) => new_balance,
+                            Err(_) => U256::zero(),
+                        }
+                    ),
+                })
+                .await?;
+
+            let sp_asset_token_out = state
+                .db
+                .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
+                    strategy_pool_contract_id: address_row.pkey_id,
+                    token_address: Some(format!("{:?}", trade.token_out)),
+                    blockchain: Some(blockchain),
                 })
                 .await?
                 .into_result();
-            /* if there is an SP contract for this strategy,  */
-            if let Some(address_row) = strategy_pool {
-                let address: Address = address_row.address.parse()?;
-                /* check if SP contract holds token_in */
-                let sp_contract = StrategyPoolContract::new(conn.clone(), address)?;
-                // TODO: we want to save the balance to database, not from on-chain
-                // TODO: save this sp_escrow_token_in_amount to database somewhere
-                // let sp_escrow_token_in_amount = sp_contract.asset_balance(trade.token_in).await?;
-                let sp_escrow_token_in_amount_ret = state
-                    .db
-                    .execute(FunWatcherListStrategyEscrowPendingWalletBalanceReq {
-                        strategy_id: Some(strategy_id),
-                        token_address: Some(format!("{:?}", trade.token_in)),
-                    })
-                    .await?
-                    .into_result()
-                    .context("Could not fetch strategy escrow pending token amount")?;
-                let sp_escrow_token_in_amount: U256 =
-                    sp_escrow_token_in_amount_ret.balance.parse()?;
-                if sp_escrow_token_in_amount == U256::zero() {
-                    bail!("strategy pool has no token_in");
+            let sp_asset_token_out_new_balance = match sp_asset_token_out {
+                Some(token_out) => {
+                    U256::from_dec_str(&token_out.balance)?.try_checked_add(sp_trade.amount_out)?
                 }
-                /* calculate how much to spend */
-                let amount_to_spend = trade
-                    .amount_in
-                    .mul_div(sp_escrow_token_in_amount, strategy_initial_token_quantity)?;
-                if amount_to_spend == U256::zero() {
-                    bail!("spent ratio is too small to be represented in amount of token_in owned by strategy pool");
-                }
+                None => sp_trade.amount_out,
+            };
 
-                /* instantiate token_in and token_out contracts */
-                let token_in_contract = Erc20Token::new(conn.clone(), trade.token_in)?;
-                let token_out_contract = Erc20Token::new(conn.clone(), trade.token_out)?;
-
-                /* instantiate pancake swap contract */
-                let pancake_contract = PancakeSmartRouterV3Contract::new(
-                    conn.clone(),
-                    state
-                        .dex_addresses
-                        .get(blockchain, EnumDex::PancakeSwap)
-                        .ok_or_else(|| eyre!("pancake swap not available on this chain"))?,
-                )?;
-
-                acquire_asset_before_trade_and_ensure_success(
-                    sp_contract.clone(),
-                    &conn,
-                    CONFIRMATIONS,
-                    MAX_RETRIES,
-                    POLL_INTERVAL,
-                    state.master_key.clone(),
-                    trade.token_in,
-                    amount_to_spend,
-                )
+            state
+                .db
+                .execute(FunWatcherUpsertStrategyPoolContractAssetBalanceReq {
+                    strategy_pool_contract_id: address_row.pkey_id,
+                    token_address: format!("{:?}", trade.token_out),
+                    blockchain: blockchain,
+                    new_balance: format!("{}", sp_asset_token_out_new_balance),
+                })
                 .await?;
-
-                /* approve pancakeswap to trade token_in */
-                approve_and_ensure_success(
-                    token_in_contract,
-                    &conn,
-                    CONFIRMATIONS,
-                    MAX_RETRIES,
-                    POLL_INTERVAL,
-                    state.master_key.clone(),
-                    pancake_contract.address(),
-                    amount_to_spend,
-                )
-                .await?;
-
-                /* trade token_in for token_out */
-                let trade_hash = copy_trade_and_ensure_success(
-                    pancake_contract,
-                    &conn,
-                    CONFIRMATIONS,
-                    MAX_RETRIES,
-                    POLL_INTERVAL,
-                    state.master_key.clone(),
-                    trade.get_pancake_pair_paths()?,
-                    amount_to_spend,
-                    U256::from(1),
-                )
-                .await?;
-
-                /* parse trade to find amount_out */
-                let sp_trade = parse_dex_trade(
-                    blockchain,
-                    &TransactionFetcher::new_and_assume_ready(trade_hash, &conn).await?,
-                    &state.dex_addresses,
-                    &state.pancake_swap,
-                )
-                .await?;
-
-                /* approve strategy pool for amount_out */
-                approve_and_ensure_success(
-                    token_out_contract,
-                    &conn,
-                    CONFIRMATIONS,
-                    MAX_RETRIES,
-                    POLL_INTERVAL,
-                    state.master_key.clone(),
-                    sp_contract.address(),
-                    sp_trade.amount_out,
-                )
-                .await?;
-
-                /* give back traded assets */
-                give_back_assets_after_trade_and_ensure_success(
-                    sp_contract,
-                    &conn,
-                    CONFIRMATIONS,
-                    MAX_RETRIES,
-                    POLL_INTERVAL,
-                    state.master_key.clone(),
-                    vec![trade.token_out],
-                    vec![sp_trade.amount_out],
-                )
-                .await?;
-            }
         }
     }
 
