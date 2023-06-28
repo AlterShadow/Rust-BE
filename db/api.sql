@@ -2965,7 +2965,7 @@ BEGIN
     -- insert new entry if not exist
     IF _expert_listened_wallet_asset_balance_id ISNULL THEN
         INSERT INTO tbl.expert_listened_wallet_asset_balance (fkey_token_id, balance, fkey_expert_watched_wallet_id)
-        VALUES (a_token_id, a_new_balance, _expert_listened_wallet_asset_balance_id)
+        VALUES (a_token_id, a_new_balance, _expert_watched_wallet_id)
         RETURNING pkey_id
             INTO _pkey_id;
     ELSE
