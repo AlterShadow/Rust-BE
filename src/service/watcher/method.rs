@@ -430,6 +430,8 @@ pub async fn handle_eth_escrows(
                 let old_balance = state
                     .db
                     .execute(FunUserListUserDepositWithdrawBalanceReq {
+                        limit: 1,
+                        offset: 0,
                         user_id: user.user_id,
                         blockchain: Some(blockchain),
                         token_address: Some(format!("{:?}", called_address)),
