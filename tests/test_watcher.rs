@@ -479,6 +479,295 @@ async fn test_handle_eth_swap_goerli_testnet() -> Result<()> {
     Ok(())
 }
 
+#[tokio::test]
+async fn test_handle_eth_swap_bsc_mainnet() -> Result<()> {
+    drop_and_recreate_database()?;
+
+    let fake_backer_strategy_wallet_key = Secp256k1SecretKey::new_random();
+    let master_key = Secp256k1SecretKey::from_str(DEV_ACCOUNT_PRIV_KEY)
+        .context("failed to parse dev account private key")?;
+    let conn_pool = EthereumRpcConnectionPool::new();
+    let conn = conn_pool.get(EnumBlockChain::BscMainnet).await?;
+    let token_addresses = BlockchainCoinAddresses::new();
+    let db = connect_to_database(database_test_config()).await?;
+    add_tokens_to_database(&db).await?;
+    let wbnb_address_on_bsc = token_addresses
+        .get(EnumBlockChain::BscMainnet, EnumBlockchainCoin::WBNB)
+        .ok_or_else(|| eyre!("could not find WBNB address on BSC Testnet"))?;
+    let busd_address_on_bsc = token_addresses
+        .get(EnumBlockChain::BscMainnet, EnumBlockchainCoin::BUSD)
+        .ok_or_else(|| eyre!("could not find BUSD address on BSC Testnet"))?;
+    let busd_contract = Erc20Token::new(conn.clone(), busd_address_on_bsc)?;
+
+    /* create expert */
+    let expert = db
+        .execute(FunAuthSignupReq {
+            address: format!("{:?}", master_key.address()),
+            email: "".to_string(),
+            phone: "".to_string(),
+            preferred_language: "".to_string(),
+            agreed_tos: true,
+            agreed_privacy: true,
+            ip_address: Ipv4Addr::new(127, 0, 0, 1).into(),
+            username: Some("TEST".to_string()),
+            age: None,
+            public_id: 2,
+        })
+        .await?
+        .into_result()
+        .context("no user signup resp")?;
+
+    /* create strategy */
+    let strategy = db
+        .execute(FunUserCreateStrategyReq {
+            user_id: expert.user_id,
+            name: "TEST".to_string(),
+            description: "TEST".to_string(),
+            strategy_thesis_url: "TEST".to_string(),
+            minimum_backing_amount_usd: 1.0,
+            strategy_fee: 1.0,
+            expert_fee: 1.0,
+            agreed_tos: true,
+            blockchain: EnumBlockChain::BscMainnet,
+            wallet_address: format!("{:?}", Address::zero()),
+        })
+        .await?
+        .into_result()
+        .context("failed to create strategy")?;
+
+    /* add strategy watching wallet */
+    let _watching_wallet = db
+        .execute(FunUserAddStrategyWatchWalletReq {
+            user_id: expert.user_id,
+            strategy_id: strategy.strategy_id,
+            blockchain: EnumBlockChain::BscMainnet,
+            wallet_address: format!("{:?}", master_key.address()),
+            ratio: 1.0,
+            dex: EnumDex::PancakeSwap.to_string(),
+        })
+        .await?
+        .into_result()
+        .context("failed to add watching wallet")?;
+
+    /* deploy strategy contract */
+    let sp_contract = StrategyPoolContract::deploy(
+        conn.clone(),
+        master_key.clone(),
+        "TEST".to_string(),
+        "TEST".to_string(),
+    )
+    .await?;
+
+    /* add strategy contract address to the database */
+    let insert_sp_contract = db
+        .execute(FunWatcherSaveStrategyPoolContractReq {
+            strategy_id: strategy.strategy_id,
+            blockchain: EnumBlockChain::BscMainnet,
+            address: format!("{:?}", sp_contract.address()),
+        })
+        .await?
+        .into_result()
+        .context("could not insert sp contract to database")?;
+
+    /* approve strategy pool for 0.0001 BUSD deposit */
+    /* make sure dev wallet has enough BUSD */
+    let how_much_busd_to_spend = U256::from(1).try_checked_mul(U256::exp10(
+        busd_contract.decimals().await?.as_usize() - 4 as usize,
+    ))?;
+    approve_and_ensure_success(
+        busd_contract.clone(),
+        &conn,
+        4,
+        10,
+        Duration::from_secs(10),
+        master_key.clone(),
+        sp_contract.address(),
+        how_much_busd_to_spend,
+    )
+    .await?;
+
+    /* deposit 0.0001 BUSD to strategy pool */
+    /* make sure dev wallet has enough BUSD */
+    sp_deposit_to_and_ensure_success(
+        sp_contract.clone(),
+        &conn,
+        12,
+        10,
+        Duration::from_secs(10),
+        master_key.clone(),
+        vec![busd_address_on_bsc],
+        vec![how_much_busd_to_spend],
+        U256::from(1),
+        fake_backer_strategy_wallet_key.address(),
+    )
+    .await?;
+
+    /* add deposit to strategy pool balance table */
+    db.execute(FunWatcherUpsertStrategyPoolContractAssetBalanceReq {
+        strategy_pool_contract_id: insert_sp_contract.pkey_id,
+        token_address: format!("{:?}", busd_address_on_bsc),
+        blockchain: EnumBlockChain::BscMainnet,
+        new_balance: format!("{:?}", how_much_busd_to_spend),
+    })
+    .await?;
+
+    /* add tokens sold tokens as strategy tokens */
+    /* since we are simulating the strategy owning the tokens beforehand */
+    /* and since they were already deposited to the strategy pool contract */
+    /* the handler will check if the token sold was previously bought to calculate how much to buy for strategy pools */
+    /* without a previous amount, there would be no way to calculate how much to buy */
+    // TODO: change this to add to ledger once ledger is implemented
+    db.execute(FunWatcherSaveStrategyWatchingWalletTradeLedgerReq {
+        address: format!("{:?}", master_key.address()),
+        transaction_hash: format!("{:?}", H256::zero()),
+        blockchain: EnumBlockChain::BscMainnet,
+        contract_address: format!("{:?}", Address::zero()),
+        dex: None,
+        token_in_address: Some(format!("{:?}", wbnb_address_on_bsc)),
+        token_out_address: Some(format!("{:?}", busd_address_on_bsc)),
+        amount_in: Some(format!("{:?}", U256::one())),
+        amount_out: Some(format!("{:?}", how_much_busd_to_spend)), // 0.0001 BUSD
+        happened_at: None,
+    })
+    .await?;
+
+    /* fetch pancake swap address */
+    let dex_addresses = DexAddresses::new();
+    let _pancake_swap_address_on_bsc = dex_addresses
+        .get(EnumBlockChain::BscMainnet, EnumDex::PancakeSwap)
+        .context("could not get pancakeswap address on bsc testnet")?;
+
+    /* expert trades 0.0001 BUSD for WBNB on pancake swap */
+    /* this is a previous trade of 0.0001 BUSD for WBNB on BSC */
+    /* this trade was made from the dev wallet, which is the expert watched wallet for the created strategy */
+    let expert_trade_hash =
+        H256::from_str("0x1d5af5eb81d7e6b1ce417a44072902b661b024ea04e58890e9bec2a4b5b9a423")
+            .unwrap();
+
+    /* set up app state */
+    let app_state = AppState {
+        dex_addresses,
+        eth_pool: conn_pool.clone(),
+        erc_20: build_erc_20()?,
+        pancake_swap: build_pancake_swap()?,
+        token_addresses: BlockchainCoinAddresses::new(),
+        escrow_addresses: EscrowAddresses::new(),
+        db: db.clone(),
+        master_key: master_key.clone(),
+        admin_client: None,
+    };
+
+    let expert_trade_tx =
+        TransactionFetcher::new_and_assume_ready(expert_trade_hash, &conn).await?;
+    /* handle eth swaps */
+    match handle_pancake_swap_transaction(
+        Arc::new(app_state),
+        EnumBlockChain::BscMainnet,
+        expert_trade_tx,
+    )
+    .await
+    {
+        Ok(_) => (),
+        Err(e) => bail!("failed to handle eth swap: {}", e),
+    };
+
+    /* parse expert trade to check quantities */
+    let expert_trade = parse_dex_trade(
+        EnumBlockChain::BscMainnet,
+        &TransactionFetcher::new_and_assume_ready(expert_trade_hash, &conn).await?,
+        &DexAddresses::new(),
+        &build_pancake_swap()?,
+    )
+    .await?;
+
+    /* check entry in watched wallet ledger */
+    let strategy_tokens_after = db
+        .execute(FunWatcherGetStrategyTokensFromLedgerReq {
+            strategy_id: strategy.strategy_id,
+        })
+        .await?
+        .into_rows();
+
+    let mut busd_present = false;
+    let mut wbnb_present = false;
+    for row in strategy_tokens_after {
+        if row.token_address == format!("{:?}", wbnb_address_on_bsc) {
+            wbnb_present = true;
+            assert!(U256::from_dec_str(&row.amount)? > U256::one());
+            assert_eq!(row.blockchain, EnumBlockChain::BscMainnet);
+        }
+        if row.token_address == format!("{:?}", busd_address_on_bsc) {
+            busd_present = true;
+        }
+    }
+    assert!(wbnb_present);
+    // BUSD cannot be present, since watched wallet had 0.0001 as strategy tokens, but sold 0.0001 BUSD for WBNB
+    assert!(!busd_present);
+
+    /* check pool balance table shows WBNB */
+    let strategy_pool_contract_wbnb = db
+        .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
+            strategy_pool_contract_id: insert_sp_contract.pkey_id,
+            blockchain: Some(EnumBlockChain::BscMainnet),
+            token_address: Some(format!("{:?}", wbnb_address_on_bsc)),
+        })
+        .await?
+        .into_result()
+        .context("no WBNB found for strategy pool contract balance")?;
+    let strategy_pool_contract_busd = db
+        .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
+            strategy_pool_contract_id: insert_sp_contract.pkey_id,
+            blockchain: Some(EnumBlockChain::BscMainnet),
+            token_address: Some(format!("{:?}", busd_address_on_bsc)),
+        })
+        .await?
+        .into_result()
+        .context("no BUSD found for strategy pool contract balance")?;
+    assert!(U256::from_dec_str(&strategy_pool_contract_wbnb.balance)? > U256::one());
+    assert!(U256::from_dec_str(&strategy_pool_contract_busd.balance)? == U256::zero());
+
+    /* check sp contract now holds WBNB instead of BUSD */
+    let sp_contract_wbnb_balance = sp_contract.asset_balance(wbnb_address_on_bsc).await?;
+    assert!(sp_contract_wbnb_balance > U256::zero());
+    /* check the tokens held by the contract are exactly the ones in the balance table */
+    assert_eq!(
+        U256::from_dec_str(&strategy_pool_contract_wbnb.balance)?,
+        sp_contract_wbnb_balance
+    );
+
+    let wbnd_id_on_bsc = db
+        .execute(FunUserListEscrowTokenContractAddressReq {
+            limit: 1,
+            offset: 0,
+            token_id: None,
+            blockchain: Some(EnumBlockChain::BscMainnet),
+            address: Some(format!("{:?}", wbnb_address_on_bsc)),
+            symbol: None,
+            is_stablecoin: None,
+        })
+        .await?
+        .into_result()
+        .context("no WBNB found in escrow token contract address table")?;
+
+    /* check expert listened wallet balance table now shows WBNB */
+    let expert_listened_wallet = db
+        .execute(FunWatcherListExpertListenedWalletAssetBalanceReq {
+            limit: 1,
+            offset: 0,
+            address: Some(format!("{:?}", master_key.address())),
+            blockchain: None,
+            token_id: None,
+        })
+        .await?
+        .into_result()
+        .context("no entry found in expert listened wallet balance table")?;
+
+    assert_eq!(expert_listened_wallet.token_id, wbnd_id_on_bsc.token_id);
+    assert!(U256::from_dec_str(&expert_listened_wallet.balance)? > U256::one());
+
+    Ok(())
+}
+
 async fn add_tokens_to_database(db: &DbClient) -> Result<()> {
     let token_addresses = BlockchainCoinAddresses::new();
     db.query(
