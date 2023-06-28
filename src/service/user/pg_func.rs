@@ -1069,11 +1069,11 @@ END
             ],
             vec![
                 Field::new("total", Type::BigInt),
-                Field::new("strategy_id", Type::BigInt),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("token_id", Type::BigInt),
                 Field::new("token_name", Type::String),
                 Field::new("token_address", Type::String),
+                Field::new("strategy_id", Type::BigInt),
                 Field::new("quantity", Type::String),
                 Field::new("created_at", Type::BigInt),
                 Field::new("updated_at", Type::BigInt),
@@ -1082,7 +1082,6 @@ END
 BEGIN
     RETURN QUERY SELECT
         COUNT(*) OVER() AS total,
-        a.pkey_id,
         b.blockchain,
         a.token_id,
         b.short_name,

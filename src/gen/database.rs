@@ -439,11 +439,11 @@ pub struct FunUserListStrategyFollowersRespRow {
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserListStrategyInitialTokenRatiosRespRow {
     pub total: i64,
-    pub strategy_id: i64,
     pub blockchain: EnumBlockChain,
     pub token_id: i64,
     pub token_name: String,
     pub token_address: String,
+    pub strategy_id: i64,
     pub quantity: String,
     pub created_at: i64,
     pub updated_at: i64,

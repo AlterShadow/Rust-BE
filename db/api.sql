@@ -1600,11 +1600,11 @@ $$;
 CREATE OR REPLACE FUNCTION api.fun_user_list_strategy_initial_token_ratios(a_strategy_id bigint, a_token_address varchar DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL)
 RETURNS table (
     "total" bigint,
-    "strategy_id" bigint,
     "blockchain" enum_block_chain,
     "token_id" bigint,
     "token_name" varchar,
     "token_address" varchar,
+    "strategy_id" bigint,
     "quantity" varchar,
     "created_at" bigint,
     "updated_at" bigint
@@ -1615,7 +1615,6 @@ AS $$
 BEGIN
     RETURN QUERY SELECT
         COUNT(*) OVER() AS total,
-        a.pkey_id,
         b.blockchain,
         a.token_id,
         b.short_name,
