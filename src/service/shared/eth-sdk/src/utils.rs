@@ -73,7 +73,7 @@ where
     /* if receipt was produced, check it's status & wait for confirmations */
     if let Some(receipt) = receipt_at_beginning {
         if receipt.status == Some(web3::types::U64([0])) {
-            bail!("transaction reverted");
+            bail!("transaction reverted {:?}", hash);
         }
         let receipt_block_number = receipt.block_number.unwrap().as_u64();
         let mut current_block_number = eth.block_number().await?.as_u64();

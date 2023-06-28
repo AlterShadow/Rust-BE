@@ -54,7 +54,7 @@ fn build_env_filter(log_level: LogLevel) -> Result<EnvFilter> {
         .add_directive("rustls::client::hs=info".parse()?)
         .add_directive("rustls::client::tls13=info".parse()?)
         .add_directive("hyper::client=info".parse()?)
-        .add_directive("hyper::proto::h2=info".parse()?)
+        .add_directive("hyper::proto=info".parse()?)
         .add_directive("mio=info".parse()?)
         .add_directive("want=info".parse()?);
     Ok(filter)

@@ -128,7 +128,7 @@ impl<T: Transport> ContractDeployer<T> {
 
                         // TODO: buggy here
                         let tx_hash = eth.send_raw_transaction(signed_tx.raw_transaction).await?;
-                        wait_for_confirmations(&eth, tx_hash, poll_interval, 3, confirmations as _)
+                        wait_for_confirmations(&eth, tx_hash, poll_interval, 10, confirmations as _)
                             .await
                     }
                 },

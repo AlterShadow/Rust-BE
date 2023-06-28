@@ -77,6 +77,13 @@ impl<T: Transport> EscrowContract<T> {
         recipient: Address,
         amount: U256,
     ) -> Result<H256> {
+        info!("Transferring {:?} amount of token {:?} to recipient {:?} from escrow contract {:?} by {:?}",
+            amount,
+            token_address,
+            recipient,
+            self.address(),
+            signer.address(),
+        );
         let estimated_gas = self
             .contract
             .estimate_gas(
@@ -187,7 +194,7 @@ pub async fn transfer_token_to_and_ensure_success(
     conn: &EthereumRpcConnection,
     confirmations: u64,
     max_retry: u64,
-    wait_timeout: Duration,
+    poll_interval: Duration,
     signer: impl Key + Clone,
     token_address: Address,
     recipient: Address,
@@ -196,7 +203,14 @@ pub async fn transfer_token_to_and_ensure_success(
     let tx_hash = contract
         .transfer_token_to(&conn, signer.clone(), token_address, recipient, amount)
         .await?;
-    wait_for_confirmations(&conn.eth(), tx_hash, wait_timeout, max_retry, confirmations).await?;
+    wait_for_confirmations(
+        &conn.eth(),
+        tx_hash,
+        poll_interval,
+        max_retry,
+        confirmations,
+    )
+    .await?;
     Ok(tx_hash)
 }
 

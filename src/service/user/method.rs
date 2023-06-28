@@ -669,7 +669,7 @@ async fn user_back_strategy(
         .await?
         .into_result()
         .context("insufficient balance")?;
-    let user_balance: U256 = user_balance.balance.parse()?;
+    let user_balance: U256 = U256::from_dec_str(&user_balance.balance)?;
     if user_balance < back_usdc_amount {
         bail!("insufficient balance");
     }
@@ -805,12 +805,13 @@ async fn user_back_strategy(
         master_key.clone(),
         token_address,
         master_key.address(),
-        back_usdc_amount,
+        back_usdc_amount_minus_fees,
     )
     .await?;
     let mut strategy_initial_token_ratios: HashMap<Address, U256> = HashMap::new();
     for x in strategy_initial_ratios.iter() {
-        strategy_initial_token_ratios.insert(x.token_address.parse()?, x.quantity.parse()?);
+        strategy_initial_token_ratios
+            .insert(x.token_address.parse()?, U256::from_dec_str(&x.quantity)?);
     }
 
     /* calculate how much of back amount to spend on each strategy token */
@@ -872,7 +873,7 @@ async fn user_back_strategy(
         strategy_wallet_contract.address(),
     )
     .await?;
-    let user_strategy_balance: U256 = db
+    let user_strategy_balance = db
         .execute(FunWatcherListUserStrategyBalanceReq {
             limit: 1,
             offset: 0,
@@ -882,9 +883,8 @@ async fn user_back_strategy(
         })
         .await?
         .first(|x| x.balance.clone())
-        .unwrap_or("0".to_owned())
-        .parse()?;
-
+        .unwrap_or("0".to_owned());
+    let user_strategy_balance = U256::from_dec_str(&user_strategy_balance)?;
     db.execute(FunWatcherUpsertUserStrategyBalanceReq {
         user_id: ctx.user_id,
         strategy_id,
@@ -1086,7 +1086,7 @@ impl RequestHandler for MethodUserBackStrategy {
                 &db,
                 token.blockchain,
                 ctx.user_id,
-                req.quantity.parse()?,
+                U256::from_dec_str(&req.quantity)?,
                 req.strategy_id,
                 token.token_id,
                 token.address.parse()?,
@@ -1252,7 +1252,7 @@ impl RequestHandler for MethodUserExitStrategy {
                 req.blockchain,
                 req.strategy_id,
                 match req.quantity {
-                    Some(quantity) => Some(quantity.parse()?),
+                    Some(quantity) => Some(U256::from_dec_str(&quantity)?),
                     None => None,
                 },
                 master_key,
@@ -1301,7 +1301,7 @@ impl RequestHandler for MethodUserRequestRefund {
                 req.blockchain,
                 &stablecoin_addresses,
                 escrow_contract,
-                req.quantity.parse()?,
+                U256::from_dec_str(&req.quantity)?,
                 req.wallet_address.parse()?,
                 master_key,
                 EnumBlockchainCoin::USDC,
