@@ -2798,6 +2798,72 @@ END
 $$;
         
 
+CREATE OR REPLACE FUNCTION api.fun_watcher_upsert_strategy_pool_contract_asset_balance(a_strategy_pool_contract_id bigint, a_token_address varchar, a_blockchain enum_block_chain, a_new_balance varchar)
+RETURNS table (
+    "strategy_contract_asset_balance_id" bigint
+)
+LANGUAGE plpgsql
+AS $$
+    
+DECLARE
+		_strategy_contract_asset_balance_id BIGINT;
+		_token_id BIGINT;
+BEGIN
+		SELECT etca.pkey_id INTO _token_id
+		FROM tbl.escrow_token_contract_address AS etca
+		WHERE etca.address = a_token_address AND etca.blockchain = a_blockchain;
+
+		SELECT spcab.pkey_id INTO _strategy_contract_asset_balance_id
+		FROM tbl.strategy_pool_contract_asset_balance AS spcab
+		WHERE spcab.fkey_strategy_pool_contract_id = a_strategy_pool_contract_id AND spcab.fkey_token_id = _token_id;
+		
+		-- if the record for this token and this strategy pool contract does not exit, create one
+		IF _strategy_contract_asset_balance_id IS NULL THEN
+			INSERT INTO tbl.strategy_pool_contract_asset_balance (fkey_strategy_pool_contract_id, fkey_token_id, balance)
+			VALUES (a_strategy_pool_contract_id, _token_id, a_new_balance)
+			RETURNING pkey_id INTO _strategy_contract_asset_balance_id;
+		ELSE
+			UPDATE tbl.strategy_pool_contract_asset_balance
+			SET balance = a_new_balance
+			WHERE pkey_id = _strategy_contract_asset_balance_id;
+		END IF;
+
+		RETURN QUERY SELECT _strategy_contract_asset_balance_id;
+END
+
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_watcher_list_strategy_pool_contract_asset_balances(a_strategy_pool_contract_id bigint, a_blockchain enum_block_chain DEFAULT NULL, a_token_address varchar DEFAULT NULL)
+RETURNS table (
+    "token_id" bigint,
+    "token_name" varchar,
+    "token_symbol" varchar,
+    "token_address" varchar,
+    "blockchain" enum_block_chain,
+    "balance" varchar
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+		RETURN QUERY SELECT
+			tc.pkey_id,
+			tc.short_name,
+			tc.symbol,
+			tc.address,
+			tc.blockchain,
+			spcab.balance AS balance
+			FROM tbl.strategy_pool_contract_asset_balance AS spcab
+			INNER JOIN tbl.escrow_token_contract_address AS tc ON spcab.fkey_token_id = tc.pkey_id
+			WHERE spcab.fkey_strategy_pool_contract_id = a_strategy_pool_contract_id
+			AND (a_blockchain ISNULL OR tc.blockchain = a_blockchain)
+			AND (a_token_address ISNULL OR tc.address = a_token_address);
+END
+
+$$;
+        
+
 CREATE OR REPLACE FUNCTION api.fun_watcher_list_strategy_escrow_pending_wallet_balance(a_strategy_id bigint DEFAULT NULL, a_token_address varchar DEFAULT NULL)
 RETURNS table (
     "strategy_id" bigint,

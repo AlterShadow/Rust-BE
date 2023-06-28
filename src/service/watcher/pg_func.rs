@@ -203,6 +203,78 @@ END
 "#,
         ),
         ProceduralFunction::new(
+            "fun_watcher_upsert_strategy_pool_contract_asset_balance",
+            vec![
+                Field::new("strategy_pool_contract_id", Type::BigInt),
+                Field::new("token_address", Type::String),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("new_balance", Type::String),
+            ],
+            vec![Field::new(
+                "strategy_contract_asset_balance_id",
+                Type::BigInt,
+            )],
+            r#"
+DECLARE
+		_strategy_contract_asset_balance_id BIGINT;
+		_token_id BIGINT;
+BEGIN
+		SELECT etca.pkey_id INTO _token_id
+		FROM tbl.escrow_token_contract_address AS etca
+		WHERE etca.address = a_token_address AND etca.blockchain = a_blockchain;
+
+		SELECT spcab.pkey_id INTO _strategy_contract_asset_balance_id
+		FROM tbl.strategy_pool_contract_asset_balance AS spcab
+		WHERE spcab.fkey_strategy_pool_contract_id = a_strategy_pool_contract_id AND spcab.fkey_token_id = _token_id;
+		
+		-- if the record for this token and this strategy pool contract does not exit, create one
+		IF _strategy_contract_asset_balance_id IS NULL THEN
+			INSERT INTO tbl.strategy_pool_contract_asset_balance (fkey_strategy_pool_contract_id, fkey_token_id, balance)
+			VALUES (a_strategy_pool_contract_id, _token_id, a_new_balance)
+			RETURNING pkey_id INTO _strategy_contract_asset_balance_id;
+		ELSE
+			UPDATE tbl.strategy_pool_contract_asset_balance
+			SET balance = a_new_balance
+			WHERE pkey_id = _strategy_contract_asset_balance_id;
+		END IF;
+
+		RETURN QUERY SELECT _strategy_contract_asset_balance_id;
+END
+"#,
+        ),
+        ProceduralFunction::new(
+            "fun_watcher_list_strategy_pool_contract_asset_balances",
+            vec![
+                Field::new("strategy_pool_contract_id", Type::BigInt),
+                Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
+                Field::new("token_address", Type::optional(Type::String)),
+            ],
+            vec![
+                Field::new("token_id", Type::BigInt),
+                Field::new("token_name", Type::String),
+                Field::new("token_symbol", Type::String),
+                Field::new("token_address", Type::String),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("balance", Type::String),
+            ],
+            r#"
+BEGIN
+		RETURN QUERY SELECT
+			tc.pkey_id,
+			tc.short_name,
+			tc.symbol,
+			tc.address,
+			tc.blockchain,
+			spcab.balance AS balance
+			FROM tbl.strategy_pool_contract_asset_balance AS spcab
+			INNER JOIN tbl.escrow_token_contract_address AS tc ON spcab.fkey_token_id = tc.pkey_id
+			WHERE spcab.fkey_strategy_pool_contract_id = a_strategy_pool_contract_id
+			AND (a_blockchain ISNULL OR tc.blockchain = a_blockchain)
+			AND (a_token_address ISNULL OR tc.address = a_token_address);
+END
+"#,
+        ),
+        ProceduralFunction::new(
             "fun_watcher_list_strategy_escrow_pending_wallet_balance",
             vec![
                 Field::new("strategy_id", Type::optional(Type::BigInt)),
