@@ -185,23 +185,24 @@ async fn test_handle_eth_escrows_anvil() -> Result<()> {
 }
 
 #[tokio::test]
-async fn test_handle_eth_swap_mainnet() -> Result<()> {
+async fn test_handle_eth_swap_testnet() -> Result<()> {
     drop_and_recreate_database()?;
+
     let fake_backer_strategy_wallet_key = Secp256k1SecretKey::new_random();
     let master_key = Secp256k1SecretKey::from_str(DEV_ACCOUNT_PRIV_KEY)
         .context("failed to parse dev account private key")?;
     let conn_pool = EthereumRpcConnectionPool::new();
-    let conn = conn_pool.get(EnumBlockChain::BscMainnet).await?;
+    let conn = conn_pool.get(EnumBlockChain::EthereumGoerli).await?;
     let token_addresses = BlockchainCoinAddresses::new();
     let db = connect_to_database(database_test_config()).await?;
-
-    let wbnb_address_on_bsc = token_addresses
-        .get(EnumBlockChain::BscMainnet, EnumBlockchainCoin::WBNB)
+    add_tokens_to_database(&db).await?;
+    let weth_address_on_goerli = token_addresses
+        .get(EnumBlockChain::EthereumGoerli, EnumBlockchainCoin::WETH)
         .ok_or_else(|| eyre!("could not find WBNB address on BSC Testnet"))?;
-    let busd_address_on_bsc = token_addresses
-        .get(EnumBlockChain::BscMainnet, EnumBlockchainCoin::BUSD)
+    let usdc_address_on_goerli = token_addresses
+        .get(EnumBlockChain::EthereumGoerli, EnumBlockchainCoin::USDC)
         .ok_or_else(|| eyre!("could not find USDC address on BSC Testnet"))?;
-    let busd_contract = Erc20Token::new(conn.clone(), busd_address_on_bsc)?;
+    let usdc_contract = Erc20Token::new(conn.clone(), usdc_address_on_goerli)?;
 
     /* create expert */
     let expert = db
@@ -232,7 +233,7 @@ async fn test_handle_eth_swap_mainnet() -> Result<()> {
             strategy_fee: 1.0,
             expert_fee: 1.0,
             agreed_tos: true,
-            blockchain: EnumBlockChain::BscMainnet,
+            blockchain: EnumBlockChain::EthereumGoerli,
             wallet_address: format!("{:?}", Address::zero()),
         })
         .await?
@@ -244,7 +245,7 @@ async fn test_handle_eth_swap_mainnet() -> Result<()> {
         .execute(FunUserAddStrategyWatchWalletReq {
             user_id: expert.user_id,
             strategy_id: strategy.strategy_id,
-            blockchain: EnumBlockChain::BscMainnet,
+            blockchain: EnumBlockChain::EthereumGoerli,
             wallet_address: format!("{:?}", master_key.address()),
             ratio: 1.0,
             dex: EnumDex::PancakeSwap.to_string(),
@@ -263,29 +264,32 @@ async fn test_handle_eth_swap_mainnet() -> Result<()> {
     .await?;
 
     /* add strategy contract address to the database */
-    db.execute(FunWatcherSaveStrategyPoolContractReq {
-        strategy_id: strategy.strategy_id,
-        blockchain: EnumBlockChain::BscMainnet,
-        address: format!("{:?}", sp_contract.address()),
-    })
-    .await?;
+    let insert_sp_contract = db
+        .execute(FunWatcherSaveStrategyPoolContractReq {
+            strategy_id: strategy.strategy_id,
+            blockchain: EnumBlockChain::EthereumGoerli,
+            address: format!("{:?}", sp_contract.address()),
+        })
+        .await?
+        .into_result()
+        .context("could not insert sp contract to database")?;
 
-    /* approve strategy pool for 1 BUSD deposit */
-    /* make sure dev wallet has enough BUSD */
+    /* approve strategy pool for 1 USDC deposit */
+    /* make sure dev wallet has enough USDC */
     approve_and_ensure_success(
-        busd_contract.clone(),
+        usdc_contract.clone(),
         &conn,
         4,
         10,
         Duration::from_secs(10),
         master_key.clone(),
         sp_contract.address(),
-        U256::from(1).try_checked_mul(U256::exp10(busd_contract.decimals().await?.as_usize()))?,
+        U256::from(1).try_checked_mul(U256::exp10(usdc_contract.decimals().await?.as_usize()))?,
     )
     .await?;
 
-    /* deposit 1 BUSD to strategy pool */
-    /* make sure dev wallet has enough BUSD */
+    /* deposit 1 USDC to strategy pool */
+    /* make sure dev wallet has enough USDC */
     sp_deposit_to_and_ensure_success(
         sp_contract.clone(),
         &conn,
@@ -293,43 +297,62 @@ async fn test_handle_eth_swap_mainnet() -> Result<()> {
         10,
         Duration::from_secs(10),
         master_key.clone(),
-        vec![busd_address_on_bsc],
+        vec![usdc_address_on_goerli],
         vec![U256::from(1)
-            .try_checked_mul(U256::exp10(busd_contract.decimals().await?.as_usize()))?],
+            .try_checked_mul(U256::exp10(usdc_contract.decimals().await?.as_usize()))?],
         U256::from(1),
         fake_backer_strategy_wallet_key.address(),
     )
     .await?;
 
+    /* add deposit to strategy pool balance table */
+    db.execute(FunWatcherUpsertStrategyPoolContractAssetBalanceReq {
+        strategy_pool_contract_id: insert_sp_contract.pkey_id,
+        token_address: format!("{:?}", usdc_address_on_goerli),
+        blockchain: EnumBlockChain::EthereumGoerli,
+        new_balance: format!(
+            "{:?}",
+            U256::from(1)
+                .try_checked_mul(U256::exp10(usdc_contract.decimals().await?.as_usize()))?
+        ),
+    })
+    .await?;
+
     /* add tokens sold tokens as strategy tokens */
-    /* since we are simulating the strategy owning the tokens before hand */
+    /* since we are simulating the strategy owning the tokens beforehand */
     /* and since they were already deposited to the strategy pool contract */
     /* the handler will check if the token sold was previously bought to calculate how much to buy for strategy pools */
     /* without a previous amount, there would be no way to calculate how much to buy */
     // TODO: change this to add to ledger once ledger is implemented
-    db.execute(FunUserAddStrategyInitialTokenRatioReq {
-        strategy_id: strategy.strategy_id,
-        token_address: format!("{:?}", busd_address_on_bsc),
-        token_name: "BUSD".to_string(),
-        quantity: format!(
+    db.execute(FunWatcherSaveStrategyWatchingWalletTradeLedgerReq {
+        address: format!("{:?}", master_key.address()),
+        transaction_hash: format!("{:?}", H256::zero()),
+        blockchain: EnumBlockChain::EthereumGoerli,
+        contract_address: format!("{:?}", Address::zero()),
+        dex: None,
+        token_in_address: Some(format!("{:?}", weth_address_on_goerli)),
+        token_out_address: Some(format!("{:?}", usdc_address_on_goerli)),
+        amount_in: Some(format!("{:?}", U256::one())),
+        amount_out: Some(format!(
             "{:?}",
             U256::from(1)
-                .try_checked_mul(U256::exp10(busd_contract.decimals().await?.as_usize()))?
-        ),
-        blockchain: EnumBlockChain::BscMainnet,
+                .try_checked_mul(U256::exp10(usdc_contract.decimals().await?.as_usize()))?
+        )), // 1 USDC
+        happened_at: None,
     })
     .await?;
 
     /* fetch pancake swap address */
     let dex_addresses = DexAddresses::new();
     let _pancake_swap_address_on_bsc = dex_addresses
-        .get(EnumBlockChain::BscMainnet, EnumDex::PancakeSwap)
+        .get(EnumBlockChain::EthereumGoerli, EnumDex::PancakeSwap)
         .context("could not get pancakeswap address on bsc testnet")?;
 
-    /* expert trades 1 BUSD for WBNB on pancake swap */
-    /* this is a previous trade of 1 BUSD for WBNB */
+    /* expert trades 1 USDC for WETH on pancake swap */
+    /* this is a previous trade of 1 USDC for WETH on Goerli */
+    /* this trade was made from the dev wallet, which is the expert watched wallet for the created strategy */
     let expert_trade_hash =
-        H256::from_str("0xa42409d6beac0c219b957361a94ef9ba042fa274de2ebbd6936af74bec525a3c")
+        H256::from_str("0x305e519ad0f9ac81d9b3b897c252e10875eebfeef6eeae7e3b114ef3709ebfc6")
             .unwrap();
 
     /* set up app state */
@@ -350,7 +373,7 @@ async fn test_handle_eth_swap_mainnet() -> Result<()> {
     /* handle eth swaps */
     match handle_pancake_swap_transaction(
         Arc::new(app_state),
-        EnumBlockChain::BscMainnet,
+        EnumBlockChain::EthereumGoerli,
         expert_trade_tx,
     )
     .await
@@ -361,84 +384,419 @@ async fn test_handle_eth_swap_mainnet() -> Result<()> {
 
     /* parse expert trade to check quantities */
     let expert_trade = parse_dex_trade(
-        EnumBlockChain::BscMainnet,
+        EnumBlockChain::EthereumGoerli,
         &TransactionFetcher::new_and_assume_ready(expert_trade_hash, &conn).await?,
         &DexAddresses::new(),
         &build_pancake_swap()?,
     )
     .await?;
 
-    /* check entry in wallet activity ledger */
-    // let wallet_activity = db
-    //     .execute(FunWatcherListWalletActivityReq {
-    //         address: format!("{:?}", master_key.address()),
-    //         blockchain: EnumBlockChain::BscMainnet,
-    //     })
-    //     .await?
-    //     .into_result()
-    //     .context("failed to fetch entry in wallet activity ledger")?;
-    //
-    // assert_eq!(
-    //     wallet_activity.address,
-    //     format!("{:?}", master_key.address())
-    // );
-    // assert_eq!(wallet_activity.blockchain, EnumBlockChain::BscMainnet);
-    // assert_eq!(
-    //     wallet_activity.transaction_hash,
-    //     format!("{:?}", expert_trade_hash)
-    // );
-    // assert_eq!(wallet_activity.dex, Some(EnumDex::PancakeSwap.to_string()));
-    // assert_eq!(
-    //     wallet_activity.contract_address,
-    //     format!("{:?}", pancake_swap_address_on_bsc)
-    // );
-    // assert_eq!(
-    //     wallet_activity.token_in_address,
-    //     Some(format!("{:?}", busd_address_on_bsc))
-    // );
-    // assert_eq!(
-    //     wallet_activity.token_out_address,
-    //     Some(format!("{:?}", wbnb_address_on_bsc))
-    // );
-    // assert_eq!(
-    //     wallet_activity.caller_address,
-    //     format!("{:?}", master_key.address())
-    // );
-    // assert_eq!(
-    //     wallet_activity.amount_in,
-    //     Some(format!(
-    //         "{:?}",
-    //         U256::from(1)
-    //             .try_checked_mul(U256::exp10(busd_contract.decimals().await?.as_usize()))?
-    //     ))
-    // );
-    // assert_eq!(
-    //     wallet_activity.amount_out,
-    //     Some(format!("{:?}", expert_trade.amount_out))
-    // );
-
-    /* check strategy_initial_token_ratio now shows wbnb */
-    let strategy_tokens = db
-        .execute(FunUserListStrategyInitialTokenRatiosReq {
+    /* check entry in watched wallet ledger */
+    let strategy_tokens_after = db
+        .execute(FunWatcherGetStrategyTokensFromLedgerReq {
             strategy_id: strategy.strategy_id,
         })
         .await?
+        .into_rows();
+
+    let mut usdc_present = false;
+    let mut weth_present = false;
+    for row in strategy_tokens_after {
+        if row.token_address == format!("{:?}", weth_address_on_goerli) {
+            weth_present = true;
+            assert!(U256::from_dec_str(&row.amount)? > U256::one());
+            assert_eq!(row.blockchain, EnumBlockChain::EthereumGoerli);
+        }
+        if row.token_address == format!("{:?}", usdc_address_on_goerli) {
+            usdc_present = true;
+        }
+    }
+    assert!(weth_present);
+    // USDC cannot be present, since watched wallet had 1 as strategy tokens, but sold 1 USDC for WETH
+    assert!(!usdc_present);
+
+    /* check pool balance table shows WETH */
+    let strategy_pool_contract_weth = db
+        .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
+            strategy_pool_contract_id: insert_sp_contract.pkey_id,
+            blockchain: Some(EnumBlockChain::EthereumGoerli),
+            token_address: Some(format!("{:?}", weth_address_on_goerli)),
+        })
+        .await?
         .into_result()
-        .context("no tokens")?;
-    assert_eq!(
-        strategy_tokens.token_address,
-        format!("{:?}", wbnb_address_on_bsc)
-    );
-    assert_eq!(
-        strategy_tokens.quantity,
-        format!("{:?}", expert_trade.amount_out)
-    );
-    assert_eq!(strategy_tokens.blockchain, EnumBlockChain::BscMainnet);
-    assert_eq!(strategy_tokens.strategy_id, strategy.strategy_id);
+        .context("no WETH found for strategy pool contract balance")?;
+    let strategy_pool_contract_usdc = db
+        .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
+            strategy_pool_contract_id: insert_sp_contract.pkey_id,
+            blockchain: Some(EnumBlockChain::EthereumGoerli),
+            token_address: Some(format!("{:?}", usdc_address_on_goerli)),
+        })
+        .await?
+        .into_result()
+        .context("no USDC found for strategy pool contract balance")?;
+    assert!(U256::from_dec_str(&strategy_pool_contract_weth.balance)? > U256::one());
+    assert!(U256::from_dec_str(&strategy_pool_contract_usdc.balance)? == U256::zero());
 
-    /* check sp contract now holds wbnb instead of busd */
-    let sp_contract_wbnb_balance = sp_contract.asset_balance(wbnb_address_on_bsc).await?;
-    assert!(sp_contract_wbnb_balance > U256::zero());
+    /* check sp contract now holds WETH instead of USDC */
+    let sp_contract_weth_balance = sp_contract.asset_balance(weth_address_on_goerli).await?;
+    assert!(sp_contract_weth_balance > U256::zero());
+    /* check the tokens held by the contract are exactly the ones in the balance table */
+    assert_eq!(
+        U256::from_dec_str(&strategy_pool_contract_weth.balance)?,
+        sp_contract_weth_balance
+    );
 
+    Ok(())
+}
+
+async fn add_tokens_to_database(db: &DbClient) -> Result<()> {
+    let token_addresses = BlockchainCoinAddresses::new();
+    db.query(
+        "
+			INSERT INTO tbl.escrow_token_contract_address (
+				pkey_id,
+				blockchain,
+				symbol,
+				short_name,
+				description,
+				address,
+				is_stablecoin
+			) VALUES ($1, $2, $3, $4, $5, $6, $7)
+	",
+        &[
+            &i64::from(1) as &(dyn ToSql + Sync),
+            &EnumBlockChain::EthereumMainnet as &(dyn ToSql + Sync),
+            &"USDC" as &(dyn ToSql + Sync),
+            &"USDC" as &(dyn ToSql + Sync),
+            &"USDC" as &(dyn ToSql + Sync),
+            &format!(
+                "{:?}",
+                token_addresses
+                    .get(EnumBlockChain::EthereumMainnet, EnumBlockchainCoin::USDC)
+                    .context("could not get token address for test insertion in database")?
+            ) as &(dyn ToSql + Sync),
+            &true as &(dyn ToSql + Sync),
+        ],
+    )
+    .await?;
+
+    db.query(
+        "
+		INSERT INTO tbl.escrow_token_contract_address (
+			pkey_id,
+			blockchain,
+			symbol,
+			short_name,
+			description,
+			address,
+			is_stablecoin
+		) VALUES ($1, $2, $3, $4, $5, $6, $7)
+",
+        &[
+            &i64::from(2) as &(dyn ToSql + Sync),
+            &EnumBlockChain::EthereumMainnet as &(dyn ToSql + Sync),
+            &"USDT" as &(dyn ToSql + Sync),
+            &"USDT" as &(dyn ToSql + Sync),
+            &"USDT" as &(dyn ToSql + Sync),
+            &format!(
+                "{:?}",
+                token_addresses
+                    .get(EnumBlockChain::EthereumMainnet, EnumBlockchainCoin::USDT)
+                    .context("could not get token address for test insertion in database")?
+            ) as &(dyn ToSql + Sync),
+            &true as &(dyn ToSql + Sync),
+        ],
+    )
+    .await?;
+
+    db.query(
+        "
+	INSERT INTO tbl.escrow_token_contract_address (
+		pkey_id,
+		blockchain,
+		symbol,
+		short_name,
+		description,
+		address,
+		is_stablecoin
+	) VALUES ($1, $2, $3, $4, $5, $6, $7)
+",
+        &[
+            &i64::from(3) as &(dyn ToSql + Sync),
+            &EnumBlockChain::EthereumMainnet as &(dyn ToSql + Sync),
+            &"BUSD" as &(dyn ToSql + Sync),
+            &"BUSD" as &(dyn ToSql + Sync),
+            &"BUSD" as &(dyn ToSql + Sync),
+            &format!(
+                "{:?}",
+                token_addresses
+                    .get(EnumBlockChain::EthereumMainnet, EnumBlockchainCoin::BUSD)
+                    .context("could not get token address for test insertion in database")?
+            ) as &(dyn ToSql + Sync),
+            &true as &(dyn ToSql + Sync),
+        ],
+    )
+    .await?;
+
+    db.query(
+        "
+INSERT INTO tbl.escrow_token_contract_address (
+	pkey_id,
+	blockchain,
+	symbol,
+	short_name,
+	description,
+	address,
+	is_stablecoin
+) VALUES ($1, $2, $3, $4, $5, $6, $7)
+",
+        &[
+            &i64::from(4) as &(dyn ToSql + Sync),
+            &EnumBlockChain::EthereumMainnet as &(dyn ToSql + Sync),
+            &"WETH" as &(dyn ToSql + Sync),
+            &"WETH" as &(dyn ToSql + Sync),
+            &"WETH" as &(dyn ToSql + Sync),
+            &format!(
+                "{:?}",
+                token_addresses
+                    .get(EnumBlockChain::EthereumMainnet, EnumBlockchainCoin::WETH)
+                    .context("could not get token address for test insertion in database")?
+            ) as &(dyn ToSql + Sync),
+            &true as &(dyn ToSql + Sync),
+        ],
+    )
+    .await?;
+
+    db.query(
+        "
+INSERT INTO tbl.escrow_token_contract_address (
+	pkey_id,
+	blockchain,
+	symbol,
+	short_name,
+	description,
+	address,
+	is_stablecoin
+) VALUES ($1, $2, $3, $4, $5, $6, $7)
+",
+        &[
+            &i64::from(5) as &(dyn ToSql + Sync),
+            &EnumBlockChain::EthereumGoerli as &(dyn ToSql + Sync),
+            &"USDC" as &(dyn ToSql + Sync),
+            &"USDC" as &(dyn ToSql + Sync),
+            &"USDC" as &(dyn ToSql + Sync),
+            &format!(
+                "{:?}",
+                token_addresses
+                    .get(EnumBlockChain::EthereumGoerli, EnumBlockchainCoin::USDC)
+                    .context("could not get token address for test insertion in database")?
+            ) as &(dyn ToSql + Sync),
+            &true as &(dyn ToSql + Sync),
+        ],
+    )
+    .await?;
+
+    db.query(
+        "
+INSERT INTO tbl.escrow_token_contract_address (
+	pkey_id,
+	blockchain,
+	symbol,
+	short_name,
+	description,
+	address,
+	is_stablecoin
+) VALUES ($1, $2, $3, $4, $5, $6, $7)
+",
+        &[
+            &i64::from(6) as &(dyn ToSql + Sync),
+            &EnumBlockChain::EthereumGoerli as &(dyn ToSql + Sync),
+            &"WETH" as &(dyn ToSql + Sync),
+            &"WETH" as &(dyn ToSql + Sync),
+            &"WETH" as &(dyn ToSql + Sync),
+            &format!(
+                "{:?}",
+                token_addresses
+                    .get(EnumBlockChain::EthereumGoerli, EnumBlockchainCoin::WETH)
+                    .context("could not get token address for test insertion in database")?
+            ) as &(dyn ToSql + Sync),
+            &true as &(dyn ToSql + Sync),
+        ],
+    )
+    .await?;
+
+    db.query(
+        "
+INSERT INTO tbl.escrow_token_contract_address (
+	pkey_id,
+	blockchain,
+	symbol,
+	short_name,
+	description,
+	address,
+	is_stablecoin
+) VALUES ($1, $2, $3, $4, $5, $6, $7)
+",
+        &[
+            &i64::from(7) as &(dyn ToSql + Sync),
+            &EnumBlockChain::BscMainnet as &(dyn ToSql + Sync),
+            &"USDC" as &(dyn ToSql + Sync),
+            &"USDC" as &(dyn ToSql + Sync),
+            &"USDC" as &(dyn ToSql + Sync),
+            &format!(
+                "{:?}",
+                token_addresses
+                    .get(EnumBlockChain::BscMainnet, EnumBlockchainCoin::USDC)
+                    .context("could not get token address for test insertion in database")?
+            ) as &(dyn ToSql + Sync),
+            &true as &(dyn ToSql + Sync),
+        ],
+    )
+    .await?;
+
+    db.query(
+        "
+INSERT INTO tbl.escrow_token_contract_address (
+	pkey_id,
+	blockchain,
+	symbol,
+	short_name,
+	description,
+	address,
+	is_stablecoin
+) VALUES ($1, $2, $3, $4, $5, $6, $7)
+",
+        &[
+            &i64::from(8) as &(dyn ToSql + Sync),
+            &EnumBlockChain::BscMainnet as &(dyn ToSql + Sync),
+            &"USDT" as &(dyn ToSql + Sync),
+            &"USDT" as &(dyn ToSql + Sync),
+            &"USDT" as &(dyn ToSql + Sync),
+            &format!(
+                "{:?}",
+                token_addresses
+                    .get(EnumBlockChain::BscMainnet, EnumBlockchainCoin::USDT)
+                    .context("could not get token address for test insertion in database")?
+            ) as &(dyn ToSql + Sync),
+            &true as &(dyn ToSql + Sync),
+        ],
+    )
+    .await?;
+
+    db.query(
+        "
+INSERT INTO tbl.escrow_token_contract_address (
+	pkey_id,
+	blockchain,
+	symbol,
+	short_name,
+	description,
+	address,
+	is_stablecoin
+) VALUES ($1, $2, $3, $4, $5, $6, $7)
+",
+        &[
+            &i64::from(9) as &(dyn ToSql + Sync),
+            &EnumBlockChain::BscMainnet as &(dyn ToSql + Sync),
+            &"BUSD" as &(dyn ToSql + Sync),
+            &"BUSD" as &(dyn ToSql + Sync),
+            &"BUSD" as &(dyn ToSql + Sync),
+            &format!(
+                "{:?}",
+                token_addresses
+                    .get(EnumBlockChain::BscMainnet, EnumBlockchainCoin::BUSD)
+                    .context("could not get token address for test insertion in database")?
+            ) as &(dyn ToSql + Sync),
+            &true as &(dyn ToSql + Sync),
+        ],
+    )
+    .await?;
+
+    db.query(
+        "
+INSERT INTO tbl.escrow_token_contract_address (
+	pkey_id,
+	blockchain,
+	symbol,
+	short_name,
+	description,
+	address,
+	is_stablecoin
+) VALUES ($1, $2, $3, $4, $5, $6, $7)
+",
+        &[
+            &i64::from(10) as &(dyn ToSql + Sync),
+            &EnumBlockChain::BscMainnet as &(dyn ToSql + Sync),
+            &"WBNB" as &(dyn ToSql + Sync),
+            &"WBNB" as &(dyn ToSql + Sync),
+            &"WBNB" as &(dyn ToSql + Sync),
+            &format!(
+                "{:?}",
+                token_addresses
+                    .get(EnumBlockChain::BscMainnet, EnumBlockchainCoin::WBNB)
+                    .context("could not get token address for test insertion in database")?
+            ) as &(dyn ToSql + Sync),
+            &true as &(dyn ToSql + Sync),
+        ],
+    )
+    .await?;
+
+    db.query(
+        "
+INSERT INTO tbl.escrow_token_contract_address (
+	pkey_id,
+	blockchain,
+	symbol,
+	short_name,
+	description,
+	address,
+	is_stablecoin
+) VALUES ($1, $2, $3, $4, $5, $6, $7)
+",
+        &[
+            &i64::from(11) as &(dyn ToSql + Sync),
+            &EnumBlockChain::BscTestnet as &(dyn ToSql + Sync),
+            &"BUSD" as &(dyn ToSql + Sync),
+            &"BUSD" as &(dyn ToSql + Sync),
+            &"BUSD" as &(dyn ToSql + Sync),
+            &format!(
+                "{:?}",
+                token_addresses
+                    .get(EnumBlockChain::BscTestnet, EnumBlockchainCoin::BUSD)
+                    .context("could not get token address for test insertion in database")?
+            ) as &(dyn ToSql + Sync),
+            &true as &(dyn ToSql + Sync),
+        ],
+    )
+    .await?;
+
+    db.query(
+        "
+INSERT INTO tbl.escrow_token_contract_address (
+	pkey_id,
+	blockchain,
+	symbol,
+	short_name,
+	description,
+	address,
+	is_stablecoin
+) VALUES ($1, $2, $3, $4, $5, $6, $7)
+",
+        &[
+            &i64::from(12) as &(dyn ToSql + Sync),
+            &EnumBlockChain::BscTestnet as &(dyn ToSql + Sync),
+            &"WBNB" as &(dyn ToSql + Sync),
+            &"WBNB" as &(dyn ToSql + Sync),
+            &"WBNB" as &(dyn ToSql + Sync),
+            &format!(
+                "{:?}",
+                token_addresses
+                    .get(EnumBlockChain::BscTestnet, EnumBlockchainCoin::WBNB)
+                    .context("could not get token address for test insertion in database")?
+            ) as &(dyn ToSql + Sync),
+            &true as &(dyn ToSql + Sync),
+        ],
+    )
+    .await?;
     Ok(())
 }
