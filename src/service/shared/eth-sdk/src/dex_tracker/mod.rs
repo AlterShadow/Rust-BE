@@ -64,7 +64,7 @@ pub async fn update_expert_listened_wallet_asset_ledger(
             limit: 1,
             blockchain: Some(blockchain),
             address: Some(format!("{:?}", expert_watched_wallet_address)),
-            token_id: Some(token_out_id),
+            token_id: Some(token_in_id),
             offset: 0,
         })
         .await?
@@ -72,12 +72,12 @@ pub async fn update_expert_listened_wallet_asset_ledger(
         .map(|tk| U256::from_dec_str(&tk.balance))
         .unwrap_or_else(|| Ok(0.into()))?;
     if old_amount > 0.into() {
-        let new_amount = old_amount.try_checked_sub(trade.amount_out)?;
+        let new_amount = old_amount.try_checked_sub(trade.amount_in)?;
         /* if token_in is already in the database, update it's amount */
         db.execute(FunWatcherUpsertExpertListenedWalletAssetBalanceReq {
             address: format!("{:?}", expert_watched_wallet_address),
             blockchain,
-            token_id: token_out_id,
+            token_id: token_in_id,
             old_balance: format!("{:?}", old_amount),
             new_balance: format!("{:?}", new_amount),
         })
@@ -88,18 +88,18 @@ pub async fn update_expert_listened_wallet_asset_ledger(
             limit: 1,
             blockchain: Some(blockchain),
             address: Some(format!("{:?}", expert_watched_wallet_address)),
-            token_id: Some(token_in_id),
+            token_id: Some(token_out_id),
             offset: 0,
         })
         .await?
         .into_result()
         .map(|tk| U256::from_dec_str(&tk.balance))
         .unwrap_or_else(|| Ok(0.into()))?;
-    let new_amount = old_amount.try_checked_add(trade.amount_in)?;
+    let new_amount = old_amount.try_checked_add(trade.amount_out)?;
     db.execute(FunWatcherUpsertExpertListenedWalletAssetBalanceReq {
         address: format!("{:?}", expert_watched_wallet_address),
         blockchain,
-        token_id: token_in_id,
+        token_id: token_out_id,
         old_balance: format!("{:?}", old_amount),
         new_balance: format!("{:?}", new_amount),
     })
