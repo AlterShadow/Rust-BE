@@ -3008,7 +3008,7 @@ BEGIN
             JOIN tbl.expert_watched_wallet AS eww ON eww.pkey_id = elwal.fkey_expert_watched_wallet_id
     WHERE (a_token_id ISNULL OR elwal.fkey_token_id = a_token_id)
      AND (a_address ISNULL OR eww.address = a_address)
-     AND (a_blockchain ISNULL OR blockchain = a_blockchain)
+     AND (a_blockchain ISNULL OR eww.blockchain = a_blockchain)
      ORDER BY elwal.pkey_id DESC
     LIMIT a_limit
     OFFSET a_offset;
