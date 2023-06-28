@@ -179,7 +179,6 @@ async fn main() -> Result<()> {
     });
     server.add_handler(MethodUserBackStrategy {
         pool: eth_pool.clone(),
-        stablecoin_addresses: coin_addresses.clone(),
         escrow_contract: escrow_contract.clone(),
         master_key: master_key.clone(),
         dex_addresses: Arc::new(DexAddresses::new()),

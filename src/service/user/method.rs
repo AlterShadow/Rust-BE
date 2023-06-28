@@ -31,7 +31,6 @@ use lib::utils::hex_decode;
 use lib::ws::SubscribeManager;
 use lib::{DEFAULT_LIMIT, DEFAULT_OFFSET};
 use num_traits::cast::FromPrimitive;
-use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -741,7 +740,7 @@ async fn user_back_strategy(
     // TODO: fetch fees from strategy
     // TODO: use (back amount - fees) to calculate trade spenditure and SP shares
     // TODO: register appropriate fees for the treasury and the strategy creator
-    let fees = back_usdc_amount * 0.02;
+    let fees = back_usdc_amount * 2 / 100;
     let back_usdc_amount_minus_fees = back_usdc_amount - fees;
 
     /* instantiate strategy contract wrapper */
@@ -873,7 +872,7 @@ async fn user_back_strategy(
         strategy_wallet_contract.address(),
     )
     .await?;
-    let user_strategy_wallet: Address = db
+    let user_strategy_balance: U256 = db
         .execute(FunWatcherListUserStrategyBalanceReq {
             limit: 1,
             offset: 0,
@@ -882,14 +881,17 @@ async fn user_back_strategy(
             blockchain: Some(blockchain),
         })
         .await?
-        .first(|x| x.balance.as_str())
-        .unwrap_or("0")
+        .first(|x| x.balance.clone())
+        .unwrap_or("0".to_owned())
         .parse()?;
-    db.execute(FunWatcherUpsertUserStrategyBalance {
+
+    db.execute(FunWatcherUpsertUserStrategyBalanceReq {
         user_id: ctx.user_id,
-        strategy_id: strategy.strategy_id,
+        strategy_id,
+        token_id,
         blockchain,
-        balance: format!("{:?}", user_strategy_wallet + strategy_pool_token_to_mint),
+        old_balance: format!("{:?}", user_strategy_balance),
+        new_balance: format!("{:?}", user_strategy_balance + strategy_pool_token_to_mint),
     })
     .await?;
     let ret = db
@@ -923,51 +925,6 @@ async fn user_back_strategy(
     Ok(())
 }
 
-fn merge_multichain_strategy_tokens(
-    chain: EnumBlockChain,
-    known_addresses: &BlockchainCoinAddresses,
-    multichain_tokens: Vec<(EnumBlockChain, Address, U256)>,
-) -> Result<HashMap<Address, U256>> {
-    /* merge multichain token addresses and amounts respective addresses on one chain with summed amounts */
-    /* will fail if any token address is from an unknown token */
-    /* TODO: replace this when we can query unified balance from tokens accross chains from db */
-    let mut merged_strategy_token_amounts_by_chain: HashMap<Address, U256> = HashMap::new();
-    for (token_chain, token_address, token_amount) in multichain_tokens {
-        let strategy_token = known_addresses
-            .get_by_address(token_chain, token_address)
-            .ok_or_else(|| eyre!("strategy token is unknown"))?;
-        if token_chain == chain {
-            /* strategy token is on this chain, use token contract address directly */
-            match merged_strategy_token_amounts_by_chain.entry(token_address) {
-                Entry::Vacant(e) => {
-                    e.insert(token_amount);
-                }
-                Entry::Occupied(mut e) => {
-                    let balance = e.get_mut();
-                    *balance = balance.try_checked_add(token_amount)?;
-                }
-            }
-        } else {
-            /* strategy token is not on this chain, use this chain's token contract address */
-            let strategy_token_address_on_this_chain =
-                known_addresses
-                    .get(chain, strategy_token)
-                    .ok_or_else(|| eyre!("strategy token not available on this chain"))?;
-            match merged_strategy_token_amounts_by_chain.entry(strategy_token_address_on_this_chain)
-            {
-                Entry::Vacant(e) => {
-                    e.insert(token_amount);
-                }
-                Entry::Occupied(mut e) => {
-                    let balance = e.get_mut();
-                    *balance = balance.try_checked_add(token_amount)?;
-                }
-            }
-        }
-    }
-    Ok(merged_strategy_token_amounts_by_chain)
-}
-
 fn calculate_escrow_allocation_for_strategy_tokens(
     escrow_amount: U256,
     total_strategy_tokens: U256,
@@ -983,88 +940,6 @@ fn calculate_escrow_allocation_for_strategy_tokens(
     }
     Ok(escrow_allocations)
 }
-//
-// async fn calculate_buying_plan_with_initial_tokens(
-//     conn: &EthereumRpcConnection,
-//     cmc: &CoinMarketCap,
-//     sp_initial_token_ratio: HashMap<Address, U256>,
-//     sp_decimals: U256,
-//     escrow_symbol: String,
-//     escrow_amount: U256,
-//     escrow_decimals: U256,
-// ) -> Result<HashMap<Address, U256>> {
-//     /*
-//     From Rev:
-//     The amount deposited -> minus fees (Some goes to treasury)
-//     We look at the ratios of tokens for the SP (Strategy pool)
-//     We then calculate roughly what that means at the DEX $100 deposit.. 35% BTC -> We will plan to buy $35 (minus fees and gas shit) at the DEX
-//     We buy $35 BTC -> We probably receive $33 (slippage and other shit)
-//     .... we do this for all tokens
-//     We then calculate post-slippage actual amounts bought
-//     THEN we MINT SP tokens based on how much the SP was increased
-//     THEN we send them the tokens
-//      */
-//
-//     /* multiply the escrow amount by the price to get its value with no consideration for decimals */
-//     /* if escrow decimals > sp decimals, divide unconsidered value by 10^(escrow decimals - sp decimals) to account for decimal differences */
-//     /* if sp decimals > escrow decimals, multiply the unconsidered value by 10^(sp decimals - escrow decimals) to account for decimal differences */
-//     /* this is valid for all tokens, not just the escrow */
-//     let escrow_value: U256;
-//     if escrow_decimals > sp_decimals {
-//         escrow_value = escrow_amount
-//             .mul_f64(cmc.get_usd_prices_by_symbol(&vec![escrow_symbol]).await?[0])?
-//             .try_checked_div(U256::exp10(
-//                 escrow_decimals.as_usize() - sp_decimals.as_usize(),
-//             ))?;
-//     } else {
-//         escrow_value = escrow_amount
-//             .mul_f64(cmc.get_usd_prices_by_symbol(&vec![escrow_symbol]).await?[0])?
-//             .try_checked_mul(U256::exp10(
-//                 sp_decimals.as_usize() - escrow_decimals.as_usize(),
-//             ))?;
-//     }
-//     if sp_total_shares == U256::zero() {
-//         /* if strategy pool is empty, shares = escrow value */
-//         Ok(escrow_value)
-//     } else {
-//         /* if strategy pool is active, shares = (escrow_value * total_strategy_shares) / total_strategy_value */
-//         let sp_total_value: U256 = {
-//             let mut total_value = U256::zero();
-//             for (asset, amount) in sp_initial_token_ratio
-//                 .0
-//                 .iter()
-//                 .zip(sp_initial_token_ratio.1.iter())
-//             {
-//                 let erc20 = Erc20Token::new(conn.clone(), *asset)?;
-//                 let price = cmc
-//                     .get_usd_prices_by_symbol(&vec![erc20.symbol().await?])
-//                     .await?;
-//                 /* add to total value the value of each token accounting for decimal differences */
-//                 let token_decimals = erc20.decimals().await?;
-//                 if token_decimals > sp_decimals {
-//                     total_value =
-//                         total_value.try_checked_add(amount.mul_f64(price[0])?.try_checked_div(
-//                             U256::exp10(token_decimals.as_usize() - sp_decimals.as_usize()),
-//                         )?)?;
-//                 } else {
-//                     total_value =
-//                         total_value.try_checked_add(amount.mul_f64(price[0])?.try_checked_mul(
-//                             U256::exp10(sp_decimals.as_usize() - token_decimals.as_usize()),
-//                         )?)?;
-//                 }
-//             }
-//             total_value
-//         };
-//         Ok(escrow_value.mul_div(
-//             sp_total_shares,
-//             if sp_total_value == U256::zero() {
-//                 U256::one()
-//             } else {
-//                 sp_total_value
-//             },
-//         )?)
-//     }
-// }
 
 async fn calculate_sp_tokens_to_mint_easy_approach(
     conn: &EthereumRpcConnection,
@@ -1169,7 +1044,6 @@ async fn trade_escrow_for_strategy_tokens(
 
 pub struct MethodUserBackStrategy {
     pub pool: EthereumRpcConnectionPool,
-    pub stablecoin_addresses: Arc<BlockchainCoinAddresses>,
     pub escrow_contract: Arc<AbstractEscrowContract>,
     pub master_key: Secp256k1SecretKey,
     pub dex_addresses: Arc<DexAddresses>,
@@ -1185,7 +1059,6 @@ impl RequestHandler for MethodUserBackStrategy {
     ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         let pool = self.pool.clone();
-        let token_addresses = self.stablecoin_addresses.clone();
         let dex_addresses = self.dex_addresses.clone();
         let escrow_contract = self.escrow_contract.clone();
         let master_key = self.master_key.clone();

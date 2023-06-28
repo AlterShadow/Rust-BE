@@ -208,6 +208,7 @@ END
                 Field::new("strategy_pool_contract_id", Type::BigInt),
                 Field::new("token_address", Type::String),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
+                // TODO: old_balance
                 Field::new("new_balance", Type::String),
             ],
             vec![Field::new(
@@ -385,17 +386,18 @@ BEGIN
         VALUES (fkey_token_id, a_new_balance, _expert_listened_wallet_asset_balance_id)
         RETURNING pkey_id
             INTO _pkey_id;
+    ELSE
+        -- update old balance if exist and equals to old balance
+        IF _expert_listened_wallet_asset_balance_old_balance NOTNULL AND _expert_listened_wallet_asset_balance_old_balance != a_old_balance THEN
+            RETURN;
+        END IF;
+        UPDATE tbl.expert_listened_wallet_asset_balance
+        SET balance = a_new_balance
+        WHERE pkey_id = _expert_listened_wallet_asset_balance_id
+        RETURNING pkey_id
+            INTO _pkey_id;
     END IF;
 
-    -- update old balance if exist and equals to old balance
-    IF _expert_listened_wallet_asset_balance_old_balance NOTNULL AND _expert_listened_wallet_asset_balance_old_balance != a_old_balance THEN
-        RETURN;
-    END IF;
-    UPDATE tbl.expert_listened_wallet_asset_balance
-    SET balance = a_new_balance
-    WHERE pkey_id = _expert_listened_wallet_asset_balance_id
-    RETURNING pkey_id
-        INTO _pkey_id;
     RETURN QUERY SELECT _pkey_id;
 END
         "#,
@@ -453,6 +455,67 @@ END
 "#,
         ),
         ProceduralFunction::new(
+            "fun_watcher_upsert_user_strategy_balance",
+            vec![
+                Field::new("user_id", Type::BigInt),
+                Field::new("strategy_id", Type::BigInt),
+                Field::new("token_id", Type::BigInt),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("old_balance", Type::String),
+                Field::new("new_balance", Type::String),
+            ],
+            vec![Field::new("ret_pkey_id", Type::BigInt)],
+            r#"
+DECLARE
+    _strategy_pool_contract_id bigint;
+    _user_strategy_wallet_id  bigint;
+    _user_strategy_wallet_balance_old_balance    varchar;
+    _user_strategy_wallet_balance_id             bigint;
+    _pkey_id                                     bigint;
+BEGIN
+    SELECT pkey_id INTO _strategy_pool_contract_id FROM tbl.strategy_pool_contract
+    WHERE fkey_strategy_id = a_strategy_id
+        AND blockchain = a_blockchain;
+    ASSERT _strategy_pool_contract_id NOTNULL;
+    
+    SELECT pkey_id INTO _user_strategy_wallet_id FROM tbl.user_strategy_wallet
+    WHERE fkey_user_id = a_user_id
+        AND fkey_token_id = a_token_id;
+        
+    ASSERT _user_strategy_wallet_id NOTNULL;
+    
+    SELECT pkey_id, balance INTO _user_strategy_wallet_balance_id, _user_strategy_wallet_balance_old_balance
+    FROM tbl.user_strategy_balance
+    WHERE fkey_user_strategy_wallet_id = _user_strategy_wallet_id
+        AND fkey_strategy_pool_contract_id = _strategy_pool_contract_id;
+    
+    -- insert new entry if not exist
+    IF _user_strategy_wallet_balance_id ISNULL THEN
+        INSERT INTO tbl.user_strategy_balance (fkey_user_strategy_wallet_id, fkey_strategy_pool_contract_id, balance)
+        VALUES (_user_strategy_wallet_id, _strategy_pool_contract_id, a_new_balance)
+        RETURNING pkey_id
+            INTO _pkey_id;
+    ELSE
+    -- update old balance if exist and equals to old balance
+        IF _user_strategy_wallet_balance_old_balance NOTNULL AND _user_strategy_wallet_balance_old_balance != a_old_balance THEN
+            RETURN;
+        END IF;
+
+        UPDATE tbl.user_strategy_balance
+        SET balance = a_new_balance
+        WHERE pkey_id = _user_strategy_wallet_balance_id
+        RETURNING pkey_id
+            INTO _pkey_id;
+            
+    END IF;
+    
+    RETURN QUERY SELECT _pkey_id;
+    
+        
+END
+            "#,
+        ),
+        ProceduralFunction::new(
             "fun_watcher_upsert_user_deposit_withdraw_balance",
             vec![
                 Field::new("user_id", Type::BigInt),
@@ -487,18 +550,19 @@ BEGIN
         VALUES (a_user_id, _escrow_contract_address_id, _token_id, a_new_balance)
         RETURNING pkey_id
             INTO _pkey_id;
+    ELSE
+        -- update old balance if exist and equals to old balance
+        IF _user_deposit_withdraw_balance_old_balance NOTNULL AND _user_deposit_withdraw_balance_old_balance != a_old_balance THEN
+            RETURN;
+        END IF;
+        UPDATE tbl.user_deposit_withdraw_balance
+        SET balance = a_new_balance
+        WHERE pkey_id = _user_deposit_withdraw_balance_id
+        RETURNING pkey_id
+            INTO _pkey_id;
     END IF;
-
-    -- update old balance if exist and equals to old balance
-    IF _user_deposit_withdraw_balance_old_balance NOTNULL AND _user_deposit_withdraw_balance_old_balance != a_old_balance THEN
-        RETURN;
-    END IF;
-    UPDATE tbl.user_deposit_withdraw_balance
-    SET balance = a_new_balance
-    WHERE pkey_id = _user_deposit_withdraw_balance_id
-    RETURNING pkey_id
-        INTO _pkey_id;
     RETURN QUERY SELECT _pkey_id;
+
 END
             "#,
         ),

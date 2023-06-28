@@ -414,7 +414,7 @@ impl<T> RDataTable<T> {
         }
     }
     pub fn first<R>(&self, f: impl Fn(&T) -> R) -> Option<R> {
-        self.rows.first().map(|x| f(x))
+        self.rows.first().map(f)
     }
     pub fn rows(&self) -> &Vec<T> {
         &self.rows
