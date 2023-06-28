@@ -3126,15 +3126,30 @@ mod tests {
         )
         .await?;
 
+        let token = db
+            .execute(FunUserListEscrowTokenContractAddressReq {
+                limit: 1,
+                offset: 0,
+                blockchain: Some(EnumBlockChain::BscTestnet),
+                token_id: None,
+                address: Some(format!("{:?}", busd_address_on_bsc_testnet)),
+                symbol: None,
+                is_stablecoin: None,
+            })
+            .await?
+            .into_result()
+            .context("no token")?;
+
         user_back_strategy(
             &conn,
             &ctx,
             &db,
             EnumBlockChain::BscTestnet,
             U256::from(10).try_checked_mul(U256::from(busd_decimals))?,
-            &token_addresses,
+            ret.user_id,
             strategy.strategy_id,
-            EnumBlockchainCoin::BUSD,
+            token.token_id,
+            busd_address_on_bsc_testnet,
             escrow_contract,
             &DexAddresses::new(),
             master_key,
