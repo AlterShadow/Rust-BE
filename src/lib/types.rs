@@ -1,6 +1,7 @@
 use bytes::BytesMut;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::error::Error;
+use std::fmt::Debug;
 use std::ops::{Deref, DerefMut};
 use std::str::FromStr;
 use tokio_postgres::types::{FromSql, IsNull, ToSql, Type};
@@ -16,8 +17,13 @@ pub fn amount_from_display(s: &str) -> U256 {
     U256::from((amount * 1e18) as u128)
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct BlockchainDecimal(pub U256);
+impl Debug for BlockchainDecimal {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
 #[allow(non_snake_case)]
 pub mod WithBlockchainDecimal {
     use super::*;
@@ -62,7 +68,7 @@ impl ToSql for BlockchainDecimal {
     where
         Self: Sized,
     {
-        self.0.to_string().to_sql(ty, out)
+        format!("{:?}", self.0).to_sql(ty, out)
     }
 
     fn accepts(ty: &Type) -> bool
@@ -77,7 +83,7 @@ impl ToSql for BlockchainDecimal {
         ty: &Type,
         out: &mut BytesMut,
     ) -> Result<IsNull, Box<dyn Error + Sync + Send>> {
-        self.0.to_string().to_sql_checked(ty, out)
+        format!("{:?}", self.0).to_sql_checked(ty, out)
     }
 }
 impl<'a> FromSql<'a> for BlockchainDecimal {
@@ -112,8 +118,13 @@ impl DerefMut for BlockchainDecimal {
         &mut self.0
     }
 }
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct BlockchainAddress(pub Address);
+impl Debug for BlockchainAddress {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
 #[allow(non_snake_case)]
 pub mod WithBlockchainAddress {
     use super::*;
@@ -156,7 +167,7 @@ impl ToSql for BlockchainAddress {
     where
         Self: Sized,
     {
-        self.0.to_string().to_sql(ty, out)
+        format!("{:?}", self.0).to_sql(ty, out)
     }
 
     fn accepts(ty: &Type) -> bool
@@ -171,7 +182,7 @@ impl ToSql for BlockchainAddress {
         ty: &Type,
         out: &mut BytesMut,
     ) -> Result<IsNull, Box<dyn Error + Sync + Send>> {
-        self.0.to_string().to_sql_checked(ty, out)
+        format!("{:?}", self.0).to_sql_checked(ty, out)
     }
 }
 impl<'a> FromSql<'a> for BlockchainAddress {
@@ -206,8 +217,13 @@ impl DerefMut for BlockchainAddress {
         &mut self.0
     }
 }
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct BlockchainTransactionHash(pub H256);
+impl Debug for BlockchainTransactionHash {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
 #[allow(non_snake_case)]
 pub mod WithBlockchainTransactionHash {
     use super::*;
@@ -250,7 +266,7 @@ impl ToSql for BlockchainTransactionHash {
     where
         Self: Sized,
     {
-        self.0.to_string().to_sql(ty, out)
+        format!("{:?}", self.0).to_sql(ty, out)
     }
 
     fn accepts(ty: &Type) -> bool
@@ -265,7 +281,7 @@ impl ToSql for BlockchainTransactionHash {
         ty: &Type,
         out: &mut BytesMut,
     ) -> Result<IsNull, Box<dyn Error + Sync + Send>> {
-        self.0.to_string().to_sql_checked(ty, out)
+        format!("{:?}", self.0).to_sql_checked(ty, out)
     }
 }
 impl<'a> FromSql<'a> for BlockchainTransactionHash {

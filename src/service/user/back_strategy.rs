@@ -24,7 +24,7 @@ use lib::database::DbClient;
 use lib::toolbox::RequestContext;
 use lib::types::U256;
 use std::collections::HashMap;
-use tracing::info;
+use tracing::{debug, info};
 use web3::signing::Key;
 use web3::types::Address;
 
@@ -193,9 +193,9 @@ pub async fn user_back_strategy(
             token_id: Some(token_id),
             escrow_contract_address: Some(escrow_contract.address().into()),
         })
-        .await?
-        .into_result()
-        .context("insufficient balance")?;
+        .await?;
+    debug!("Fetched {} rows of user balance", user_balance.len());
+    let user_balance = user_balance.into_result().context("insufficient balance")?;
     let user_balance: U256 = user_balance.balance.into();
     if user_balance < back_usdc_amount {
         bail!("insufficient balance");

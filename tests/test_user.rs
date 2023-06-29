@@ -3,11 +3,14 @@ pub mod tools;
 use eth_sdk::signer::Secp256k1SecretKey;
 use eyre::*;
 use gen::model::*;
-use lib::database::drop_and_recreate_database;
+use lib::database::{connect_to_database, drop_and_recreate_database, DatabaseConfig};
 use lib::log::{setup_logs, LogLevel};
 
+use gen::database::FunUserListUserDepositWithdrawBalanceReq;
 use tools::*;
 use tracing::*;
+use web3::signing::Key;
+use web3::types::Address;
 
 #[tokio::test]
 async fn test_create_update_strategy() -> Result<()> {
@@ -23,7 +26,7 @@ async fn test_create_update_strategy() -> Result<()> {
             strategy_fee: 0.0,
             expert_fee: 0.0,
             agreed_tos: true,
-            wallet_address: format!("{:?}", user.address),
+            wallet_address: user.address.into(),
             wallet_blockchain: EnumBlockChain::EthereumMainnet,
             initial_tokens: vec![],
             audit_rules: Some(vec![1]),
@@ -42,7 +45,7 @@ async fn test_create_update_strategy() -> Result<()> {
         .request(ExpertAddStrategyWatchingWalletRequest {
             strategy_id: resp.strategy_id,
             blockchain: EnumBlockChain::LocalNet,
-            wallet_address: "0x000000000001".to_string(),
+            wallet_address: user.address().into(),
             ratio: 1.0,
         })
         .await?;
@@ -72,7 +75,7 @@ async fn test_user_follow_strategy() -> Result<()> {
             strategy_fee: 0.0,
             expert_fee: 0.0,
             agreed_tos: true,
-            wallet_address: format!("{:?}", user.address),
+            wallet_address: user.address.into(),
             wallet_blockchain: EnumBlockChain::EthereumMainnet,
             initial_tokens: vec![],
             audit_rules: Some(vec![1]),
@@ -140,7 +143,7 @@ async fn test_user_follow_strategy_get_user_profile() -> Result<()> {
             strategy_fee: 0.0,
             expert_fee: 0.0,
             agreed_tos: true,
-            wallet_address: format!("{:?}", user.address),
+            wallet_address: user.address.into(),
             wallet_blockchain: EnumBlockChain::EthereumMainnet,
             initial_tokens: vec![],
             audit_rules: Some(vec![1]),
@@ -187,7 +190,7 @@ async fn test_user_list_strategies() -> Result<()> {
             strategy_fee: 0.0,
             expert_fee: 0.0,
             agreed_tos: true,
-            wallet_address: format!("{:?}", user.address),
+            wallet_address: user.address.into(),
             wallet_blockchain: EnumBlockChain::EthereumMainnet,
             initial_tokens: vec![],
             audit_rules: None,
