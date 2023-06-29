@@ -817,7 +817,6 @@ async fn user_back_strategy(
     /* calculate how much of back amount to spend on each strategy token */
     let escrow_allocations_for_tokens = calculate_escrow_allocation_for_strategy_tokens(
         back_usdc_amount_minus_fees,
-        total_strategy_pool_tokens,
         strategy_initial_token_ratios,
     )?;
     /* approve pancakeswap to trade escrow token */
@@ -927,15 +926,20 @@ async fn user_back_strategy(
 
 fn calculate_escrow_allocation_for_strategy_tokens(
     escrow_amount: U256,
-    total_strategy_tokens: U256,
     strategy_initial_token_ratios: HashMap<Address, U256>,
 ) -> Result<HashMap<Address, U256>> {
+    let total_initial_token_numbers: U256 = strategy_initial_token_ratios
+        .values()
+        .fold(U256::zero(), |acc, x| acc + x);
+    ensure!(
+        total_initial_token_numbers > U256::zero(),
+        "Total initial token numbers is zero"
+    );
     /* calculates how much of escrow to spend on each strategy token */
-    /* allocation = (strategy_token_amount * escrow_amount) / total_strategy_token_amounts */
-    // TODO: do we really want to mixup these amounts instead of values?
+    /* allocation = (initial_strategy_token_amount * escrow_amount) / total_initial_strategy_token_amounts */
     let mut escrow_allocations: HashMap<Address, U256> = HashMap::new();
     for (token_address, token_amount) in strategy_initial_token_ratios {
-        let escrow_allocation = token_amount.mul_div(escrow_amount, total_strategy_tokens)?;
+        let escrow_allocation = token_amount.mul_div(escrow_amount, total_initial_token_numbers)?;
         escrow_allocations.insert(token_address, escrow_allocation);
     }
     Ok(escrow_allocations)
