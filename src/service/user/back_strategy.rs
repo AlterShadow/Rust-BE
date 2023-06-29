@@ -264,10 +264,17 @@ pub async fn user_back_strategy(
         "strategy has no initial ratios"
     );
     /* deduce fees from back amount */
-    // TODO: fetch fees from strategy
     // TODO: use (back amount - fees) to calculate trade spenditure and SP shares
-    // TODO: register appropriate fees for the treasury and the strategy creator
-    let fees = back_usdc_amount * 2 / 100;
+    // TODO: distribute fees for the treasury and the strategy creator
+    let platform_fee = 0.01;
+    let divide_scale = 10000;
+    let fees = back_usdc_amount
+        * (((strategy.swap_fee.unwrap_or_default()
+            + strategy.strategy_fee.unwrap_or_default()
+            + strategy.expert_fee.unwrap_or_default()
+            + platform_fee)
+            * divide_scale as f64) as u64)
+        / divide_scale;
     let back_usdc_amount_minus_fees = back_usdc_amount - fees;
 
     /* instantiate strategy contract wrapper */

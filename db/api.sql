@@ -367,7 +367,10 @@ RETURNS table (
     "immutable_audit_rules" boolean,
     "strategy_pool_token" varchar,
     "blockchain" enum_block_chain,
-    "strategy_pool_address" varchar
+    "strategy_pool_address" varchar,
+    "swap_fee" double precision,
+    "strategy_fee" double precision,
+    "expert_fee" double precision
 )
 LANGUAGE plpgsql
 AS $$
@@ -406,7 +409,10 @@ BEGIN
 			ON spt.fkey_user_strategy_wallet_id = usw.pkey_id
 			WHERE spc.fkey_strategy_id = s.pkey_id AND usw.fkey_user_id = a_user_id) AS strategy_pool_token,
       s.blockchain,
-      s.strategy_pool_address
+      s.strategy_pool_address,
+      s.swap_fee,
+      s.strategy_fee,
+      s.expert_fee
       
                  FROM tbl.strategy AS s
                      JOIN tbl.user_follow_strategy AS b ON b.fkey_strategy_id = s.pkey_id
@@ -451,7 +457,10 @@ RETURNS table (
     "immutable_audit_rules" boolean,
     "strategy_pool_token" varchar,
     "blockchain" enum_block_chain,
-    "strategy_pool_address" varchar
+    "strategy_pool_address" varchar,
+    "swap_fee" double precision,
+    "strategy_fee" double precision,
+    "expert_fee" double precision
 )
 LANGUAGE plpgsql
 AS $$
@@ -490,7 +499,10 @@ BEGIN
 			ON spt.fkey_user_strategy_wallet_id = usw.pkey_id
 			WHERE spc.fkey_strategy_id = s.pkey_id AND usw.fkey_user_id = a_user_id) AS strategy_pool_token,
       s.blockchain,
-      s.strategy_pool_address
+      s.strategy_pool_address,
+      s.swap_fee,
+      s.strategy_fee,
+      s.expert_fee
       
                  FROM tbl.strategy AS s
                         JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id
@@ -667,7 +679,10 @@ RETURNS table (
     "immutable_audit_rules" boolean,
     "strategy_pool_token" varchar,
     "blockchain" enum_block_chain,
-    "strategy_pool_address" varchar
+    "strategy_pool_address" varchar,
+    "swap_fee" double precision,
+    "strategy_fee" double precision,
+    "expert_fee" double precision
 )
 LANGUAGE plpgsql
 AS $$
@@ -706,7 +721,10 @@ BEGIN
 			ON spt.fkey_user_strategy_wallet_id = usw.pkey_id
 			WHERE spc.fkey_strategy_id = s.pkey_id AND usw.fkey_user_id = a_user_id) AS strategy_pool_token,
       s.blockchain,
-      s.strategy_pool_address
+      s.strategy_pool_address,
+      s.swap_fee,
+      s.strategy_fee,
+      s.expert_fee
       
                  FROM tbl.strategy AS s
                       JOIN tbl.user_back_exit_strategy_ledger AS b ON b.fkey_strategy_id = s.pkey_id AND b.fkey_user_id = a_user_id
@@ -2383,7 +2401,10 @@ RETURNS table (
     "immutable_audit_rules" boolean,
     "strategy_pool_token" varchar,
     "blockchain" enum_block_chain,
-    "strategy_pool_address" varchar
+    "strategy_pool_address" varchar,
+    "swap_fee" double precision,
+    "strategy_fee" double precision,
+    "expert_fee" double precision
 )
 LANGUAGE plpgsql
 AS $$
@@ -2424,7 +2445,10 @@ BEGIN
 			ON spt.fkey_user_strategy_wallet_id = usw.pkey_id
 			WHERE spc.fkey_strategy_id = s.pkey_id AND usw.fkey_user_id = a_user_id) AS strategy_pool_token,
       s.blockchain,
-      s.strategy_pool_address
+      s.strategy_pool_address,
+      s.swap_fee,
+      s.strategy_fee,
+      s.expert_fee
       
                  FROM tbl.strategy AS s
                       JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id

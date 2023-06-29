@@ -549,6 +549,12 @@ pub struct FunUserStrategyRowType {
     pub blockchain: EnumBlockChain,
     #[serde(default)]
     pub strategy_pool_address: Option<BlockchainAddress>,
+    #[serde(default)]
+    pub swap_fee: Option<f64>,
+    #[serde(default)]
+    pub strategy_fee: Option<f64>,
+    #[serde(default)]
+    pub expert_fee: Option<f64>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]

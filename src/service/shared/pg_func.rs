@@ -45,6 +45,9 @@ pub fn strategy_row_type() -> Type {
                 "strategy_pool_address",
                 Type::optional(Type::BlockchainAddress),
             ),
+            Field::new("swap_fee", Type::optional(Type::Numeric)),
+            Field::new("strategy_fee", Type::optional(Type::Numeric)),
+            Field::new("expert_fee", Type::optional(Type::Numeric)),
         ],
     )
 }
@@ -83,7 +86,10 @@ pub fn get_strategy(followed: &str) -> String {
 			ON spt.fkey_user_strategy_wallet_id = usw.pkey_id
 			WHERE spc.fkey_strategy_id = s.pkey_id AND usw.fkey_user_id = a_user_id) AS strategy_pool_token,
       s.blockchain,
-      s.strategy_pool_address
+      s.strategy_pool_address,
+      s.swap_fee,
+      s.strategy_fee,
+      s.expert_fee
       ",
         followers = get_strategy_followers_count(),
         backers = get_strategy_backers_count(),
