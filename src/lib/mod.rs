@@ -8,6 +8,7 @@ mod listener;
 pub mod log;
 pub mod scheduler;
 pub mod toolbox;
+pub mod types;
 pub mod utils;
 pub mod ws;
 

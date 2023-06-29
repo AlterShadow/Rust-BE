@@ -124,15 +124,15 @@ pub async fn handle_pancake_swap_transaction(
     let saved = state
         .db
         .execute(FunWatcherSaveStrategyWatchingWalletTradeLedgerReq {
-            address: format!("{:?}", caller.clone()),
-            transaction_hash: format!("{:?}", tx.get_hash()),
+            address: caller.clone().into(),
+            transaction_hash: tx.get_hash().into(),
             blockchain,
-            contract_address: format!("{:?}", called_address),
+            contract_address: called_address.into(),
             dex: Some(EnumDex::PancakeSwap.to_string()),
-            token_in_address: Some(format!("{:?}", trade.token_in)),
-            token_out_address: Some(format!("{:?}", trade.token_out)),
-            amount_in: Some(format!("{:?}", trade.amount_in)),
-            amount_out: Some(format!("{:?}", trade.amount_out)),
+            token_in_address: Some(trade.token_in.into()),
+            token_out_address: Some(trade.token_out.into()),
+            amount_in: Some(trade.amount_in.into()),
+            amount_out: Some(trade.amount_out.into()),
             happened_at: None,
         })
         .await
@@ -176,7 +176,7 @@ pub async fn handle_pancake_swap_transaction(
 
         /* if there is an SP contract for this strategy,  */
         if let Some(address_row) = strategy_pool {
-            let address: Address = address_row.address.parse()?;
+            let address: Address = address_row.address.into();
             /* check if SP contract holds token_in */
             let sp_contract = StrategyPoolContract::new(conn.clone(), address)?;
             // TODO: we want to save the balance to database, not from on-chain
@@ -186,14 +186,14 @@ pub async fn handle_pancake_swap_transaction(
                 .db
                 .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
                     strategy_pool_contract_id: address_row.pkey_id,
-                    token_address: Some(format!("{:?}", trade.token_in)),
+                    token_address: Some(trade.token_in.into()),
                     blockchain: Some(blockchain),
                 })
                 .await?
                 .into_result()
                 .context("strategy pool contract does not hold asset to sell")?;
 
-            let sp_asset_token_in_amount = U256::from_dec_str(&sp_asset_token_in.balance)?;
+            let sp_asset_token_in_amount = sp_asset_token_in.balance.into();
             if sp_asset_token_in_amount == U256::zero() {
                 bail!("strategy pool has no asset to sell");
             }
@@ -304,15 +304,13 @@ pub async fn handle_pancake_swap_transaction(
                 .db
                 .execute(FunWatcherUpsertStrategyPoolContractAssetBalanceReq {
                     strategy_pool_contract_id: address_row.pkey_id,
-                    token_address: format!("{:?}", trade.token_in),
-                    blockchain: blockchain,
-                    new_balance: format!(
-                        "{}",
-                        match sp_asset_token_in_amount.try_checked_sub(amount_to_spend) {
-                            Ok(new_balance) => new_balance,
-                            Err(_) => U256::zero(),
-                        }
-                    ),
+                    token_address: trade.token_in.into(),
+                    blockchain,
+                    new_balance: match sp_asset_token_in_amount.try_checked_sub(amount_to_spend) {
+                        Ok(new_balance) => new_balance,
+                        Err(_) => U256::zero(),
+                    }
+                    .into(),
                 })
                 .await?;
 
@@ -320,15 +318,13 @@ pub async fn handle_pancake_swap_transaction(
                 .db
                 .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
                     strategy_pool_contract_id: address_row.pkey_id,
-                    token_address: Some(format!("{:?}", trade.token_out)),
+                    token_address: Some(trade.token_out.into()),
                     blockchain: Some(blockchain),
                 })
                 .await?
                 .into_result();
             let sp_asset_token_out_new_balance = match sp_asset_token_out {
-                Some(token_out) => {
-                    U256::from_dec_str(&token_out.balance)?.try_checked_add(sp_trade.amount_out)?
-                }
+                Some(token_out) => (*token_out.balance).try_checked_add(sp_trade.amount_out)?,
                 None => sp_trade.amount_out,
             };
 
@@ -336,9 +332,9 @@ pub async fn handle_pancake_swap_transaction(
                 .db
                 .execute(FunWatcherUpsertStrategyPoolContractAssetBalanceReq {
                     strategy_pool_contract_id: address_row.pkey_id,
-                    token_address: format!("{:?}", trade.token_out),
-                    blockchain: blockchain,
-                    new_balance: format!("{}", sp_asset_token_out_new_balance),
+                    token_address: trade.token_out.into(),
+                    blockchain,
+                    new_balance: sp_asset_token_out_new_balance.into(),
                 })
                 .await?;
         }
@@ -406,7 +402,7 @@ pub async fn handle_eth_escrows(
                 let user = match state
                     .db
                     .execute(FunUserGetUserByAddressReq {
-                        address: format!("{:?}", caller),
+                        address: caller.into(),
                     })
                     .await?
                     .into_result()
@@ -428,12 +424,12 @@ pub async fn handle_eth_escrows(
                     .db
                     .execute(FunWatcherSaveUserDepositWithdrawLedgerReq {
                         user_id: user.user_id,
-                        quantity: format!("{:?}", escrow.amount),
+                        quantity: escrow.amount.into(),
                         blockchain,
-                        user_address: format!("{:?}", escrow.owner),
-                        contract_address: format!("{:?}", called_address),
-                        transaction_hash: format!("{:?}", tx.get_hash()),
-                        receiver_address: format!("{:?}", escrow.recipient),
+                        user_address: escrow.owner.into(),
+                        contract_address: called_address.into(),
+                        transaction_hash: tx.get_hash().into(),
+                        receiver_address: escrow.recipient.into(),
                     })
                     .await
                     .context("error inserting escrow in ledger")?;
@@ -445,24 +441,24 @@ pub async fn handle_eth_escrows(
                         offset: 0,
                         user_id: user.user_id,
                         blockchain: Some(blockchain),
-                        token_address: Some(format!("{:?}", called_address)),
+                        token_address: Some(called_address.into()),
                         token_id: None,
-                        escrow_contract_address: Some(format!("{:?}", escrow.recipient)),
+                        escrow_contract_address: Some(escrow.recipient.into()),
                     })
                     .await?
                     .into_result()
-                    .map(|x| U256::from_dec_str(&x.balance))
-                    .unwrap_or_else(|| Ok(0.into()))?;
-                let new_balance = old_balance + escrow.amount;
+                    .map(|x| x.balance)
+                    .unwrap_or_default();
+                let new_balance = (*old_balance) + escrow.amount;
                 state
                     .db
                     .execute(FunWatcherUpsertUserDepositWithdrawBalanceReq {
                         user_id: user.user_id,
                         blockchain,
-                        old_balance: format!("{:?}", old_balance),
-                        new_balance: format!("{:?}", new_balance),
-                        token_address: format!("{:?}", called_address),
-                        escrow_contract_address: format!("{:?}", escrow.recipient),
+                        old_balance,
+                        new_balance: new_balance.into(),
+                        token_address: called_address.into(),
+                        escrow_contract_address: escrow.recipient.into(),
                     })
                     .await?;
 
@@ -474,12 +470,12 @@ pub async fn handle_eth_escrows(
                             pkey_id: 0,
                             user_id: user.user_id,
                             balance: UserListDepositLedgerRow {
-                                quantity: format!("{:?}", escrow.amount),
+                                quantity: escrow.amount.into(),
                                 blockchain,
-                                user_address: format!("{:?}", escrow.owner),
-                                contract_address: format!("{:?}", called_address),
-                                transaction_hash: format!("{:?}", tx.get_hash()),
-                                receiver_address: format!("{:?}", escrow.recipient),
+                                user_address: escrow.owner.into(),
+                                contract_address: called_address.into(),
+                                transaction_hash: tx.get_hash().into(),
+                                receiver_address: escrow.recipient.into(),
                                 created_at: Utc::now().timestamp(),
                             },
                         })

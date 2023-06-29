@@ -32,7 +32,6 @@ use lib::ws::SubscribeManager;
 use lib::{DEFAULT_LIMIT, DEFAULT_OFFSET};
 use num_traits::cast::FromPrimitive;
 use std::collections::HashMap;
-use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::time::sleep;
@@ -207,7 +206,7 @@ impl RequestHandler for MethodUserListStrategyFollowers {
                     .map(|x| ListStrategyFollowersRow {
                         user_id: x.user_public_id,
                         name: x.username,
-                        linked_wallet: x.wallet_address,
+                        linked_wallet: x.wallet_address.into(),
                         followed_date: x.followed_at,
                     })
                     .collect(),
@@ -242,7 +241,7 @@ impl RequestHandler for MethodUserListStrategyBackers {
                     .map(|x| ListStrategyBackersRow {
                         user_id: x.user_public_id,
                         name: x.username,
-                        linked_wallet: x.wallet_address,
+                        linked_wallet: x.wallet_address.into(),
                         backed_date: x.backed_at,
                     })
                     .collect(),
@@ -559,10 +558,7 @@ async fn user_get_or_deploy_strategy_wallet(
     {
         Some(strategy_wallet_contract) => {
             /* if user has wallet on this chain, use it */
-            StrategyWalletContract::new(
-                conn.clone(),
-                Address::from_str(&strategy_wallet_contract.address)?,
-            )
+            StrategyWalletContract::new(conn.clone(), strategy_wallet_contract.address.into())
         }
         None => {
             /* if user does not have a wallet on this chain, deploy it, and use it */
@@ -579,7 +575,7 @@ async fn user_get_or_deploy_strategy_wallet(
             db.execute(FunUserAddStrategyWalletReq {
                 user_id: ctx.user_id,
                 blockchain,
-                address: format!("{:?}", strategy_wallet_contract.address()),
+                address: strategy_wallet_contract.address().into(),
             })
             .await?;
 
@@ -610,7 +606,7 @@ async fn user_get_or_deploy_strategy_pool(
         .into_result();
     let sp_contract = match strategy_pool {
         Some(addr) => {
-            let address = Address::from_str(&addr.address)?;
+            let address = addr.address.into();
             (
                 addr.pkey_id,
                 StrategyPoolContract::new(conn.clone(), address)?,
@@ -630,7 +626,7 @@ async fn user_get_or_deploy_strategy_pool(
                 .execute(FunUserAddStrategyPoolContractReq {
                     strategy_id,
                     blockchain,
-                    address: format!("{:?}", contract.address()),
+                    address: contract.address().into(),
                 })
                 .await?
                 .into_result()
@@ -670,12 +666,12 @@ async fn user_back_strategy(
             blockchain: Some(blockchain),
             token_address: None,
             token_id: Some(token_id),
-            escrow_contract_address: Some(format!("{:?}", escrow_contract.address())),
+            escrow_contract_address: Some(escrow_contract.address().into()),
         })
         .await?
         .into_result()
         .context("insufficient balance")?;
-    let user_balance: U256 = U256::from_dec_str(&user_balance.balance)?;
+    let user_balance: U256 = user_balance.balance.into();
     if user_balance < back_usdc_amount {
         bail!("insufficient balance");
     }
@@ -684,8 +680,8 @@ async fn user_back_strategy(
     // TODO: fetch the correct address where user desires to receive shares on this chain
     // since users can have multiple addresses, this information is critical
     // for now, we fetch the "address" field from the user table
-    let user_wallet_address_to_receive_shares_on_this_chain = Address::from_str(
-        &db.execute(FunAdminListUsersReq {
+    let user_wallet_address_to_receive_shares_on_this_chain = db
+        .execute(FunAdminListUsersReq {
             limit: 1,
             offset: 0,
             user_id: Some(ctx.user_id),
@@ -697,8 +693,8 @@ async fn user_back_strategy(
         .await?
         .into_result()
         .context("No such user")?
-        .address,
-    )?;
+        .address
+        .into();
 
     /* instantiate strategy wallet contract wrapper */
     let strategy_wallet_contract = user_get_or_deploy_strategy_wallet(
@@ -816,8 +812,7 @@ async fn user_back_strategy(
     .await?;
     let mut strategy_initial_token_ratios: HashMap<Address, U256> = HashMap::new();
     for x in strategy_initial_ratios.iter() {
-        strategy_initial_token_ratios
-            .insert(x.token_address.parse()?, U256::from_dec_str(&x.quantity)?);
+        strategy_initial_token_ratios.insert(x.token_address.into(), x.quantity.into());
     }
 
     /* calculate how much of back amount to spend on each strategy token */
@@ -887,36 +882,40 @@ async fn user_back_strategy(
             blockchain: Some(blockchain),
         })
         .await?
-        .first(|x| x.balance.clone())
-        .unwrap_or("0".to_owned());
-    let user_strategy_balance = U256::from_dec_str(&user_strategy_balance)?;
+        .first(|x| x.balance)
+        .unwrap_or_default();
+
     db.execute(FunWatcherUpsertUserStrategyBalanceReq {
         user_id: ctx.user_id,
         strategy_id,
         token_id,
         blockchain,
-        old_balance: format!("{:?}", user_strategy_balance),
-        new_balance: format!("{:?}", user_strategy_balance + strategy_pool_token_to_mint),
+        old_balance: user_strategy_balance,
+        new_balance: (*user_strategy_balance + strategy_pool_token_to_mint).into(),
     })
     .await?;
-    for (token, amount) in tokens_to_deposit.iter().zip(amounts_to_deposit.iter()) {
+    for (token, amount) in tokens_to_deposit
+        .iter()
+        .cloned()
+        .zip(amounts_to_deposit.iter().cloned())
+    {
         let sp_asset_token = db
             .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
                 strategy_pool_contract_id,
-                token_address: Some(format!("{:?}", token)),
+                token_address: Some(token.into()),
                 blockchain: Some(blockchain),
             })
             .await?
             .into_result();
         let sp_asset_token_out_new_balance = match sp_asset_token {
-            Some(token_out) => U256::from_dec_str(&token_out.balance)?.try_checked_add(*amount)?,
-            None => *amount,
+            Some(token_out) => (*token_out.balance).try_checked_add(amount)?,
+            None => amount,
         };
         db.execute(FunWatcherUpsertStrategyPoolContractAssetBalanceReq {
             strategy_pool_contract_id,
-            token_address: format!("{:?}", token),
+            token_address: token.into(),
             blockchain,
-            new_balance: format!("{:?}", sp_asset_token_out_new_balance),
+            new_balance: sp_asset_token_out_new_balance.into(),
         })
         .await?;
     }
@@ -925,20 +924,14 @@ async fn user_back_strategy(
         .execute(FunUserBackStrategyReq {
             user_id: ctx.user_id,
             strategy_id: strategy.strategy_id,
-            quantity: format!("{:?}", back_usdc_amount),
-            new_total_backed_quantity: format!(
-                "{:?}",
-                strategy.total_backed_usdc.parse::<U256>()? + back_usdc_amount
-            ),
+            quantity: back_usdc_amount.into(),
+            new_total_backed_quantity: (*strategy.total_backed_usdc + back_usdc_amount).into(),
             old_total_backed_quantity: strategy.total_backed_usdc,
-            new_current_quantity: format!(
-                "{:?}",
-                strategy.current_usdc.parse::<U256>()? + back_usdc_amount
-            ),
+            new_current_quantity: (*strategy.current_usdc + back_usdc_amount).into(),
             old_current_quantity: strategy.current_usdc,
             blockchain,
-            transaction_hash: format!("{:?}", deposit_transaction_hash),
-            earn_sp_tokens: format!("{:?}", strategy_pool_token_to_mint),
+            transaction_hash: deposit_transaction_hash.into(),
+            earn_sp_tokens: strategy_pool_token_to_mint.into(),
         })
         .await?
         .into_result()
@@ -1124,10 +1117,10 @@ impl RequestHandler for MethodUserBackStrategy {
                 &db,
                 token.blockchain,
                 ctx.user_id,
-                U256::from_dec_str(&req.quantity)?,
+                req.quantity.into(),
                 req.strategy_id,
                 token.token_id,
-                token.address.parse()?,
+                token.address.into(),
                 escrow_contract,
                 &dex_addresses,
                 master_key,
@@ -1163,10 +1156,8 @@ async fn user_exit_strategy(
         .await?
         .into_result()
         .context("user has no strategy wallet on this chain")?;
-    let strategy_wallet_contract = StrategyWalletContract::new(
-        conn.clone(),
-        Address::from_str(&strategy_wallet_contract.address)?,
-    )?;
+    let strategy_wallet_contract =
+        StrategyWalletContract::new(conn.clone(), strategy_wallet_contract.address.into())?;
 
     /* if master key eoa is not admin, we can't redeem */
     if strategy_wallet_contract.admin().await? != master_key.address() {
@@ -1186,8 +1177,7 @@ async fn user_exit_strategy(
         .context("strategy pool is not registered in the database")?;
 
     /* instantiate strategy pool contract wrapper */
-    let sp_contract =
-        StrategyPoolContract::new(conn.clone(), Address::from_str(&strategy_pool.address)?)?;
+    let sp_contract = StrategyPoolContract::new(conn.clone(), strategy_pool.address.into())?;
 
     /* check if strategy is trading */
     if sp_contract.is_paused().await? {
@@ -1251,10 +1241,10 @@ async fn user_exit_strategy(
         user_id: ctx.user_id,
         strategy_id,
         // TODO: calculate value of sp tokens exit in usdc
-        quantity: format!("{:?}", 0),
+        quantity: U256::zero().into(),
         blockchain,
-        transaction_hash: format!("{:?}", tx_hash),
-        redeem_sp_tokens: format!("{:?}", shares_redeemed),
+        transaction_hash: tx_hash.into(),
+        redeem_sp_tokens: shares_redeemed.into(),
     })
     .await?;
 
@@ -1289,16 +1279,13 @@ impl RequestHandler for MethodUserExitStrategy {
                 &db,
                 req.blockchain,
                 req.strategy_id,
-                match req.quantity {
-                    Some(quantity) => Some(U256::from_dec_str(&quantity)?),
-                    None => None,
-                },
+                req.quantity.map(|x| x.into()),
                 master_key,
             )
             .await?;
             Ok(UserExitStrategyResponse {
                 success: true,
-                transaction_hash: format!("{:?}", tx_hash),
+                transaction_hash: tx_hash.into(),
             })
         }
         .boxed()
@@ -1339,8 +1326,8 @@ impl RequestHandler for MethodUserRequestRefund {
                 req.blockchain,
                 &stablecoin_addresses,
                 escrow_contract,
-                U256::from_dec_str(&req.quantity)?,
-                req.wallet_address.parse()?,
+                req.quantity.into(),
+                req.wallet_address.into(),
                 master_key,
                 EnumBlockchainCoin::USDC,
             )
@@ -1800,17 +1787,12 @@ impl RequestHandler for MethodUserRegisterWallet {
         let db: DbClient = toolbox.get_db();
         async move {
             ensure_user_role(ctx, EnumRole::User)?;
-            let address = Address::from_str(&req.wallet_address).map_err(|x| {
-                CustomError::new(
-                    EnumErrorCode::UnknownUser,
-                    format!("Invalid address: {}", x),
-                )
-            })?;
 
             let signature_text = hex_decode(req.message_to_sign.as_bytes())?;
             let signature = hex_decode(req.message_signature.as_bytes())?;
 
-            let verified = verify_message_address(&signature_text, &signature, address)?;
+            let verified =
+                verify_message_address(&signature_text, &signature, req.wallet_address.into())?;
 
             ensure!(
                 verified,
@@ -2231,12 +2213,12 @@ pub async fn on_user_request_refund(
 
     db.execute(FunUserRequestRefundReq {
         user_id: ctx.user_id,
-        quantity: format!("{:?}", quantity),
+        quantity: quantity.into(),
         blockchain: chain,
-        user_address: format!("{:?}", wallet_address),
-        receiver_address: format!("{:?}", wallet_address),
-        contract_address: format!("{:?}", escrow_contract.address()),
-        transaction_hash: format!("{:?}", hash),
+        user_address: wallet_address.into(),
+        receiver_address: wallet_address.into(),
+        contract_address: escrow_contract.address().into(),
+        transaction_hash: hash.into(),
     })
     .await?
     .into_result()
@@ -2475,7 +2457,7 @@ impl RequestHandler for MethodUserGetDepositTokens {
                     .map(|(blockchain, token, address)| UserGetDepositTokensRow {
                         blockchain,
                         token,
-                        address: format!("{:?}", address),
+                        address: address.into(),
                         short_name: format!("{:?}", token),
                         icon_url: "https://etherscan.io/token/images/centre-usdc_28.png"
                             .to_string(),
@@ -2532,7 +2514,7 @@ impl RequestHandler for MethodUserListDepositLedger {
                         user_address: x.user_address,
                         contract_address: x.contract_address,
                         receiver_address: x.receiver_address,
-                        quantity: x.quantity,
+                        quantity: x.quantity.into(),
                         transaction_hash: x.transaction_hash,
                         created_at: x.created_at,
                     })
@@ -2601,12 +2583,14 @@ impl RequestHandler for MethodUserSubscribeDepositLedger {
                             &toolbox,
                             AdminSubscribeTopic::AdminNotifyEscrowLedgerChange,
                             &UserListDepositLedgerRow {
-                                quantity: format!("{:?}", amount),
-                                blockchain: EnumBlockChain::EthereumMainnet,
-                                user_address: format!("{:?}", key.address),
-                                contract_address: format!("{:?}", key.address),
-                                transaction_hash: format!("{:?}", key.address),
-                                receiver_address: format!("{:?}", key.address),
+                                quantity: amount.into(),
+                                blockchain: req
+                                    .blockchain
+                                    .unwrap_or(EnumBlockChain::EthereumMainnet),
+                                user_address: key.address.clone().into(),
+                                contract_address: key.address.clone().into(),
+                                transaction_hash: H256::random().into(),
+                                receiver_address: key.address.clone().into(),
                                 created_at: Utc::now().timestamp(),
                             },
                             |x| x.connection_id == ctx.connection_id,
@@ -2699,7 +2683,7 @@ impl RequestHandler for MethodUserCreateStrategyWallet {
             let strategy_wallet = deploy_wallet_contract(
                 &conn,
                 master_key.clone(),
-                Address::from_str(&req.wallet_address)?,
+                req.wallet_address.into(),
                 match req.adminship {
                     true => master_key.address(),
                     false => Address::zero(),
@@ -2712,12 +2696,12 @@ impl RequestHandler for MethodUserCreateStrategyWallet {
                 // TODO: add backer wallet address registered in strategy wallet in database
                 user_id: ctx.user_id,
                 blockchain: req.blockchain,
-                address: format!("{:?}", strategy_wallet.address()),
+                address: strategy_wallet.address().into(),
             })
             .await?;
             Ok(UserCreateStrategyWalletResponse {
                 blockchain: req.blockchain,
-                address: format!("{:?}", strategy_wallet.address()),
+                address: strategy_wallet.address().into(),
             })
         }
         .boxed()

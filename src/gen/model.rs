@@ -1,9 +1,11 @@
 use lib::error_code::ErrorCode;
+use lib::types::*;
 use lib::ws::*;
 use num_derive::FromPrimitive;
 use serde::*;
 use strum_macros::{Display, EnumString};
 use tokio_postgres::types::*;
+
 #[derive(
     Debug,
     Clone,
@@ -818,7 +820,7 @@ pub struct AdminAddAuditRuleResponse {}
 #[serde(rename_all = "camelCase")]
 pub struct AdminAddEscrowContractAddressRequest {
     pub pkey_id: i64,
-    pub address: String,
+    pub address: BlockchainAddress,
     pub blockchain: EnumBlockChain,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -831,7 +833,7 @@ pub struct AdminAddEscrowTokenContractAddressRequest {
     pub symbol: String,
     pub short_name: String,
     pub description: String,
-    pub address: String,
+    pub address: BlockchainAddress,
     pub blockchain: EnumBlockChain,
     pub is_stablecoin: bool,
 }
@@ -896,7 +898,7 @@ pub struct AdminListBackersResponse {
 pub struct AdminListBackersRow {
     pub username: String,
     pub user_id: i64,
-    pub login_wallet_address: String,
+    pub login_wallet_address: BlockchainAddress,
     pub joined_at: i64,
     pub total_platform_fee_paid: f64,
     pub total_strategy_fee_paid: f64,
@@ -1085,10 +1087,10 @@ pub struct AumLedgerRow {
     pub blockchain: EnumBlockChain,
     pub dex: String,
     pub action: String,
-    pub wallet_address: String,
+    pub wallet_address: BlockchainAddress,
     pub price: f64,
     pub current_price: f64,
-    pub quantity: f64,
+    pub quantity: BlockchainDecimal,
     pub yield_7d: f64,
     pub yield_30d: f64,
 }
@@ -1118,11 +1120,11 @@ pub struct BackLedgerPoint {
 pub struct BackStrategyLedgerRow {
     pub back_ledger_id: i64,
     pub strategy_id: i64,
-    pub quantity: String,
+    pub quantity: BlockchainDecimal,
     pub blockchain: EnumBlockChain,
     pub dex: String,
     pub is_back: bool,
-    pub transaction_hash: String,
+    pub transaction_hash: BlockchainTransactionHash,
     pub time: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1143,7 +1145,7 @@ pub struct ChangeLoginWalletResponse {}
 pub struct ExitStrategyLedgerRow {
     pub exit_ledger_id: i64,
     pub strategy_id: i64,
-    pub exit_quantity: String,
+    pub exit_quantity: BlockchainDecimal,
     pub blockchain: EnumBlockChain,
     pub exit_time: i64,
 }
@@ -1152,7 +1154,7 @@ pub struct ExitStrategyLedgerRow {
 pub struct ExpertAddStrategyInitialTokenRatioRequest {
     pub strategy_id: i64,
     pub token_id: i64,
-    pub quantity: String,
+    pub quantity: BlockchainDecimal,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1165,7 +1167,7 @@ pub struct ExpertAddStrategyInitialTokenRatioResponse {
 pub struct ExpertAddStrategyWatchingWalletRequest {
     pub strategy_id: i64,
     pub blockchain: EnumBlockChain,
-    pub wallet_address: String,
+    pub wallet_address: BlockchainAddress,
     pub ratio: f64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1185,7 +1187,7 @@ pub struct ExpertCreateStrategyRequest {
     pub strategy_fee: f64,
     pub expert_fee: f64,
     pub agreed_tos: bool,
-    pub wallet_address: String,
+    pub wallet_address: BlockchainAddress,
     pub wallet_blockchain: EnumBlockChain,
     pub initial_tokens: Vec<UserCreateStrategyInitialTokenRow>,
     #[serde(default)]
@@ -1308,7 +1310,7 @@ pub struct FollowLedgerPoint {
 pub struct ListExpertsRow {
     pub expert_id: i64,
     pub user_public_id: i64,
-    pub linked_wallet: String,
+    pub linked_wallet: BlockchainAddress,
     pub name: String,
     #[serde(default)]
     pub family_name: Option<String>,
@@ -1335,7 +1337,7 @@ pub struct ListExpertsRow {
 pub struct ListPendingExpertApplicationsRow {
     pub user_id: i64,
     pub name: String,
-    pub linked_wallet: String,
+    pub linked_wallet: BlockchainAddress,
     pub joined_at: i64,
     pub requested_at: i64,
     pub follower_count: i32,
@@ -1358,9 +1360,9 @@ pub struct ListStrategiesRow {
     pub followed: bool,
     pub swap_price: f64,
     pub price_change: f64,
-    pub wallet_address: String,
+    pub wallet_address: BlockchainAddress,
     #[serde(default)]
-    pub strategy_pool_address: Option<String>,
+    pub strategy_pool_address: Option<BlockchainAddress>,
     pub approved: bool,
     #[serde(default)]
     pub approved_at: Option<i64>,
@@ -1381,7 +1383,7 @@ pub struct ListStrategiesRow {
 pub struct ListStrategyBackersRow {
     pub user_id: i64,
     pub name: String,
-    pub linked_wallet: String,
+    pub linked_wallet: BlockchainAddress,
     pub backed_date: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1389,7 +1391,7 @@ pub struct ListStrategyBackersRow {
 pub struct ListStrategyFollowersRow {
     pub user_id: i64,
     pub name: String,
-    pub linked_wallet: String,
+    pub linked_wallet: BlockchainAddress,
     pub followed_date: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1397,8 +1399,8 @@ pub struct ListStrategyFollowersRow {
 pub struct ListStrategyInitialTokenRatioRow {
     pub token_id: i64,
     pub token_name: String,
-    pub token_address: String,
-    pub quantity: String,
+    pub token_address: BlockchainAddress,
+    pub quantity: BlockchainDecimal,
     pub updated_at: i64,
     pub created_at: i64,
 }
@@ -1407,7 +1409,7 @@ pub struct ListStrategyInitialTokenRatioRow {
 pub struct ListStrategyWatchingWalletsRow {
     pub wallet_id: i64,
     pub blockchain: EnumBlockChain,
-    pub wallet_address: String,
+    pub wallet_address: BlockchainAddress,
     pub ratio: f64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1417,7 +1419,7 @@ pub struct ListUserRow {
     pub public_user_id: i64,
     #[serde(default)]
     pub username: Option<String>,
-    pub address: String,
+    pub address: BlockchainAddress,
     pub last_ip: std::net::IpAddr,
     pub last_login_at: i64,
     pub login_count: i32,
@@ -1431,16 +1433,16 @@ pub struct ListUserRow {
 #[serde(rename_all = "camelCase")]
 pub struct ListWalletActivityLedgerRow {
     pub record_id: i64,
-    pub wallet_address: String,
-    pub transaction_hash: String,
+    pub wallet_address: BlockchainAddress,
+    pub transaction_hash: BlockchainTransactionHash,
     pub dex: String,
     pub blockchain: EnumBlockChain,
-    pub contract_address: String,
-    pub token_in_address: String,
-    pub token_out_address: String,
-    pub caller_address: String,
-    pub amount_in: String,
-    pub amount_out: String,
+    pub contract_address: BlockchainAddress,
+    pub token_in_address: BlockchainAddress,
+    pub token_out_address: BlockchainAddress,
+    pub caller_address: BlockchainAddress,
+    pub amount_in: BlockchainDecimal,
+    pub amount_out: BlockchainDecimal,
     pub swap_calls: serde_json::Value,
     pub paths: serde_json::Value,
     pub dex_versions: serde_json::Value,
@@ -1451,7 +1453,7 @@ pub struct ListWalletActivityLedgerRow {
 pub struct ListWalletsRow {
     pub wallet_id: i64,
     pub blockchain: EnumBlockChain,
-    pub wallet_address: String,
+    pub wallet_address: BlockchainAddress,
     pub is_default: bool,
     pub is_compatible: bool,
 }
@@ -1516,12 +1518,12 @@ pub struct UserAddStrategyAuditRuleResponse {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserAllowedEscrowTransferInfo {
-    pub receiver_address: String,
+    pub receiver_address: BlockchainAddress,
     pub blockchain: EnumBlockChain,
     pub token_id: i64,
     pub token_symbol: String,
     pub token_name: String,
-    pub token_address: String,
+    pub token_address: BlockchainAddress,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1536,7 +1538,7 @@ pub struct UserApplyBecomeExpertResponse {
 #[serde(rename_all = "camelCase")]
 pub struct UserBackStrategyRequest {
     pub strategy_id: i64,
-    pub quantity: String,
+    pub quantity: BlockchainDecimal,
     pub token_id: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1548,12 +1550,12 @@ pub struct UserBackStrategyResponse {
 #[serde(rename_all = "camelCase")]
 pub struct UserCreateStrategyInitialTokenRow {
     pub token_id: i64,
-    pub quantity: String,
+    pub quantity: BlockchainDecimal,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserCreateStrategyWalletRequest {
-    pub wallet_address: String,
+    pub wallet_address: BlockchainAddress,
     pub blockchain: EnumBlockChain,
     pub adminship: bool,
 }
@@ -1561,7 +1563,7 @@ pub struct UserCreateStrategyWalletRequest {
 #[serde(rename_all = "camelCase")]
 pub struct UserCreateStrategyWalletResponse {
     pub blockchain: EnumBlockChain,
-    pub address: String,
+    pub address: BlockchainAddress,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1578,14 +1580,14 @@ pub struct UserDeregisterWalletResponse {
 pub struct UserExitStrategyRequest {
     pub strategy_id: i64,
     #[serde(default)]
-    pub quantity: Option<String>,
+    pub quantity: Option<BlockchainDecimal>,
     pub blockchain: EnumBlockChain,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserExitStrategyResponse {
     pub success: bool,
-    pub transaction_hash: String,
+    pub transaction_hash: BlockchainTransactionHash,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1619,7 +1621,7 @@ pub struct UserGetDepositAddressesResponse {
 #[serde(rename_all = "camelCase")]
 pub struct UserGetDepositAddressesRow {
     pub blockchain: EnumBlockChain,
-    pub address: String,
+    pub address: BlockchainAddress,
     pub short_name: String,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1635,7 +1637,7 @@ pub struct UserGetDepositTokensResponse {
 pub struct UserGetDepositTokensRow {
     pub blockchain: EnumBlockChain,
     pub token: EnumBlockchainCoin,
-    pub address: String,
+    pub address: BlockchainAddress,
     pub short_name: String,
     pub icon_url: String,
     pub conversion: f64,
@@ -1648,7 +1650,7 @@ pub struct UserGetDepositWithdrawBalanceRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserGetDepositWithdrawBalanceResponse {
-    pub balance: String,
+    pub balance: BlockchainDecimal,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1785,11 +1787,11 @@ pub struct UserListDepositLedgerResponse {
 #[serde(rename_all = "camelCase")]
 pub struct UserListDepositLedgerRow {
     pub blockchain: EnumBlockChain,
-    pub user_address: String,
-    pub contract_address: String,
-    pub receiver_address: String,
-    pub quantity: String,
-    pub transaction_hash: String,
+    pub user_address: BlockchainAddress,
+    pub contract_address: BlockchainAddress,
+    pub receiver_address: BlockchainAddress,
+    pub quantity: BlockchainDecimal,
+    pub transaction_hash: BlockchainTransactionHash,
     pub created_at: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1799,7 +1801,7 @@ pub struct UserListDepositWithdrawBalance {
     pub token_id: i64,
     pub token_symbol: String,
     pub token_name: String,
-    pub balance: String,
+    pub balance: BlockchainDecimal,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1833,7 +1835,7 @@ pub struct UserListEscrowTokenContractAddressesRow {
     pub token_id: i64,
     pub token_symbol: String,
     pub token_name: String,
-    pub token_address: String,
+    pub token_address: BlockchainAddress,
     pub description: String,
     pub blockchain: EnumBlockChain,
     pub is_stablecoin: bool,
@@ -1940,7 +1942,7 @@ pub struct UserListRegisteredWalletsRequest {
     #[serde(default)]
     pub blockchain: Option<EnumBlockChain>,
     #[serde(default)]
-    pub wallet_address: Option<String>,
+    pub wallet_address: Option<BlockchainAddress>,
     #[serde(default)]
     pub strategy_id: Option<i64>,
 }
@@ -1969,7 +1971,7 @@ pub struct UserListStrategiesRequest {
     #[serde(default)]
     pub blockchain: Option<EnumBlockChain>,
     #[serde(default)]
-    pub wallet_address: Option<String>,
+    pub wallet_address: Option<BlockchainAddress>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -2054,7 +2056,7 @@ pub struct UserListStrategyWalletsResponse {
 #[serde(rename_all = "camelCase")]
 pub struct UserListStrategyWalletsRow {
     pub blockchain: EnumBlockChain,
-    pub address: String,
+    pub address: BlockchainAddress,
     pub created_at: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -2099,7 +2101,7 @@ pub struct UserListTopPerformingStrategiesResponse {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserListWalletActivityLedgerRequest {
-    pub wallet_address: String,
+    pub wallet_address: BlockchainAddress,
     pub blockchain: EnumBlockChain,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -2112,7 +2114,7 @@ pub struct UserListWalletActivityLedgerResponse {
 #[serde(rename_all = "camelCase")]
 pub struct UserRegisterWalletRequest {
     pub blockchain: EnumBlockChain,
-    pub wallet_address: String,
+    pub wallet_address: BlockchainAddress,
     pub message_to_sign: String,
     pub message_signature: String,
 }
@@ -2134,8 +2136,8 @@ pub struct UserRemoveStrategyAuditRuleResponse {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserRequestRefundRequest {
-    pub quantity: String,
-    pub wallet_address: String,
+    pub quantity: BlockchainDecimal,
+    pub wallet_address: BlockchainAddress,
     pub blockchain: EnumBlockChain,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -2203,7 +2205,7 @@ pub struct UserUpdateUserProfileResponse {}
 #[serde(rename_all = "camelCase")]
 pub struct WatchingWalletRow {
     pub watching_wallet_id: i64,
-    pub wallet_address: String,
+    pub wallet_address: BlockchainAddress,
     pub blockchain: EnumBlockChain,
     pub ratio_distribution: f64,
 }
@@ -2538,12 +2540,12 @@ impl WsRequest for UserListFollowedStrategiesRequest {
               },
               {
                 "name": "wallet_address",
-                "ty": "String"
+                "ty": "BlockchainAddress"
               },
               {
                 "name": "strategy_pool_address",
                 "ty": {
-                  "Optional": "String"
+                  "Optional": "BlockchainAddress"
                 }
               },
               {
@@ -2702,7 +2704,7 @@ impl WsRequest for UserListStrategiesRequest {
     {
       "name": "wallet_address",
       "ty": {
-        "Optional": "String"
+        "Optional": "BlockchainAddress"
       }
     }
   ],
@@ -2760,12 +2762,12 @@ impl WsRequest for UserListStrategiesRequest {
               },
               {
                 "name": "wallet_address",
-                "ty": "String"
+                "ty": "BlockchainAddress"
               },
               {
                 "name": "strategy_pool_address",
                 "ty": {
-                  "Optional": "String"
+                  "Optional": "BlockchainAddress"
                 }
               },
               {
@@ -2911,12 +2913,12 @@ impl WsRequest for UserListTopPerformingStrategiesRequest {
               },
               {
                 "name": "wallet_address",
-                "ty": "String"
+                "ty": "BlockchainAddress"
               },
               {
                 "name": "strategy_pool_address",
                 "ty": {
-                  "Optional": "String"
+                  "Optional": "BlockchainAddress"
                 }
               },
               {
@@ -3033,7 +3035,7 @@ impl WsRequest for UserListStrategyBackersRequest {
             },
             {
               "name": "linked_wallet",
-              "ty": "String"
+              "ty": "BlockchainAddress"
             },
             {
               "name": "backed_date",
@@ -3098,7 +3100,7 @@ impl WsRequest for UserListStrategyFollowersRequest {
             },
             {
               "name": "linked_wallet",
-              "ty": "String"
+              "ty": "BlockchainAddress"
             },
             {
               "name": "followed_date",
@@ -3179,12 +3181,12 @@ impl WsRequest for UserGetStrategyRequest {
             },
             {
               "name": "wallet_address",
-              "ty": "String"
+              "ty": "BlockchainAddress"
             },
             {
               "name": "strategy_pool_address",
               "ty": {
-                "Optional": "String"
+                "Optional": "BlockchainAddress"
               }
             },
             {
@@ -3257,7 +3259,7 @@ impl WsRequest for UserGetStrategyRequest {
             },
             {
               "name": "wallet_address",
-              "ty": "String"
+              "ty": "BlockchainAddress"
             },
             {
               "name": "blockchain",
@@ -3307,7 +3309,7 @@ impl WsRequest for UserGetStrategyRequest {
             },
             {
               "name": "wallet_address",
-              "ty": "String"
+              "ty": "BlockchainAddress"
             },
             {
               "name": "price",
@@ -3319,7 +3321,7 @@ impl WsRequest for UserGetStrategyRequest {
             },
             {
               "name": "quantity",
-              "ty": "Numeric"
+              "ty": "BlockchainDecimal"
             },
             {
               "name": "yield_7d",
@@ -3567,7 +3569,7 @@ impl WsRequest for UserBackStrategyRequest {
     },
     {
       "name": "quantity",
-      "ty": "String"
+      "ty": "BlockchainDecimal"
     },
     {
       "name": "token_id",
@@ -3603,7 +3605,7 @@ impl WsRequest for UserExitStrategyRequest {
     {
       "name": "quantity",
       "ty": {
-        "Optional": "String"
+        "Optional": "BlockchainDecimal"
       }
     },
     {
@@ -3620,7 +3622,7 @@ impl WsRequest for UserExitStrategyRequest {
     },
     {
       "name": "transaction_hash",
-      "ty": "String"
+      "ty": "BlockchainTransactionHash"
     }
   ],
   "stream_response": null,
@@ -3641,11 +3643,11 @@ impl WsRequest for UserRequestRefundRequest {
   "parameters": [
     {
       "name": "quantity",
-      "ty": "String"
+      "ty": "BlockchainDecimal"
     },
     {
       "name": "wallet_address",
-      "ty": "String"
+      "ty": "BlockchainAddress"
     },
     {
       "name": "blockchain",
@@ -3743,12 +3745,12 @@ impl WsRequest for UserListBackedStrategiesRequest {
               },
               {
                 "name": "wallet_address",
-                "ty": "String"
+                "ty": "BlockchainAddress"
               },
               {
                 "name": "strategy_pool_address",
                 "ty": {
-                  "Optional": "String"
+                  "Optional": "BlockchainAddress"
                 }
               },
               {
@@ -3861,7 +3863,7 @@ impl WsRequest for UserListBackStrategyLedgerRequest {
             },
             {
               "name": "quantity",
-              "ty": "String"
+              "ty": "BlockchainDecimal"
             },
             {
               "name": "blockchain",
@@ -3879,7 +3881,7 @@ impl WsRequest for UserListBackStrategyLedgerRequest {
             },
             {
               "name": "transaction_hash",
-              "ty": "String"
+              "ty": "BlockchainTransactionHash"
             },
             {
               "name": "time",
@@ -3946,7 +3948,7 @@ impl WsRequest for UserListExitStrategyLedgerRequest {
             },
             {
               "name": "exit_quantity",
-              "ty": "String"
+              "ty": "BlockchainDecimal"
             },
             {
               "name": "blockchain",
@@ -4041,7 +4043,7 @@ impl WsRequest for UserListFollowedExpertsRequest {
               },
               {
                 "name": "linked_wallet",
-                "ty": "String"
+                "ty": "BlockchainAddress"
               },
               {
                 "name": "name",
@@ -4255,7 +4257,7 @@ impl WsRequest for UserListExpertsRequest {
               },
               {
                 "name": "linked_wallet",
-                "ty": "String"
+                "ty": "BlockchainAddress"
               },
               {
                 "name": "name",
@@ -4388,7 +4390,7 @@ impl WsRequest for UserListTopPerformingExpertsRequest {
               },
               {
                 "name": "linked_wallet",
-                "ty": "String"
+                "ty": "BlockchainAddress"
               },
               {
                 "name": "name",
@@ -4521,7 +4523,7 @@ impl WsRequest for UserListFeaturedExpertsRequest {
               },
               {
                 "name": "linked_wallet",
-                "ty": "String"
+                "ty": "BlockchainAddress"
               },
               {
                 "name": "name",
@@ -4710,12 +4712,12 @@ impl WsRequest for UserGetExpertProfileRequest {
               },
               {
                 "name": "wallet_address",
-                "ty": "String"
+                "ty": "BlockchainAddress"
               },
               {
                 "name": "strategy_pool_address",
                 "ty": {
-                  "Optional": "String"
+                  "Optional": "BlockchainAddress"
                 }
               },
               {
@@ -4836,7 +4838,7 @@ impl WsRequest for UserGetUserProfileRequest {
               },
               {
                 "name": "linked_wallet",
-                "ty": "String"
+                "ty": "BlockchainAddress"
               },
               {
                 "name": "name",
@@ -4966,12 +4968,12 @@ impl WsRequest for UserGetUserProfileRequest {
               },
               {
                 "name": "wallet_address",
-                "ty": "String"
+                "ty": "BlockchainAddress"
               },
               {
                 "name": "strategy_pool_address",
                 "ty": {
-                  "Optional": "String"
+                  "Optional": "BlockchainAddress"
                 }
               },
               {
@@ -5082,12 +5084,12 @@ impl WsRequest for UserGetUserProfileRequest {
               },
               {
                 "name": "wallet_address",
-                "ty": "String"
+                "ty": "BlockchainAddress"
               },
               {
                 "name": "strategy_pool_address",
                 "ty": {
-                  "Optional": "String"
+                  "Optional": "BlockchainAddress"
                 }
               },
               {
@@ -5174,7 +5176,7 @@ impl WsRequest for UserRegisterWalletRequest {
     },
     {
       "name": "wallet_address",
-      "ty": "String"
+      "ty": "BlockchainAddress"
     },
     {
       "name": "message_to_sign",
@@ -5240,7 +5242,7 @@ impl WsRequest for UserListRegisteredWalletsRequest {
     {
       "name": "wallet_address",
       "ty": {
-        "Optional": "String"
+        "Optional": "BlockchainAddress"
       }
     },
     {
@@ -5269,7 +5271,7 @@ impl WsRequest for UserListRegisteredWalletsRequest {
             },
             {
               "name": "wallet_address",
-              "ty": "String"
+              "ty": "BlockchainAddress"
             },
             {
               "name": "is_default",
@@ -5385,7 +5387,7 @@ impl WsRequest for ExpertCreateStrategyRequest {
     },
     {
       "name": "wallet_address",
-      "ty": "String"
+      "ty": "BlockchainAddress"
     },
     {
       "name": "wallet_blockchain",
@@ -5405,7 +5407,7 @@ impl WsRequest for ExpertCreateStrategyRequest {
             },
             {
               "name": "quantity",
-              "ty": "String"
+              "ty": "BlockchainDecimal"
             }
           ]
         }
@@ -5530,7 +5532,7 @@ impl WsRequest for ExpertAddStrategyWatchingWalletRequest {
     },
     {
       "name": "wallet_address",
-      "ty": "String"
+      "ty": "BlockchainAddress"
     },
     {
       "name": "ratio",
@@ -5622,7 +5624,7 @@ impl WsRequest for UserListStrategyWatchingWalletsRequest {
             },
             {
               "name": "wallet_address",
-              "ty": "String"
+              "ty": "BlockchainAddress"
             },
             {
               "name": "ratio",
@@ -5651,7 +5653,7 @@ impl WsRequest for UserListWalletActivityLedgerRequest {
   "parameters": [
     {
       "name": "wallet_address",
-      "ty": "String"
+      "ty": "BlockchainAddress"
     },
     {
       "name": "blockchain",
@@ -5677,11 +5679,11 @@ impl WsRequest for UserListWalletActivityLedgerRequest {
             },
             {
               "name": "wallet_address",
-              "ty": "String"
+              "ty": "BlockchainAddress"
             },
             {
               "name": "transaction_hash",
-              "ty": "String"
+              "ty": "BlockchainTransactionHash"
             },
             {
               "name": "dex",
@@ -5695,27 +5697,27 @@ impl WsRequest for UserListWalletActivityLedgerRequest {
             },
             {
               "name": "contract_address",
-              "ty": "String"
+              "ty": "BlockchainAddress"
             },
             {
               "name": "token_in_address",
-              "ty": "String"
+              "ty": "BlockchainAddress"
             },
             {
               "name": "token_out_address",
-              "ty": "String"
+              "ty": "BlockchainAddress"
             },
             {
               "name": "caller_address",
-              "ty": "String"
+              "ty": "BlockchainAddress"
             },
             {
               "name": "amount_in",
-              "ty": "String"
+              "ty": "BlockchainDecimal"
             },
             {
               "name": "amount_out",
-              "ty": "String"
+              "ty": "BlockchainDecimal"
             },
             {
               "name": "swap_calls",
@@ -5764,7 +5766,7 @@ impl WsRequest for ExpertAddStrategyInitialTokenRatioRequest {
     },
     {
       "name": "quantity",
-      "ty": "String"
+      "ty": "BlockchainDecimal"
     }
   ],
   "returns": [
@@ -5850,11 +5852,11 @@ impl WsRequest for UserListStrategyInitialTokenRatioRequest {
             },
             {
               "name": "token_address",
-              "ty": "String"
+              "ty": "BlockchainAddress"
             },
             {
               "name": "quantity",
-              "ty": "String"
+              "ty": "BlockchainDecimal"
             },
             {
               "name": "updated_at",
@@ -6052,7 +6054,7 @@ impl WsRequest for UserGetDepositTokensRequest {
             },
             {
               "name": "address",
-              "ty": "String"
+              "ty": "BlockchainAddress"
             },
             {
               "name": "short_name",
@@ -6102,7 +6104,7 @@ impl WsRequest for UserGetDepositAddressesRequest {
             },
             {
               "name": "address",
-              "ty": "String"
+              "ty": "BlockchainAddress"
             },
             {
               "name": "short_name",
@@ -6170,23 +6172,23 @@ impl WsRequest for UserListDepositLedgerRequest {
               },
               {
                 "name": "user_address",
-                "ty": "String"
+                "ty": "BlockchainAddress"
               },
               {
                 "name": "contract_address",
-                "ty": "String"
+                "ty": "BlockchainAddress"
               },
               {
                 "name": "receiver_address",
-                "ty": "String"
+                "ty": "BlockchainAddress"
               },
               {
                 "name": "quantity",
-                "ty": "String"
+                "ty": "BlockchainDecimal"
               },
               {
                 "name": "transaction_hash",
-                "ty": "String"
+                "ty": "BlockchainTransactionHash"
               },
               {
                 "name": "created_at",
@@ -6248,23 +6250,23 @@ impl WsRequest for UserSubscribeDepositLedgerRequest {
         },
         {
           "name": "user_address",
-          "ty": "String"
+          "ty": "BlockchainAddress"
         },
         {
           "name": "contract_address",
-          "ty": "String"
+          "ty": "BlockchainAddress"
         },
         {
           "name": "receiver_address",
-          "ty": "String"
+          "ty": "BlockchainAddress"
         },
         {
           "name": "quantity",
-          "ty": "String"
+          "ty": "BlockchainDecimal"
         },
         {
           "name": "transaction_hash",
-          "ty": "String"
+          "ty": "BlockchainTransactionHash"
         },
         {
           "name": "created_at",
@@ -6333,7 +6335,7 @@ impl WsRequest for UserListStrategyWalletsRequest {
             },
             {
               "name": "address",
-              "ty": "String"
+              "ty": "BlockchainAddress"
             },
             {
               "name": "created_at",
@@ -6362,7 +6364,7 @@ impl WsRequest for UserCreateStrategyWalletRequest {
   "parameters": [
     {
       "name": "wallet_address",
-      "ty": "String"
+      "ty": "BlockchainAddress"
     },
     {
       "name": "blockchain",
@@ -6384,7 +6386,7 @@ impl WsRequest for UserCreateStrategyWalletRequest {
     },
     {
       "name": "address",
-      "ty": "String"
+      "ty": "BlockchainAddress"
     }
   ],
   "stream_response": null,
@@ -6530,7 +6532,7 @@ impl WsRequest for UserGetEscrowAddressForStrategyRequest {
           "fields": [
             {
               "name": "receiver_address",
-              "ty": "String"
+              "ty": "BlockchainAddress"
             },
             {
               "name": "blockchain",
@@ -6552,7 +6554,7 @@ impl WsRequest for UserGetEscrowAddressForStrategyRequest {
             },
             {
               "name": "token_address",
-              "ty": "String"
+              "ty": "BlockchainAddress"
             }
           ]
         }
@@ -6602,7 +6604,7 @@ impl WsRequest for UserListDepositWithdrawBalancesRequest {
             },
             {
               "name": "balance",
-              "ty": "String"
+              "ty": "BlockchainDecimal"
             }
           ]
         }
@@ -6633,7 +6635,7 @@ impl WsRequest for UserGetDepositWithdrawBalanceRequest {
   "returns": [
     {
       "name": "balance",
-      "ty": "String"
+      "ty": "BlockchainDecimal"
     }
   ],
   "stream_response": null,
@@ -6704,7 +6706,7 @@ impl WsRequest for UserListEscrowTokenContractAddressesRequest {
             },
             {
               "name": "token_address",
-              "ty": "String"
+              "ty": "BlockchainAddress"
             },
             {
               "name": "description",
@@ -6809,7 +6811,7 @@ impl WsRequest for AdminListUsersRequest {
             },
             {
               "name": "address",
-              "ty": "String"
+              "ty": "BlockchainAddress"
             },
             {
               "name": "last_ip",
@@ -6952,7 +6954,7 @@ impl WsRequest for AdminListPendingExpertApplicationsRequest {
             },
             {
               "name": "linked_wallet",
-              "ty": "String"
+              "ty": "BlockchainAddress"
             },
             {
               "name": "joined_at",
@@ -7205,7 +7207,7 @@ impl WsRequest for AdminListExpertsRequest {
               },
               {
                 "name": "linked_wallet",
-                "ty": "String"
+                "ty": "BlockchainAddress"
               },
               {
                 "name": "name",
@@ -7367,7 +7369,7 @@ impl WsRequest for AdminListBackersRequest {
             },
             {
               "name": "login_wallet_address",
-              "ty": "String"
+              "ty": "BlockchainAddress"
             },
             {
               "name": "joined_at",
@@ -7515,12 +7517,12 @@ impl WsRequest for AdminListStrategiesRequest {
               },
               {
                 "name": "wallet_address",
-                "ty": "String"
+                "ty": "BlockchainAddress"
               },
               {
                 "name": "strategy_pool_address",
                 "ty": {
-                  "Optional": "String"
+                  "Optional": "BlockchainAddress"
                 }
               },
               {
@@ -7705,23 +7707,23 @@ impl WsRequest for AdminNotifyEscrowLedgerChangeRequest {
             },
             {
               "name": "user_address",
-              "ty": "String"
+              "ty": "BlockchainAddress"
             },
             {
               "name": "contract_address",
-              "ty": "String"
+              "ty": "BlockchainAddress"
             },
             {
               "name": "receiver_address",
-              "ty": "String"
+              "ty": "BlockchainAddress"
             },
             {
               "name": "quantity",
-              "ty": "String"
+              "ty": "BlockchainDecimal"
             },
             {
               "name": "transaction_hash",
-              "ty": "String"
+              "ty": "BlockchainTransactionHash"
             },
             {
               "name": "created_at",
@@ -7783,23 +7785,23 @@ impl WsRequest for AdminSubscribeDepositLedgerRequest {
         },
         {
           "name": "user_address",
-          "ty": "String"
+          "ty": "BlockchainAddress"
         },
         {
           "name": "contract_address",
-          "ty": "String"
+          "ty": "BlockchainAddress"
         },
         {
           "name": "receiver_address",
-          "ty": "String"
+          "ty": "BlockchainAddress"
         },
         {
           "name": "quantity",
-          "ty": "String"
+          "ty": "BlockchainDecimal"
         },
         {
           "name": "transaction_hash",
-          "ty": "String"
+          "ty": "BlockchainTransactionHash"
         },
         {
           "name": "created_at",
@@ -7858,7 +7860,7 @@ impl WsRequest for AdminAddEscrowTokenContractAddressRequest {
     },
     {
       "name": "address",
-      "ty": "String"
+      "ty": "BlockchainAddress"
     },
     {
       "name": "blockchain",
@@ -7894,7 +7896,7 @@ impl WsRequest for AdminAddEscrowContractAddressRequest {
     },
     {
       "name": "address",
-      "ty": "String"
+      "ty": "BlockchainAddress"
     },
     {
       "name": "blockchain",

@@ -18,7 +18,7 @@ pub async fn get_strategy_id_from_watching_wallet(
     let strategy_id: i64 = db
         .execute(FunUserGetStrategyIdFromWatchingWalletReq {
             blockchain,
-            address: format!("{:?}", wallet_address),
+            address: wallet_address.into(),
         })
         .await?
         .into_result()
@@ -59,49 +59,49 @@ pub async fn update_expert_listened_wallet_asset_ledger(
 ) -> Result<()> {
     // correctly adding wallet balance to tbl.strategy_initial_token ratio is not possible because expert can have multiple watching wallets in one chain
     let expert_watched_wallet_address = trade.caller;
-    let old_amount = db
+    let old_amount: U256 = db
         .execute(FunWatcherListExpertListenedWalletAssetBalanceReq {
             limit: 1,
             blockchain: Some(blockchain),
-            address: Some(format!("{:?}", expert_watched_wallet_address)),
+            address: Some(expert_watched_wallet_address.into()),
             token_id: Some(token_in_id),
             offset: 0,
         })
         .await?
         .into_result()
-        .map(|tk| U256::from_dec_str(&tk.balance))
-        .unwrap_or_else(|| Ok(0.into()))?;
+        .map(|tk| tk.balance.into())
+        .unwrap_or_else(|| 0.into());
     if old_amount > 0.into() {
         let new_amount = old_amount.try_checked_sub(trade.amount_in)?;
         /* if token_in is already in the database, update it's amount */
         db.execute(FunWatcherUpsertExpertListenedWalletAssetBalanceReq {
-            address: format!("{:?}", expert_watched_wallet_address),
+            address: expert_watched_wallet_address.into(),
             blockchain,
             token_id: token_in_id,
-            old_balance: format!("{:?}", old_amount),
-            new_balance: format!("{:?}", new_amount),
+            old_balance: old_amount.into(),
+            new_balance: new_amount.into(),
         })
         .await?;
     };
-    let old_amount = db
+    let old_amount: U256 = db
         .execute(FunWatcherListExpertListenedWalletAssetBalanceReq {
             limit: 1,
             blockchain: Some(blockchain),
-            address: Some(format!("{:?}", expert_watched_wallet_address)),
+            address: Some(expert_watched_wallet_address.into()),
             token_id: Some(token_out_id),
             offset: 0,
         })
         .await?
         .into_result()
-        .map(|tk| U256::from_dec_str(&tk.balance))
-        .unwrap_or_else(|| Ok(0.into()))?;
+        .map(|tk| tk.balance.into())
+        .unwrap_or_else(|| 0.into());
     let new_amount = old_amount.try_checked_add(trade.amount_out)?;
     db.execute(FunWatcherUpsertExpertListenedWalletAssetBalanceReq {
-        address: format!("{:?}", expert_watched_wallet_address),
+        address: expert_watched_wallet_address.into(),
         blockchain,
         token_id: token_out_id,
-        old_balance: format!("{:?}", old_amount),
-        new_balance: format!("{:?}", new_amount),
+        old_balance: old_amount.into(),
+        new_balance: new_amount.into(),
     })
     .await?;
 

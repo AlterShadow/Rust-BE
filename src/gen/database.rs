@@ -1,5 +1,6 @@
 use crate::model::*;
 use lib::database::*;
+use lib::types::*;
 use postgres_from_row::FromRow;
 use serde::*;
 
@@ -34,7 +35,7 @@ pub struct FunAdminListBackersRespRow {
     pub user_id: i64,
     pub user_public_id: i64,
     pub username: String,
-    pub login_wallet_address: String,
+    pub login_wallet_address: BlockchainAddress,
     pub joined_at: i64,
 }
 
@@ -42,7 +43,7 @@ pub struct FunAdminListBackersRespRow {
 pub struct FunAdminListEscrowContractAddressRespRow {
     pub pkey_id: i64,
     pub blockchain: EnumBlockChain,
-    pub address: String,
+    pub address: BlockchainAddress,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -51,7 +52,7 @@ pub struct FunAdminListEscrowTokenContractAddressRespRow {
     pub symbol: String,
     pub short_name: String,
     pub description: String,
-    pub address: String,
+    pub address: BlockchainAddress,
     pub blockchain: EnumBlockChain,
     pub is_stablecoin: bool,
 }
@@ -61,7 +62,7 @@ pub struct FunAdminListPendingUserExpertApplicationsRespRow {
     pub total: i64,
     pub user_public_id: i64,
     pub name: String,
-    pub linked_wallet: String,
+    pub linked_wallet: BlockchainAddress,
     pub follower_count: i64,
     #[serde(default)]
     pub description: Option<String>,
@@ -88,7 +89,7 @@ pub struct FunAdminListUsersRespRow {
     pub public_user_id: i64,
     #[serde(default)]
     pub username: Option<String>,
-    pub address: String,
+    pub address: BlockchainAddress,
     pub last_ip: std::net::IpAddr,
     pub last_login_at: i64,
     pub login_count: i32,
@@ -272,7 +273,7 @@ pub struct FunUserExpertRowType {
     pub pending_expert: bool,
     pub approved_expert: bool,
     pub followed: bool,
-    pub linked_wallet: String,
+    pub linked_wallet: BlockchainAddress,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -354,9 +355,9 @@ pub struct FunUserListAuditRulesRespRow {
 pub struct FunUserListBackStrategyLedgerRespRow {
     pub back_ledger_id: i64,
     pub strategy_id: i64,
-    pub quantity: String,
+    pub quantity: BlockchainDecimal,
     pub blockchain: EnumBlockChain,
-    pub transaction_hash: String,
+    pub transaction_hash: BlockchainTransactionHash,
     pub time: i64,
 }
 
@@ -364,11 +365,11 @@ pub struct FunUserListBackStrategyLedgerRespRow {
 pub struct FunUserListDepositLedgerRespRow {
     pub total: i64,
     pub blockchain: EnumBlockChain,
-    pub user_address: String,
-    pub contract_address: String,
-    pub receiver_address: String,
-    pub quantity: String,
-    pub transaction_hash: String,
+    pub user_address: BlockchainAddress,
+    pub contract_address: BlockchainAddress,
+    pub receiver_address: BlockchainAddress,
+    pub quantity: BlockchainDecimal,
+    pub transaction_hash: BlockchainTransactionHash,
     pub created_at: i64,
 }
 
@@ -377,7 +378,7 @@ pub struct FunUserListEscrowTokenContractAddressRespRow {
     pub total: i64,
     pub token_id: i64,
     pub blockchain: EnumBlockChain,
-    pub address: String,
+    pub address: BlockchainAddress,
     pub symbol: String,
     pub short_name: String,
     pub description: String,
@@ -389,7 +390,7 @@ pub struct FunUserListExitStrategyLedgerRespRow {
     pub total: i64,
     pub exit_ledger_id: i64,
     pub strategy_id: i64,
-    pub exit_quantity: String,
+    pub exit_quantity: BlockchainDecimal,
     pub blockchain: EnumBlockChain,
     pub exit_time: i64,
 }
@@ -398,7 +399,7 @@ pub struct FunUserListExitStrategyLedgerRespRow {
 pub struct FunUserListRegisteredWalletsRespRow {
     pub registered_wallet_id: i64,
     pub blockchain: EnumBlockChain,
-    pub address: String,
+    pub address: BlockchainAddress,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -406,8 +407,8 @@ pub struct FunUserListRequestRefundLedgerRespRow {
     pub request_refund_id: i64,
     pub user_id: i64,
     pub blockchain: EnumBlockChain,
-    pub quantity: String,
-    pub wallet_address: String,
+    pub quantity: BlockchainDecimal,
+    pub wallet_address: BlockchainAddress,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -422,7 +423,7 @@ pub struct FunUserListStrategyBackersRespRow {
     pub total: i64,
     pub user_public_id: i64,
     pub username: String,
-    pub wallet_address: String,
+    pub wallet_address: BlockchainAddress,
     pub backed_at: i64,
 }
 
@@ -432,7 +433,7 @@ pub struct FunUserListStrategyFollowersRespRow {
     pub user_id: i64,
     pub user_public_id: i64,
     pub username: String,
-    pub wallet_address: String,
+    pub wallet_address: BlockchainAddress,
     pub followed_at: i64,
 }
 
@@ -442,8 +443,8 @@ pub struct FunUserListStrategyInitialTokenRatiosRespRow {
     pub blockchain: EnumBlockChain,
     pub token_id: i64,
     pub token_name: String,
-    pub token_address: String,
-    pub quantity: String,
+    pub token_address: BlockchainAddress,
+    pub quantity: BlockchainDecimal,
     pub strategy_id: i64,
     pub created_at: i64,
     pub updated_at: i64,
@@ -453,14 +454,14 @@ pub struct FunUserListStrategyInitialTokenRatiosRespRow {
 pub struct FunUserListStrategyWalletsRespRow {
     pub total: i64,
     pub blockchain: EnumBlockChain,
-    pub address: String,
+    pub address: BlockchainAddress,
     pub created_at: i64,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserListStrategyWatchWalletsRespRow {
     pub watch_wallet_id: i64,
-    pub wallet_address: String,
+    pub wallet_address: BlockchainAddress,
     pub blockchain: EnumBlockChain,
     pub ratio: f64,
 }
@@ -491,7 +492,7 @@ pub struct FunUserListUserDepositWithdrawBalanceRespRow {
     pub token_id: i64,
     pub token_symbol: String,
     pub token_name: String,
-    pub balance: String,
+    pub balance: BlockchainDecimal,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -516,9 +517,9 @@ pub struct FunUserStrategyRowType {
     pub strategy_id: i64,
     pub strategy_name: String,
     pub strategy_description: String,
-    pub current_usdc: String,
-    pub total_backed_usdc: String,
-    pub total_exited_usdc: String,
+    pub current_usdc: BlockchainDecimal,
+    pub total_backed_usdc: BlockchainDecimal,
+    pub total_exited_usdc: BlockchainDecimal,
     #[serde(default)]
     pub risk_score: Option<f64>,
     #[serde(default)]
@@ -547,7 +548,7 @@ pub struct FunUserStrategyRowType {
     pub strategy_pool_token: Option<String>,
     pub blockchain: EnumBlockChain,
     #[serde(default)]
-    pub strategy_pool_address: Option<String>,
+    pub strategy_pool_address: Option<BlockchainAddress>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -574,7 +575,7 @@ pub struct FunUserUpdateStrategyRespRow {
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunWatcherGetRawTransactionRespRow {
     pub transaction_cache_id: i64,
-    pub transaction_hash: String,
+    pub transaction_hash: BlockchainTransactionHash,
     pub chain: String,
     #[serde(default)]
     pub dex: Option<String>,
@@ -587,7 +588,7 @@ pub struct FunWatcherGetStrategyTokensFromLedgerRespRow {
     pub token_id: i64,
     pub token_name: String,
     pub token_symbol: String,
-    pub token_address: String,
+    pub token_address: BlockchainAddress,
     pub blockchain: EnumBlockChain,
     pub amount: String,
 }
@@ -595,22 +596,22 @@ pub struct FunWatcherGetStrategyTokensFromLedgerRespRow {
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunWatcherListExpertListenedWalletAssetBalanceRespRow {
     pub pkey_id: i64,
-    pub address: String,
+    pub address: BlockchainAddress,
     pub blockchain: EnumBlockChain,
     pub token_id: i64,
-    pub balance: String,
+    pub balance: BlockchainDecimal,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunWatcherListStrategyEscrowPendingWalletBalanceRespRow {
     pub strategy_id: i64,
     pub blockchain: EnumBlockChain,
-    pub address: String,
+    pub address: BlockchainAddress,
     pub token_id: i64,
-    pub token_address: String,
+    pub token_address: BlockchainAddress,
     pub token_name: String,
     pub token_symbol: String,
-    pub balance: String,
+    pub balance: BlockchainDecimal,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -618,9 +619,9 @@ pub struct FunWatcherListStrategyPoolContractAssetBalancesRespRow {
     pub token_id: i64,
     pub token_name: String,
     pub token_symbol: String,
-    pub token_address: String,
+    pub token_address: BlockchainAddress,
     pub blockchain: EnumBlockChain,
-    pub balance: String,
+    pub balance: BlockchainDecimal,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -628,7 +629,7 @@ pub struct FunWatcherListStrategyPoolContractRespRow {
     pub pkey_id: i64,
     pub strategy_id: i64,
     pub blockchain: EnumBlockChain,
-    pub address: String,
+    pub address: BlockchainAddress,
     pub created_at: i64,
 }
 
@@ -637,9 +638,9 @@ pub struct FunWatcherListUserStrategyBalanceRespRow {
     pub strategy_id: i64,
     pub user_id: i64,
     pub blockchain: EnumBlockChain,
-    pub strategy_pool_contract_address: String,
-    pub user_strategy_wallet_address: String,
-    pub balance: String,
+    pub strategy_pool_contract_address: BlockchainAddress,
+    pub user_strategy_wallet_address: BlockchainAddress,
+    pub balance: BlockchainDecimal,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -966,7 +967,7 @@ pub struct FunUserListStrategiesReq {
     #[serde(default)]
     pub blockchain: Option<EnumBlockChain>,
     #[serde(default)]
-    pub wallet_address: Option<String>,
+    pub wallet_address: Option<BlockchainAddress>,
 }
 
 #[allow(unused_variables)]
@@ -1063,14 +1064,14 @@ impl DatabaseRequest for FunUserGetStrategyStatisticsBackLedgerReq {
 pub struct FunUserBackStrategyReq {
     pub user_id: i64,
     pub strategy_id: i64,
-    pub quantity: String,
-    pub new_total_backed_quantity: String,
-    pub old_total_backed_quantity: String,
-    pub new_current_quantity: String,
-    pub old_current_quantity: String,
+    pub quantity: BlockchainDecimal,
+    pub new_total_backed_quantity: BlockchainDecimal,
+    pub old_total_backed_quantity: BlockchainDecimal,
+    pub new_current_quantity: BlockchainDecimal,
+    pub old_current_quantity: BlockchainDecimal,
     pub blockchain: EnumBlockChain,
-    pub transaction_hash: String,
-    pub earn_sp_tokens: String,
+    pub transaction_hash: BlockchainTransactionHash,
+    pub earn_sp_tokens: BlockchainDecimal,
 }
 
 #[allow(unused_variables)]
@@ -1142,10 +1143,10 @@ impl DatabaseRequest for FunUserListBackStrategyLedgerReq {
 pub struct FunUserExitStrategyReq {
     pub user_id: i64,
     pub strategy_id: i64,
-    pub quantity: String,
-    pub redeem_sp_tokens: String,
+    pub quantity: BlockchainDecimal,
+    pub redeem_sp_tokens: BlockchainDecimal,
     pub blockchain: EnumBlockChain,
-    pub transaction_hash: String,
+    pub transaction_hash: BlockchainTransactionHash,
 }
 
 #[allow(unused_variables)]
@@ -1407,7 +1408,7 @@ pub struct FunUserCreateStrategyReq {
     pub strategy_fee: f64,
     pub expert_fee: f64,
     pub agreed_tos: bool,
-    pub wallet_address: String,
+    pub wallet_address: BlockchainAddress,
     pub blockchain: EnumBlockChain,
 }
 
@@ -1466,7 +1467,7 @@ impl DatabaseRequest for FunUserUpdateStrategyReq {
 pub struct FunUserAddStrategyWatchWalletReq {
     pub user_id: i64,
     pub strategy_id: i64,
-    pub wallet_address: String,
+    pub wallet_address: BlockchainAddress,
     pub blockchain: EnumBlockChain,
     pub ratio: f64,
     pub dex: String,
@@ -1564,7 +1565,7 @@ impl DatabaseRequest for FunUserListStrategyBackersReq {
 pub struct FunUserAddRegisteredWalletReq {
     pub user_id: i64,
     pub blockchain: EnumBlockChain,
-    pub address: String,
+    pub address: BlockchainAddress,
 }
 
 #[allow(unused_variables)]
@@ -1611,7 +1612,7 @@ pub struct FunUserListRegisteredWalletsReq {
     #[serde(default)]
     pub blockchain: Option<EnumBlockChain>,
     #[serde(default)]
-    pub address: Option<String>,
+    pub address: Option<BlockchainAddress>,
 }
 
 #[allow(unused_variables)]
@@ -1635,11 +1636,11 @@ impl DatabaseRequest for FunUserListRegisteredWalletsReq {
 pub struct FunUserRequestRefundReq {
     pub user_id: i64,
     pub blockchain: EnumBlockChain,
-    pub user_address: String,
-    pub contract_address: String,
-    pub receiver_address: String,
-    pub quantity: String,
-    pub transaction_hash: String,
+    pub user_address: BlockchainAddress,
+    pub contract_address: BlockchainAddress,
+    pub receiver_address: BlockchainAddress,
+    pub quantity: BlockchainDecimal,
+    pub transaction_hash: BlockchainTransactionHash,
 }
 
 #[allow(unused_variables)]
@@ -1687,7 +1688,7 @@ impl DatabaseRequest for FunUserListRequestRefundLedgerReq {
 pub struct FunUserAddStrategyInitialTokenRatioReq {
     pub strategy_id: i64,
     pub token_id: i64,
-    pub quantity: String,
+    pub quantity: BlockchainDecimal,
 }
 
 #[allow(unused_variables)]
@@ -1709,7 +1710,7 @@ impl DatabaseRequest for FunUserAddStrategyInitialTokenRatioReq {
 pub struct FunUserUpdateStrategyInitialTokenRatioReq {
     pub strategy_id: i64,
     pub token_id: i64,
-    pub new_quantity: String,
+    pub new_quantity: BlockchainDecimal,
 }
 
 #[allow(unused_variables)]
@@ -1751,7 +1752,7 @@ impl DatabaseRequest for FunUserRemoveStrategyInitialTokenRatioReq {
 pub struct FunUserListStrategyInitialTokenRatiosReq {
     pub strategy_id: i64,
     #[serde(default)]
-    pub token_address: Option<String>,
+    pub token_address: Option<BlockchainAddress>,
     #[serde(default)]
     pub blockchain: Option<EnumBlockChain>,
 }
@@ -1843,7 +1844,7 @@ impl DatabaseRequest for FunUserListDepositLedgerReq {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserGetUserByAddressReq {
-    pub address: String,
+    pub address: BlockchainAddress,
 }
 
 #[allow(unused_variables)]
@@ -1861,7 +1862,7 @@ impl DatabaseRequest for FunUserGetUserByAddressReq {
 pub struct FunUserAddStrategyWalletReq {
     pub user_id: i64,
     pub blockchain: EnumBlockChain,
-    pub address: String,
+    pub address: BlockchainAddress,
 }
 
 #[allow(unused_variables)]
@@ -2037,7 +2038,7 @@ impl DatabaseRequest for FunUserListAuditRulesReq {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserGetStrategyIdFromWatchingWalletReq {
     pub blockchain: EnumBlockChain,
-    pub address: String,
+    pub address: BlockchainAddress,
 }
 
 #[allow(unused_variables)]
@@ -2062,11 +2063,11 @@ pub struct FunUserListUserDepositWithdrawBalanceReq {
     #[serde(default)]
     pub blockchain: Option<EnumBlockChain>,
     #[serde(default)]
-    pub token_address: Option<String>,
+    pub token_address: Option<BlockchainAddress>,
     #[serde(default)]
     pub token_id: Option<i64>,
     #[serde(default)]
-    pub escrow_contract_address: Option<String>,
+    pub escrow_contract_address: Option<BlockchainAddress>,
 }
 
 #[allow(unused_variables)]
@@ -2092,7 +2093,7 @@ impl DatabaseRequest for FunUserListUserDepositWithdrawBalanceReq {
 pub struct FunUserAddStrategyPoolContractReq {
     pub strategy_id: i64,
     pub blockchain: EnumBlockChain,
-    pub address: String,
+    pub address: BlockchainAddress,
 }
 
 #[allow(unused_variables)]
@@ -2119,7 +2120,7 @@ pub struct FunUserListEscrowTokenContractAddressReq {
     #[serde(default)]
     pub blockchain: Option<EnumBlockChain>,
     #[serde(default)]
-    pub address: Option<String>,
+    pub address: Option<BlockchainAddress>,
     #[serde(default)]
     pub symbol: Option<String>,
     #[serde(default)]
@@ -2492,7 +2493,7 @@ pub struct FunAdminAddEscrowTokenContractAddressReq {
     pub symbol: String,
     pub short_name: String,
     pub description: String,
-    pub address: String,
+    pub address: BlockchainAddress,
     pub blockchain: EnumBlockChain,
     pub is_stablecoin: bool,
 }
@@ -2543,7 +2544,7 @@ impl DatabaseRequest for FunAdminListEscrowTokenContractAddressReq {
 pub struct FunAdminAddEscrowContractAddressReq {
     pub pkey_id: i64,
     pub blockchain: EnumBlockChain,
-    pub address: String,
+    pub address: BlockchainAddress,
 }
 
 #[allow(unused_variables)]
@@ -2588,11 +2589,11 @@ impl DatabaseRequest for FunAdminListEscrowContractAddressReq {
 pub struct FunWatcherSaveUserDepositWithdrawLedgerReq {
     pub user_id: i64,
     pub blockchain: EnumBlockChain,
-    pub user_address: String,
-    pub contract_address: String,
-    pub receiver_address: String,
-    pub quantity: String,
-    pub transaction_hash: String,
+    pub user_address: BlockchainAddress,
+    pub contract_address: BlockchainAddress,
+    pub receiver_address: BlockchainAddress,
+    pub quantity: BlockchainDecimal,
+    pub transaction_hash: BlockchainTransactionHash,
 }
 
 #[allow(unused_variables)]
@@ -2616,8 +2617,8 @@ impl DatabaseRequest for FunWatcherSaveUserDepositWithdrawLedgerReq {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunWatcherSaveRawTransactionReq {
-    pub transaction_hash: String,
-    pub chain: String,
+    pub transaction_hash: BlockchainTransactionHash,
+    pub blockchain: EnumBlockChain,
     pub raw_transaction: String,
     #[serde(default)]
     pub dex: Option<String>,
@@ -2627,12 +2628,12 @@ pub struct FunWatcherSaveRawTransactionReq {
 impl DatabaseRequest for FunWatcherSaveRawTransactionReq {
     type ResponseRow = FunWatcherSaveRawTransactionRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_watcher_save_raw_transaction(a_transaction_hash => $1::varchar, a_chain => $2::varchar, a_raw_transaction => $3::varchar, a_dex => $4::varchar);"
+        "SELECT * FROM api.fun_watcher_save_raw_transaction(a_transaction_hash => $1::varchar, a_blockchain => $2::enum_block_chain, a_raw_transaction => $3::varchar, a_dex => $4::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
             &self.transaction_hash as &(dyn ToSql + Sync),
-            &self.chain as &(dyn ToSql + Sync),
+            &self.blockchain as &(dyn ToSql + Sync),
             &self.raw_transaction as &(dyn ToSql + Sync),
             &self.dex as &(dyn ToSql + Sync),
         ]
@@ -2641,7 +2642,7 @@ impl DatabaseRequest for FunWatcherSaveRawTransactionReq {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunWatcherGetRawTransactionReq {
-    pub transaction_hash: String,
+    pub transaction_hash: BlockchainTransactionHash,
     pub chain: String,
     #[serde(default)]
     pub dex: Option<String>,
@@ -2664,20 +2665,20 @@ impl DatabaseRequest for FunWatcherGetRawTransactionReq {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunWatcherSaveStrategyWatchingWalletTradeLedgerReq {
-    pub address: String,
-    pub transaction_hash: String,
+    pub address: BlockchainAddress,
+    pub transaction_hash: BlockchainTransactionHash,
     pub blockchain: EnumBlockChain,
-    pub contract_address: String,
+    pub contract_address: BlockchainAddress,
     #[serde(default)]
     pub dex: Option<String>,
     #[serde(default)]
-    pub token_in_address: Option<String>,
+    pub token_in_address: Option<BlockchainAddress>,
     #[serde(default)]
-    pub token_out_address: Option<String>,
+    pub token_out_address: Option<BlockchainAddress>,
     #[serde(default)]
-    pub amount_in: Option<String>,
+    pub amount_in: Option<BlockchainDecimal>,
     #[serde(default)]
-    pub amount_out: Option<String>,
+    pub amount_out: Option<BlockchainDecimal>,
     #[serde(default)]
     pub happened_at: Option<i64>,
 }
@@ -2723,9 +2724,9 @@ impl DatabaseRequest for FunWatcherGetStrategyTokensFromLedgerReq {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunWatcherUpsertStrategyPoolContractAssetBalanceReq {
     pub strategy_pool_contract_id: i64,
-    pub token_address: String,
+    pub token_address: BlockchainAddress,
     pub blockchain: EnumBlockChain,
-    pub new_balance: String,
+    pub new_balance: BlockchainDecimal,
 }
 
 #[allow(unused_variables)]
@@ -2750,7 +2751,7 @@ pub struct FunWatcherListStrategyPoolContractAssetBalancesReq {
     #[serde(default)]
     pub blockchain: Option<EnumBlockChain>,
     #[serde(default)]
-    pub token_address: Option<String>,
+    pub token_address: Option<BlockchainAddress>,
 }
 
 #[allow(unused_variables)]
@@ -2773,7 +2774,7 @@ pub struct FunWatcherListStrategyEscrowPendingWalletBalanceReq {
     #[serde(default)]
     pub strategy_id: Option<i64>,
     #[serde(default)]
-    pub token_address: Option<String>,
+    pub token_address: Option<BlockchainAddress>,
 }
 
 #[allow(unused_variables)]
@@ -2821,11 +2822,11 @@ impl DatabaseRequest for FunWatcherListUserStrategyBalanceReq {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunWatcherUpsertExpertListenedWalletAssetBalanceReq {
-    pub address: String,
+    pub address: BlockchainAddress,
     pub blockchain: EnumBlockChain,
     pub token_id: i64,
-    pub old_balance: String,
-    pub new_balance: String,
+    pub old_balance: BlockchainDecimal,
+    pub new_balance: BlockchainDecimal,
 }
 
 #[allow(unused_variables)]
@@ -2850,7 +2851,7 @@ pub struct FunWatcherListExpertListenedWalletAssetBalanceReq {
     pub limit: i64,
     pub offset: i64,
     #[serde(default)]
-    pub address: Option<String>,
+    pub address: Option<BlockchainAddress>,
     #[serde(default)]
     pub blockchain: Option<EnumBlockChain>,
     #[serde(default)]
@@ -2878,7 +2879,7 @@ impl DatabaseRequest for FunWatcherListExpertListenedWalletAssetBalanceReq {
 pub struct FunWatcherSaveStrategyPoolContractReq {
     pub strategy_id: i64,
     pub blockchain: EnumBlockChain,
-    pub address: String,
+    pub address: BlockchainAddress,
 }
 
 #[allow(unused_variables)]
@@ -2902,8 +2903,8 @@ pub struct FunWatcherUpsertUserStrategyBalanceReq {
     pub strategy_id: i64,
     pub token_id: i64,
     pub blockchain: EnumBlockChain,
-    pub old_balance: String,
-    pub new_balance: String,
+    pub old_balance: BlockchainDecimal,
+    pub new_balance: BlockchainDecimal,
 }
 
 #[allow(unused_variables)]
@@ -2927,11 +2928,11 @@ impl DatabaseRequest for FunWatcherUpsertUserStrategyBalanceReq {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunWatcherUpsertUserDepositWithdrawBalanceReq {
     pub user_id: i64,
-    pub token_address: String,
-    pub escrow_contract_address: String,
+    pub token_address: BlockchainAddress,
+    pub escrow_contract_address: BlockchainAddress,
     pub blockchain: EnumBlockChain,
-    pub old_balance: String,
-    pub new_balance: String,
+    pub old_balance: BlockchainDecimal,
+    pub new_balance: BlockchainDecimal,
 }
 
 #[allow(unused_variables)]
@@ -2961,7 +2962,7 @@ pub struct FunWatcherListStrategyPoolContractReq {
     #[serde(default)]
     pub blockchain: Option<EnumBlockChain>,
     #[serde(default)]
-    pub address: Option<String>,
+    pub address: Option<BlockchainAddress>,
 }
 
 #[allow(unused_variables)]

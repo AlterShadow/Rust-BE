@@ -34,12 +34,12 @@ pub async fn on_user_deposit(
     // USER just deposits to our service
     db.execute(FunWatcherSaveUserDepositWithdrawLedgerReq {
         user_id: ctx.user_id,
-        quantity: format!("{:?}", esc.amount),
+        quantity: esc.amount.into(),
         blockchain: chain,
-        user_address: format!("{:?}", esc.owner),
-        contract_address: format!("{:?}", tx.get_to().context("no to")?),
-        transaction_hash: format!("{:?}", tx.get_hash()),
-        receiver_address: format!("{:?}", esc.recipient),
+        user_address: esc.owner.into(),
+        contract_address: tx.get_to().context("no to")?.into(),
+        transaction_hash: tx.get_hash().into(),
+        receiver_address: esc.recipient.into(),
     })
     .await?;
     Ok(())

@@ -45,7 +45,7 @@ pub async fn validate_audit_rule_user_whitelisted_wallet_same_network(
             offset: 0,
             user_id: None,
             blockchain: None,
-            address: Some(format!("{:?}", user_whitelisted_wallet_address)),
+            address: Some(user_whitelisted_wallet_address.into()),
         })
         .await?
         .into_result()

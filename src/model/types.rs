@@ -69,6 +69,9 @@ pub enum Type {
         variants: Vec<EnumVariant>,
     },
     EnumRef(String),
+    BlockchainDecimal,
+    BlockchainAddress,
+    BlockchainTransactionHash,
 }
 impl Type {
     pub fn struct_(name: impl Into<String>, fields: Vec<Field>) -> Self {

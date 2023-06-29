@@ -2614,7 +2614,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_watcher_save_raw_transaction(a_transaction_hash varchar, a_chain varchar, a_raw_transaction varchar, a_dex varchar DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_watcher_save_raw_transaction(a_transaction_hash varchar, a_blockchain enum_block_chain, a_raw_transaction varchar, a_dex varchar DEFAULT NULL)
 RETURNS table (
     "transaction_cache_id" bigint
 )
@@ -2628,7 +2628,7 @@ BEGIN
                                                    raw_content,
                                                    created_at)
                  VALUES (a_transaction_hash,
-                         a_chain,
+                         a_blockchain,
                          a_dex,
                          a_raw_transaction,
                          extract(Epoch FROM (NOW()))::bigint)

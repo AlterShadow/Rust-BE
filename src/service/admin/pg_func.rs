@@ -20,7 +20,7 @@ pub fn get_admin_pg_func() -> Vec<ProceduralFunction> {
                 Field::new("user_id", Type::BigInt),
                 Field::new("public_user_id", Type::BigInt),
                 Field::new("username", Type::optional(Type::String)),
-                Field::new("address", Type::String),
+                Field::new("address", Type::BlockchainAddress),
                 Field::new("last_ip", Type::Inet),
                 Field::new("last_login_at", Type::BigInt),
                 Field::new("login_count", Type::Int),
@@ -135,7 +135,7 @@ END
                 Field::new("total", Type::BigInt),
                 Field::new("user_public_id", Type::BigInt),
                 Field::new("name", Type::String),
-                Field::new("linked_wallet", Type::String),
+                Field::new("linked_wallet", Type::BlockchainAddress),
                 Field::new("follower_count", Type::BigInt),
                 Field::new("description", Type::optional(Type::String)),
                 Field::new("social_media", Type::optional(Type::String)),
@@ -270,7 +270,7 @@ END
                 Field::new("user_id", Type::BigInt),
                 Field::new("user_public_id", Type::BigInt),
                 Field::new("username", Type::String),
-                Field::new("login_wallet_address", Type::String),
+                Field::new("login_wallet_address", Type::BlockchainAddress),
                 Field::new("joined_at", Type::BigInt),
             ],
             r#"
@@ -384,7 +384,7 @@ END
                 Field::new("symbol", Type::String),
                 Field::new("short_name", Type::String),
                 Field::new("description", Type::String),
-                Field::new("address", Type::String),
+                Field::new("address", Type::BlockchainAddress),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("is_stablecoin", Type::Boolean),
             ],
@@ -409,7 +409,7 @@ END
                 Field::new("symbol", Type::String),
                 Field::new("short_name", Type::String),
                 Field::new("description", Type::String),
-                Field::new("address", Type::String),
+                Field::new("address", Type::BlockchainAddress),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("is_stablecoin", Type::Boolean),
             ],
@@ -429,7 +429,7 @@ END
             vec![
                 Field::new("pkey_id", Type::BigInt),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
-                Field::new("address", Type::String),
+                Field::new("address", Type::BlockchainAddress),
             ],
             vec![],
             r#"
@@ -449,7 +449,7 @@ END
             vec![
                 Field::new("pkey_id", Type::BigInt),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
-                Field::new("address", Type::String),
+                Field::new("address", Type::BlockchainAddress),
             ],
             r#"
 BEGIN
@@ -467,11 +467,11 @@ END
             vec![
                 Field::new("user_id", Type::BigInt),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
-                Field::new("user_address", Type::String),
-                Field::new("contract_address", Type::String),
-                Field::new("receiver_address", Type::String),
-                Field::new("quantity", Type::String),
-                Field::new("transaction_hash", Type::String),
+                Field::new("user_address", Type::BlockchainAddress),
+                Field::new("contract_address", Type::BlockchainAddress),
+                Field::new("receiver_address", Type::BlockchainAddress),
+                Field::new("quantity", Type::BlockchainDecimal),
+                Field::new("transaction_hash", Type::BlockchainTransactionHash),
             ],
             vec![Field::new("success", Type::Boolean)],
             r#"

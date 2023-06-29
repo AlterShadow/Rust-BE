@@ -20,8 +20,8 @@ pub fn convert_strategy_db_to_api(x: FunUserStrategyRowType) -> ListStrategiesRo
         aum: x.aum.unwrap_or_default(),
         followed: x.followed,
         // FIXME: this is a hack to get the value
-        wallet_address: "0x000".to_string(),
-        strategy_pool_address: x.strategy_pool_address,
+        wallet_address: Address::zero().into(),
+        strategy_pool_address: x.strategy_pool_address.into(),
         approved: x.approved,
         approved_at: x.approved_at,
         requested_at: x.requested_at,

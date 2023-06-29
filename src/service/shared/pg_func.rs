@@ -19,9 +19,9 @@ pub fn strategy_row_type() -> Type {
             Field::new("strategy_id", Type::BigInt),
             Field::new("strategy_name", Type::String),
             Field::new("strategy_description", Type::String),
-            Field::new("current_usdc", Type::String),
-            Field::new("total_backed_usdc", Type::String),
-            Field::new("total_exited_usdc", Type::String),
+            Field::new("current_usdc", Type::BlockchainDecimal),
+            Field::new("total_backed_usdc", Type::BlockchainDecimal),
+            Field::new("total_exited_usdc", Type::BlockchainDecimal),
             Field::new("risk_score", Type::optional(Type::Numeric)),
             Field::new("aum", Type::optional(Type::Numeric)),
             Field::new("followers", Type::BigInt),
@@ -41,7 +41,10 @@ pub fn strategy_row_type() -> Type {
             Field::new("immutable_audit_rules", Type::Boolean),
             Field::new("strategy_pool_token", Type::optional(Type::String)),
             Field::new("blockchain", Type::enum_ref("block_chain")),
-            Field::new("strategy_pool_address", Type::optional(Type::String)),
+            Field::new(
+                "strategy_pool_address",
+                Type::optional(Type::BlockchainAddress),
+            ),
         ],
     )
 }
@@ -112,7 +115,7 @@ pub fn expert_row_type() -> Type {
             Field::new("pending_expert", Type::Boolean),
             Field::new("approved_expert", Type::Boolean),
             Field::new("followed", Type::Boolean),
-            Field::new("linked_wallet", Type::String),
+            Field::new("linked_wallet", Type::BlockchainAddress),
         ],
     )
 }

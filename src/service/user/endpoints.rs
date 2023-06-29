@@ -46,7 +46,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 Field::new("expert_name", Type::optional(Type::String)),
                 Field::new("description", Type::optional(Type::String)),
                 Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
-                Field::new("wallet_address", Type::optional(Type::String)),
+                Field::new("wallet_address", Type::optional(Type::BlockchainAddress)),
             ],
             vec![
                 Field::new("strategies_total", Type::BigInt),
@@ -84,7 +84,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                         vec![
                             Field::new("user_id", Type::BigInt),
                             Field::new("name", Type::String),
-                            Field::new("linked_wallet", Type::String),
+                            Field::new("linked_wallet", Type::BlockchainAddress),
                             Field::new("backed_date", Type::BigInt),
                         ],
                     ),
@@ -108,7 +108,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                         vec![
                             Field::new("user_id", Type::BigInt),
                             Field::new("name", Type::String),
-                            Field::new("linked_wallet", Type::String),
+                            Field::new("linked_wallet", Type::BlockchainAddress),
                             Field::new("followed_date", Type::BigInt),
                         ],
                     ),
@@ -127,7 +127,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                         "WatchingWalletRow",
                         vec![
                             Field::new("watching_wallet_id", Type::BigInt),
-                            Field::new("wallet_address", Type::String),
+                            Field::new("wallet_address", Type::BlockchainAddress),
                             Field::new("blockchain", Type::enum_ref("block_chain")),
                             Field::new("ratio_distribution", Type::Numeric),
                         ],
@@ -144,10 +144,10 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                             Field::new("blockchain", Type::enum_ref("block_chain")),
                             Field::new("dex", Type::String),
                             Field::new("action", Type::String),
-                            Field::new("wallet_address", Type::String),
+                            Field::new("wallet_address", Type::BlockchainAddress),
                             Field::new("price", Type::Numeric),
                             Field::new("current_price", Type::Numeric),
-                            Field::new("quantity", Type::Numeric),
+                            Field::new("quantity", Type::BlockchainDecimal),
                             Field::new("yield_7d", Type::Numeric),
                             Field::new("yield_30d", Type::Numeric),
                         ],
@@ -242,7 +242,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
             20080,
             vec![
                 Field::new("strategy_id", Type::BigInt),
-                Field::new("quantity", Type::String),
+                Field::new("quantity", Type::BlockchainDecimal),
                 Field::new("token_id", Type::BigInt),
             ],
             vec![Field::new("success", Type::Boolean)],
@@ -252,20 +252,20 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
             20110,
             vec![
                 Field::new("strategy_id", Type::BigInt),
-                Field::new("quantity", Type::optional(Type::String)),
+                Field::new("quantity", Type::optional(Type::BlockchainDecimal)),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
             ],
             vec![
                 Field::new("success", Type::Boolean),
-                Field::new("transaction_hash", Type::String),
+                Field::new("transaction_hash", Type::BlockchainTransactionHash),
             ],
         ),
         EndpointSchema::new(
             "UserRequestRefund",
             20081,
             vec![
-                Field::new("quantity", Type::String),
-                Field::new("wallet_address", Type::String),
+                Field::new("quantity", Type::BlockchainDecimal),
+                Field::new("wallet_address", Type::BlockchainAddress),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
             ],
             vec![Field::new("success", Type::Boolean)],
@@ -298,11 +298,11 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                         vec![
                             Field::new("back_ledger_id", Type::BigInt),
                             Field::new("strategy_id", Type::BigInt),
-                            Field::new("quantity", Type::String),
+                            Field::new("quantity", Type::BlockchainDecimal),
                             Field::new("blockchain", Type::enum_ref("block_chain")),
                             Field::new("dex", Type::String),
                             Field::new("is_back", Type::Boolean),
-                            Field::new("transaction_hash", Type::String),
+                            Field::new("transaction_hash", Type::BlockchainTransactionHash),
                             Field::new("time", Type::BigInt),
                         ],
                     ),
@@ -327,7 +327,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                         vec![
                             Field::new("exit_ledger_id", Type::BigInt),
                             Field::new("strategy_id", Type::BigInt),
-                            Field::new("exit_quantity", Type::String),
+                            Field::new("exit_quantity", Type::BlockchainDecimal),
                             Field::new("blockchain", Type::enum_ref("block_chain")),
                             Field::new("exit_time", Type::BigInt),
                         ],
@@ -450,7 +450,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
             20190,
             vec![
                 Field::new("blockchain", Type::enum_ref("block_chain")),
-                Field::new("wallet_address", Type::String),
+                Field::new("wallet_address", Type::BlockchainAddress),
                 Field::new("message_to_sign", Type::String),
                 Field::new("message_signature", Type::String),
             ],
@@ -468,7 +468,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 Field::new("offset", Type::optional(Type::BigInt)),
                 Field::new("wallet_id", Type::optional(Type::BigInt)),
                 Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
-                Field::new("wallet_address", Type::optional(Type::String)),
+                Field::new("wallet_address", Type::optional(Type::BlockchainAddress)),
                 Field::new("strategy_id", Type::optional(Type::BigInt)),
             ],
             vec![Field::new(
@@ -478,7 +478,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                     vec![
                         Field::new("wallet_id", Type::BigInt),
                         Field::new("blockchain", Type::enum_ref("block_chain")),
-                        Field::new("wallet_address", Type::String),
+                        Field::new("wallet_address", Type::BlockchainAddress),
                         Field::new("is_default", Type::Boolean),
                         Field::new("is_compatible", Type::Boolean),
                     ],
@@ -514,7 +514,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 Field::new("strategy_fee", Type::Numeric),
                 Field::new("expert_fee", Type::Numeric),
                 Field::new("agreed_tos", Type::Boolean),
-                Field::new("wallet_address", Type::String),
+                Field::new("wallet_address", Type::BlockchainAddress),
                 Field::new("wallet_blockchain", Type::enum_ref("block_chain")),
                 Field::new(
                     "initial_tokens",
@@ -522,7 +522,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                         "UserCreateStrategyInitialTokenRow",
                         vec![
                             Field::new("token_id", Type::BigInt),
-                            Field::new("quantity", Type::String),
+                            Field::new("quantity", Type::BlockchainDecimal),
                         ],
                     ),
                 ),
@@ -559,7 +559,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
             vec![
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
-                Field::new("wallet_address", Type::String),
+                Field::new("wallet_address", Type::BlockchainAddress),
                 Field::new("ratio", Type::Numeric),
             ],
             vec![
@@ -589,7 +589,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                         vec![
                             Field::new("wallet_id", Type::BigInt),
                             Field::new("blockchain", Type::enum_ref("block_chain")),
-                            Field::new("wallet_address", Type::String),
+                            Field::new("wallet_address", Type::BlockchainAddress),
                             Field::new("ratio", Type::Numeric),
                         ],
                     ),
@@ -600,7 +600,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
             "UserListWalletActivityLedger",
             20300,
             vec![
-                Field::new("wallet_address", Type::String),
+                Field::new("wallet_address", Type::BlockchainAddress),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
             ],
             vec![
@@ -611,16 +611,16 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                         "ListWalletActivityLedgerRow",
                         vec![
                             Field::new("record_id", Type::BigInt),
-                            Field::new("wallet_address", Type::String),
-                            Field::new("transaction_hash", Type::String),
+                            Field::new("wallet_address", Type::BlockchainAddress),
+                            Field::new("transaction_hash", Type::BlockchainTransactionHash),
                             Field::new("dex", Type::String),
                             Field::new("blockchain", Type::enum_ref("block_chain")),
-                            Field::new("contract_address", Type::String),
-                            Field::new("token_in_address", Type::String),
-                            Field::new("token_out_address", Type::String),
-                            Field::new("caller_address", Type::String),
-                            Field::new("amount_in", Type::String),
-                            Field::new("amount_out", Type::String),
+                            Field::new("contract_address", Type::BlockchainAddress),
+                            Field::new("token_in_address", Type::BlockchainAddress),
+                            Field::new("token_out_address", Type::BlockchainAddress),
+                            Field::new("caller_address", Type::BlockchainAddress),
+                            Field::new("amount_in", Type::BlockchainDecimal),
+                            Field::new("amount_out", Type::BlockchainDecimal),
                             Field::new("swap_calls", Type::Object),
                             Field::new("paths", Type::Object),
                             Field::new("dex_versions", Type::Object),
@@ -636,7 +636,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
             vec![
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("token_id", Type::BigInt),
-                Field::new("quantity", Type::String),
+                Field::new("quantity", Type::BlockchainDecimal),
             ],
             vec![
                 Field::new("success", Type::Boolean),
@@ -665,8 +665,8 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                         vec![
                             Field::new("token_id", Type::BigInt),
                             Field::new("token_name", Type::String),
-                            Field::new("token_address", Type::String),
-                            Field::new("quantity", Type::String),
+                            Field::new("token_address", Type::BlockchainAddress),
+                            Field::new("quantity", Type::BlockchainDecimal),
                             Field::new("updated_at", Type::BigInt),
                             Field::new("created_at", Type::BigInt),
                         ],
@@ -735,7 +735,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                     vec![
                         Field::new("blockchain", Type::enum_ref("block_chain")),
                         Field::new("token", Type::enum_ref("blockchain_coin")),
-                        Field::new("address", Type::String),
+                        Field::new("address", Type::BlockchainAddress),
                         Field::new("short_name", Type::String),
                         Field::new("icon_url", Type::String),
                         Field::new("conversion", Type::Numeric),
@@ -753,7 +753,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                     "UserGetDepositAddressesRow",
                     vec![
                         Field::new("blockchain", Type::enum_ref("block_chain")),
-                        Field::new("address", Type::String),
+                        Field::new("address", Type::BlockchainAddress),
                         Field::new("short_name", Type::String),
                     ],
                 ),
@@ -799,7 +799,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                         "UserListStrategyWalletsRow",
                         vec![
                             Field::new("blockchain", Type::enum_ref("block_chain")),
-                            Field::new("address", Type::String),
+                            Field::new("address", Type::BlockchainAddress),
                             Field::new("created_at", Type::BigInt),
                         ],
                     ),
@@ -810,13 +810,13 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
             "UserCreateStrategyWallet",
             20391,
             vec![
-                Field::new("wallet_address", Type::String),
+                Field::new("wallet_address", Type::BlockchainAddress),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("adminship", Type::Boolean),
             ],
             vec![
                 Field::new("blockchain", Type::enum_ref("block_chain")),
-                Field::new("address", Type::String),
+                Field::new("address", Type::BlockchainAddress),
             ],
         ),
         EndpointSchema::new(
@@ -868,12 +868,12 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 Type::datatable(
                     "UserAllowedEscrowTransferInfo",
                     vec![
-                        Field::new("receiver_address", Type::String),
+                        Field::new("receiver_address", Type::BlockchainAddress),
                         Field::new("blockchain", Type::enum_ref("block_chain")),
                         Field::new("token_id", Type::BigInt),
                         Field::new("token_symbol", Type::String),
                         Field::new("token_name", Type::String),
-                        Field::new("token_address", Type::String),
+                        Field::new("token_address", Type::BlockchainAddress),
                     ],
                 ),
             )],
@@ -891,7 +891,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                         Field::new("token_id", Type::BigInt),
                         Field::new("token_symbol", Type::String),
                         Field::new("token_name", Type::String),
-                        Field::new("balance", Type::String),
+                        Field::new("balance", Type::BlockchainDecimal),
                     ],
                 ),
             )],
@@ -900,7 +900,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
             "UserGetDepositWithdrawBalance",
             20511,
             vec![Field::new("token_id", Type::BigInt)],
-            vec![Field::new("balance", Type::String)],
+            vec![Field::new("balance", Type::BlockchainDecimal)],
         ),
         EndpointSchema::new(
             "UserListEscrowTokenContractAddresses",
@@ -921,7 +921,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                             Field::new("token_id", Type::BigInt),
                             Field::new("token_symbol", Type::String),
                             Field::new("token_name", Type::String),
-                            Field::new("token_address", Type::String),
+                            Field::new("token_address", Type::BlockchainAddress),
                             Field::new("description", Type::String),
                             Field::new("blockchain", Type::enum_ref("block_chain")),
                             Field::new("is_stablecoin", Type::Boolean),

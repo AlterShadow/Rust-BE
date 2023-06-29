@@ -40,6 +40,9 @@ impl ToRust for Type {
             Type::Inet => "std::net::IpAddr".to_owned(),
             Type::Enum { name, .. } => format!("Enum{}", name.to_case(Case::Pascal),),
             Type::EnumRef(name) => format!("Enum{}", name.to_case(Case::Pascal),),
+            Type::BlockchainDecimal => "BlockchainDecimal".to_owned(),
+            Type::BlockchainAddress => "BlockchainAddress".to_owned(),
+            Type::BlockchainTransactionHash => "BlockchainTransactionHash".to_owned(),
         }
     }
 
@@ -148,6 +151,7 @@ pub fn gen_db_rs(dir: &str) -> eyre::Result<()> {
         "{}",
         r#"
 use lib::database::*;
+use lib::types::*;
 use crate::model::*;
 use serde::*;
 use postgres_from_row::FromRow;
@@ -232,6 +236,8 @@ use num_derive::FromPrimitive;
 use strum_macros::{EnumString, Display};
 use lib::error_code::ErrorCode;
 use lib::ws::*;
+use lib::types::*;
+
     "#
     )?;
 

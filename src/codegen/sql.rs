@@ -45,6 +45,9 @@ impl ToSql for Type {
             Type::Inet => "inet".to_owned(),
             Type::Enum { name, .. } => format!("enum_{}", name),
             Type::EnumRef(name) => format!("enum_{}", name),
+            Type::BlockchainDecimal => "varchar".to_owned(),
+            Type::BlockchainAddress => "varchar".to_owned(),
+            Type::BlockchainTransactionHash => "varchar".to_owned(),
         }
     }
 }

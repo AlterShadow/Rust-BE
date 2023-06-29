@@ -1708,6 +1708,7 @@ dependencies = [
  "tracing-subscriber",
  "urlencoding",
  "uuid",
+ "web3",
 ]
 
 [[package]]

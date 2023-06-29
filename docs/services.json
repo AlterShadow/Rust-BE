@@ -290,12 +290,12 @@
                       },
                       {
                         "name": "wallet_address",
-                        "ty": "String"
+                        "ty": "BlockchainAddress"
                       },
                       {
                         "name": "strategy_pool_address",
                         "ty": {
-                          "Optional": "String"
+                          "Optional": "BlockchainAddress"
                         }
                       },
                       {
@@ -438,7 +438,7 @@
             {
               "name": "wallet_address",
               "ty": {
-                "Optional": "String"
+                "Optional": "BlockchainAddress"
               }
             }
           ],
@@ -496,12 +496,12 @@
                       },
                       {
                         "name": "wallet_address",
-                        "ty": "String"
+                        "ty": "BlockchainAddress"
                       },
                       {
                         "name": "strategy_pool_address",
                         "ty": {
-                          "Optional": "String"
+                          "Optional": "BlockchainAddress"
                         }
                       },
                       {
@@ -639,12 +639,12 @@
                       },
                       {
                         "name": "wallet_address",
-                        "ty": "String"
+                        "ty": "BlockchainAddress"
                       },
                       {
                         "name": "strategy_pool_address",
                         "ty": {
-                          "Optional": "String"
+                          "Optional": "BlockchainAddress"
                         }
                       },
                       {
@@ -753,7 +753,7 @@
                     },
                     {
                       "name": "linked_wallet",
-                      "ty": "String"
+                      "ty": "BlockchainAddress"
                     },
                     {
                       "name": "backed_date",
@@ -810,7 +810,7 @@
                     },
                     {
                       "name": "linked_wallet",
-                      "ty": "String"
+                      "ty": "BlockchainAddress"
                     },
                     {
                       "name": "followed_date",
@@ -883,12 +883,12 @@
                     },
                     {
                       "name": "wallet_address",
-                      "ty": "String"
+                      "ty": "BlockchainAddress"
                     },
                     {
                       "name": "strategy_pool_address",
                       "ty": {
-                        "Optional": "String"
+                        "Optional": "BlockchainAddress"
                       }
                     },
                     {
@@ -961,7 +961,7 @@
                     },
                     {
                       "name": "wallet_address",
-                      "ty": "String"
+                      "ty": "BlockchainAddress"
                     },
                     {
                       "name": "blockchain",
@@ -1011,7 +1011,7 @@
                     },
                     {
                       "name": "wallet_address",
-                      "ty": "String"
+                      "ty": "BlockchainAddress"
                     },
                     {
                       "name": "price",
@@ -1023,7 +1023,7 @@
                     },
                     {
                       "name": "quantity",
-                      "ty": "Numeric"
+                      "ty": "BlockchainDecimal"
                     },
                     {
                       "name": "yield_7d",
@@ -1239,7 +1239,7 @@
             },
             {
               "name": "quantity",
-              "ty": "String"
+              "ty": "BlockchainDecimal"
             },
             {
               "name": "token_id",
@@ -1267,7 +1267,7 @@
             {
               "name": "quantity",
               "ty": {
-                "Optional": "String"
+                "Optional": "BlockchainDecimal"
               }
             },
             {
@@ -1284,7 +1284,7 @@
             },
             {
               "name": "transaction_hash",
-              "ty": "String"
+              "ty": "BlockchainTransactionHash"
             }
           ],
           "stream_response": null,
@@ -1297,11 +1297,11 @@
           "parameters": [
             {
               "name": "quantity",
-              "ty": "String"
+              "ty": "BlockchainDecimal"
             },
             {
               "name": "wallet_address",
-              "ty": "String"
+              "ty": "BlockchainAddress"
             },
             {
               "name": "blockchain",
@@ -1391,12 +1391,12 @@
                       },
                       {
                         "name": "wallet_address",
-                        "ty": "String"
+                        "ty": "BlockchainAddress"
                       },
                       {
                         "name": "strategy_pool_address",
                         "ty": {
-                          "Optional": "String"
+                          "Optional": "BlockchainAddress"
                         }
                       },
                       {
@@ -1501,7 +1501,7 @@
                     },
                     {
                       "name": "quantity",
-                      "ty": "String"
+                      "ty": "BlockchainDecimal"
                     },
                     {
                       "name": "blockchain",
@@ -1519,7 +1519,7 @@
                     },
                     {
                       "name": "transaction_hash",
-                      "ty": "String"
+                      "ty": "BlockchainTransactionHash"
                     },
                     {
                       "name": "time",
@@ -1578,7 +1578,7 @@
                     },
                     {
                       "name": "exit_quantity",
-                      "ty": "String"
+                      "ty": "BlockchainDecimal"
                     },
                     {
                       "name": "blockchain",
@@ -1657,7 +1657,7 @@
                       },
                       {
                         "name": "linked_wallet",
-                        "ty": "String"
+                        "ty": "BlockchainAddress"
                       },
                       {
                         "name": "name",
@@ -1855,7 +1855,7 @@
                       },
                       {
                         "name": "linked_wallet",
-                        "ty": "String"
+                        "ty": "BlockchainAddress"
                       },
                       {
                         "name": "name",
@@ -1980,7 +1980,7 @@
                       },
                       {
                         "name": "linked_wallet",
-                        "ty": "String"
+                        "ty": "BlockchainAddress"
                       },
                       {
                         "name": "name",
@@ -2105,7 +2105,7 @@
                       },
                       {
                         "name": "linked_wallet",
-                        "ty": "String"
+                        "ty": "BlockchainAddress"
                       },
                       {
                         "name": "name",
@@ -2286,12 +2286,12 @@
                       },
                       {
                         "name": "wallet_address",
-                        "ty": "String"
+                        "ty": "BlockchainAddress"
                       },
                       {
                         "name": "strategy_pool_address",
                         "ty": {
-                          "Optional": "String"
+                          "Optional": "BlockchainAddress"
                         }
                       },
                       {
@@ -2404,7 +2404,7 @@
                       },
                       {
                         "name": "linked_wallet",
-                        "ty": "String"
+                        "ty": "BlockchainAddress"
                       },
                       {
                         "name": "name",
@@ -2534,12 +2534,12 @@
                       },
                       {
                         "name": "wallet_address",
-                        "ty": "String"
+                        "ty": "BlockchainAddress"
                       },
                       {
                         "name": "strategy_pool_address",
                         "ty": {
-                          "Optional": "String"
+                          "Optional": "BlockchainAddress"
                         }
                       },
                       {
@@ -2650,12 +2650,12 @@
                       },
                       {
                         "name": "wallet_address",
-                        "ty": "String"
+                        "ty": "BlockchainAddress"
                       },
                       {
                         "name": "strategy_pool_address",
                         "ty": {
-                          "Optional": "String"
+                          "Optional": "BlockchainAddress"
                         }
                       },
                       {
@@ -2734,7 +2734,7 @@
             },
             {
               "name": "wallet_address",
-              "ty": "String"
+              "ty": "BlockchainAddress"
             },
             {
               "name": "message_to_sign",
@@ -2792,7 +2792,7 @@
             {
               "name": "wallet_address",
               "ty": {
-                "Optional": "String"
+                "Optional": "BlockchainAddress"
               }
             },
             {
@@ -2821,7 +2821,7 @@
                     },
                     {
                       "name": "wallet_address",
-                      "ty": "String"
+                      "ty": "BlockchainAddress"
                     },
                     {
                       "name": "is_default",
@@ -2913,7 +2913,7 @@
             },
             {
               "name": "wallet_address",
-              "ty": "String"
+              "ty": "BlockchainAddress"
             },
             {
               "name": "wallet_blockchain",
@@ -2933,7 +2933,7 @@
                     },
                     {
                       "name": "quantity",
-                      "ty": "String"
+                      "ty": "BlockchainDecimal"
                     }
                   ]
                 }
@@ -3034,7 +3034,7 @@
             },
             {
               "name": "wallet_address",
-              "ty": "String"
+              "ty": "BlockchainAddress"
             },
             {
               "name": "ratio",
@@ -3110,7 +3110,7 @@
                     },
                     {
                       "name": "wallet_address",
-                      "ty": "String"
+                      "ty": "BlockchainAddress"
                     },
                     {
                       "name": "ratio",
@@ -3131,7 +3131,7 @@
           "parameters": [
             {
               "name": "wallet_address",
-              "ty": "String"
+              "ty": "BlockchainAddress"
             },
             {
               "name": "blockchain",
@@ -3157,11 +3157,11 @@
                     },
                     {
                       "name": "wallet_address",
-                      "ty": "String"
+                      "ty": "BlockchainAddress"
                     },
                     {
                       "name": "transaction_hash",
-                      "ty": "String"
+                      "ty": "BlockchainTransactionHash"
                     },
                     {
                       "name": "dex",
@@ -3175,27 +3175,27 @@
                     },
                     {
                       "name": "contract_address",
-                      "ty": "String"
+                      "ty": "BlockchainAddress"
                     },
                     {
                       "name": "token_in_address",
-                      "ty": "String"
+                      "ty": "BlockchainAddress"
                     },
                     {
                       "name": "token_out_address",
-                      "ty": "String"
+                      "ty": "BlockchainAddress"
                     },
                     {
                       "name": "caller_address",
-                      "ty": "String"
+                      "ty": "BlockchainAddress"
                     },
                     {
                       "name": "amount_in",
-                      "ty": "String"
+                      "ty": "BlockchainDecimal"
                     },
                     {
                       "name": "amount_out",
-                      "ty": "String"
+                      "ty": "BlockchainDecimal"
                     },
                     {
                       "name": "swap_calls",
@@ -3236,7 +3236,7 @@
             },
             {
               "name": "quantity",
-              "ty": "String"
+              "ty": "BlockchainDecimal"
             }
           ],
           "returns": [
@@ -3306,11 +3306,11 @@
                     },
                     {
                       "name": "token_address",
-                      "ty": "String"
+                      "ty": "BlockchainAddress"
                     },
                     {
                       "name": "quantity",
-                      "ty": "String"
+                      "ty": "BlockchainDecimal"
                     },
                     {
                       "name": "updated_at",
@@ -3484,7 +3484,7 @@
                     },
                     {
                       "name": "address",
-                      "ty": "String"
+                      "ty": "BlockchainAddress"
                     },
                     {
                       "name": "short_name",
@@ -3526,7 +3526,7 @@
                     },
                     {
                       "name": "address",
-                      "ty": "String"
+                      "ty": "BlockchainAddress"
                     },
                     {
                       "name": "short_name",
@@ -3586,23 +3586,23 @@
                       },
                       {
                         "name": "user_address",
-                        "ty": "String"
+                        "ty": "BlockchainAddress"
                       },
                       {
                         "name": "contract_address",
-                        "ty": "String"
+                        "ty": "BlockchainAddress"
                       },
                       {
                         "name": "receiver_address",
-                        "ty": "String"
+                        "ty": "BlockchainAddress"
                       },
                       {
                         "name": "quantity",
-                        "ty": "String"
+                        "ty": "BlockchainDecimal"
                       },
                       {
                         "name": "transaction_hash",
-                        "ty": "String"
+                        "ty": "BlockchainTransactionHash"
                       },
                       {
                         "name": "created_at",
@@ -3656,23 +3656,23 @@
                 },
                 {
                   "name": "user_address",
-                  "ty": "String"
+                  "ty": "BlockchainAddress"
                 },
                 {
                   "name": "contract_address",
-                  "ty": "String"
+                  "ty": "BlockchainAddress"
                 },
                 {
                   "name": "receiver_address",
-                  "ty": "String"
+                  "ty": "BlockchainAddress"
                 },
                 {
                   "name": "quantity",
-                  "ty": "String"
+                  "ty": "BlockchainDecimal"
                 },
                 {
                   "name": "transaction_hash",
-                  "ty": "String"
+                  "ty": "BlockchainTransactionHash"
                 },
                 {
                   "name": "created_at",
@@ -3725,7 +3725,7 @@
                     },
                     {
                       "name": "address",
-                      "ty": "String"
+                      "ty": "BlockchainAddress"
                     },
                     {
                       "name": "created_at",
@@ -3746,7 +3746,7 @@
           "parameters": [
             {
               "name": "wallet_address",
-              "ty": "String"
+              "ty": "BlockchainAddress"
             },
             {
               "name": "blockchain",
@@ -3768,7 +3768,7 @@
             },
             {
               "name": "address",
-              "ty": "String"
+              "ty": "BlockchainAddress"
             }
           ],
           "stream_response": null,
@@ -3882,7 +3882,7 @@
                   "fields": [
                     {
                       "name": "receiver_address",
-                      "ty": "String"
+                      "ty": "BlockchainAddress"
                     },
                     {
                       "name": "blockchain",
@@ -3904,7 +3904,7 @@
                     },
                     {
                       "name": "token_address",
-                      "ty": "String"
+                      "ty": "BlockchainAddress"
                     }
                   ]
                 }
@@ -3946,7 +3946,7 @@
                     },
                     {
                       "name": "balance",
-                      "ty": "String"
+                      "ty": "BlockchainDecimal"
                     }
                   ]
                 }
@@ -3969,7 +3969,7 @@
           "returns": [
             {
               "name": "balance",
-              "ty": "String"
+              "ty": "BlockchainDecimal"
             }
           ],
           "stream_response": null,
@@ -4032,7 +4032,7 @@
                     },
                     {
                       "name": "token_address",
-                      "ty": "String"
+                      "ty": "BlockchainAddress"
                     },
                     {
                       "name": "description",
@@ -4135,7 +4135,7 @@
                     },
                     {
                       "name": "address",
-                      "ty": "String"
+                      "ty": "BlockchainAddress"
                     },
                     {
                       "name": "last_ip",
@@ -4254,7 +4254,7 @@
                     },
                     {
                       "name": "linked_wallet",
-                      "ty": "String"
+                      "ty": "BlockchainAddress"
                     },
                     {
                       "name": "joined_at",
@@ -4467,7 +4467,7 @@
                       },
                       {
                         "name": "linked_wallet",
-                        "ty": "String"
+                        "ty": "BlockchainAddress"
                       },
                       {
                         "name": "name",
@@ -4621,7 +4621,7 @@
                     },
                     {
                       "name": "login_wallet_address",
-                      "ty": "String"
+                      "ty": "BlockchainAddress"
                     },
                     {
                       "name": "joined_at",
@@ -4761,12 +4761,12 @@
                       },
                       {
                         "name": "wallet_address",
-                        "ty": "String"
+                        "ty": "BlockchainAddress"
                       },
                       {
                         "name": "strategy_pool_address",
                         "ty": {
-                          "Optional": "String"
+                          "Optional": "BlockchainAddress"
                         }
                       },
                       {
@@ -4919,23 +4919,23 @@
                     },
                     {
                       "name": "user_address",
-                      "ty": "String"
+                      "ty": "BlockchainAddress"
                     },
                     {
                       "name": "contract_address",
-                      "ty": "String"
+                      "ty": "BlockchainAddress"
                     },
                     {
                       "name": "receiver_address",
-                      "ty": "String"
+                      "ty": "BlockchainAddress"
                     },
                     {
                       "name": "quantity",
-                      "ty": "String"
+                      "ty": "BlockchainDecimal"
                     },
                     {
                       "name": "transaction_hash",
-                      "ty": "String"
+                      "ty": "BlockchainTransactionHash"
                     },
                     {
                       "name": "created_at",
@@ -4989,23 +4989,23 @@
                 },
                 {
                   "name": "user_address",
-                  "ty": "String"
+                  "ty": "BlockchainAddress"
                 },
                 {
                   "name": "contract_address",
-                  "ty": "String"
+                  "ty": "BlockchainAddress"
                 },
                 {
                   "name": "receiver_address",
-                  "ty": "String"
+                  "ty": "BlockchainAddress"
                 },
                 {
                   "name": "quantity",
-                  "ty": "String"
+                  "ty": "BlockchainDecimal"
                 },
                 {
                   "name": "transaction_hash",
-                  "ty": "String"
+                  "ty": "BlockchainTransactionHash"
                 },
                 {
                   "name": "created_at",
@@ -5048,7 +5048,7 @@
             },
             {
               "name": "address",
-              "ty": "String"
+              "ty": "BlockchainAddress"
             },
             {
               "name": "blockchain",
@@ -5076,7 +5076,7 @@
             },
             {
               "name": "address",
-              "ty": "String"
+              "ty": "BlockchainAddress"
             },
             {
               "name": "blockchain",

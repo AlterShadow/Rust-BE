@@ -6,8 +6,8 @@ pub fn get_trade_watcher_pg_func() -> Vec<ProceduralFunction> {
         ProceduralFunction::new(
             "fun_watcher_save_raw_transaction",
             vec![
-                Field::new("transaction_hash", Type::String),
-                Field::new("chain", Type::String),
+                Field::new("transaction_hash", Type::BlockchainTransactionHash),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("raw_transaction", Type::String),
                 Field::new("dex", Type::optional(Type::String)),
             ],
@@ -20,7 +20,7 @@ BEGIN
                                                    raw_content,
                                                    created_at)
                  VALUES (a_transaction_hash,
-                         a_chain,
+                         a_blockchain,
                          a_dex,
                          a_raw_transaction,
                          extract(Epoch FROM (NOW()))::bigint)
@@ -31,13 +31,13 @@ END
         ProceduralFunction::new(
             "fun_watcher_get_raw_transaction",
             vec![
-                Field::new("transaction_hash", Type::String),
+                Field::new("transaction_hash", Type::BlockchainTransactionHash),
                 Field::new("chain", Type::String),
                 Field::new("dex", Type::optional(Type::String)),
             ],
             vec![
                 Field::new("transaction_cache_id", Type::BigInt),
-                Field::new("transaction_hash", Type::String),
+                Field::new("transaction_hash", Type::BlockchainTransactionHash),
                 Field::new("chain", Type::String),
                 Field::new("dex", Type::optional(Type::String)),
                 Field::new("raw_transaction", Type::String),
@@ -61,15 +61,15 @@ END
         ProceduralFunction::new(
             "fun_watcher_save_strategy_watching_wallet_trade_ledger",
             vec![
-                Field::new("address", Type::String),
-                Field::new("transaction_hash", Type::String),
+                Field::new("address", Type::BlockchainAddress),
+                Field::new("transaction_hash", Type::BlockchainTransactionHash),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
-                Field::new("contract_address", Type::String),
+                Field::new("contract_address", Type::BlockchainAddress),
                 Field::new("dex", Type::optional(Type::String)),
-                Field::new("token_in_address", Type::optional(Type::String)),
-                Field::new("token_out_address", Type::optional(Type::String)),
-                Field::new("amount_in", Type::optional(Type::String)),
-                Field::new("amount_out", Type::optional(Type::String)),
+                Field::new("token_in_address", Type::optional(Type::BlockchainAddress)),
+                Field::new("token_out_address", Type::optional(Type::BlockchainAddress)),
+                Field::new("amount_in", Type::optional(Type::BlockchainDecimal)),
+                Field::new("amount_out", Type::optional(Type::BlockchainDecimal)),
                 Field::new("happened_at", Type::optional(Type::BigInt)),
             ],
             vec![
@@ -130,7 +130,7 @@ END
                 Field::new("token_id", Type::BigInt),
                 Field::new("token_name", Type::String),
                 Field::new("token_symbol", Type::String),
-                Field::new("token_address", Type::String),
+                Field::new("token_address", Type::BlockchainAddress),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("amount", Type::String),
             ],
@@ -206,10 +206,10 @@ END
             "fun_watcher_upsert_strategy_pool_contract_asset_balance",
             vec![
                 Field::new("strategy_pool_contract_id", Type::BigInt),
-                Field::new("token_address", Type::String),
+                Field::new("token_address", Type::BlockchainAddress),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
                 // TODO: old_balance
-                Field::new("new_balance", Type::String),
+                Field::new("new_balance", Type::BlockchainDecimal),
             ],
             vec![Field::new(
                 "strategy_contract_asset_balance_id",
@@ -248,15 +248,15 @@ END
             vec![
                 Field::new("strategy_pool_contract_id", Type::BigInt),
                 Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
-                Field::new("token_address", Type::optional(Type::String)),
+                Field::new("token_address", Type::optional(Type::BlockchainAddress)),
             ],
             vec![
                 Field::new("token_id", Type::BigInt),
                 Field::new("token_name", Type::String),
                 Field::new("token_symbol", Type::String),
-                Field::new("token_address", Type::String),
+                Field::new("token_address", Type::BlockchainAddress),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
-                Field::new("balance", Type::String),
+                Field::new("balance", Type::BlockchainDecimal),
             ],
             r#"
 BEGIN
@@ -279,17 +279,17 @@ END
             "fun_watcher_list_strategy_escrow_pending_wallet_balance",
             vec![
                 Field::new("strategy_id", Type::optional(Type::BigInt)),
-                Field::new("token_address", Type::optional(Type::String)),
+                Field::new("token_address", Type::optional(Type::BlockchainAddress)),
             ],
             vec![
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
-                Field::new("address", Type::String),
+                Field::new("address", Type::BlockchainAddress),
                 Field::new("token_id", Type::BigInt),
-                Field::new("token_address", Type::String),
+                Field::new("token_address", Type::BlockchainAddress),
                 Field::new("token_name", Type::String),
                 Field::new("token_symbol", Type::String),
-                Field::new("balance", Type::String),
+                Field::new("balance", Type::BlockchainDecimal),
             ],
             r#"
 BEGIN
@@ -323,9 +323,9 @@ END
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("user_id", Type::BigInt),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
-                Field::new("strategy_pool_contract_address", Type::String),
-                Field::new("user_strategy_wallet_address", Type::String),
-                Field::new("balance", Type::String),
+                Field::new("strategy_pool_contract_address", Type::BlockchainAddress),
+                Field::new("user_strategy_wallet_address", Type::BlockchainAddress),
+                Field::new("balance", Type::BlockchainDecimal),
             ],
             r#"
 BEGIN
@@ -350,11 +350,11 @@ END
         ProceduralFunction::new(
             "fun_watcher_upsert_expert_listened_wallet_asset_balance",
             vec![
-                Field::new("address", Type::String),
+                Field::new("address", Type::BlockchainAddress),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("token_id", Type::BigInt),
-                Field::new("old_balance", Type::String),
-                Field::new("new_balance", Type::String),
+                Field::new("old_balance", Type::BlockchainDecimal),
+                Field::new("new_balance", Type::BlockchainDecimal),
             ],
             vec![Field::new(
                 "expert_listened_wallet_asset_balance_id",
@@ -407,16 +407,16 @@ END
             vec![
                 Field::new("limit", Type::BigInt),
                 Field::new("offset", Type::BigInt),
-                Field::new("address", Type::optional(Type::String)),
+                Field::new("address", Type::optional(Type::BlockchainAddress)),
                 Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
                 Field::new("token_id", Type::optional(Type::BigInt)),
             ],
             vec![
                 Field::new("pkey_id", Type::BigInt),
-                Field::new("address", Type::String),
+                Field::new("address", Type::BlockchainAddress),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("token_id", Type::BigInt),
-                Field::new("balance", Type::String),
+                Field::new("balance", Type::BlockchainDecimal),
             ],
             r#"
 BEGIN
@@ -443,7 +443,7 @@ END
             vec![
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
-                Field::new("address", Type::String),
+                Field::new("address", Type::BlockchainAddress),
             ],
             vec![Field::new("pkey_id", Type::BigInt)],
             r#"
@@ -461,8 +461,8 @@ END
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("token_id", Type::BigInt),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
-                Field::new("old_balance", Type::String),
-                Field::new("new_balance", Type::String),
+                Field::new("old_balance", Type::BlockchainDecimal),
+                Field::new("new_balance", Type::BlockchainDecimal),
             ],
             vec![Field::new("ret_pkey_id", Type::BigInt)],
             r#"
@@ -519,11 +519,11 @@ END
             "fun_watcher_upsert_user_deposit_withdraw_balance",
             vec![
                 Field::new("user_id", Type::BigInt),
-                Field::new("token_address", Type::String),
-                Field::new("escrow_contract_address", Type::String),
+                Field::new("token_address", Type::BlockchainAddress),
+                Field::new("escrow_contract_address", Type::BlockchainAddress),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
-                Field::new("old_balance", Type::String),
-                Field::new("new_balance", Type::String),
+                Field::new("old_balance", Type::BlockchainDecimal),
+                Field::new("new_balance", Type::BlockchainDecimal),
             ],
             vec![Field::new("ret_pkey_id", Type::BigInt)],
             r#"
@@ -573,13 +573,13 @@ END
                 Field::new("offset", Type::BigInt),
                 Field::new("strategy_id", Type::optional(Type::BigInt)),
                 Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
-                Field::new("address", Type::optional(Type::String)),
+                Field::new("address", Type::optional(Type::BlockchainAddress)),
             ],
             vec![
                 Field::new("pkey_id", Type::BigInt),
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
-                Field::new("address", Type::String),
+                Field::new("address", Type::BlockchainAddress),
                 Field::new("created_at", Type::BigInt),
             ],
             r#"

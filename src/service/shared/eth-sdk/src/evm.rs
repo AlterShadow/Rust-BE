@@ -77,8 +77,8 @@ pub async fn cache_ethereum_transaction(
 ) -> Result<()> {
     if let Err(err) = async {
         db.execute(FunWatcherSaveRawTransactionReq {
-            transaction_hash: format!("{:?}", tx.get_hash()),
-            chain: blockchain.to_string(),
+            transaction_hash: tx.get_hash().into(),
+            blockchain,
             dex: None,
             raw_transaction: serde_json::to_string(tx.get_transaction()).context("transaction")?,
         })

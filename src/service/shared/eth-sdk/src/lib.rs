@@ -4,7 +4,7 @@ use std::fmt::{Debug, Formatter};
 use std::time::Duration;
 use tracing::info;
 use web3::signing::Key;
-use web3::types::{Address, TransactionParameters, TransactionRequest, H160, H256, U256};
+use web3::types::{Address, TransactionParameters, TransactionRequest, H256, U256};
 use web3::Web3;
 mod calldata;
 mod conn;
@@ -106,10 +106,10 @@ impl Debug for EthereumToken {
 #[derive(Clone, Debug)]
 pub struct EscrowTransfer {
     pub token: EnumBlockchainCoin,
-    pub token_address: H160,
+    pub token_address: Address,
     pub amount: U256,
-    pub recipient: H160,
-    pub owner: H160,
+    pub recipient: Address,
+    pub owner: Address,
 }
 
 pub const ANVIL_PRIV_KEY_1: &str =

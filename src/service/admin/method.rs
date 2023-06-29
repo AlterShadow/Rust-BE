@@ -14,7 +14,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::time::sleep;
 use tracing::info;
-use web3::types::U256;
+use web3::types::{H256, U256};
 
 pub struct MethodAdminListUsers;
 impl RequestHandler for MethodAdminListUsers {
@@ -551,7 +551,7 @@ impl RequestHandler for MethodAdminSubscribeDepositLedger {
                             &toolbox,
                             AdminSubscribeTopic::AdminNotifyEscrowLedgerChangeAll,
                             &UserListDepositLedgerRow {
-                                quantity: row.quantity,
+                                quantity: row.quantity.into(),
                                 blockchain: row.blockchain,
                                 user_address: row.user_address,
                                 contract_address: row.contract_address,
@@ -575,12 +575,12 @@ impl RequestHandler for MethodAdminSubscribeDepositLedger {
                             &toolbox,
                             AdminSubscribeTopic::AdminNotifyEscrowLedgerChangeAll,
                             &UserListDepositLedgerRow {
-                                quantity: format!("{:?}", amount),
+                                quantity: amount.into(),
                                 blockchain: EnumBlockChain::EthereumMainnet,
-                                user_address: format!("{:?}", key.address),
-                                contract_address: format!("{:?}", key.address),
-                                transaction_hash: format!("{:?}", key.address),
-                                receiver_address: format!("{:?}", key.address),
+                                user_address: key.address.clone().into(),
+                                contract_address: key.address.clone().into(),
+                                transaction_hash: H256::random().into(),
+                                receiver_address: key.address.clone().into(),
                                 created_at: Utc::now().timestamp(),
                             },
                         )
