@@ -4,8 +4,10 @@ pub mod admin_endpoints;
 mod admin_method;
 #[path = "../shared/audit/mod.rs"]
 pub mod audit;
+mod back_strategy;
 pub mod endpoints;
 mod method;
+
 use crate::admin_method::*;
 use crate::audit::AuditLogger;
 use crate::method::*;
