@@ -125,6 +125,7 @@ pub const DEV_ACCOUNT_PRIV_KEY: &str =
     "bc0846d716105203f84e0c841a63faa5d7b20addff1975b1554485b5a13a8061";
 pub const DEV_ACCOUNT_ADDRESS: &str = "0x8A2D8E538E8544B77303E57950d526Da42D54af3";
 
-pub const CONFIRMATIONS: u64 = 14;
+// TODO: increase confirmations to 14 when we go to public
+pub const CONFIRMATIONS: u64 = 4;
 pub const MAX_RETRIES: u64 = 3;
 pub const POLL_INTERVAL: Duration = Duration::from_secs(3);

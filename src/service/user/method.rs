@@ -596,7 +596,7 @@ async fn user_get_or_deploy_strategy_pool(
     blockchain: EnumBlockChain,
     strategy_token_name: String,
     strategy_token_symbol: String,
-) -> Result<StrategyPoolContract<EitherTransport>> {
+) -> Result<(i64, StrategyPoolContract<EitherTransport>)> {
     /* instantiate strategy contract wrapper */
     let strategy_pool = db
         .execute(FunWatcherListStrategyPoolContractReq {
@@ -611,7 +611,10 @@ async fn user_get_or_deploy_strategy_pool(
     let sp_contract = match strategy_pool {
         Some(addr) => {
             let address = Address::from_str(&addr.address)?;
-            StrategyPoolContract::new(conn.clone(), address)?
+            (
+                addr.pkey_id,
+                StrategyPoolContract::new(conn.clone(), address)?,
+            )
         }
         None => {
             /* if strategy pool doesn't exist in this chain, create it */
@@ -623,14 +626,17 @@ async fn user_get_or_deploy_strategy_pool(
             )
             .await?;
             /* insert strategy contract address in the database */
-            db.execute(FunUserAddStrategyPoolContractReq {
-                strategy_id,
-                blockchain,
-                address: format!("{:?}", contract.address()),
-            })
-            .await?;
+            let resp = db
+                .execute(FunUserAddStrategyPoolContractReq {
+                    strategy_id,
+                    blockchain,
+                    address: format!("{:?}", contract.address()),
+                })
+                .await?
+                .into_result()
+                .context("No strategy pool contract address returned")?;
 
-            contract
+            (resp.strategy_pool_contract_id, contract)
         }
     };
     Ok(sp_contract)
@@ -744,7 +750,7 @@ async fn user_back_strategy(
     let back_usdc_amount_minus_fees = back_usdc_amount - fees;
 
     /* instantiate strategy contract wrapper */
-    let sp_contract = user_get_or_deploy_strategy_pool(
+    let (strategy_pool_contract_id, sp_contract) = user_get_or_deploy_strategy_pool(
         &conn,
         &ctx,
         &db,
@@ -866,8 +872,8 @@ async fn user_back_strategy(
         MAX_RETRIES,
         POLL_INTERVAL,
         master_key.clone(),
-        tokens_to_deposit,
-        amounts_to_deposit,
+        tokens_to_deposit.clone(),
+        amounts_to_deposit.clone(),
         strategy_pool_token_to_mint,
         strategy_wallet_contract.address(),
     )
@@ -893,6 +899,28 @@ async fn user_back_strategy(
         new_balance: format!("{:?}", user_strategy_balance + strategy_pool_token_to_mint),
     })
     .await?;
+    for (token, amount) in tokens_to_deposit.iter().zip(amounts_to_deposit.iter()) {
+        let sp_asset_token = db
+            .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
+                strategy_pool_contract_id,
+                token_address: Some(format!("{:?}", token)),
+                blockchain: Some(blockchain),
+            })
+            .await?
+            .into_result();
+        let sp_asset_token_out_new_balance = match sp_asset_token {
+            Some(token_out) => U256::from_dec_str(&token_out.balance)?.try_checked_add(*amount)?,
+            None => *amount,
+        };
+        db.execute(FunWatcherUpsertStrategyPoolContractAssetBalanceReq {
+            strategy_pool_contract_id,
+            token_address: format!("{:?}", token),
+            blockchain,
+            new_balance: format!("{:?}", sp_asset_token_out_new_balance),
+        })
+        .await?;
+    }
+
     let ret = db
         .execute(FunUserBackStrategyReq {
             user_id: ctx.user_id,
@@ -2962,6 +2990,7 @@ mod tests {
     use lib::database::{connect_to_database, database_test_config, drop_and_recreate_database};
     use lib::log::{setup_logs, LogLevel};
     use std::net::Ipv4Addr;
+    use std::{assert_eq, format, vec};
 
     pub async fn add_strategy_initial_token_ratio(
         db: &DbClient,

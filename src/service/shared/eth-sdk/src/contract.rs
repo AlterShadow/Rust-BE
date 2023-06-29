@@ -1,5 +1,6 @@
 use crate::{
     EitherTransport, EthereumRpcConnectionGuard, EthereumRpcConnectionPool, MultiChainAddressTable,
+    CONFIRMATIONS,
 };
 use eyre::{bail, ContextCompat};
 use gen::model::EnumBlockChain;
@@ -27,7 +28,7 @@ pub struct ContractDeployer<T: Transport> {
     pub(crate) abi: ethabi::Contract,
     pub(crate) options: Options,
     pub(crate) max_retries: usize,
-    pub(crate) confirmations: usize,
+    pub(crate) confirmations: u64,
     pub(crate) poll_interval: time::Duration,
     pub(crate) linker: HashMap<String, Address>,
     pub(crate) code: Option<String>,
@@ -41,7 +42,7 @@ impl<T: Transport> ContractDeployer<T> {
             abi,
             options: Options::default(),
             max_retries: 1,
-            confirmations: 8, // not enough for ethereum. should be 14
+            confirmations: CONFIRMATIONS, // not enough for ethereum. should be 14
             poll_interval: time::Duration::from_secs(3),
             linker: HashMap::default(),
             code: None,
