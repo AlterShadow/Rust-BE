@@ -1048,6 +1048,12 @@ async fn trade_escrow_for_strategy_tokens(
     let mut token_addresses_to_deposit: Vec<Address> = Vec::new();
     let mut token_amounts_to_deposit: Vec<U256> = Vec::new();
     for (token_address, amount_to_spend_on_it) in tokens_and_amounts_to_buy {
+        if token_address == escrow_token_address {
+            /* if sp holds escrow token, deposit it directly */
+            token_addresses_to_deposit.push(token_address);
+            token_amounts_to_deposit.push(amount_to_spend_on_it);
+            continue;
+        }
         let pancake_path_set =
             pancake_paths.get_pair_by_address(chain, escrow_token_address, token_address)?;
         let trade_hash = copy_trade_and_ensure_success(
