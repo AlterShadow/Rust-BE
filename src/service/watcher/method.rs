@@ -22,11 +22,9 @@ use eth_sdk::{
 use eyre::*;
 use gen::database::*;
 use gen::model::*;
-use std::collections::hash_map::Entry;
-use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
-use tracing::{error, info, warn};
+use tracing::{error, info, trace, warn};
 use web3::ethabi::Address;
 use web3::types::U256;
 
@@ -87,38 +85,34 @@ pub async fn handle_pancake_swap_transaction(
 ) -> Result<()> {
     /* check if caller is a strategy watching wallet & get strategy id */
     let caller = tx.get_from().context("no from address found")?;
-    let strategy_id = get_strategy_id_from_watching_wallet(&state.db, blockchain, caller)
-        .await
-        .context("caller is not a strategy watching wallet")?;
-
+    let strategy_id =
+        match get_strategy_id_from_watching_wallet(&state.db, blockchain, caller).await? {
+            Some(strategy_id) => strategy_id,
+            None => {
+                trace!("caller {:?} is not a strategy watching wallet", caller);
+                return Ok(());
+            }
+        };
+    let conn = state.eth_pool.get(blockchain).await?;
     /* parse trade */
     let trade = parse_dex_trade(blockchain, &tx, &state.dex_addresses, &state.pancake_swap).await?;
 
-    /* get called contract */
-    let called_address = tx.get_to().context("no to address found")?;
+    /* instantiate token_in and token_out contracts */
+    let token_in_contract = Erc20Token::new(conn.clone(), trade.token_in)?;
+    let token_out_contract = Erc20Token::new(conn.clone(), trade.token_out)?;
 
     /* get strategy tokens prior to the trade */
-    let strategy_tokens_before_trade_by_chain = state
+    let strategy_token_in_previous_amount = state
         .db
-        .execute(FunWatcherGetStrategyTokensFromLedgerReq { strategy_id })
+        .execute(FunWatcherGetStrategyTokensFromLedgerReq {
+            strategy_id,
+            blockchain: Some(blockchain),
+            symbol: Some(token_in_contract.symbol().await?)
+        })
         .await?
-        .into_rows();
-
-    /* merge multichain strategy tokens before trade by symbol */
-    let mut strategy_tokens_before_trade_by_symbol: HashMap<String, U256> =
-        std::collections::HashMap::new();
-    for strategy_token_by_chain in strategy_tokens_before_trade_by_chain {
-        match strategy_tokens_before_trade_by_symbol.entry(strategy_token_by_chain.token_symbol) {
-            Entry::Vacant(e) => {
-                e.insert(U256::from_dec_str(&strategy_token_by_chain.amount)?);
-            }
-            Entry::Occupied(mut e) => {
-                let balance = e.get_mut();
-                *balance = balance
-                    .try_checked_add(U256::from_dec_str(&strategy_token_by_chain.amount)?)?;
-            }
-        }
-    }
+        .into_result()
+        .context("sold token was not previously owned by strategy, there is no way to calculate the trade")?
+        .amount;
 
     /* update wallet activity ledger & make sure this transaction is not a duplicate */
     let saved = state
@@ -127,7 +121,7 @@ pub async fn handle_pancake_swap_transaction(
             address: caller.clone().into(),
             transaction_hash: tx.get_hash().into(),
             blockchain,
-            contract_address: called_address.into(),
+            contract_address: trade.contract.into(),
             dex: Some(EnumDex::PancakeSwap.to_string()),
             token_in_address: Some(trade.token_in.into()),
             token_out_address: Some(trade.token_out.into()),
@@ -138,7 +132,7 @@ pub async fn handle_pancake_swap_transaction(
         .await
         .context("swap transaction is a duplicate")?
         .into_result();
-
+    // TODO: update strategy_watching_wallet_trade_balance
     if let Some(saved) = saved {
         /* update database with watched wallet's tokens */
         let conn = state.eth_pool.get(blockchain).await?;
@@ -151,15 +145,6 @@ pub async fn handle_pancake_swap_transaction(
             blockchain,
         )
         .await?;
-
-        /* instantiate token_in and token_out contracts */
-        let token_in_contract = Erc20Token::new(conn.clone(), trade.token_in)?;
-        let token_out_contract = Erc20Token::new(conn.clone(), trade.token_out)?;
-
-        /* check if token_in was a strategy token */
-        let strategy_token_in_previous_amount = strategy_tokens_before_trade_by_symbol
-            .get(&token_in_contract.symbol().await?)
-            .context("sold token was not previously owned by strategy, there is no way to calculate the trade")?;
 
         /* if token_in was already a strategy token trade it from SPs in ratio traded_amount / old_amount */
         let strategy_pool = state
@@ -181,7 +166,7 @@ pub async fn handle_pancake_swap_transaction(
             let sp_contract = StrategyPoolContract::new(conn.clone(), address)?;
             // TODO: we want to save the balance to database, not from on-chain
             // TODO: save this sp_asset_token_in_amount to database somewhere
-
+            // FIXME: there is no trades happening on the strategy pool contract, so before == after
             let sp_asset_token_in = state
                 .db
                 .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
@@ -198,6 +183,8 @@ pub async fn handle_pancake_swap_transaction(
                 bail!("strategy pool has no asset to sell");
             }
             /* calculate how much to spend */
+            // TODO: this formula doesn't seem right. need revise
+            // suggested formula: amount_to_spend = trade.amount_in * sp_asset_token_in_amount / expert_wallet_token_in_amount
             let corrected_amount_in = if trade.amount_in > *strategy_token_in_previous_amount {
                 /* if the traded amount_in is larger than the total amount of token_in we know of the strategy,
                      it means that the trader has acquired tokens from sources we have not read
@@ -211,6 +198,7 @@ pub async fn handle_pancake_swap_transaction(
                 trade.amount_in
             };
             let amount_to_spend = corrected_amount_in
+                // TODO: use expert_wallet_token_in_amount from FunWatcherListStrategyWatchingWalletTradeLedger
                 .mul_div(sp_asset_token_in_amount, *strategy_token_in_previous_amount)?;
             if amount_to_spend == U256::zero() {
                 bail!("spent ratio is too small to be represented in amount of token_in owned by strategy pool");

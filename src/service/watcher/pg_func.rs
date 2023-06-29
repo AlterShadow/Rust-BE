@@ -125,14 +125,18 @@ END
         ),
         ProceduralFunction::new(
             "fun_watcher_get_strategy_tokens_from_ledger",
-            vec![Field::new("strategy_id", Type::BigInt)],
+            vec![
+                Field::new("strategy_id", Type::BigInt),
+                Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
+                Field::new("symbol", Type::optional(Type::String)),
+            ],
             vec![
                 Field::new("token_id", Type::BigInt),
                 Field::new("token_name", Type::String),
                 Field::new("token_symbol", Type::String),
                 Field::new("token_address", Type::BlockchainAddress),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
-                Field::new("amount", Type::String),
+                Field::new("amount", Type::BlockchainDecimal),
             ],
             r#"
 BEGIN
@@ -198,7 +202,10 @@ BEGIN
 			CAST(tb.token_balance AS VARCHAR) AS amount
 		FROM token_balances AS tb
 		INNER JOIN token_contracts AS tc ON tb.symbol = tc.token_symbol AND tb.etca_blockchain = tc.etca_blockchain
-		WHERE tb.token_balance > 0;
+		WHERE tb.token_balance > 0
+		AND (a_blockchain IS NULL OR tb.etca_blockchain = a_blockchain)
+		AND (a_symbol IS NULL OR tb.symbol = a_symbol);
+		
 END
 "#,
         ),

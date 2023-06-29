@@ -596,7 +596,7 @@ pub struct FunWatcherGetStrategyTokensFromLedgerRespRow {
     pub token_symbol: String,
     pub token_address: BlockchainAddress,
     pub blockchain: EnumBlockChain,
-    pub amount: String,
+    pub amount: BlockchainDecimal,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -2714,16 +2714,24 @@ impl DatabaseRequest for FunWatcherSaveStrategyWatchingWalletTradeLedgerReq {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunWatcherGetStrategyTokensFromLedgerReq {
     pub strategy_id: i64,
+    #[serde(default)]
+    pub blockchain: Option<EnumBlockChain>,
+    #[serde(default)]
+    pub symbol: Option<String>,
 }
 
 #[allow(unused_variables)]
 impl DatabaseRequest for FunWatcherGetStrategyTokensFromLedgerReq {
     type ResponseRow = FunWatcherGetStrategyTokensFromLedgerRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_watcher_get_strategy_tokens_from_ledger(a_strategy_id => $1::bigint);"
+        "SELECT * FROM api.fun_watcher_get_strategy_tokens_from_ledger(a_strategy_id => $1::bigint, a_blockchain => $2::enum_block_chain, a_symbol => $3::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
-        vec![&self.strategy_id as &(dyn ToSql + Sync)]
+        vec![
+            &self.strategy_id as &(dyn ToSql + Sync),
+            &self.blockchain as &(dyn ToSql + Sync),
+            &self.symbol as &(dyn ToSql + Sync),
+        ]
     }
 }
 

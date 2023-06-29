@@ -2746,7 +2746,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_watcher_get_strategy_tokens_from_ledger(a_strategy_id bigint)
+CREATE OR REPLACE FUNCTION api.fun_watcher_get_strategy_tokens_from_ledger(a_strategy_id bigint, a_blockchain enum_block_chain DEFAULT NULL, a_symbol varchar DEFAULT NULL)
 RETURNS table (
     "token_id" bigint,
     "token_name" varchar,
@@ -2821,7 +2821,10 @@ BEGIN
 			CAST(tb.token_balance AS VARCHAR) AS amount
 		FROM token_balances AS tb
 		INNER JOIN token_contracts AS tc ON tb.symbol = tc.token_symbol AND tb.etca_blockchain = tc.etca_blockchain
-		WHERE tb.token_balance > 0;
+		WHERE tb.token_balance > 0
+		AND (a_blockchain IS NULL OR tb.etca_blockchain = a_blockchain)
+		AND (a_symbol IS NULL OR tb.symbol = a_symbol);
+		
 END
 
 $$;
