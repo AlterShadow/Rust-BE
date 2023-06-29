@@ -575,9 +575,10 @@ async fn user_exit_strategy(
     db: &DbClient,
     blockchain: EnumBlockChain,
     strategy_id: i64,
-    shares: Option<U256>,
+    maybe_strategy_tokens_to_redeem: Option<U256>,
     master_key: impl Key + Clone,
 ) -> Result<H256> {
+    use eth_sdk::contract_wrappers::strategy_pool::parse_strategy_pool_withdraw_event;
     /* instantiate strategy wallet */
     let strategy_wallet_contract = db
         .execute(FunUserListStrategyWalletsReq {
@@ -595,7 +596,7 @@ async fn user_exit_strategy(
         bail!("strategy wallet has another or no admin");
     }
 
-    let strategy_pool = db
+    let strategy_pool_contract_row = db
         .execute(FunWatcherListStrategyPoolContractReq {
             limit: 1,
             offset: 0,
@@ -608,26 +609,26 @@ async fn user_exit_strategy(
         .context("strategy pool is not registered in the database")?;
 
     /* instantiate strategy pool contract wrapper */
-    let sp_contract = StrategyPoolContract::new(conn.clone(), strategy_pool.address.into())?;
+    let strategy_pool_contract =
+        StrategyPoolContract::new(conn.clone(), strategy_pool_contract_row.address.into())?;
 
-    /* check if strategy is trading */
-    if sp_contract.is_paused().await? {
+    /* check if strategy pool is trading */
+    if strategy_pool_contract.is_paused().await? {
         bail!("strategy is currently trading, redeem is not possible");
     }
 
     /* redeem */
-    let shares_redeemed: U256;
-    let tx_hash = match shares {
-        Some(shares) => {
+    let tx_hash = match maybe_strategy_tokens_to_redeem {
+        Some(strategy_tokens_to_redeem) => {
             /* check share balance first */
-            if sp_contract
+            // TODO: check balance from the database when we have a balance table or a pg func from ledger
+            if strategy_pool_contract
                 .balance_of(strategy_wallet_contract.address())
                 .await?
-                < shares
+                < strategy_tokens_to_redeem
             {
-                bail!("not enough shares");
+                bail!("not enough strategy tokens");
             }
-            shares_redeemed = shares;
             /* if strategy is currently trading, redeem is not possible */
             redeem_from_strategy_and_ensure_success(
                 strategy_wallet_contract.clone(),
@@ -636,22 +637,22 @@ async fn user_exit_strategy(
                 MAX_RETRIES,
                 POLL_INTERVAL,
                 master_key.clone(),
-                sp_contract.address(),
-                shares,
+                strategy_pool_contract.address(),
+                strategy_tokens_to_redeem,
             )
             .await
             .context("redeem is not possible currently")?
         }
         None => {
             /* check share balance first */
-            let share_balance = sp_contract
+            // TODO: check balance from the database when we have a balance table or a pg func from ledger
+            let strategy_token_balance = strategy_pool_contract
                 .balance_of(strategy_wallet_contract.address())
                 .await?;
-            if share_balance == U256::zero() {
-                bail!("no shares to redeem");
+            if strategy_token_balance == U256::zero() {
+                bail!("no strategy tokens to redeem");
             }
 
-            shares_redeemed = share_balance;
             /* if strategy is currently trading, redeem is not possible */
             full_redeem_from_strategy_and_ensure_success(
                 strategy_wallet_contract.clone(),
@@ -660,12 +661,17 @@ async fn user_exit_strategy(
                 10,
                 Duration::from_secs(10),
                 master_key.clone(),
-                sp_contract.address(),
+                strategy_pool_contract.address(),
             )
             .await
             .context("redeem is not possible currently")?
         }
     };
+
+    let redeem_info = parse_strategy_pool_withdraw_event(
+        strategy_pool_contract.address(),
+        conn.transaction_receipt(tx_hash).await?,
+    )?;
 
     /* update exit strategy ledger */
     db.execute(FunUserExitStrategyReq {
@@ -675,9 +681,36 @@ async fn user_exit_strategy(
         quantity: U256::zero().into(),
         blockchain,
         transaction_hash: tx_hash.into(),
-        redeem_sp_tokens: shares_redeemed.into(),
+        redeem_sp_tokens: redeem_info.strategy_tokens,
     })
     .await?;
+
+    /* update strategy pool contract balance table */
+    for idx in 0..redeem_info.strategy_pool_assets.len() {
+        let redeemed_asset = redeem_info.strategy_pool_assets[idx];
+        let redeemed_amount = redeem_info.strategy_pool_asset_amounts[idx];
+
+        let old_asset_balance_row = db
+            .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
+                strategy_pool_contract_id: strategy_pool_contract_row.pkey_id,
+                blockchain: Some(blockchain),
+                token_address: Some(format!("{:?}", redeemed_asset)),
+            })
+            .await?
+            .into_result()
+            .context("strategy pool balance of redeemed asset not found")?;
+
+        db.execute(FunWatcherUpsertStrategyPoolContractAssetBalanceReq {
+            strategy_pool_contract_id: strategy_pool_contract_row.pkey_id,
+            token_address: format!("{:?}", redeemed_asset),
+            blockchain: blockchain,
+            new_balance: old_asset_balance_row
+                .balance
+                .try_checked_sub(redeemed_amount)
+                .context("redeemed amount is greater than known balance of strategy pool asset")?,
+        })
+        .await?;
+    }
 
     Ok(tx_hash)
 }
@@ -700,10 +733,9 @@ impl RequestHandler for MethodUserExitStrategy {
         let pool = self.pool.clone();
         let master_key = self.master_key.clone();
         async move {
-            let eth_conn = pool.get(EnumBlockChain::LocalNet).await?;
+            let eth_conn = pool.get(blockchain).await?;
             // TODO: decide if we should ensure user role
             ensure_user_role(ctx, EnumRole::User)?;
-
             let tx_hash = user_exit_strategy(
                 &eth_conn,
                 &ctx,
