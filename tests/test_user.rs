@@ -3,14 +3,11 @@ pub mod tools;
 use eth_sdk::signer::Secp256k1SecretKey;
 use eyre::*;
 use gen::model::*;
-use lib::database::{connect_to_database, drop_and_recreate_database, DatabaseConfig};
+use lib::database::drop_and_recreate_database;
 use lib::log::{setup_logs, LogLevel};
-
-use gen::database::FunUserListUserDepositWithdrawBalanceReq;
 use tools::*;
 use tracing::*;
 use web3::signing::Key;
-use web3::types::Address;
 
 #[tokio::test]
 async fn test_create_update_strategy() -> Result<()> {

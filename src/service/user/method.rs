@@ -1387,6 +1387,29 @@ impl RequestHandler for MethodExpertCreateStrategy {
         let cmc_client = self.cmc_client.clone();
         async move {
             ensure_user_role(ctx, EnumRole::Expert)?;
+            ensure!(
+                0.0 <= req.strategy_fee && req.strategy_fee <= 1.0,
+                CustomError::new(
+                    EnumErrorCode::InvalidArgument,
+                    "Strategy fee must be less than 1.0 and greater than 0.0"
+                )
+            );
+            ensure!(
+                0.0 <= req.expert_fee && req.expert_fee <= 1.0,
+                CustomError::new(
+                    EnumErrorCode::InvalidArgument,
+                    "Expert fee must be less than 1.0 and greater than 0.0"
+                )
+            );
+
+            let fee_sum = req.strategy_fee + req.expert_fee;
+            ensure!(
+                fee_sum <= 1.0,
+                CustomError::new(
+                    EnumErrorCode::InvalidArgument,
+                    "Sum of strategy fee and expert fee must be less than 1.0"
+                )
+            );
 
             let ret = db
                 .execute(FunUserCreateStrategyReq {
