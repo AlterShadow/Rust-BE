@@ -10,6 +10,7 @@ use std::time::Duration;
 use tracing::info;
 use web3::contract::{Contract, Options};
 use web3::signing::Key;
+use web3::types::TransactionReceipt;
 use web3::types::{Address, H256, U256};
 use web3::{ethabi, Transport, Web3};
 
@@ -624,6 +625,105 @@ pub async fn transfer_ownership_and_ensure_success(
     .await?;
 
     Ok(tx_hash)
+}
+
+#[derive(Debug, Clone)]
+pub struct StrategyPoolWithdrawEvent {
+    pub sender: Address,
+    pub receiver: Address,
+    pub owner: Address,
+    pub strategy_tokens: U256,
+    pub strategy_pool_assets: Vec<Address>,
+    pub strategy_pool_asset_amounts: Vec<U256>,
+}
+
+pub fn parse_strategy_pool_withdraw_event(
+    strategy_pool_address: Address,
+    receipt: TransactionReceipt,
+) -> Result<StrategyPoolWithdrawEvent> {
+    let strategy_pool = web3::ethabi::Contract::load(POOL_ABI_JSON.as_bytes())?;
+    let withdraw_event = strategy_pool
+        .event("Withdraw")
+        .context("Failed to get Withdraw event from strategy pool")?;
+
+    for log in receipt.logs {
+        /* there can only be 4 indexed (topic) values in a event log */
+        /* 1st topic is always the hash of the event signature */
+        if log.topics[0] == withdraw_event.signature()
+						/* address of the contract that fired the event */
+						&& log.address == strategy_pool_address
+        {
+            /* 2nd topic is sender of the call, should be strategy wallet address */
+            /* topics have 32 bytes, so we must fetch the last 20 bytes for an address */
+            let sender_bytes = log.topics[1].as_bytes();
+            if sender_bytes.len() < 32 {
+                return Err(eyre!("invalid topic length"));
+            }
+            let sender = Address::from_slice(&sender_bytes[12..]);
+
+            /* 3rd topic is the receiver of the assets, should be backer address */
+            /* topics have 32 bytes, so we must fetch the last 20 bytes for an address */
+            let receiver_bytes = log.topics[2].as_bytes();
+            if receiver_bytes.len() < 32 {
+                return Err(eyre!("invalid topic length"));
+            }
+            let receiver = Address::from_slice(&receiver_bytes[12..]);
+
+            /* 4th topic is the owner of the sp tokens, should be strategy wallet address */
+            /* topics have 32 bytes, so we must fetch the last 20 bytes for an address */
+            let owner_bytes = log.topics[3].as_bytes();
+            if owner_bytes.len() < 32 {
+                return Err(eyre!("invalid topic length"));
+            }
+            let owner = Address::from_slice(&owner_bytes[12..]);
+
+            /* instantiate an ethabi::Log from raw log to enable access to non indexed data */
+            let parsed_log = withdraw_event.parse_log(web3::ethabi::RawLog {
+                topics: log.topics.clone(),
+                data: log.data.0.clone(),
+            })?;
+
+            /* parse non indexed event data from event log */
+            /* ethabi::Log params ignore the first topic, so params[0] is not the event signature */
+            let strategy_pool_assets = parsed_log.params[3]
+                .value
+                .clone()
+                .into_array()
+                .context("could not parse assets from event log")?
+                .into_iter()
+                .map(|val| {
+                    val.into_address()
+                        .ok_or_else(|| eyre!("could not parse asset address from event log"))
+                })
+                .collect::<Result<Vec<Address>, _>>()?;
+            let strategy_pool_asset_amounts = parsed_log.params[4]
+                .value
+                .clone()
+                .into_array()
+                .context("could not parse amounts array from event log")?
+                .into_iter()
+                .map(|val| {
+                    val.into_uint()
+                        .ok_or_else(|| eyre!("could not parse amount from event log"))
+                })
+                .collect::<Result<Vec<U256>, _>>()?;
+            let strategy_tokens = parsed_log.params[5]
+                .value
+                .clone()
+                .into_uint()
+                .context("could not parse redeemed sp tokens from event log")?;
+
+            return Ok(StrategyPoolWithdrawEvent {
+                sender,
+                receiver,
+                owner,
+                strategy_tokens,
+                strategy_pool_assets,
+                strategy_pool_asset_amounts,
+            });
+        }
+    }
+    Err(eyre!("could not find withdraw event in receipt"))
 }
 
 #[cfg(test)]
