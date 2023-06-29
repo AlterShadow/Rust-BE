@@ -578,7 +578,7 @@ async fn user_exit_strategy(
     maybe_strategy_tokens_to_redeem: Option<U256>,
     master_key: impl Key + Clone,
 ) -> Result<H256> {
-    use eth_sdk::contract_wrappers::strategy_pool::parse_strategy_pool_withdraw_event;
+    use eth_sdk::strategy_pool::parse_strategy_pool_withdraw_event;
     /* instantiate strategy wallet */
     let strategy_wallet_contract = db
         .execute(FunUserListStrategyWalletsReq {
@@ -670,7 +670,10 @@ async fn user_exit_strategy(
 
     let redeem_info = parse_strategy_pool_withdraw_event(
         strategy_pool_contract.address(),
-        conn.transaction_receipt(tx_hash).await?,
+        conn.eth()
+            .transaction_receipt(tx_hash)
+            .await?
+            .context("redeem transaction receipt not found even though it has confirmations")?,
     )?;
 
     /* update exit strategy ledger */
@@ -681,7 +684,7 @@ async fn user_exit_strategy(
         quantity: U256::zero().into(),
         blockchain,
         transaction_hash: tx_hash.into(),
-        redeem_sp_tokens: redeem_info.strategy_tokens,
+        redeem_sp_tokens: redeem_info.strategy_tokens.into(),
     })
     .await?;
 
@@ -694,7 +697,7 @@ async fn user_exit_strategy(
             .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
                 strategy_pool_contract_id: strategy_pool_contract_row.pkey_id,
                 blockchain: Some(blockchain),
-                token_address: Some(format!("{:?}", redeemed_asset)),
+                token_address: Some(redeemed_asset.into()),
             })
             .await?
             .into_result()
@@ -702,12 +705,13 @@ async fn user_exit_strategy(
 
         db.execute(FunWatcherUpsertStrategyPoolContractAssetBalanceReq {
             strategy_pool_contract_id: strategy_pool_contract_row.pkey_id,
-            token_address: format!("{:?}", redeemed_asset),
+            token_address: redeemed_asset.into(),
             blockchain: blockchain,
             new_balance: old_asset_balance_row
                 .balance
                 .try_checked_sub(redeemed_amount)
-                .context("redeemed amount is greater than known balance of strategy pool asset")?,
+                .context("redeemed amount is greater than known balance of strategy pool asset")?
+                .into(),
         })
         .await?;
     }
@@ -733,7 +737,7 @@ impl RequestHandler for MethodUserExitStrategy {
         let pool = self.pool.clone();
         let master_key = self.master_key.clone();
         async move {
-            let eth_conn = pool.get(blockchain).await?;
+            let eth_conn = pool.get(req.blockchain).await?;
             // TODO: decide if we should ensure user role
             ensure_user_role(ctx, EnumRole::User)?;
             let tx_hash = user_exit_strategy(
