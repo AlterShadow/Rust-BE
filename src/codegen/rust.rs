@@ -11,12 +11,12 @@ use std::io::Write;
 use std::process::Command;
 
 pub trait ToRust {
-    fn to_rust_ref(&self) -> String;
-    fn to_rust_decl(&self) -> String;
+    fn to_rust_ref(&self, serde_with: bool) -> String;
+    fn to_rust_decl(&self, serde_with: bool) -> String;
 }
 
 impl ToRust for Type {
-    fn to_rust_ref(&self) -> String {
+    fn to_rust_ref(&self, serde_with: bool) -> String {
         match self {
             Type::Date => "u32".to_owned(), // TODO: resolve date
             Type::Int => "i32".to_owned(),
@@ -27,11 +27,11 @@ impl ToRust for Type {
             Type::Object => "serde_json::Value".to_owned(),
             Type::DataTable { name, .. } => format!("Vec<{}>", name),
             Type::Vec(ele) => {
-                format!("Vec<{}>", ele.to_rust_ref())
+                format!("Vec<{}>", ele.to_rust_ref(serde_with))
             }
             Type::Unit => "()".to_owned(),
             Type::Optional(t) => {
-                format!("Option<{}>", t.to_rust_ref())
+                format!("Option<{}>", t.to_rust_ref(serde_with))
             }
             Type::Boolean => "bool".to_owned(),
             Type::String => "String".to_owned(),
@@ -40,22 +40,38 @@ impl ToRust for Type {
             Type::Inet => "std::net::IpAddr".to_owned(),
             Type::Enum { name, .. } => format!("Enum{}", name.to_case(Case::Pascal),),
             Type::EnumRef(name) => format!("Enum{}", name.to_case(Case::Pascal),),
+            Type::BlockchainDecimal if serde_with => "U256".to_owned(),
+            Type::BlockchainAddress if serde_with => "Address".to_owned(),
+            Type::BlockchainTransactionHash if serde_with => "H256".to_owned(),
             Type::BlockchainDecimal => "BlockchainDecimal".to_owned(),
             Type::BlockchainAddress => "BlockchainAddress".to_owned(),
             Type::BlockchainTransactionHash => "BlockchainTransactionHash".to_owned(),
         }
     }
 
-    fn to_rust_decl(&self) -> String {
+    fn to_rust_decl(&self, serde_with: bool) -> String {
         match self {
             Type::Struct { name, fields } => {
                 let mut fields = fields.iter().map(|x| {
                     let opt = matches!(&x.ty, Type::Optional(_));
+                    let serde_with_opt = match &x.ty {
+                        Type::BlockchainDecimal if serde_with => "WithBlockchainDecimal",
+                        Type::BlockchainAddress if serde_with => "WithBlockchainAddress",
+                        Type::BlockchainTransactionHash if serde_with => {
+                            "WithBlockchainTransactionHash"
+                        }
+                        _ => "",
+                    };
                     format!(
-                        "{} pub {}: {}",
+                        "{} {} pub {}: {}",
                         if opt { "#[serde(default)]" } else { "" },
+                        if serde_with_opt.is_empty() {
+                            "".to_string()
+                        } else {
+                            format!("#[serde(with = \"{}\")]", serde_with_opt)
+                        },
                         x.name,
-                        x.ty.to_rust_ref()
+                        x.ty.to_rust_ref(serde_with)
                     )
                 });
                 format!("pub struct {} {{{}}}", name, fields.join(","))
@@ -88,7 +104,7 @@ impl ToRust for Type {
                     fields.join(",")
                 )
             }
-            x => x.to_rust_ref(),
+            x => x.to_rust_ref(serde_with),
         }
     }
 }
@@ -173,7 +189,7 @@ use postgres_from_row::FromRow;
                 .map(|x| {
                     format!(
                         "#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]\n{}",
-                        x.to_rust_decl()
+                        x.to_rust_decl(false)
                     )
                 })
                 .join("\n"),
@@ -192,7 +208,7 @@ use postgres_from_row::FromRow;
                 .map(|x| {
                     format!(
                         "#[derive(Serialize, Deserialize, Debug, Clone)]\n{}",
-                        x.to_rust_decl()
+                        x.to_rust_decl(false)
                     )
                 })
                 .join("\n"),
@@ -242,7 +258,7 @@ use lib::types::*;
     )?;
 
     for e in enums::get_enums() {
-        writeln!(&mut f, "{}", e.to_rust_decl())?;
+        writeln!(&mut f, "{}", e.to_rust_decl(false))?;
     }
     check_endpoint_codes(&mut f)?;
 
@@ -264,7 +280,7 @@ use lib::types::*;
             r#"#[derive(Serialize, Deserialize, Debug)]
                #[serde(rename_all = "camelCase")]
                {}"#,
-            s.to_rust_decl()
+            s.to_rust_decl(true)
         )?;
     }
     let enum_ = Type::enum_(
@@ -281,7 +297,7 @@ use lib::types::*;
             })
             .collect(),
     );
-    writeln!(&mut f, "{}", enum_.to_rust_decl())?;
+    writeln!(&mut f, "{}", enum_.to_rust_decl(false))?;
     writeln!(
         &mut f,
         r#"
@@ -314,7 +330,7 @@ impl Into<ErrorCode> for EnumErrorCode {{
             r#"#[derive(Serialize, Deserialize, Debug, Clone)]
                     #[serde(rename_all = "camelCase")]
                     {}"#,
-            s.to_rust_decl()
+            s.to_rust_decl(true)
         )?;
     }
 
@@ -366,7 +382,7 @@ pub fn check_endpoint_codes(mut writer: impl Write) -> eyre::Result<()> {
         }
     }
     let enum_ = Type::enum_("Endpoint", variants);
-    writeln!(writer, "{}", enum_.to_rust_decl())?;
+    writeln!(writer, "{}", enum_.to_rust_decl(false))?;
     // if it compiles, there're no duplicate codes or names
     Ok(())
 }

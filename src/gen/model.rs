@@ -820,7 +820,8 @@ pub struct AdminAddAuditRuleResponse {}
 #[serde(rename_all = "camelCase")]
 pub struct AdminAddEscrowContractAddressRequest {
     pub pkey_id: i64,
-    pub address: BlockchainAddress,
+    #[serde(with = "WithBlockchainAddress")]
+    pub address: Address,
     pub blockchain: EnumBlockChain,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -833,7 +834,8 @@ pub struct AdminAddEscrowTokenContractAddressRequest {
     pub symbol: String,
     pub short_name: String,
     pub description: String,
-    pub address: BlockchainAddress,
+    #[serde(with = "WithBlockchainAddress")]
+    pub address: Address,
     pub blockchain: EnumBlockChain,
     pub is_stablecoin: bool,
 }
@@ -898,7 +900,8 @@ pub struct AdminListBackersResponse {
 pub struct AdminListBackersRow {
     pub username: String,
     pub user_id: i64,
-    pub login_wallet_address: BlockchainAddress,
+    #[serde(with = "WithBlockchainAddress")]
+    pub login_wallet_address: Address,
     pub joined_at: i64,
     pub total_platform_fee_paid: f64,
     pub total_strategy_fee_paid: f64,
@@ -1087,10 +1090,12 @@ pub struct AumLedgerRow {
     pub blockchain: EnumBlockChain,
     pub dex: String,
     pub action: String,
-    pub wallet_address: BlockchainAddress,
+    #[serde(with = "WithBlockchainAddress")]
+    pub wallet_address: Address,
     pub price: f64,
     pub current_price: f64,
-    pub quantity: BlockchainDecimal,
+    #[serde(with = "WithBlockchainDecimal")]
+    pub quantity: U256,
     pub yield_7d: f64,
     pub yield_30d: f64,
 }
@@ -1120,11 +1125,13 @@ pub struct BackLedgerPoint {
 pub struct BackStrategyLedgerRow {
     pub back_ledger_id: i64,
     pub strategy_id: i64,
-    pub quantity: BlockchainDecimal,
+    #[serde(with = "WithBlockchainDecimal")]
+    pub quantity: U256,
     pub blockchain: EnumBlockChain,
     pub dex: String,
     pub is_back: bool,
-    pub transaction_hash: BlockchainTransactionHash,
+    #[serde(with = "WithBlockchainTransactionHash")]
+    pub transaction_hash: H256,
     pub time: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1145,7 +1152,8 @@ pub struct ChangeLoginWalletResponse {}
 pub struct ExitStrategyLedgerRow {
     pub exit_ledger_id: i64,
     pub strategy_id: i64,
-    pub exit_quantity: BlockchainDecimal,
+    #[serde(with = "WithBlockchainDecimal")]
+    pub exit_quantity: U256,
     pub blockchain: EnumBlockChain,
     pub exit_time: i64,
 }
@@ -1154,7 +1162,8 @@ pub struct ExitStrategyLedgerRow {
 pub struct ExpertAddStrategyInitialTokenRatioRequest {
     pub strategy_id: i64,
     pub token_id: i64,
-    pub quantity: BlockchainDecimal,
+    #[serde(with = "WithBlockchainDecimal")]
+    pub quantity: U256,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1167,7 +1176,8 @@ pub struct ExpertAddStrategyInitialTokenRatioResponse {
 pub struct ExpertAddStrategyWatchingWalletRequest {
     pub strategy_id: i64,
     pub blockchain: EnumBlockChain,
-    pub wallet_address: BlockchainAddress,
+    #[serde(with = "WithBlockchainAddress")]
+    pub wallet_address: Address,
     pub ratio: f64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1187,7 +1197,8 @@ pub struct ExpertCreateStrategyRequest {
     pub strategy_fee: f64,
     pub expert_fee: f64,
     pub agreed_tos: bool,
-    pub wallet_address: BlockchainAddress,
+    #[serde(with = "WithBlockchainAddress")]
+    pub wallet_address: Address,
     pub wallet_blockchain: EnumBlockChain,
     pub initial_tokens: Vec<UserCreateStrategyInitialTokenRow>,
     #[serde(default)]
@@ -1310,7 +1321,8 @@ pub struct FollowLedgerPoint {
 pub struct ListExpertsRow {
     pub expert_id: i64,
     pub user_public_id: i64,
-    pub linked_wallet: BlockchainAddress,
+    #[serde(with = "WithBlockchainAddress")]
+    pub linked_wallet: Address,
     pub name: String,
     #[serde(default)]
     pub family_name: Option<String>,
@@ -1337,7 +1349,8 @@ pub struct ListExpertsRow {
 pub struct ListPendingExpertApplicationsRow {
     pub user_id: i64,
     pub name: String,
-    pub linked_wallet: BlockchainAddress,
+    #[serde(with = "WithBlockchainAddress")]
+    pub linked_wallet: Address,
     pub joined_at: i64,
     pub requested_at: i64,
     pub follower_count: i32,
@@ -1360,9 +1373,10 @@ pub struct ListStrategiesRow {
     pub followed: bool,
     pub swap_price: f64,
     pub price_change: f64,
-    pub wallet_address: BlockchainAddress,
+    #[serde(with = "WithBlockchainAddress")]
+    pub wallet_address: Address,
     #[serde(default)]
-    pub strategy_pool_address: Option<BlockchainAddress>,
+    pub strategy_pool_address: Option<Address>,
     pub approved: bool,
     #[serde(default)]
     pub approved_at: Option<i64>,
@@ -1383,7 +1397,8 @@ pub struct ListStrategiesRow {
 pub struct ListStrategyBackersRow {
     pub user_id: i64,
     pub name: String,
-    pub linked_wallet: BlockchainAddress,
+    #[serde(with = "WithBlockchainAddress")]
+    pub linked_wallet: Address,
     pub backed_date: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1391,7 +1406,8 @@ pub struct ListStrategyBackersRow {
 pub struct ListStrategyFollowersRow {
     pub user_id: i64,
     pub name: String,
-    pub linked_wallet: BlockchainAddress,
+    #[serde(with = "WithBlockchainAddress")]
+    pub linked_wallet: Address,
     pub followed_date: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1399,8 +1415,10 @@ pub struct ListStrategyFollowersRow {
 pub struct ListStrategyInitialTokenRatioRow {
     pub token_id: i64,
     pub token_name: String,
-    pub token_address: BlockchainAddress,
-    pub quantity: BlockchainDecimal,
+    #[serde(with = "WithBlockchainAddress")]
+    pub token_address: Address,
+    #[serde(with = "WithBlockchainDecimal")]
+    pub quantity: U256,
     pub updated_at: i64,
     pub created_at: i64,
 }
@@ -1409,7 +1427,8 @@ pub struct ListStrategyInitialTokenRatioRow {
 pub struct ListStrategyWatchingWalletsRow {
     pub wallet_id: i64,
     pub blockchain: EnumBlockChain,
-    pub wallet_address: BlockchainAddress,
+    #[serde(with = "WithBlockchainAddress")]
+    pub wallet_address: Address,
     pub ratio: f64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1419,7 +1438,8 @@ pub struct ListUserRow {
     pub public_user_id: i64,
     #[serde(default)]
     pub username: Option<String>,
-    pub address: BlockchainAddress,
+    #[serde(with = "WithBlockchainAddress")]
+    pub address: Address,
     pub last_ip: std::net::IpAddr,
     pub last_login_at: i64,
     pub login_count: i32,
@@ -1433,16 +1453,24 @@ pub struct ListUserRow {
 #[serde(rename_all = "camelCase")]
 pub struct ListWalletActivityLedgerRow {
     pub record_id: i64,
-    pub wallet_address: BlockchainAddress,
-    pub transaction_hash: BlockchainTransactionHash,
+    #[serde(with = "WithBlockchainAddress")]
+    pub wallet_address: Address,
+    #[serde(with = "WithBlockchainTransactionHash")]
+    pub transaction_hash: H256,
     pub dex: String,
     pub blockchain: EnumBlockChain,
-    pub contract_address: BlockchainAddress,
-    pub token_in_address: BlockchainAddress,
-    pub token_out_address: BlockchainAddress,
-    pub caller_address: BlockchainAddress,
-    pub amount_in: BlockchainDecimal,
-    pub amount_out: BlockchainDecimal,
+    #[serde(with = "WithBlockchainAddress")]
+    pub contract_address: Address,
+    #[serde(with = "WithBlockchainAddress")]
+    pub token_in_address: Address,
+    #[serde(with = "WithBlockchainAddress")]
+    pub token_out_address: Address,
+    #[serde(with = "WithBlockchainAddress")]
+    pub caller_address: Address,
+    #[serde(with = "WithBlockchainDecimal")]
+    pub amount_in: U256,
+    #[serde(with = "WithBlockchainDecimal")]
+    pub amount_out: U256,
     pub swap_calls: serde_json::Value,
     pub paths: serde_json::Value,
     pub dex_versions: serde_json::Value,
@@ -1453,7 +1481,8 @@ pub struct ListWalletActivityLedgerRow {
 pub struct ListWalletsRow {
     pub wallet_id: i64,
     pub blockchain: EnumBlockChain,
-    pub wallet_address: BlockchainAddress,
+    #[serde(with = "WithBlockchainAddress")]
+    pub wallet_address: Address,
     pub is_default: bool,
     pub is_compatible: bool,
 }
@@ -1518,12 +1547,14 @@ pub struct UserAddStrategyAuditRuleResponse {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserAllowedEscrowTransferInfo {
-    pub receiver_address: BlockchainAddress,
+    #[serde(with = "WithBlockchainAddress")]
+    pub receiver_address: Address,
     pub blockchain: EnumBlockChain,
     pub token_id: i64,
     pub token_symbol: String,
     pub token_name: String,
-    pub token_address: BlockchainAddress,
+    #[serde(with = "WithBlockchainAddress")]
+    pub token_address: Address,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1538,7 +1569,8 @@ pub struct UserApplyBecomeExpertResponse {
 #[serde(rename_all = "camelCase")]
 pub struct UserBackStrategyRequest {
     pub strategy_id: i64,
-    pub quantity: BlockchainDecimal,
+    #[serde(with = "WithBlockchainDecimal")]
+    pub quantity: U256,
     pub token_id: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1550,12 +1582,14 @@ pub struct UserBackStrategyResponse {
 #[serde(rename_all = "camelCase")]
 pub struct UserCreateStrategyInitialTokenRow {
     pub token_id: i64,
-    pub quantity: BlockchainDecimal,
+    #[serde(with = "WithBlockchainDecimal")]
+    pub quantity: U256,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserCreateStrategyWalletRequest {
-    pub wallet_address: BlockchainAddress,
+    #[serde(with = "WithBlockchainAddress")]
+    pub wallet_address: Address,
     pub blockchain: EnumBlockChain,
     pub adminship: bool,
 }
@@ -1563,7 +1597,8 @@ pub struct UserCreateStrategyWalletRequest {
 #[serde(rename_all = "camelCase")]
 pub struct UserCreateStrategyWalletResponse {
     pub blockchain: EnumBlockChain,
-    pub address: BlockchainAddress,
+    #[serde(with = "WithBlockchainAddress")]
+    pub address: Address,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1580,14 +1615,15 @@ pub struct UserDeregisterWalletResponse {
 pub struct UserExitStrategyRequest {
     pub strategy_id: i64,
     #[serde(default)]
-    pub quantity: Option<BlockchainDecimal>,
+    pub quantity: Option<U256>,
     pub blockchain: EnumBlockChain,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserExitStrategyResponse {
     pub success: bool,
-    pub transaction_hash: BlockchainTransactionHash,
+    #[serde(with = "WithBlockchainTransactionHash")]
+    pub transaction_hash: H256,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1621,7 +1657,8 @@ pub struct UserGetDepositAddressesResponse {
 #[serde(rename_all = "camelCase")]
 pub struct UserGetDepositAddressesRow {
     pub blockchain: EnumBlockChain,
-    pub address: BlockchainAddress,
+    #[serde(with = "WithBlockchainAddress")]
+    pub address: Address,
     pub short_name: String,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1637,7 +1674,8 @@ pub struct UserGetDepositTokensResponse {
 pub struct UserGetDepositTokensRow {
     pub blockchain: EnumBlockChain,
     pub token: EnumBlockchainCoin,
-    pub address: BlockchainAddress,
+    #[serde(with = "WithBlockchainAddress")]
+    pub address: Address,
     pub short_name: String,
     pub icon_url: String,
     pub conversion: f64,
@@ -1650,7 +1688,8 @@ pub struct UserGetDepositWithdrawBalanceRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserGetDepositWithdrawBalanceResponse {
-    pub balance: BlockchainDecimal,
+    #[serde(with = "WithBlockchainDecimal")]
+    pub balance: U256,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1787,11 +1826,16 @@ pub struct UserListDepositLedgerResponse {
 #[serde(rename_all = "camelCase")]
 pub struct UserListDepositLedgerRow {
     pub blockchain: EnumBlockChain,
-    pub user_address: BlockchainAddress,
-    pub contract_address: BlockchainAddress,
-    pub receiver_address: BlockchainAddress,
-    pub quantity: BlockchainDecimal,
-    pub transaction_hash: BlockchainTransactionHash,
+    #[serde(with = "WithBlockchainAddress")]
+    pub user_address: Address,
+    #[serde(with = "WithBlockchainAddress")]
+    pub contract_address: Address,
+    #[serde(with = "WithBlockchainAddress")]
+    pub receiver_address: Address,
+    #[serde(with = "WithBlockchainDecimal")]
+    pub quantity: U256,
+    #[serde(with = "WithBlockchainTransactionHash")]
+    pub transaction_hash: H256,
     pub created_at: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1801,7 +1845,8 @@ pub struct UserListDepositWithdrawBalance {
     pub token_id: i64,
     pub token_symbol: String,
     pub token_name: String,
-    pub balance: BlockchainDecimal,
+    #[serde(with = "WithBlockchainDecimal")]
+    pub balance: U256,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1835,7 +1880,8 @@ pub struct UserListEscrowTokenContractAddressesRow {
     pub token_id: i64,
     pub token_symbol: String,
     pub token_name: String,
-    pub token_address: BlockchainAddress,
+    #[serde(with = "WithBlockchainAddress")]
+    pub token_address: Address,
     pub description: String,
     pub blockchain: EnumBlockChain,
     pub is_stablecoin: bool,
@@ -1942,7 +1988,7 @@ pub struct UserListRegisteredWalletsRequest {
     #[serde(default)]
     pub blockchain: Option<EnumBlockChain>,
     #[serde(default)]
-    pub wallet_address: Option<BlockchainAddress>,
+    pub wallet_address: Option<Address>,
     #[serde(default)]
     pub strategy_id: Option<i64>,
 }
@@ -1971,7 +2017,7 @@ pub struct UserListStrategiesRequest {
     #[serde(default)]
     pub blockchain: Option<EnumBlockChain>,
     #[serde(default)]
-    pub wallet_address: Option<BlockchainAddress>,
+    pub wallet_address: Option<Address>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -2056,7 +2102,8 @@ pub struct UserListStrategyWalletsResponse {
 #[serde(rename_all = "camelCase")]
 pub struct UserListStrategyWalletsRow {
     pub blockchain: EnumBlockChain,
-    pub address: BlockchainAddress,
+    #[serde(with = "WithBlockchainAddress")]
+    pub address: Address,
     pub created_at: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -2101,7 +2148,8 @@ pub struct UserListTopPerformingStrategiesResponse {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserListWalletActivityLedgerRequest {
-    pub wallet_address: BlockchainAddress,
+    #[serde(with = "WithBlockchainAddress")]
+    pub wallet_address: Address,
     pub blockchain: EnumBlockChain,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -2114,7 +2162,8 @@ pub struct UserListWalletActivityLedgerResponse {
 #[serde(rename_all = "camelCase")]
 pub struct UserRegisterWalletRequest {
     pub blockchain: EnumBlockChain,
-    pub wallet_address: BlockchainAddress,
+    #[serde(with = "WithBlockchainAddress")]
+    pub wallet_address: Address,
     pub message_to_sign: String,
     pub message_signature: String,
 }
@@ -2136,8 +2185,10 @@ pub struct UserRemoveStrategyAuditRuleResponse {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserRequestRefundRequest {
-    pub quantity: BlockchainDecimal,
-    pub wallet_address: BlockchainAddress,
+    #[serde(with = "WithBlockchainDecimal")]
+    pub quantity: U256,
+    #[serde(with = "WithBlockchainAddress")]
+    pub wallet_address: Address,
     pub blockchain: EnumBlockChain,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -2205,7 +2256,8 @@ pub struct UserUpdateUserProfileResponse {}
 #[serde(rename_all = "camelCase")]
 pub struct WatchingWalletRow {
     pub watching_wallet_id: i64,
-    pub wallet_address: BlockchainAddress,
+    #[serde(with = "WithBlockchainAddress")]
+    pub wallet_address: Address,
     pub blockchain: EnumBlockChain,
     pub ratio_distribution: f64,
 }

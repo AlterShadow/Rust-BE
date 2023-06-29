@@ -129,7 +129,7 @@ impl RequestHandler for MethodUserListStrategies {
                     expert_name: req.expert_name,
                     description: req.description,
                     blockchain: req.blockchain,
-                    wallet_address: req.wallet_address,
+                    wallet_address: req.wallet_address.map(|x| x.into()),
                 })
                 .await?;
 
@@ -289,7 +289,7 @@ impl RequestHandler for MethodUserGetStrategy {
                     .await?
                     .map(|x| WatchingWalletRow {
                         watching_wallet_id: x.watch_wallet_id,
-                        wallet_address: x.wallet_address,
+                        wallet_address: x.wallet_address.into(),
                         blockchain: x.blockchain,
                         ratio_distribution: x.ratio,
                     }),
@@ -467,7 +467,7 @@ impl RequestHandler for MethodUserListDepositWithdrawBalances {
                     token_id: x.token_id,
                     token_symbol: x.token_symbol,
                     token_name: x.token_name,
-                    balance: x.balance,
+                    balance: x.balance.into(),
                 }),
             })
         }
@@ -501,7 +501,9 @@ impl RequestHandler for MethodUserGetDepositWithdrawBalance {
                 .into_result()
                 .map(|x| x.balance)
                 .unwrap_or_default();
-            Ok(UserGetDepositWithdrawBalanceResponse { balance })
+            Ok(UserGetDepositWithdrawBalanceResponse {
+                balance: balance.into(),
+            })
         }
         .boxed()
     }
@@ -1393,7 +1395,7 @@ impl RequestHandler for MethodUserListExitStrategyLedger {
                     .map(|x| ExitStrategyLedgerRow {
                         exit_ledger_id: x.exit_ledger_id,
                         strategy_id: x.strategy_id,
-                        exit_quantity: x.exit_quantity,
+                        exit_quantity: x.exit_quantity.into(),
                         blockchain: x.blockchain,
                         exit_time: x.exit_time,
                     })
@@ -1802,7 +1804,7 @@ impl RequestHandler for MethodUserRegisterWallet {
                 .execute(FunUserAddRegisteredWalletReq {
                     user_id: ctx.user_id,
                     blockchain: req.blockchain,
-                    address: req.wallet_address,
+                    address: req.wallet_address.into(),
                 })
                 .await?
                 .into_result()
@@ -1869,7 +1871,7 @@ impl RequestHandler for MethodUserListRegisteredWallets {
                     .map(|x| ListWalletsRow {
                         wallet_id: x.registered_wallet_id,
                         blockchain: x.blockchain,
-                        wallet_address: x.address,
+                        wallet_address: x.address.into(),
                         is_default: false,
                         is_compatible: if let Some(blockchain) = blockchain_filter {
                             blockchain == x.blockchain
@@ -1967,7 +1969,7 @@ impl RequestHandler for MethodExpertCreateStrategy {
                     strategy_fee: req.strategy_fee,
                     expert_fee: req.expert_fee,
                     agreed_tos: req.agreed_tos,
-                    wallet_address: req.wallet_address,
+                    wallet_address: req.wallet_address.into(),
                     blockchain: req.wallet_blockchain,
                 })
                 .await?
@@ -2001,7 +2003,7 @@ impl RequestHandler for MethodExpertCreateStrategy {
                 db.execute(FunUserAddStrategyInitialTokenRatioReq {
                     strategy_id: ret.strategy_id,
                     token_id: token.token_id,
-                    quantity: token.quantity,
+                    quantity: token.quantity.into(),
                 })
                 .await?;
             }
@@ -2118,7 +2120,7 @@ impl RequestHandler for MethodExpertAddStrategyWatchingWallet {
                 .execute(FunUserAddStrategyWatchWalletReq {
                     user_id: ctx.user_id,
                     strategy_id: req.strategy_id,
-                    wallet_address: req.wallet_address,
+                    wallet_address: req.wallet_address.into(),
                     blockchain: req.blockchain,
                     ratio: req.ratio,
                     // TODO: maybe remove dex?
@@ -2270,7 +2272,7 @@ impl RequestHandler for MethodExpertAddStrategyInitialTokenRatio {
             let ret = db
                 .execute(FunUserAddStrategyInitialTokenRatioReq {
                     strategy_id: req.strategy_id,
-                    quantity: req.quantity,
+                    quantity: req.quantity.into(),
                     token_id: req.token_id,
                 })
                 .await?
@@ -2345,8 +2347,8 @@ impl RequestHandler for MethodUserListStrategyInitialTokenRatio {
                 token_ratios: ret.map(|x| ListStrategyInitialTokenRatioRow {
                     token_id: x.token_id,
                     token_name: x.token_name,
-                    token_address: x.token_address,
-                    quantity: x.quantity,
+                    token_address: x.token_address.into(),
+                    quantity: x.quantity.into(),
                     updated_at: x.updated_at,
                     created_at: x.created_at,
                 }),
@@ -2511,11 +2513,11 @@ impl RequestHandler for MethodUserListDepositLedger {
                     .into_iter()
                     .map(|x| UserListDepositLedgerRow {
                         blockchain: x.blockchain,
-                        user_address: x.user_address,
-                        contract_address: x.contract_address,
-                        receiver_address: x.receiver_address,
+                        user_address: x.user_address.into(),
+                        contract_address: x.contract_address.into(),
+                        receiver_address: x.receiver_address.into(),
                         quantity: x.quantity.into(),
-                        transaction_hash: x.transaction_hash,
+                        transaction_hash: x.transaction_hash.into(),
                         created_at: x.created_at,
                     })
                     .collect(),
@@ -2559,12 +2561,12 @@ impl RequestHandler for MethodUserSubscribeDepositLedger {
                             &toolbox,
                             AdminSubscribeTopic::AdminNotifyEscrowLedgerChange,
                             &UserListDepositLedgerRow {
-                                quantity: row.quantity,
+                                quantity: row.quantity.into(),
                                 blockchain: row.blockchain,
-                                user_address: row.user_address,
-                                contract_address: row.contract_address,
-                                transaction_hash: row.transaction_hash,
-                                receiver_address: row.receiver_address,
+                                user_address: row.user_address.into(),
+                                contract_address: row.contract_address.into(),
+                                transaction_hash: row.transaction_hash.into(),
+                                receiver_address: row.receiver_address.into(),
                                 created_at: row.created_at,
                             },
                             |x| x.connection_id == ctx.connection_id,
@@ -2652,7 +2654,7 @@ impl RequestHandler for MethodUserListStrategyWallets {
                     .into_iter()
                     .map(|x| UserListStrategyWalletsRow {
                         blockchain: x.blockchain,
-                        address: x.address,
+                        address: x.address.into(),
                         created_at: x.created_at,
                     })
                     .collect(),
@@ -2920,7 +2922,7 @@ impl RequestHandler for MethodUserGetEscrowAddressForStrategy {
                         token_id: token.token_id,
                         token_symbol: token.symbol.clone(),
                         token_name: token.short_name.clone(),
-                        token_address: token.address.clone(),
+                        token_address: token.address.clone().into(),
                     };
                     tokens.push(tk);
                 }
@@ -2961,7 +2963,7 @@ impl RequestHandler for MethodUserListEscrowTokenContractAddresses {
                     token_id: x.token_id,
                     token_symbol: x.symbol,
                     token_name: x.short_name,
-                    token_address: x.address,
+                    token_address: x.address.into(),
                     description: x.description,
                     is_stablecoin: x.is_stablecoin,
                 }),
@@ -2980,6 +2982,7 @@ mod tests {
     use lib::database::{connect_to_database, database_test_config, drop_and_recreate_database};
     use lib::log::{setup_logs, LogLevel};
     use std::net::Ipv4Addr;
+    use std::str::FromStr;
     use std::{assert_eq, format, vec};
 
     pub async fn add_strategy_initial_token_ratio(
@@ -2993,7 +2996,7 @@ mod tests {
             symbol: "WBNB".to_string(),
             short_name: "WBNB".to_string(),
             description: "WBNB".to_string(),
-            address: format!("{:?}", wbnb_address_on_bsc_testnet),
+            address: wbnb_address_on_bsc_testnet.into(),
             blockchain: EnumBlockChain::BscTestnet,
             is_stablecoin: false,
         })
@@ -3001,7 +3004,7 @@ mod tests {
         db.execute(FunUserAddStrategyInitialTokenRatioReq {
             strategy_id,
             token_id: 666,
-            quantity: "100000000".to_string(),
+            quantity: U256::from_dec_str("100000000")?.into(),
         })
         .await?;
 
@@ -3098,7 +3101,7 @@ mod tests {
                 expert_fee: 1.0,
                 agreed_tos: true,
                 blockchain: EnumBlockChain::BscTestnet,
-                wallet_address: format!("{:?}", Address::zero()),
+                wallet_address: Address::zero().into(),
             })
             .await?
             .into_result()
@@ -3155,7 +3158,7 @@ mod tests {
                 offset: 0,
                 blockchain: Some(EnumBlockChain::BscTestnet),
                 token_id: None,
-                address: Some(format!("{:?}", busd_address_on_bsc_testnet)),
+                address: Some(busd_address_on_bsc_testnet.into()),
                 symbol: None,
                 is_stablecoin: None,
             })

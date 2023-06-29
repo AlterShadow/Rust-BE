@@ -21,7 +21,7 @@ pub fn convert_strategy_db_to_api(x: FunUserStrategyRowType) -> ListStrategiesRo
         followed: x.followed,
         // FIXME: this is a hack to get the value
         wallet_address: Address::zero().into(),
-        strategy_pool_address: x.strategy_pool_address.into(),
+        strategy_pool_address: x.strategy_pool_address.map(|x| x.into()),
         approved: x.approved,
         approved_at: x.approved_at,
         requested_at: x.requested_at,
@@ -57,7 +57,7 @@ pub fn convert_expert_db_to_api(x: FunUserExpertRowType) -> ListExpertsRow {
         requested_at: x.requested_at.unwrap_or_default(),
         approved_at: x.approved_at,
         pending_expert: x.pending_expert,
-        linked_wallet: x.linked_wallet,
+        linked_wallet: x.linked_wallet.into(),
         approved_expert: x.approved_expert,
         followed: x.followed,
     }

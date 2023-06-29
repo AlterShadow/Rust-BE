@@ -48,7 +48,7 @@ impl RequestHandler for MethodAdminListUsers {
                     .into_iter()
                     .map(|x| ListUserRow {
                         user_id: x.user_id,
-                        address: x.address,
+                        address: x.address.into(),
                         last_ip: x.last_ip,
                         last_login_at: x.last_login_at,
                         username: x.username,
@@ -203,7 +203,7 @@ impl RequestHandler for MethodAdminListPendingExpertApplications {
                 users: ret.map(|x| ListPendingExpertApplicationsRow {
                     user_id: x.user_public_id,
                     name: x.name,
-                    linked_wallet: x.linked_wallet,
+                    linked_wallet: x.linked_wallet.into(),
                     joined_at: x.joined_at.unwrap_or_default(),
                     requested_at: x.requested_at.unwrap_or_default(),
                     follower_count: x.follower_count as _,
@@ -347,7 +347,7 @@ impl RequestHandler for MethodAdminListBackers {
                     username: x.username,
                     user_id: x.user_public_id,
                     joined_at: x.joined_at,
-                    login_wallet_address: x.login_wallet_address,
+                    login_wallet_address: x.login_wallet_address.into(),
                     // TODO: calculate these fees and total backing amount
                     total_platform_fee_paid: 0.0,
                     total_strategy_fee_paid: 0.0,
@@ -553,10 +553,10 @@ impl RequestHandler for MethodAdminSubscribeDepositLedger {
                             &UserListDepositLedgerRow {
                                 quantity: row.quantity.into(),
                                 blockchain: row.blockchain,
-                                user_address: row.user_address,
-                                contract_address: row.contract_address,
-                                transaction_hash: row.transaction_hash,
-                                receiver_address: row.receiver_address,
+                                user_address: row.user_address.into(),
+                                contract_address: row.contract_address.into(),
+                                transaction_hash: row.transaction_hash.into(),
+                                receiver_address: row.receiver_address.into(),
                                 created_at: row.created_at,
                             },
                             |x| x.connection_id == ctx.connection_id,
@@ -638,7 +638,7 @@ impl RequestHandler for MethodAdminAddEscrowTokenContractAddress {
                     symbol: req.symbol,
                     short_name: req.short_name,
                     description: req.description,
-                    address: req.address,
+                    address: req.address.into(),
                     blockchain: req.blockchain,
                     is_stablecoin: req.is_stablecoin,
                 })
@@ -668,7 +668,7 @@ impl RequestHandler for MethodAdminAddEscrowContractAddress {
             let _ret = db
                 .execute(FunAdminAddEscrowContractAddressReq {
                     pkey_id: req.pkey_id,
-                    address: req.address,
+                    address: req.address.into(),
                     blockchain: req.blockchain,
                 })
                 .await?;

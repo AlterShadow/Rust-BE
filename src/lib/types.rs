@@ -4,7 +4,8 @@ use std::error::Error;
 use std::ops::{Deref, DerefMut};
 use std::str::FromStr;
 use tokio_postgres::types::{FromSql, IsNull, ToSql, Type};
-use web3::types::{Address, H256, U256};
+#[doc(hidden)]
+pub use web3::types::{Address, H256, U256};
 pub fn amount_to_display(amount: U256) -> String {
     let amount = amount.as_u128();
     let amount = amount as f64 / 1e18;
@@ -17,7 +18,26 @@ pub fn amount_from_display(s: &str) -> U256 {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct BlockchainDecimal(pub U256);
+#[allow(non_snake_case)]
+pub mod WithBlockchainDecimal {
+    use super::*;
 
+    pub fn serialize<S>(this: &U256, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let value = amount_to_display(*this);
+        value.serialize(serializer)
+    }
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<U256, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let value = String::deserialize(deserializer)?;
+        let value = amount_from_display(&value);
+        Ok(value)
+    }
+}
 impl Serialize for BlockchainDecimal {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -32,7 +52,6 @@ impl<'de> Deserialize<'de> for BlockchainDecimal {
     where
         D: Deserializer<'de>,
     {
-        // we accept either f64 or string
         let value = String::deserialize(deserializer)?;
         let value = amount_from_display(&value);
         Ok(BlockchainDecimal(value))
@@ -95,6 +114,25 @@ impl DerefMut for BlockchainDecimal {
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct BlockchainAddress(pub Address);
+#[allow(non_snake_case)]
+pub mod WithBlockchainAddress {
+    use super::*;
+
+    pub fn serialize<S>(this: &Address, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        format!("{:?}", this).serialize(serializer)
+    }
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Address, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let value = String::deserialize(deserializer)?;
+        let value = Address::from_str(&value).unwrap();
+        Ok(value)
+    }
+}
 impl Serialize for BlockchainAddress {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -108,7 +146,6 @@ impl<'de> Deserialize<'de> for BlockchainAddress {
     where
         D: Deserializer<'de>,
     {
-        // we accept either f64 or string
         let value = String::deserialize(deserializer)?;
         let value = Address::from_str(&value).unwrap();
         Ok(BlockchainAddress(value))
@@ -171,6 +208,25 @@ impl DerefMut for BlockchainAddress {
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct BlockchainTransactionHash(pub H256);
+#[allow(non_snake_case)]
+pub mod WithBlockchainTransactionHash {
+    use super::*;
+
+    pub fn serialize<S>(this: &H256, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        format!("{:?}", this).serialize(serializer)
+    }
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<H256, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let value = String::deserialize(deserializer)?;
+        let value = H256::from_str(&value).unwrap();
+        Ok(value)
+    }
+}
 impl Serialize for BlockchainTransactionHash {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -184,7 +240,6 @@ impl<'de> Deserialize<'de> for BlockchainTransactionHash {
     where
         D: Deserializer<'de>,
     {
-        // we accept either f64 or string
         let value = String::deserialize(deserializer)?;
         let value = H256::from_str(&value).unwrap();
         Ok(BlockchainTransactionHash(value))
