@@ -569,7 +569,7 @@ impl RequestHandler for MethodUserBackStrategy {
     }
 }
 
-async fn user_exit_strategy(
+pub async fn user_exit_strategy(
     conn: &EthereumRpcConnection,
     ctx: &RequestContext,
     db: &DbClient,

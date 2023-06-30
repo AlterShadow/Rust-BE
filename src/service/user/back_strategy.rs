@@ -607,6 +607,7 @@ async fn trade_escrow_for_strategy_tokens(
 
 #[cfg(test)]
 mod tests {
+    use super::super::method::user_exit_strategy;
     use super::*;
     use crate::method::on_user_request_refund;
     use eth_sdk::erc20::Erc20Token;
@@ -619,8 +620,8 @@ mod tests {
         ANVIL_PRIV_KEY_1, ANVIL_PRIV_KEY_2,
     };
     use gen::database::{
-        FunAdminAddEscrowTokenContractAddressReq, FunAuthSignupReq,
-        FunUserAddStrategyInitialTokenRatioReq, FunUserCreateStrategyReq,
+        FunAdminAddEscrowContractAddressReq, FunAdminAddEscrowTokenContractAddressReq,
+        FunAuthSignupReq, FunUserAddStrategyInitialTokenRatioReq, FunUserCreateStrategyReq,
         FunUserListEscrowTokenContractAddressReq, FunUserListExitStrategyLedgerReq,
         FunWatcherSaveStrategyPoolContractReq,
     };
@@ -629,6 +630,7 @@ mod tests {
     use lib::log::{setup_logs, LogLevel};
     use std::net::Ipv4Addr;
     use std::str::FromStr;
+    use std::time::Duration;
     use std::{assert_eq, format, vec};
 
     pub async fn add_strategy_initial_token_ratio(
@@ -934,7 +936,7 @@ mod tests {
         db.execute(FunUserAddStrategyWalletReq {
             user_id: ret.user_id,
             blockchain: EnumBlockChain::LocalNet,
-            address: format!("{:?}", strategy_wallet_contract.address()),
+            address: strategy_wallet_contract.address().into(),
         })
         .await?;
 
@@ -950,7 +952,7 @@ mod tests {
                 expert_fee: 1.0,
                 agreed_tos: true,
                 blockchain: EnumBlockChain::LocalNet,
-                wallet_address: format!("{:?}", Address::zero()),
+                wallet_address: Address::zero().into(),
             })
             .await?
             .into_result()
@@ -964,18 +966,32 @@ mod tests {
             "TEST".to_string(),
         )
         .await?;
-        db.execute(FunWatcherSaveStrategyPoolContractReq {
-            strategy_id: strategy.strategy_id,
-            blockchain: EnumBlockChain::LocalNet,
-            address: format!("{:?}", strategy_contract.address()),
-        })
-        .await?;
+        let strategy_pool_contract_ret = db
+            .execute(FunWatcherSaveStrategyPoolContractReq {
+                strategy_id: strategy.strategy_id,
+                blockchain: EnumBlockChain::LocalNet,
+                address: strategy_contract.address().into(),
+            })
+            .await?
+            .into_result()
+            .context("could not save strategy pool contract to database")?;
 
         /* deploy token contract */
         let token_contract = deploy_mock_erc20(conn.clone(), master_key.clone()).await?;
 
-        let tokens_minted = U256::from(1000000);
+        /* add token to database */
+        let add_token_ret = db
+            .execute(FunAdminAddEscrowContractAddressReq {
+                pkey_id: 1,
+                blockchain: EnumBlockChain::LocalNet,
+                address: token_contract.address.into(),
+            })
+            .await?
+            .into_result()
+            .context("could not add token to database")?;
+
         /* mint tokens for master key (simulating transferring escrow to our eoa and trading) */
+        let tokens_minted = U256::from(1000000);
         wait_for_confirmations_simple(
             &conn.eth(),
             token_contract
@@ -1007,34 +1023,43 @@ mod tests {
         )
         .await?;
 
-        let shares_minted = U256::from(1000000);
         /* deposit tokens in strategy pool to strategy wallet's address */
+        let strategy_tokens_minted = U256::from(1000000);
         let deposit_hash = strategy_contract
             .deposit(
                 &conn,
                 master_key.clone(),
                 vec![token_contract.address],
                 vec![tokens_minted],
-                shares_minted,
+                strategy_tokens_minted,
                 strategy_wallet_contract.address(),
             )
             .await?;
         wait_for_confirmations_simple(&conn.eth(), deposit_hash, Duration::from_secs(1), 10)
             .await?;
 
+        /* insert into strategy pool contract balance table */
+        db.execute(FunWatcherUpsertStrategyPoolContractAssetBalanceReq {
+            strategy_pool_contract_id: strategy_pool_contract_ret.pkey_id,
+            token_address: token_contract.address.into(),
+            blockchain: EnumBlockChain::LocalNet,
+            new_balance: tokens_minted.into(),
+        })
+        .await?;
+
         /* insert into back strategy Ledger */
         /* here ends the back strategy simulation */
         db.execute(FunUserBackStrategyReq {
             user_id: ret.user_id,
             strategy_id: strategy.strategy_id,
-            quantity: "1000000".to_string(),
-            new_total_backed_quantity: "1000000".to_string(),
-            old_total_backed_quantity: "0".to_string(),
-            new_current_quantity: "1000000".to_string(),
-            old_current_quantity: "0".to_string(),
+            quantity: U256::from(1000000).into(),
+            new_total_backed_quantity: U256::from(1000000).into(),
+            old_total_backed_quantity: U256::zero().into(),
+            new_current_quantity: U256::from(1000000).into(),
+            old_current_quantity: U256::zero().into(),
             blockchain: EnumBlockChain::LocalNet,
-            transaction_hash: format!("{:?}", deposit_hash),
-            earn_sp_tokens: format!("{:?}", shares_minted),
+            transaction_hash: deposit_hash.into(),
+            earn_sp_tokens: strategy_tokens_minted.into(),
         })
         .await?;
 
@@ -1054,7 +1079,7 @@ mod tests {
             &db,
             EnumBlockChain::LocalNet,
             strategy.strategy_id,
-            Some(shares_minted),
+            Some(strategy_tokens_minted),
             master_key.clone(),
         )
         .await?;
@@ -1065,7 +1090,7 @@ mod tests {
             tokens_minted
         );
 
-        /* check user exit strategy is in database */
+        /* check user exit strategy is in back exit ledger */
         let exit_strategy = db
             .execute(FunUserListExitStrategyLedgerReq {
                 user_id: ret.user_id,
