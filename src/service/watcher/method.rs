@@ -89,7 +89,7 @@ pub async fn handle_pancake_swap_transaction(
         match get_strategy_id_from_watching_wallet(&state.db, blockchain, caller).await? {
             Some(strategy_id) => strategy_id,
             None => {
-                trace!("caller {:?} is not a strategy watching wallet", caller);
+                /* caller is not a strategy watching wallet */
                 return Ok(());
             }
         };
