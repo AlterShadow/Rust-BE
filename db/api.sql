@@ -2746,7 +2746,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_watcher_get_strategy_tokens_from_ledger(a_strategy_id bigint, a_blockchain enum_block_chain DEFAULT NULL, a_symbol varchar DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_watcher_get_expert_wallet_assets_from_ledger(a_strategy_id bigint, a_blockchain enum_block_chain DEFAULT NULL, a_symbol varchar DEFAULT NULL)
 RETURNS table (
     "token_id" bigint,
     "token_name" varchar,

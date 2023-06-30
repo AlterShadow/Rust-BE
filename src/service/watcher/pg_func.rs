@@ -124,7 +124,7 @@ END
         "#,
         ),
         ProceduralFunction::new(
-            "fun_watcher_get_strategy_tokens_from_ledger",
+            "fun_watcher_get_expert_wallet_assets_from_ledger",
             vec![
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),

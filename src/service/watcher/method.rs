@@ -105,7 +105,7 @@ pub async fn handle_pancake_swap_transaction(
     /* get expert wallet token_in asset balance prior to the trade */
     let expert_wallet_asset_token_in_previous_amount = state
         .db
-        .execute(FunWatcherGetStrategyTokensFromLedgerReq {
+        .execute(FunWatcherGetExpertWalletAssetsFromLedgerReq {
             strategy_id,
             blockchain: Some(blockchain),
             symbol: Some(token_in_contract.symbol().await?)

@@ -579,6 +579,16 @@ pub struct FunUserUpdateStrategyRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunWatcherGetExpertWalletAssetsFromLedgerRespRow {
+    pub token_id: i64,
+    pub token_name: String,
+    pub token_symbol: String,
+    pub token_address: BlockchainAddress,
+    pub blockchain: EnumBlockChain,
+    pub amount: BlockchainDecimal,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunWatcherGetRawTransactionRespRow {
     pub transaction_cache_id: i64,
     pub transaction_hash: BlockchainTransactionHash,
@@ -587,16 +597,6 @@ pub struct FunWatcherGetRawTransactionRespRow {
     pub dex: Option<String>,
     pub raw_transaction: String,
     pub created_at: i64,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
-pub struct FunWatcherGetStrategyTokensFromLedgerRespRow {
-    pub token_id: i64,
-    pub token_name: String,
-    pub token_symbol: String,
-    pub token_address: BlockchainAddress,
-    pub blockchain: EnumBlockChain,
-    pub amount: BlockchainDecimal,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -2712,7 +2712,7 @@ impl DatabaseRequest for FunWatcherSaveStrategyWatchingWalletTradeLedgerReq {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunWatcherGetStrategyTokensFromLedgerReq {
+pub struct FunWatcherGetExpertWalletAssetsFromLedgerReq {
     pub strategy_id: i64,
     #[serde(default)]
     pub blockchain: Option<EnumBlockChain>,
@@ -2721,10 +2721,10 @@ pub struct FunWatcherGetStrategyTokensFromLedgerReq {
 }
 
 #[allow(unused_variables)]
-impl DatabaseRequest for FunWatcherGetStrategyTokensFromLedgerReq {
-    type ResponseRow = FunWatcherGetStrategyTokensFromLedgerRespRow;
+impl DatabaseRequest for FunWatcherGetExpertWalletAssetsFromLedgerReq {
+    type ResponseRow = FunWatcherGetExpertWalletAssetsFromLedgerRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_watcher_get_strategy_tokens_from_ledger(a_strategy_id => $1::bigint, a_blockchain => $2::enum_block_chain, a_symbol => $3::varchar);"
+        "SELECT * FROM api.fun_watcher_get_expert_wallet_assets_from_ledger(a_strategy_id => $1::bigint, a_blockchain => $2::enum_block_chain, a_symbol => $3::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
