@@ -1,9 +1,13 @@
-use eyre::*;
+use std::str::FromStr;
 
+use eyre::*;
 use web3::types::U256;
+
+// TODO: add ethereum_types dependency to use U512 and make scaled arithmetic safe for ALL U256 values
 
 pub trait ScaledMath {
     fn mul_f64(&self, factor: f64) -> Result<U256>;
+    fn div_as_f64(&self, divisor: U256) -> Result<f64>;
     fn mul_div(&self, factor: U256, divisor: U256) -> Result<U256>;
     fn try_checked_add(&self, term: U256) -> Result<U256>;
     fn try_checked_sub(&self, term: U256) -> Result<U256>;
@@ -37,6 +41,74 @@ impl ScaledMath for U256 {
             .ok_or_else(|| eyre!("scaled multiplication would overflow"))?;
 
         Ok(result_u256 / multiplier)
+    }
+
+    fn div_as_f64(&self, divisor: U256) -> Result<f64> {
+        if divisor == U256::zero() {
+            bail!("division by zero");
+        }
+
+        /* calculate the number of digits in self and divisor */
+        let self_digits = self.to_string().len();
+        let divisor_digits = divisor.to_string().len();
+
+        /* calculate the scaling factor based on the number of digits */
+        /* use a minimum scaling factor of 16 to assure f64 precision */
+        let digit_diff = (divisor_digits.saturating_sub(self_digits)).max(16);
+
+        if digit_diff > 77 {
+            bail!("scaling the scale factor would cause overflow");
+        }
+
+        /* calculate scale factor */
+        let scale_factor = U256::exp10(digit_diff);
+
+        /* scale self */
+        let scaled_dividend = self
+            .checked_mul(scale_factor)
+            .context("overflow when scaling dividend")?;
+
+        /* perform division and get the result as a string */
+        let quotient = scaled_dividend / divisor;
+        let quotient_str = quotient.to_string();
+
+        let int_str: String;
+        let frac_str: String;
+
+        /* determine the integer part and the fraction part */
+        if quotient_str.len() > digit_diff {
+            /* if quotient has more digits than scaling factor, quotient is larger than 1 */
+            /* in this case, the dividend is larger than the divisor */
+            /* i.e. both integer part and fraction part are present */
+            let (int_part, frac_part) = quotient_str.split_at(quotient_str.len() - digit_diff);
+            int_str = int_part.to_string();
+            frac_str = frac_part[0..frac_part.len().min(16)].to_string();
+        } else if quotient_str.len() == digit_diff {
+            /* if quotient has same digits as scaling factor, quotient is smaller than 1 */
+            /* in this case, the dividend is smaller than the divisor and the quotient has one less digit than the scaled dividend */
+            /* i.e. only the fraction part is present */
+            int_str = "0".to_string();
+            frac_str = quotient_str[0..quotient_str.len().min(16)].to_string();
+        } else {
+            /* if quotient has less digits than the scaling factor, the quotient is also smaller than 1 */
+            /* in this case, the dividend is smaller than the divisor and the quotient has more than one digit less than the scaled dividend */
+            /* i.e. need to add leading zeros to the fraction part */
+            int_str = "0".to_string();
+            let leading_zeros = "0".repeat(digit_diff - quotient_str.len());
+            frac_str = (leading_zeros + &quotient_str[0..quotient_str.len().min(16)]).to_string();
+        }
+
+        /* construct the final string */
+        let result_str = if frac_str.is_empty() {
+            int_str.to_string()
+        } else {
+            format!("{}.{}", int_str, frac_str)
+        };
+
+        /* parse string to f64 */
+        let result_f64 = f64::from_str(&result_str).context("failed to convert string to f64")?;
+
+        Ok(result_f64)
     }
 
     fn mul_div(&self, factor: U256, divisor: U256) -> Result<U256> {
