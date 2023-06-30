@@ -195,4 +195,138 @@ mod tests {
             _ => assert!(false),
         }
     }
+
+    #[test]
+    fn div_as_f64_expected_values() -> Result<()> {
+        let mut dividend = U256::from(4);
+        let mut divisor = U256::from(2);
+        assert_eq!(dividend.div_as_f64(divisor)?, f64::from(2));
+
+        dividend = U256::from(1);
+        divisor = U256::from(2);
+        assert_eq!(dividend.div_as_f64(divisor)?, f64::from(0.5));
+
+        dividend = U256::from(1);
+        divisor = U256::from(3);
+        assert_eq!(dividend.div_as_f64(divisor)?, f64::from(0.3333333333333333));
+
+        dividend = U256::from(10);
+        divisor = U256::from(9);
+        assert_eq!(dividend.div_as_f64(divisor)?, f64::from(1.1111111111111112));
+
+        dividend = U256::from(100000);
+        divisor = U256::from(999999);
+        assert_eq!(dividend.div_as_f64(divisor)?, f64::from(0.1000001000001));
+
+        dividend = U256::zero();
+        divisor = U256::from(3);
+        assert_eq!(dividend.div_as_f64(divisor)?, f64::from(0));
+
+        dividend = U256::from(1);
+        divisor = U256::max_value();
+        assert_eq!(dividend.div_as_f64(divisor)?, f64::from(0));
+
+        dividend = U256::from(1);
+        divisor = U256::from(1000000000);
+        assert_eq!(dividend.div_as_f64(divisor)?, f64::from(0.000000001));
+
+        dividend = U256::from(1);
+        divisor = U256::from(i64::from_str("4000000000")?);
+        assert_eq!(dividend.div_as_f64(divisor)?, f64::from(0.00000000025));
+
+        dividend = U256::from(1);
+        divisor = U256::from(i64::from(10));
+        assert_eq!(dividend.div_as_f64(divisor)?, f64::from(0.1));
+
+        dividend = U256::from(1);
+        divisor = U256::from(i64::from(20));
+        assert_eq!(dividend.div_as_f64(divisor)?, f64::from(0.05));
+
+        dividend = U256::from(1);
+        divisor = U256::from(i64::from(90));
+        assert_eq!(dividend.div_as_f64(divisor)?, f64::from(0.0111111111111111));
+
+        dividend = U256::from(1);
+        divisor = U256::from(i64::from(99));
+        assert_eq!(dividend.div_as_f64(divisor)?, f64::from(0.0101010101010101));
+
+        dividend = U256::from(2);
+        divisor = U256::from(200);
+        assert_eq!(dividend.div_as_f64(divisor)?, f64::from(0.01));
+
+        dividend = U256::from(20000);
+        divisor = U256::from(i64::from(200));
+        assert_eq!(dividend.div_as_f64(divisor)?, f64::from(100.0));
+
+        dividend = U256::from(20000);
+        divisor = U256::from(i64::from(2000));
+        assert_eq!(dividend.div_as_f64(divisor)?, f64::from(10.0));
+
+        dividend = U256::from(20000);
+        divisor = U256::from(i64::from(1000));
+        assert_eq!(dividend.div_as_f64(divisor)?, f64::from(20.0));
+
+        dividend = U256::from(20000);
+        divisor = U256::from(2);
+        assert_eq!(dividend.div_as_f64(divisor)?, f64::from(10000.0));
+
+        Ok(())
+    }
+
+    #[test]
+    fn div_as_f64_with_division_by_zero() {
+        let dividend = U256::from(1);
+        let divisor = U256::zero();
+        match dividend.div_as_f64(divisor) {
+            Err(_) => assert!(true), // expected throw an error for division by zero
+            _ => assert!(false),
+        }
+    }
+
+    #[test]
+    fn div_as_f64_with_huge_values() -> Result<()> {
+        let mut dividend = U256::max_value();
+        let mut divisor = U256::exp10(76);
+        match dividend.div_as_f64(divisor) {
+            Err(_) => assert!(true), // expected throw an error for overflow when scaling
+            _ => assert!(false),
+        }
+
+        dividend = U256::from(4).try_checked_mul(U256::exp10(17))?;
+        divisor = U256::from(2).try_checked_mul(U256::exp10(17))?;
+        assert_eq!(dividend.div_as_f64(divisor)?, f64::from(2));
+
+        dividend = U256::from(2).try_checked_mul(U256::exp10(17))?;
+        divisor = U256::from(4).try_checked_mul(U256::exp10(17))?;
+        assert_eq!(dividend.div_as_f64(divisor)?, f64::from(0.5));
+
+        dividend = U256::from(2).try_checked_mul(U256::exp10(17))?;
+        divisor = U256::from(20).try_checked_mul(U256::exp10(17))?;
+        assert_eq!(dividend.div_as_f64(divisor)?, f64::from(0.1));
+
+        dividend = U256::from(200).try_checked_mul(U256::exp10(17))?;
+        divisor = U256::from(150).try_checked_mul(U256::exp10(17))?;
+        assert_eq!(dividend.div_as_f64(divisor)?, f64::from(1.3333333333333333));
+
+        dividend = U256::from(1000).try_checked_mul(U256::exp10(20))?;
+        divisor = U256::from(150).try_checked_mul(U256::exp10(20))?;
+        assert_eq!(dividend.div_as_f64(divisor)?, f64::from(6.666666666666667));
+
+        dividend = U256::from(4).try_checked_mul(U256::exp10(40))?;
+        divisor = U256::from(2).try_checked_mul(U256::exp10(40))?;
+        assert_eq!(dividend.div_as_f64(divisor)?, f64::from(2));
+
+        dividend = U256::from(4).try_checked_mul(U256::exp10(60))?;
+        divisor = U256::from(2).try_checked_mul(U256::exp10(60))?;
+        assert_eq!(dividend.div_as_f64(divisor)?, f64::from(2));
+
+        dividend = U256::from(4).try_checked_mul(U256::exp10(61))?;
+        divisor = U256::from(2).try_checked_mul(U256::exp10(61))?;
+        match dividend.div_as_f64(divisor) {
+            Err(_) => assert!(true), // expected throw an error for overflow when scaling
+            _ => assert!(false),
+        }
+
+        Ok(())
+    }
 }
