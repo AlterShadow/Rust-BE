@@ -284,6 +284,22 @@ CREATE TABLE tbl.transaction_cache (
     CONSTRAINT transaction_cache_pk PRIMARY KEY (pkey_id)
 );
 
+-- Table: last_dex_trade_for_pair
+CREATE TABLE tbl.last_dex_trade_for_pair (
+	pkey_id bigint NOT NULL DEFAULT nextval('tbl.seq_last_dex_trade_for_pair_id'),
+	transaction_hash varchar(80) NOT NULL,
+	blockchain enum_block_chain  NOT NULL,
+	dex enum_dex NOT NULL,
+	fkey_token_in bigint NOT NULL,
+	fkey_token_out bigint NOT NULL,
+	amount_in varchar(64) NOT NULL,
+	amount_out varchar(64) NOT NULL,
+	happened_at bigint NOT NULL,
+	CONSTRAINT last_dex_trade_for_pair_ak_1 UNIQUE (blockchain, dex, fkey_token_in, fkey_token_out) NOT DEFERRABLE  INITIALLY IMMEDIATE,
+	CONSTRAINT last_dex_trade_for_pair_ak_2 UNIQUE (blockchain, transaction_hash) NOT DEFERRABLE  INITIALLY IMMEDIATE,
+	CONSTRAINT last_dex_trade_for_pair_pk PRIMARY KEY (pkey_id)
+);
+
 -- Table: user
 CREATE TABLE tbl."user" (
     pkey_id bigint  NOT NULL DEFAULT nextval( 'tbl.seq_user_id' ),
@@ -866,6 +882,13 @@ CREATE SEQUENCE tbl.seq_transaction_cache_id
       NO MINVALUE
       NO MAXVALUE
       NO CYCLE
+;
+
+-- Sequence: seq_last_dex_trade_for_pair_id
+CREATE SEQUENCE tbl.seq_last_dex_trade_for_pair_id
+			NO MINVALUE
+			NO MAXVALUE
+			NO CYCLE
 ;
 
 -- Sequence: seq_user_back_exit_strategy_ledger_id
