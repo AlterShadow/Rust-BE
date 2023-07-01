@@ -15,8 +15,9 @@ use gen::database::{
     FunAdminListUsersReq, FunUserAddStrategyPoolContractReq, FunUserAddStrategyWalletReq,
     FunUserBackStrategyReq, FunUserListStrategiesReq, FunUserListStrategyInitialTokenRatiosReq,
     FunUserListStrategyWalletsReq, FunUserListUserDepositWithdrawBalanceReq,
-    FunWatcherListStrategyPoolContractAssetBalancesReq, FunWatcherListStrategyPoolContractReq,
-    FunWatcherListUserStrategyBalanceReq, FunWatcherUpsertStrategyPoolContractAssetBalanceReq,
+    FunWatcherListLastDexTradesForPairReq, FunWatcherListStrategyPoolContractAssetBalancesReq,
+    FunWatcherListStrategyPoolContractReq, FunWatcherListUserStrategyBalanceReq,
+    FunWatcherUpsertLastDexTradeForPairReq, FunWatcherUpsertStrategyPoolContractAssetBalanceReq,
     FunWatcherUpsertUserStrategyBalanceReq,
 };
 use gen::model::{EnumBlockChain, EnumDex};
@@ -368,6 +369,7 @@ pub async fn user_back_strategy(
     /* trade escrow token for strategy's tokens */
     let (tokens_to_deposit, amounts_to_deposit) = trade_escrow_for_strategy_tokens(
         &conn,
+        &db,
         master_key.clone(),
         blockchain,
         token_address,
@@ -559,6 +561,7 @@ async fn calculate_sp_tokens_to_mint_easy_approach(
 
 async fn trade_escrow_for_strategy_tokens(
     conn: &EthereumRpcConnection,
+    db: &DbClient,
     master_key: impl Key + Clone,
     chain: EnumBlockChain,
     escrow_token_address: Address,
@@ -600,6 +603,18 @@ async fn trade_escrow_for_strategy_tokens(
 
         token_addresses_to_deposit.push(token_address);
         token_amounts_to_deposit.push(trade.amount_out);
+
+        /* update last dex trade cache table */
+        db.execute(FunWatcherUpsertLastDexTradeForPairReq {
+            transaction_hash: trade_hash.into(),
+            blockchain: chain.into(),
+            dex: EnumDex::PancakeSwap,
+            token_in_address: escrow_token_address.into(),
+            token_out_address: token_address.into(),
+            amount_in: trade.amount_in.into(),
+            amount_out: trade.amount_out.into(),
+        })
+        .await?;
     }
     Ok((token_addresses_to_deposit, token_amounts_to_deposit))
 }
@@ -811,6 +826,7 @@ pub async fn user_back_strategy_sergio_tries_to_help(
     /* trade base token for strategy pool assets */
     let (tokens_to_deposit, amounts_to_deposit) = trade_escrow_for_strategy_tokens(
         &conn,
+        &db,
         master_key.clone(),
         blockchain,
         token_address,
