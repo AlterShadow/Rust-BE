@@ -687,6 +687,28 @@ pub async fn user_exit_strategy(
     })
     .await?;
 
+    /* update user strategy token balance */
+    let user_strategy_balance: U256 = db
+        .execute(FunWatcherListUserStrategyBalanceReq {
+            limit: 1,
+            offset: 0,
+            strategy_id: Some(strategy_id),
+            user_id: Some(ctx.user_id),
+            blockchain: Some(blockchain),
+        })
+        .await?
+        .first(|x| x.balance)
+        .context("could not get user strategy token balance from database on exit strategy")?
+        .into();
+    db.execute(FunWatcherUpsertUserStrategyBalanceReq {
+        user_id: ctx.user_id,
+        strategy_id,
+        blockchain,
+        old_balance: user_strategy_balance.into(),
+        new_balance: (user_strategy_balance.try_checked_sub(redeem_info.strategy_tokens)?).into(),
+    })
+    .await?;
+
     /* update strategy pool contract balance table */
     for idx in 0..redeem_info.strategy_pool_assets.len() {
         let redeemed_asset = redeem_info.strategy_pool_assets[idx];
