@@ -621,6 +621,18 @@ pub struct FunWatcherListExpertListenedWalletAssetBalanceRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunWatcherListLastDexTradesForPairRespRow {
+    pub transaction_hash: BlockchainTransactionHash,
+    pub blockchain: EnumBlockChain,
+    pub dex: EnumDex,
+    pub token_in_id: i64,
+    pub token_out_id: i64,
+    pub amount_in: BlockchainDecimal,
+    pub amount_out: BlockchainDecimal,
+    pub happened_at: i64,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunWatcherListStrategyEscrowPendingWalletBalanceRespRow {
     pub strategy_id: i64,
     pub blockchain: EnumBlockChain,
@@ -689,6 +701,11 @@ pub struct FunWatcherSaveUserDepositWithdrawLedgerRespRow {
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunWatcherUpsertExpertListenedWalletAssetBalanceRespRow {
     pub expert_listened_wallet_asset_balance_id: i64,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunWatcherUpsertLastDexTradeForPairRespRow {
+    pub last_dex_trade_for_pair_id: i64,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -2773,6 +2790,61 @@ impl DatabaseRequest for FunWatcherGetExpertWalletAssetsFromLedgerReq {
             &self.strategy_id as &(dyn ToSql + Sync),
             &self.blockchain as &(dyn ToSql + Sync),
             &self.symbol as &(dyn ToSql + Sync),
+        ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunWatcherListLastDexTradesForPairReq {
+    pub token_in_address: BlockchainAddress,
+    pub token_out_address: BlockchainAddress,
+    pub blockchain: EnumBlockChain,
+    #[serde(default)]
+    pub dex: Option<EnumDex>,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunWatcherListLastDexTradesForPairReq {
+    type ResponseRow = FunWatcherListLastDexTradesForPairRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_watcher_list_last_dex_trades_for_pair(a_token_in_address => $1::varchar, a_token_out_address => $2::varchar, a_blockchain => $3::enum_block_chain, a_dex => $4::enum_dex);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.token_in_address as &(dyn ToSql + Sync),
+            &self.token_out_address as &(dyn ToSql + Sync),
+            &self.blockchain as &(dyn ToSql + Sync),
+            &self.dex as &(dyn ToSql + Sync),
+        ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunWatcherUpsertLastDexTradeForPairReq {
+    pub transaction_hash: BlockchainTransactionHash,
+    pub blockchain: EnumBlockChain,
+    pub dex: EnumDex,
+    pub token_in_address: BlockchainAddress,
+    pub token_out_address: BlockchainAddress,
+    pub amount_in: BlockchainDecimal,
+    pub amount_out: BlockchainDecimal,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunWatcherUpsertLastDexTradeForPairReq {
+    type ResponseRow = FunWatcherUpsertLastDexTradeForPairRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_watcher_upsert_last_dex_trade_for_pair(a_transaction_hash => $1::varchar, a_blockchain => $2::enum_block_chain, a_dex => $3::enum_dex, a_token_in_address => $4::varchar, a_token_out_address => $5::varchar, a_amount_in => $6::varchar, a_amount_out => $7::varchar);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.transaction_hash as &(dyn ToSql + Sync),
+            &self.blockchain as &(dyn ToSql + Sync),
+            &self.dex as &(dyn ToSql + Sync),
+            &self.token_in_address as &(dyn ToSql + Sync),
+            &self.token_out_address as &(dyn ToSql + Sync),
+            &self.amount_in as &(dyn ToSql + Sync),
+            &self.amount_out as &(dyn ToSql + Sync),
         ]
     }
 }

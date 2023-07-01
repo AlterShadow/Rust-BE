@@ -210,6 +210,112 @@ END
 "#,
         ),
         ProceduralFunction::new(
+            "fun_watcher_list_last_dex_trades_for_pair",
+            vec![
+                Field::new("token_in_address", Type::BlockchainAddress),
+                Field::new("token_out_address", Type::BlockchainAddress),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("dex", Type::optional(Type::enum_ref("dex"))),
+            ],
+            vec![
+                Field::new("transaction_hash", Type::BlockchainTransactionHash),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("dex", Type::enum_ref("dex")),
+                Field::new("token_in_id", Type::BigInt),
+                Field::new("token_out_id", Type::BigInt),
+                Field::new("amount_in", Type::BlockchainDecimal),
+                Field::new("amount_out", Type::BlockchainDecimal),
+                Field::new("happened_at", Type::BigInt),
+            ],
+            r#"
+BEGIN
+		RETURN QUERY
+		SELECT
+			dex_trade.transaction_hash,
+			dex_trade.blockchain,
+			dex_trade.dex,
+			dex_trade.fkey_token_in,
+			dex_trade.fkey_token_out,
+			dex_trade.amount_in,
+			dex_trade.amount_out,
+			dex_trade.happened_at
+		FROM tbl.last_dex_trade_for_pair AS dex_trade
+		WHERE dex_trade.fkey_token_in = (SELECT etca.pkey_id FROM tbl.escrow_token_contract_address AS etca WHERE etca.address = a_token_in_address AND etca.blockchain = a_blockchain)
+		AND dex_trade.fkey_token_out = (SELECT etca.pkey_id FROM tbl.escrow_token_contract_address AS etca WHERE etca.address = a_token_out_address AND etca.blockchain = a_blockchain)
+		AND dex_trade.blockchain = a_blockchain
+		AND dex_trade.dex = COALESCE(a_dex, dex_trade.dex);
+END
+"#,
+        ),
+        ProceduralFunction::new(
+            "fun_watcher_upsert_last_dex_trade_for_pair",
+            vec![
+                Field::new("transaction_hash", Type::BlockchainTransactionHash),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("dex", Type::enum_ref("dex")),
+                Field::new("token_in_address", Type::BlockchainAddress),
+                Field::new("token_out_address", Type::BlockchainAddress),
+                Field::new("amount_in", Type::BlockchainDecimal),
+                Field::new("amount_out", Type::BlockchainDecimal),
+            ],
+            vec![Field::new("last_dex_trade_for_pair_id", Type::BigInt)],
+            r#"
+DECLARE
+		_last_dex_trade_for_pair_id BIGINT;
+		_token_in_id BIGINT;
+		_token_out_id BIGINT;
+BEGIN
+		SELECT etca.pkey_id INTO _token_in_id
+		FROM tbl.escrow_token_contract_address AS etca
+		WHERE etca.address = a_token_in_address AND etca.blockchain = a_blockchain;
+
+		SELECT etca.pkey_id INTO _token_out_id
+		FROM tbl.escrow_token_contract_address AS etca
+		WHERE etca.address = a_token_out_address AND etca.blockchain = a_blockchain;
+
+		ASSERT _token_in_id NOTNULL;
+		ASSERT _token_out_id NOTNULL;
+
+		SELECT ldtfp.pkey_id INTO _last_dex_trade_for_pair_id
+		FROM tbl.last_dex_trade_for_pair AS ldtfp
+		WHERE ldtfp.fkey_token_in = _token_in_id AND ldtfp.fkey_token_out = _token_out_id
+		AND ldtfp.blockchain = a_blockchain AND ldtfp.dex = a_dex;
+
+		-- if the trade record for this token_in, token_out, dex, and blockchain does not exist, create one
+		IF _last_dex_trade_for_pair_id IS NULL THEN
+			INSERT INTO tbl.last_dex_trade_for_pair (
+				transaction_hash,
+				blockchain,
+				dex,
+				fkey_token_in,
+				fkey_token_out,
+				amount_in,
+				amount_out,
+				happened_at
+			) VALUES (
+				a_transaction_hash,
+				a_blockchain,
+				a_dex,
+				_token_in_id,
+				_token_out_id,
+				a_amount_in,
+				a_amount_out,
+				EXTRACT(EPOCH FROM NOW())
+			) RETURNING pkey_id INTO _last_dex_trade_for_pair_id;
+		ELSE
+			UPDATE tbl.last_dex_trade_for_pair
+			SET transaction_hash = a_transaction_hash,
+				amount_in = a_amount_in,
+				amount_out = a_amount_out,
+				happened_at = EXTRACT(EPOCH FROM NOW())
+			WHERE pkey_id = _last_dex_trade_for_pair_id;
+		END IF;
+
+		RETURN QUERY SELECT _last_dex_trade_for_pair_id;
+END
+"#,
+        ),
+        ProceduralFunction::new(
             "fun_watcher_upsert_strategy_pool_contract_asset_balance",
             vec![
                 Field::new("strategy_pool_contract_id", Type::BigInt),
