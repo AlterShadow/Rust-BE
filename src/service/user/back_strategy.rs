@@ -1064,7 +1064,7 @@ fn calculate_sp_tokens_to_mint_nth_backer_sergio_tries_to_help(
     /* calculate ratio as total strategy pool value / total supply */
     /* i.e. the share value of one base token */
     /* i.e. the base token price in shares */
-    let ratio = strategy_pool_assets_total_value.div_as_f64(strategy_token_total_supply)?;
+    let ratio = strategy_token_total_supply.div_as_f64(strategy_pool_assets_total_value)?;
 
     /* calculate strategy pool tokens to mint as actual_amount * ratio */
     Ok(base_token_actual_amount.mul_f64(ratio)?)
