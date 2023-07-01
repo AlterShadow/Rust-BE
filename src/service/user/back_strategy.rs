@@ -889,7 +889,6 @@ pub async fn user_back_strategy_sergio_tries_to_help(
             back_usdc_amount_minus_fees,
         )?,
         true => calculate_sp_tokens_to_mint_nth_backer_sergio_tries_to_help(
-            &EnumDex::PancakeSwap,
             total_strategy_pool_tokens,
             sp_assets_and_amounts,
             strategy_pool_assets_bought,
@@ -1028,7 +1027,6 @@ fn calculate_sp_tokens_to_mint_1st_backer_sergio_tries_to_help(
 }
 
 fn calculate_sp_tokens_to_mint_nth_backer_sergio_tries_to_help(
-    dex: &EnumDex,
     strategy_token_total_supply: U256,
     strategy_pool_asset_balances: HashMap<Address, U256>,
     bought_asset_amounts: HashMap<Address, U256>,
@@ -1048,7 +1046,6 @@ fn calculate_sp_tokens_to_mint_nth_backer_sergio_tries_to_help(
 
         /* get base token value of one asset */
         /* i.e. asset price in base tokens */
-        // TODO: cache asset price in base tokens + DEX in database
         let asset_price_in_base_tokens =
             amount_of_base_token_spent_on_asset.div_as_f64(*amount_of_asset_bought)?;
 
