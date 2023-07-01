@@ -1,16 +1,3 @@
-#[path = "../admin/endpoints.rs"]
-pub mod admin_endpoints;
-#[path = "../admin/method.rs"]
-mod admin_method;
-#[path = "../shared/audit/mod.rs"]
-pub mod audit;
-mod back_strategy;
-pub mod endpoints;
-mod method;
-
-use crate::admin_method::*;
-use crate::audit::AuditLogger;
-use crate::method::*;
 use api::cmc::CoinMarketCap;
 use eth_sdk::escrow::AbstractEscrowContract;
 use eth_sdk::signer::Secp256k1SecretKey;
@@ -26,6 +13,9 @@ use lib::log::{setup_logs, LogLevel};
 use lib::ws::{EndpointAuthController, SubscribeManager, WebsocketServer};
 use mc2fi_auth::endpoints::endpoint_auth_authorize;
 use mc2fi_auth::method::MethodAuthAuthorize;
+use mc2fi_user::admin_method::*;
+use mc2fi_user::audit::AuditLogger;
+use mc2fi_user::method::*;
 use secrecy::{ExposeSecret, SecretString};
 use serde::Deserialize;
 use std::fmt::Debug;
@@ -123,6 +113,7 @@ async fn main() -> Result<()> {
     server.add_handler(MethodUserListDepositWithdrawBalances);
     server.add_handler(MethodUserGetDepositWithdrawBalance);
     server.add_handler(MethodUserListEscrowTokenContractAddresses);
+    server.add_handler(MethodUserListBackStrategyLedger);
     // they are basically the same but MethodUserGetEscrowAddressForStrategy is more user friendly
     server.add_handler(MethodUserGetDepositAddresses {
         addresses: config.escrow_addresses.clone(),

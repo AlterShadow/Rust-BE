@@ -40,6 +40,7 @@
   "UserGetStrategy",
   "UserGetStrategyStatistics",
   "UserGetUserProfile",
+  "UserListBackStrategyLedger",
   "UserListBackedStrategies",
   "UserListDepositLedger",
   "UserListDepositWithdrawBalances",

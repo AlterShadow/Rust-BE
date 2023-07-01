@@ -358,7 +358,7 @@ pub struct FunUserListBackStrategyLedgerRespRow {
     pub quantity: BlockchainDecimal,
     pub blockchain: EnumBlockChain,
     pub transaction_hash: BlockchainTransactionHash,
-    pub time: i64,
+    pub happened_at: i64,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -1126,7 +1126,10 @@ impl DatabaseRequest for FunUserListBackedStrategiesReq {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserListBackStrategyLedgerReq {
-    pub user_id: i64,
+    pub limit: i64,
+    pub offset: i64,
+    #[serde(default)]
+    pub user_id: Option<i64>,
     #[serde(default)]
     pub strategy_id: Option<i64>,
 }
@@ -1135,10 +1138,12 @@ pub struct FunUserListBackStrategyLedgerReq {
 impl DatabaseRequest for FunUserListBackStrategyLedgerReq {
     type ResponseRow = FunUserListBackStrategyLedgerRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_list_back_strategy_ledger(a_user_id => $1::bigint, a_strategy_id => $2::bigint);"
+        "SELECT * FROM api.fun_user_list_back_strategy_ledger(a_limit => $1::bigint, a_offset => $2::bigint, a_user_id => $3::bigint, a_strategy_id => $4::bigint);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
+            &self.limit as &(dyn ToSql + Sync),
+            &self.offset as &(dyn ToSql + Sync),
             &self.user_id as &(dyn ToSql + Sync),
             &self.strategy_id as &(dyn ToSql + Sync),
         ]

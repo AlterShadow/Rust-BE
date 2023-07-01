@@ -739,14 +739,14 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_list_back_strategy_ledger(a_user_id bigint, a_strategy_id bigint DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_user_list_back_strategy_ledger(a_limit bigint, a_offset bigint, a_user_id bigint DEFAULT NULL, a_strategy_id bigint DEFAULT NULL)
 RETURNS table (
     "back_ledger_id" bigint,
     "strategy_id" bigint,
     "quantity" varchar,
     "blockchain" enum_block_chain,
     "transaction_hash" varchar,
-    "time" bigint
+    "happened_at" bigint
 )
 LANGUAGE plpgsql
 AS $$
@@ -757,12 +757,15 @@ BEGIN
                         a.quantity_of_usdc         AS quantity,
                         a.blockchain       AS blockchain,
                         a.transaction_hash AS transaction_hash,
-                        a.happened_at             AS time
+                        a.happened_at             AS happened_at
                  FROM tbl.user_back_exit_strategy_ledger AS a
-                 WHERE a.fkey_user_id = a_user_id
-                  AND (a_strategy_id NOTNULL OR a_strategy_id = a.fkey_strategy_id)
-									AND a.is_back = TRUE
-								 ORDER BY a.happened_at DESC;
+                 WHERE (a_user_id ISNULL OR a.fkey_user_id = a_user_id)
+                    AND (a_strategy_id ISNULL OR a_strategy_id = a.fkey_strategy_id)
+                        AND a.is_back = TRUE
+                 ORDER BY a.happened_at
+                 LIMIT a_limit
+                 OFFSET a_offset;
+                  ;
 END
 
 $$;

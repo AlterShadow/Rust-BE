@@ -26,7 +26,6 @@ use lib::toolbox::*;
 use lib::utils::hex_decode;
 use lib::ws::SubscribeManager;
 use lib::{DEFAULT_LIMIT, DEFAULT_OFFSET};
-use num_traits::cast::FromPrimitive;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::time::sleep;
@@ -2454,6 +2453,43 @@ impl RequestHandler for MethodUserListEscrowTokenContractAddresses {
                     token_address: x.address.into(),
                     description: x.description,
                     is_stablecoin: x.is_stablecoin,
+                }),
+            })
+        }
+        .boxed()
+    }
+}
+pub struct MethodUserListBackStrategyLedger;
+impl RequestHandler for MethodUserListBackStrategyLedger {
+    type Request = UserListBackStrategyLedgerRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db = toolbox.get_db();
+        async move {
+            ensure_user_role(ctx, EnumRole::User)?;
+            let ledger = db
+                .execute(FunUserListBackStrategyLedgerReq {
+                    limit: req.limit.unwrap_or(DEFAULT_LIMIT),
+                    offset: req.offset.unwrap_or(DEFAULT_OFFSET),
+                    strategy_id: req.strategy_id,
+                    user_id: Some(ctx.user_id),
+                })
+                .await?;
+            Ok(UserListBackStrategyLedgerResponse {
+                back_ledger_total: 0,
+
+                back_ledger: ledger.map(|x| BackStrategyLedgerRow {
+                    back_ledger_id: x.back_ledger_id,
+                    strategy_id: x.strategy_id,
+                    quantity: x.quantity.into(),
+                    blockchain: x.blockchain,
+                    transaction_hash: x.transaction_hash.into(),
+                    happened_at: x.happened_at,
                 }),
             })
         }

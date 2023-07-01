@@ -1128,11 +1128,9 @@ pub struct BackStrategyLedgerRow {
     #[serde(with = "WithBlockchainDecimal")]
     pub quantity: U256,
     pub blockchain: EnumBlockChain,
-    pub dex: String,
-    pub is_back: bool,
     #[serde(with = "WithBlockchainTransactionHash")]
     pub transaction_hash: H256,
-    pub time: i64,
+    pub happened_at: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1785,6 +1783,8 @@ pub struct UserListBackStrategyLedgerRequest {
     pub limit: Option<i64>,
     #[serde(default)]
     pub offset: Option<i64>,
+    #[serde(default)]
+    pub strategy_id: Option<i64>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -3892,6 +3892,12 @@ impl WsRequest for UserListBackStrategyLedgerRequest {
       "ty": {
         "Optional": "BigInt"
       }
+    },
+    {
+      "name": "strategy_id",
+      "ty": {
+        "Optional": "BigInt"
+      }
     }
   ],
   "returns": [
@@ -3924,19 +3930,11 @@ impl WsRequest for UserListBackStrategyLedgerRequest {
               }
             },
             {
-              "name": "dex",
-              "ty": "String"
-            },
-            {
-              "name": "is_back",
-              "ty": "Boolean"
-            },
-            {
               "name": "transaction_hash",
               "ty": "BlockchainTransactionHash"
             },
             {
-              "name": "time",
+              "name": "happened_at",
               "ty": "BigInt"
             }
           ]

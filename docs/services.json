@@ -1478,6 +1478,12 @@
               "ty": {
                 "Optional": "BigInt"
               }
+            },
+            {
+              "name": "strategy_id",
+              "ty": {
+                "Optional": "BigInt"
+              }
             }
           ],
           "returns": [
@@ -1510,19 +1516,11 @@
                       }
                     },
                     {
-                      "name": "dex",
-                      "ty": "String"
-                    },
-                    {
-                      "name": "is_back",
-                      "ty": "Boolean"
-                    },
-                    {
                       "name": "transaction_hash",
                       "ty": "BlockchainTransactionHash"
                     },
                     {
-                      "name": "time",
+                      "name": "happened_at",
                       "ty": "BigInt"
                     }
                   ]

@@ -30,7 +30,7 @@ ID: 2
 |20110|UserExitStrategy|strategy_id, quantity, blockchain|success, transaction_hash||
 |20081|UserRequestRefund|quantity, wallet_address, blockchain|success||
 |20090|UserListBackedStrategies|limit, offset|strategies_total, strategies||
-|20100|UserListBackStrategyLedger|limit, offset|back_ledger_total, back_ledger||
+|20100|UserListBackStrategyLedger|limit, offset, strategy_id|back_ledger_total, back_ledger||
 |20120|UserListExitStrategyLedger|strategy_id, limit, offset|exit_ledger_total, exit_ledger||
 |20130|UserFollowExpert|expert_id|success|User follows an expert|
 |20140|UserListFollowedExperts|limit, offset|experts_total, experts|User lists followed experts|

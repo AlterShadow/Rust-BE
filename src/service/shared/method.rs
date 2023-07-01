@@ -1,3 +1,5 @@
+use num_traits::FromPrimitive;
+
 pub fn ensure_user_role(ctx: RequestContext, role: EnumRole) -> Result<()> {
     let ctx_role = EnumRole::from_u32(ctx.role).context("Invalid role")?;
     ensure!(

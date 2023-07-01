@@ -288,6 +288,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
             vec![
                 Field::new("limit", Type::optional(Type::BigInt)),
                 Field::new("offset", Type::optional(Type::BigInt)),
+                Field::new("strategy_id", Type::optional(Type::BigInt)),
             ],
             vec![
                 Field::new("back_ledger_total", Type::BigInt),
@@ -300,10 +301,8 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                             Field::new("strategy_id", Type::BigInt),
                             Field::new("quantity", Type::BlockchainDecimal),
                             Field::new("blockchain", Type::enum_ref("block_chain")),
-                            Field::new("dex", Type::String),
-                            Field::new("is_back", Type::Boolean),
                             Field::new("transaction_hash", Type::BlockchainTransactionHash),
-                            Field::new("time", Type::BigInt),
+                            Field::new("happened_at", Type::BigInt),
                         ],
                     ),
                 ),
