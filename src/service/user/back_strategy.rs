@@ -420,7 +420,6 @@ pub async fn user_back_strategy(
     db.execute(FunWatcherUpsertUserStrategyBalanceReq {
         user_id: ctx.user_id,
         strategy_id,
-        token_id,
         blockchain,
         old_balance: user_strategy_balance,
         new_balance: (*user_strategy_balance + strategy_pool_token_to_mint).into(),
@@ -886,7 +885,6 @@ pub async fn user_back_strategy_sergio_tries_to_help(
     db.execute(FunWatcherUpsertUserStrategyBalanceReq {
         user_id: ctx.user_id,
         strategy_id,
-        token_id,
         blockchain,
         old_balance: user_strategy_balance,
         new_balance: (*user_strategy_balance + strategy_pool_token_to_mint).into(),

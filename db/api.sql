@@ -3202,7 +3202,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_watcher_upsert_user_strategy_balance(a_user_id bigint, a_strategy_id bigint, a_token_id bigint, a_blockchain enum_block_chain, a_old_balance varchar, a_new_balance varchar)
+CREATE OR REPLACE FUNCTION api.fun_watcher_upsert_user_strategy_balance(a_user_id bigint, a_strategy_id bigint, a_blockchain enum_block_chain, a_old_balance varchar, a_new_balance varchar)
 RETURNS table (
     "ret_pkey_id" bigint
 )

@@ -572,7 +572,6 @@ END
             vec![
                 Field::new("user_id", Type::BigInt),
                 Field::new("strategy_id", Type::BigInt),
-                Field::new("token_id", Type::BigInt),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("old_balance", Type::BlockchainDecimal),
                 Field::new("new_balance", Type::BlockchainDecimal),
