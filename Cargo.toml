@@ -42,19 +42,20 @@ crypto = { path = "src/service/shared/crypto" }
 eth-sdk = { path = "src/service/shared/eth-sdk" }
 api = { path = "src/service/shared/api" }
 mc2fi_auth = { path = "src/service/auth" }
+mc2fi_user = { path = "src/service/user" }
 mc2fi_watcher = { path = "src/service/watcher" }
 tracing-appender = "0.2"
 
 [workspace]
 resolver = "2"
 members = [
-    "src/service/shared/eth-sdk",
-    "src/service/shared/crypto",
-    "src/service/shared/api",
-    "src/service/auth",
-    "src/service/user",
-    "src/service/admin",
-    "src/service/watcher",
-    "src/lib",
-    "src/gen",
+	"src/service/shared/eth-sdk",
+	"src/service/shared/crypto",
+	"src/service/shared/api",
+	"src/service/auth",
+	"src/service/user",
+	"src/service/admin",
+	"src/service/watcher",
+	"src/lib",
+	"src/gen",
 ]

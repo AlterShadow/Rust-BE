@@ -1842,6 +1842,7 @@ dependencies = [
  "itertools",
  "lib",
  "mc2fi_auth",
+ "mc2fi_user",
  "mc2fi_watcher",
  "model",
  "num",

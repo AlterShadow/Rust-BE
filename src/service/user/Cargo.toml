@@ -63,3 +63,6 @@ no-github-ci-tests = []
 name = "mc2fi_user"
 path = "main.rs"
 
+[lib]
+name = "mc2fi_user"
+path = "lib.rs"
