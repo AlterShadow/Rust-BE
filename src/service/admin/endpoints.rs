@@ -266,5 +266,32 @@ pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
             ],
             vec![],
         ),
+        EndpointSchema::new(
+            "AdminListBackStrategyLedger",
+            32040,
+            vec![
+                Field::new("limit", Type::optional(Type::BigInt)),
+                Field::new("offset", Type::optional(Type::BigInt)),
+                Field::new("strategy_id", Type::optional(Type::BigInt)),
+            ],
+            vec![
+                Field::new("back_ledger_total", Type::BigInt),
+                Field::new(
+                    "back_ledger",
+                    Type::datatable(
+                        "AdminBackStrategyLedgerRow",
+                        vec![
+                            Field::new("back_ledger_id", Type::BigInt),
+                            Field::new("user_id", Type::BigInt),
+                            Field::new("strategy_id", Type::BigInt),
+                            Field::new("quantity", Type::BlockchainDecimal),
+                            Field::new("blockchain", Type::enum_ref("block_chain")),
+                            Field::new("transaction_hash", Type::BlockchainTransactionHash),
+                            Field::new("happened_at", Type::BigInt),
+                        ],
+                    ),
+                ),
+            ],
+        ),
     ]
 }

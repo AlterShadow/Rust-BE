@@ -5,6 +5,7 @@
   "AdminApproveStrategy",
   "AdminApproveUserBecomeExpert",
   "AdminGetSystemConfig",
+  "AdminListBackStrategyLedger",
   "AdminListBackers",
   "AdminListExperts",
   "AdminListPendingExpertApplications",

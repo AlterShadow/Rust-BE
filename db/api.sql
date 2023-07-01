@@ -743,6 +743,7 @@ CREATE OR REPLACE FUNCTION api.fun_user_list_back_strategy_ledger(a_limit bigint
 RETURNS table (
     "total" bigint,
     "back_ledger_id" bigint,
+    "user_id" bigint,
     "strategy_id" bigint,
     "quantity" varchar,
     "blockchain" enum_block_chain,
@@ -755,6 +756,7 @@ AS $$
 BEGIN
     RETURN QUERY SELECT COUNT(*) OVER() AS total,
                         a.pkey_id          AS back_ledger_id,
+                        a.fkey_user_id     AS user_id,
                         a.fkey_strategy_id AS strategy_id,
                         a.quantity_of_usdc         AS quantity,
                         a.blockchain       AS blockchain,

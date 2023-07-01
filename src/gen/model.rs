@@ -463,6 +463,9 @@ pub enum EnumEndpoint {
     ///
     #[postgres(name = "AdminAddEscrowContractAddress")]
     AdminAddEscrowContractAddress = 32030,
+    ///
+    #[postgres(name = "AdminListBackStrategyLedger")]
+    AdminListBackStrategyLedger = 32040,
 }
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -867,12 +870,41 @@ pub struct AdminApproveUserBecomeExpertResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct AdminBackStrategyLedgerRow {
+    pub back_ledger_id: i64,
+    pub user_id: i64,
+    pub strategy_id: i64,
+    #[serde(with = "WithBlockchainDecimal")]
+    pub quantity: U256,
+    pub blockchain: EnumBlockChain,
+    #[serde(with = "WithBlockchainTransactionHash")]
+    pub transaction_hash: H256,
+    pub happened_at: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct AdminGetSystemConfigRequest {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminGetSystemConfigResponse {
     pub config_placeholder_1: i64,
     pub config_placeholder_2: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminListBackStrategyLedgerRequest {
+    #[serde(default)]
+    pub limit: Option<i64>,
+    #[serde(default)]
+    pub offset: Option<i64>,
+    #[serde(default)]
+    pub strategy_id: Option<i64>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminListBackStrategyLedgerResponse {
+    pub back_ledger_total: i64,
+    pub back_ledger: Vec<AdminBackStrategyLedgerRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -8066,4 +8098,85 @@ impl WsRequest for AdminAddEscrowContractAddressRequest {
 }
 impl WsResponse for AdminAddEscrowContractAddressResponse {
     type Request = AdminAddEscrowContractAddressRequest;
+}
+
+impl WsRequest for AdminListBackStrategyLedgerRequest {
+    type Response = AdminListBackStrategyLedgerResponse;
+    const METHOD_ID: u32 = 32040;
+    const SCHEMA: &'static str = r#"{
+  "name": "AdminListBackStrategyLedger",
+  "code": 32040,
+  "parameters": [
+    {
+      "name": "limit",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "offset",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "strategy_id",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    }
+  ],
+  "returns": [
+    {
+      "name": "back_ledger_total",
+      "ty": "BigInt"
+    },
+    {
+      "name": "back_ledger",
+      "ty": {
+        "DataTable": {
+          "name": "AdminBackStrategyLedgerRow",
+          "fields": [
+            {
+              "name": "back_ledger_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "user_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "quantity",
+              "ty": "BlockchainDecimal"
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
+            },
+            {
+              "name": "transaction_hash",
+              "ty": "BlockchainTransactionHash"
+            },
+            {
+              "name": "happened_at",
+              "ty": "BigInt"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": null,
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for AdminListBackStrategyLedgerResponse {
+    type Request = AdminListBackStrategyLedgerRequest;
 }

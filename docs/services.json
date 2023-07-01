@@ -5152,6 +5152,79 @@
           "stream_response": null,
           "description": "",
           "json_schema": null
+        },
+        {
+          "name": "AdminListBackStrategyLedger",
+          "code": 32040,
+          "parameters": [
+            {
+              "name": "limit",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "offset",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "strategy_id",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "name": "back_ledger_total",
+              "ty": "BigInt"
+            },
+            {
+              "name": "back_ledger",
+              "ty": {
+                "DataTable": {
+                  "name": "AdminBackStrategyLedgerRow",
+                  "fields": [
+                    {
+                      "name": "back_ledger_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "user_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "strategy_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "quantity",
+                      "ty": "BlockchainDecimal"
+                    },
+                    {
+                      "name": "blockchain",
+                      "ty": {
+                        "EnumRef": "block_chain"
+                      }
+                    },
+                    {
+                      "name": "transaction_hash",
+                      "ty": "BlockchainTransactionHash"
+                    },
+                    {
+                      "name": "happened_at",
+                      "ty": "BigInt"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "stream_response": null,
+          "description": "",
+          "json_schema": null
         }
       ]
     },

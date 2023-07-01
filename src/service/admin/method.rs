@@ -678,3 +678,41 @@ impl RequestHandler for MethodAdminAddEscrowContractAddress {
         .boxed()
     }
 }
+
+pub struct MethodAdminListBackStrategyLedger;
+impl RequestHandler for MethodAdminListBackStrategyLedger {
+    type Request = AdminListBackStrategyLedgerRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db = toolbox.get_db();
+        async move {
+            ensure_user_role(ctx, EnumRole::Admin)?;
+            let ledger = db
+                .execute(FunUserListBackStrategyLedgerReq {
+                    limit: req.limit.unwrap_or(DEFAULT_LIMIT),
+                    offset: req.offset.unwrap_or(DEFAULT_OFFSET),
+                    strategy_id: req.strategy_id,
+                    user_id: None,
+                })
+                .await?;
+            Ok(AdminListBackStrategyLedgerResponse {
+                back_ledger_total: ledger.first(|x| x.total).unwrap_or_default(),
+                back_ledger: ledger.map(|x| AdminBackStrategyLedgerRow {
+                    user_id: x.user_id,
+                    back_ledger_id: x.back_ledger_id,
+                    strategy_id: x.strategy_id,
+                    quantity: x.quantity.into(),
+                    blockchain: x.blockchain,
+                    transaction_hash: x.transaction_hash.into(),
+                    happened_at: x.happened_at,
+                }),
+            })
+        }
+        .boxed()
+    }
+}

@@ -355,6 +355,7 @@ pub struct FunUserListAuditRulesRespRow {
 pub struct FunUserListBackStrategyLedgerRespRow {
     pub total: i64,
     pub back_ledger_id: i64,
+    pub user_id: i64,
     pub strategy_id: i64,
     pub quantity: BlockchainDecimal,
     pub blockchain: EnumBlockChain,

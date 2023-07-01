@@ -282,6 +282,7 @@ END
             vec![
                 Field::new("total", Type::BigInt),
                 Field::new("back_ledger_id", Type::BigInt),
+                Field::new("user_id", Type::BigInt),
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("quantity", Type::BlockchainDecimal),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
@@ -292,6 +293,7 @@ END
 BEGIN
     RETURN QUERY SELECT COUNT(*) OVER() AS total,
                         a.pkey_id          AS back_ledger_id,
+                        a.fkey_user_id     AS user_id,
                         a.fkey_strategy_id AS strategy_id,
                         a.quantity_of_usdc         AS quantity,
                         a.blockchain       AS blockchain,
