@@ -1530,5 +1530,44 @@ BEGIN
 END
             "#,
         ),
+        ProceduralFunction::new(
+            "fun_user_list_user_strategy_balance",
+            vec![
+                Field::new("limit", Type::BigInt),
+                Field::new("offset", Type::BigInt),
+                Field::new("user_id", Type::BigInt),
+                Field::new("strategy_id", Type::optional(Type::BigInt)),
+            ],
+            vec![
+                Field::new("total", Type::BigInt),
+                Field::new("strategy_id", Type::BigInt),
+                Field::new("strategy_name", Type::String),
+                Field::new("balance", Type::BlockchainDecimal),
+                Field::new("user_strategy_wallet_address", Type::BlockchainAddress),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+            ],
+            r#"
+BEGIN
+            SELECT 
+                    COUNT(*) OVER() AS total,
+                    spc.fkey_strategy_id,
+                    s.pkey_id,
+                    s.name,
+                    spt.balance,
+                    usw.address,
+                    s.blockchain
+			FROM tbl.user_strategy_balance AS spt
+			JOIN tbl.strategy_pool_contract AS spc ON spt.fkey_strategy_pool_contract_id = spc.pkey_id
+			JOIN tbl.user_strategy_wallet AS usw ON spt.fkey_user_strategy_wallet_id = usw.pkey_id
+			JOIN tbl.strategy AS s on s.pkey_id = spc.fkey_strategy_id
+			WHERE (a_strategy_id ISNULL OR spc.fkey_strategy_id = a_strategy_id)
+			AND usw.fkey_user_id = a_user_id
+			ORDER BY spt.pkey_id
+			OFFSET a_offset
+			LIMIT a_limit
+			;
+END
+            "#,
+        ),
     ]
 }

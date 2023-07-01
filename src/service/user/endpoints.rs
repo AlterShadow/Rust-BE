@@ -929,5 +929,30 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 ),
             ],
         ),
+        EndpointSchema::new(
+            "UserListStrategyTokenBalance",
+            20530,
+            vec![
+                Field::new("limit", Type::optional(Type::BigInt)),
+                Field::new("offset", Type::optional(Type::BigInt)),
+                Field::new("strategy_id", Type::optional(Type::BigInt)),
+            ],
+            vec![
+                Field::new("tokens_total", Type::BigInt),
+                Field::new(
+                    "tokens",
+                    Type::datatable(
+                        "UserListStrategyTokenBalanceRow",
+                        vec![
+                            Field::new("strategy_id", Type::BigInt),
+                            Field::new("strategy_name", Type::String),
+                            Field::new("balance", Type::BlockchainDecimal),
+                            Field::new("address", Type::BlockchainAddress),
+                            Field::new("blockchain", Type::enum_ref("block_chain")),
+                        ],
+                    ),
+                ),
+            ],
+        ),
     ]
 }

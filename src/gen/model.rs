@@ -404,6 +404,9 @@ pub enum EnumEndpoint {
     #[postgres(name = "UserListEscrowTokenContractAddresses")]
     UserListEscrowTokenContractAddresses = 20520,
     ///
+    #[postgres(name = "UserListStrategyTokenBalance")]
+    UserListStrategyTokenBalance = 20530,
+    ///
     #[postgres(name = "AdminListUsers")]
     AdminListUsers = 30010,
     ///
@@ -2085,6 +2088,33 @@ pub struct UserListStrategyInitialTokenRatioRequest {
 pub struct UserListStrategyInitialTokenRatioResponse {
     pub token_ratios_total: i64,
     pub token_ratios: Vec<ListStrategyInitialTokenRatioRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListStrategyTokenBalanceRequest {
+    #[serde(default)]
+    pub limit: Option<i64>,
+    #[serde(default)]
+    pub offset: Option<i64>,
+    #[serde(default)]
+    pub strategy_id: Option<i64>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListStrategyTokenBalanceResponse {
+    pub tokens_total: i64,
+    pub tokens: Vec<UserListStrategyTokenBalanceRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListStrategyTokenBalanceRow {
+    pub strategy_id: i64,
+    pub strategy_name: String,
+    #[serde(with = "WithBlockchainDecimal")]
+    pub balance: U256,
+    #[serde(with = "WithBlockchainAddress")]
+    pub address: Address,
+    pub blockchain: EnumBlockChain,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -6784,6 +6814,79 @@ impl WsRequest for UserListEscrowTokenContractAddressesRequest {
 }
 impl WsResponse for UserListEscrowTokenContractAddressesResponse {
     type Request = UserListEscrowTokenContractAddressesRequest;
+}
+
+impl WsRequest for UserListStrategyTokenBalanceRequest {
+    type Response = UserListStrategyTokenBalanceResponse;
+    const METHOD_ID: u32 = 20530;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserListStrategyTokenBalance",
+  "code": 20530,
+  "parameters": [
+    {
+      "name": "limit",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "offset",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "strategy_id",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    }
+  ],
+  "returns": [
+    {
+      "name": "tokens_total",
+      "ty": "BigInt"
+    },
+    {
+      "name": "tokens",
+      "ty": {
+        "DataTable": {
+          "name": "UserListStrategyTokenBalanceRow",
+          "fields": [
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "strategy_name",
+              "ty": "String"
+            },
+            {
+              "name": "balance",
+              "ty": "BlockchainDecimal"
+            },
+            {
+              "name": "address",
+              "ty": "BlockchainAddress"
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": null,
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for UserListStrategyTokenBalanceResponse {
+    type Request = UserListStrategyTokenBalanceRequest;
 }
 
 impl WsRequest for AdminListUsersRequest {

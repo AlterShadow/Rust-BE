@@ -4054,6 +4054,71 @@
           "stream_response": null,
           "description": "",
           "json_schema": null
+        },
+        {
+          "name": "UserListStrategyTokenBalance",
+          "code": 20530,
+          "parameters": [
+            {
+              "name": "limit",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "offset",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "strategy_id",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "name": "tokens_total",
+              "ty": "BigInt"
+            },
+            {
+              "name": "tokens",
+              "ty": {
+                "DataTable": {
+                  "name": "UserListStrategyTokenBalanceRow",
+                  "fields": [
+                    {
+                      "name": "strategy_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "strategy_name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "balance",
+                      "ty": "BlockchainDecimal"
+                    },
+                    {
+                      "name": "address",
+                      "ty": "BlockchainAddress"
+                    },
+                    {
+                      "name": "blockchain",
+                      "ty": {
+                        "EnumRef": "block_chain"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "stream_response": null,
+          "description": "",
+          "json_schema": null
         }
       ]
     },

@@ -2061,6 +2061,42 @@ END
 $$;
         
 
+CREATE OR REPLACE FUNCTION api.fun_user_list_user_strategy_balance(a_limit bigint, a_offset bigint, a_user_id bigint, a_strategy_id bigint DEFAULT NULL)
+RETURNS table (
+    "total" bigint,
+    "strategy_id" bigint,
+    "strategy_name" varchar,
+    "balance" varchar,
+    "user_strategy_wallet_address" varchar,
+    "blockchain" enum_block_chain
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+            SELECT 
+                    COUNT(*) OVER() AS total,
+                    spc.fkey_strategy_id,
+                    s.pkey_id,
+                    s.name,
+                    spt.balance,
+                    usw.address,
+                    s.blockchain
+			FROM tbl.user_strategy_balance AS spt
+			JOIN tbl.strategy_pool_contract AS spc ON spt.fkey_strategy_pool_contract_id = spc.pkey_id
+			JOIN tbl.user_strategy_wallet AS usw ON spt.fkey_user_strategy_wallet_id = usw.pkey_id
+			JOIN tbl.strategy AS s on s.pkey_id = spc.fkey_strategy_id
+			WHERE (a_strategy_id ISNULL OR spc.fkey_strategy_id = a_strategy_id)
+			AND usw.fkey_user_id = a_user_id
+			ORDER BY spt.pkey_id
+			OFFSET a_offset
+			LIMIT a_limit
+			;
+END
+            
+$$;
+        
+
 CREATE OR REPLACE FUNCTION api.fun_admin_list_users(a_limit bigint, a_offset bigint, a_user_id bigint DEFAULT NULL, a_address varchar DEFAULT NULL, a_username varchar DEFAULT NULL, a_email varchar DEFAULT NULL, a_role enum_role DEFAULT NULL)
 RETURNS table (
     "total" bigint,

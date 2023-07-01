@@ -497,6 +497,16 @@ pub struct FunUserListUserDepositWithdrawBalanceRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunUserListUserStrategyBalanceRespRow {
+    pub total: i64,
+    pub strategy_id: i64,
+    pub strategy_name: String,
+    pub balance: BlockchainDecimal,
+    pub user_strategy_wallet_address: BlockchainAddress,
+    pub blockchain: EnumBlockChain,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserRemoveRegisteredWalletRespRow {}
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -2154,6 +2164,31 @@ impl DatabaseRequest for FunUserListEscrowTokenContractAddressReq {
             &self.address as &(dyn ToSql + Sync),
             &self.symbol as &(dyn ToSql + Sync),
             &self.is_stablecoin as &(dyn ToSql + Sync),
+        ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserListUserStrategyBalanceReq {
+    pub limit: i64,
+    pub offset: i64,
+    pub user_id: i64,
+    #[serde(default)]
+    pub strategy_id: Option<i64>,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunUserListUserStrategyBalanceReq {
+    type ResponseRow = FunUserListUserStrategyBalanceRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_list_user_strategy_balance(a_limit => $1::bigint, a_offset => $2::bigint, a_user_id => $3::bigint, a_strategy_id => $4::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.limit as &(dyn ToSql + Sync),
+            &self.offset as &(dyn ToSql + Sync),
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.strategy_id as &(dyn ToSql + Sync),
         ]
     }
 }

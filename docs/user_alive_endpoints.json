@@ -55,6 +55,7 @@
   "UserListStrategyBackers",
   "UserListStrategyFollowers",
   "UserListStrategyInitialTokenRatio",
+  "UserListStrategyTokenBalance",
   "UserListStrategyWallets",
   "UserListTopPerformingExperts",
   "UserListTopPerformingStrategies",

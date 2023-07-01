@@ -114,6 +114,7 @@ async fn main() -> Result<()> {
     server.add_handler(MethodUserGetDepositWithdrawBalance);
     server.add_handler(MethodUserListEscrowTokenContractAddresses);
     server.add_handler(MethodUserListBackStrategyLedger);
+    server.add_handler(MethodUserListStrategyTokenBalance);
     // they are basically the same but MethodUserGetEscrowAddressForStrategy is more user friendly
     server.add_handler(MethodUserGetDepositAddresses {
         addresses: config.escrow_addresses.clone(),

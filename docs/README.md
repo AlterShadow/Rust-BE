@@ -70,6 +70,7 @@ ID: 2
 |20510|UserListDepositWithdrawBalances||balances||
 |20511|UserGetDepositWithdrawBalance|token_id|balance||
 |20520|UserListEscrowTokenContractAddresses|limit, offset, blockchain, is_stablecoin|tokens_total, tokens||
+|20530|UserListStrategyTokenBalance|limit, offset, strategy_id|tokens_total, tokens||
 
 # admin Server
 ID: 3

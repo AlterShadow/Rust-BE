@@ -2495,3 +2495,37 @@ impl RequestHandler for MethodUserListBackStrategyLedger {
         .boxed()
     }
 }
+
+pub struct MethodUserListStrategyTokenBalance;
+impl RequestHandler for MethodUserListStrategyTokenBalance {
+    type Request = UserListStrategyTokenBalanceRequest;
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db = toolbox.get_db();
+        async move {
+            let balance = db
+                .execute(FunUserListUserStrategyBalanceReq {
+                    limit: req.limit.unwrap_or(DEFAULT_LIMIT),
+                    offset: req.offset.unwrap_or(DEFAULT_OFFSET),
+                    user_id: ctx.user_id,
+                    strategy_id: req.strategy_id,
+                })
+                .await?;
+            Ok(UserListStrategyTokenBalanceResponse {
+                tokens_total: balance.first(|x| x.total).unwrap_or_default(),
+                tokens: balance.map(|x| UserListStrategyTokenBalanceRow {
+                    strategy_id: x.strategy_id,
+                    strategy_name: x.strategy_name,
+                    blockchain: x.blockchain,
+                    address: x.user_strategy_wallet_address.into(),
+                    balance: x.balance.into(),
+                }),
+            })
+        }
+        .boxed()
+    }
+}
