@@ -2481,8 +2481,7 @@ impl RequestHandler for MethodUserListBackStrategyLedger {
                 })
                 .await?;
             Ok(UserListBackStrategyLedgerResponse {
-                back_ledger_total: 0,
-
+                back_ledger_total: ledger.first(|x| x.total).unwrap_or_default(),
                 back_ledger: ledger.map(|x| BackStrategyLedgerRow {
                     back_ledger_id: x.back_ledger_id,
                     strategy_id: x.strategy_id,

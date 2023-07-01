@@ -353,6 +353,7 @@ pub struct FunUserListAuditRulesRespRow {
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserListBackStrategyLedgerRespRow {
+    pub total: i64,
     pub back_ledger_id: i64,
     pub strategy_id: i64,
     pub quantity: BlockchainDecimal,

@@ -280,6 +280,7 @@ END
                 Field::new("strategy_id", Type::optional(Type::BigInt)),
             ],
             vec![
+                Field::new("total", Type::BigInt),
                 Field::new("back_ledger_id", Type::BigInt),
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("quantity", Type::BlockchainDecimal),
@@ -289,7 +290,8 @@ END
             ],
             r#"
 BEGIN
-    RETURN QUERY SELECT a.pkey_id          AS back_ledger_id,
+    RETURN QUERY SELECT COUNT(*) OVER() AS total,
+                        a.pkey_id          AS back_ledger_id,
                         a.fkey_strategy_id AS strategy_id,
                         a.quantity_of_usdc         AS quantity,
                         a.blockchain       AS blockchain,

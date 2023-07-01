@@ -741,6 +741,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION api.fun_user_list_back_strategy_ledger(a_limit bigint, a_offset bigint, a_user_id bigint DEFAULT NULL, a_strategy_id bigint DEFAULT NULL)
 RETURNS table (
+    "total" bigint,
     "back_ledger_id" bigint,
     "strategy_id" bigint,
     "quantity" varchar,
@@ -752,7 +753,8 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY SELECT a.pkey_id          AS back_ledger_id,
+    RETURN QUERY SELECT COUNT(*) OVER() AS total,
+                        a.pkey_id          AS back_ledger_id,
                         a.fkey_strategy_id AS strategy_id,
                         a.quantity_of_usdc         AS quantity,
                         a.blockchain       AS blockchain,
