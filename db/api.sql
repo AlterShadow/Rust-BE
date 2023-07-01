@@ -765,7 +765,6 @@ BEGIN
                  ORDER BY a.happened_at
                  LIMIT a_limit
                  OFFSET a_offset;
-                  ;
 END
 
 $$;
