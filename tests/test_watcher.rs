@@ -393,8 +393,10 @@ async fn test_handle_eth_swap_goerli_testnet() -> Result<()> {
 
     /* check entry in watched wallet ledger */
     let strategy_tokens_after = db
-        .execute(FunWatcherGetStrategyTokensFromLedgerReq {
+        .execute(FunWatcherGetExpertWalletAssetsFromLedgerReq {
             strategy_id: strategy.strategy_id,
+            blockchain: None,
+            symbol: None,
         })
         .await?
         .into_rows();
