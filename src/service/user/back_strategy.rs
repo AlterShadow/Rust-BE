@@ -812,7 +812,7 @@ pub async fn user_back_strategy_sergio_tries_to_help(
 
     /* approve pancakeswap to trade base token */
     approve_and_ensure_success(
-        escrow_token_contract,
+        escrow_token_contract.clone(),
         &conn,
         CONFIRMATIONS,
         MAX_RETRIES,
@@ -885,6 +885,7 @@ pub async fn user_back_strategy_sergio_tries_to_help(
     let strategy_pool_token_to_mint = match strategy_pool_is_active {
         false => calculate_sp_tokens_to_mint_1st_backer_sergio_tries_to_help(
             sp_contract.decimals().await?,
+            escrow_token_contract.decimals().await?,
             back_usdc_amount_minus_fees,
         )?,
         true => calculate_sp_tokens_to_mint_nth_backer_sergio_tries_to_help(
@@ -1004,13 +1005,26 @@ pub async fn user_back_strategy_sergio_tries_to_help(
 
 fn calculate_sp_tokens_to_mint_1st_backer_sergio_tries_to_help(
     strategy_token_decimals: U256,
+    base_token_decimals: U256,
     base_token_actual_amount: U256,
 ) -> Result<U256> {
-    // TODO: confirm the multiplier constant is 1e18
-    Ok(
-        base_token_actual_amount
-            .try_checked_mul(U256::exp10(strategy_token_decimals.as_usize()))?,
-    )
+    /* after normalization, the value is equivalent to what it would be in strategy token decimals */
+    /* e.g. if actual_amount is 1.0 base tokens (i.e. 1 * 10^base_token_decimals) */
+    /* normalized_amount is 1.0 strategy tokens (i.e. 1 * 10^strategy_token_decimals) */
+    let decimal_normalized_base_token: U256 = if base_token_decimals > strategy_token_decimals {
+        base_token_actual_amount.try_checked_div(U256::exp10(
+            base_token_decimals.as_usize() - strategy_token_decimals.as_usize(),
+        ))?
+    } else {
+        base_token_actual_amount.try_checked_mul(U256::exp10(
+            strategy_token_decimals.as_usize() - base_token_decimals.as_usize(),
+        ))?
+    };
+
+    // TODO: discover what the constant should be
+    // remember that strategy token decimals is 18, this value is already considerably large
+    let constant = U256::one();
+    Ok(decimal_normalized_base_token.try_checked_mul(constant)?)
 }
 
 fn calculate_sp_tokens_to_mint_nth_backer_sergio_tries_to_help(
