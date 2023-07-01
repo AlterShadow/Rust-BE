@@ -835,6 +835,52 @@ pub async fn user_back_strategy_sergio_tries_to_help(
     )
     .await?;
 
+    // WARNING: without this mintage calculation might break for nth backer
+    /* get amount spent and amount bought for every strategy pool asset to calculate sp valuation for mintage */
+    /* necessary because there could be a strategy pool asset that is not in initial_token_ratios */
+    // TODO: remove this when back strategy buys all strategy pool assets instead of initial_token_ratios
+    // TODO: use strategy_pool_assets_bought_for_this_backer and escrow_allocations_for_tokens directly
+    let strategy_pool_assets_bought_for_this_backer: HashMap<Address, U256> = tokens_to_deposit
+        .iter()
+        .cloned()
+        .zip(amounts_to_deposit.iter().cloned())
+        .collect::<HashMap<_, _>>();
+    let mut strategy_pool_assets_bought: HashMap<Address, U256> = HashMap::new();
+    let mut base_tokens_spent_on_strategy_pool_assets: HashMap<Address, U256> = HashMap::new();
+    for (strategy_pool_asset, _) in sp_assets_and_amounts.iter() {
+        if let Some(amount_bought) =
+            strategy_pool_assets_bought_for_this_backer.get(strategy_pool_asset)
+        {
+            /* if strategy pool asset is in initial_token_ratios, it was bought */
+            /* so use these trade values for valuation */
+            strategy_pool_assets_bought.insert(strategy_pool_asset.clone(), amount_bought.clone());
+            let amount_spent_on_asset = escrow_allocations_for_tokens.get(strategy_pool_asset).context("could not get amount spent for backer in strategy pool asset, even though amount bought exists")?.clone();
+            base_tokens_spent_on_strategy_pool_assets
+                .insert(strategy_pool_asset.clone(), amount_spent_on_asset);
+        } else {
+            /* if strategy pool asset is not in initial_token_ratios, it was not bought */
+            /* fetch the most recent trade values from the database to use for valuation */
+            let last_dex_trade_row = db
+                .execute(FunWatcherListLastDexTradesForPairReq {
+                    token_in_address: token_address.into(),
+                    token_out_address: strategy_pool_asset.clone().into(),
+                    blockchain: blockchain,
+                    dex: None,
+                })
+                .await?
+                .into_result()
+                .context("could not fetch last dex trade for strategy pool asset")?;
+            strategy_pool_assets_bought.insert(
+                strategy_pool_asset.clone(),
+                last_dex_trade_row.amount_out.into(),
+            );
+            base_tokens_spent_on_strategy_pool_assets.insert(
+                strategy_pool_asset.clone(),
+                last_dex_trade_row.amount_in.into(),
+            );
+        }
+    }
+
     /* calculate mintage */
     let strategy_pool_token_to_mint = match strategy_pool_is_active {
         false => calculate_sp_tokens_to_mint_1st_backer_sergio_tries_to_help(
@@ -845,12 +891,8 @@ pub async fn user_back_strategy_sergio_tries_to_help(
             &EnumDex::PancakeSwap,
             total_strategy_pool_tokens,
             sp_assets_and_amounts,
-            tokens_to_deposit
-                .iter()
-                .cloned()
-                .zip(amounts_to_deposit.iter().cloned())
-                .collect::<HashMap<_, _>>(),
-            escrow_allocations_for_tokens,
+            strategy_pool_assets_bought,
+            base_tokens_spent_on_strategy_pool_assets,
             back_usdc_amount_minus_fees,
         )?,
     };
