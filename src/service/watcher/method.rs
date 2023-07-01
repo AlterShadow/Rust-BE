@@ -98,6 +98,20 @@ pub async fn handle_pancake_swap_transaction(
     let expert_trade =
         parse_dex_trade(blockchain, &tx, &state.dex_addresses, &state.pancake_swap).await?;
 
+    /* update last dex trade cache table */
+    state
+        .db
+        .execute(FunWatcherUpsertLastDexTradeForPairReq {
+            transaction_hash: tx.get_hash().into(),
+            blockchain: blockchain,
+            dex: EnumDex::PancakeSwap,
+            token_in_address: expert_trade.token_in.into(),
+            token_out_address: expert_trade.token_out.into(),
+            amount_in: expert_trade.amount_in.into(),
+            amount_out: expert_trade.amount_out.into(),
+        })
+        .await?;
+
     /* instantiate token_in and token_out contracts from expert's trade */
     let token_in_contract = Erc20Token::new(conn.clone(), expert_trade.token_in)?;
     let token_out_contract = Erc20Token::new(conn.clone(), expert_trade.token_out)?;
