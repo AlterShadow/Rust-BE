@@ -4326,6 +4326,10 @@
               "ty": "BlockchainDecimal"
             },
             {
+              "name": "total_amount_to_back_after_fee",
+              "ty": "BlockchainDecimal"
+            },
+            {
               "name": "estimated_amount_of_strategy_tokens",
               "ty": "BlockchainDecimal"
             }

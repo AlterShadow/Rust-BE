@@ -1,4 +1,3 @@
-use api::cmc::CoinMarketCap;
 use eth_sdk::erc20::{approve_and_ensure_success, Erc20Token};
 use eth_sdk::escrow::{transfer_token_to_and_ensure_success, EscrowContract};
 use eth_sdk::pair_paths::WorkingPancakePairPaths;
@@ -10,16 +9,7 @@ use eth_sdk::{
     TransactionFetcher, CONFIRMATIONS, MAX_RETRIES, POLL_INTERVAL,
 };
 use eyre::*;
-use eyre::{bail, ensure, eyre, ContextCompat, WrapErr};
-use gen::database::{
-    FunAdminListUsersReq, FunUserAddStrategyPoolContractReq, FunUserAddStrategyWalletReq,
-    FunUserBackStrategyReq, FunUserListStrategiesReq, FunUserListStrategyInitialTokenRatiosReq,
-    FunUserListStrategyInitialTokenRatiosRespRow, FunUserListStrategyWalletsReq,
-    FunUserListUserDepositWithdrawBalanceReq, FunWatcherListLastDexTradesForPairReq,
-    FunWatcherListStrategyPoolContractAssetBalancesReq, FunWatcherListStrategyPoolContractReq,
-    FunWatcherListUserStrategyBalanceReq, FunWatcherUpsertLastDexTradeForPairReq,
-    FunWatcherUpsertStrategyPoolContractAssetBalanceReq, FunWatcherUpsertUserStrategyBalanceReq,
-};
+use gen::database::*;
 use gen::model::{EnumBlockChain, EnumDex};
 use lib::database::DbClient;
 use lib::log::DynLogger;
@@ -130,6 +120,7 @@ async fn user_get_or_deploy_strategy_pool(
     strategy_token_name: String,
     strategy_token_symbol: String,
     logger: DynLogger,
+    dry_run: bool,
 ) -> Result<(i64, StrategyPoolContract<EitherTransport>)> {
     /* instantiate strategy contract wrapper */
     let strategy_pool = db
@@ -150,7 +141,7 @@ async fn user_get_or_deploy_strategy_pool(
                 StrategyPoolContract::new(conn.clone(), address)?,
             )
         }
-        None => {
+        None if dry_run => {
             /* if strategy pool doesn't exist in this chain, create it */
             let contract = deploy_strategy_contract(
                 &conn,
@@ -173,8 +164,246 @@ async fn user_get_or_deploy_strategy_pool(
 
             (resp.strategy_pool_contract_id, contract)
         }
+        _ => bail!("Strategy pool contract not found. dry run mode"),
     };
     Ok(sp_contract)
+}
+pub struct CalculateUserBackStrategyCalculateAmountToMintResult {
+    pub fees: U256,
+    pub back_usdc_amount_minus_fees: U256,
+    pub strategy_token_to_mint: U256,
+}
+pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
+    conn: &EthereumRpcConnection,
+    ctx: &RequestContext,
+    db: &DbClient,
+    blockchain: EnumBlockChain,
+    user_id: i64,
+    back_usdc_amount: U256,
+    strategy_id: i64,
+    token_id: i64,
+    token_address: Address,
+    escrow_contract: EscrowContract<EitherTransport>,
+    dex_addresses: &DexAddresses,
+    master_key: impl Key + Clone,
+    logger: DynLogger,
+) -> Result<CalculateUserBackStrategyCalculateAmountToMintResult> {
+    /* fetch strategy */
+    let strategy = db
+        .execute(FunUserListStrategiesReq {
+            strategy_id: Some(strategy_id),
+            strategy_name: None,
+            expert_public_id: None,
+            expert_name: None,
+            description: None,
+            blockchain: None,
+            user_id: ctx.user_id,
+            limit: 1,
+            offset: 0,
+            wallet_address: None,
+        })
+        .await?
+        .into_result()
+        .context("strategy is not registered in the database")?;
+    /* instantiate strategy contract wrapper */
+    let (strategy_pool_contract_id, sp_contract) = user_get_or_deploy_strategy_pool(
+        &conn,
+        &ctx,
+        &db,
+        master_key.clone(),
+        strategy_id,
+        blockchain,
+        strategy.strategy_name.clone(),
+        strategy.strategy_name,
+        logger.clone(),
+        true,
+    )
+    .await?;
+    /* fetch strategy's tokens */
+    let strategy_initial_ratios = db
+        .execute(FunUserListStrategyInitialTokenRatiosReq {
+            strategy_id,
+            token_id: None,
+            token_address: None,
+            blockchain: Some(blockchain),
+        })
+        .await?
+        .into_rows();
+    ensure!(
+        !strategy_initial_ratios.is_empty(),
+        "strategy has no initial ratios"
+    );
+    logger.log("calculating fees");
+    /* deduce fees from back amount */
+    // TODO: use (back amount - fees) to calculate trade spenditure and SP shares
+    // TODO: distribute fees for the treasury and the strategy creator
+    let divide_scale = 10000;
+    let fees = back_usdc_amount
+        * (((strategy.swap_fee.unwrap_or_default()
+            + strategy.strategy_fee.unwrap_or_default()
+            + strategy.expert_fee.unwrap_or_default())
+            * divide_scale as f64) as u64)
+        / divide_scale;
+    let back_usdc_amount_minus_fees = back_usdc_amount - fees;
+    let strategy_pool_assets = db
+        .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
+            strategy_pool_contract_id,
+            token_address: None,
+            blockchain: Some(blockchain),
+        })
+        .await?
+        .into_rows();
+
+    let mut strategy_pool_is_active: bool = false;
+    let mut sp_assets_and_amounts: HashMap<Address, U256> = HashMap::new();
+    for sp_asset_row in strategy_pool_assets {
+        if sp_asset_row.balance > U256::zero().into() {
+            strategy_pool_is_active = true;
+        }
+        sp_assets_and_amounts.insert(
+            sp_asset_row.token_address.into(),
+            sp_asset_row.balance.into(),
+        );
+    }
+
+    /* calculate mintage */
+    let strategy_token_to_mint = match strategy_pool_is_active {
+        false => {
+            logger.log("calculating strategy tokens");
+            let escrow_token_contract = Erc20Token::new(conn.clone(), token_address)?;
+            let token = db
+                .execute(FunUserListStrategyInitialTokenRatiosReq {
+                    strategy_id,
+                    token_id: Some(token_id),
+                    token_address: None,
+                    blockchain: None,
+                })
+                .await?
+                .into_result()
+                .context("initial token not found in strategy")?;
+            let strategy_pool_token_to_mint = if token.relative_token_id.is_some()
+                && token.relative_quantity.is_some()
+            {
+                info!("Calculating strategy token with easy approach");
+                logger.log("calculating strategy tokens with easy approach");
+                calculate_sp_tokens_to_mint_easy_approach(
+                    token,
+                    back_usdc_amount_minus_fees,
+                    escrow_token_contract.decimals().await?,
+                )
+                .await?
+            } else {
+                bail!("relative token id or relative quantity not found in initial token ratio");
+            };
+            strategy_pool_token_to_mint
+        }
+        true => {
+            /* instantiate base token contract, and pancake contract */
+            let escrow_token_contract = Erc20Token::new(conn.clone(), token_address)?;
+            let pancake_contract = PancakeSmartRouterV3Contract::new(
+                conn.clone(),
+                dex_addresses
+                    .get(blockchain, EnumDex::PancakeSwap)
+                    .ok_or_else(|| eyre!("pancake swap not available on this chain"))?,
+            )?;
+
+            let mut strategy_initial_token_ratios: HashMap<Address, U256> = HashMap::new();
+            for x in strategy_initial_ratios.iter() {
+                strategy_initial_token_ratios.insert(x.token_address.into(), x.quantity.into());
+            }
+
+            /* calculate how much of back amount to spend on each strategy pool asset */
+            let escrow_allocations_for_tokens = calculate_escrow_allocation_for_strategy_tokens(
+                back_usdc_amount_minus_fees,
+                strategy_initial_token_ratios,
+            )?;
+
+            /* trade base token for strategy pool assets */
+            let strategy_pool_assets_bought_for_this_backer = trade_escrow_for_strategy_tokens(
+                &conn,
+                &db,
+                master_key.clone(),
+                blockchain,
+                token_address,
+                &pancake_contract,
+                escrow_allocations_for_tokens.clone(),
+                logger.clone(),
+                true,
+            )
+            .await?;
+
+            /* calculate strategy tokens to mint for backer */
+
+            // WARNING: without this mintage calculation might break for nth backer
+            /* get amount spent and amount bought for every strategy pool asset to calculate sp valuation for mintage */
+            /* necessary because there could be a strategy pool asset that is not in initial_token_ratios */
+            // TODO: remove this when back strategy buys all strategy pool assets instead of initial_token_ratios
+            // TODO: use strategy_pool_assets_bought_for_this_backer and escrow_allocations_for_tokens directly
+
+            let mut strategy_pool_assets_last_bought: HashMap<Address, U256> = HashMap::new();
+            let mut base_tokens_spent_on_strategy_pool_assets: HashMap<Address, U256> =
+                HashMap::new();
+            // let mut strategy_pool_asset_last_prices_in_base_token: HashMap<Address, U256> =
+            //     HashMap::new();
+            for strategy_pool_asset in sp_assets_and_amounts.keys() {
+                if let Some(amount_bought) =
+                    strategy_pool_assets_bought_for_this_backer.get(strategy_pool_asset)
+                {
+                    /* if strategy pool asset is in initial_token_ratios, it was bought */
+                    /* so use these trade values for valuation */
+                    strategy_pool_assets_last_bought
+                        .insert(strategy_pool_asset.clone(), amount_bought.clone());
+                    let amount_spent_on_asset = escrow_allocations_for_tokens.get(strategy_pool_asset).context("could not get amount spent for backer in strategy pool asset, even though amount bought exists")?.clone();
+                    base_tokens_spent_on_strategy_pool_assets
+                        .insert(strategy_pool_asset.clone(), amount_spent_on_asset);
+                    // strategy_pool_asset_last_prices_in_base_token.insert(
+                    //     strategy_pool_asset.clone(),
+                    //     amount_spent_on_asset.mul_div() / amount_bought,
+                    // );
+                } else {
+                    /* if strategy pool asset is not in initial_token_ratios, it was not bought */
+                    /* fetch the most recent trade values from the database to use for valuation */
+                    let last_dex_trade_row = db
+                        .execute(FunWatcherListLastDexTradesForPairReq {
+                            token_in_address: token_address.into(),
+                            token_out_address: strategy_pool_asset.clone().into(),
+                            blockchain,
+                            dex: None,
+                        })
+                        .await?
+                        .into_result()
+                        .context("could not fetch last dex trade for strategy pool asset")?;
+                    strategy_pool_assets_last_bought.insert(
+                        strategy_pool_asset.clone(),
+                        last_dex_trade_row.amount_out.into(),
+                    );
+                    base_tokens_spent_on_strategy_pool_assets.insert(
+                        strategy_pool_asset.clone(),
+                        last_dex_trade_row.amount_in.into(),
+                    );
+                }
+            }
+
+            // TODO: find out if we use back amount with or without fees for share calculation
+            // currently calculating with back amount minus fees
+            // TODO: get these values from database
+            let total_strategy_tokens = sp_contract.total_supply().await?;
+
+            calculate_sp_tokens_to_mint_nth_backer(
+                total_strategy_tokens,
+                sp_assets_and_amounts,
+                strategy_pool_assets_last_bought,
+                base_tokens_spent_on_strategy_pool_assets,
+                back_usdc_amount_minus_fees,
+                escrow_token_contract.address,
+            )?
+        }
+    };
+    Ok(CalculateUserBackStrategyCalculateAmountToMintResult {
+        fees,
+        back_usdc_amount_minus_fees,
+        strategy_token_to_mint,
+    })
 }
 
 pub async fn user_back_strategy(
@@ -284,17 +513,6 @@ pub async fn user_back_strategy(
         "strategy has no initial ratios"
     );
     logger.log("calculating fees");
-    /* deduce fees from back amount */
-    // TODO: use (back amount - fees) to calculate trade spenditure and SP shares
-    // TODO: distribute fees for the treasury and the strategy creator
-    let divide_scale = 10000;
-    let fees = back_usdc_amount
-        * (((strategy.swap_fee.unwrap_or_default()
-            + strategy.strategy_fee.unwrap_or_default()
-            + strategy.expert_fee.unwrap_or_default())
-            * divide_scale as f64) as u64)
-        / divide_scale;
-    let back_usdc_amount_minus_fees = back_usdc_amount - fees;
 
     /* instantiate strategy contract wrapper */
     let (strategy_pool_contract_id, sp_contract) = user_get_or_deploy_strategy_pool(
@@ -307,60 +525,33 @@ pub async fn user_back_strategy(
         strategy.strategy_name.clone(),
         strategy.strategy_name,
         logger.clone(),
+        false,
     )
     .await?;
     logger.log("calculating strategy tokens");
-    /* calculate strategy tokens to mint for backer */
-    // TODO: find out if we use back amount with or without fees for share calculation
-    // currently calculating with back amount minus fees
-    // TODO: get these values from database
-    let total_strategy_pool_tokens = sp_contract.total_supply().await?;
 
     let escrow_token_contract = Erc20Token::new(conn.clone(), token_address)?;
-    let token = db
-        .execute(FunUserListStrategyInitialTokenRatiosReq {
-            strategy_id,
-            token_id: Some(token_id),
-            token_address: None,
-            blockchain: None,
-        })
-        .await?
-        .into_result()
-        .context("initial token not found in strategy")?;
-    let strategy_pool_token_to_mint =
-        if token.relative_token_id.is_some() && token.relative_quantity.is_some() {
-            info!("Calculating strategy token with easy approach");
-            logger.log("calculating strategy tokens with easy approach");
-            calculate_sp_tokens_to_mint_easy_approach(
-                token,
-                back_usdc_amount_minus_fees,
-                escrow_token_contract.decimals().await?,
-            )
-            .await?
-        } else {
-            let sp_assets_and_amounts = sp_contract
-                .assets_and_balances()
-                .await
-                .context("failed to query strategy pool assets and amounts")?;
-            let sp_assets_and_amounts: HashMap<Address, U256> = sp_assets_and_amounts
-                .0
-                .into_iter()
-                .zip(sp_assets_and_amounts.1.into_iter())
-                .collect();
-            info!("Calculating strategy token by usd value");
-            logger.log("calculating strategy tokens by usd value");
-            calculate_sp_tokens_to_mint_by_usd_value(
-                &conn,
-                &CoinMarketCap::new_debug_key()?,
-                total_strategy_pool_tokens,
-                sp_assets_and_amounts,
-                sp_contract.decimals().await?,
-                escrow_token_contract.symbol().await?,
-                back_usdc_amount_minus_fees,
-                escrow_token_contract.decimals().await?,
-            )
-            .await?
-        };
+
+    let CalculateUserBackStrategyCalculateAmountToMintResult {
+        fees,
+        back_usdc_amount_minus_fees,
+        strategy_token_to_mint,
+    } = calculate_user_back_strategy_calculate_amount_to_mint(
+        conn,
+        ctx,
+        db,
+        blockchain,
+        user_id,
+        back_usdc_amount,
+        strategy_id,
+        token_id,
+        token_address,
+        escrow_contract.clone(),
+        dex_addresses.clone(),
+        master_key.clone(),
+        logger.clone(),
+    )
+    .await?;
 
     /* instantiate pancake contract */
     let pancake_contract = PancakeSmartRouterV3Contract::new(
@@ -412,7 +603,7 @@ pub async fn user_back_strategy(
     .await?;
 
     /* trade escrow token for strategy's tokens */
-    let (tokens_to_deposit, amounts_to_deposit) = trade_escrow_for_strategy_tokens(
+    let trades = trade_escrow_for_strategy_tokens(
         &conn,
         &db,
         master_key.clone(),
@@ -421,11 +612,12 @@ pub async fn user_back_strategy(
         &pancake_contract,
         escrow_allocations_for_tokens,
         logger.clone(),
+        false,
     )
     .await?;
 
     /* approve tokens and amounts to SP contract */
-    for (token, amount) in tokens_to_deposit.iter().zip(amounts_to_deposit.iter()) {
+    for (token, amount) in trades.iter() {
         logger.log(format!(
             "approving {} token {:?} to strategy pool contract",
             amount, token
@@ -452,9 +644,8 @@ pub async fn user_back_strategy(
         MAX_RETRIES,
         POLL_INTERVAL,
         master_key.clone(),
-        tokens_to_deposit.clone(),
-        amounts_to_deposit.clone(),
-        strategy_pool_token_to_mint,
+        trades.clone(),
+        strategy_token_to_mint,
         strategy_wallet_contract.address(),
         logger.clone(),
     )
@@ -476,14 +667,10 @@ pub async fn user_back_strategy(
         strategy_id,
         blockchain,
         old_balance: user_strategy_balance,
-        new_balance: (*user_strategy_balance + strategy_pool_token_to_mint).into(),
+        new_balance: (*user_strategy_balance + strategy_token_to_mint).into(),
     })
     .await?;
-    for (token, amount) in tokens_to_deposit
-        .iter()
-        .cloned()
-        .zip(amounts_to_deposit.iter().cloned())
-    {
+    for (token, amount) in trades {
         let sp_asset_token = db
             .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
                 strategy_pool_contract_id,
@@ -516,7 +703,7 @@ pub async fn user_back_strategy(
             old_current_quantity: strategy.current_usdc,
             blockchain,
             transaction_hash: deposit_transaction_hash.into(),
-            earn_sp_tokens: strategy_pool_token_to_mint.into(),
+            earn_sp_tokens: strategy_token_to_mint.into(),
         })
         .await?
         .into_result()
@@ -566,87 +753,28 @@ pub async fn calculate_sp_tokens_to_mint_easy_approach(
     )?;
     Ok(result)
 }
-async fn calculate_sp_tokens_to_mint_by_usd_value(
-    conn: &EthereumRpcConnection,
-    cmc: &CoinMarketCap,
-    sp_total_shares: U256,
-    sp_escrow_token_balances: HashMap<Address, U256>,
-    sp_decimals: U256,
-    escrow_symbol: String,
-    escrow_amount: U256,
-    escrow_decimals: U256,
-) -> Result<U256> {
-    /* multiply the escrow amount by the price to get its value with no consideration for decimals */
-    /* if escrow decimals > sp decimals, divide unconsidered value by 10^(escrow decimals - sp decimals) to account for decimal differences */
-    /* if sp decimals > escrow decimals, multiply the unconsidered value by 10^(sp decimals - escrow decimals) to account for decimal differences */
-    /* this is valid for all tokens, not just the escrow */
-    let factor = cmc.get_usd_prices_by_symbol(&vec![escrow_symbol]).await?[0];
-    let escrow_value: U256 = if escrow_decimals > sp_decimals {
-        escrow_amount.mul_f64(factor)?.try_checked_div(U256::exp10(
-            escrow_decimals.as_usize() - sp_decimals.as_usize(),
-        ))?
-    } else {
-        escrow_amount.mul_f64(factor)?.try_checked_mul(U256::exp10(
-            sp_decimals.as_usize() - escrow_decimals.as_usize(),
-        ))?
-    };
-    if sp_total_shares == U256::zero() {
-        /* if strategy pool is empty, shares = escrow value */
-        return Ok(escrow_value);
-    }
-    /* if strategy pool is active, shares = (escrow_value * total_strategy_shares) / total_strategy_value */
-    let mut sp_total_value = U256::zero();
-    for (asset, amount) in sp_escrow_token_balances.iter() {
-        let erc20 = Erc20Token::new(conn.clone(), *asset)?;
-        let price = cmc
-            .get_usd_prices_by_symbol(&vec![erc20.symbol().await?])
-            .await?;
-        /* add to total value the value of each token accounting for decimal differences */
-        let token_decimals = erc20.decimals().await?;
-        if token_decimals > sp_decimals {
-            sp_total_value =
-                sp_total_value.try_checked_add(amount.mul_f64(price[0])?.try_checked_div(
-                    U256::exp10(token_decimals.as_usize() - sp_decimals.as_usize()),
-                )?)?;
-        } else {
-            sp_total_value =
-                sp_total_value.try_checked_add(amount.mul_f64(price[0])?.try_checked_mul(
-                    U256::exp10(sp_decimals.as_usize() - token_decimals.as_usize()),
-                )?)?;
-        }
-    }
-
-    Ok(escrow_value.mul_div(
-        sp_total_shares,
-        if sp_total_value == U256::zero() {
-            U256::one()
-        } else {
-            sp_total_value
-        },
-    )?)
-}
 
 async fn trade_escrow_for_strategy_tokens(
     conn: &EthereumRpcConnection,
     db: &DbClient,
     master_key: impl Key + Clone,
-    chain: EnumBlockChain,
+    blockchain: EnumBlockChain,
     escrow_token_address: Address,
     dex_contract: &PancakeSmartRouterV3Contract<EitherTransport>,
     tokens_and_amounts_to_buy: HashMap<Address, U256>,
     logger: DynLogger,
-) -> Result<(Vec<Address>, Vec<U256>)> {
+    dry_run: bool,
+) -> Result<HashMap<Address, U256>> {
     /* buys tokens and amounts and returns a vector or bought tokens and amounts out */
     // TODO: stop using hardcoded hashmaps and retrieve paths from database
     let pancake_trade_parser = build_pancake_swap()?;
     let pancake_paths = WorkingPancakePairPaths::new()?;
-    let mut token_addresses_to_deposit: Vec<Address> = Vec::new();
-    let mut token_amounts_to_deposit: Vec<U256> = Vec::new();
+    let mut deposit_amounts: HashMap<Address, U256> = HashMap::new();
+
     for (token_address, amount_to_spend_on_it) in tokens_and_amounts_to_buy {
         if token_address == escrow_token_address {
             /* if sp holds escrow token, deposit it directly */
-            token_addresses_to_deposit.push(token_address);
-            token_amounts_to_deposit.push(amount_to_spend_on_it);
+            deposit_amounts.insert(token_address, amount_to_spend_on_it);
             continue;
         }
         logger.log(format!(
@@ -654,468 +782,72 @@ async fn trade_escrow_for_strategy_tokens(
             token_address, escrow_token_address
         ));
         let pancake_path_set =
-            pancake_paths.get_pair_by_address(chain, escrow_token_address, token_address)?;
+            pancake_paths.get_pair_by_address(blockchain, escrow_token_address, token_address)?;
+        if !dry_run {
+            let trade_hash = copy_trade_and_ensure_success(
+                dex_contract.clone(),
+                &conn,
+                CONFIRMATIONS,
+                MAX_RETRIES,
+                POLL_INTERVAL,
+                master_key.clone(),
+                pancake_path_set,
+                amount_to_spend_on_it,
+                U256::one(), // TODO: find a way to estimate amount out
+                logger.clone(),
+            )
+            .await?;
 
-        let trade_hash = copy_trade_and_ensure_success(
-            dex_contract.clone(),
-            &conn,
-            CONFIRMATIONS,
-            MAX_RETRIES,
-            POLL_INTERVAL,
-            master_key.clone(),
-            pancake_path_set,
-            amount_to_spend_on_it,
-            U256::one(), // TODO: find a way to estimate amount out
-            logger.clone(),
-        )
-        .await?;
+            let trade = pancake_trade_parser.parse_trade(
+                &TransactionFetcher::new_and_assume_ready(trade_hash.transaction_hash, &conn)
+                    .await?,
+                blockchain,
+            )?;
+            deposit_amounts.insert(token_address, trade.amount_out);
 
-        let trade = pancake_trade_parser.parse_trade(
-            &TransactionFetcher::new_and_assume_ready(trade_hash.transaction_hash, &conn).await?,
-            chain,
-        )?;
-
-        token_addresses_to_deposit.push(token_address);
-        token_amounts_to_deposit.push(trade.amount_out);
-
-        /* update last dex trade cache table */
-        db.execute(FunWatcherUpsertLastDexTradeForPairReq {
-            transaction_hash: trade_hash.transaction_hash.into(),
-            blockchain: chain.into(),
-            dex: EnumDex::PancakeSwap,
-            token_in_address: escrow_token_address.into(),
-            token_out_address: token_address.into(),
-            amount_in: trade.amount_in.into(),
-            amount_out: trade.amount_out.into(),
-        })
-        .await?;
-    }
-    Ok((token_addresses_to_deposit, token_amounts_to_deposit))
-}
-
-pub async fn user_back_strategy_sergio_tries_to_help(
-    conn: &EthereumRpcConnection,
-    ctx: &RequestContext,
-    db: &DbClient,
-    blockchain: EnumBlockChain,
-    user_id: i64,
-    back_usdc_amount: U256,
-    strategy_id: i64,
-    token_id: i64,
-    token_address: Address,
-    escrow_contract: EscrowContract<EitherTransport>,
-    dex_addresses: &DexAddresses,
-    master_key: impl Key + Clone,
-    logger: DynLogger,
-) -> Result<()> {
-    if back_usdc_amount == U256::zero() {
-        bail!("back zero amount");
-    }
-
-    /* check if user has enough balance */
-    // TODO: add user balance to the database
-    // TODO: might call balanceOf of these ERC20 contracts if database is not working correctly
-    let user_balance = db
-        .execute(FunUserListUserDepositWithdrawBalanceReq {
-            limit: 1,
-            offset: 0,
-            user_id,
-            blockchain: Some(blockchain),
-            token_address: None,
-            token_id: Some(token_id),
-            escrow_contract_address: Some(escrow_contract.address().into()),
-        })
-        .await?;
-    debug!("Fetched {} rows of user balance", user_balance.len());
-    let user_balance_row = user_balance.into_result().context("insufficient balance")?;
-    let user_balance: U256 = user_balance_row.balance.into();
-    if user_balance < back_usdc_amount {
-        bail!("insufficient balance");
-    }
-
-    /* fetch user address to receive strategy assets */
-    // TODO: fetch the correct address where user desires to receive shares on this chain
-    // since users can have multiple addresses, this information is critical
-    // for now, we fetch the "address" field from the user table
-    let user_wallet_address_to_receive_shares_on_this_chain = db
-        .execute(FunAdminListUsersReq {
-            limit: 1,
-            offset: 0,
-            user_id: Some(ctx.user_id),
-            address: None,
-            username: None,
-            email: None,
-            role: None,
-        })
-        .await?
-        .into_result()
-        .context("No such user")?
-        .address
-        .into();
-
-    /* instantiate strategy wallet contract wrapper */
-    let strategy_wallet_contract = user_get_or_deploy_strategy_wallet(
-        &conn,
-        &ctx,
-        &db,
-        master_key.clone(),
-        blockchain,
-        user_wallet_address_to_receive_shares_on_this_chain,
-        logger.clone(),
-    )
-    .await?;
-
-    /* fetch strategy */
-    let strategy = db
-        .execute(FunUserListStrategiesReq {
-            strategy_id: Some(strategy_id),
-            strategy_name: None,
-            expert_public_id: None,
-            expert_name: None,
-            description: None,
-            blockchain: None,
-            user_id: ctx.user_id,
-            limit: 1,
-            offset: 0,
-            wallet_address: None,
-        })
-        .await?
-        .into_result()
-        .context("strategy is not registered in the database")?;
-
-    /* fetch strategy assets */
-    let strategy_initial_ratios = db
-        .execute(FunUserListStrategyInitialTokenRatiosReq {
-            strategy_id,
-            token_id: None,
-            token_address: None,
-            blockchain: Some(blockchain),
-        })
-        .await?
-        .into_rows();
-    ensure!(
-        !strategy_initial_ratios.is_empty(),
-        "strategy has no initial ratios"
-    );
-
-    /* deduce fees from back amount */
-    // TODO: use (back amount - fees) to calculate trade spenditure and SP shares
-    // TODO: distribute fees for the treasury and the strategy creator
-    let platform_fee = 0.01;
-    let divide_scale = 10000;
-    let fees = back_usdc_amount
-        * (((strategy.swap_fee.unwrap_or_default()
-            + strategy.strategy_fee.unwrap_or_default()
-            + strategy.expert_fee.unwrap_or_default()
-            + platform_fee)
-            * divide_scale as f64) as u64)
-        / divide_scale;
-    let back_usdc_amount_minus_fees = back_usdc_amount - fees;
-
-    /* instantiate strategy contract wrapper */
-    let (strategy_pool_contract_id, sp_contract) = user_get_or_deploy_strategy_pool(
-        &conn,
-        &ctx,
-        &db,
-        master_key.clone(),
-        strategy_id,
-        blockchain,
-        strategy.strategy_name.clone(),
-        strategy.strategy_name,
-        logger.clone(),
-    )
-    .await?;
-
-    /* calculate shares to mint for backer */
-    // TODO: find out if we use back amount with or without fees for share calculation
-    // currently calculating with back amount minus fees
-    // TODO: get these values from database
-    let total_strategy_pool_tokens = sp_contract.total_supply().await?;
-
-    let sp_asset_rows = db
-        .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
-            strategy_pool_contract_id: strategy_pool_contract_id,
-            token_address: None,
-            blockchain: Some(blockchain),
-        })
-        .await?
-        .into_rows();
-
-    let mut strategy_pool_is_active: bool = false;
-    let mut sp_assets_and_amounts: HashMap<Address, U256> = HashMap::new();
-    for sp_asset_row in sp_asset_rows {
-        if sp_asset_row.balance > U256::zero().into() {
-            strategy_pool_is_active = true;
-        }
-        sp_assets_and_amounts.insert(
-            sp_asset_row.token_address.into(),
-            sp_asset_row.balance.into(),
-        );
-    }
-
-    /* instantiate base token contract, and pancake contract */
-    let escrow_token_contract = Erc20Token::new(conn.clone(), token_address)?;
-    let pancake_contract = PancakeSmartRouterV3Contract::new(
-        conn.clone(),
-        dex_addresses
-            .get(blockchain, EnumDex::PancakeSwap)
-            .ok_or_else(|| eyre!("pancake swap not available on this chain"))?,
-    )?;
-
-    // TODO: make some way of replaying the correct transactions in case of failure in the middle of the backing process
-    // FIXME: we should do it in escrow pending contract or somewhere
-    /* transfer escrow to our EOA */
-    transfer_token_to_and_ensure_success(
-        escrow_contract,
-        &conn,
-        CONFIRMATIONS,
-        MAX_RETRIES,
-        POLL_INTERVAL,
-        master_key.clone(),
-        token_address,
-        master_key.address(),
-        back_usdc_amount_minus_fees,
-        logger.clone(),
-    )
-    .await?;
-    let mut strategy_initial_token_ratios: HashMap<Address, U256> = HashMap::new();
-    for x in strategy_initial_ratios.iter() {
-        strategy_initial_token_ratios.insert(x.token_address.into(), x.quantity.into());
-    }
-
-    /* calculate how much of back amount to spend on each strategy pool asset */
-    let escrow_allocations_for_tokens = calculate_escrow_allocation_for_strategy_tokens(
-        back_usdc_amount_minus_fees,
-        strategy_initial_token_ratios,
-    )?;
-
-    /* approve pancakeswap to trade base token */
-    approve_and_ensure_success(
-        escrow_token_contract.clone(),
-        &conn,
-        CONFIRMATIONS,
-        MAX_RETRIES,
-        POLL_INTERVAL,
-        master_key.clone(),
-        pancake_contract.address(),
-        back_usdc_amount,
-        logger.clone(),
-    )
-    .await?;
-
-    /* trade base token for strategy pool assets */
-    let (tokens_to_deposit, amounts_to_deposit) = trade_escrow_for_strategy_tokens(
-        &conn,
-        &db,
-        master_key.clone(),
-        blockchain,
-        token_address,
-        &pancake_contract,
-        escrow_allocations_for_tokens.clone(),
-        logger.clone(),
-    )
-    .await?;
-
-    // WARNING: without this mintage calculation might break for nth backer
-    /* get amount spent and amount bought for every strategy pool asset to calculate sp valuation for mintage */
-    /* necessary because there could be a strategy pool asset that is not in initial_token_ratios */
-    // TODO: remove this when back strategy buys all strategy pool assets instead of initial_token_ratios
-    // TODO: use strategy_pool_assets_bought_for_this_backer and escrow_allocations_for_tokens directly
-    let strategy_pool_assets_bought_for_this_backer: HashMap<Address, U256> = tokens_to_deposit
-        .iter()
-        .cloned()
-        .zip(amounts_to_deposit.iter().cloned())
-        .collect::<HashMap<_, _>>();
-    let mut strategy_pool_assets_bought: HashMap<Address, U256> = HashMap::new();
-    let mut base_tokens_spent_on_strategy_pool_assets: HashMap<Address, U256> = HashMap::new();
-    for (strategy_pool_asset, _) in sp_assets_and_amounts.iter() {
-        if let Some(amount_bought) =
-            strategy_pool_assets_bought_for_this_backer.get(strategy_pool_asset)
-        {
-            /* if strategy pool asset is in initial_token_ratios, it was bought */
-            /* so use these trade values for valuation */
-            strategy_pool_assets_bought.insert(strategy_pool_asset.clone(), amount_bought.clone());
-            let amount_spent_on_asset = escrow_allocations_for_tokens.get(strategy_pool_asset).context("could not get amount spent for backer in strategy pool asset, even though amount bought exists")?.clone();
-            base_tokens_spent_on_strategy_pool_assets
-                .insert(strategy_pool_asset.clone(), amount_spent_on_asset);
+            /* update last dex trade cache table */
+            db.execute(FunWatcherUpsertLastDexTradeForPairReq {
+                transaction_hash: trade_hash.transaction_hash.into(),
+                blockchain: blockchain.into(),
+                dex: EnumDex::PancakeSwap,
+                token_in_address: escrow_token_address.into(),
+                token_out_address: token_address.into(),
+                amount_in: trade.amount_in.into(),
+                amount_out: trade.amount_out.into(),
+            })
+            .await?;
         } else {
-            /* if strategy pool asset is not in initial_token_ratios, it was not bought */
-            /* fetch the most recent trade values from the database to use for valuation */
-            let last_dex_trade_row = db
+            let trade = db
                 .execute(FunWatcherListLastDexTradesForPairReq {
-                    token_in_address: token_address.into(),
-                    token_out_address: strategy_pool_asset.clone().into(),
-                    blockchain: blockchain,
-                    dex: None,
+                    token_in_address: escrow_token_address.into(),
+                    token_out_address: token_address.into(),
+                    blockchain,
+                    dex: Some(EnumDex::PancakeSwap),
                 })
                 .await?
                 .into_result()
-                .context("could not fetch last dex trade for strategy pool asset")?;
-            strategy_pool_assets_bought.insert(
-                strategy_pool_asset.clone(),
-                last_dex_trade_row.amount_out.into(),
-            );
-            base_tokens_spent_on_strategy_pool_assets.insert(
-                strategy_pool_asset.clone(),
-                last_dex_trade_row.amount_in.into(),
-            );
+                .with_context(|| {
+                    format!(
+                        "No last dex trade found for pair {:?} -> {:?}",
+                        escrow_token_address, token_address
+                    )
+                })?;
+            deposit_amounts.insert(token_address, trade.amount_out.into());
         }
     }
-
-    /* calculate mintage */
-    let strategy_pool_token_to_mint = match strategy_pool_is_active {
-        false => calculate_sp_tokens_to_mint_1st_backer_sergio_tries_to_help(
-            sp_contract.decimals().await?,
-            escrow_token_contract.decimals().await?,
-            back_usdc_amount_minus_fees,
-        )?,
-        true => calculate_sp_tokens_to_mint_nth_backer_sergio_tries_to_help(
-            total_strategy_pool_tokens,
-            sp_assets_and_amounts,
-            strategy_pool_assets_bought,
-            base_tokens_spent_on_strategy_pool_assets,
-            back_usdc_amount_minus_fees,
-        )?,
-    };
-
-    /* approve bought assets to strategy pool contract before deposit */
-    for (token, amount) in tokens_to_deposit.iter().zip(amounts_to_deposit.iter()) {
-        approve_and_ensure_success(
-            Erc20Token::new(conn.clone(), token.clone())?,
-            &conn,
-            CONFIRMATIONS,
-            MAX_RETRIES,
-            POLL_INTERVAL,
-            master_key.clone(),
-            sp_contract.address(),
-            amount.clone(),
-            logger.clone(),
-        )
-        .await?;
-    }
-
-    /* deposit bought assets to strategy wallet contract and mint strategy tokens for backer's strategy wallet */
-    let deposit_transaction_hash = sp_deposit_to_and_ensure_success(
-        sp_contract,
-        &conn,
-        CONFIRMATIONS,
-        MAX_RETRIES,
-        POLL_INTERVAL,
-        master_key.clone(),
-        tokens_to_deposit.clone(),
-        amounts_to_deposit.clone(),
-        strategy_pool_token_to_mint,
-        strategy_wallet_contract.address(),
-        logger.clone(),
-    )
-    .await?;
-
-    /* update user strategy tokens balance in database */
-    let user_strategy_balance = db
-        .execute(FunWatcherListUserStrategyBalanceReq {
-            limit: 1,
-            offset: 0,
-            strategy_id: Some(strategy_id),
-            user_id: Some(ctx.user_id),
-            blockchain: Some(blockchain),
-        })
-        .await?
-        .first(|x| x.balance)
-        .unwrap_or_default();
-
-    db.execute(FunWatcherUpsertUserStrategyBalanceReq {
-        user_id: ctx.user_id,
-        strategy_id,
-        blockchain,
-        old_balance: user_strategy_balance,
-        new_balance: (*user_strategy_balance + strategy_pool_token_to_mint).into(),
-    })
-    .await?;
-
-    /* update strategy pool contract assets in database */
-    for (token, amount) in tokens_to_deposit
-        .iter()
-        .cloned()
-        .zip(amounts_to_deposit.iter().cloned())
-    {
-        let sp_asset_token = db
-            .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
-                strategy_pool_contract_id,
-                token_address: Some(token.into()),
-                blockchain: Some(blockchain),
-            })
-            .await?
-            .into_result();
-        let sp_asset_token_out_new_balance = match sp_asset_token {
-            Some(token_out) => (*token_out.balance).try_checked_add(amount)?,
-            None => amount,
-        };
-        db.execute(FunWatcherUpsertStrategyPoolContractAssetBalanceReq {
-            strategy_pool_contract_id,
-            token_address: token.into(),
-            blockchain,
-            new_balance: sp_asset_token_out_new_balance.into(),
-        })
-        .await?;
-    }
-
-    /* update user back exit strategy ledger in database */
-    let ret = db
-        .execute(FunUserBackStrategyReq {
-            user_id: ctx.user_id,
-            strategy_id: strategy.strategy_id,
-            quantity: back_usdc_amount.into(),
-            new_total_backed_quantity: (*strategy.total_backed_usdc + back_usdc_amount).into(),
-            old_total_backed_quantity: strategy.total_backed_usdc,
-            new_current_quantity: (*strategy.current_usdc + back_usdc_amount).into(),
-            old_current_quantity: strategy.current_usdc,
-            blockchain,
-            transaction_hash: deposit_transaction_hash.into(),
-            earn_sp_tokens: strategy_pool_token_to_mint.into(),
-        })
-        .await?
-        .into_result()
-        .context("No record")?;
-    if !ret.success {
-        bail!(
-            "User back strategy not sucessful due to other clients updated record at the same time"
-        )
-    }
-
-    Ok(())
+    Ok(deposit_amounts)
 }
 
-fn calculate_sp_tokens_to_mint_1st_backer_sergio_tries_to_help(
-    strategy_token_decimals: U256,
-    base_token_decimals: U256,
-    base_token_actual_amount: U256,
-) -> Result<U256> {
-    /* after normalization, the value is equivalent to what it would be in strategy token decimals */
-    /* e.g. if actual_amount is 1.0 base tokens (i.e. 1 * 10^base_token_decimals) */
-    /* normalized_amount is 1.0 strategy tokens (i.e. 1 * 10^strategy_token_decimals) */
-    let decimal_normalized_base_token: U256 = if base_token_decimals > strategy_token_decimals {
-        base_token_actual_amount.try_checked_div(U256::exp10(
-            base_token_decimals.as_usize() - strategy_token_decimals.as_usize(),
-        ))?
-    } else {
-        base_token_actual_amount.try_checked_mul(U256::exp10(
-            strategy_token_decimals.as_usize() - base_token_decimals.as_usize(),
-        ))?
-    };
-
-    // TODO: discover what the constant should be
-    // remember that strategy token decimals is 18, this value is already considerably large
-    let constant = U256::one();
-    Ok(decimal_normalized_base_token.try_checked_mul(constant)?)
-}
-
-fn calculate_sp_tokens_to_mint_nth_backer_sergio_tries_to_help(
+fn calculate_sp_tokens_to_mint_nth_backer(
     strategy_token_total_supply: U256,
     strategy_pool_asset_balances: HashMap<Address, U256>,
-    bought_asset_amounts: HashMap<Address, U256>,
+    last_bought_asset_amounts: HashMap<Address, U256>,
     spent_base_token_allocation: HashMap<Address, U256>,
     base_token_actual_amount: U256,
+    deposit_asset: Address,
 ) -> Result<U256> {
+    // sp tokens to mint = actual value of backing / (total value / total supply)
+    //                   = actual value of backing * total supply / total value
     /* calculate strategy pool assets total value in base tokens based on the price paid on assets */
     let mut strategy_pool_assets_total_value = U256::zero();
     for (strategy_pool_asset, strategy_pool_asset_amount) in strategy_pool_asset_balances.iter() {
@@ -1123,7 +855,7 @@ fn calculate_sp_tokens_to_mint_nth_backer_sergio_tries_to_help(
         let amount_of_base_token_spent_on_asset = spent_base_token_allocation
             .get(strategy_pool_asset)
             .context("could not find amount spend on asset to calculate mintage")?;
-        let amount_of_asset_bought = bought_asset_amounts
+        let amount_of_asset_bought = last_bought_asset_amounts
             .get(strategy_pool_asset)
             .context("could not find bought asset to calculate mintage")?;
 
@@ -1145,9 +877,13 @@ fn calculate_sp_tokens_to_mint_nth_backer_sergio_tries_to_help(
     /* i.e. the share value of one base token */
     /* i.e. the base token price in shares */
     let ratio = strategy_token_total_supply.div_as_f64(strategy_pool_assets_total_value)?;
-
+    let deposit_asset_price_in_base_token = spent_base_token_allocation
+        .get(&deposit_asset)
+        .context("could not find amount spend on asset to calculate mintage")?;
+    let base_token_actual_value =
+        base_token_actual_amount.mul_div(*deposit_asset_price_in_base_token, U256::exp10(18))?;
     /* calculate strategy pool tokens to mint as actual_amount * ratio */
-    Ok(base_token_actual_amount.mul_f64(ratio)?)
+    Ok(base_token_actual_value.mul_f64(ratio)?)
 }
 
 #[cfg(test)]

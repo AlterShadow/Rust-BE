@@ -7,6 +7,7 @@ use crate::{
 use eyre::*;
 use gen::model::EnumBlockChain;
 use lib::log::DynLogger;
+use std::collections::HashMap;
 use std::time::Duration;
 use tracing::info;
 use web3::contract::{Contract, Options};
@@ -536,9 +537,8 @@ pub async fn sp_deposit_to_and_ensure_success(
     max_retry: u64,
     poll_interval: Duration,
     signer: impl Key + Clone,
-    assets: Vec<Address>,
-    amounts: Vec<U256>,
-    shares: U256,
+    assets_amounts: HashMap<Address, U256>,
+    strategy_tokens: U256,
     receiver: Address,
     logger: DynLogger,
 ) -> Result<H256> {
@@ -547,9 +547,9 @@ pub async fn sp_deposit_to_and_ensure_success(
         .deposit(
             &conn,
             signer.clone(),
-            assets.clone(),
-            amounts.clone(),
-            shares,
+            assets_amounts.keys().cloned().collect(),
+            assets_amounts.values().cloned().collect(),
+            strategy_tokens,
             receiver,
             logger,
         )

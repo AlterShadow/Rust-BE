@@ -119,7 +119,7 @@ CREATE TABLE tbl.expert_watched_wallet (
 -- Table: last_dex_trade_for_pair
 CREATE TABLE tbl.last_dex_trade_for_pair (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_last_dex_trade_for_pair_id'),
-    transaction_hash varchar(64)  NOT NULL,
+    transaction_hash varchar(80)  NOT NULL,
     blockchain enum_block_chain  NOT NULL,
     dex enum_dex  NOT NULL,
     fkey_token_in bigint  NOT NULL,

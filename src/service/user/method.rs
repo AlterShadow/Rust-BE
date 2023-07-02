@@ -3,7 +3,10 @@ use crate::audit::{
     get_audit_rules, validate_audit_rule_immutable_tokens, AuditLogger, AUDIT_TOP25_TOKENS,
 };
 use crate::back_strategy;
-use crate::back_strategy::calculate_sp_tokens_to_mint_easy_approach;
+use crate::back_strategy::{
+    calculate_user_back_strategy_calculate_amount_to_mint,
+    CalculateUserBackStrategyCalculateAmountToMintResult,
+};
 use api::cmc::CoinMarketCap;
 use chrono::Utc;
 use eth_sdk::escrow::transfer_token_to_and_ensure_success;
@@ -1534,11 +1537,14 @@ impl RequestHandler for MethodExpertCreateStrategy {
 
             for token in req.initial_tokens {
                 let tk = db
-                    .execute(FunUserListStrategyInitialTokenRatiosReq {
-                        strategy_id: ret.strategy_id,
+                    .execute(FunUserListEscrowTokenContractAddressReq {
+                        limit: 1,
                         token_id: Some(token.token_id),
-                        token_address: None,
                         blockchain: None,
+                        address: None,
+                        symbol: None,
+                        offset: 0,
+                        is_stablecoin: None,
                     })
                     .await?
                     .into_result()
@@ -1548,7 +1554,7 @@ impl RequestHandler for MethodExpertCreateStrategy {
                             format!("token not found: {}", token.token_id),
                         )
                     })?;
-                if tk.token_name == format!("{:?}", EnumBlockchainCoin::USDC) {
+                if tk.symbol == format!("{:?}", EnumBlockchainCoin::USDC) {
                     db.execute(FunUserAddStrategyInitialTokenRatioReq {
                         strategy_id: ret.strategy_id,
                         token_id: token.token_id,
@@ -2630,50 +2636,51 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
         req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         let db = toolbox.get_db();
+        let pool = self.pool.clone();
+        let escrow_contract = self.escrow_contract.clone();
+        let master_key = self.master_key.clone();
         async move {
             ensure_user_role(ctx, EnumRole::User)?;
-            let strategy = db
-                .execute(FunUserListStrategiesReq {
-                    user_id: ctx.user_id,
+            let token = db
+                .execute(FunUserListEscrowTokenContractAddressReq {
                     limit: 1,
                     offset: 0,
-                    strategy_id: Some(req.strategy_id),
-                    strategy_name: None,
-                    expert_public_id: None,
-                    expert_name: None,
-                    description: None,
                     blockchain: None,
-                    wallet_address: None,
-                })
-                .await?
-                .into_result()
-                .with_context(|| {
-                    CustomError::new(EnumErrorCode::NotFound, "Could not find strategy")
-                })?;
-            let user_back_fee_ratio = strategy.swap_fee.unwrap_or_default()
-                + strategy.expert_fee.unwrap_or_default()
-                + strategy.strategy_fee.unwrap_or_default();
-            let token = db
-                .execute(FunUserListStrategyInitialTokenRatiosReq {
-                    strategy_id: req.strategy_id,
                     token_id: Some(req.token_id),
-                    token_address: None,
-                    blockchain: None,
+                    address: None,
+                    symbol: None,
+                    is_stablecoin: None,
                 })
                 .await?
                 .into_result()
-                .context("initial token not found in strategy")?;
-            let strategy_fee = req.quantity * (100000.0 * user_back_fee_ratio) as u64 / 100000;
-            let sp_tokens = calculate_sp_tokens_to_mint_easy_approach(
-                token,
-                req.quantity - strategy_fee,
-                18.into(),
+                .with_context(|| CustomError::new(EnumErrorCode::NotFound, "Token not found"))?;
+            let escrow_contract = escrow_contract.get(&pool, token.blockchain).await?;
+            let eth_conn = pool.get(token.blockchain).await?;
+            let CalculateUserBackStrategyCalculateAmountToMintResult {
+                fees,
+                back_usdc_amount_minus_fees,
+                strategy_token_to_mint,
+            } = calculate_user_back_strategy_calculate_amount_to_mint(
+                &eth_conn,
+                &ctx,
+                &db,
+                token.blockchain,
+                ctx.user_id,
+                req.quantity,
+                req.strategy_id,
+                req.token_id,
+                token.address.into(),
+                escrow_contract,
+                &DexAddresses::new(),
+                master_key,
+                DynLogger::empty(),
             )
             .await?;
             Ok(UserGetBackStrategyReviewDetailResponse {
-                strategy_fee,
+                strategy_fee: fees,
                 total_amount_to_back: req.quantity,
-                estimated_amount_of_strategy_tokens: sp_tokens,
+                total_amount_to_back_after_fee: back_usdc_amount_minus_fees,
+                estimated_amount_of_strategy_tokens: strategy_token_to_mint,
             })
         }
         .boxed()

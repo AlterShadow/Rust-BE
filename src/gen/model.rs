@@ -1710,6 +1710,8 @@ pub struct UserGetBackStrategyReviewDetailResponse {
     #[serde(with = "WithBlockchainDecimal")]
     pub total_amount_to_back: U256,
     #[serde(with = "WithBlockchainDecimal")]
+    pub total_amount_to_back_after_fee: U256,
+    #[serde(with = "WithBlockchainDecimal")]
     pub estimated_amount_of_strategy_tokens: U256,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -7161,6 +7163,10 @@ impl WsRequest for UserGetBackStrategyReviewDetailRequest {
     },
     {
       "name": "total_amount_to_back",
+      "ty": "BlockchainDecimal"
+    },
+    {
+      "name": "total_amount_to_back_after_fee",
       "ty": "BlockchainDecimal"
     },
     {

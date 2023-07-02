@@ -977,6 +977,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
             vec![
                 Field::new("strategy_fee", Type::BlockchainDecimal),
                 Field::new("total_amount_to_back", Type::BlockchainDecimal),
+                Field::new("total_amount_to_back_after_fee", Type::BlockchainDecimal),
                 Field::new(
                     "estimated_amount_of_strategy_tokens",
                     Type::BlockchainDecimal,
