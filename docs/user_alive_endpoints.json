@@ -28,7 +28,6 @@
   "UserApplyBecomeExpert",
   "UserBackStrategy",
   "UserCreateStrategyWallet",
-  "UserDeregisterWallet",
   "UserExitStrategy",
   "UserFollowExpert",
   "UserFollowStrategy",
@@ -51,7 +50,6 @@
   "UserListFeaturedExperts",
   "UserListFollowedExperts",
   "UserListFollowedStrategies",
-  "UserListRegisteredWallets",
   "UserListStrategies",
   "UserListStrategyAuditRules",
   "UserListStrategyBackers",
@@ -61,11 +59,13 @@
   "UserListStrategyWallets",
   "UserListTopPerformingExperts",
   "UserListTopPerformingStrategies",
-  "UserRegisterWallet",
+  "UserListWhitelistedWallets",
   "UserRequestRefund",
   "UserSubscribeDepositLedger",
   "UserUnfollowExpert",
   "UserUnfollowStrategy",
   "UserUnsubscribeDepositLedger",
-  "UserUpdateUserProfile"
+  "UserUnwhitelistWallet",
+  "UserUpdateUserProfile",
+  "UserWhitelistWallet"
 ]

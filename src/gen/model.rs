@@ -314,14 +314,14 @@ pub enum EnumEndpoint {
     #[postgres(name = "UserGetUserProfile")]
     UserGetUserProfile = 20180,
     ///
-    #[postgres(name = "UserRegisterWallet")]
-    UserRegisterWallet = 20190,
+    #[postgres(name = "UserWhitelistWallet")]
+    UserWhitelistWallet = 20190,
     ///
-    #[postgres(name = "UserListRegisteredWallets")]
-    UserListRegisteredWallets = 20200,
+    #[postgres(name = "UserListWhitelistedWallets")]
+    UserListWhitelistedWallets = 20200,
     ///
-    #[postgres(name = "UserDeregisterWallet")]
-    UserDeregisterWallet = 20210,
+    #[postgres(name = "UserUnwhitelistWallet")]
+    UserUnwhitelistWallet = 20210,
     ///
     #[postgres(name = "UserApplyBecomeExpert")]
     UserApplyBecomeExpert = 20220,
@@ -1648,16 +1648,6 @@ pub struct UserCreateStrategyWalletResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserDeregisterWalletRequest {
-    pub wallet_id: i64,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserDeregisterWalletResponse {
-    pub success: bool,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
 pub struct UserExitStrategyRequest {
     pub strategy_id: i64,
     #[serde(default)]
@@ -2046,27 +2036,6 @@ pub struct UserListFollowedStrategiesResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserListRegisteredWalletsRequest {
-    #[serde(default)]
-    pub limit: Option<i64>,
-    #[serde(default)]
-    pub offset: Option<i64>,
-    #[serde(default)]
-    pub wallet_id: Option<i64>,
-    #[serde(default)]
-    pub blockchain: Option<EnumBlockChain>,
-    #[serde(default)]
-    pub wallet_address: Option<Address>,
-    #[serde(default)]
-    pub strategy_id: Option<i64>,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserListRegisteredWalletsResponse {
-    pub wallets: Vec<ListWalletsRow>,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
 pub struct UserListStrategiesRequest {
     #[serde(default)]
     pub limit: Option<i64>,
@@ -2255,18 +2224,24 @@ pub struct UserListWalletActivityLedgerResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserRegisterWalletRequest {
-    pub blockchain: EnumBlockChain,
-    #[serde(with = "WithBlockchainAddress")]
-    pub wallet_address: Address,
-    pub message_to_sign: String,
-    pub message_signature: String,
+pub struct UserListWhitelistedWalletsRequest {
+    #[serde(default)]
+    pub limit: Option<i64>,
+    #[serde(default)]
+    pub offset: Option<i64>,
+    #[serde(default)]
+    pub wallet_id: Option<i64>,
+    #[serde(default)]
+    pub blockchain: Option<EnumBlockChain>,
+    #[serde(default)]
+    pub wallet_address: Option<Address>,
+    #[serde(default)]
+    pub strategy_id: Option<i64>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserRegisterWalletResponse {
-    pub success: bool,
-    pub wallet_id: i64,
+pub struct UserListWhitelistedWalletsResponse {
+    pub wallets: Vec<ListWalletsRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -2332,6 +2307,16 @@ pub struct UserUnsubscribeDepositLedgerRequest {}
 pub struct UserUnsubscribeDepositLedgerResponse {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct UserUnwhitelistWalletRequest {
+    pub wallet_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserUnwhitelistWalletResponse {
+    pub success: bool,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct UserUpdateUserProfileRequest {
     #[serde(default)]
     pub username: Option<String>,
@@ -2347,6 +2332,19 @@ pub struct UserUpdateUserProfileRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserUpdateUserProfileResponse {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserWhitelistWalletRequest {
+    pub blockchain: EnumBlockChain,
+    #[serde(with = "WithBlockchainAddress")]
+    pub wallet_address: Address,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserWhitelistWalletResponse {
+    pub success: bool,
+    pub wallet_id: i64,
+}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct WatchingWalletRow {
@@ -5479,11 +5477,11 @@ impl WsResponse for UserGetUserProfileResponse {
     type Request = UserGetUserProfileRequest;
 }
 
-impl WsRequest for UserRegisterWalletRequest {
-    type Response = UserRegisterWalletResponse;
+impl WsRequest for UserWhitelistWalletRequest {
+    type Response = UserWhitelistWalletResponse;
     const METHOD_ID: u32 = 20190;
     const SCHEMA: &'static str = r#"{
-  "name": "UserRegisterWallet",
+  "name": "UserWhitelistWallet",
   "code": 20190,
   "parameters": [
     {
@@ -5495,14 +5493,6 @@ impl WsRequest for UserRegisterWalletRequest {
     {
       "name": "wallet_address",
       "ty": "BlockchainAddress"
-    },
-    {
-      "name": "message_to_sign",
-      "ty": "String"
-    },
-    {
-      "name": "message_signature",
-      "ty": "String"
     }
   ],
   "returns": [
@@ -5520,15 +5510,15 @@ impl WsRequest for UserRegisterWalletRequest {
   "json_schema": null
 }"#;
 }
-impl WsResponse for UserRegisterWalletResponse {
-    type Request = UserRegisterWalletRequest;
+impl WsResponse for UserWhitelistWalletResponse {
+    type Request = UserWhitelistWalletRequest;
 }
 
-impl WsRequest for UserListRegisteredWalletsRequest {
-    type Response = UserListRegisteredWalletsResponse;
+impl WsRequest for UserListWhitelistedWalletsRequest {
+    type Response = UserListWhitelistedWalletsResponse;
     const METHOD_ID: u32 = 20200;
     const SCHEMA: &'static str = r#"{
-  "name": "UserListRegisteredWallets",
+  "name": "UserListWhitelistedWallets",
   "code": 20200,
   "parameters": [
     {
@@ -5609,15 +5599,15 @@ impl WsRequest for UserListRegisteredWalletsRequest {
   "json_schema": null
 }"#;
 }
-impl WsResponse for UserListRegisteredWalletsResponse {
-    type Request = UserListRegisteredWalletsRequest;
+impl WsResponse for UserListWhitelistedWalletsResponse {
+    type Request = UserListWhitelistedWalletsRequest;
 }
 
-impl WsRequest for UserDeregisterWalletRequest {
-    type Response = UserDeregisterWalletResponse;
+impl WsRequest for UserUnwhitelistWalletRequest {
+    type Response = UserUnwhitelistWalletResponse;
     const METHOD_ID: u32 = 20210;
     const SCHEMA: &'static str = r#"{
-  "name": "UserDeregisterWallet",
+  "name": "UserUnwhitelistWallet",
   "code": 20210,
   "parameters": [
     {
@@ -5636,8 +5626,8 @@ impl WsRequest for UserDeregisterWalletRequest {
   "json_schema": null
 }"#;
 }
-impl WsResponse for UserDeregisterWalletResponse {
-    type Request = UserDeregisterWalletRequest;
+impl WsResponse for UserUnwhitelistWalletResponse {
+    type Request = UserUnwhitelistWalletRequest;
 }
 
 impl WsRequest for UserApplyBecomeExpertRequest {

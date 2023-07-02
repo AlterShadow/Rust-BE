@@ -1457,9 +1457,9 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_add_registered_wallet(a_user_id bigint, a_blockchain enum_block_chain, a_address varchar)
+CREATE OR REPLACE FUNCTION api.fun_user_add_whitelisted_wallet(a_user_id bigint, a_blockchain enum_block_chain, a_address varchar)
 RETURNS table (
-    "registered_wallet_id" bigint
+    "whitelisted_wallet_id" bigint
 )
 LANGUAGE plpgsql
 AS $$
@@ -1472,7 +1472,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_remove_registered_wallet(a_registered_wallet_id bigint, a_user_id bigint)
+CREATE OR REPLACE FUNCTION api.fun_user_remove_whitelisted_wallet(a_whitelisted_wallet_id bigint, a_user_id bigint)
 RETURNS void
 LANGUAGE plpgsql
 AS $$
@@ -1484,7 +1484,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_list_registered_wallets(a_limit bigint, a_offset bigint, a_user_id bigint DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL, a_address varchar DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_user_list_whitelisted_wallets(a_limit bigint, a_offset bigint, a_user_id bigint DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL, a_address varchar DEFAULT NULL)
 RETURNS table (
     "registered_wallet_id" bigint,
     "blockchain" enum_block_chain,

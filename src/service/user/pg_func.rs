@@ -891,13 +891,13 @@ END
 "#,
         ),
         ProceduralFunction::new(
-            "fun_user_add_registered_wallet",
+            "fun_user_add_whitelisted_wallet",
             vec![
                 Field::new("user_id", Type::BigInt),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("address", Type::BlockchainAddress),
             ],
-            vec![Field::new("registered_wallet_id", Type::BigInt)],
+            vec![Field::new("whitelisted_wallet_id", Type::BigInt)],
             r#"
 BEGIN
     RETURN QUERY INSERT INTO tbl.user_registered_wallet (fkey_user_id, blockchain, address, created_at)
@@ -906,9 +906,9 @@ END
 "#,
         ),
         ProceduralFunction::new(
-            "fun_user_remove_registered_wallet",
+            "fun_user_remove_whitelisted_wallet",
             vec![
-                Field::new("registered_wallet_id", Type::BigInt),
+                Field::new("whitelisted_wallet_id", Type::BigInt),
                 Field::new("user_id", Type::BigInt),
             ],
             vec![],
@@ -919,7 +919,7 @@ END
 "#,
         ),
         ProceduralFunction::new(
-            "fun_user_list_registered_wallets",
+            "fun_user_list_whitelisted_wallets",
             vec![
                 Field::new("limit", Type::BigInt),
                 Field::new("offset", Type::BigInt),

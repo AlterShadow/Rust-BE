@@ -40,9 +40,9 @@ ID: 2
 |20162|UserListFeaturedExperts|limit, offset|experts_total, experts|User lists experts|
 |20170|UserGetExpertProfile|expert_id|expert_id, name, follower_count, description, social_media, risk_score, reputation_score, aum, strategies_total, strategies|User gets an expert profile|
 |20180|UserGetUserProfile||name, login_wallet, joined_at, follower_count, description, social_media, followed_experts, followed_strategies, backed_strategies|User gets an user profile|
-|20190|UserRegisterWallet|blockchain, wallet_address, message_to_sign, message_signature|success, wallet_id|User registers a wallet|
-|20200|UserListRegisteredWallets|limit, offset, wallet_id, blockchain, wallet_address, strategy_id|wallets|User lists wallets|
-|20210|UserDeregisterWallet|wallet_id|success|User deregisters a wallet|
+|20190|UserWhitelistWallet|blockchain, wallet_address|success, wallet_id|User registers a wallet|
+|20200|UserListWhitelistedWallets|limit, offset, wallet_id, blockchain, wallet_address, strategy_id|wallets|User lists wallets|
+|20210|UserUnwhitelistWallet|wallet_id|success|User deregisters a wallet|
 |20220|UserApplyBecomeExpert||success, expert_id|User applies to become an expert|
 |20250|ExpertCreateStrategy|name, description, strategy_thesis_url, minimum_backing_amount_usd, strategy_fee, expert_fee, agreed_tos, wallet_address, wallet_blockchain, strategy_token_relative_to_usdc_ratio, initial_tokens, audit_rules|success, strategy_id|User makes a strategy|
 |20260|ExpertUpdateStrategy|strategy_id, name, description, social_media|success|Expert updates a strategy|

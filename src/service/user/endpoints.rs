@@ -453,13 +453,11 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
         )
         .with_description("User gets an user profile"),
         EndpointSchema::new(
-            "UserRegisterWallet",
+            "UserWhitelistWallet",
             20190,
             vec![
                 Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("wallet_address", Type::BlockchainAddress),
-                Field::new("message_to_sign", Type::String),
-                Field::new("message_signature", Type::String),
             ],
             vec![
                 Field::new("success", Type::Boolean),
@@ -468,7 +466,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
         )
         .with_description("User registers a wallet"),
         EndpointSchema::new(
-            "UserListRegisteredWallets",
+            "UserListWhitelistedWallets",
             20200,
             vec![
                 Field::new("limit", Type::optional(Type::BigInt)),
@@ -494,7 +492,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
         )
         .with_description("User lists wallets"),
         EndpointSchema::new(
-            "UserDeregisterWallet",
+            "UserUnwhitelistWallet",
             20210,
             vec![Field::new("wallet_id", Type::BigInt)],
             vec![Field::new("success", Type::Boolean)],

@@ -57,9 +57,9 @@ async fn main() -> Result<()> {
     server.add_handler(MethodUserListFollowedStrategies);
     server.add_handler(MethodUserUnfollowStrategy);
 
-    server.add_handler(MethodUserRegisterWallet);
-    server.add_handler(MethodUserListRegisteredWallets);
-    server.add_handler(MethodUserDeregisterWallet);
+    server.add_handler(MethodUserWhitelistWallet);
+    server.add_handler(MethodUserListWhitelistedWallets);
+    server.add_handler(MethodUserUnwhitelistWallet);
     server.add_handler(MethodUserListStrategies);
     server.add_handler(MethodUserListTopPerformingStrategies);
     server.add_handler(MethodUserListStrategyFollowers);

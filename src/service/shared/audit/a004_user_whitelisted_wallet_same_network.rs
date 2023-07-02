@@ -1,6 +1,6 @@
 use crate::audit::{AuditLogger, AuditRule};
 use eyre::*;
-use gen::database::{FunUserListRegisteredWalletsReq, FunUserListStrategiesReq};
+use gen::database::{FunUserListStrategiesReq, FunUserListWhitelistedWalletsReq};
 use gen::model::EnumErrorCode;
 use lib::database::DbClient;
 use lib::toolbox::CustomError;
@@ -40,7 +40,7 @@ pub async fn validate_audit_rule_user_whitelisted_wallet_same_network(
         .into_result()
         .with_context(|| CustomError::new(EnumErrorCode::NotFound, "Strategy not found"))?;
     let wallet = db
-        .execute(FunUserListRegisteredWalletsReq {
+        .execute(FunUserListWhitelistedWalletsReq {
             limit: 1,
             offset: 0,
             user_id: None,

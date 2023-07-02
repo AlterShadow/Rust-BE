@@ -2894,7 +2894,7 @@
           "json_schema": null
         },
         {
-          "name": "UserRegisterWallet",
+          "name": "UserWhitelistWallet",
           "code": 20190,
           "parameters": [
             {
@@ -2906,14 +2906,6 @@
             {
               "name": "wallet_address",
               "ty": "BlockchainAddress"
-            },
-            {
-              "name": "message_to_sign",
-              "ty": "String"
-            },
-            {
-              "name": "message_signature",
-              "ty": "String"
             }
           ],
           "returns": [
@@ -2931,7 +2923,7 @@
           "json_schema": null
         },
         {
-          "name": "UserListRegisteredWallets",
+          "name": "UserListWhitelistedWallets",
           "code": 20200,
           "parameters": [
             {
@@ -3012,7 +3004,7 @@
           "json_schema": null
         },
         {
-          "name": "UserDeregisterWallet",
+          "name": "UserUnwhitelistWallet",
           "code": 20210,
           "parameters": [
             {

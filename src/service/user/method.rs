@@ -1288,9 +1288,9 @@ impl RequestHandler for MethodUserGetUserProfile {
         .boxed()
     }
 }
-pub struct MethodUserRegisterWallet;
-impl RequestHandler for MethodUserRegisterWallet {
-    type Request = UserRegisterWalletRequest;
+pub struct MethodUserWhitelistWallet;
+impl RequestHandler for MethodUserWhitelistWallet {
+    type Request = UserWhitelistWalletRequest;
 
     fn handle(
         &self,
@@ -1302,18 +1302,18 @@ impl RequestHandler for MethodUserRegisterWallet {
         async move {
             ensure_user_role(ctx, EnumRole::User)?;
 
-            let signature_text = hex_decode(req.message_to_sign.as_bytes())?;
-            let signature = hex_decode(req.message_signature.as_bytes())?;
+            // let signature_text = hex_decode(req.message_to_sign.as_bytes())?;
+            // let signature = hex_decode(req.message_signature.as_bytes())?;
+            //
+            // let verified =
+            //     verify_message_address(&signature_text, &signature, req.wallet_address.into())?;
 
-            let verified =
-                verify_message_address(&signature_text, &signature, req.wallet_address.into())?;
-
-            ensure!(
-                verified,
-                CustomError::new(EnumErrorCode::InvalidPassword, "Signature is not valid")
-            );
+            // ensure!(
+            //     verified,
+            //     CustomError::new(EnumErrorCode::InvalidPassword, "Signature is not valid")
+            // );
             let ret = db
-                .execute(FunUserAddRegisteredWalletReq {
+                .execute(FunUserAddWhitelistedWalletReq {
                     user_id: ctx.user_id,
                     blockchain: req.blockchain,
                     address: req.wallet_address.into(),
@@ -1322,18 +1322,18 @@ impl RequestHandler for MethodUserRegisterWallet {
                 .into_result()
                 .context("failed to register wallet")?;
 
-            Ok(UserRegisterWalletResponse {
+            Ok(UserWhitelistWalletResponse {
                 success: true,
-                wallet_id: ret.registered_wallet_id,
+                wallet_id: ret.whitelisted_wallet_id,
             })
         }
         .boxed()
     }
 }
 
-pub struct MethodUserListRegisteredWallets;
-impl RequestHandler for MethodUserListRegisteredWallets {
-    type Request = UserListRegisteredWalletsRequest;
+pub struct MethodUserListWhitelistedWallets;
+impl RequestHandler for MethodUserListWhitelistedWallets {
+    type Request = UserListWhitelistedWalletsRequest;
 
     fn handle(
         &self,
@@ -1368,7 +1368,7 @@ impl RequestHandler for MethodUserListRegisteredWallets {
                 None
             };
             let ret = db
-                .execute(FunUserListRegisteredWalletsReq {
+                .execute(FunUserListWhitelistedWalletsReq {
                     limit: req.limit.unwrap_or(DEFAULT_LIMIT),
                     offset: req.offset.unwrap_or(DEFAULT_OFFSET),
                     user_id: Some(ctx.user_id),
@@ -1377,7 +1377,7 @@ impl RequestHandler for MethodUserListRegisteredWallets {
                 })
                 .await?;
 
-            Ok(UserListRegisteredWalletsResponse {
+            Ok(UserListWhitelistedWalletsResponse {
                 wallets: ret
                     .into_iter()
                     .map(|x| ListWalletsRow {
@@ -1397,9 +1397,9 @@ impl RequestHandler for MethodUserListRegisteredWallets {
         .boxed()
     }
 }
-pub struct MethodUserDeregisterWallet;
-impl RequestHandler for MethodUserDeregisterWallet {
-    type Request = UserDeregisterWalletRequest;
+pub struct MethodUserUnwhitelistWallet;
+impl RequestHandler for MethodUserUnwhitelistWallet {
+    type Request = UserUnwhitelistWalletRequest;
 
     fn handle(
         &self,
@@ -1412,13 +1412,13 @@ impl RequestHandler for MethodUserDeregisterWallet {
             ensure_user_role(ctx, EnumRole::User)?;
 
             let _ret = db
-                .execute(FunUserRemoveRegisteredWalletReq {
-                    registered_wallet_id: req.wallet_id,
+                .execute(FunUserRemoveWhitelistedWalletReq {
+                    whitelisted_wallet_id: req.wallet_id,
                     user_id: ctx.user_id,
                 })
                 .await?;
 
-            Ok(UserDeregisterWalletResponse { success: true })
+            Ok(UserUnwhitelistWalletResponse { success: true })
         }
         .boxed()
     }
@@ -2259,7 +2259,7 @@ impl RequestHandler for MethodUserCreateStrategyWallet {
         async move {
             let conn = pool.get(req.blockchain).await?;
             let wallet = db
-                .execute(FunUserListRegisteredWalletsReq {
+                .execute(FunUserListWhitelistedWalletsReq {
                     limit: 1,
                     offset: 0,
                     user_id: Some(ctx.user_id),

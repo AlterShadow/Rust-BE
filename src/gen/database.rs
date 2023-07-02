@@ -177,11 +177,6 @@ pub struct FunExpertListFollowersRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
-pub struct FunUserAddRegisteredWalletRespRow {
-    pub registered_wallet_id: i64,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserAddStrategyAuditRuleRespRow {}
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -205,6 +200,11 @@ pub struct FunUserAddStrategyWatchWalletRespRow {
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserAddStrategyWhitelistedTokenRespRow {}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunUserAddWhitelistedWalletRespRow {
+    pub whitelisted_wallet_id: i64,
+}
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserApplyBecomeExpertRespRow {
@@ -398,13 +398,6 @@ pub struct FunUserListExitStrategyLedgerRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
-pub struct FunUserListRegisteredWalletsRespRow {
-    pub registered_wallet_id: i64,
-    pub blockchain: EnumBlockChain,
-    pub address: BlockchainAddress,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserListRequestRefundLedgerRespRow {
     pub request_refund_id: i64,
     pub user_id: i64,
@@ -516,7 +509,11 @@ pub struct FunUserListUserStrategyBalanceRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
-pub struct FunUserRemoveRegisteredWalletRespRow {}
+pub struct FunUserListWhitelistedWalletsRespRow {
+    pub registered_wallet_id: i64,
+    pub blockchain: EnumBlockChain,
+    pub address: BlockchainAddress,
+}
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserRemoveStrategyInitialTokenRatioRespRow {}
@@ -525,6 +522,9 @@ pub struct FunUserRemoveStrategyInitialTokenRatioRespRow {}
 pub struct FunUserRemoveStrategyWatchWalletRespRow {
     pub success: bool,
 }
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunUserRemoveWhitelistedWalletRespRow {}
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserRequestRefundRespRow {
@@ -1610,17 +1610,17 @@ impl DatabaseRequest for FunUserListStrategyBackersReq {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunUserAddRegisteredWalletReq {
+pub struct FunUserAddWhitelistedWalletReq {
     pub user_id: i64,
     pub blockchain: EnumBlockChain,
     pub address: BlockchainAddress,
 }
 
 #[allow(unused_variables)]
-impl DatabaseRequest for FunUserAddRegisteredWalletReq {
-    type ResponseRow = FunUserAddRegisteredWalletRespRow;
+impl DatabaseRequest for FunUserAddWhitelistedWalletReq {
+    type ResponseRow = FunUserAddWhitelistedWalletRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_add_registered_wallet(a_user_id => $1::bigint, a_blockchain => $2::enum_block_chain, a_address => $3::varchar);"
+        "SELECT * FROM api.fun_user_add_whitelisted_wallet(a_user_id => $1::bigint, a_blockchain => $2::enum_block_chain, a_address => $3::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -1632,27 +1632,27 @@ impl DatabaseRequest for FunUserAddRegisteredWalletReq {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunUserRemoveRegisteredWalletReq {
-    pub registered_wallet_id: i64,
+pub struct FunUserRemoveWhitelistedWalletReq {
+    pub whitelisted_wallet_id: i64,
     pub user_id: i64,
 }
 
 #[allow(unused_variables)]
-impl DatabaseRequest for FunUserRemoveRegisteredWalletReq {
-    type ResponseRow = FunUserRemoveRegisteredWalletRespRow;
+impl DatabaseRequest for FunUserRemoveWhitelistedWalletReq {
+    type ResponseRow = FunUserRemoveWhitelistedWalletRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_remove_registered_wallet(a_registered_wallet_id => $1::bigint, a_user_id => $2::bigint);"
+        "SELECT * FROM api.fun_user_remove_whitelisted_wallet(a_whitelisted_wallet_id => $1::bigint, a_user_id => $2::bigint);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
-            &self.registered_wallet_id as &(dyn ToSql + Sync),
+            &self.whitelisted_wallet_id as &(dyn ToSql + Sync),
             &self.user_id as &(dyn ToSql + Sync),
         ]
     }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunUserListRegisteredWalletsReq {
+pub struct FunUserListWhitelistedWalletsReq {
     pub limit: i64,
     pub offset: i64,
     #[serde(default)]
@@ -1664,10 +1664,10 @@ pub struct FunUserListRegisteredWalletsReq {
 }
 
 #[allow(unused_variables)]
-impl DatabaseRequest for FunUserListRegisteredWalletsReq {
-    type ResponseRow = FunUserListRegisteredWalletsRespRow;
+impl DatabaseRequest for FunUserListWhitelistedWalletsReq {
+    type ResponseRow = FunUserListWhitelistedWalletsRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_list_registered_wallets(a_limit => $1::bigint, a_offset => $2::bigint, a_user_id => $3::bigint, a_blockchain => $4::enum_block_chain, a_address => $5::varchar);"
+        "SELECT * FROM api.fun_user_list_whitelisted_wallets(a_limit => $1::bigint, a_offset => $2::bigint, a_user_id => $3::bigint, a_blockchain => $4::enum_block_chain, a_address => $5::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
