@@ -1579,7 +1579,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_add_strategy_initial_token_ratio(a_strategy_id bigint, a_token_id bigint, a_quantity varchar)
+CREATE OR REPLACE FUNCTION api.fun_user_add_strategy_initial_token_ratio(a_strategy_id bigint, a_token_id bigint, a_quantity varchar, a_relative_token_id bigint DEFAULT NULL, a_relative_quantity varchar DEFAULT NULL)
 RETURNS table (
     "strategy_initial_token_ratio_id" bigint
 )
@@ -1587,8 +1587,8 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY INSERT INTO tbl.strategy_initial_token_ratio (fkey_strategy_id, token_id, quantity, created_at, updated_at)
-            VALUES ( a_strategy_id, a_token_id, a_quantity, EXTRACT(EPOCH FROM NOW())::bigint, EXTRACT(EPOCH FROM NOW())::bigint) RETURNING pkey_id;
+    RETURN QUERY INSERT INTO tbl.strategy_initial_token_ratio (fkey_strategy_id, token_id, quantity, created_at, updated_at, fkey_token_id_relative_to, relative_token_ratio)
+            VALUES ( a_strategy_id, a_token_id, a_quantity, EXTRACT(EPOCH FROM NOW())::bigint, EXTRACT(EPOCH FROM NOW())::bigint, a_relative_token_id, a_relative_quantity) RETURNING pkey_id;
 END
 
 $$;
@@ -1621,7 +1621,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_list_strategy_initial_token_ratios(a_strategy_id bigint, a_token_address varchar DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_user_list_strategy_initial_token_ratios(a_strategy_id bigint, a_token_id bigint DEFAULT NULL, a_token_address varchar DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL)
 RETURNS table (
     "total" bigint,
     "blockchain" enum_block_chain,
@@ -1629,6 +1629,10 @@ RETURNS table (
     "token_name" varchar,
     "token_address" varchar,
     "quantity" varchar,
+    "relative_token_id" bigint,
+    "relative_token_name" varchar,
+    "relative_token_address" varchar,
+    "relative_quantity" varchar,
     "strategy_id" bigint,
     "created_at" bigint,
     "updated_at" bigint
@@ -1644,14 +1648,20 @@ BEGIN
         b.short_name,
         b.address,
         a.quantity,
+        rb.pkey_id,
+        rb.short_name,
+        rb.address,
+        a.relative_token_ratio,
         a.fkey_strategy_id,
         a.updated_at,
         a.created_at 
     FROM tbl.strategy_initial_token_ratio AS a
     JOIN tbl.escrow_token_contract_address AS b ON a.token_id = b.pkey_id
+    LEFT JOIN tbl.escrow_token_contract_address AS rb ON a.fkey_token_id_relative_to = rb.pkey_id
     WHERE fkey_strategy_id = a_strategy_id
-    AND (b.address = a_token_address OR a_token_address IS NULL)
-    AND (b.blockchain = a_blockchain OR a_blockchain IS NULL);
+    AND (b.pkey_id = a_token_id ON a_token_id ISNULL)
+    AND (b.address = a_token_address OR a_token_address ISNULL)
+    AND (b.blockchain = a_blockchain OR a_blockchain ISNULL);
     
 END
 

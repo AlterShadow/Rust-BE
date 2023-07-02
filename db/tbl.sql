@@ -1,5 +1,5 @@
 -- Created by Vertabelo (http://vertabelo.com)
--- Last modification date: 2023-06-26 14:03:49.764
+-- Last modification date: 2023-07-02 06:07:29.431
 
 CREATE SCHEMA IF NOT EXISTS tbl;;
 
@@ -116,6 +116,20 @@ CREATE TABLE tbl.expert_watched_wallet (
     CONSTRAINT expert_watched_wallet_pk PRIMARY KEY (pkey_id)
 );
 
+-- Table: last_dex_trade_for_pair
+CREATE TABLE tbl.last_dex_trade_for_pair (
+    pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_last_dex_trade_for_pair_id'),
+    transaction_hash varchar(64)  NOT NULL,
+    blockchain enum_block_chain  NOT NULL,
+    dex enum_dex  NOT NULL,
+    fkey_token_in bigint  NOT NULL,
+    fkey_token_out bigint  NOT NULL,
+    amount_in varchar(64)  NOT NULL,
+    amount_out varchar(64)  NOT NULL,
+    happened_at bigint  NOT NULL,
+    CONSTRAINT last_dex_trade_for_pair_pk PRIMARY KEY (pkey_id)
+);
+
 -- Table: login_attempt
 CREATE TABLE tbl.login_attempt (
     pkey_id bigint  NOT NULL DEFAULT nextval( 'tbl.seq_login_attempt_id' ),
@@ -202,17 +216,9 @@ CREATE TABLE tbl.strategy_initial_token_ratio (
     quantity varchar(64)  NOT NULL,
     updated_at bigint  NOT NULL,
     created_at bigint  NOT NULL,
+    fkey_token_id_relative_to bigint  NULL,
+    relative_token_ratio varchar(64)  NULL,
     CONSTRAINT strategy_initial_token_ratio_pk PRIMARY KEY (pkey_id)
-);
-
--- Table: strategy_pool_contract_asset_balance
-CREATE TABLE tbl.strategy_pool_contract_asset_balance (
-	pkey_id bigint NOT NULL DEFAULT nextval('tbl.seq_strategy_pool_contract_asset_balance_id'),
-	fkey_strategy_pool_contract_id bigint NOT NULL,
-	fkey_token_id bigint NOT NULL,
-	balance varchar(64) NOT NULL,
-	CONSTRAINT strategy_pool_contract_asset_balance_ak_1 UNIQUE (fkey_strategy_pool_contract_id, fkey_token_id) NOT DEFERRABLE  INITIALLY IMMEDIATE,
-	CONSTRAINT strategy_pool_contract_asset_balance_pk PRIMARY KEY (pkey_id)
 );
 
 -- Table: strategy_pool_contract
@@ -224,6 +230,16 @@ CREATE TABLE tbl.strategy_pool_contract (
     created_at bigint  NOT NULL,
     CONSTRAINT strategy_pool_contract_ak_1 UNIQUE (fkey_strategy_id, blockchain) NOT DEFERRABLE  INITIALLY IMMEDIATE,
     CONSTRAINT strategy_pool_contract_pk PRIMARY KEY (pkey_id)
+);
+
+-- Table: strategy_pool_contract_asset_balance
+CREATE TABLE tbl.strategy_pool_contract_asset_balance (
+    pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_strategy_pool_contract_asset_balance_id'),
+    fkey_strategy_pool_contract_id bigint  NOT NULL,
+    fkey_token_id bigint  NOT NULL,
+    balance varchar(64)  NOT NULL,
+    CONSTRAINT strategy_pool_contract_asset_balance_ak_1 UNIQUE (fkey_strategy_pool_contract_id, fkey_token_id) NOT DEFERRABLE  INITIALLY IMMEDIATE,
+    CONSTRAINT strategy_pool_contract_asset_balance_pk PRIMARY KEY (pkey_id)
 );
 
 -- Table: strategy_watched_wallet
@@ -282,22 +298,6 @@ CREATE TABLE tbl.transaction_cache (
     created_at bigint  NOT NULL,
     CONSTRAINT transaction_cache_ak_1 UNIQUE (transaction_hash) NOT DEFERRABLE  INITIALLY IMMEDIATE,
     CONSTRAINT transaction_cache_pk PRIMARY KEY (pkey_id)
-);
-
--- Table: last_dex_trade_for_pair
-CREATE TABLE tbl.last_dex_trade_for_pair (
-	pkey_id bigint NOT NULL DEFAULT nextval('tbl.seq_last_dex_trade_for_pair_id'),
-	transaction_hash varchar(80) NOT NULL,
-	blockchain enum_block_chain  NOT NULL,
-	dex enum_dex NOT NULL,
-	fkey_token_in bigint NOT NULL,
-	fkey_token_out bigint NOT NULL,
-	amount_in varchar(64) NOT NULL,
-	amount_out varchar(64) NOT NULL,
-	happened_at bigint NOT NULL,
-	CONSTRAINT last_dex_trade_for_pair_ak_1 UNIQUE (blockchain, dex, fkey_token_in, fkey_token_out) NOT DEFERRABLE  INITIALLY IMMEDIATE,
-	CONSTRAINT last_dex_trade_for_pair_ak_2 UNIQUE (blockchain, transaction_hash) NOT DEFERRABLE  INITIALLY IMMEDIATE,
-	CONSTRAINT last_dex_trade_for_pair_pk PRIMARY KEY (pkey_id)
 );
 
 -- Table: user
@@ -492,6 +492,22 @@ ALTER TABLE tbl.user_deposit_withdraw_ledger ADD CONSTRAINT fkey_user_deposit_wi
     INITIALLY IMMEDIATE
 ;
 
+-- Reference: last_dex_trade_for_pair_escrow_token_contract_address_in (table: last_dex_trade_for_pair)
+ALTER TABLE tbl.last_dex_trade_for_pair ADD CONSTRAINT last_dex_trade_for_pair_escrow_token_contract_address_in
+    FOREIGN KEY (fkey_token_in)
+    REFERENCES tbl.escrow_token_contract_address (pkey_id)  
+    NOT DEFERRABLE 
+    INITIALLY IMMEDIATE
+;
+
+-- Reference: last_dex_trade_for_pair_escrow_token_contract_address_out (table: last_dex_trade_for_pair)
+ALTER TABLE tbl.last_dex_trade_for_pair ADD CONSTRAINT last_dex_trade_for_pair_escrow_token_contract_address_out
+    FOREIGN KEY (fkey_token_out)
+    REFERENCES tbl.escrow_token_contract_address (pkey_id)  
+    NOT DEFERRABLE 
+    INITIALLY IMMEDIATE
+;
+
 -- Reference: login_attempt_user (table: login_attempt)
 ALTER TABLE tbl.login_attempt ADD CONSTRAINT login_attempt_user
     FOREIGN KEY (fkey_user)
@@ -544,6 +560,30 @@ ALTER TABLE tbl.strategy_escrow_pending_wallet_balance ADD CONSTRAINT strategy_e
 ALTER TABLE tbl.strategy_initial_token_ratio ADD CONSTRAINT strategy_initial_token_ratio_escrow_token_contract_address
     FOREIGN KEY (token_id)
     REFERENCES tbl.escrow_token_contract_address (pkey_id)  
+    NOT DEFERRABLE 
+    INITIALLY IMMEDIATE
+;
+
+-- Reference: strategy_initial_token_ratio_escrow_token_contract_relative (table: strategy_initial_token_ratio)
+ALTER TABLE tbl.strategy_initial_token_ratio ADD CONSTRAINT strategy_initial_token_ratio_escrow_token_contract_relative
+    FOREIGN KEY (fkey_token_id_relative_to)
+    REFERENCES tbl.escrow_token_contract_address (pkey_id)  
+    NOT DEFERRABLE 
+    INITIALLY IMMEDIATE
+;
+
+-- Reference: strategy_pool_contract_asset_balance_escrow_token_cont_out (table: strategy_pool_contract_asset_balance)
+ALTER TABLE tbl.strategy_pool_contract_asset_balance ADD CONSTRAINT strategy_pool_contract_asset_balance_escrow_token_cont_out
+    FOREIGN KEY (fkey_token_id)
+    REFERENCES tbl.escrow_token_contract_address (pkey_id)  
+    NOT DEFERRABLE 
+    INITIALLY IMMEDIATE
+;
+
+-- Reference: strategy_pool_contract_asset_balance_strategy_pool_contract (table: strategy_pool_contract_asset_balance)
+ALTER TABLE tbl.strategy_pool_contract_asset_balance ADD CONSTRAINT strategy_pool_contract_asset_balance_strategy_pool_contract
+    FOREIGN KEY (fkey_strategy_pool_contract_id)
+    REFERENCES tbl.strategy_pool_contract (pkey_id)  
     NOT DEFERRABLE 
     INITIALLY IMMEDIATE
 ;
@@ -792,6 +832,13 @@ CREATE SEQUENCE tbl.seq_expert_profile_id
       NO CYCLE
 ;
 
+-- Sequence: seq_last_dex_trade_for_pair_id
+CREATE SEQUENCE tbl.seq_last_dex_trade_for_pair_id
+      NO MINVALUE
+      NO MAXVALUE
+      NO CYCLE
+;
+
 -- Sequence: seq_login_attempt_id
 CREATE SEQUENCE tbl.seq_login_attempt_id
       NO MINVALUE
@@ -830,9 +877,9 @@ CREATE SEQUENCE tbl.seq_strategy_initial_token_ratio_id
 
 -- Sequence: seq_strategy_pool_contract_asset_balance_id
 CREATE SEQUENCE tbl.seq_strategy_pool_contract_asset_balance_id
-			NO MINVALUE
-			NO MAXVALUE
-			NO CYCLE
+      NO MINVALUE
+      NO MAXVALUE
+      NO CYCLE
 ;
 
 -- Sequence: seq_strategy_pool_contract_id
@@ -882,13 +929,6 @@ CREATE SEQUENCE tbl.seq_transaction_cache_id
       NO MINVALUE
       NO MAXVALUE
       NO CYCLE
-;
-
--- Sequence: seq_last_dex_trade_for_pair_id
-CREATE SEQUENCE tbl.seq_last_dex_trade_for_pair_id
-			NO MINVALUE
-			NO MAXVALUE
-			NO CYCLE
 ;
 
 -- Sequence: seq_user_back_exit_strategy_ledger_id

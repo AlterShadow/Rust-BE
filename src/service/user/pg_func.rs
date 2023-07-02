@@ -1029,12 +1029,14 @@ END
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("token_id", Type::BigInt),
                 Field::new("quantity", Type::BlockchainDecimal),
+                Field::new("relative_token_id", Type::optional(Type::BigInt)),
+                Field::new("relative_quantity", Type::optional(Type::BlockchainDecimal)),
             ],
             vec![Field::new("strategy_initial_token_ratio_id", Type::BigInt)],
             r#"
 BEGIN
-    RETURN QUERY INSERT INTO tbl.strategy_initial_token_ratio (fkey_strategy_id, token_id, quantity, created_at, updated_at)
-            VALUES ( a_strategy_id, a_token_id, a_quantity, EXTRACT(EPOCH FROM NOW())::bigint, EXTRACT(EPOCH FROM NOW())::bigint) RETURNING pkey_id;
+    RETURN QUERY INSERT INTO tbl.strategy_initial_token_ratio (fkey_strategy_id, token_id, quantity, created_at, updated_at, fkey_token_id_relative_to, relative_token_ratio)
+            VALUES ( a_strategy_id, a_token_id, a_quantity, EXTRACT(EPOCH FROM NOW())::bigint, EXTRACT(EPOCH FROM NOW())::bigint, a_relative_token_id, a_relative_quantity) RETURNING pkey_id;
 END
 "#,
         ),
@@ -1072,6 +1074,7 @@ END
             "fun_user_list_strategy_initial_token_ratios",
             vec![
                 Field::new("strategy_id", Type::BigInt),
+                Field::new("token_id", Type::optional(Type::BigInt)),
                 Field::new("token_address", Type::optional(Type::BlockchainAddress)),
                 Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
             ],
@@ -1082,6 +1085,13 @@ END
                 Field::new("token_name", Type::String),
                 Field::new("token_address", Type::BlockchainAddress),
                 Field::new("quantity", Type::BlockchainDecimal),
+                Field::new("relative_token_id", Type::optional(Type::BigInt)),
+                Field::new("relative_token_name", Type::optional(Type::String)),
+                Field::new(
+                    "relative_token_address",
+                    Type::optional(Type::BlockchainAddress),
+                ),
+                Field::new("relative_quantity", Type::optional(Type::BlockchainDecimal)),
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("created_at", Type::BigInt),
                 Field::new("updated_at", Type::BigInt),
@@ -1095,14 +1105,20 @@ BEGIN
         b.short_name,
         b.address,
         a.quantity,
+        rb.pkey_id,
+        rb.short_name,
+        rb.address,
+        a.relative_token_ratio,
         a.fkey_strategy_id,
         a.updated_at,
         a.created_at 
     FROM tbl.strategy_initial_token_ratio AS a
     JOIN tbl.escrow_token_contract_address AS b ON a.token_id = b.pkey_id
+    LEFT JOIN tbl.escrow_token_contract_address AS rb ON a.fkey_token_id_relative_to = rb.pkey_id
     WHERE fkey_strategy_id = a_strategy_id
-    AND (b.address = a_token_address OR a_token_address IS NULL)
-    AND (b.blockchain = a_blockchain OR a_blockchain IS NULL);
+    AND (b.pkey_id = a_token_id ON a_token_id ISNULL)
+    AND (b.address = a_token_address OR a_token_address ISNULL)
+    AND (b.blockchain = a_blockchain OR a_blockchain ISNULL);
     
 END
 "#,

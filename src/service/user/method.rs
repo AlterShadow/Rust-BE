@@ -3,6 +3,7 @@ use crate::audit::{
     get_audit_rules, validate_audit_rule_immutable_tokens, AuditLogger, AUDIT_TOP25_TOKENS,
 };
 use crate::back_strategy;
+use crate::back_strategy::calculate_sp_tokens_to_mint_easy_approach;
 use api::cmc::CoinMarketCap;
 use chrono::Utc;
 use eth_sdk::escrow::transfer_token_to_and_ensure_success;
@@ -1508,13 +1509,42 @@ impl RequestHandler for MethodExpertCreateStrategy {
                     .await?;
                 }
             }
+
             for token in req.initial_tokens {
-                db.execute(FunUserAddStrategyInitialTokenRatioReq {
-                    strategy_id: ret.strategy_id,
-                    token_id: token.token_id,
-                    quantity: token.quantity.into(),
-                })
-                .await?;
+                let tk = db
+                    .execute(FunUserListStrategyInitialTokenRatiosReq {
+                        strategy_id: ret.strategy_id,
+                        token_id: Some(token.token_id),
+                        token_address: None,
+                        blockchain: None,
+                    })
+                    .await?
+                    .into_result()
+                    .with_context(|| {
+                        CustomError::new(
+                            EnumErrorCode::NotFound,
+                            format!("token not found: {}", token.token_id),
+                        )
+                    })?;
+                if tk.token_name == format!("{:?}", EnumBlockchainCoin::USDC) {
+                    db.execute(FunUserAddStrategyInitialTokenRatioReq {
+                        strategy_id: ret.strategy_id,
+                        token_id: token.token_id,
+                        quantity: token.quantity.into(),
+                        relative_token_id: Some(tk.token_id),
+                        relative_quantity: Some(U256::exp10(18).into()),
+                    })
+                    .await?;
+                } else {
+                    db.execute(FunUserAddStrategyInitialTokenRatioReq {
+                        strategy_id: ret.strategy_id,
+                        token_id: token.token_id,
+                        quantity: token.quantity.into(),
+                        relative_token_id: None,
+                        relative_quantity: None,
+                    })
+                    .await?;
+                }
             }
 
             Ok(ExpertCreateStrategyResponse {
@@ -1782,7 +1812,9 @@ impl RequestHandler for MethodExpertAddStrategyInitialTokenRatio {
                 .execute(FunUserAddStrategyInitialTokenRatioReq {
                     strategy_id: req.strategy_id,
                     quantity: req.quantity.into(),
+                    relative_token_id: None,
                     token_id: req.token_id,
+                    relative_quantity: None,
                 })
                 .await?
                 .into_result()
@@ -1846,6 +1878,7 @@ impl RequestHandler for MethodUserListStrategyInitialTokenRatio {
             let ret = db
                 .execute(FunUserListStrategyInitialTokenRatiosReq {
                     strategy_id: req.strategy_id,
+                    token_id: None,
                     token_address: None,
                     blockchain: None,
                 })
@@ -2568,10 +2601,6 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
         req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         let db = toolbox.get_db();
-        let pool = self.pool.clone();
-        let escrow_contract = self.escrow_contract.clone();
-        let master_key = self.master_key.clone();
-        let dex_addresses = self.dex_addresses.clone();
         async move {
             ensure_user_role(ctx, EnumRole::User)?;
             let strategy = db
@@ -2595,11 +2624,27 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
             let user_back_fee_ratio = strategy.swap_fee.unwrap_or_default()
                 + strategy.expert_fee.unwrap_or_default()
                 + strategy.strategy_fee.unwrap_or_default();
+            let token = db
+                .execute(FunUserListStrategyInitialTokenRatiosReq {
+                    strategy_id: req.strategy_id,
+                    token_id: Some(req.token_id),
+                    token_address: None,
+                    blockchain: None,
+                })
+                .await?
+                .into_result()
+                .context("initial token not found in strategy")?;
             let strategy_fee = req.quantity * (100000.0 * user_back_fee_ratio) as u64 / 100000;
+            let sp_tokens = calculate_sp_tokens_to_mint_easy_approach(
+                token,
+                req.quantity - strategy_fee,
+                18.into(),
+            )
+            .await?;
             Ok(UserGetBackStrategyReviewDetailResponse {
                 strategy_fee,
-                total_amount_to_back: Default::default(),
-                estimated_amount_of_strategy_tokens: Default::default(),
+                total_amount_to_back: req.quantity,
+                estimated_amount_of_strategy_tokens: sp_tokens,
             })
         }
         .boxed()

@@ -14,11 +14,11 @@ use eyre::{bail, ensure, eyre, ContextCompat, WrapErr};
 use gen::database::{
     FunAdminListUsersReq, FunUserAddStrategyPoolContractReq, FunUserAddStrategyWalletReq,
     FunUserBackStrategyReq, FunUserListStrategiesReq, FunUserListStrategyInitialTokenRatiosReq,
-    FunUserListStrategyWalletsReq, FunUserListUserDepositWithdrawBalanceReq,
-    FunWatcherListLastDexTradesForPairReq, FunWatcherListStrategyPoolContractAssetBalancesReq,
-    FunWatcherListStrategyPoolContractReq, FunWatcherListUserStrategyBalanceReq,
-    FunWatcherUpsertLastDexTradeForPairReq, FunWatcherUpsertStrategyPoolContractAssetBalanceReq,
-    FunWatcherUpsertUserStrategyBalanceReq,
+    FunUserListStrategyInitialTokenRatiosRespRow, FunUserListStrategyWalletsReq,
+    FunUserListUserDepositWithdrawBalanceReq, FunWatcherListLastDexTradesForPairReq,
+    FunWatcherListStrategyPoolContractAssetBalancesReq, FunWatcherListStrategyPoolContractReq,
+    FunWatcherListUserStrategyBalanceReq, FunWatcherUpsertLastDexTradeForPairReq,
+    FunWatcherUpsertStrategyPoolContractAssetBalanceReq, FunWatcherUpsertUserStrategyBalanceReq,
 };
 use gen::model::{EnumBlockChain, EnumDex};
 use lib::database::DbClient;
@@ -255,6 +255,7 @@ pub async fn user_back_strategy(
     let strategy_initial_ratios = db
         .execute(FunUserListStrategyInitialTokenRatiosReq {
             strategy_id,
+            token_id: None,
             token_address: None,
             blockchain: Some(blockchain),
         })
@@ -307,17 +308,39 @@ pub async fn user_back_strategy(
         .zip(sp_assets_and_amounts.1.into_iter())
         .collect();
     let escrow_token_contract = Erc20Token::new(conn.clone(), token_address)?;
-    let strategy_pool_token_to_mint = calculate_sp_tokens_to_mint_easy_approach(
-        &conn,
-        &CoinMarketCap::new_debug_key()?,
-        total_strategy_pool_tokens,
-        sp_assets_and_amounts,
-        sp_contract.decimals().await?,
-        escrow_token_contract.symbol().await?,
-        back_usdc_amount_minus_fees,
-        escrow_token_contract.decimals().await?,
-    )
-    .await?;
+    let token = db
+        .execute(FunUserListStrategyInitialTokenRatiosReq {
+            strategy_id,
+            token_id: Some(token_id),
+            token_address: None,
+            blockchain: None,
+        })
+        .await?
+        .into_result()
+        .context("initial token not found in strategy")?;
+    let strategy_pool_token_to_mint =
+        if token.relative_token_id.is_some() && token.relative_quantity.is_some() {
+            info!("Calculating strategy token with easy approach");
+            calculate_sp_tokens_to_mint_easy_approach(
+                token,
+                back_usdc_amount_minus_fees,
+                escrow_token_contract.decimals().await?,
+            )
+            .await?
+        } else {
+            info!("Calculating strategy token by usd value");
+            calculate_sp_tokens_to_mint_by_usd_value(
+                &conn,
+                &CoinMarketCap::new_debug_key()?,
+                total_strategy_pool_tokens,
+                sp_assets_and_amounts,
+                sp_contract.decimals().await?,
+                escrow_token_contract.symbol().await?,
+                back_usdc_amount_minus_fees,
+                escrow_token_contract.decimals().await?,
+            )
+            .await?
+        };
 
     /* instantiate pancake contract */
     let pancake_contract = PancakeSmartRouterV3Contract::new(
@@ -499,7 +522,19 @@ fn calculate_escrow_allocation_for_strategy_tokens(
     Ok(escrow_allocations)
 }
 
-async fn calculate_sp_tokens_to_mint_easy_approach(
+pub async fn calculate_sp_tokens_to_mint_easy_approach(
+    token: FunUserListStrategyInitialTokenRatiosRespRow,
+    escrow_amount: U256,
+    escrow_decimals: U256,
+) -> Result<U256> {
+    let relative_quantity = token.relative_quantity.unwrap();
+    let result = escrow_amount.mul_div(
+        relative_quantity.into(),
+        U256::exp10(escrow_decimals.as_u32() as _),
+    )?;
+    Ok(result)
+}
+async fn calculate_sp_tokens_to_mint_by_usd_value(
     conn: &EthereumRpcConnection,
     cmc: &CoinMarketCap,
     sp_total_shares: U256,
@@ -711,6 +746,7 @@ pub async fn user_back_strategy_sergio_tries_to_help(
     let strategy_initial_ratios = db
         .execute(FunUserListStrategyInitialTokenRatiosReq {
             strategy_id,
+            token_id: None,
             token_address: None,
             blockchain: Some(blockchain),
         })
@@ -1115,6 +1151,8 @@ mod tests {
             strategy_id,
             token_id: 666,
             quantity: U256::from_dec_str("100000000")?.into(),
+            relative_token_id: None,
+            relative_quantity: None,
         })
         .await?;
 
