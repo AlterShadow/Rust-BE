@@ -954,5 +954,22 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 ),
             ],
         ),
+        EndpointSchema::new(
+            "UserGetBackStrategyReviewDetail",
+            20540,
+            vec![
+                Field::new("strategy_id", Type::BigInt),
+                Field::new("token_id", Type::BigInt),
+                Field::new("quantity", Type::BlockchainDecimal),
+            ],
+            vec![
+                Field::new("strategy_fee", Type::BlockchainDecimal),
+                Field::new("total_amount_to_back", Type::BlockchainDecimal),
+                Field::new(
+                    "estimated_amount_of_strategy_tokens",
+                    Type::BlockchainDecimal,
+                ),
+            ],
+        ),
     ]
 }

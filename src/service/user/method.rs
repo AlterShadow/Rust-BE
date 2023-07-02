@@ -2551,3 +2551,57 @@ impl RequestHandler for MethodUserListStrategyTokenBalance {
         .boxed()
     }
 }
+pub struct MethodUserGetBackStrategyReviewDetail {
+    pub pool: EthereumRpcConnectionPool,
+    pub escrow_contract: Arc<AbstractEscrowContract>,
+    pub master_key: Secp256k1SecretKey,
+    pub dex_addresses: Arc<DexAddresses>,
+}
+
+impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
+    type Request = UserGetBackStrategyReviewDetailRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db = toolbox.get_db();
+        let pool = self.pool.clone();
+        let escrow_contract = self.escrow_contract.clone();
+        let master_key = self.master_key.clone();
+        let dex_addresses = self.dex_addresses.clone();
+        async move {
+            ensure_user_role(ctx, EnumRole::User)?;
+            let strategy = db
+                .execute(FunUserListStrategiesReq {
+                    user_id: ctx.user_id,
+                    limit: 1,
+                    offset: 0,
+                    strategy_id: Some(req.strategy_id),
+                    strategy_name: None,
+                    expert_public_id: None,
+                    expert_name: None,
+                    description: None,
+                    blockchain: None,
+                    wallet_address: None,
+                })
+                .await?
+                .into_result()
+                .with_context(|| {
+                    CustomError::new(EnumErrorCode::NotFound, "Could not find strategy")
+                })?;
+            let user_back_fee_ratio = strategy.swap_fee.unwrap_or_default()
+                + strategy.expert_fee.unwrap_or_default()
+                + strategy.strategy_fee.unwrap_or_default();
+            let strategy_fee = req.quantity * (100000.0 * user_back_fee_ratio) as u64 / 100000;
+            Ok(UserGetBackStrategyReviewDetailResponse {
+                strategy_fee,
+                total_amount_to_back: Default::default(),
+                estimated_amount_of_strategy_tokens: Default::default(),
+            })
+        }
+        .boxed()
+    }
+}

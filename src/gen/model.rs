@@ -407,6 +407,9 @@ pub enum EnumEndpoint {
     #[postgres(name = "UserListStrategyTokenBalance")]
     UserListStrategyTokenBalance = 20530,
     ///
+    #[postgres(name = "UserGetBackStrategyReviewDetail")]
+    UserGetBackStrategyReviewDetail = 20540,
+    ///
     #[postgres(name = "AdminListUsers")]
     AdminListUsers = 30010,
     ///
@@ -1682,6 +1685,24 @@ pub struct UserFollowStrategyRequest {
 #[serde(rename_all = "camelCase")]
 pub struct UserFollowStrategyResponse {
     pub success: bool,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserGetBackStrategyReviewDetailRequest {
+    pub strategy_id: i64,
+    pub token_id: i64,
+    #[serde(with = "WithBlockchainDecimal")]
+    pub quantity: U256,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserGetBackStrategyReviewDetailResponse {
+    #[serde(with = "WithBlockchainDecimal")]
+    pub strategy_fee: U256,
+    #[serde(with = "WithBlockchainDecimal")]
+    pub total_amount_to_back: U256,
+    #[serde(with = "WithBlockchainDecimal")]
+    pub estimated_amount_of_strategy_tokens: U256,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -7084,6 +7105,49 @@ impl WsRequest for UserListStrategyTokenBalanceRequest {
 }
 impl WsResponse for UserListStrategyTokenBalanceResponse {
     type Request = UserListStrategyTokenBalanceRequest;
+}
+
+impl WsRequest for UserGetBackStrategyReviewDetailRequest {
+    type Response = UserGetBackStrategyReviewDetailResponse;
+    const METHOD_ID: u32 = 20540;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserGetBackStrategyReviewDetail",
+  "code": 20540,
+  "parameters": [
+    {
+      "name": "strategy_id",
+      "ty": "BigInt"
+    },
+    {
+      "name": "token_id",
+      "ty": "BigInt"
+    },
+    {
+      "name": "quantity",
+      "ty": "BlockchainDecimal"
+    }
+  ],
+  "returns": [
+    {
+      "name": "strategy_fee",
+      "ty": "BlockchainDecimal"
+    },
+    {
+      "name": "total_amount_to_back",
+      "ty": "BlockchainDecimal"
+    },
+    {
+      "name": "estimated_amount_of_strategy_tokens",
+      "ty": "BlockchainDecimal"
+    }
+  ],
+  "stream_response": null,
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for UserGetBackStrategyReviewDetailResponse {
+    type Request = UserGetBackStrategyReviewDetailRequest;
 }
 
 impl WsRequest for AdminListUsersRequest {

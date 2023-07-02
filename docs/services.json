@@ -4279,6 +4279,41 @@
           "stream_response": null,
           "description": "",
           "json_schema": null
+        },
+        {
+          "name": "UserGetBackStrategyReviewDetail",
+          "code": 20540,
+          "parameters": [
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "token_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "quantity",
+              "ty": "BlockchainDecimal"
+            }
+          ],
+          "returns": [
+            {
+              "name": "strategy_fee",
+              "ty": "BlockchainDecimal"
+            },
+            {
+              "name": "total_amount_to_back",
+              "ty": "BlockchainDecimal"
+            },
+            {
+              "name": "estimated_amount_of_strategy_tokens",
+              "ty": "BlockchainDecimal"
+            }
+          ],
+          "stream_response": null,
+          "description": "",
+          "json_schema": null
         }
       ]
     },

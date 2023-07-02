@@ -172,6 +172,12 @@ async fn main() -> Result<()> {
         pool: eth_pool.clone(),
         master_key: master_key.clone(),
     });
+    server.add_handler(MethodUserGetBackStrategyReviewDetail {
+        pool: eth_pool.clone(),
+        escrow_contract: escrow_contract.clone(),
+        master_key: master_key.clone(),
+        dex_addresses: Arc::new(DexAddresses::new()),
+    });
     server.add_handler(MethodUserBackStrategy {
         pool: eth_pool.clone(),
         escrow_contract: escrow_contract.clone(),
