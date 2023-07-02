@@ -531,7 +531,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                         "UserCreateStrategyInitialTokenRow",
                         vec![
                             Field::new("token_id", Type::BigInt),
-                            Field::new("quantity", Type::BlockchainDecimal),
+                            Field::new("quantity", Type::Numeric),
                         ],
                     ),
                 ),
@@ -645,7 +645,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
             vec![
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("token_id", Type::BigInt),
-                Field::new("quantity", Type::BlockchainDecimal),
+                Field::new("quantity", Type::Numeric),
             ],
             vec![
                 Field::new("success", Type::Boolean),

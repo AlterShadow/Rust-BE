@@ -1464,7 +1464,7 @@ impl RequestHandler for MethodExpertCreateStrategy {
         &self,
         toolbox: &Toolbox,
         ctx: RequestContext,
-        req: Self::Request,
+        mut req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         let cmc_client = self.cmc_client.clone();
@@ -1534,6 +1534,42 @@ impl RequestHandler for MethodExpertCreateStrategy {
                     .await?;
                 }
             }
+            let usdc = db
+                .execute(FunUserListEscrowTokenContractAddressReq {
+                    limit: 1,
+                    token_id: None,
+                    blockchain: None,
+                    address: None,
+                    symbol: Some(EnumBlockchainCoin::USDC.to_string()),
+                    offset: 0,
+                    is_stablecoin: None,
+                })
+                .await?
+                .into_result()
+                .with_context(|| {
+                    CustomError::new(
+                        EnumErrorCode::NotFound,
+                        format!("token not found: {}", "USDC"),
+                    )
+                })?;
+            ensure!(
+                req.initial_tokens.iter().map(|x| x.quantity).sum::<f64>() > 0.into(),
+                CustomError::new(
+                    EnumErrorCode::InvalidArgument,
+                    "Initial token quantity must be greater than 0"
+                )
+            );
+            if req
+                .initial_tokens
+                .iter()
+                .find(|x| x.token_id == usdc.token_id)
+                .is_none()
+            {
+                req.initial_tokens.push(UserCreateStrategyInitialTokenRow {
+                    token_id: usdc.token_id,
+                    quantity: 0.into(),
+                });
+            }
 
             for token in req.initial_tokens {
                 let tk = db
@@ -1558,8 +1594,8 @@ impl RequestHandler for MethodExpertCreateStrategy {
                     db.execute(FunUserAddStrategyInitialTokenRatioReq {
                         strategy_id: ret.strategy_id,
                         token_id: token.token_id,
-                        quantity: token.quantity.into(),
-                        relative_token_id: Some(tk.token_id),
+                        quantity: token.quantity,
+                        relative_token_id: Some(usdc.token_id),
                         relative_quantity: Some(
                             req.strategy_token_relative_to_usdc_ratio
                                 .unwrap_or(U256::exp10(18))
@@ -1845,7 +1881,7 @@ impl RequestHandler for MethodExpertAddStrategyInitialTokenRatio {
             let ret = db
                 .execute(FunUserAddStrategyInitialTokenRatioReq {
                     strategy_id: req.strategy_id,
-                    quantity: req.quantity.into(),
+                    quantity: req.quantity,
                     relative_token_id: None,
                     token_id: req.token_id,
                     relative_quantity: None,
