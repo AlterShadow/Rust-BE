@@ -1579,7 +1579,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_add_strategy_initial_token_ratio(a_strategy_id bigint, a_token_id bigint, a_quantity varchar, a_relative_token_id bigint DEFAULT NULL, a_relative_quantity varchar DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_user_add_strategy_initial_token_ratio(a_strategy_id bigint, a_token_id bigint, a_quantity double precision, a_relative_token_id bigint DEFAULT NULL, a_relative_quantity varchar DEFAULT NULL)
 RETURNS table (
     "strategy_initial_token_ratio_id" bigint
 )

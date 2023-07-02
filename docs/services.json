@@ -3102,7 +3102,7 @@
                     },
                     {
                       "name": "quantity",
-                      "ty": "BlockchainDecimal"
+                      "ty": "Numeric"
                     }
                   ]
                 }
@@ -3405,7 +3405,7 @@
             },
             {
               "name": "quantity",
-              "ty": "BlockchainDecimal"
+              "ty": "Numeric"
             }
           ],
           "returns": [
