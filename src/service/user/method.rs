@@ -2635,6 +2635,7 @@ pub struct MethodUserGetBackStrategyReviewDetail {
     pub escrow_contract: Arc<AbstractEscrowContract>,
     pub master_key: Secp256k1SecretKey,
     pub dex_addresses: Arc<DexAddresses>,
+    pub cmc: CoinMarketCap,
 }
 
 impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
@@ -2650,6 +2651,7 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
         let pool = self.pool.clone();
         let escrow_contract = self.escrow_contract.clone();
         let master_key = self.master_key.clone();
+        let cmc = self.cmc.clone();
         async move {
             ensure_user_role(ctx, EnumRole::User)?;
             let token = db
@@ -2671,6 +2673,7 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
                 fees,
                 back_usdc_amount_minus_fees,
                 strategy_token_to_mint,
+                ..
             } = calculate_user_back_strategy_calculate_amount_to_mint(
                 &eth_conn,
                 &ctx,
@@ -2685,6 +2688,8 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
                 &DexAddresses::new(),
                 master_key,
                 DynLogger::empty(),
+                true,
+                Some(cmc),
             )
             .await?;
             Ok(UserGetBackStrategyReviewDetailResponse {

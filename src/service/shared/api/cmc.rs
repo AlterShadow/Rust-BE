@@ -59,6 +59,7 @@ pub struct MapCoinInfo {
 pub struct MapCoinResponse {
     pub data: Vec<MapCoinInfo>,
 }
+#[derive(Clone)]
 pub struct CoinMarketCap {
     client: Client,
     base_url: String,

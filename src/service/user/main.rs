@@ -177,6 +177,7 @@ async fn main() -> Result<()> {
         escrow_contract: escrow_contract.clone(),
         master_key: master_key.clone(),
         dex_addresses: Arc::new(DexAddresses::new()),
+        cmc: CoinMarketCap::new(config.cmc_api_key.expose_secret())?,
     });
     server.add_handler(MethodUserBackStrategy {
         pool: eth_pool.clone(),
