@@ -1236,6 +1236,8 @@ pub struct ExpertCreateStrategyRequest {
     #[serde(with = "WithBlockchainAddress")]
     pub wallet_address: Address,
     pub wallet_blockchain: EnumBlockChain,
+    #[serde(default)]
+    pub strategy_token_relative_to_usdc_ratio: Option<U256>,
     pub initial_tokens: Vec<UserCreateStrategyInitialTokenRow>,
     #[serde(default)]
     pub audit_rules: Option<Vec<i64>>,
@@ -5710,6 +5712,12 @@ impl WsRequest for ExpertCreateStrategyRequest {
       "name": "wallet_blockchain",
       "ty": {
         "EnumRef": "block_chain"
+      }
+    },
+    {
+      "name": "strategy_token_relative_to_usdc_ratio",
+      "ty": {
+        "Optional": "BlockchainDecimal"
       }
     },
     {

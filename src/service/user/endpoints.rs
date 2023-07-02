@@ -524,6 +524,10 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 Field::new("wallet_address", Type::BlockchainAddress),
                 Field::new("wallet_blockchain", Type::enum_ref("block_chain")),
                 Field::new(
+                    "strategy_token_relative_to_usdc_ratio",
+                    Type::optional(Type::BlockchainDecimal),
+                ),
+                Field::new(
                     "initial_tokens",
                     Type::datatable(
                         "UserCreateStrategyInitialTokenRow",

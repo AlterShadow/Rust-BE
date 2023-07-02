@@ -3093,6 +3093,12 @@
               }
             },
             {
+              "name": "strategy_token_relative_to_usdc_ratio",
+              "ty": {
+                "Optional": "BlockchainDecimal"
+              }
+            },
+            {
               "name": "initial_tokens",
               "ty": {
                 "DataTable": {

@@ -1554,7 +1554,11 @@ impl RequestHandler for MethodExpertCreateStrategy {
                         token_id: token.token_id,
                         quantity: token.quantity.into(),
                         relative_token_id: Some(tk.token_id),
-                        relative_quantity: Some(U256::exp10(18).into()),
+                        relative_quantity: Some(
+                            req.strategy_token_relative_to_usdc_ratio
+                                .unwrap_or(U256::exp10(18))
+                                .into(),
+                        ),
                     })
                     .await?;
                 } else {
