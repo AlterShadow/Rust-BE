@@ -23,7 +23,7 @@ use gen::database::{
 use gen::model::{EnumBlockChain, EnumDex};
 use lib::database::DbClient;
 use lib::toolbox::RequestContext;
-use lib::types::U256;
+use lib::types::{H256, U256};
 use std::collections::HashMap;
 use tracing::{debug, info};
 use web3::signing::Key;
@@ -176,7 +176,9 @@ pub async fn user_back_strategy(
     escrow_contract: EscrowContract<EitherTransport>,
     dex_addresses: &DexAddresses,
     master_key: impl Key + Clone,
+    report_progress: &impl Fn(bool, &str, H256),
 ) -> Result<()> {
+    report_progress(false, "checking back amount", H256::zero());
     if back_usdc_amount == U256::zero() {
         bail!("back zero amount");
     }

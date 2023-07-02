@@ -1616,8 +1616,14 @@ pub struct UserBackStrategyRequest {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserBackStrategyResponse {
-    pub success: bool,
+pub struct UserBackStrategyResponse {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserBackStrategyStreamResponse {
+    pub end: bool,
+    pub msg: String,
+    #[serde(with = "WithBlockchainTransactionHash")]
+    pub hash: H256,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -3796,13 +3802,26 @@ impl WsRequest for UserBackStrategyRequest {
       "ty": "BigInt"
     }
   ],
-  "returns": [
-    {
-      "name": "success",
-      "ty": "Boolean"
+  "returns": [],
+  "stream_response": {
+    "Struct": {
+      "name": "UserBackStrategyStreamResponse",
+      "fields": [
+        {
+          "name": "end",
+          "ty": "Boolean"
+        },
+        {
+          "name": "msg",
+          "ty": "String"
+        },
+        {
+          "name": "hash",
+          "ty": "BlockchainTransactionHash"
+        }
+      ]
     }
-  ],
-  "stream_response": null,
+  },
   "description": "",
   "json_schema": null
 }"#;

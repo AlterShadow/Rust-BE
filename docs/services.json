@@ -1326,13 +1326,26 @@
               "ty": "BigInt"
             }
           ],
-          "returns": [
-            {
-              "name": "success",
-              "ty": "Boolean"
+          "returns": [],
+          "stream_response": {
+            "Struct": {
+              "name": "UserBackStrategyStreamResponse",
+              "fields": [
+                {
+                  "name": "end",
+                  "ty": "Boolean"
+                },
+                {
+                  "name": "msg",
+                  "ty": "String"
+                },
+                {
+                  "name": "hash",
+                  "ty": "BlockchainTransactionHash"
+                }
+              ]
             }
-          ],
-          "stream_response": null,
+          },
           "description": "",
           "json_schema": null
         },

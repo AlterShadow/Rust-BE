@@ -318,6 +318,7 @@ impl Into<ErrorCode> for EnumErrorCode {{
                 vec![
                     collect_rust_recursive_types(req),
                     collect_rust_recursive_types(resp),
+                    e.stream_response.into_iter().collect(),
                 ]
                 .concat()
                 .into_iter(),

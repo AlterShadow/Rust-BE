@@ -183,6 +183,7 @@ async fn main() -> Result<()> {
         escrow_contract: escrow_contract.clone(),
         master_key: master_key.clone(),
         dex_addresses: Arc::new(DexAddresses::new()),
+        subscribe_manager: Arc::clone(&sub_manager),
     });
     server.add_handler(MethodUserExitStrategy {
         pool: eth_pool.clone(),

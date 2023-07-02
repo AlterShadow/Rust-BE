@@ -30,7 +30,7 @@ use lib::{DEFAULT_LIMIT, DEFAULT_OFFSET};
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::time::sleep;
-use tracing::info;
+use tracing::{error, info};
 use web3::signing::Key;
 use web3::types::{Address, H256, U256};
 include!("../shared/method.rs");
@@ -509,6 +509,7 @@ pub struct MethodUserBackStrategy {
     pub escrow_contract: Arc<AbstractEscrowContract>,
     pub master_key: Secp256k1SecretKey,
     pub dex_addresses: Arc<DexAddresses>,
+    pub subscribe_manager: Arc<SubscribeManager<AdminSubscribeTopic>>,
 }
 impl RequestHandler for MethodUserBackStrategy {
     type Request = UserBackStrategyRequest;
@@ -520,10 +521,12 @@ impl RequestHandler for MethodUserBackStrategy {
         req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
+        let toolbox = toolbox.clone();
         let pool = self.pool.clone();
         let dex_addresses = self.dex_addresses.clone();
         let escrow_contract = self.escrow_contract.clone();
         let master_key = self.master_key.clone();
+        let subscribe_manager = self.subscribe_manager.clone();
         async move {
             let token = db
                 .execute(FunUserListEscrowTokenContractAddressReq {
@@ -541,29 +544,47 @@ impl RequestHandler for MethodUserBackStrategy {
             let escrow_contract = escrow_contract.get(&pool, token.blockchain).await?;
             let eth_conn = pool.get(token.blockchain).await?;
             ensure_user_role(ctx, EnumRole::User)?;
-
-            if let Err(err) = back_strategy::user_back_strategy(
-                &eth_conn,
-                &ctx,
-                &db,
-                token.blockchain,
-                ctx.user_id,
-                req.quantity.into(),
-                req.strategy_id,
-                token.token_id,
-                token.address.into(),
-                escrow_contract,
-                &dex_addresses,
-                master_key,
-            )
-            .await
-            {
-                bail!(CustomError::new(
-                    EnumErrorCode::InternalError,
-                    format!("{:?}", err),
-                ))
-            }
-            Ok(UserBackStrategyResponse { success: true })
+            subscribe_manager.subscribe(AdminSubscribeTopic::UserBackProgress, ctx);
+            let seq = ctx.seq;
+            let report_progress = move |end: bool, msg: &str, hash: H256| {
+                subscribe_manager.publish_with_filter(
+                    &toolbox,
+                    AdminSubscribeTopic::UserBackProgress,
+                    &UserBackStrategyStreamResponse {
+                        end,
+                        msg: msg.to_string(),
+                        hash: hash.into(),
+                    },
+                    |ctx| ctx.seq == seq,
+                )
+            };
+            tokio::spawn(async move {
+                if let Err(err) = back_strategy::user_back_strategy(
+                    &eth_conn,
+                    &ctx,
+                    &db,
+                    token.blockchain,
+                    ctx.user_id,
+                    req.quantity.into(),
+                    req.strategy_id,
+                    token.token_id,
+                    token.address.into(),
+                    escrow_contract,
+                    &dex_addresses,
+                    master_key,
+                    &report_progress,
+                )
+                .await
+                {
+                    error!("user back strategy error: {:?}", err);
+                    report_progress(
+                        true,
+                        &format!("user back strategy error {}", err),
+                        H256::zero(),
+                    );
+                }
+            });
+            Ok(UserBackStrategyResponse {})
         }
         .boxed()
     }

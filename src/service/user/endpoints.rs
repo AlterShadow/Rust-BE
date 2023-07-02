@@ -245,8 +245,16 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 Field::new("quantity", Type::BlockchainDecimal),
                 Field::new("token_id", Type::BigInt),
             ],
-            vec![Field::new("success", Type::Boolean)],
-        ),
+            vec![],
+        )
+        .with_stream_response_type(Type::struct_(
+            "UserBackStrategyStreamResponse",
+            vec![
+                Field::new("end", Type::Boolean),
+                Field::new("msg", Type::String),
+                Field::new("hash", Type::BlockchainTransactionHash),
+            ],
+        )),
         EndpointSchema::new(
             "UserExitStrategy",
             20110,

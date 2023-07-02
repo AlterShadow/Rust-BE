@@ -476,6 +476,7 @@ impl RequestHandler for MethodAdminAddAuditRule {
 pub enum AdminSubscribeTopic {
     AdminNotifyEscrowLedgerChange = 1,
     AdminNotifyEscrowLedgerChangeAll = 2,
+    UserBackProgress = 3,
 }
 impl Into<u32> for AdminSubscribeTopic {
     fn into(self) -> u32 {
