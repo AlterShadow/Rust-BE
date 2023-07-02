@@ -2258,21 +2258,32 @@ impl RequestHandler for MethodUserCreateStrategyWallet {
         let master_key = self.master_key.clone();
         async move {
             let conn = pool.get(req.blockchain).await?;
+            let wallet = db
+                .execute(FunUserListRegisteredWalletsReq {
+                    limit: 1,
+                    offset: 0,
+                    user_id: Some(ctx.user_id),
+                    blockchain: Some(req.blockchain),
+                    address: None,
+                })
+                .await?
+                .into_result()
+                .with_context(|| {
+                    CustomError::new(
+                        EnumErrorCode::NotFound,
+                        format!("User has not registered wallet on {:?}", req.blockchain),
+                    )
+                })?;
             let strategy_wallet = back_strategy::deploy_wallet_contract(
                 &conn,
                 master_key.clone(),
-                req.wallet_address.into(),
-                match req.adminship {
-                    true => master_key.address(),
-                    false => Address::zero(),
-                },
+                wallet.address.into(),
+                master_key.address(),
                 DynLogger::empty(),
             )
             .await?;
 
             db.execute(FunUserAddStrategyWalletReq {
-                // TODO: add opt in adminship in database for each strategy wallet
-                // TODO: add backer wallet address registered in strategy wallet in database
                 user_id: ctx.user_id,
                 blockchain: req.blockchain,
                 address: strategy_wallet.address().into(),

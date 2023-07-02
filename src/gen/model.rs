@@ -1637,10 +1637,7 @@ pub struct UserCreateStrategyInitialTokenRow {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserCreateStrategyWalletRequest {
-    #[serde(with = "WithBlockchainAddress")]
-    pub wallet_address: Address,
     pub blockchain: EnumBlockChain,
-    pub adminship: bool,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -6690,18 +6687,10 @@ impl WsRequest for UserCreateStrategyWalletRequest {
   "code": 20391,
   "parameters": [
     {
-      "name": "wallet_address",
-      "ty": "BlockchainAddress"
-    },
-    {
       "name": "blockchain",
       "ty": {
         "EnumRef": "block_chain"
       }
-    },
-    {
-      "name": "adminship",
-      "ty": "Boolean"
     }
   ],
   "returns": [
