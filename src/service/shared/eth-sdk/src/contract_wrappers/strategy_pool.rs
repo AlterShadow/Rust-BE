@@ -6,6 +6,7 @@ use crate::{
 };
 use eyre::*;
 use gen::model::EnumBlockChain;
+use lib::log::DynLogger;
 use std::time::Duration;
 use tracing::info;
 use web3::contract::{Contract, Options};
@@ -46,9 +47,10 @@ impl<T: Transport> StrategyPoolContract<T> {
         key: impl Key + Clone,
         name: String,
         symbol: String,
+        logger: DynLogger,
     ) -> Result<Self> {
         let params = (name.clone(), symbol.clone(), key.address());
-        let contract = deploy_contract(w3.clone(), key, params, "StrategyPool").await?;
+        let contract = deploy_contract(w3.clone(), key, params, "StrategyPool", logger).await?;
         Ok(Self { contract })
     }
 
@@ -199,6 +201,7 @@ impl<T: Transport> StrategyPoolContract<T> {
         amounts: Vec<U256>,
         shares: U256,
         receiver: Address,
+        logger: DynLogger,
     ) -> Result<H256> {
         let estimated_gas = self
             .contract
@@ -220,6 +223,17 @@ impl<T: Transport> StrategyPoolContract<T> {
 							self.address(),
 							signer.address(),
 				);
+        logger.log(
+            format!(
+                "Depositing amounts {:?} of assets {:?} to mint {:?} shares to receiver {:?} to strategy pool contract {:?} by {:?}",
+                amounts.clone(),
+                assets.clone(),
+                shares,
+                receiver,
+                self.address(),
+                signer.address(),
+            ),
+        );
 
         Ok(self
             .contract
@@ -526,6 +540,7 @@ pub async fn sp_deposit_to_and_ensure_success(
     amounts: Vec<U256>,
     shares: U256,
     receiver: Address,
+    logger: DynLogger,
 ) -> Result<H256> {
     /* publish transaction */
     let tx_hash = contract
@@ -536,6 +551,7 @@ pub async fn sp_deposit_to_and_ensure_success(
             amounts.clone(),
             shares,
             receiver,
+            logger,
         )
         .await?;
     let _tx_receipt = wait_for_confirmations(

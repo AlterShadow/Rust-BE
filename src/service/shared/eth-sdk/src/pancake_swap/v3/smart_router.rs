@@ -4,12 +4,13 @@ use crate::v3::multi_hop::MultiHopPath;
 use crate::PancakePairPathSet;
 use crate::{EitherTransport, EthereumRpcConnection};
 use eyre::*;
+use lib::log::DynLogger;
 use std::str::FromStr;
 use std::time::Duration;
 use web3::contract::{Contract, Options};
 use web3::ethabi::Token;
 use web3::signing::Key;
-use web3::types::{Address, H256, U256};
+use web3::types::{Address, TransactionReceipt, H256, U256};
 use web3::{Transport, Web3};
 
 pub const SMART_ROUTER_ABI_JSON: &str = include_str!("smart_router_v3.json");
@@ -729,7 +730,12 @@ pub async fn copy_trade_and_ensure_success(
     paths: PancakePairPathSet,
     amount_in: U256,
     amount_out_minimum: U256,
-) -> Result<H256> {
+    logger: DynLogger,
+) -> Result<TransactionReceipt> {
+    logger.log(&format!(
+        "copy_trade_and_ensure_success: amount_in: {}, amount_out_minimum: {}",
+        amount_in, amount_out_minimum
+    ));
     /* publish transaction */
     let tx_hash = contract
         .copy_trade(
@@ -740,7 +746,11 @@ pub async fn copy_trade_and_ensure_success(
             amount_out_minimum,
         )
         .await?;
-    let _tx_receipt = wait_for_confirmations(
+    logger.log(&format!(
+        "copy_trade_and_ensure_success: tx_hash: {:?}",
+        tx_hash
+    ));
+    let tx_receipt = wait_for_confirmations(
         &conn.eth(),
         tx_hash,
         poll_interval,
@@ -748,8 +758,11 @@ pub async fn copy_trade_and_ensure_success(
         confirmations,
     )
     .await?;
-
-    Ok(tx_hash)
+    logger.log(&format!(
+        "copy_trade_and_ensure_success: tx_receipt: {:?}",
+        tx_receipt.transaction_hash
+    ));
+    Ok(tx_receipt)
 }
 
 #[cfg(test)]

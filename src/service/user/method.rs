@@ -23,6 +23,7 @@ use gen::model::*;
 use itertools::Itertools;
 use lib::database::DbClient;
 use lib::handler::{FutureResponse, RequestHandler};
+use lib::log::DynLogger;
 use lib::toolbox::*;
 use lib::utils::hex_decode;
 use lib::ws::SubscribeManager;
@@ -558,6 +559,9 @@ impl RequestHandler for MethodUserBackStrategy {
                     |ctx| ctx.seq == seq,
                 )
             };
+            let logger = DynLogger::new(Arc::new(move |msg| {
+                report_progress(false, msg, H256::zero());
+            }));
             tokio::spawn(async move {
                 if let Err(err) = back_strategy::user_back_strategy(
                     &eth_conn,
@@ -572,16 +576,12 @@ impl RequestHandler for MethodUserBackStrategy {
                     escrow_contract,
                     &dex_addresses,
                     master_key,
-                    &report_progress,
+                    logger.clone(),
                 )
                 .await
                 {
                     error!("user back strategy error: {:?}", err);
-                    report_progress(
-                        true,
-                        &format!("user back strategy error {}", err),
-                        H256::zero(),
-                    );
+                    logger.log(format!("user back strategy error {}", err));
                 }
             });
             Ok(UserBackStrategyResponse {})
@@ -840,6 +840,7 @@ impl RequestHandler for MethodUserRequestRefund {
                 req.wallet_address.into(),
                 master_key,
                 EnumBlockchainCoin::USDC,
+                DynLogger::empty(),
             )
             .await?;
             Ok(UserRequestRefundResponse { success: true })
@@ -1744,6 +1745,7 @@ pub async fn on_user_request_refund(
     wallet_address: Address,
     escrow_signer: impl Key + Clone,
     token: EnumBlockchainCoin,
+    logger: DynLogger,
 ) -> Result<H256> {
     info!(
         "on_user_request_refund {:?} from {:?} transfer {:?} {:?} to {:?}",
@@ -1770,6 +1772,7 @@ pub async fn on_user_request_refund(
         token_address,
         wallet_address,
         quantity,
+        logger.clone(),
     )
     .await?;
 
@@ -2253,6 +2256,7 @@ impl RequestHandler for MethodUserCreateStrategyWallet {
                     true => master_key.address(),
                     false => Address::zero(),
                 },
+                DynLogger::empty(),
             )
             .await?;
 

@@ -8,6 +8,7 @@ use crate::{
 };
 use eyre::*;
 use gen::model::EnumBlockChain;
+use lib::log::DynLogger;
 use tracing::info;
 use web3::api::Eth;
 use web3::contract::{Contract, Options};
@@ -56,7 +57,7 @@ pub struct EscrowContract<T: Transport> {
 impl<T: Transport> EscrowContract<T> {
     pub async fn deploy(w3: Web3<T>, key: impl Key + Clone) -> Result<Self> {
         let address = key.address();
-        let contract = deploy_contract(w3, key, address, "Escrow").await?;
+        let contract = deploy_contract(w3, key, address, "Escrow", DynLogger::empty()).await?;
         Ok(Self { contract })
     }
 
@@ -76,6 +77,7 @@ impl<T: Transport> EscrowContract<T> {
         token_address: Address,
         recipient: Address,
         amount: U256,
+        logger: DynLogger,
     ) -> Result<H256> {
         info!("Transferring {:?} amount of token {:?} to recipient {:?} from escrow contract {:?} by {:?}",
             amount,
@@ -84,6 +86,14 @@ impl<T: Transport> EscrowContract<T> {
             self.address(),
             signer.address(),
         );
+        logger.log(&format!(
+            "Transferring {:?} amount of token {:?} to recipient {:?} from escrow contract {:?} by {:?}",
+            amount,
+            token_address,
+            recipient,
+            self.address(),
+            signer.address(),
+        ));
         let estimated_gas = self
             .contract
             .estimate_gas(
@@ -100,10 +110,18 @@ impl<T: Transport> EscrowContract<T> {
             "Transferring {:?} amount of token {:?} to recipient {:?} from escrow contract {:?} by {:?}",
             amount,
             token_address,
-						recipient,
+            recipient,
             self.address(),
             signer.address(),
         );
+        logger.log(&format!(
+            "Transferring {:?} amount of token {:?} to recipient {:?} from escrow contract {:?} by {:?}",
+            amount,
+            token_address,
+            recipient,
+            self.address(),
+            signer.address(),
+        ));
 
         Ok(self
             .contract
@@ -199,9 +217,17 @@ pub async fn transfer_token_to_and_ensure_success(
     token_address: Address,
     recipient: Address,
     amount: U256,
+    logger: DynLogger,
 ) -> Result<H256> {
     let tx_hash = contract
-        .transfer_token_to(&conn, signer.clone(), token_address, recipient, amount)
+        .transfer_token_to(
+            &conn,
+            signer.clone(),
+            token_address,
+            recipient,
+            amount,
+            logger,
+        )
         .await?;
     wait_for_confirmations(
         &conn.eth(),

@@ -3,6 +3,7 @@ use crate::erc20::Erc20Token;
 use crate::utils::get_project_root;
 use crate::EitherTransport;
 use eyre::*;
+use lib::log::DynLogger;
 use web3::contract::Options;
 use web3::signing::Key;
 use web3::Web3;
@@ -33,7 +34,10 @@ pub async fn deploy_mock_erc20(
         });
     Ok(Erc20Token::new_with_abi(
         conn,
-        deployer.sign_with_key_and_execute((), key).await?.address(),
+        deployer
+            .sign_with_key_and_execute((), key, DynLogger::empty())
+            .await?
+            .address(),
         web3::ethabi::Contract::load(abi_json.to_string().as_bytes())?,
     )?)
 }
@@ -43,8 +47,8 @@ mod tests {
     use super::*;
     use crate::signer::Secp256k1SecretKey;
     use crate::{
-        EthereumRpcConnectionPool, TxChecker, ANVIL_PRIV_KEY_1, ANVIL_PRIV_KEY_2,
-        ANVIL_PRIV_KEY_3, ANVIL_PRIV_KEY_4,
+        EthereumRpcConnectionPool, TxChecker, ANVIL_PRIV_KEY_1, ANVIL_PRIV_KEY_2, ANVIL_PRIV_KEY_3,
+        ANVIL_PRIV_KEY_4,
     };
     use gen::model::EnumBlockChain;
     use web3::types::U256;

@@ -5,6 +5,7 @@ use crate::{
 };
 use eyre::*;
 use gen::model::EnumBlockChain;
+use lib::log::DynLogger;
 use std::fmt::{Debug, Formatter};
 use std::time::Duration;
 use web3::api::Web3;
@@ -204,7 +205,13 @@ impl Erc20Token {
         secret: impl Key,
         spender: Address,
         amount: U256,
+        logger: DynLogger,
     ) -> Result<H256> {
+        logger.log(format!(
+            "erc20 approve: {:?} {:?} {:?}",
+            self.address, spender, amount
+        ));
+        logger.log("erc20 approve: estimate gas");
         let estimated_gas = self
             .contract
             .estimate_gas(
@@ -216,7 +223,7 @@ impl Erc20Token {
             .await?;
 
         let estimated_gas_price = conn.eth().gas_price().await?;
-
+        logger.log(format!("erc20 approve: estimated gas: {:?}", estimated_gas));
         Ok(self
             .contract
             .signed_call(
@@ -281,10 +288,11 @@ pub async fn approve_and_ensure_success(
     signer: impl Key + Clone,
     spender: Address,
     amount: U256,
+    logger: DynLogger,
 ) -> Result<H256> {
     /* publish transaction */
     let tx_hash = contract
-        .approve(&conn, signer.clone(), spender, amount)
+        .approve(&conn, signer.clone(), spender, amount, logger)
         .await?;
     wait_for_confirmations(
         &conn.eth(),

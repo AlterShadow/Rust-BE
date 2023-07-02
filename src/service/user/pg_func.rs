@@ -1116,7 +1116,7 @@ BEGIN
     JOIN tbl.escrow_token_contract_address AS b ON a.token_id = b.pkey_id
     LEFT JOIN tbl.escrow_token_contract_address AS rb ON a.fkey_token_id_relative_to = rb.pkey_id
     WHERE fkey_strategy_id = a_strategy_id
-    AND (b.pkey_id = a_token_id ON a_token_id ISNULL)
+    AND (b.pkey_id = a_token_id OR a_token_id ISNULL)
     AND (b.address = a_token_address OR a_token_address ISNULL)
     AND (b.blockchain = a_blockchain OR a_blockchain ISNULL);
     

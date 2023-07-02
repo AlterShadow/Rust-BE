@@ -1,6 +1,7 @@
 use eyre::*;
 use serde::*;
 use std::str::FromStr;
+use std::sync::Arc;
 use tracing::level_filters::LevelFilter;
 use tracing_log::LogTracer;
 use tracing_subscriber::{fmt, EnvFilter};
@@ -72,4 +73,21 @@ pub fn setup_logs(log_level: LogLevel) -> Result<()> {
     tracing::subscriber::set_global_default(subscriber).context("Cannot setup_logs")?;
     log_panics::init();
     Ok(())
+}
+#[derive(Clone)]
+pub struct DynLogger {
+    logger: Arc<dyn Fn(&str) + Send + Sync>,
+}
+impl DynLogger {
+    pub fn new(logger: Arc<dyn Fn(&str) + Send + Sync>) -> Self {
+        Self { logger }
+    }
+    pub fn empty() -> Self {
+        Self {
+            logger: Arc::new(|_| {}),
+        }
+    }
+    pub fn log(&self, msg: impl AsRef<str>) {
+        (self.logger)(msg.as_ref())
+    }
 }

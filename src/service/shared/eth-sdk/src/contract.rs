@@ -4,6 +4,7 @@ use crate::{
 };
 use eyre::{bail, ContextCompat};
 use gen::model::EnumBlockChain;
+use lib::log::DynLogger;
 use serde_json::Value;
 use std::fmt::{Debug, Formatter};
 use std::future::Future;
@@ -87,6 +88,7 @@ impl<T: Transport> ContractDeployer<T> {
         &self,
         params: P,
         signer: K,
+        logger: DynLogger,
     ) -> eyre::Result<Contract<T>>
     where
         P: Tokenize,
@@ -98,6 +100,7 @@ impl<T: Transport> ContractDeployer<T> {
         let eth = self.eth.clone();
         let gas = self.options.gas;
         let confirmations = self.confirmations;
+        let logger2 = logger.clone();
         let contract = self
             .do_execute(
                 self.code.as_deref().context("Code is not provided")?,
@@ -107,6 +110,7 @@ impl<T: Transport> ContractDeployer<T> {
                     let transport = transport.clone();
                     let signer = signer.clone();
                     let eth = eth.clone();
+                    let logger = logger2.clone();
                     async move {
                         let tx = TransactionParameters {
                             nonce: tx.nonce,
@@ -123,16 +127,25 @@ impl<T: Transport> ContractDeployer<T> {
                             max_fee_per_gas: tx.max_fee_per_gas,
                             max_priority_fee_per_gas: tx.max_priority_fee_per_gas,
                         };
+                        logger.log(&format!("Signing transaction: {:?}", tx));
                         let signed_tx = Accounts::new(transport)
                             .sign_transaction(tx, signer)
                             .await?;
-
+                        logger.log(&format!(
+                            "Sending transaction: {:?}",
+                            signed_tx.transaction_hash
+                        ));
                         // TODO: buggy here
                         let tx_hash = eth.send_raw_transaction(signed_tx.raw_transaction).await?;
+                        logger.log(&format!(
+                            "Transaction sent, waiting for confirmations: {:?}",
+                            tx_hash
+                        ));
                         wait_for_confirmations(&eth, tx_hash, poll_interval, 10, confirmations as _)
                             .await
                     }
                 },
+                logger,
             )
             .await?;
         Ok(contract)
@@ -144,6 +157,7 @@ impl<T: Transport> ContractDeployer<T> {
         params: P,
         from: Address,
         send: impl Fn(TransactionRequest) -> Ft,
+        logger: DynLogger,
     ) -> eyre::Result<Contract<T>>
     where
         P: Tokenize,
@@ -198,9 +212,11 @@ impl<T: Transport> ContractDeployer<T> {
             max_priority_fee_per_gas: options.max_priority_fee_per_gas,
         };
         for _ in 0..self.max_retries {
+            logger.log(&format!("Deploying contract with nonce {:?}", tx.nonce));
             let receipt = send(tx.clone()).await;
             match receipt {
                 Ok(receipt) => {
+                    logger.log(&format!("transaction hash {}", receipt.transaction_hash));
                     return match receipt.status {
                         Some(status) if status == 0.into() => {
                             Err(Error::ContractDeploymentFailure(receipt.transaction_hash).into())

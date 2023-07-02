@@ -22,8 +22,9 @@ use gen::database::{
 };
 use gen::model::{EnumBlockChain, EnumDex};
 use lib::database::DbClient;
+use lib::log::DynLogger;
 use lib::toolbox::RequestContext;
-use lib::types::{H256, U256};
+use lib::types::U256;
 use std::collections::HashMap;
 use tracing::{debug, info};
 use web3::signing::Key;
@@ -34,12 +35,16 @@ pub async fn deploy_wallet_contract(
     key: impl Key + Clone,
     backer: Address,
     admin: Address,
+    logger: DynLogger,
 ) -> Result<StrategyWalletContract<EitherTransport>> {
     info!("Deploying wallet contract");
+    logger.log("Deploying wallet contract");
 
-    let wallet = StrategyWalletContract::deploy(conn.clone(), key, backer, admin).await?;
+    let wallet =
+        StrategyWalletContract::deploy(conn.clone(), key, backer, admin, logger.clone()).await?;
 
     info!("Deploy wallet contract success");
+    logger.log(&format!("Deploying wallet contract {}", wallet.address()));
 
     Ok(wallet)
 }
@@ -49,17 +54,22 @@ async fn deploy_strategy_contract(
     key: impl Key + Clone,
     strategy_token_name: String,
     strategy_token_symbol: String,
+    logger: DynLogger,
 ) -> Result<StrategyPoolContract<EitherTransport>> {
     info!("Deploying strategy contract");
-
+    logger.log("Deploying strategy contract");
     let strategy = StrategyPoolContract::deploy(
         conn.clone(),
         key,
         strategy_token_name,
         strategy_token_symbol,
+        logger.clone(),
     )
     .await?;
-
+    logger.log(&format!(
+        "Deploying strategy contract {:?}",
+        strategy.address()
+    ));
     info!("Deploy strategy contract success");
     Ok(strategy)
 }
@@ -71,6 +81,7 @@ async fn user_get_or_deploy_strategy_wallet(
     master_key: impl Key + Clone,
     blockchain: EnumBlockChain,
     user_wallet_address_to_receive_shares_on_this_chain: Address,
+    logger: DynLogger,
 ) -> Result<StrategyWalletContract<EitherTransport>> {
     match db
         .execute(FunUserListStrategyWalletsReq {
@@ -92,6 +103,7 @@ async fn user_get_or_deploy_strategy_wallet(
                 master_key.clone(),
                 user_wallet_address_to_receive_shares_on_this_chain,
                 master_key.address(),
+                logger.clone(),
             )
             .await?;
 
@@ -117,6 +129,7 @@ async fn user_get_or_deploy_strategy_pool(
     blockchain: EnumBlockChain,
     strategy_token_name: String,
     strategy_token_symbol: String,
+    logger: DynLogger,
 ) -> Result<(i64, StrategyPoolContract<EitherTransport>)> {
     /* instantiate strategy contract wrapper */
     let strategy_pool = db
@@ -144,6 +157,7 @@ async fn user_get_or_deploy_strategy_pool(
                 master_key.clone(),
                 strategy_token_name,
                 strategy_token_symbol,
+                logger.clone(),
             )
             .await?;
             /* insert strategy contract address in the database */
@@ -176,9 +190,9 @@ pub async fn user_back_strategy(
     escrow_contract: EscrowContract<EitherTransport>,
     dex_addresses: &DexAddresses,
     master_key: impl Key + Clone,
-    report_progress: &impl Fn(bool, &str, H256),
+    logger: DynLogger,
 ) -> Result<()> {
-    report_progress(false, "checking back amount", H256::zero());
+    logger.log("checking back amount");
     if back_usdc_amount == U256::zero() {
         bail!("back zero amount");
     }
@@ -198,6 +212,7 @@ pub async fn user_back_strategy(
         })
         .await?;
     debug!("Fetched {} rows of user balance", user_balance.len());
+
     let user_balance = user_balance.into_result().context("insufficient balance")?;
     let user_balance: U256 = user_balance.balance.into();
     if user_balance < back_usdc_amount {
@@ -223,7 +238,7 @@ pub async fn user_back_strategy(
         .context("No such user")?
         .address
         .into();
-
+    logger.log("user_get_or_deploy_strategy_wallet");
     /* instantiate strategy wallet contract wrapper */
     let strategy_wallet_contract = user_get_or_deploy_strategy_wallet(
         &conn,
@@ -232,6 +247,7 @@ pub async fn user_back_strategy(
         master_key.clone(),
         blockchain,
         user_wallet_address_to_receive_shares_on_this_chain,
+        logger.clone(),
     )
     .await?;
 
@@ -267,16 +283,15 @@ pub async fn user_back_strategy(
         !strategy_initial_ratios.is_empty(),
         "strategy has no initial ratios"
     );
+    logger.log("calculating fees");
     /* deduce fees from back amount */
     // TODO: use (back amount - fees) to calculate trade spenditure and SP shares
     // TODO: distribute fees for the treasury and the strategy creator
-    let platform_fee = 0.01;
     let divide_scale = 10000;
     let fees = back_usdc_amount
         * (((strategy.swap_fee.unwrap_or_default()
             + strategy.strategy_fee.unwrap_or_default()
-            + strategy.expert_fee.unwrap_or_default()
-            + platform_fee)
+            + strategy.expert_fee.unwrap_or_default())
             * divide_scale as f64) as u64)
         / divide_scale;
     let back_usdc_amount_minus_fees = back_usdc_amount - fees;
@@ -291,24 +306,16 @@ pub async fn user_back_strategy(
         blockchain,
         strategy.strategy_name.clone(),
         strategy.strategy_name,
+        logger.clone(),
     )
     .await?;
-
-    /* calculate shares to mint for backer */
+    logger.log("calculating strategy tokens");
+    /* calculate strategy tokens to mint for backer */
     // TODO: find out if we use back amount with or without fees for share calculation
     // currently calculating with back amount minus fees
     // TODO: get these values from database
     let total_strategy_pool_tokens = sp_contract.total_supply().await?;
 
-    let sp_assets_and_amounts = sp_contract
-        .assets_and_balances()
-        .await
-        .context("failed to query strategy pool assets and amounts")?;
-    let sp_assets_and_amounts: HashMap<Address, U256> = sp_assets_and_amounts
-        .0
-        .into_iter()
-        .zip(sp_assets_and_amounts.1.into_iter())
-        .collect();
     let escrow_token_contract = Erc20Token::new(conn.clone(), token_address)?;
     let token = db
         .execute(FunUserListStrategyInitialTokenRatiosReq {
@@ -323,6 +330,7 @@ pub async fn user_back_strategy(
     let strategy_pool_token_to_mint =
         if token.relative_token_id.is_some() && token.relative_quantity.is_some() {
             info!("Calculating strategy token with easy approach");
+            logger.log("calculating strategy tokens with easy approach");
             calculate_sp_tokens_to_mint_easy_approach(
                 token,
                 back_usdc_amount_minus_fees,
@@ -330,7 +338,17 @@ pub async fn user_back_strategy(
             )
             .await?
         } else {
+            let sp_assets_and_amounts = sp_contract
+                .assets_and_balances()
+                .await
+                .context("failed to query strategy pool assets and amounts")?;
+            let sp_assets_and_amounts: HashMap<Address, U256> = sp_assets_and_amounts
+                .0
+                .into_iter()
+                .zip(sp_assets_and_amounts.1.into_iter())
+                .collect();
             info!("Calculating strategy token by usd value");
+            logger.log("calculating strategy tokens by usd value");
             calculate_sp_tokens_to_mint_by_usd_value(
                 &conn,
                 &CoinMarketCap::new_debug_key()?,
@@ -366,6 +384,7 @@ pub async fn user_back_strategy(
         token_address,
         master_key.address(),
         back_usdc_amount_minus_fees,
+        logger.clone(),
     )
     .await?;
     let mut strategy_initial_token_ratios: HashMap<Address, U256> = HashMap::new();
@@ -388,6 +407,7 @@ pub async fn user_back_strategy(
         master_key.clone(),
         pancake_contract.address(),
         back_usdc_amount,
+        logger.clone(),
     )
     .await?;
 
@@ -400,11 +420,16 @@ pub async fn user_back_strategy(
         token_address,
         &pancake_contract,
         escrow_allocations_for_tokens,
+        logger.clone(),
     )
     .await?;
 
     /* approve tokens and amounts to SP contract */
     for (token, amount) in tokens_to_deposit.iter().zip(amounts_to_deposit.iter()) {
+        logger.log(format!(
+            "approving {} token {:?} to strategy pool contract",
+            amount, token
+        ));
         approve_and_ensure_success(
             Erc20Token::new(conn.clone(), token.clone())?,
             &conn,
@@ -414,6 +439,7 @@ pub async fn user_back_strategy(
             master_key.clone(),
             sp_contract.address(),
             amount.clone(),
+            logger.clone(),
         )
         .await?;
     }
@@ -430,6 +456,7 @@ pub async fn user_back_strategy(
         amounts_to_deposit.clone(),
         strategy_pool_token_to_mint,
         strategy_wallet_contract.address(),
+        logger.clone(),
     )
     .await?;
     let user_strategy_balance = db
@@ -496,10 +523,13 @@ pub async fn user_back_strategy(
         .context("No record")?;
     if !ret.success {
         bail!(
-            "User back strategy not sucessful due to other clients updated record at the same time"
+            "User back strategy not successful due to other clients updated record at the same time"
         )
     }
-
+    logger.log(format!(
+        "User backed strategy {:?} with {} USDC",
+        strategy_id, back_usdc_amount
+    ));
     Ok(())
 }
 
@@ -604,6 +634,7 @@ async fn trade_escrow_for_strategy_tokens(
     escrow_token_address: Address,
     dex_contract: &PancakeSmartRouterV3Contract<EitherTransport>,
     tokens_and_amounts_to_buy: HashMap<Address, U256>,
+    logger: DynLogger,
 ) -> Result<(Vec<Address>, Vec<U256>)> {
     /* buys tokens and amounts and returns a vector or bought tokens and amounts out */
     // TODO: stop using hardcoded hashmaps and retrieve paths from database
@@ -618,8 +649,13 @@ async fn trade_escrow_for_strategy_tokens(
             token_amounts_to_deposit.push(amount_to_spend_on_it);
             continue;
         }
+        logger.log(format!(
+            "Trading {} for {}",
+            token_address, escrow_token_address
+        ));
         let pancake_path_set =
             pancake_paths.get_pair_by_address(chain, escrow_token_address, token_address)?;
+
         let trade_hash = copy_trade_and_ensure_success(
             dex_contract.clone(),
             &conn,
@@ -630,11 +666,12 @@ async fn trade_escrow_for_strategy_tokens(
             pancake_path_set,
             amount_to_spend_on_it,
             U256::one(), // TODO: find a way to estimate amount out
+            logger.clone(),
         )
         .await?;
 
         let trade = pancake_trade_parser.parse_trade(
-            &TransactionFetcher::new_and_assume_ready(trade_hash, &conn).await?,
+            &TransactionFetcher::new_and_assume_ready(trade_hash.transaction_hash, &conn).await?,
             chain,
         )?;
 
@@ -643,7 +680,7 @@ async fn trade_escrow_for_strategy_tokens(
 
         /* update last dex trade cache table */
         db.execute(FunWatcherUpsertLastDexTradeForPairReq {
-            transaction_hash: trade_hash.into(),
+            transaction_hash: trade_hash.transaction_hash.into(),
             blockchain: chain.into(),
             dex: EnumDex::PancakeSwap,
             token_in_address: escrow_token_address.into(),
@@ -669,6 +706,7 @@ pub async fn user_back_strategy_sergio_tries_to_help(
     escrow_contract: EscrowContract<EitherTransport>,
     dex_addresses: &DexAddresses,
     master_key: impl Key + Clone,
+    logger: DynLogger,
 ) -> Result<()> {
     if back_usdc_amount == U256::zero() {
         bail!("back zero amount");
@@ -723,6 +761,7 @@ pub async fn user_back_strategy_sergio_tries_to_help(
         master_key.clone(),
         blockchain,
         user_wallet_address_to_receive_shares_on_this_chain,
+        logger.clone(),
     )
     .await?;
 
@@ -783,6 +822,7 @@ pub async fn user_back_strategy_sergio_tries_to_help(
         blockchain,
         strategy.strategy_name.clone(),
         strategy.strategy_name,
+        logger.clone(),
     )
     .await?;
 
@@ -835,6 +875,7 @@ pub async fn user_back_strategy_sergio_tries_to_help(
         token_address,
         master_key.address(),
         back_usdc_amount_minus_fees,
+        logger.clone(),
     )
     .await?;
     let mut strategy_initial_token_ratios: HashMap<Address, U256> = HashMap::new();
@@ -858,6 +899,7 @@ pub async fn user_back_strategy_sergio_tries_to_help(
         master_key.clone(),
         pancake_contract.address(),
         back_usdc_amount,
+        logger.clone(),
     )
     .await?;
 
@@ -870,6 +912,7 @@ pub async fn user_back_strategy_sergio_tries_to_help(
         token_address,
         &pancake_contract,
         escrow_allocations_for_tokens.clone(),
+        logger.clone(),
     )
     .await?;
 
@@ -946,6 +989,7 @@ pub async fn user_back_strategy_sergio_tries_to_help(
             master_key.clone(),
             sp_contract.address(),
             amount.clone(),
+            logger.clone(),
         )
         .await?;
     }
@@ -962,6 +1006,7 @@ pub async fn user_back_strategy_sergio_tries_to_help(
         amounts_to_deposit.clone(),
         strategy_pool_token_to_mint,
         strategy_wallet_contract.address(),
+        logger.clone(),
     )
     .await?;
 
@@ -1431,6 +1476,7 @@ mod tests {
             master_key.clone(),
             user_key.address(),
             master_key.address(),
+            DynLogger::empty(),
         )
         .await?;
 

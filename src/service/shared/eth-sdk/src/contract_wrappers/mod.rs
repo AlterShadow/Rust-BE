@@ -1,6 +1,7 @@
 use crate::contract::{read_abi_from_solc_output, ContractDeployer};
 use crate::utils::get_project_root;
 use eyre::*;
+use lib::log::DynLogger;
 use tracing::info;
 use web3::contract::tokens::Tokenize;
 use web3::contract::{Contract, Options};
@@ -21,6 +22,7 @@ pub async fn deploy_contract<T: Transport>(
     key: impl Key + Clone,
     params: impl Tokenize + Clone,
     contract_name: &str,
+    logger: DynLogger,
 ) -> Result<Contract<T>> {
     let base = get_project_root().parent().unwrap().to_owned();
     let abi_json_path = &base.join(format!(
@@ -44,7 +46,7 @@ pub async fn deploy_contract<T: Transport>(
 
     /* append encoded parameters to bytecode bytes */
     let code_with_constructor = [bin_bytes, constructor_params].concat();
-
+    logger.log(&format!("estimating gas for deploying {}", contract_name));
     /* estimate gas */
     let estimated_gas = w3
         .eth()
@@ -67,7 +69,10 @@ pub async fn deploy_contract<T: Transport>(
 
     /* estimate gas price */
     let estimated_gas_price = w3.eth().gas_price().await?;
-
+    logger.log(&format!(
+        "estimated gas: {}, estimated gas price: {}",
+        estimated_gas, estimated_gas_price
+    ));
     /* setup options with GAS estimations */
     let options = Options {
         gas: Some(estimated_gas),
@@ -85,5 +90,7 @@ pub async fn deploy_contract<T: Transport>(
         .code(bin)
         .options(options);
 
-    Ok(deployer.sign_with_key_and_execute(params, key).await?)
+    Ok(deployer
+        .sign_with_key_and_execute(params, key, logger)
+        .await?)
 }
