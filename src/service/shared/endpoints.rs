@@ -33,6 +33,13 @@ pub fn strategy_row() -> Type {
             Field::new("reputation", Type::Int),
             Field::new("risk_score", Type::Numeric),
             Field::new("strategy_pool_token", Type::String),
+            // strategy fee = platform fee + expert fee
+            Field::new("strategy_fee", Type::Numeric),
+            Field::new("platform_fee", Type::Numeric),
+            Field::new("expert_fee", Type::Numeric),
+            // total fee = strategy fee + swap fee(gas fee)
+            Field::new("swap_fee", Type::Numeric),
+            Field::new("total_fee", Type::Numeric),
         ],
     )
 }

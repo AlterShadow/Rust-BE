@@ -351,6 +351,26 @@
                       {
                         "name": "strategy_pool_token",
                         "ty": "String"
+                      },
+                      {
+                        "name": "strategy_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "platform_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "expert_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "swap_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "total_fee",
+                        "ty": "Numeric"
                       }
                     ]
                   }
@@ -557,6 +577,26 @@
                       {
                         "name": "strategy_pool_token",
                         "ty": "String"
+                      },
+                      {
+                        "name": "strategy_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "platform_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "expert_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "swap_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "total_fee",
+                        "ty": "Numeric"
                       }
                     ]
                   }
@@ -700,6 +740,26 @@
                       {
                         "name": "strategy_pool_token",
                         "ty": "String"
+                      },
+                      {
+                        "name": "strategy_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "platform_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "expert_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "swap_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "total_fee",
+                        "ty": "Numeric"
                       }
                     ]
                   }
@@ -944,6 +1004,26 @@
                     {
                       "name": "strategy_pool_token",
                       "ty": "String"
+                    },
+                    {
+                      "name": "strategy_fee",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "platform_fee",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "expert_fee",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "swap_fee",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "total_fee",
+                      "ty": "Numeric"
                     }
                   ]
                 }
@@ -1452,6 +1532,26 @@
                       {
                         "name": "strategy_pool_token",
                         "ty": "String"
+                      },
+                      {
+                        "name": "strategy_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "platform_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "expert_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "swap_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "total_fee",
+                        "ty": "Numeric"
                       }
                     ]
                   }
@@ -2345,6 +2445,26 @@
                       {
                         "name": "strategy_pool_token",
                         "ty": "String"
+                      },
+                      {
+                        "name": "strategy_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "platform_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "expert_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "swap_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "total_fee",
+                        "ty": "Numeric"
                       }
                     ]
                   }
@@ -2593,6 +2713,26 @@
                       {
                         "name": "strategy_pool_token",
                         "ty": "String"
+                      },
+                      {
+                        "name": "strategy_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "platform_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "expert_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "swap_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "total_fee",
+                        "ty": "Numeric"
                       }
                     ]
                   }
@@ -2709,6 +2849,26 @@
                       {
                         "name": "strategy_pool_token",
                         "ty": "String"
+                      },
+                      {
+                        "name": "strategy_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "platform_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "expert_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "swap_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "total_fee",
+                        "ty": "Numeric"
                       }
                     ]
                   }
@@ -4885,6 +5045,26 @@
                       {
                         "name": "strategy_pool_token",
                         "ty": "String"
+                      },
+                      {
+                        "name": "strategy_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "platform_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "expert_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "swap_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "total_fee",
+                        "ty": "Numeric"
                       }
                     ]
                   }

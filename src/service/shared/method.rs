@@ -38,6 +38,13 @@ pub fn convert_strategy_db_to_api(x: FunUserStrategyRowType) -> ListStrategiesRo
         price_change: 0.97,
         reputation: 5,
         strategy_pool_token: x.strategy_pool_token.unwrap_or_default(),
+        strategy_fee: x.strategy_fee.unwrap_or_default(),
+        platform_fee: x.strategy_fee.unwrap_or_default() + x.expert_fee.unwrap_or_default(),
+        expert_fee: x.expert_fee.unwrap_or_default(),
+        swap_fee: x.swap_fee.unwrap_or_default(),
+        total_fee: x.strategy_fee.unwrap_or_default()
+            + x.expert_fee.unwrap_or_default()
+            + x.swap_fee.unwrap_or_default(),
     }
 }
 pub fn convert_expert_db_to_api(x: FunUserExpertRowType) -> ListExpertsRow {

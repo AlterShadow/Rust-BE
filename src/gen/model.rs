@@ -1424,6 +1424,11 @@ pub struct ListStrategiesRow {
     pub reputation: i32,
     pub risk_score: f64,
     pub strategy_pool_token: String,
+    pub strategy_fee: f64,
+    pub platform_fee: f64,
+    pub expert_fee: f64,
+    pub swap_fee: f64,
+    pub total_fee: f64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -2715,6 +2720,26 @@ impl WsRequest for UserListFollowedStrategiesRequest {
               {
                 "name": "strategy_pool_token",
                 "ty": "String"
+              },
+              {
+                "name": "strategy_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "platform_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "expert_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "swap_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "total_fee",
+                "ty": "Numeric"
               }
             ]
           }
@@ -2937,6 +2962,26 @@ impl WsRequest for UserListStrategiesRequest {
               {
                 "name": "strategy_pool_token",
                 "ty": "String"
+              },
+              {
+                "name": "strategy_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "platform_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "expert_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "swap_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "total_fee",
+                "ty": "Numeric"
               }
             ]
           }
@@ -3088,6 +3133,26 @@ impl WsRequest for UserListTopPerformingStrategiesRequest {
               {
                 "name": "strategy_pool_token",
                 "ty": "String"
+              },
+              {
+                "name": "strategy_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "platform_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "expert_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "swap_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "total_fee",
+                "ty": "Numeric"
               }
             ]
           }
@@ -3356,6 +3421,26 @@ impl WsRequest for UserGetStrategyRequest {
             {
               "name": "strategy_pool_token",
               "ty": "String"
+            },
+            {
+              "name": "strategy_fee",
+              "ty": "Numeric"
+            },
+            {
+              "name": "platform_fee",
+              "ty": "Numeric"
+            },
+            {
+              "name": "expert_fee",
+              "ty": "Numeric"
+            },
+            {
+              "name": "swap_fee",
+              "ty": "Numeric"
+            },
+            {
+              "name": "total_fee",
+              "ty": "Numeric"
             }
           ]
         }
@@ -3920,6 +4005,26 @@ impl WsRequest for UserListBackedStrategiesRequest {
               {
                 "name": "strategy_pool_token",
                 "ty": "String"
+              },
+              {
+                "name": "strategy_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "platform_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "expert_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "swap_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "total_fee",
+                "ty": "Numeric"
               }
             ]
           }
@@ -4885,6 +4990,26 @@ impl WsRequest for UserGetExpertProfileRequest {
               {
                 "name": "strategy_pool_token",
                 "ty": "String"
+              },
+              {
+                "name": "strategy_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "platform_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "expert_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "swap_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "total_fee",
+                "ty": "Numeric"
               }
             ]
           }
@@ -5141,6 +5266,26 @@ impl WsRequest for UserGetUserProfileRequest {
               {
                 "name": "strategy_pool_token",
                 "ty": "String"
+              },
+              {
+                "name": "strategy_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "platform_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "expert_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "swap_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "total_fee",
+                "ty": "Numeric"
               }
             ]
           }
@@ -5257,6 +5402,26 @@ impl WsRequest for UserGetUserProfileRequest {
               {
                 "name": "strategy_pool_token",
                 "ty": "String"
+              },
+              {
+                "name": "strategy_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "platform_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "expert_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "swap_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "total_fee",
+                "ty": "Numeric"
               }
             ]
           }
@@ -7763,6 +7928,26 @@ impl WsRequest for AdminListStrategiesRequest {
               {
                 "name": "strategy_pool_token",
                 "ty": "String"
+              },
+              {
+                "name": "strategy_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "platform_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "expert_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "swap_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "total_fee",
+                "ty": "Numeric"
               }
             ]
           }
