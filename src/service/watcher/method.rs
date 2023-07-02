@@ -22,6 +22,7 @@ use eth_sdk::{
 use eyre::*;
 use gen::database::*;
 use gen::model::*;
+use lib::log::DynLogger;
 use std::sync::Arc;
 use std::time::Duration;
 use tracing::{error, info, trace, warn};
@@ -247,6 +248,7 @@ pub async fn handle_pancake_swap_transaction(
             state.master_key.clone(),
             pancake_contract.address(),
             amount_to_spend,
+            DynLogger::empty(),
         )
         .await?;
 
@@ -261,13 +263,14 @@ pub async fn handle_pancake_swap_transaction(
             expert_trade.get_pancake_pair_paths()?,
             amount_to_spend,
             U256::from(1),
+            DynLogger::empty(),
         )
         .await?;
 
         /* parse trade to find amount_out */
         let strategy_pool_pending_wallet_trade = parse_dex_trade(
             blockchain,
-            &TransactionFetcher::new_and_assume_ready(trade_hash, &conn).await?,
+            &TransactionFetcher::new_and_assume_ready(trade_hash.transaction_hash, &conn).await?,
             &state.dex_addresses,
             &state.pancake_swap,
         )
@@ -283,6 +286,7 @@ pub async fn handle_pancake_swap_transaction(
             state.master_key.clone(),
             strategy_pool_contract.address(),
             strategy_pool_pending_wallet_trade.amount_out,
+            DynLogger::empty(),
         )
         .await?;
 
