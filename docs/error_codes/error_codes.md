@@ -17,6 +17,7 @@
 |102602|TokenNotTop25|Token is not top 25|Audit|
 |102603|ImmutableStrategy|Strategy is immutable|Audit|
 |102604|UserWhitelistedWalletNotSameNetworkAsStrategy|User whitelisted wallet not same network as strategy|Audit|
+|103001|DuplicateRequest|Duplicate request|Custom|
 |3484946|InvalidEnumLevel|InvalidEnumLevel|SQL 22P02|
 |4349632|Error|Error|SQL R0000|
 |45349633|InvalidArgument|InvalidArgument|SQL R0001|
