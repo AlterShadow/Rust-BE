@@ -22,6 +22,7 @@ pub mod escrow_tracker;
 pub mod evm;
 mod pool;
 pub mod signer;
+mod strategy_pool_herald_addresses;
 mod tx;
 pub mod utils;
 pub use address_table::*;
@@ -35,6 +36,7 @@ pub use escrow_addresses::*;
 use gen::model::EnumBlockchainCoin;
 pub use pancake_swap::*;
 pub use pool::*;
+pub use strategy_pool_herald_addresses::*;
 pub use tx::*;
 
 #[derive(Clone)]
