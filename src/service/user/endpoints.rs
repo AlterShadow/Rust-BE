@@ -809,6 +809,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                         vec![
                             Field::new("blockchain", Type::enum_ref("block_chain")),
                             Field::new("address", Type::BlockchainAddress),
+                            Field::new("is_platform_managed", Type::Boolean),
                             Field::new("created_at", Type::BigInt),
                         ],
                     ),

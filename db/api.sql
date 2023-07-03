@@ -1797,14 +1797,14 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_add_strategy_wallet(a_user_id bigint, a_blockchain enum_block_chain, a_address varchar)
+CREATE OR REPLACE FUNCTION api.fun_user_add_strategy_wallet(a_user_id bigint, a_blockchain enum_block_chain, a_address varchar, a_is_platform_managed boolean)
 RETURNS void
 LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    INSERT INTO tbl.user_strategy_wallet (fkey_user_id, blockchain, address, created_at) 
-    VALUES (a_user_id, a_blockchain, a_address, EXTRACT(EPOCH FROM NOW())::BIGINT);
+    INSERT INTO tbl.user_strategy_wallet (fkey_user_id, blockchain, address, is_platform_managed, created_at) 
+    VALUES (a_user_id, a_blockchain, a_address, a_is_platform_managed, EXTRACT(EPOCH FROM NOW())::BIGINT);
 END
             
 $$;
@@ -1815,6 +1815,7 @@ RETURNS table (
     "total" bigint,
     "blockchain" enum_block_chain,
     "address" varchar,
+    "is_platform_managed" boolean,
     "created_at" bigint
 )
 LANGUAGE plpgsql
@@ -1825,7 +1826,8 @@ BEGIN
         COUNT(*) OVER() AS total,
         a.blockchain,
         a.address, 
-    a.created_at 
+        a.is_platform_managed,
+        a.created_at 
     FROM tbl.user_strategy_wallet AS a 
     WHERE a.fkey_user_id = a_user_id 
         AND (a_blockchain ISNULL OR a.blockchain = a_blockchain);

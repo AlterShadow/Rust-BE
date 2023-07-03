@@ -3897,6 +3897,10 @@
                       "ty": "BlockchainAddress"
                     },
                     {
+                      "name": "is_platform_managed",
+                      "ty": "Boolean"
+                    },
+                    {
                       "name": "created_at",
                       "ty": "BigInt"
                     }

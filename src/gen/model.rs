@@ -2168,6 +2168,7 @@ pub struct UserListStrategyWalletsRow {
     pub blockchain: EnumBlockChain,
     #[serde(with = "WithBlockchainAddress")]
     pub address: Address,
+    pub is_platform_managed: bool,
     pub created_at: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -6650,6 +6651,10 @@ impl WsRequest for UserListStrategyWalletsRequest {
             {
               "name": "address",
               "ty": "BlockchainAddress"
+            },
+            {
+              "name": "is_platform_managed",
+              "ty": "Boolean"
             },
             {
               "name": "created_at",

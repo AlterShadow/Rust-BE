@@ -2267,6 +2267,7 @@ impl RequestHandler for MethodUserListStrategyWallets {
                     .map(|x| UserListStrategyWalletsRow {
                         blockchain: x.blockchain,
                         address: x.address.into(),
+                        is_platform_managed: x.is_platform_managed,
                         created_at: x.created_at,
                     })
                     .collect(),
