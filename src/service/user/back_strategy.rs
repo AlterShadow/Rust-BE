@@ -17,7 +17,7 @@ use lib::log::DynLogger;
 use lib::toolbox::RequestContext;
 use lib::types::U256;
 use std::collections::HashMap;
-use tracing::{debug, info};
+use tracing::{debug, info, warn};
 use web3::signing::Key;
 use web3::types::Address;
 
@@ -258,10 +258,9 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
         })
         .await?
         .into_rows();
-
     let mut strategy_pool_active: bool = false;
     let mut sp_assets_and_amounts: HashMap<Address, U256> = HashMap::new();
-    for sp_asset_row in strategy_pool_assets {
+    for sp_asset_row in &strategy_pool_assets {
         if sp_asset_row.balance > U256::zero().into() {
             strategy_pool_active = true;
         }
@@ -303,6 +302,10 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
             strategy_pool_token_to_mint
         }
         true => {
+            ensure!(
+                !strategy_pool_assets.is_empty(),
+                "strategy pool has no assets"
+            );
             /* instantiate base token contract, and pancake contract */
             let escrow_token_contract = Erc20Token::new(conn.clone(), token_address)?;
             let pancake_contract = PancakeSmartRouterV3Contract::new(
@@ -354,11 +357,20 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
                     /* so use these trade values for valuation */
 
                     let amount_spent_on_asset = escrow_allocations_for_tokens.get(strategy_pool_asset).context("could not get amount spent for backer in strategy pool asset, even though amount bought exists")?.clone();
-
-                    strategy_pool_asset_last_prices_in_base_token.insert(
-                        strategy_pool_asset.clone(),
-                        amount_spent_on_asset.mul_div(U256::exp10(18), amount_bought.clone())?,
-                    );
+                    if amount_bought.is_zero() {
+                        warn!(
+                            "amount bought is zero, setting last price to zero {:?}",
+                            strategy_pool_asset
+                        );
+                        strategy_pool_asset_last_prices_in_base_token
+                            .insert(strategy_pool_asset.clone(), U256::zero());
+                    } else {
+                        strategy_pool_asset_last_prices_in_base_token.insert(
+                            strategy_pool_asset.clone(),
+                            amount_spent_on_asset
+                                .mul_div(U256::exp10(18), amount_bought.clone())?,
+                        );
+                    }
                 } else {
                     /* if strategy pool asset is not in initial_token_ratios, it was not bought */
                     /* fetch the most recent trade values from the database to use for valuation */
@@ -816,10 +828,12 @@ pub async fn calculate_sp_tokens_to_mint_easy_approach(
     escrow_decimals: U256,
 ) -> Result<U256> {
     let relative_quantity = token.relative_quantity.unwrap();
-    let result = escrow_amount.mul_div(
-        relative_quantity.into(),
-        U256::exp10(escrow_decimals.as_u32() as _),
-    )?;
+    let result = escrow_amount
+        .mul_div(
+            relative_quantity.into(),
+            U256::exp10(escrow_decimals.as_u32() as _),
+        )
+        .context("calculate_sp_tokens_to_mint_easy_approach")?;
     Ok(result)
 }
 
@@ -944,6 +958,10 @@ fn calculate_sp_tokens_to_mint_nth_backer(
     base_token_actual_amount: U256,
     deposit_asset: Address,
 ) -> Result<U256> {
+    ensure!(
+        strategy_pool_asset_balances.len() > 0,
+        "strategy pool asset balances must not be empty"
+    );
     // sp tokens to mint = actual value of backing / (total value / total supply)
     //                   = actual value of backing * total supply / total value
     /* calculate strategy pool assets total value in base tokens based on the price paid on assets */
@@ -967,7 +985,9 @@ fn calculate_sp_tokens_to_mint_nth_backer(
     /* calculate ratio as total strategy pool value / total supply */
     /* i.e. the share value of one base token */
     /* i.e. the base token price in shares */
-    let ratio = strategy_token_total_supply.div_as_f64(strategy_pool_assets_total_value)?;
+    let ratio = strategy_token_total_supply
+        .div_as_f64(strategy_pool_assets_total_value)
+        .context("calculate_sp_tokens_to_mint_nth_backer calculating ratio")?;
     let deposit_asset_price_in_base_token = token_prices
         .get(&deposit_asset)
         .context("could not find amount spend on asset to calculate mintage")?;
