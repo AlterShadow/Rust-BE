@@ -2293,42 +2293,57 @@ impl RequestHandler for MethodUserCreateStrategyWallet {
         let pool = self.pool.clone();
         let master_key = self.master_key.clone();
         async move {
-            let conn = pool.get(req.blockchain).await?;
-            let wallet = db
-                .execute(FunUserListWhitelistedWalletsReq {
-                    limit: 1,
-                    offset: 0,
-                    user_id: Some(ctx.user_id),
-                    blockchain: Some(req.blockchain),
-                    address: None,
+            if let Some(user_managed_wallet_address) = req.user_managed_wallet_address {
+                db.execute(FunUserAddStrategyWalletReq {
+                    user_id: ctx.user_id,
+                    blockchain: req.blockchain,
+                    address: user_managed_wallet_address.into(),
+                    is_platform_managed: false,
                 })
-                .await?
-                .into_result()
-                .with_context(|| {
-                    CustomError::new(
-                        EnumErrorCode::NotFound,
-                        format!("User has not registered wallet on {:?}", req.blockchain),
-                    )
-                })?;
-            let strategy_wallet = back_strategy::deploy_wallet_contract(
-                &conn,
-                master_key.clone(),
-                wallet.address.into(),
-                master_key.address(),
-                DynLogger::empty(),
-            )
-            .await?;
+                .await?;
+                Ok(UserCreateStrategyWalletResponse {
+                    blockchain: req.blockchain,
+                    address: user_managed_wallet_address,
+                })
+            } else {
+                let conn = pool.get(req.blockchain).await?;
+                let wallet = db
+                    .execute(FunUserListWhitelistedWalletsReq {
+                        limit: 1,
+                        offset: 0,
+                        user_id: Some(ctx.user_id),
+                        blockchain: Some(req.blockchain),
+                        address: None,
+                    })
+                    .await?
+                    .into_result()
+                    .with_context(|| {
+                        CustomError::new(
+                            EnumErrorCode::NotFound,
+                            format!("User has not registered wallet on {:?}", req.blockchain),
+                        )
+                    })?;
+                let strategy_wallet = back_strategy::deploy_wallet_contract(
+                    &conn,
+                    master_key.clone(),
+                    wallet.address.into(),
+                    master_key.address(),
+                    DynLogger::empty(),
+                )
+                .await?;
 
-            db.execute(FunUserAddStrategyWalletReq {
-                user_id: ctx.user_id,
-                blockchain: req.blockchain,
-                address: strategy_wallet.address().into(),
-            })
-            .await?;
-            Ok(UserCreateStrategyWalletResponse {
-                blockchain: req.blockchain,
-                address: strategy_wallet.address().into(),
-            })
+                db.execute(FunUserAddStrategyWalletReq {
+                    user_id: ctx.user_id,
+                    blockchain: req.blockchain,
+                    address: strategy_wallet.address().into(),
+                    is_platform_managed: true,
+                })
+                .await?;
+                Ok(UserCreateStrategyWalletResponse {
+                    blockchain: req.blockchain,
+                    address: strategy_wallet.address().into(),
+                })
+            }
         }
         .boxed()
     }

@@ -1264,12 +1264,13 @@ END
                 Field::new("user_id", Type::BigInt),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("address", Type::BlockchainAddress),
+                Field::new("is_platform_managed", Type::Boolean),
             ],
             vec![],
             r#"
 BEGIN
-    INSERT INTO tbl.user_strategy_wallet (fkey_user_id, blockchain, address, created_at) 
-    VALUES (a_user_id, a_blockchain, a_address, EXTRACT(EPOCH FROM NOW())::BIGINT);
+    INSERT INTO tbl.user_strategy_wallet (fkey_user_id, blockchain, address, is_platform_managed, created_at) 
+    VALUES (a_user_id, a_blockchain, a_address, a_is_platform_managed, EXTRACT(EPOCH FROM NOW())::BIGINT);
 END
             "#,
         ),
@@ -1283,6 +1284,7 @@ END
                 Field::new("total", Type::BigInt),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("address", Type::BlockchainAddress),
+                Field::new("is_platform_managed", Type::Boolean),
                 Field::new("created_at", Type::BigInt),
             ],
             r#"
@@ -1291,7 +1293,8 @@ BEGIN
         COUNT(*) OVER() AS total,
         a.blockchain,
         a.address, 
-    a.created_at 
+        a.is_platform_managed,
+        a.created_at 
     FROM tbl.user_strategy_wallet AS a 
     WHERE a.fkey_user_id = a_user_id 
         AND (a_blockchain ISNULL OR a.blockchain = a_blockchain);

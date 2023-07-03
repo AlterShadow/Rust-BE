@@ -73,6 +73,7 @@ async fn user_get_or_deploy_strategy_wallet(
     blockchain: EnumBlockChain,
     user_wallet_address_to_receive_shares_on_this_chain: Address,
     logger: DynLogger,
+    read_only: bool,
 ) -> Result<StrategyWalletContract<EitherTransport>> {
     match db
         .execute(FunUserListStrategyWalletsReq {
@@ -86,7 +87,7 @@ async fn user_get_or_deploy_strategy_wallet(
             /* if user has wallet on this chain, use it */
             StrategyWalletContract::new(conn.clone(), strategy_wallet_contract.address.into())
         }
-        None => {
+        None if !read_only => {
             /* if user does not have a wallet on this chain, deploy it, and use it */
             // TODO: add admin as Address::zero() if user has opted out of having an admin
             let strategy_wallet_contract = deploy_wallet_contract(
@@ -103,11 +104,13 @@ async fn user_get_or_deploy_strategy_wallet(
                 user_id: ctx.user_id,
                 blockchain,
                 address: strategy_wallet_contract.address().into(),
+                is_platform_managed: true,
             })
             .await?;
 
             Ok(strategy_wallet_contract)
         }
+        _ => bail!("User does not have a wallet on this chain {:?}", blockchain),
     }
 }
 
@@ -488,6 +491,7 @@ pub async fn user_back_strategy(
         blockchain,
         user_wallet_address_to_receive_shares_on_this_chain,
         logger.clone(),
+        true,
     )
     .await?;
 

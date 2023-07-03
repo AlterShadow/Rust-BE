@@ -421,6 +421,7 @@ CREATE TABLE tbl.user_strategy_wallet (
     fkey_user_id bigint  NOT NULL,
     address varchar(64)  NOT NULL,
     blockchain enum_block_chain  NOT NULL,
+    is_platform_managed boolean  NOT NULL,
     created_at bigint  NOT NULL,
     CONSTRAINT user_strategy_wallet_ak_1 UNIQUE (address, blockchain) NOT DEFERRABLE  INITIALLY IMMEDIATE,
     CONSTRAINT user_strategy_wallet_ak_2 UNIQUE (fkey_user_id, blockchain) NOT DEFERRABLE  INITIALLY IMMEDIATE,

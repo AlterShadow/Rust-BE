@@ -458,6 +458,7 @@ pub struct FunUserListStrategyWalletsRespRow {
     pub total: i64,
     pub blockchain: EnumBlockChain,
     pub address: BlockchainAddress,
+    pub is_platform_managed: bool,
     pub created_at: i64,
 }
 
@@ -1920,19 +1921,21 @@ pub struct FunUserAddStrategyWalletReq {
     pub user_id: i64,
     pub blockchain: EnumBlockChain,
     pub address: BlockchainAddress,
+    pub is_platform_managed: bool,
 }
 
 #[allow(unused_variables)]
 impl DatabaseRequest for FunUserAddStrategyWalletReq {
     type ResponseRow = FunUserAddStrategyWalletRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_add_strategy_wallet(a_user_id => $1::bigint, a_blockchain => $2::enum_block_chain, a_address => $3::varchar);"
+        "SELECT * FROM api.fun_user_add_strategy_wallet(a_user_id => $1::bigint, a_blockchain => $2::enum_block_chain, a_address => $3::varchar, a_is_platform_managed => $4::boolean);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
             &self.user_id as &(dyn ToSql + Sync),
             &self.blockchain as &(dyn ToSql + Sync),
             &self.address as &(dyn ToSql + Sync),
+            &self.is_platform_managed as &(dyn ToSql + Sync),
         ]
     }
 }

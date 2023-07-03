@@ -1636,6 +1636,8 @@ pub struct UserCreateStrategyInitialTokenRow {
 #[serde(rename_all = "camelCase")]
 pub struct UserCreateStrategyWalletRequest {
     pub blockchain: EnumBlockChain,
+    #[serde(default)]
+    pub user_managed_wallet_address: Option<Address>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -6678,6 +6680,12 @@ impl WsRequest for UserCreateStrategyWalletRequest {
       "name": "blockchain",
       "ty": {
         "EnumRef": "block_chain"
+      }
+    },
+    {
+      "name": "user_managed_wallet_address",
+      "ty": {
+        "Optional": "BlockchainAddress"
       }
     }
   ],

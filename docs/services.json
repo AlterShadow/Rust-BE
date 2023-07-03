@@ -3918,6 +3918,12 @@
               "ty": {
                 "EnumRef": "block_chain"
               }
+            },
+            {
+              "name": "user_managed_wallet_address",
+              "ty": {
+                "Optional": "BlockchainAddress"
+              }
             }
           ],
           "returns": [

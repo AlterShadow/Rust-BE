@@ -62,7 +62,7 @@ ID: 2
 |20381|UserSubscribeDepositLedger|initial_data, blockchain, mock_data|||
 |20382|UserUnsubscribeDepositLedger||||
 |20390|UserListStrategyWallets|blockchain|wallets_total, wallets||
-|20391|UserCreateStrategyWallet|blockchain|blockchain, address||
+|20391|UserCreateStrategyWallet|blockchain, user_managed_wallet_address|blockchain, address||
 |20400|UserListStrategyAuditRules|strategy_id|audit_rules||
 |20410|UserAddStrategyAuditRule|strategy_id, rule_id|||
 |20420|UserRemoveStrategyAuditRule|strategy_id, rule_id|||
