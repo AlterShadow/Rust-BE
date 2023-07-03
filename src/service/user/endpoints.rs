@@ -244,6 +244,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("quantity", Type::BlockchainDecimal),
                 Field::new("token_id", Type::BigInt),
+                Field::new("nonce", Type::BigInt),
             ],
             vec![],
         )
@@ -262,6 +263,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("quantity", Type::optional(Type::BlockchainDecimal)),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("nonce", Type::BigInt),
             ],
             vec![
                 Field::new("success", Type::Boolean),
@@ -275,6 +277,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 Field::new("quantity", Type::BlockchainDecimal),
                 Field::new("wallet_address", Type::BlockchainAddress),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("nonce", Type::BigInt),
             ],
             vec![Field::new("success", Type::Boolean)],
         ),

@@ -21,8 +21,6 @@ pub fn convert_strategy_db_to_api(x: FunUserStrategyRowType) -> ListStrategiesRo
         risk_score: x.risk_score.unwrap_or_default(),
         aum: x.aum.unwrap_or_default(),
         followed: x.followed,
-        // FIXME: this is a hack to get the value
-        wallet_address: Address::zero().into(),
         strategy_pool_address: x.strategy_pool_address.map(|x| x.into()),
         approved: x.approved,
         approved_at: x.approved_at,

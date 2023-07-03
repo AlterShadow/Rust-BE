@@ -517,6 +517,9 @@ pub struct ErrorImmutableStrategy {}
 pub struct ErrorUserWhitelistedWalletNotSameNetworkAsStrategy {}
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
+pub struct ErrorDuplicateRequest {}
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct ErrorInvalidEnumLevel {}
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -693,6 +696,9 @@ pub enum EnumErrorCode {
     /// Audit User whitelisted wallet not same network as strategy
     #[postgres(name = "UserWhitelistedWalletNotSameNetworkAsStrategy")]
     UserWhitelistedWalletNotSameNetworkAsStrategy = 102604,
+    /// Custom Duplicate request
+    #[postgres(name = "DuplicateRequest")]
+    DuplicateRequest = 103001,
     /// SQL 22P02 InvalidEnumLevel
     #[postgres(name = "InvalidEnumLevel")]
     InvalidEnumLevel = 3484946,
@@ -1410,8 +1416,6 @@ pub struct ListStrategiesRow {
     pub followed: bool,
     pub swap_price: f64,
     pub price_change: f64,
-    #[serde(with = "WithBlockchainAddress")]
-    pub wallet_address: Address,
     #[serde(default)]
     pub strategy_pool_address: Option<Address>,
     pub approved: bool,
@@ -1614,6 +1618,7 @@ pub struct UserBackStrategyRequest {
     #[serde(with = "WithBlockchainDecimal")]
     pub quantity: U256,
     pub token_id: i64,
+    pub nonce: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1653,6 +1658,7 @@ pub struct UserExitStrategyRequest {
     #[serde(default)]
     pub quantity: Option<U256>,
     pub blockchain: EnumBlockChain,
+    pub nonce: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -2261,6 +2267,7 @@ pub struct UserRequestRefundRequest {
     #[serde(with = "WithBlockchainAddress")]
     pub wallet_address: Address,
     pub blockchain: EnumBlockChain,
+    pub nonce: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -2685,10 +2692,6 @@ impl WsRequest for UserListFollowedStrategiesRequest {
                 "ty": "Numeric"
               },
               {
-                "name": "wallet_address",
-                "ty": "BlockchainAddress"
-              },
-              {
                 "name": "strategy_pool_address",
                 "ty": {
                   "Optional": "BlockchainAddress"
@@ -2927,10 +2930,6 @@ impl WsRequest for UserListStrategiesRequest {
                 "ty": "Numeric"
               },
               {
-                "name": "wallet_address",
-                "ty": "BlockchainAddress"
-              },
-              {
                 "name": "strategy_pool_address",
                 "ty": {
                   "Optional": "BlockchainAddress"
@@ -3096,10 +3095,6 @@ impl WsRequest for UserListTopPerformingStrategiesRequest {
               {
                 "name": "price_change",
                 "ty": "Numeric"
-              },
-              {
-                "name": "wallet_address",
-                "ty": "BlockchainAddress"
               },
               {
                 "name": "strategy_pool_address",
@@ -3384,10 +3379,6 @@ impl WsRequest for UserGetStrategyRequest {
             {
               "name": "price_change",
               "ty": "Numeric"
-            },
-            {
-              "name": "wallet_address",
-              "ty": "BlockchainAddress"
             },
             {
               "name": "strategy_pool_address",
@@ -3800,6 +3791,10 @@ impl WsRequest for UserBackStrategyRequest {
     {
       "name": "token_id",
       "ty": "BigInt"
+    },
+    {
+      "name": "nonce",
+      "ty": "BigInt"
     }
   ],
   "returns": [],
@@ -3852,6 +3847,10 @@ impl WsRequest for UserExitStrategyRequest {
       "ty": {
         "EnumRef": "block_chain"
       }
+    },
+    {
+      "name": "nonce",
+      "ty": "BigInt"
     }
   ],
   "returns": [
@@ -3893,6 +3892,10 @@ impl WsRequest for UserRequestRefundRequest {
       "ty": {
         "EnumRef": "block_chain"
       }
+    },
+    {
+      "name": "nonce",
+      "ty": "BigInt"
     }
   ],
   "returns": [
@@ -3981,10 +3984,6 @@ impl WsRequest for UserListBackedStrategiesRequest {
               {
                 "name": "price_change",
                 "ty": "Numeric"
-              },
-              {
-                "name": "wallet_address",
-                "ty": "BlockchainAddress"
               },
               {
                 "name": "strategy_pool_address",
@@ -4968,10 +4967,6 @@ impl WsRequest for UserGetExpertProfileRequest {
                 "ty": "Numeric"
               },
               {
-                "name": "wallet_address",
-                "ty": "BlockchainAddress"
-              },
-              {
                 "name": "strategy_pool_address",
                 "ty": {
                   "Optional": "BlockchainAddress"
@@ -5244,10 +5239,6 @@ impl WsRequest for UserGetUserProfileRequest {
                 "ty": "Numeric"
               },
               {
-                "name": "wallet_address",
-                "ty": "BlockchainAddress"
-              },
-              {
                 "name": "strategy_pool_address",
                 "ty": {
                   "Optional": "BlockchainAddress"
@@ -5378,10 +5369,6 @@ impl WsRequest for UserGetUserProfileRequest {
               {
                 "name": "price_change",
                 "ty": "Numeric"
-              },
-              {
-                "name": "wallet_address",
-                "ty": "BlockchainAddress"
               },
               {
                 "name": "strategy_pool_address",
@@ -7951,10 +7938,6 @@ impl WsRequest for AdminListStrategiesRequest {
               {
                 "name": "price_change",
                 "ty": "Numeric"
-              },
-              {
-                "name": "wallet_address",
-                "ty": "BlockchainAddress"
               },
               {
                 "name": "strategy_pool_address",

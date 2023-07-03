@@ -17,7 +17,6 @@ use eth_sdk::strategy_wallet::{
     full_redeem_from_strategy_and_ensure_success, redeem_from_strategy_and_ensure_success,
     StrategyWalletContract,
 };
-use eth_sdk::utils::verify_message_address;
 use eth_sdk::*;
 use eyre::*;
 use futures::FutureExt;
@@ -28,11 +27,12 @@ use lib::database::DbClient;
 use lib::handler::{FutureResponse, RequestHandler};
 use lib::log::DynLogger;
 use lib::toolbox::*;
-use lib::utils::hex_decode;
 use lib::ws::SubscribeManager;
 use lib::{DEFAULT_LIMIT, DEFAULT_OFFSET};
+use lru::LruCache;
 use std::sync::Arc;
 use std::time::Duration;
+use tokio::sync::Mutex;
 use tokio::time::sleep;
 use tracing::{error, info};
 use web3::signing::Key;
@@ -514,6 +514,7 @@ pub struct MethodUserBackStrategy {
     pub master_key: Secp256k1SecretKey,
     pub dex_addresses: Arc<DexAddresses>,
     pub subscribe_manager: Arc<SubscribeManager<AdminSubscribeTopic>>,
+    pub lru: Arc<Mutex<LruCache<i64, ()>>>,
 }
 impl RequestHandler for MethodUserBackStrategy {
     type Request = UserBackStrategyRequest;
@@ -531,7 +532,17 @@ impl RequestHandler for MethodUserBackStrategy {
         let escrow_contract = self.escrow_contract.clone();
         let master_key = self.master_key.clone();
         let subscribe_manager = self.subscribe_manager.clone();
+        let lru = self.lru.clone();
         async move {
+            {
+                let mut lru = lru.lock().await;
+                if lru.put(req.nonce, ()).is_some() {
+                    bail!(CustomError::new(
+                        EnumErrorCode::DuplicateRequest,
+                        "Duplicate request",
+                    ));
+                }
+            }
             let token = db
                 .execute(FunUserListEscrowTokenContractAddressReq {
                     limit: 1,
@@ -587,7 +598,7 @@ impl RequestHandler for MethodUserBackStrategy {
                     logger.log(format!("user back strategy error {}", err));
                 }
             });
-            Ok(UserBackStrategyResponse {})
+            Ok::<_, Error>(UserBackStrategyResponse {})
         }
         .boxed()
     }
@@ -768,6 +779,7 @@ pub async fn user_exit_strategy(
 pub struct MethodUserExitStrategy {
     pub pool: EthereumRpcConnectionPool,
     pub master_key: Secp256k1SecretKey,
+    pub lru: Arc<Mutex<LruCache<i64, ()>>>,
 }
 
 impl RequestHandler for MethodUserExitStrategy {
@@ -782,7 +794,17 @@ impl RequestHandler for MethodUserExitStrategy {
         let db: DbClient = toolbox.get_db();
         let pool = self.pool.clone();
         let master_key = self.master_key.clone();
+        let lru = self.lru.clone();
         async move {
+            {
+                let mut lru = lru.lock().await;
+                if lru.put(req.nonce, ()).is_some() {
+                    bail!(CustomError::new(
+                        EnumErrorCode::DuplicateRequest,
+                        "duplicate request"
+                    ))
+                }
+            }
             let eth_conn = pool.get(req.blockchain).await?;
             // TODO: decide if we should ensure user role
             ensure_user_role(ctx, EnumRole::User)?;
@@ -810,6 +832,7 @@ pub struct MethodUserRequestRefund {
     pub stablecoin_addresses: Arc<BlockchainCoinAddresses>,
     pub escrow_contract: Arc<AbstractEscrowContract>,
     pub master_key: Secp256k1SecretKey,
+    pub lru: Arc<Mutex<LruCache<i64, ()>>>,
 }
 
 impl RequestHandler for MethodUserRequestRefund {
@@ -826,7 +849,17 @@ impl RequestHandler for MethodUserRequestRefund {
         let stablecoin_addresses = self.stablecoin_addresses.clone();
         let escrow_contract = self.escrow_contract.clone();
         let master_key = self.master_key.clone();
+        let lru = self.lru.clone();
         async move {
+            {
+                let mut lru = lru.lock().await;
+                if lru.put(req.nonce, ()).is_some() {
+                    bail!(CustomError::new(
+                        EnumErrorCode::DuplicateRequest,
+                        "duplicate request"
+                    ))
+                }
+            }
             let escrow_contract = escrow_contract.get(&pool, req.blockchain).await?;
             let eth_conn = pool.get(req.blockchain).await?;
 

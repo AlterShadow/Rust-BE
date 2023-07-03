@@ -26,9 +26,9 @@ ID: 2
 |20070|UserGetStrategyStatistics|strategy_id|strategy_id, net_value, follow_ledger, back_ledger|User gets a strategy statistics|
 |20071|UserGetStrategiesStatistics||tracking_amount_usd, backing_amount_usd, difference_amount_usd, aum_value_usd, current_value_usd, withdrawable_value_usd|User gets statistics of all strategies related to the user|
 |20172|UserUpdateUserProfile|username, family_name, given_name, description, social_media||User update its expert profile|
-|20080|UserBackStrategy|strategy_id, quantity, token_id|||
-|20110|UserExitStrategy|strategy_id, quantity, blockchain|success, transaction_hash||
-|20081|UserRequestRefund|quantity, wallet_address, blockchain|success||
+|20080|UserBackStrategy|strategy_id, quantity, token_id, nonce|||
+|20110|UserExitStrategy|strategy_id, quantity, blockchain, nonce|success, transaction_hash||
+|20081|UserRequestRefund|quantity, wallet_address, blockchain, nonce|success||
 |20090|UserListBackedStrategies|limit, offset|strategies_total, strategies||
 |20100|UserListBackStrategyLedger|limit, offset, strategy_id|back_ledger_total, back_ledger||
 |20120|UserListExitStrategyLedger|strategy_id, limit, offset|exit_ledger_total, exit_ledger||

@@ -11,6 +11,7 @@ use lib::config::{load_config, WsServerConfig};
 use lib::database::{connect_to_database, DatabaseConfig};
 use lib::log::{setup_logs, LogLevel};
 use lib::ws::{EndpointAuthController, SubscribeManager, WebsocketServer};
+use lru::LruCache;
 use mc2fi_auth::endpoints::endpoint_auth_authorize;
 use mc2fi_auth::method::MethodAuthAuthorize;
 use mc2fi_user::admin_method::*;
@@ -19,7 +20,9 @@ use mc2fi_user::method::*;
 use secrecy::{ExposeSecret, SecretString};
 use serde::Deserialize;
 use std::fmt::Debug;
+use std::num::NonZeroUsize;
 use std::sync::Arc;
+use tokio::sync::Mutex;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Config {
@@ -179,22 +182,26 @@ async fn main() -> Result<()> {
         dex_addresses: Arc::new(DexAddresses::new()),
         cmc: CoinMarketCap::new(config.cmc_api_key.expose_secret())?,
     });
+    let lru = Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(1000).unwrap())));
     server.add_handler(MethodUserBackStrategy {
         pool: eth_pool.clone(),
         escrow_contract: escrow_contract.clone(),
         master_key: master_key.clone(),
         dex_addresses: Arc::new(DexAddresses::new()),
         subscribe_manager: Arc::clone(&sub_manager),
+        lru: lru.clone(),
     });
     server.add_handler(MethodUserExitStrategy {
         pool: eth_pool.clone(),
         master_key: master_key.clone(),
+        lru: lru.clone(),
     });
     server.add_handler(MethodUserRequestRefund {
         pool: eth_pool,
         stablecoin_addresses: coin_addresses,
         escrow_contract: escrow_contract.clone(),
         master_key: master_key.clone(),
+        lru,
     });
     server.dump_schemas()?;
     server.listen().await?;

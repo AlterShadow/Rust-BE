@@ -16,7 +16,6 @@ pub fn strategy_row() -> Type {
             Field::new("followed", Type::Boolean),
             Field::new("swap_price", Type::Numeric),
             Field::new("price_change", Type::Numeric),
-            Field::new("wallet_address", Type::BlockchainAddress),
             Field::new(
                 "strategy_pool_address",
                 Type::optional(Type::BlockchainAddress),
