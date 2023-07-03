@@ -183,9 +183,10 @@ pub async fn handle_pancake_swap_transaction(
         let strategy_pool_asset_token_in_row = state
             .db
             .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
-                strategy_pool_contract_id: strategy_pool_contract_row.pkey_id,
+                strategy_pool_contract_id: Some(strategy_pool_contract_row.pkey_id),
                 token_address: Some(expert_trade.token_in.into()),
                 blockchain: Some(blockchain),
+                strategy_id: None,
             })
             .await?
             .into_result()
@@ -324,9 +325,10 @@ pub async fn handle_pancake_swap_transaction(
         let maybe_strategy_pool_asset_token_out_row = state
             .db
             .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
-                strategy_pool_contract_id: strategy_pool_contract_row.pkey_id,
+                strategy_pool_contract_id: Some(strategy_pool_contract_row.pkey_id),
                 token_address: Some(expert_trade.token_out.into()),
                 blockchain: Some(blockchain),
+                strategy_id: None,
             })
             .await?
             .into_result();

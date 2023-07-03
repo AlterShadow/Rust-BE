@@ -395,15 +395,15 @@ CREATE TABLE tbl.user_follow_strategy (
     CONSTRAINT user_follow_strategy_pk PRIMARY KEY (pkey_id)
 );
 
--- Table: user_registered_wallet
-CREATE TABLE tbl.user_registered_wallet (
-    pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_user_registered_wallet_id'),
+-- Table: user_whitelisted_wallet
+CREATE TABLE tbl.user_whitelisted_wallet (
+    pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_user_whitelisted_wallet_id'),
     fkey_user_id bigint  NOT NULL,
     blockchain enum_block_chain  NOT NULL,
     address varchar(64)  NOT NULL,
     created_at bigint  NOT NULL,
-    CONSTRAINT user_registered_wallet_ak_1 UNIQUE (address, blockchain) NOT DEFERRABLE  INITIALLY IMMEDIATE,
-    CONSTRAINT user_registered_wallet_pk PRIMARY KEY (pkey_id)
+    CONSTRAINT user_whitelisted_wallet_ak_1 UNIQUE (address, blockchain) NOT DEFERRABLE  INITIALLY IMMEDIATE,
+    CONSTRAINT user_whitelisted_wallet_pk PRIMARY KEY (pkey_id)
 );
 
 -- Table: user_strategy_balance
@@ -749,8 +749,8 @@ ALTER TABLE tbl.expert_profile ADD CONSTRAINT user_profile_user
     INITIALLY IMMEDIATE
 ;
 
--- Reference: user_registered_wallet_user (table: user_registered_wallet)
-ALTER TABLE tbl.user_registered_wallet ADD CONSTRAINT user_registered_wallet_user
+-- Reference: user_whitelisted_wallet_user (table: user_whitelisted_wallet)
+ALTER TABLE tbl.user_whitelisted_wallet ADD CONSTRAINT user_whitelisted_wallet_user
     FOREIGN KEY (fkey_user_id)
     REFERENCES tbl."user" (pkey_id)  
     NOT DEFERRABLE 
@@ -975,8 +975,8 @@ CREATE SEQUENCE tbl.seq_user_id
       AS bigint
 ;
 
--- Sequence: seq_user_registered_wallet_id
-CREATE SEQUENCE tbl.seq_user_registered_wallet_id
+-- Sequence: seq_user_whitelisted_wallet_id
+CREATE SEQUENCE tbl.seq_user_whitelisted_wallet_id
       NO MINVALUE
       NO MAXVALUE
       NO CYCLE

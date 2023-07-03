@@ -1,4 +1,5 @@
 use num_traits::FromPrimitive;
+use web3::Transport;
 
 pub fn ensure_user_role(ctx: RequestContext, role: EnumRole) -> Result<()> {
     let ctx_role = EnumRole::from_u32(ctx.role).context("Invalid role")?;
@@ -44,6 +45,29 @@ pub fn convert_strategy_db_to_api(x: FunUserStrategyRowType) -> ListStrategiesRo
             + x.expert_fee.unwrap_or_default()
             + x.swap_fee.unwrap_or_default(),
     }
+}
+pub async fn convert_strategy_db_to_api_net_value(
+    x: FunUserStrategyRowType,
+    cmc: &CoinMarketCap,
+    db: &DbClient,
+) -> Result<ListStrategiesRow> {
+    let mut value = convert_strategy_db_to_api(x);
+    let mut usdc = 0.0;
+    for tokens in db
+        .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
+            strategy_pool_contract_id: None,
+            strategy_id: Some(value.strategy_id),
+            blockchain: Some(value.blockchain),
+            token_address: None,
+        })
+        .await?
+        .into_iter()
+    {
+        let price = cmc.get_usd_prices_by_symbol(&[tokens.token_symbol]).await?[0];
+        usdc += price * tokens.balance.div_as_f64(U256::exp10(18))?;
+    }
+    value.net_value = usdc;
+    Ok(value)
 }
 pub fn convert_expert_db_to_api(x: FunUserExpertRowType) -> ListExpertsRow {
     ListExpertsRow {

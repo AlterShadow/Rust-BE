@@ -257,9 +257,10 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
     let back_usdc_amount_minus_fees = back_usdc_amount - fees;
     let strategy_pool_assets = db
         .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
-            strategy_pool_contract_id,
+            strategy_pool_contract_id: Some(strategy_pool_contract_id),
             token_address: None,
             blockchain: Some(blockchain),
+            strategy_id: None,
         })
         .await?
         .into_rows();
@@ -767,9 +768,10 @@ pub async fn user_back_strategy(
     for (token, amount) in trades.clone() {
         let sp_asset_token = db
             .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
-                strategy_pool_contract_id,
+                strategy_pool_contract_id: Some(strategy_pool_contract_id),
                 token_address: Some(token.into()),
                 blockchain: Some(blockchain),
+                strategy_id: None,
             })
             .await?
             .into_result();

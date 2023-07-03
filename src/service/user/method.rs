@@ -752,7 +752,8 @@ pub async fn user_exit_strategy(
 
         let old_asset_balance_row = db
             .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
-                strategy_pool_contract_id: strategy_pool_contract_row.pkey_id,
+                strategy_pool_contract_id: Some(strategy_pool_contract_row.pkey_id),
+                strategy_id: None,
                 blockchain: Some(blockchain),
                 token_address: Some(redeemed_asset.into()),
             })

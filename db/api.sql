@@ -45,12 +45,16 @@ BEGIN
             extract(Epoch FROM (NOW()))::bigint,
             extract(Epoch FROM (NOW()))::bigint)
     RETURNING pkey_id INTO STRICT id_;
-    INSERT INTO tbl.user_registered_wallet(fkey_user_id,
+    INSERT INTO tbl.user_whitelisted_wallet(fkey_user_id,
                                            blockchain,
                                            address,
                                            created_at)
     VALUES (id_,
             'EthereumMainnet'::enum_block_chain,
+            a_address,
+            extract(Epoch FROM (NOW()))::bigint),
+            (id_,
+            'BscMainnet'::enum_block_chain,
             a_address,
             extract(Epoch FROM (NOW()))::bigint);
             
@@ -1465,7 +1469,7 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY INSERT INTO tbl.user_registered_wallet (fkey_user_id, blockchain, address, created_at)
+    RETURN QUERY INSERT INTO tbl.user_whitelisted_wallet (fkey_user_id, blockchain, address, created_at)
             VALUES ( a_user_id, a_blockchain, a_address, EXTRACT(EPOCH FROM NOW())::bigint) RETURNING pkey_id;
 END
 
@@ -1478,7 +1482,7 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    DELETE FROM tbl.user_registered_wallet WHERE pkey_id = a_registered_wallet_id AND fkey_user_id = a_user_id;
+    DELETE FROM tbl.user_whitelisted_wallet WHERE pkey_id = a_whitelisted_wallet_id AND fkey_user_id = a_user_id;
 END
 
 $$;
@@ -1498,7 +1502,7 @@ BEGIN
         a.pkey_id,
         a.blockchain,
         a.address 
-    FROM tbl.user_registered_wallet AS a 
+    FROM tbl.user_whitelisted_wallet AS a 
     WHERE (a.fkey_user_id = a_user_id OR a_user_id IS NULL) AND
           (a.blockchain = a_blockchain OR a_blockchain IS NULL) AND
           (a.address = a_address OR a_address IS NULL)
@@ -3019,7 +3023,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_watcher_list_strategy_pool_contract_asset_balances(a_strategy_pool_contract_id bigint, a_blockchain enum_block_chain DEFAULT NULL, a_token_address varchar DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_watcher_list_strategy_pool_contract_asset_balances(a_strategy_pool_contract_id bigint DEFAULT NULL, a_strategy_id bigint DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL, a_token_address varchar DEFAULT NULL)
 RETURNS table (
     "token_id" bigint,
     "token_name" varchar,
@@ -3040,8 +3044,10 @@ BEGIN
 			tc.blockchain,
 			spcab.balance AS balance
 			FROM tbl.strategy_pool_contract_asset_balance AS spcab
-			INNER JOIN tbl.escrow_token_contract_address AS tc ON spcab.fkey_token_id = tc.pkey_id
-			WHERE spcab.fkey_strategy_pool_contract_id = a_strategy_pool_contract_id
+			JOIN tbl.escrow_token_contract_address AS tc ON spcab.fkey_token_id = tc.pkey_id
+			JOIN tbl.strategy_pool_contract AS spc ON spc.pkey_id = spcab.fkey_strategy_pool_contract_id 
+			WHERE (a_strategy_pool_contract_id ISNULL OR spcab.fkey_strategy_pool_contract_id = a_strategy_pool_contract_id)
+			AND (a_strategy_id ISNULL OR spc.fkey_strategy_id = a_strategy_id)
 			AND (a_blockchain ISNULL OR tc.blockchain = a_blockchain)
 			AND (a_token_address ISNULL OR tc.address = a_token_address);
 END

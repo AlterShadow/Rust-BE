@@ -900,7 +900,7 @@ END
             vec![Field::new("whitelisted_wallet_id", Type::BigInt)],
             r#"
 BEGIN
-    RETURN QUERY INSERT INTO tbl.user_registered_wallet (fkey_user_id, blockchain, address, created_at)
+    RETURN QUERY INSERT INTO tbl.user_whitelisted_wallet (fkey_user_id, blockchain, address, created_at)
             VALUES ( a_user_id, a_blockchain, a_address, EXTRACT(EPOCH FROM NOW())::bigint) RETURNING pkey_id;
 END
 "#,
@@ -914,7 +914,7 @@ END
             vec![],
             r#"
 BEGIN
-    DELETE FROM tbl.user_registered_wallet WHERE pkey_id = a_registered_wallet_id AND fkey_user_id = a_user_id;
+    DELETE FROM tbl.user_whitelisted_wallet WHERE pkey_id = a_whitelisted_wallet_id AND fkey_user_id = a_user_id;
 END
 "#,
         ),
@@ -938,7 +938,7 @@ BEGIN
         a.pkey_id,
         a.blockchain,
         a.address 
-    FROM tbl.user_registered_wallet AS a 
+    FROM tbl.user_whitelisted_wallet AS a 
     WHERE (a.fkey_user_id = a_user_id OR a_user_id IS NULL) AND
           (a.blockchain = a_blockchain OR a_blockchain IS NULL) AND
           (a.address = a_address OR a_address IS NULL)

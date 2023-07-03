@@ -359,7 +359,8 @@ END
         ProceduralFunction::new(
             "fun_watcher_list_strategy_pool_contract_asset_balances",
             vec![
-                Field::new("strategy_pool_contract_id", Type::BigInt),
+                Field::new("strategy_pool_contract_id", Type::optional(Type::BigInt)),
+                Field::new("strategy_id", Type::optional(Type::BigInt)),
                 Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
                 Field::new("token_address", Type::optional(Type::BlockchainAddress)),
             ],
@@ -381,8 +382,10 @@ BEGIN
 			tc.blockchain,
 			spcab.balance AS balance
 			FROM tbl.strategy_pool_contract_asset_balance AS spcab
-			INNER JOIN tbl.escrow_token_contract_address AS tc ON spcab.fkey_token_id = tc.pkey_id
-			WHERE spcab.fkey_strategy_pool_contract_id = a_strategy_pool_contract_id
+			JOIN tbl.escrow_token_contract_address AS tc ON spcab.fkey_token_id = tc.pkey_id
+			JOIN tbl.strategy_pool_contract AS spc ON spc.pkey_id = spcab.fkey_strategy_pool_contract_id 
+			WHERE (a_strategy_pool_contract_id ISNULL OR spcab.fkey_strategy_pool_contract_id = a_strategy_pool_contract_id)
+			AND (a_strategy_id ISNULL OR spc.fkey_strategy_id = a_strategy_id)
 			AND (a_blockchain ISNULL OR tc.blockchain = a_blockchain)
 			AND (a_token_address ISNULL OR tc.address = a_token_address);
 END

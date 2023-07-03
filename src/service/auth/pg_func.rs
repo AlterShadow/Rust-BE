@@ -57,12 +57,16 @@ BEGIN
             extract(Epoch FROM (NOW()))::bigint,
             extract(Epoch FROM (NOW()))::bigint)
     RETURNING pkey_id INTO STRICT id_;
-    INSERT INTO tbl.user_registered_wallet(fkey_user_id,
+    INSERT INTO tbl.user_whitelisted_wallet(fkey_user_id,
                                            blockchain,
                                            address,
                                            created_at)
     VALUES (id_,
             'EthereumMainnet'::enum_block_chain,
+            a_address,
+            extract(Epoch FROM (NOW()))::bigint),
+            (id_,
+            'BscMainnet'::enum_block_chain,
             a_address,
             extract(Epoch FROM (NOW()))::bigint);
             
