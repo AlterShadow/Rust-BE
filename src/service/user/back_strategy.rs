@@ -145,7 +145,7 @@ async fn user_get_or_deploy_strategy_pool(
                 StrategyPoolContract::new(conn.clone(), address)?,
             )
         }
-        None if dry_run => {
+        None if !dry_run => {
             /* if strategy pool doesn't exist in this chain, create it */
             let contract = deploy_strategy_contract(
                 &conn,
