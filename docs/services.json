@@ -4306,6 +4306,36 @@
             {
               "name": "estimated_amount_of_strategy_tokens",
               "ty": "BlockchainDecimal"
+            },
+            {
+              "name": "estimated_backed_token_ratios",
+              "ty": {
+                "DataTable": {
+                  "name": "EstimatedBackedTokenRatios",
+                  "fields": [
+                    {
+                      "name": "token_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "token_name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "back_amount",
+                      "ty": "BlockchainDecimal"
+                    },
+                    {
+                      "name": "back_value_in_usd",
+                      "ty": "BlockchainDecimal"
+                    },
+                    {
+                      "name": "back_value_ratio",
+                      "ty": "Numeric"
+                    }
+                  ]
+                }
+              }
             }
           ],
           "stream_response": null,

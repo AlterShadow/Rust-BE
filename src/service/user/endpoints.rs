@@ -986,6 +986,19 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                     "estimated_amount_of_strategy_tokens",
                     Type::BlockchainDecimal,
                 ),
+                Field::new(
+                    "estimated_backed_token_ratios",
+                    Type::datatable(
+                        "EstimatedBackedTokenRatios",
+                        vec![
+                            Field::new("token_id", Type::BigInt),
+                            Field::new("token_name", Type::String),
+                            Field::new("back_amount", Type::BlockchainDecimal),
+                            Field::new("back_value_in_usd", Type::BlockchainDecimal),
+                            Field::new("back_value_ratio", Type::Numeric),
+                        ],
+                    ),
+                ),
             ],
         ),
     ]

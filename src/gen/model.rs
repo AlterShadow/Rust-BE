@@ -1191,6 +1191,17 @@ pub struct ChangeLoginWalletRequest {
 pub struct ChangeLoginWalletResponse {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct EstimatedBackedTokenRatios {
+    pub token_id: i64,
+    pub token_name: String,
+    #[serde(with = "WithBlockchainDecimal")]
+    pub back_amount: U256,
+    #[serde(with = "WithBlockchainDecimal")]
+    pub back_value_in_usd: U256,
+    pub back_value_ratio: f64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct ExitStrategyLedgerRow {
     pub exit_ledger_id: i64,
     pub strategy_id: i64,
@@ -1706,6 +1717,7 @@ pub struct UserGetBackStrategyReviewDetailResponse {
     pub total_amount_to_back_after_fee: U256,
     #[serde(with = "WithBlockchainDecimal")]
     pub estimated_amount_of_strategy_tokens: U256,
+    pub estimated_backed_token_ratios: Vec<EstimatedBackedTokenRatios>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -7149,6 +7161,36 @@ impl WsRequest for UserGetBackStrategyReviewDetailRequest {
     {
       "name": "estimated_amount_of_strategy_tokens",
       "ty": "BlockchainDecimal"
+    },
+    {
+      "name": "estimated_backed_token_ratios",
+      "ty": {
+        "DataTable": {
+          "name": "EstimatedBackedTokenRatios",
+          "fields": [
+            {
+              "name": "token_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "token_name",
+              "ty": "String"
+            },
+            {
+              "name": "back_amount",
+              "ty": "BlockchainDecimal"
+            },
+            {
+              "name": "back_value_in_usd",
+              "ty": "BlockchainDecimal"
+            },
+            {
+              "name": "back_value_ratio",
+              "ty": "Numeric"
+            }
+          ]
+        }
+      }
     }
   ],
   "stream_response": null,

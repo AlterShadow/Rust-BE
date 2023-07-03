@@ -2758,7 +2758,10 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
                 fees,
                 back_usdc_amount_minus_fees,
                 strategy_token_to_mint,
-                ..
+                strategy_pool_active,
+                sp_assets_and_amounts,
+                escrow_allocations_for_tokens,
+                strategy_pool_assets_bought_for_this_backer,
             } = calculate_user_back_strategy_calculate_amount_to_mint(
                 &eth_conn,
                 &ctx,
@@ -2774,14 +2777,53 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
                 master_key,
                 DynLogger::empty(),
                 true,
-                Some(cmc),
+                Some(cmc.clone()),
             )
             .await?;
+            let mut ratios: Vec<EstimatedBackedTokenRatios> = vec![];
+            for address in strategy_pool_assets_bought_for_this_backer.keys() {
+                let before_amount = sp_assets_and_amounts
+                    .get(address)
+                    .cloned()
+                    .unwrap_or(U256::zero());
+                let add_amount = strategy_pool_assets_bought_for_this_backer
+                    .get(address)
+                    .cloned()
+                    .unwrap_or(U256::zero());
+                let after_amount = before_amount + add_amount;
+                let ratio = add_amount.div_as_f64(after_amount)?;
+                let token = db
+                    .execute(FunUserListEscrowTokenContractAddressReq {
+                        limit: 1,
+                        offset: 0,
+                        token_id: None,
+                        blockchain: Some(token.blockchain),
+                        address: Some((*address).into()),
+                        symbol: None,
+                        is_stablecoin: None,
+                    })
+                    .await?
+                    .into_result()
+                    .with_context(|| {
+                        CustomError::new(EnumErrorCode::NotFound, "Token not found")
+                    })?;
+                let price = cmc
+                    .get_usd_prices_by_symbol(&[token.short_name.clone()])
+                    .await?[0];
+                ratios.push(EstimatedBackedTokenRatios {
+                    token_id: token.token_id,
+                    token_name: token.short_name,
+                    back_amount: add_amount.into(),
+                    back_value_in_usd: add_amount.mul_f64(price)?,
+                    back_value_ratio: ratio,
+                });
+            }
             Ok(UserGetBackStrategyReviewDetailResponse {
                 strategy_fee: fees,
                 total_amount_to_back: req.quantity,
                 total_amount_to_back_after_fee: back_usdc_amount_minus_fees,
                 estimated_amount_of_strategy_tokens: strategy_token_to_mint,
+                estimated_backed_token_ratios: ratios,
             })
         }
         .boxed()

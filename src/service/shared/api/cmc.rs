@@ -151,7 +151,7 @@ impl CoinMarketCap {
         Ok(token_infos)
     }
 
-    pub async fn get_usd_prices_by_symbol(&self, symbols: &Vec<String>) -> Result<Vec<f64>> {
+    pub async fn get_usd_prices_by_symbol(&self, symbols: &[String]) -> Result<Vec<f64>> {
         let mut url = self.price_url()?;
         self.append_url_params(&mut url, "symbol", symbols);
         let payload = &self
@@ -202,7 +202,7 @@ impl CoinMarketCap {
         Ok(Url::parse(&format!("{}{}", self.base_url, self.map_path))?)
     }
 
-    fn append_url_params(&self, url: &mut Url, param_key: &str, param_values: &Vec<String>) -> () {
+    fn append_url_params(&self, url: &mut Url, param_key: &str, param_values: &[String]) -> () {
         let mut params = url.query_pairs_mut();
         params.append_pair(param_key, &param_values.join(","));
     }

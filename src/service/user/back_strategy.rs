@@ -178,6 +178,8 @@ pub struct CalculateUserBackStrategyCalculateAmountToMintResult {
     pub strategy_token_to_mint: U256,
     pub strategy_pool_active: bool,
     pub sp_assets_and_amounts: HashMap<Address, U256>,
+    pub escrow_allocations_for_tokens: HashMap<Address, U256>,
+    pub strategy_pool_assets_bought_for_this_backer: HashMap<Address, U256>,
 }
 pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
     conn: &EthereumRpcConnection,
@@ -272,6 +274,29 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
             sp_asset_row.balance.into(),
         );
     }
+    let mut strategy_initial_token_ratios: HashMap<Address, U256> = HashMap::new();
+    for x in strategy_initial_ratios.iter() {
+        strategy_initial_token_ratios.insert(x.token_address.into(), x.quantity.into());
+    }
+
+    /* calculate how much of back amount to spend on each strategy pool asset */
+    let escrow_allocations_for_tokens = calculate_escrow_allocation_for_strategy_tokens(
+        back_usdc_amount_minus_fees,
+        strategy_initial_token_ratios,
+    )?;
+    let strategy_pool_assets_bought_for_this_backer = trade_escrow_for_strategy_tokens(
+        &conn,
+        &db,
+        master_key.clone(),
+        blockchain,
+        token_address,
+        None,
+        escrow_allocations_for_tokens.clone(),
+        logger.clone(),
+        true,
+        cmc.clone(),
+    )
+    .await?;
 
     /* calculate mintage */
     let strategy_token_to_mint = match strategy_pool_active {
@@ -318,17 +343,6 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
                     .ok_or_else(|| eyre!("pancake swap not available on this chain"))?,
             )?;
 
-            let mut strategy_initial_token_ratios: HashMap<Address, U256> = HashMap::new();
-            for x in strategy_initial_ratios.iter() {
-                strategy_initial_token_ratios.insert(x.token_address.into(), x.quantity.into());
-            }
-
-            /* calculate how much of back amount to spend on each strategy pool asset */
-            let escrow_allocations_for_tokens = calculate_escrow_allocation_for_strategy_tokens(
-                back_usdc_amount_minus_fees,
-                strategy_initial_token_ratios,
-            )?;
-
             /* trade base token for strategy pool assets */
             let strategy_pool_assets_bought_for_this_backer = trade_escrow_for_strategy_tokens(
                 &conn,
@@ -336,7 +350,7 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
                 master_key.clone(),
                 blockchain,
                 token_address,
-                &pancake_contract,
+                Some(&pancake_contract),
                 escrow_allocations_for_tokens.clone(),
                 logger.clone(),
                 dry_run,
@@ -417,6 +431,8 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
         strategy_token_to_mint,
         strategy_pool_active,
         sp_assets_and_amounts,
+        escrow_allocations_for_tokens,
+        strategy_pool_assets_bought_for_this_backer,
     })
 }
 
@@ -554,6 +570,8 @@ pub async fn user_back_strategy(
         strategy_token_to_mint: _strategy_token_to_mint,
         strategy_pool_active,
         sp_assets_and_amounts,
+        escrow_allocations_for_tokens,
+        ..
     } = calculate_user_back_strategy_calculate_amount_to_mint(
         conn,
         ctx,
@@ -598,16 +616,7 @@ pub async fn user_back_strategy(
         logger.clone(),
     )
     .await?;
-    let mut strategy_initial_token_ratios: HashMap<Address, U256> = HashMap::new();
-    for x in strategy_initial_ratios.iter() {
-        strategy_initial_token_ratios.insert(x.token_address.into(), x.quantity.into());
-    }
 
-    /* calculate how much of back amount to spend on each strategy token */
-    let escrow_allocations_for_tokens = calculate_escrow_allocation_for_strategy_tokens(
-        back_usdc_amount_minus_fees,
-        strategy_initial_token_ratios,
-    )?;
     /* approve pancakeswap to trade escrow token */
     approve_and_ensure_success(
         escrow_token_contract,
@@ -629,7 +638,7 @@ pub async fn user_back_strategy(
         master_key.clone(),
         blockchain,
         token_address,
-        &pancake_contract,
+        Some(&pancake_contract),
         escrow_allocations_for_tokens.clone(),
         logger.clone(),
         false,
@@ -847,7 +856,7 @@ async fn trade_escrow_for_strategy_tokens(
     master_key: impl Key + Clone,
     blockchain: EnumBlockChain,
     escrow_token_address: Address,
-    dex_contract: &PancakeSmartRouterV3Contract<EitherTransport>,
+    dex_contract: Option<&PancakeSmartRouterV3Contract<EitherTransport>>,
     tokens_and_amounts_to_buy: HashMap<Address, U256>,
     logger: DynLogger,
     dry_run: bool,
@@ -919,7 +928,7 @@ async fn trade_escrow_for_strategy_tokens(
             }
         } else {
             let trade_hash = copy_trade_and_ensure_success(
-                dex_contract.clone(),
+                dex_contract.cloned().unwrap(),
                 &conn,
                 CONFIRMATIONS,
                 MAX_RETRIES,
