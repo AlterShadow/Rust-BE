@@ -387,6 +387,204 @@ END
 "#,
         ),
         ProceduralFunction::new(
+            "fun_user_list_user_strategy_pool_contract_asset_ledger_entries",
+            vec![
+                Field::new("limit", Type::BigInt),
+                Field::new("offset", Type::BigInt),
+                Field::new("user_id", Type::BigInt),
+                Field::new("strategy_pool_contract_id", Type::BigInt),
+            ],
+            vec![
+                Field::new("user_strategy_pool_contract_asset_ledger_id", Type::BigInt),
+                Field::new("strategy_pool_contract_id", Type::BigInt),
+                Field::new("strategy_id", Type::BigInt),
+                Field::new("token_id", Type::BigInt),
+                Field::new("token_symbol", Type::String),
+                Field::new("token_name", Type::String),
+                Field::new("token_address", Type::BlockchainAddress),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("amount", Type::BlockchainDecimal),
+                Field::new("happened_at", Type::BigInt),
+                Field::new("is_add", Type::Boolean),
+            ],
+            r#"
+DECLARE
+		_strategy_id BIGINT;
+BEGIN
+		SELECT fkey_strategy_id INTO _strategy_id
+		FROM tbl.strategy_pool_contract
+		WHERE pkey_id = a_strategy_pool_contract_id;
+		
+		ASSERT _strategy_id IS NOT NULL;
+
+		RETURN QUERY
+		WITH tokens AS (
+			SELECT etca.pkey_id, etca.address, etca.symbol, etca.short_name, etca.blockchain
+			FROM tbl.escrow_token_contract_address AS etca
+		)
+
+		SELECT
+			uspcal.pkey_id AS user_strategy_pool_contract_asset_ledger_id,
+			uspcal.fkey_strategy_pool_contract_id,
+			_strategy_id AS strategy_id,
+			tokens.pkey_id AS token_id,
+			tokens.symbol AS token_symbol,
+			tokens.short_name AS token_name,
+			tokens.address AS token_address,
+			tokens.blockchain,
+			uspcal.amount,
+			uspcal.happened_at,
+			uspcal.is_add
+		FROM tbl.user_strategy_pool_contract_asset_ledger AS uspcal
+		INNER JOIN tokens ON tokens.pkey_id = uspcal.fkey_token_id
+		WHERE uspcal.fkey_user_id = a_user_id
+			AND uspcal.fkey_strategy_pool_contract_id = a_strategy_pool_contract_id
+		ORDER BY uspcal.happened_at DESC
+		LIMIT a_limit
+		OFFSET a_offset;
+END
+"#,
+        ),
+        ProceduralFunction::new(
+            "fun_user_add_user_strategy_pool_contract_asset_ledger_entry",
+            vec![
+                Field::new("user_id", Type::BigInt),
+                Field::new("strategy_pool_contract_id", Type::BigInt),
+                Field::new("token_address", Type::BlockchainAddress),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("amount", Type::BlockchainDecimal),
+                Field::new("is_add", Type::Boolean),
+            ],
+            vec![Field::new("success", Type::Boolean)],
+            r#"
+BEGIN
+
+	INSERT INTO tbl.user_strategy_pool_contract_asset_ledger (
+		fkey_user_id,
+		fkey_strategy_pool_contract_id,
+		fkey_token_id,
+		amount,
+		happened_at,
+		is_add
+	) VALUES (
+		a_user_id,
+		a_strategy_pool_contract_id,
+		(SELECT pkey_id FROM tbl.escrow_token_contract_address AS etca WHERE etca.address = a_token_address AND etca.blockchain = a_blockchain),
+		a_amount,
+		extract(epoch from now())::bigint,
+		a_is_add
+	);
+
+	RETURN QUERY SELECT TRUE;
+
+END
+"#,
+        ),
+        ProceduralFunction::new(
+            "fun_user_list_user_strategy_pool_contract_asset_balances",
+            vec![
+                Field::new("strategy_pool_contract_id", Type::BigInt),
+                Field::new("user_id", Type::optional(Type::BigInt)),
+                Field::new("token_address", Type::optional(Type::BlockchainAddress)),
+                Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
+            ],
+            vec![
+                Field::new("token_id", Type::BigInt),
+                Field::new("token_name", Type::String),
+                Field::new("token_symbol", Type::String),
+                Field::new("token_address", Type::BlockchainAddress),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("balance", Type::BlockchainDecimal),
+            ],
+            r#"
+BEGIN
+
+RETURN QUERY
+WITH tokens AS (
+	SELECT etca.pkey_id, etca.address, etca.symbol, etca.short_name, etca.blockchain
+	FROM tbl.escrow_token_contract_address AS etca
+)
+
+SELECT
+	tokens.pkey_id AS token_id,
+	tokens.short_name AS token_name,
+	tokens.symbol AS token_symbol,
+	tokens.address AS token_address,
+	tokens.blockchain,
+	uspcab.balance
+	FROM tbl.user_strategy_pool_contract_asset_balance as uspcab
+	INNER JOIN tokens ON tokens.pkey_id = uspcab.fkey_token_id
+	WHERE uspcab.fkey_strategy_pool_contract_id = a_strategy_pool_contract_id
+		AND (a_user_id ISNULL OR uspcab.fkey_user_id = a_user_id)
+		AND (a_token_address ISNULL OR tokens.address = a_token_address)
+		AND (a_blockchain ISNULL OR tokens.blockchain = a_blockchain);
+END
+"#,
+        ),
+        ProceduralFunction::new(
+            "fun_user_upsert_user_strategy_pool_contract_asset_balance",
+            vec![
+                Field::new("user_id", Type::BigInt),
+                Field::new("strategy_pool_contract_id", Type::BigInt),
+                Field::new("token_address", Type::BlockchainAddress),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("old_balance", Type::BlockchainDecimal),
+                Field::new("new_balance", Type::BlockchainDecimal),
+            ],
+            vec![Field::new(
+                "user_strategy_pool_contract_asset_balance_id",
+                Type::BigInt,
+            )],
+            r#"
+DECLARE
+		_token_id BIGINT;
+		_user_strategy_pool_contract_asset_balance_id BIGINT;
+		_user_strategy_pool_contract_asset_balance_old_balance VARCHAR;
+		_pkey_id BIGINT;
+BEGIN
+	SELECT etca.pkey_id INTO _token_id
+	FROM tbl.escrow_token_contract_address AS etca
+	WHERE etca.address = a_token_address AND etca.blockchain = a_blockchain;
+
+	ASSERT _token_id IS NOT NULL;
+
+	SELECT uspcab.pkey_id, uspcab.balance
+	INTO _user_strategy_pool_contract_asset_balance_id, _user_strategy_pool_contract_asset_balance_old_balance
+	FROM tbl.user_strategy_pool_contract_asset_balance AS uspcab
+	WHERE uspcab.fkey_user_id = a_user_id
+		AND uspcab.fkey_strategy_pool_contract_id = a_strategy_pool_contract_id
+		AND uspcab.fkey_token_id = _token_id;
+
+	-- insert new entry if not exist
+	IF _user_strategy_pool_contract_asset_balance_id ISNULL THEN
+			INSERT INTO tbl.user_strategy_pool_contract_asset_balance (
+				fkey_user_id,
+				fkey_strategy_pool_contract_id,
+				fkey_token_id,
+				balance
+			)	VALUES (
+				a_user_id,
+				a_strategy_pool_contract_id,
+				_token_id,
+				a_new_balance
+			)	RETURNING pkey_id	INTO _pkey_id;
+	ELSE
+			-- update old balance if exist and equals to old balance
+			IF _expert_listened_wallet_asset_balance_old_balance NOTNULL AND _user_strategy_pool_contract_asset_balance_old_balance != a_old_balance THEN
+					RETURN;
+			END IF;
+			UPDATE tbl.user_strategy_pool_contract_asset_balance
+			SET balance = a_new_balance
+			WHERE pkey_id = _expert_listened_wallet_asset_balance_id
+			RETURNING pkey_id
+					INTO _pkey_id;
+	END IF;
+
+	RETURN QUERY SELECT _pkey_id;
+END
+"#,
+        ),
+        ProceduralFunction::new(
             "fun_user_follow_expert",
             vec![
                 Field::new("user_id", Type::BigInt),
