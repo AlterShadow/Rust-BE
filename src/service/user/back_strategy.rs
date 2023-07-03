@@ -5,6 +5,7 @@ use eth_sdk::pair_paths::WorkingPancakePairPaths;
 use eth_sdk::strategy_pool::{sp_deposit_to_and_ensure_success, StrategyPoolContract};
 use eth_sdk::strategy_wallet::StrategyWalletContract;
 use eth_sdk::v3::smart_router::{copy_trade_and_ensure_success, PancakeSmartRouterV3Contract};
+use eth_sdk::StrategyPoolHeraldAddresses;
 use eth_sdk::{
     build_pancake_swap, DexAddresses, EitherTransport, EthereumRpcConnection, ScaledMath,
     TransactionFetcher, CONFIRMATIONS, MAX_RETRIES, POLL_INTERVAL,
@@ -45,6 +46,7 @@ async fn deploy_strategy_contract(
     key: impl Key + Clone,
     strategy_token_name: String,
     strategy_token_symbol: String,
+    herald_contract_address: Address,
     logger: DynLogger,
 ) -> Result<StrategyPoolContract<EitherTransport>> {
     info!("Deploying strategy contract");
@@ -54,6 +56,7 @@ async fn deploy_strategy_contract(
         key,
         strategy_token_name,
         strategy_token_symbol,
+        herald_contract_address,
         logger.clone(),
     )
     .await?;
@@ -147,11 +150,15 @@ async fn user_get_or_deploy_strategy_pool(
         }
         None if !dry_run => {
             /* if strategy pool doesn't exist in this chain, create it */
+
             let contract = deploy_strategy_contract(
                 &conn,
                 master_key.clone(),
                 strategy_token_name,
                 strategy_token_symbol,
+                StrategyPoolHeraldAddresses::new()
+                    .get(blockchain, ())
+                    .context("could not find herald contract address in this chain")?,
                 logger.clone(),
             )
             .await?;

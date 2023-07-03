@@ -48,9 +48,10 @@ impl<T: Transport> StrategyPoolContract<T> {
         key: impl Key + Clone,
         name: String,
         symbol: String,
+        herald: Address,
         logger: DynLogger,
     ) -> Result<Self> {
-        let params = (name.clone(), symbol.clone(), key.address());
+        let params = (name.clone(), symbol.clone(), key.address(), herald);
         let contract = deploy_contract(w3.clone(), key, params, "StrategyPool", logger).await?;
         Ok(Self { contract })
     }
