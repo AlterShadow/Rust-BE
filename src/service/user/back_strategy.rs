@@ -704,7 +704,7 @@ pub async fn user_back_strategy(
         .await?
         .first(|x| x.balance)
         .unwrap_or_default();
-    let strategy_token_to_mint = if strategy_pool_active {
+    let strategy_token_to_mint = if !strategy_pool_active {
         _strategy_token_to_mint
     } else {
         // recalculate strategy token to mint if strategy pool is not active
