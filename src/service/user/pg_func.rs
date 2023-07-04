@@ -570,12 +570,12 @@ BEGIN
 			)	RETURNING pkey_id	INTO _pkey_id;
 	ELSE
 			-- update old balance if exist and equals to old balance
-			IF _expert_listened_wallet_asset_balance_old_balance NOTNULL AND _user_strategy_pool_contract_asset_balance_old_balance != a_old_balance THEN
+			IF _user_strategy_pool_contract_asset_balance_old_balance NOTNULL AND _user_strategy_pool_contract_asset_balance_old_balance != a_old_balance THEN
 					RETURN;
 			END IF;
 			UPDATE tbl.user_strategy_pool_contract_asset_balance
 			SET balance = a_new_balance
-			WHERE pkey_id = _expert_listened_wallet_asset_balance_id
+			WHERE pkey_id = _user_strategy_pool_contract_asset_balance_id
 			RETURNING pkey_id
 					INTO _pkey_id;
 	END IF;
