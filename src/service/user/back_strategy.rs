@@ -624,6 +624,11 @@ pub async fn user_back_strategy(
 
     // FIXME: we should do it in escrow pending contract or somewhere
     /* transfer escrow to our EOA */
+    info!(
+        "transfer escrow to our EOA {:?} for trading",
+        master_key.address()
+    );
+
     transfer_token_to_and_ensure_success(
         escrow_contract,
         &conn,
@@ -639,6 +644,7 @@ pub async fn user_back_strategy(
     .await?;
 
     /* approve pancakeswap to trade escrow token */
+    info!("approve pancakeswap to trade escrow token");
     approve_and_ensure_success(
         escrow_token_contract,
         &conn,
@@ -653,6 +659,7 @@ pub async fn user_back_strategy(
     .await?;
 
     /* trade escrow token for strategy's tokens */
+    info!("trade escrow token for strategy's tokens");
     let trades = trade_escrow_for_strategy_tokens(
         &conn,
         &db,
@@ -721,11 +728,19 @@ pub async fn user_back_strategy(
                 /* so use these trade values for valuation */
 
                 let amount_spent_on_asset = escrow_allocations_for_tokens.get(strategy_pool_asset).context("could not get amount spent for backer in strategy pool asset, even though amount bought exists")?.clone();
-
-                strategy_pool_asset_last_prices_in_base_token.insert(
-                    strategy_pool_asset.clone(),
-                    amount_spent_on_asset.mul_div(U256::exp10(18), amount_bought.clone())?,
-                );
+                if amount_bought.is_zero() {
+                    warn!(
+                        "amount bought is zero, setting last price to zero {:?}",
+                        strategy_pool_asset
+                    );
+                    strategy_pool_asset_last_prices_in_base_token
+                        .insert(strategy_pool_asset.clone(), U256::zero());
+                } else {
+                    strategy_pool_asset_last_prices_in_base_token.insert(
+                        strategy_pool_asset.clone(),
+                        amount_spent_on_asset.mul_div(U256::exp10(18), amount_bought.clone())?,
+                    );
+                }
             } else {
                 /* if strategy pool asset is not in initial_token_ratios, it was not bought */
                 /* fetch the most recent trade values from the database to use for valuation */
@@ -863,12 +878,18 @@ pub async fn calculate_sp_tokens_to_mint_easy_approach(
     escrow_decimals: U256,
 ) -> Result<U256> {
     let relative_quantity = token.relative_quantity.unwrap();
+    info!(
+        "calculate_sp_tokens_to_mint_easy_approach {:?} {:?} {:?}",
+        escrow_amount, relative_quantity, escrow_decimals
+    );
     let result = escrow_amount
         .mul_div(
             relative_quantity.into(),
             U256::exp10(escrow_decimals.as_u32() as _),
         )
         .context("calculate_sp_tokens_to_mint_easy_approach")?;
+    info!("Calculating strategy token with easy approach done");
+
     Ok(result)
 }
 

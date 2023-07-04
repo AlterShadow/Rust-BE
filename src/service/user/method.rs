@@ -2818,7 +2818,11 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
                     .cloned()
                     .unwrap_or(U256::zero());
                 let after_amount = before_amount + add_amount;
-                let ratio = add_amount.div_as_f64(after_amount)?;
+                let ratio = if after_amount.is_zero() {
+                    0.0
+                } else {
+                    add_amount.div_as_f64(after_amount)?
+                };
                 let token = db
                     .execute(FunUserListEscrowTokenContractAddressReq {
                         limit: 1,
