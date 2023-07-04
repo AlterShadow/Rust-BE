@@ -429,18 +429,18 @@ CREATE TABLE tbl.user_strategy_balance (
 -- Table: user_strategy_pool_contract_asset_balance
 CREATE TABLE tbl.user_strategy_pool_contract_asset_balance (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_user_strategy_pool_contract_asset_balance_id'),
-    fkey_user_id bigint  NOT NULL,
+    fkey_strategy_wallet_id bigint  NOT NULL,
     fkey_strategy_pool_contract_id bigint  NOT NULL,
     fkey_token_id bigint  NOT NULL,
     balance varchar(64)  NOT NULL,
-    CONSTRAINT user_strategy_pool_contract_asset_balance_ak_1 UNIQUE (fkey_user_id, fkey_strategy_pool_contract_id, fkey_token_id) NOT DEFERRABLE  INITIALLY IMMEDIATE,
+    CONSTRAINT user_strategy_pool_contract_asset_balance_ak_1 UNIQUE (fkey_strategy_wallet_id, fkey_strategy_pool_contract_id, fkey_token_id) NOT DEFERRABLE  INITIALLY IMMEDIATE,
     CONSTRAINT user_strategy_pool_contract_asset_balance_pk PRIMARY KEY (pkey_id)
 );
 
 -- Table: user_strategy_pool_contract_asset_ledger
 CREATE TABLE tbl.user_strategy_pool_contract_asset_ledger (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_user_strategy_pool_contract_asset_ledger_id'),
-    fkey_user_id bigint  NOT NULL,
+    fkey_strategy_wallet_id bigint  NOT NULL,
     fkey_strategy_pool_contract_id bigint  NOT NULL,
     fkey_token_id bigint  NOT NULL,
     amount varchar(64)  NOT NULL,
