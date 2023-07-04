@@ -1,5 +1,5 @@
 -- Created by Vertabelo (http://vertabelo.com)
--- Last modification date: 2023-07-02 06:07:29.431
+-- Last modification date: 2023-07-04 14:11:34.941
 
 CREATE SCHEMA IF NOT EXISTS tbl;;
 
@@ -242,29 +242,6 @@ CREATE TABLE tbl.strategy_pool_contract_asset_balance (
     CONSTRAINT strategy_pool_contract_asset_balance_pk PRIMARY KEY (pkey_id)
 );
 
--- Table: user_strategy_pool_contract_asset_ledger
-CREATE TABLE tbl.user_strategy_pool_contract_asset_ledger (
-	pkey_id bigint NOT NULL DEFAULT nextval('tbl.seq_user_strategy_pool_contract_asset_ledger_id'),
-	fkey_user_id bigint NOT NULL,
-	fkey_strategy_pool_contract_id bigint NOT NULL,
-	fkey_token_id bigint NOT NULL,
-	amount varchar(64) NOT NULL,
-	is_add boolean NOT NULL,
-	happened_at bigint NOT NULL,
-	CONSTRAINT user_strategy_pool_contract_asset_ledger_pk PRIMARY KEY (pkey_id)
-);
-
--- Table: user_strategy_pool_contract_asset_balance
-CREATE TABLE tbl.user_strategy_pool_contract_asset_balance (
-	pkey_id bigint NOT NULL DEFAULT nextval('tbl.seq_user_strategy_pool_contract_asset_balance_id'),
-	fkey_user_id bigint NOT NULL,
-	fkey_strategy_pool_contract_id bigint NOT NULL,
-	fkey_token_id bigint NOT NULL,
-	balance varchar(64) NOT NULL,
-	CONSTRAINT user_strategy_pool_contract_asset_balance_ak_1 UNIQUE (fkey_user_id, fkey_strategy_pool_contract_id, fkey_token_id) NOT DEFERRABLE INITIALLY IMMEDIATE,
-	CONSTRAINT user_strategy_pool_contract_asset_balance_pk PRIMARY KEY (pkey_id)
-);
-
 -- Table: strategy_watched_wallet
 CREATE TABLE tbl.strategy_watched_wallet (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_strategy_watching_wallet_id'),
@@ -368,6 +345,28 @@ CREATE TABLE tbl.user_back_exit_strategy_ledger (
     CONSTRAINT user_back_exit_strategy_ledger_pk PRIMARY KEY (pkey_id)
 );
 
+-- Table: user_back_strategy_attempt
+CREATE TABLE tbl.user_back_strategy_attempt (
+    pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_user_back_strategy_attempt_id'),
+    fkey_user_id bigint  NOT NULL,
+    fkey_strategy_id bigint  NOT NULL,
+    fkey_token_id bigint  NOT NULL,
+    strategy_wallet_address varchar(64)  NOT NULL,
+    log_id bigint  NOT NULL,
+    back_quantity varchar(64)  NOT NULL,
+    happened_at bigint  NOT NULL,
+    CONSTRAINT user_back_strategy_attempt_pk PRIMARY KEY (pkey_id)
+);
+
+-- Table: user_back_strategy_log
+CREATE TABLE tbl.user_back_strategy_log (
+    pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_user_back_strategy_log_id'),
+    fkey_user_back_strategy_attempt_id bigint  NOT NULL,
+    message varchar  NOT NULL,
+    happened_at bigint  NOT NULL,
+    CONSTRAINT user_back_strategy_log_pk PRIMARY KEY (pkey_id)
+);
+
 -- Table: user_deposit_withdraw_balance
 CREATE TABLE tbl.user_deposit_withdraw_balance (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_user_deposit_exit_strategy_balance_id'),
@@ -418,17 +417,6 @@ CREATE TABLE tbl.user_follow_strategy (
     CONSTRAINT user_follow_strategy_pk PRIMARY KEY (pkey_id)
 );
 
--- Table: user_whitelisted_wallet
-CREATE TABLE tbl.user_whitelisted_wallet (
-    pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_user_whitelisted_wallet_id'),
-    fkey_user_id bigint  NOT NULL,
-    blockchain enum_block_chain  NOT NULL,
-    address varchar(64)  NOT NULL,
-    created_at bigint  NOT NULL,
-    CONSTRAINT user_whitelisted_wallet_ak_1 UNIQUE (address, blockchain) NOT DEFERRABLE  INITIALLY IMMEDIATE,
-    CONSTRAINT user_whitelisted_wallet_pk PRIMARY KEY (pkey_id)
-);
-
 -- Table: user_strategy_balance
 CREATE TABLE tbl.user_strategy_balance (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_user_strategy_balance_id'),
@@ -438,17 +426,51 @@ CREATE TABLE tbl.user_strategy_balance (
     CONSTRAINT user_strategy_balance_pk PRIMARY KEY (pkey_id)
 );
 
+-- Table: user_strategy_pool_contract_asset_balance
+CREATE TABLE tbl.user_strategy_pool_contract_asset_balance (
+    pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_user_strategy_pool_contract_asset_balance_id'),
+    fkey_user_id bigint  NOT NULL,
+    fkey_strategy_pool_contract_id bigint  NOT NULL,
+    fkey_token_id bigint  NOT NULL,
+    balance varchar(64)  NOT NULL,
+    CONSTRAINT user_strategy_pool_contract_asset_balance_ak_1 UNIQUE (fkey_user_id, fkey_strategy_pool_contract_id, fkey_token_id) NOT DEFERRABLE  INITIALLY IMMEDIATE,
+    CONSTRAINT user_strategy_pool_contract_asset_balance_pk PRIMARY KEY (pkey_id)
+);
+
+-- Table: user_strategy_pool_contract_asset_ledger
+CREATE TABLE tbl.user_strategy_pool_contract_asset_ledger (
+    pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_user_strategy_pool_contract_asset_ledger_id'),
+    fkey_user_id bigint  NOT NULL,
+    fkey_strategy_pool_contract_id bigint  NOT NULL,
+    fkey_token_id bigint  NOT NULL,
+    amount varchar(64)  NOT NULL,
+    is_add boolean  NOT NULL,
+    happened_at bigint  NOT NULL,
+    CONSTRAINT user_strategy_pool_contract_asset_ledger_pk PRIMARY KEY (pkey_id)
+);
+
 -- Table: user_strategy_wallet
 CREATE TABLE tbl.user_strategy_wallet (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_strategy_wallet_id'),
     fkey_user_id bigint  NOT NULL,
     address varchar(64)  NOT NULL,
-    blockchain enum_block_chain  NOT NULL,
     is_platform_managed boolean  NOT NULL,
+    blockchain enum_block_chain  NOT NULL,
     created_at bigint  NOT NULL,
     CONSTRAINT user_strategy_wallet_ak_1 UNIQUE (address, blockchain) NOT DEFERRABLE  INITIALLY IMMEDIATE,
     CONSTRAINT user_strategy_wallet_ak_2 UNIQUE (fkey_user_id, blockchain) NOT DEFERRABLE  INITIALLY IMMEDIATE,
     CONSTRAINT user_strategy_wallet_pk PRIMARY KEY (pkey_id)
+);
+
+-- Table: user_whitelisted_wallet
+CREATE TABLE tbl.user_whitelisted_wallet (
+    pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_user_whitelisted_wallet_id'),
+    fkey_user_id bigint  NOT NULL,
+    blockchain enum_block_chain  NOT NULL,
+    address varchar(64)  NOT NULL,
+    created_at bigint  NOT NULL,
+    CONSTRAINT user_registered_wallet_ak_1 UNIQUE (address, blockchain) NOT DEFERRABLE  INITIALLY IMMEDIATE,
+    CONSTRAINT user_whitelisted_wallet_pk PRIMARY KEY (pkey_id)
 );
 
 -- foreign keys
@@ -700,6 +722,38 @@ ALTER TABLE tbl.user_back_exit_strategy_ledger ADD CONSTRAINT user_back_strategy
     INITIALLY IMMEDIATE
 ;
 
+-- Reference: user_back_strategy_log_user_back_strategy_attempt (table: user_back_strategy_log)
+ALTER TABLE tbl.user_back_strategy_log ADD CONSTRAINT user_back_strategy_log_user_back_strategy_attempt
+    FOREIGN KEY (fkey_user_back_strategy_attempt_id)
+    REFERENCES tbl.user_back_strategy_attempt (pkey_id)  
+    NOT DEFERRABLE 
+    INITIALLY IMMEDIATE
+;
+
+-- Reference: user_back_strategy_logs_escrow_token_contract_address (table: user_back_strategy_attempt)
+ALTER TABLE tbl.user_back_strategy_attempt ADD CONSTRAINT user_back_strategy_logs_escrow_token_contract_address
+    FOREIGN KEY (fkey_token_id)
+    REFERENCES tbl.escrow_token_contract_address (pkey_id)  
+    NOT DEFERRABLE 
+    INITIALLY IMMEDIATE
+;
+
+-- Reference: user_back_strategy_logs_strategy (table: user_back_strategy_attempt)
+ALTER TABLE tbl.user_back_strategy_attempt ADD CONSTRAINT user_back_strategy_logs_strategy
+    FOREIGN KEY (fkey_strategy_id)
+    REFERENCES tbl.strategy (pkey_id)  
+    NOT DEFERRABLE 
+    INITIALLY IMMEDIATE
+;
+
+-- Reference: user_back_strategy_logs_user (table: user_back_strategy_attempt)
+ALTER TABLE tbl.user_back_strategy_attempt ADD CONSTRAINT user_back_strategy_logs_user
+    FOREIGN KEY (fkey_user_id)
+    REFERENCES tbl."user" (pkey_id)  
+    NOT DEFERRABLE 
+    INITIALLY IMMEDIATE
+;
+
 -- Reference: user_deposit_exit_strategy_balance_escrow_address (table: user_deposit_withdraw_balance)
 ALTER TABLE tbl.user_deposit_withdraw_balance ADD CONSTRAINT user_deposit_exit_strategy_balance_escrow_address
     FOREIGN KEY (fkey_escrow_contract_address_id)
@@ -772,10 +826,18 @@ ALTER TABLE tbl.expert_profile ADD CONSTRAINT user_profile_user
     INITIALLY IMMEDIATE
 ;
 
--- Reference: user_whitelisted_wallet_user (table: user_whitelisted_wallet)
-ALTER TABLE tbl.user_whitelisted_wallet ADD CONSTRAINT user_whitelisted_wallet_user
+-- Reference: user_registered_wallet_user (table: user_whitelisted_wallet)
+ALTER TABLE tbl.user_whitelisted_wallet ADD CONSTRAINT user_registered_wallet_user
     FOREIGN KEY (fkey_user_id)
     REFERENCES tbl."user" (pkey_id)  
+    NOT DEFERRABLE 
+    INITIALLY IMMEDIATE
+;
+
+-- Reference: user_strat_pool_cont_asset_bal_strategy_pool_contract (table: user_strategy_pool_contract_asset_balance)
+ALTER TABLE tbl.user_strategy_pool_contract_asset_balance ADD CONSTRAINT user_strat_pool_cont_asset_bal_strategy_pool_contract
+    FOREIGN KEY (fkey_strategy_pool_contract_id)
+    REFERENCES tbl.strategy_pool_contract (pkey_id)  
     NOT DEFERRABLE 
     INITIALLY IMMEDIATE
 ;
@@ -800,6 +862,46 @@ ALTER TABLE tbl.user_strategy_balance ADD CONSTRAINT user_strategy_balance_strat
 ALTER TABLE tbl.user_strategy_balance ADD CONSTRAINT user_strategy_ledger_user_strategy_wallet
     FOREIGN KEY (fkey_user_strategy_wallet_id)
     REFERENCES tbl.user_strategy_wallet (pkey_id)  
+    NOT DEFERRABLE 
+    INITIALLY IMMEDIATE
+;
+
+-- Reference: user_strategy_pool_cct_asset_bal_esc_token_coct_address (table: user_strategy_pool_contract_asset_balance)
+ALTER TABLE tbl.user_strategy_pool_contract_asset_balance ADD CONSTRAINT user_strategy_pool_cct_asset_bal_esc_token_coct_address
+    FOREIGN KEY (fkey_token_id)
+    REFERENCES tbl.escrow_token_contract_address (pkey_id)  
+    NOT DEFERRABLE 
+    INITIALLY IMMEDIATE
+;
+
+-- Reference: user_strategy_pool_cct_asset_ldg_esc_token_contract_address (table: user_strategy_pool_contract_asset_ledger)
+ALTER TABLE tbl.user_strategy_pool_contract_asset_ledger ADD CONSTRAINT user_strategy_pool_cct_asset_ldg_esc_token_contract_address
+    FOREIGN KEY (fkey_token_id)
+    REFERENCES tbl.escrow_token_contract_address (pkey_id)  
+    NOT DEFERRABLE 
+    INITIALLY IMMEDIATE
+;
+
+-- Reference: user_strategy_pool_contract_asset_balance_user (table: user_strategy_pool_contract_asset_balance)
+ALTER TABLE tbl.user_strategy_pool_contract_asset_balance ADD CONSTRAINT user_strategy_pool_contract_asset_balance_user
+    FOREIGN KEY (fkey_user_id)
+    REFERENCES tbl."user" (pkey_id)  
+    NOT DEFERRABLE 
+    INITIALLY IMMEDIATE
+;
+
+-- Reference: user_strategy_pool_contract_asset_ledger_strategy_pool_contract (table: user_strategy_pool_contract_asset_ledger)
+ALTER TABLE tbl.user_strategy_pool_contract_asset_ledger ADD CONSTRAINT user_strategy_pool_contract_asset_ledger_strategy_pool_contract
+    FOREIGN KEY (fkey_strategy_pool_contract_id)
+    REFERENCES tbl.strategy_pool_contract (pkey_id)  
+    NOT DEFERRABLE 
+    INITIALLY IMMEDIATE
+;
+
+-- Reference: user_strategy_pool_contract_asset_ledger_user (table: user_strategy_pool_contract_asset_ledger)
+ALTER TABLE tbl.user_strategy_pool_contract_asset_ledger ADD CONSTRAINT user_strategy_pool_contract_asset_ledger_user
+    FOREIGN KEY (fkey_user_id)
+    REFERENCES tbl."user" (pkey_id)  
     NOT DEFERRABLE 
     INITIALLY IMMEDIATE
 ;
@@ -906,20 +1008,6 @@ CREATE SEQUENCE tbl.seq_strategy_pool_contract_asset_balance_id
       NO CYCLE
 ;
 
--- Sequence: seq_user_strategy_pool_contract_asset_ledger_id
-CREATE SEQUENCE tbl.seq_user_strategy_pool_contract_asset_ledger_id
-      NO MINVALUE
-      NO MAXVALUE
-      NO CYCLE
-;
-
--- Sequence: seq_user_strategy_pool_contract_asset_balance_id
-CREATE SEQUENCE tbl.seq_user_strategy_pool_contract_asset_balance_id
-      NO MINVALUE
-      NO MAXVALUE
-      NO CYCLE
-;
-
 -- Sequence: seq_strategy_pool_contract_id
 CREATE SEQUENCE tbl.seq_strategy_pool_contract_id
       NO MINVALUE
@@ -976,6 +1064,20 @@ CREATE SEQUENCE tbl.seq_user_back_exit_strategy_ledger_id
       NO CYCLE
 ;
 
+-- Sequence: seq_user_back_strategy_attempt_id
+CREATE SEQUENCE tbl.seq_user_back_strategy_attempt_id
+      NO MINVALUE
+      NO MAXVALUE
+      NO CYCLE
+;
+
+-- Sequence: seq_user_back_strategy_log_id
+CREATE SEQUENCE tbl.seq_user_back_strategy_log_id
+      NO MINVALUE
+      NO MAXVALUE
+      NO CYCLE
+;
+
 -- Sequence: seq_user_deposit_exit_strategy_balance_id
 CREATE SEQUENCE tbl.seq_user_deposit_exit_strategy_balance_id
       NO MINVALUE
@@ -1012,13 +1114,6 @@ CREATE SEQUENCE tbl.seq_user_id
       AS bigint
 ;
 
--- Sequence: seq_user_whitelisted_wallet_id
-CREATE SEQUENCE tbl.seq_user_whitelisted_wallet_id
-      NO MINVALUE
-      NO MAXVALUE
-      NO CYCLE
-;
-
 -- Sequence: seq_user_request_refund_ledger_id
 CREATE SEQUENCE tbl.seq_user_request_refund_ledger_id
       NO MINVALUE
@@ -1028,6 +1123,27 @@ CREATE SEQUENCE tbl.seq_user_request_refund_ledger_id
 
 -- Sequence: seq_user_strategy_balance_id
 CREATE SEQUENCE tbl.seq_user_strategy_balance_id
+      NO MINVALUE
+      NO MAXVALUE
+      NO CYCLE
+;
+
+-- Sequence: seq_user_strategy_pool_contract_asset_balance_id
+CREATE SEQUENCE tbl.seq_user_strategy_pool_contract_asset_balance_id
+      NO MINVALUE
+      NO MAXVALUE
+      NO CYCLE
+;
+
+-- Sequence: seq_user_strategy_pool_contract_asset_ledger_id
+CREATE SEQUENCE tbl.seq_user_strategy_pool_contract_asset_ledger_id
+      NO MINVALUE
+      NO MAXVALUE
+      NO CYCLE
+;
+
+-- Sequence: seq_user_whitelisted_wallet_id
+CREATE SEQUENCE tbl.seq_user_whitelisted_wallet_id
       NO MINVALUE
       NO MAXVALUE
       NO CYCLE

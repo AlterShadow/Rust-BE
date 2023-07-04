@@ -1790,5 +1790,109 @@ BEGIN
 END
             "#,
         ),
+        ProceduralFunction::new(
+            "fun_user_save_user_back_strategy_attempt",
+            vec![
+                Field::new("strategy_id", Type::BigInt),
+                Field::new("user_id", Type::BigInt),
+                Field::new("token_id", Type::BigInt),
+                Field::new("back_quantity", Type::BlockchainDecimal),
+                Field::new("strategy_wallet_address", Type::BlockchainAddress),
+                Field::new("log_id", Type::BigInt),
+            ],
+            vec![Field::new("user_back_strategy_attempt_id", Type::BigInt)],
+            r#"
+BEGIN
+    RETURN QUERY INSERT INTO tbl.user_back_strategy_attempt (fkey_strategy_id, fkey_user_id, fkey_token_id, back_quantity, strategy_wallet_address, log_id, happened_at)
+        VALUES (a_strategy_id, a_user_id, a_token_id, a_back_quantity, a_strategy_wallet_address, a_log_id, EXTRACT(EPOCH FROM NOW()))
+        RETURNING pkey_id;
+END
+            "#,
+        ),
+        ProceduralFunction::new(
+            "fun_user_list_back_strategy_attempt",
+            vec![
+                Field::new("limit", Type::BigInt),
+                Field::new("offset", Type::BigInt),
+                Field::new("user_id", Type::optional(Type::BigInt)),
+                Field::new("strategy_id", Type::optional(Type::BigInt)),
+                Field::new("token_id", Type::optional(Type::BigInt)),
+            ],
+            vec![
+                Field::new("total", Type::BigInt),
+                Field::new("user_back_strategy_attempt_id", Type::BigInt),
+                Field::new("strategy_id", Type::BigInt),
+                Field::new("strategy_name", Type::String),
+                Field::new("token_id", Type::BigInt),
+                Field::new("token_symbol", Type::String),
+                Field::new("back_quantity", Type::BlockchainDecimal),
+                Field::new("strategy_wallet_address", Type::BlockchainAddress),
+                Field::new("log_id", Type::BigInt),
+                Field::new("happened_at", Type::BigInt),
+            ],
+            r#"
+BEGIN
+    RETURN QUERY SELECT
+        COUNT(*) OVER() AS total,
+        a.pkey_id,
+        a.fkey_strategy_id,
+        s.name,
+        a.fkey_token_id,
+        t.symbol,
+        a.back_quantity,
+        a.strategy_wallet_address,
+        a.log_id
+    FROM tbl.user_back_strategy_attempt AS a
+    JOIN tbl.strategy AS s ON a.fkey_strategy_id = s.pkey_id
+    JOIN tbl.escrow_token_contract_address AS t ON a.fkey_token_id = t.pkey_id
+    WHERE (a_strategy_id ISNULL OR a.fkey_strategy_id = a_strategy_id)
+        AND (a_token_id ISNULL OR a.fkey_token_id = a_token_id)
+        AND (a_user_id ISNULL OR a.fkey_user_id = a_user_id)
+    ORDER BY a.pkey_id
+    LIMIT a_limit
+    OFFSET a_offset;
+END
+            "#,
+        ),
+        ProceduralFunction::new(
+            "fun_user_save_user_back_strategy_log",
+            vec![
+                Field::new("user_back_strategy_attempt_id", Type::BigInt),
+                Field::new("message", Type::String),
+            ],
+            vec![],
+            r#"
+BEGIN
+    INSERT INTO tbl.user_back_strategy_log (fkey_user_back_strategy_attempt_id, message, happened_at)
+        VALUES (a_user_back_strategy_attempt_id, a_message, EXTRACT(EPOCH FROM NOW()));
+END
+            "#,
+        ),
+        ProceduralFunction::new(
+            "fun_user_list_back_strategy_log",
+            vec![
+                Field::new("limit", Type::BigInt),
+                Field::new("offset", Type::BigInt),
+                Field::new("user_back_strategy_attempt_id", Type::BigInt),
+            ],
+            vec![
+                Field::new("total", Type::BigInt),
+                Field::new("message", Type::String),
+                Field::new("happened_at", Type::BigInt),
+            ],
+            r#"
+BEGIN
+    RETURN QUERY SELECT
+        COUNT(*) OVER() AS total,
+        l.message,
+        l.happened_at
+    FROM tbl.user_back_strategy_log AS l
+    WHERE l.fkey_user_back_strategy_attempt_id = a_user_back_strategy_attempt_id
+    ORDER BY l.pkey_id
+    LIMIT a_limit
+    OFFSET a_offset;
+END
+            "#,
+        ),
     ]
 }

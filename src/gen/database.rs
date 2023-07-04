@@ -357,6 +357,20 @@ pub struct FunUserListAuditRulesRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunUserListBackStrategyAttemptRespRow {
+    pub total: i64,
+    pub user_back_strategy_attempt_id: i64,
+    pub strategy_id: i64,
+    pub strategy_name: String,
+    pub token_id: i64,
+    pub token_symbol: String,
+    pub back_quantity: BlockchainDecimal,
+    pub strategy_wallet_address: BlockchainAddress,
+    pub log_id: i64,
+    pub happened_at: i64,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserListBackStrategyLedgerRespRow {
     pub total: i64,
     pub back_ledger_id: i64,
@@ -365,6 +379,13 @@ pub struct FunUserListBackStrategyLedgerRespRow {
     pub quantity: BlockchainDecimal,
     pub blockchain: EnumBlockChain,
     pub transaction_hash: BlockchainTransactionHash,
+    pub happened_at: i64,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunUserListBackStrategyLogRespRow {
+    pub total: i64,
+    pub message: String,
     pub happened_at: i64,
 }
 
@@ -562,6 +583,14 @@ pub struct FunUserRemoveWhitelistedWalletRespRow {}
 pub struct FunUserRequestRefundRespRow {
     pub request_refund_id: i64,
 }
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunUserSaveUserBackStrategyAttemptRespRow {
+    pub user_back_strategy_attempt_id: i64,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunUserSaveUserBackStrategyLogRespRow {}
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserStrategyRowType {
@@ -2370,6 +2399,105 @@ impl DatabaseRequest for FunUserListUserStrategyBalanceReq {
             &self.offset as &(dyn ToSql + Sync),
             &self.user_id as &(dyn ToSql + Sync),
             &self.strategy_id as &(dyn ToSql + Sync),
+        ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserSaveUserBackStrategyAttemptReq {
+    pub strategy_id: i64,
+    pub user_id: i64,
+    pub token_id: i64,
+    pub back_quantity: BlockchainDecimal,
+    pub strategy_wallet_address: BlockchainAddress,
+    pub log_id: i64,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunUserSaveUserBackStrategyAttemptReq {
+    type ResponseRow = FunUserSaveUserBackStrategyAttemptRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_save_user_back_strategy_attempt(a_strategy_id => $1::bigint, a_user_id => $2::bigint, a_token_id => $3::bigint, a_back_quantity => $4::varchar, a_strategy_wallet_address => $5::varchar, a_log_id => $6::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.strategy_id as &(dyn ToSql + Sync),
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.token_id as &(dyn ToSql + Sync),
+            &self.back_quantity as &(dyn ToSql + Sync),
+            &self.strategy_wallet_address as &(dyn ToSql + Sync),
+            &self.log_id as &(dyn ToSql + Sync),
+        ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserListBackStrategyAttemptReq {
+    pub limit: i64,
+    pub offset: i64,
+    #[serde(default)]
+    pub user_id: Option<i64>,
+    #[serde(default)]
+    pub strategy_id: Option<i64>,
+    #[serde(default)]
+    pub token_id: Option<i64>,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunUserListBackStrategyAttemptReq {
+    type ResponseRow = FunUserListBackStrategyAttemptRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_list_back_strategy_attempt(a_limit => $1::bigint, a_offset => $2::bigint, a_user_id => $3::bigint, a_strategy_id => $4::bigint, a_token_id => $5::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.limit as &(dyn ToSql + Sync),
+            &self.offset as &(dyn ToSql + Sync),
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.strategy_id as &(dyn ToSql + Sync),
+            &self.token_id as &(dyn ToSql + Sync),
+        ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserSaveUserBackStrategyLogReq {
+    pub user_back_strategy_attempt_id: i64,
+    pub message: String,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunUserSaveUserBackStrategyLogReq {
+    type ResponseRow = FunUserSaveUserBackStrategyLogRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_save_user_back_strategy_log(a_user_back_strategy_attempt_id => $1::bigint, a_message => $2::varchar);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.user_back_strategy_attempt_id as &(dyn ToSql + Sync),
+            &self.message as &(dyn ToSql + Sync),
+        ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserListBackStrategyLogReq {
+    pub limit: i64,
+    pub offset: i64,
+    pub user_back_strategy_attempt_id: i64,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunUserListBackStrategyLogReq {
+    type ResponseRow = FunUserListBackStrategyLogRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_list_back_strategy_log(a_limit => $1::bigint, a_offset => $2::bigint, a_user_back_strategy_attempt_id => $3::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.limit as &(dyn ToSql + Sync),
+            &self.offset as &(dyn ToSql + Sync),
+            &self.user_back_strategy_attempt_id as &(dyn ToSql + Sync),
         ]
     }
 }
