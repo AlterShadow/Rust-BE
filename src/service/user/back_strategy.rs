@@ -128,7 +128,7 @@ async fn user_get_or_deploy_strategy_pool(
     strategy_token_symbol: String,
     logger: DynLogger,
     dry_run: bool,
-) -> Result<(i64, StrategyPoolContract<EitherTransport>)> {
+) -> Result<Option<(i64, StrategyPoolContract<EitherTransport>)>> {
     /* instantiate strategy contract wrapper */
     let strategy_pool = db
         .execute(FunWatcherListStrategyPoolContractReq {
@@ -175,9 +175,12 @@ async fn user_get_or_deploy_strategy_pool(
 
             (resp.strategy_pool_contract_id, contract)
         }
-        _ => bail!("Strategy pool contract not found. dry run mode"),
+        _ => {
+            warn!("Strategy pool contract not found. dry run mode");
+            return Ok(None);
+        }
     };
-    Ok(sp_contract)
+    Ok(Some(sp_contract))
 }
 pub struct CalculateUserBackStrategyCalculateAmountToMintResult {
     pub fees: U256,
@@ -223,7 +226,7 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
         .into_result()
         .context("strategy is not registered in the database")?;
     /* instantiate strategy contract wrapper */
-    let (strategy_pool_contract_id, sp_contract) = user_get_or_deploy_strategy_pool(
+    let sp_contract = user_get_or_deploy_strategy_pool(
         &conn,
         &ctx,
         &db,
@@ -250,6 +253,11 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
         !strategy_initial_ratios.is_empty(),
         "strategy has no initial ratios"
     );
+    let mut strategy_initial_token_ratios: HashMap<Address, U256> = HashMap::new();
+    for x in strategy_initial_ratios.iter() {
+        strategy_initial_token_ratios.insert(x.token_address.into(), x.quantity.into());
+    }
+
     logger.log("calculating fees");
     /* deduce fees from back amount */
     // TODO: use (back amount - fees) to calculate trade spenditure and SP shares
@@ -261,32 +269,34 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
             + strategy.expert_fee.unwrap_or_default())
             * divide_scale as f64) as u64)
         / divide_scale;
+    ensure!(
+        fees < back_usdc_amount,
+        "fees are too high, back amount is too low"
+    );
     let back_usdc_amount_minus_fees = back_usdc_amount - fees;
-    let strategy_pool_assets = db
-        .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
-            strategy_pool_contract_id: Some(strategy_pool_contract_id),
-            token_address: None,
-            blockchain: Some(blockchain),
-            strategy_id: None,
-        })
-        .await?
-        .into_rows();
+
     let mut strategy_pool_active: bool = false;
     let mut sp_assets_and_amounts: HashMap<Address, U256> = HashMap::new();
-    for sp_asset_row in &strategy_pool_assets {
-        if sp_asset_row.balance > U256::zero().into() {
-            strategy_pool_active = true;
+    if let Some((strategy_pool_contract_id, sp_contract)) = sp_contract.as_ref() {
+        let strategy_pool_assets = db
+            .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
+                strategy_pool_contract_id: Some(*strategy_pool_contract_id),
+                token_address: None,
+                blockchain: Some(blockchain),
+                strategy_id: None,
+            })
+            .await?
+            .into_rows();
+        for sp_asset_row in &strategy_pool_assets {
+            if sp_asset_row.balance > U256::zero().into() {
+                strategy_pool_active = true;
+            }
+            sp_assets_and_amounts.insert(
+                sp_asset_row.token_address.into(),
+                sp_asset_row.balance.into(),
+            );
         }
-        sp_assets_and_amounts.insert(
-            sp_asset_row.token_address.into(),
-            sp_asset_row.balance.into(),
-        );
     }
-    let mut strategy_initial_token_ratios: HashMap<Address, U256> = HashMap::new();
-    for x in strategy_initial_ratios.iter() {
-        strategy_initial_token_ratios.insert(x.token_address.into(), x.quantity.into());
-    }
-
     /* calculate how much of back amount to spend on each strategy pool asset */
     let escrow_allocations_for_tokens = calculate_escrow_allocation_for_strategy_tokens(
         back_usdc_amount_minus_fees,
@@ -338,10 +348,6 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
             strategy_pool_token_to_mint
         }
         true => {
-            ensure!(
-                !strategy_pool_assets.is_empty(),
-                "strategy pool has no assets"
-            );
             /* instantiate base token contract, and pancake contract */
             let escrow_token_contract = Erc20Token::new(conn.clone(), token_address)?;
             let pancake_contract = PancakeSmartRouterV3Contract::new(
@@ -422,7 +428,7 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
             // TODO: find out if we use back amount with or without fees for share calculation
             // currently calculating with back amount minus fees
             // TODO: get these values from database
-            let total_strategy_tokens = sp_contract.total_supply().await?;
+            let total_strategy_tokens = sp_contract.as_ref().unwrap().1.total_supply().await?;
 
             calculate_sp_tokens_to_mint_nth_backer(
                 total_strategy_tokens,
@@ -566,7 +572,8 @@ pub async fn user_back_strategy(
         logger.clone(),
         false,
     )
-    .await?;
+    .await?
+    .unwrap();
     logger.log("calculating strategy tokens");
 
     let escrow_token_contract = Erc20Token::new(conn.clone(), token_address)?;
