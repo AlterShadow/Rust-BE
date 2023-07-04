@@ -305,6 +305,10 @@ mod tests {
 
         let escrow = EscrowContract::deploy(tx_conn.clone(), god_key.clone()).await?;
 
+        let logger = DynLogger::new(Arc::new(move |msg| {
+            println!("{}", msg);
+        }));
+
         wait_for_confirmations_simple(
             &tx_conn.clone().eth(),
             mock_erc20_a
@@ -333,6 +337,7 @@ mod tests {
                     mock_erc20_a.address,
                     alice.address(),
                     U256::from(100),
+                    logger.clone(),
                 )
                 .await?,
             Duration::from_millis(1),

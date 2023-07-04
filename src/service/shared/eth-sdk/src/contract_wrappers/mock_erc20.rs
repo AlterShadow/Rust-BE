@@ -51,6 +51,7 @@ mod tests {
         ANVIL_PRIV_KEY_4,
     };
     use gen::model::EnumBlockChain;
+    use std::sync::Arc;
     use web3::types::U256;
 
     #[tokio::test]
@@ -64,6 +65,10 @@ mod tests {
         let alice = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_2)?;
         let bob = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_3)?;
         let charlie = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_4)?;
+
+        let logger = DynLogger::new(Arc::new(move |msg| {
+            println!("{}", msg);
+        }));
 
         /* positive assertions */
         assert_eq!(mock_erc20.balance_of(alice.address).await?, U256::from(0));
@@ -85,7 +90,13 @@ mod tests {
         assert_eq!(mock_erc20.balance_of(bob.address).await?, U256::from(5));
 
         mock_erc20
-            .approve(&conn, bob.clone(), charlie.address, U256::from(5))
+            .approve(
+                &conn,
+                bob.clone(),
+                charlie.address,
+                U256::from(5),
+                logger.clone(),
+            )
             .await?;
         assert_eq!(mock_erc20.balance_of(bob.address).await?, U256::from(5));
         assert_eq!(mock_erc20.balance_of(charlie.address).await?, U256::from(0));
@@ -142,7 +153,13 @@ mod tests {
             .mint(&conn, key.clone(), alice.address, U256::from(10))
             .await?;
         mock_erc20
-            .approve(&conn, alice.clone(), bob.address, U256::from(5))
+            .approve(
+                &conn,
+                alice.clone(),
+                bob.address,
+                U256::from(5),
+                logger.clone(),
+            )
             .await?;
         assert!(matches!(
             mock_erc20
