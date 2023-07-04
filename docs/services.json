@@ -1310,6 +1310,12 @@
               "ty": "BigInt"
             },
             {
+              "name": "strategy_wallet",
+              "ty": {
+                "Optional": "BlockchainAddress"
+              }
+            },
+            {
               "name": "nonce",
               "ty": "BigInt"
             }

@@ -1629,6 +1629,8 @@ pub struct UserBackStrategyRequest {
     #[serde(with = "WithBlockchainDecimal")]
     pub quantity: U256,
     pub token_id: i64,
+    #[serde(default)]
+    pub strategy_wallet: Option<Address>,
     pub nonce: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -3813,6 +3815,12 @@ impl WsRequest for UserBackStrategyRequest {
     {
       "name": "token_id",
       "ty": "BigInt"
+    },
+    {
+      "name": "strategy_wallet",
+      "ty": {
+        "Optional": "BlockchainAddress"
+      }
     },
     {
       "name": "nonce",

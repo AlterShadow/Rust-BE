@@ -590,6 +590,7 @@ impl RequestHandler for MethodUserBackStrategy {
                     escrow_contract,
                     &dex_addresses,
                     master_key,
+                    req.strategy_wallet,
                     logger.clone(),
                 )
                 .await

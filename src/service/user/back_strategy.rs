@@ -77,7 +77,11 @@ async fn user_get_or_deploy_strategy_wallet(
     user_wallet_address_to_receive_shares_on_this_chain: Address,
     logger: DynLogger,
     read_only: bool,
+    user_supplied_wallet: Option<Address>,
 ) -> Result<StrategyWalletContract<EitherTransport>> {
+    if let Some(user_supplied_wallet) = user_supplied_wallet {
+        return StrategyWalletContract::new(conn.clone(), user_supplied_wallet.into());
+    }
     match db
         .execute(FunUserListStrategyWalletsReq {
             user_id: ctx.user_id,
@@ -463,6 +467,7 @@ pub async fn user_back_strategy(
     escrow_contract: EscrowContract<EitherTransport>,
     dex_addresses: &DexAddresses,
     master_key: impl Key + Clone,
+    strategy_wallet: Option<Address>,
     logger: DynLogger,
 ) -> Result<()> {
     logger.log("checking back amount");
@@ -521,7 +526,8 @@ pub async fn user_back_strategy(
         blockchain,
         user_wallet_address_to_receive_shares_on_this_chain,
         logger.clone(),
-        true,
+        false,
+        strategy_wallet,
     )
     .await?;
 
