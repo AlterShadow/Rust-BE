@@ -538,11 +538,15 @@ pub async fn sp_deposit_to_and_ensure_success(
     max_retry: u64,
     poll_interval: Duration,
     signer: impl Key + Clone,
-    assets_amounts: HashMap<Address, U256>,
+    mut assets_amounts: HashMap<Address, U256>,
     strategy_tokens: U256,
     receiver: Address,
     logger: DynLogger,
 ) -> Result<H256> {
+    assets_amounts = assets_amounts
+        .into_iter()
+        .filter(|x| !x.1.is_zero())
+        .collect();
     /* publish transaction */
     let tx_hash = contract
         .deposit(
