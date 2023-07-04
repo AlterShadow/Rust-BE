@@ -1513,7 +1513,7 @@ END
             ],
             r#"
 BEGIN
-    RETURN QUERY SELECT a.pkey_id, a.fkey_audit_rule_id
+    RETURN QUERY SELECT a.fkey_audit_rule_id, a.created_at
     FROM tbl.strategy_audit_rule AS a
     WHERE a.fkey_strategy_id = a_strategy_id
     AND (a_audit_rule_id ISNULL OR a.fkey_audit_rule_id = a_audit_rule_id);
