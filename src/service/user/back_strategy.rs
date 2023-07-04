@@ -821,6 +821,61 @@ pub async fn user_back_strategy(
             new_balance: sp_asset_token_out_new_balance.into(),
         })
         .await?;
+
+        /* update user strategy pool contract asset balance & add entry to ledger */
+        let strategy_wallet_row = db
+            .execute(FunUserListStrategyWalletsReq {
+                user_id: ctx.user_id,
+                blockchain: Some(blockchain),
+            })
+            .await?
+            .into_result()
+            .context("could not fetch strategy wallet after backing")?;
+
+        match db
+            .execute(FunUserListUserStrategyPoolContractAssetBalancesReq {
+                strategy_pool_contract_id,
+                user_id: Some(ctx.user_id),
+                token_address: Some(token.into()),
+                blockchain: Some(blockchain),
+            })
+            .await?
+            .into_result()
+        {
+            Some(existing_amount) => {
+                let old_amount: U256 = existing_amount.balance.into();
+                let new_amount = old_amount.try_checked_add(amount)?;
+                db.execute(FunUserUpsertUserStrategyPoolContractAssetBalanceReq {
+                    strategy_pool_contract_id,
+                    strategy_wallet_id: strategy_wallet_row.wallet_id,
+                    token_address: token.into(),
+                    blockchain,
+                    old_balance: old_amount.into(),
+                    new_balance: new_amount.into(),
+                })
+                .await?;
+            }
+            None => {
+                db.execute(FunUserUpsertUserStrategyPoolContractAssetBalanceReq {
+                    strategy_pool_contract_id,
+                    strategy_wallet_id: strategy_wallet_row.wallet_id,
+                    token_address: token.into(),
+                    blockchain,
+                    old_balance: U256::zero().into(),
+                    new_balance: amount.into(),
+                })
+                .await?;
+            }
+        }
+        db.execute(FunUserAddUserStrategyPoolContractAssetLedgerEntryReq {
+            strategy_wallet_id: strategy_wallet_row.wallet_id,
+            strategy_pool_contract_id,
+            token_address: token.into(),
+            amount: amount.into(),
+            is_add: true,
+            blockchain,
+        })
+        .await?;
     }
 
     let ret = db
