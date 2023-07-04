@@ -1215,7 +1215,8 @@ pub struct ExitStrategyLedgerRow {
 pub struct ExpertAddStrategyInitialTokenRatioRequest {
     pub strategy_id: i64,
     pub token_id: i64,
-    pub quantity: f64,
+    #[serde(with = "WithBlockchainDecimal")]
+    pub quantity: U256,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1648,7 +1649,8 @@ pub struct UserBackStrategyStreamResponse {
 #[serde(rename_all = "camelCase")]
 pub struct UserCreateStrategyInitialTokenRow {
     pub token_id: i64,
-    pub quantity: f64,
+    #[serde(with = "WithBlockchainDecimal")]
+    pub quantity: U256,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -5739,7 +5741,7 @@ impl WsRequest for ExpertCreateStrategyRequest {
             },
             {
               "name": "quantity",
-              "ty": "Numeric"
+              "ty": "BlockchainDecimal"
             }
           ]
         }
@@ -6098,7 +6100,7 @@ impl WsRequest for ExpertAddStrategyInitialTokenRatioRequest {
     },
     {
       "name": "quantity",
-      "ty": "Numeric"
+      "ty": "BlockchainDecimal"
     }
   ],
   "returns": [

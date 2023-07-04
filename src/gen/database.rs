@@ -1909,7 +1909,7 @@ impl DatabaseRequest for FunUserListRequestRefundLedgerReq {
 pub struct FunUserAddStrategyInitialTokenRatioReq {
     pub strategy_id: i64,
     pub token_id: i64,
-    pub quantity: f64,
+    pub quantity: BlockchainDecimal,
     #[serde(default)]
     pub relative_token_id: Option<i64>,
     #[serde(default)]
@@ -1920,7 +1920,7 @@ pub struct FunUserAddStrategyInitialTokenRatioReq {
 impl DatabaseRequest for FunUserAddStrategyInitialTokenRatioReq {
     type ResponseRow = FunUserAddStrategyInitialTokenRatioRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_add_strategy_initial_token_ratio(a_strategy_id => $1::bigint, a_token_id => $2::bigint, a_quantity => $3::double precision, a_relative_token_id => $4::bigint, a_relative_quantity => $5::varchar);"
+        "SELECT * FROM api.fun_user_add_strategy_initial_token_ratio(a_strategy_id => $1::bigint, a_token_id => $2::bigint, a_quantity => $3::varchar, a_relative_token_id => $4::bigint, a_relative_quantity => $5::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![

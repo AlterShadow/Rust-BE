@@ -1226,7 +1226,7 @@ END
             vec![
                 Field::new("strategy_id", Type::BigInt),
                 Field::new("token_id", Type::BigInt),
-                Field::new("quantity", Type::Numeric),
+                Field::new("quantity", Type::BlockchainDecimal),
                 Field::new("relative_token_id", Type::optional(Type::BigInt)),
                 Field::new("relative_quantity", Type::optional(Type::BlockchainDecimal)),
             ],

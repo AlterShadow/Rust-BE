@@ -1573,7 +1573,7 @@ impl RequestHandler for MethodExpertCreateStrategy {
                 .execute(FunUserListEscrowTokenContractAddressReq {
                     limit: 1,
                     token_id: None,
-                    blockchain: None,
+                    blockchain: Some(req.wallet_blockchain),
                     address: None,
                     symbol: Some(EnumBlockchainCoin::USDC.to_string()),
                     offset: 0,
@@ -1587,13 +1587,38 @@ impl RequestHandler for MethodExpertCreateStrategy {
                         format!("token not found: {}", "USDC"),
                     )
                 })?;
-            ensure!(
-                req.initial_tokens.iter().map(|x| x.quantity).sum::<f64>() > 0.into(),
-                CustomError::new(
-                    EnumErrorCode::InvalidArgument,
-                    "Initial token quantity must be greater than 0"
-                )
-            );
+            // ensure!(
+            //     req.initial_tokens.iter().map(|x| x.quantity).sum::<f64>() > 0.into(),
+            //     CustomError::new(
+            //         EnumErrorCode::InvalidArgument,
+            //         "Initial token quantity must be greater than 0"
+            //     )
+            // );
+            // a hack
+            if req.initial_tokens.is_empty() {
+                let busd = db
+                    .execute(FunUserListEscrowTokenContractAddressReq {
+                        limit: 1,
+                        token_id: None,
+                        blockchain: Some(req.wallet_blockchain),
+                        address: None,
+                        symbol: Some(EnumBlockchainCoin::BUSD.to_string()),
+                        offset: 0,
+                        is_stablecoin: None,
+                    })
+                    .await?
+                    .into_result()
+                    .with_context(|| {
+                        CustomError::new(
+                            EnumErrorCode::NotFound,
+                            format!("token not found: {}", "BUSD"),
+                        )
+                    })?;
+                req.initial_tokens.push(UserCreateStrategyInitialTokenRow {
+                    token_id: busd.token_id,
+                    quantity: U256::exp10(18).into(),
+                });
+            }
             if req
                 .initial_tokens
                 .iter()
@@ -1629,7 +1654,7 @@ impl RequestHandler for MethodExpertCreateStrategy {
                     db.execute(FunUserAddStrategyInitialTokenRatioReq {
                         strategy_id: ret.strategy_id,
                         token_id: token.token_id,
-                        quantity: token.quantity,
+                        quantity: token.quantity.into(),
                         relative_token_id: Some(usdc.token_id),
                         relative_quantity: Some(
                             req.strategy_token_relative_to_usdc_ratio
@@ -1916,7 +1941,7 @@ impl RequestHandler for MethodExpertAddStrategyInitialTokenRatio {
             let ret = db
                 .execute(FunUserAddStrategyInitialTokenRatioReq {
                     strategy_id: req.strategy_id,
-                    quantity: req.quantity,
+                    quantity: req.quantity.into(),
                     relative_token_id: None,
                     token_id: req.token_id,
                     relative_quantity: None,
