@@ -1810,7 +1810,7 @@ END
             "#,
         ),
         ProceduralFunction::new(
-            "fun_user_list_back_strategy_attempt",
+            "fun_user_list_user_back_strategy_attempt",
             vec![
                 Field::new("limit", Type::BigInt),
                 Field::new("offset", Type::BigInt),
@@ -1869,7 +1869,7 @@ END
             "#,
         ),
         ProceduralFunction::new(
-            "fun_user_list_back_strategy_log",
+            "fun_user_list_user_back_strategy_log",
             vec![
                 Field::new("limit", Type::BigInt),
                 Field::new("offset", Type::BigInt),
@@ -1877,6 +1877,7 @@ END
             ],
             vec![
                 Field::new("total", Type::BigInt),
+                Field::new("log_entry_id", Type::BigInt),
                 Field::new("message", Type::String),
                 Field::new("happened_at", Type::BigInt),
             ],
@@ -1884,6 +1885,7 @@ END
 BEGIN
     RETURN QUERY SELECT
         COUNT(*) OVER() AS total,
+        l.pkey_id,
         l.message,
         l.happened_at
     FROM tbl.user_back_strategy_log AS l

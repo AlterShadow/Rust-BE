@@ -4375,6 +4375,140 @@
           "stream_response": null,
           "description": "",
           "json_schema": null
+        },
+        {
+          "name": "UserListUserBackStrategyAttempt",
+          "code": 20550,
+          "parameters": [
+            {
+              "name": "limit",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "offset",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "strategy_id",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "token_id",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "name": "total",
+              "ty": "BigInt"
+            },
+            {
+              "name": "back_attempts",
+              "ty": {
+                "DataTable": {
+                  "name": "UserBackStrategyAttempt",
+                  "fields": [
+                    {
+                      "name": "attempt_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "strategy_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "strategy_name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "token_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "token_symbol",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "token_name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "quantity",
+                      "ty": "BlockchainDecimal"
+                    },
+                    {
+                      "name": "happened_at",
+                      "ty": "BigInt"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "stream_response": null,
+          "description": "",
+          "json_schema": null
+        },
+        {
+          "name": "UserListUserBackStrategyLog",
+          "code": 20560,
+          "parameters": [
+            {
+              "name": "attempt_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "limit",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "offset",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "name": "back_logs_total",
+              "ty": "BigInt"
+            },
+            {
+              "name": "back_logs",
+              "ty": {
+                "DataTable": {
+                  "name": "UserBackStrategyLog",
+                  "fields": [
+                    {
+                      "name": "pkey_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "message",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "happened_at",
+                      "ty": "BigInt"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "stream_response": null,
+          "description": "",
+          "json_schema": null
         }
       ]
     },

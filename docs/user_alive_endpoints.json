@@ -59,6 +59,8 @@
   "UserListStrategyWallets",
   "UserListTopPerformingExperts",
   "UserListTopPerformingStrategies",
+  "UserListUserBackStrategyAttempt",
+  "UserListUserBackStrategyLog",
   "UserListWhitelistedWallets",
   "UserRequestRefund",
   "UserSubscribeDepositLedger",

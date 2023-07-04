@@ -2316,7 +2316,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_list_back_strategy_attempt(a_limit bigint, a_offset bigint, a_user_id bigint DEFAULT NULL, a_strategy_id bigint DEFAULT NULL, a_token_id bigint DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_user_list_user_back_strategy_attempt(a_limit bigint, a_offset bigint, a_user_id bigint DEFAULT NULL, a_strategy_id bigint DEFAULT NULL, a_token_id bigint DEFAULT NULL)
 RETURNS table (
     "total" bigint,
     "user_back_strategy_attempt_id" bigint,
@@ -2370,9 +2370,10 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_list_back_strategy_log(a_limit bigint, a_offset bigint, a_user_back_strategy_attempt_id bigint)
+CREATE OR REPLACE FUNCTION api.fun_user_list_user_back_strategy_log(a_limit bigint, a_offset bigint, a_user_back_strategy_attempt_id bigint)
 RETURNS table (
     "total" bigint,
+    "log_entry_id" bigint,
     "message" varchar,
     "happened_at" bigint
 )
@@ -2382,6 +2383,7 @@ AS $$
 BEGIN
     RETURN QUERY SELECT
         COUNT(*) OVER() AS total,
+        l.pkey_id,
         l.message,
         l.happened_at
     FROM tbl.user_back_strategy_log AS l

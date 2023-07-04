@@ -357,20 +357,6 @@ pub struct FunUserListAuditRulesRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
-pub struct FunUserListBackStrategyAttemptRespRow {
-    pub total: i64,
-    pub user_back_strategy_attempt_id: i64,
-    pub strategy_id: i64,
-    pub strategy_name: String,
-    pub token_id: i64,
-    pub token_symbol: String,
-    pub back_quantity: BlockchainDecimal,
-    pub strategy_wallet_address: BlockchainAddress,
-    pub log_id: i64,
-    pub happened_at: i64,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserListBackStrategyLedgerRespRow {
     pub total: i64,
     pub back_ledger_id: i64,
@@ -379,13 +365,6 @@ pub struct FunUserListBackStrategyLedgerRespRow {
     pub quantity: BlockchainDecimal,
     pub blockchain: EnumBlockChain,
     pub transaction_hash: BlockchainTransactionHash,
-    pub happened_at: i64,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
-pub struct FunUserListBackStrategyLogRespRow {
-    pub total: i64,
-    pub message: String,
     pub happened_at: i64,
 }
 
@@ -514,6 +493,28 @@ pub struct FunUserListTopPerformingStrategiesRespRow {
     pub risk_score: Option<f64>,
     #[serde(default)]
     pub aum: Option<f64>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunUserListUserBackStrategyAttemptRespRow {
+    pub total: i64,
+    pub user_back_strategy_attempt_id: i64,
+    pub strategy_id: i64,
+    pub strategy_name: String,
+    pub token_id: i64,
+    pub token_symbol: String,
+    pub back_quantity: BlockchainDecimal,
+    pub strategy_wallet_address: BlockchainAddress,
+    pub log_id: i64,
+    pub happened_at: i64,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunUserListUserBackStrategyLogRespRow {
+    pub total: i64,
+    pub log_entry_id: i64,
+    pub message: String,
+    pub happened_at: i64,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -2432,7 +2433,7 @@ impl DatabaseRequest for FunUserSaveUserBackStrategyAttemptReq {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunUserListBackStrategyAttemptReq {
+pub struct FunUserListUserBackStrategyAttemptReq {
     pub limit: i64,
     pub offset: i64,
     #[serde(default)]
@@ -2444,10 +2445,10 @@ pub struct FunUserListBackStrategyAttemptReq {
 }
 
 #[allow(unused_variables)]
-impl DatabaseRequest for FunUserListBackStrategyAttemptReq {
-    type ResponseRow = FunUserListBackStrategyAttemptRespRow;
+impl DatabaseRequest for FunUserListUserBackStrategyAttemptReq {
+    type ResponseRow = FunUserListUserBackStrategyAttemptRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_list_back_strategy_attempt(a_limit => $1::bigint, a_offset => $2::bigint, a_user_id => $3::bigint, a_strategy_id => $4::bigint, a_token_id => $5::bigint);"
+        "SELECT * FROM api.fun_user_list_user_back_strategy_attempt(a_limit => $1::bigint, a_offset => $2::bigint, a_user_id => $3::bigint, a_strategy_id => $4::bigint, a_token_id => $5::bigint);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -2481,17 +2482,17 @@ impl DatabaseRequest for FunUserSaveUserBackStrategyLogReq {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunUserListBackStrategyLogReq {
+pub struct FunUserListUserBackStrategyLogReq {
     pub limit: i64,
     pub offset: i64,
     pub user_back_strategy_attempt_id: i64,
 }
 
 #[allow(unused_variables)]
-impl DatabaseRequest for FunUserListBackStrategyLogReq {
-    type ResponseRow = FunUserListBackStrategyLogRespRow;
+impl DatabaseRequest for FunUserListUserBackStrategyLogReq {
+    type ResponseRow = FunUserListUserBackStrategyLogRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_list_back_strategy_log(a_limit => $1::bigint, a_offset => $2::bigint, a_user_back_strategy_attempt_id => $3::bigint);"
+        "SELECT * FROM api.fun_user_list_user_back_strategy_log(a_limit => $1::bigint, a_offset => $2::bigint, a_user_back_strategy_attempt_id => $3::bigint);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![

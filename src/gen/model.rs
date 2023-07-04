@@ -410,6 +410,12 @@ pub enum EnumEndpoint {
     #[postgres(name = "UserGetBackStrategyReviewDetail")]
     UserGetBackStrategyReviewDetail = 20540,
     ///
+    #[postgres(name = "UserListUserBackStrategyAttempt")]
+    UserListUserBackStrategyAttempt = 20550,
+    ///
+    #[postgres(name = "UserListUserBackStrategyLog")]
+    UserListUserBackStrategyLog = 20560,
+    ///
     #[postgres(name = "AdminListUsers")]
     AdminListUsers = 30010,
     ///
@@ -1625,6 +1631,26 @@ pub struct UserApplyBecomeExpertResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct UserBackStrategyAttempt {
+    pub attempt_id: i64,
+    pub strategy_id: i64,
+    pub strategy_name: String,
+    pub token_id: i64,
+    pub token_symbol: String,
+    pub token_name: String,
+    #[serde(with = "WithBlockchainDecimal")]
+    pub quantity: U256,
+    pub happened_at: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserBackStrategyLog {
+    pub pkey_id: i64,
+    pub message: String,
+    pub happened_at: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct UserBackStrategyRequest {
     pub strategy_id: i64,
     #[serde(with = "WithBlockchainDecimal")]
@@ -2232,6 +2258,39 @@ pub struct UserListTopPerformingStrategiesRequest {
 pub struct UserListTopPerformingStrategiesResponse {
     pub strategies_total: i64,
     pub strategies: Vec<ListStrategiesRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListUserBackStrategyAttemptRequest {
+    #[serde(default)]
+    pub limit: Option<i64>,
+    #[serde(default)]
+    pub offset: Option<i64>,
+    #[serde(default)]
+    pub strategy_id: Option<i64>,
+    #[serde(default)]
+    pub token_id: Option<i64>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListUserBackStrategyAttemptResponse {
+    pub total: i64,
+    pub back_attempts: Vec<UserBackStrategyAttempt>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListUserBackStrategyLogRequest {
+    pub attempt_id: i64,
+    #[serde(default)]
+    pub limit: Option<i64>,
+    #[serde(default)]
+    pub offset: Option<i64>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListUserBackStrategyLogResponse {
+    pub back_logs_total: i64,
+    pub back_logs: Vec<UserBackStrategyLog>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -7248,6 +7307,156 @@ impl WsRequest for UserGetBackStrategyReviewDetailRequest {
 }
 impl WsResponse for UserGetBackStrategyReviewDetailResponse {
     type Request = UserGetBackStrategyReviewDetailRequest;
+}
+
+impl WsRequest for UserListUserBackStrategyAttemptRequest {
+    type Response = UserListUserBackStrategyAttemptResponse;
+    const METHOD_ID: u32 = 20550;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserListUserBackStrategyAttempt",
+  "code": 20550,
+  "parameters": [
+    {
+      "name": "limit",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "offset",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "strategy_id",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "token_id",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    }
+  ],
+  "returns": [
+    {
+      "name": "total",
+      "ty": "BigInt"
+    },
+    {
+      "name": "back_attempts",
+      "ty": {
+        "DataTable": {
+          "name": "UserBackStrategyAttempt",
+          "fields": [
+            {
+              "name": "attempt_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "strategy_name",
+              "ty": "String"
+            },
+            {
+              "name": "token_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "token_symbol",
+              "ty": "String"
+            },
+            {
+              "name": "token_name",
+              "ty": "String"
+            },
+            {
+              "name": "quantity",
+              "ty": "BlockchainDecimal"
+            },
+            {
+              "name": "happened_at",
+              "ty": "BigInt"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": null,
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for UserListUserBackStrategyAttemptResponse {
+    type Request = UserListUserBackStrategyAttemptRequest;
+}
+
+impl WsRequest for UserListUserBackStrategyLogRequest {
+    type Response = UserListUserBackStrategyLogResponse;
+    const METHOD_ID: u32 = 20560;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserListUserBackStrategyLog",
+  "code": 20560,
+  "parameters": [
+    {
+      "name": "attempt_id",
+      "ty": "BigInt"
+    },
+    {
+      "name": "limit",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "offset",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    }
+  ],
+  "returns": [
+    {
+      "name": "back_logs_total",
+      "ty": "BigInt"
+    },
+    {
+      "name": "back_logs",
+      "ty": {
+        "DataTable": {
+          "name": "UserBackStrategyLog",
+          "fields": [
+            {
+              "name": "pkey_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "message",
+              "ty": "String"
+            },
+            {
+              "name": "happened_at",
+              "ty": "BigInt"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": null,
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for UserListUserBackStrategyLogResponse {
+    type Request = UserListUserBackStrategyLogRequest;
 }
 
 impl WsRequest for AdminListUsersRequest {

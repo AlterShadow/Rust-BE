@@ -1014,5 +1014,57 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 ),
             ],
         ),
+        EndpointSchema::new(
+            "UserListUserBackStrategyAttempt",
+            20550,
+            vec![
+                Field::new("limit", Type::optional(Type::BigInt)),
+                Field::new("offset", Type::optional(Type::BigInt)),
+                Field::new("strategy_id", Type::optional(Type::BigInt)),
+                Field::new("token_id", Type::optional(Type::BigInt)),
+            ],
+            vec![
+                Field::new("total", Type::BigInt),
+                Field::new(
+                    "back_attempts",
+                    Type::datatable(
+                        "UserBackStrategyAttempt",
+                        vec![
+                            Field::new("attempt_id", Type::BigInt),
+                            Field::new("strategy_id", Type::BigInt),
+                            Field::new("strategy_name", Type::String),
+                            Field::new("token_id", Type::BigInt),
+                            Field::new("token_symbol", Type::String),
+                            Field::new("token_name", Type::String),
+                            Field::new("quantity", Type::BlockchainDecimal),
+                            Field::new("happened_at", Type::BigInt),
+                        ],
+                    ),
+                ),
+            ],
+        ),
+        EndpointSchema::new(
+            "UserListUserBackStrategyLog",
+            20560,
+            vec![
+                Field::new("attempt_id", Type::BigInt),
+                Field::new("limit", Type::optional(Type::BigInt)),
+                Field::new("offset", Type::optional(Type::BigInt)),
+            ],
+            vec![
+                Field::new("back_logs_total", Type::BigInt),
+                Field::new(
+                    "back_logs",
+                    Type::datatable(
+                        "UserBackStrategyLog",
+                        vec![
+                            Field::new("pkey_id", Type::BigInt),
+                            Field::new("message", Type::String),
+                            Field::new("happened_at", Type::BigInt),
+                        ],
+                    ),
+                ),
+            ],
+        ),
     ]
 }

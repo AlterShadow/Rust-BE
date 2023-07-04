@@ -90,6 +90,9 @@ async fn main() -> Result<()> {
     server.add_handler(MethodUserUpdateUserProfile);
     server.add_handler(MethodUserApplyBecomeExpert);
 
+    server.add_handler(MethodUserListUserBackStrategyAttempt);
+    server.add_handler(MethodUserListUserBackStrategyLog);
+
     server.add_handler(MethodExpertCreateStrategy {
         cmc_client: Arc::new(CoinMarketCap::new(config.cmc_api_key.expose_secret())?),
     });

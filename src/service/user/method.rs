@@ -561,7 +561,41 @@ impl RequestHandler for MethodUserBackStrategy {
             ensure_user_role(ctx, EnumRole::User)?;
             subscribe_manager.subscribe(AdminSubscribeTopic::UserBackProgress, ctx);
             let seq = ctx.seq;
+            let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
+            let attempt = db
+                .execute(FunUserSaveUserBackStrategyAttemptReq {
+                    strategy_id: req.strategy_id,
+                    user_id: ctx.user_id,
+                    token_id: token.token_id,
+                    back_quantity: req.quantity.into(),
+                    // TODO: this wallet maybe newly created
+                    strategy_wallet_address: req.strategy_wallet.unwrap_or_default().into(),
+                    log_id: ctx.log_id as _,
+                })
+                .await?
+                .into_result()
+                .context("Failed to save user back strategy attempt")?;
+            {
+                let db = db.clone();
+
+                tokio::spawn(async move {
+                    while let Some(msg) = rx.recv().await {
+                        if let Err(err) = db
+                            .execute(FunUserSaveUserBackStrategyLogReq {
+                                user_back_strategy_attempt_id: attempt
+                                    .user_back_strategy_attempt_id,
+                                message: msg,
+                            })
+                            .await
+                        {
+                            error!("Failed to save user back strategy log: {:?}", err);
+                        }
+                    }
+                });
+            }
             let report_progress = move |end: bool, msg: &str, hash: H256| {
+                // TODO: have dedicated thread to write logs, instead of writing
+                let _ = tx.send(msg.to_string());
                 subscribe_manager.publish_with_filter(
                     &toolbox,
                     AdminSubscribeTopic::UserBackProgress,
@@ -2867,6 +2901,76 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
                 }),
                 estimated_amount_of_strategy_tokens: strategy_token_to_mint,
                 estimated_backed_token_ratios: ratios,
+            })
+        }
+        .boxed()
+    }
+}
+
+pub struct MethodUserListUserBackStrategyAttempt;
+impl RequestHandler for MethodUserListUserBackStrategyAttempt {
+    type Request = UserListUserBackStrategyAttemptRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db = toolbox.get_db();
+        async move {
+            let attempts = db
+                .execute(FunUserListUserBackStrategyAttemptReq {
+                    user_id: Some(ctx.user_id),
+                    strategy_id: None,
+                    limit: req.limit.unwrap_or(DEFAULT_LIMIT),
+                    offset: req.offset.unwrap_or(DEFAULT_OFFSET),
+                    token_id: None,
+                })
+                .await?;
+            Ok(UserListUserBackStrategyAttemptResponse {
+                total: attempts.first(|x| x.total).unwrap_or_default(),
+                back_attempts: attempts.map(|x| UserBackStrategyAttempt {
+                    attempt_id: x.user_back_strategy_attempt_id,
+                    strategy_id: x.strategy_id,
+                    strategy_name: x.strategy_name,
+                    token_id: x.token_id,
+                    token_symbol: x.token_symbol.clone(),
+                    token_name: x.token_symbol,
+                    quantity: x.back_quantity.into(),
+                    happened_at: x.happened_at,
+                }),
+            })
+        }
+        .boxed()
+    }
+}
+pub struct MethodUserListUserBackStrategyLog;
+impl RequestHandler for MethodUserListUserBackStrategyLog {
+    type Request = UserListUserBackStrategyLogRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db = toolbox.get_db();
+        async move {
+            let logs = db
+                .execute(FunUserListUserBackStrategyLogReq {
+                    limit: req.limit.unwrap_or(DEFAULT_LIMIT),
+                    offset: req.offset.unwrap_or(DEFAULT_OFFSET),
+                    user_back_strategy_attempt_id: req.attempt_id,
+                })
+                .await?;
+            Ok(UserListUserBackStrategyLogResponse {
+                back_logs_total: logs.first(|x| x.total).unwrap_or_default(),
+                back_logs: logs.map(|x| UserBackStrategyLog {
+                    pkey_id: x.log_entry_id,
+                    happened_at: x.happened_at,
+                    message: x.message,
+                }),
             })
         }
         .boxed()
