@@ -83,7 +83,7 @@
 			{
 				"indexed": false,
 				"internalType": "uint256",
-				"name": "shares",
+				"name": "poolTokens",
 				"type": "uint256"
 			}
 		],
@@ -138,7 +138,7 @@
 			},
 			{
 				"internalType": "uint256",
-				"name": "_shares",
+				"name": "_poolTokens",
 				"type": "uint256"
 			}
 		],
