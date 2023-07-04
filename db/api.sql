@@ -856,6 +856,9 @@ RETURNS table (
     "user_strategy_pool_contract_asset_ledger_id" bigint,
     "strategy_pool_contract_id" bigint,
     "strategy_id" bigint,
+    "strategy_wallet_id" bigint,
+    "strategy_wallet_address" varchar,
+    "is_strategy_wallet_managed" boolean,
     "token_id" bigint,
     "token_symbol" varchar,
     "token_name" varchar,
@@ -869,7 +872,7 @@ LANGUAGE plpgsql
 AS $$
     
 DECLARE
-		_strategy_id BIGINT;
+	_strategy_id BIGINT;
 BEGIN
 		SELECT fkey_strategy_id INTO _strategy_id
 		FROM tbl.strategy_pool_contract
@@ -881,12 +884,21 @@ BEGIN
 		WITH tokens AS (
 			SELECT etca.pkey_id, etca.address, etca.symbol, etca.short_name, etca.blockchain
 			FROM tbl.escrow_token_contract_address AS etca
+		),
+
+		strategy_wallets AS (
+			SELECT usw.pkey_id, usw.fkey_user_id, usw.address, usw.blockchain, usw.is_platform_managed, usw.created_at
+			FROM tbl.user_strategy_wallet as usw
+			WHERE usw.fkey_user_id = a_user_id
 		)
 
 		SELECT
 			uspcal.pkey_id AS user_strategy_pool_contract_asset_ledger_id,
 			uspcal.fkey_strategy_pool_contract_id,
 			_strategy_id AS strategy_id,
+			strategy_wallets.pkey_id AS strategy_wallet_id,
+			strategy_wallets.address AS strategy_wallet_address,
+			strategy_wallets.is_platform_managed AS is_strategy_wallet_managed,
 			tokens.pkey_id AS token_id,
 			tokens.symbol AS token_symbol,
 			tokens.short_name AS token_name,
@@ -897,8 +909,8 @@ BEGIN
 			uspcal.is_add
 		FROM tbl.user_strategy_pool_contract_asset_ledger AS uspcal
 		INNER JOIN tokens ON tokens.pkey_id = uspcal.fkey_token_id
-		WHERE uspcal.fkey_user_id = a_user_id
-			AND uspcal.fkey_strategy_pool_contract_id = a_strategy_pool_contract_id
+		INNER JOIN strategy_wallets ON strategy_wallets.pkey_id = uspcal.fkey_strategy_wallet_id
+		WHERE uspcal.fkey_strategy_pool_contract_id = a_strategy_pool_contract_id
 		ORDER BY uspcal.happened_at DESC
 		LIMIT a_limit
 		OFFSET a_offset;
@@ -907,7 +919,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_add_user_strategy_pool_contract_asset_ledger_entry(a_user_id bigint, a_strategy_pool_contract_id bigint, a_token_address varchar, a_blockchain enum_block_chain, a_amount varchar, a_is_add boolean)
+CREATE OR REPLACE FUNCTION api.fun_user_add_user_strategy_pool_contract_asset_ledger_entry(a_strategy_wallet_id bigint, a_strategy_pool_contract_id bigint, a_token_address varchar, a_blockchain enum_block_chain, a_amount varchar, a_is_add boolean)
 RETURNS table (
     "success" boolean
 )
@@ -915,16 +927,15 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-
 	INSERT INTO tbl.user_strategy_pool_contract_asset_ledger (
-		fkey_user_id,
+		fkey_strategy_wallet_id,
 		fkey_strategy_pool_contract_id,
 		fkey_token_id,
 		amount,
 		happened_at,
 		is_add
 	) VALUES (
-		a_user_id,
+		a_strategy_wallet_id,
 		a_strategy_pool_contract_id,
 		(SELECT pkey_id FROM tbl.escrow_token_contract_address AS etca WHERE etca.address = a_token_address AND etca.blockchain = a_blockchain),
 		a_amount,
@@ -933,7 +944,6 @@ BEGIN
 	);
 
 	RETURN QUERY SELECT TRUE;
-
 END
 
 $$;
@@ -941,6 +951,10 @@ $$;
 
 CREATE OR REPLACE FUNCTION api.fun_user_list_user_strategy_pool_contract_asset_balances(a_strategy_pool_contract_id bigint, a_user_id bigint DEFAULT NULL, a_token_address varchar DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL)
 RETURNS table (
+    "user_id" bigint,
+    "strategy_wallet_id" bigint,
+    "strategy_wallet_address" varchar,
+    "is_strategy_wallet_managed" boolean,
     "token_id" bigint,
     "token_name" varchar,
     "token_symbol" varchar,
@@ -952,32 +966,44 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
+	RETURN QUERY
+		WITH tokens AS (
+		SELECT etca.pkey_id, etca.address, etca.symbol, etca.short_name, etca.blockchain
+		FROM tbl.escrow_token_contract_address AS etca
+	),
 
-RETURN QUERY
-WITH tokens AS (
-	SELECT etca.pkey_id, etca.address, etca.symbol, etca.short_name, etca.blockchain
-	FROM tbl.escrow_token_contract_address AS etca
-)
+	strategy_wallets AS (
+		SELECT usw.pkey_id, usw.fkey_user_id, usw.address, usw.blockchain, usw.is_platform_managed, usw.created_at
+		FROM tbl.user_strategy_wallet as usw
+		WHERE (a_user_id ISNULL OR usw.fkey_user_id = a_user_id)
+			AND (a_blockchain ISNULL OR usw.blockchain = a_blockchain)
+	)
 
-SELECT
-	tokens.pkey_id AS token_id,
-	tokens.short_name AS token_name,
-	tokens.symbol AS token_symbol,
-	tokens.address AS token_address,
-	tokens.blockchain,
-	uspcab.balance
+	SELECT
+		strategy_wallets.fkey_user_id AS user_id,
+		strategy_wallets.pkey_id AS strategy_wallet_id,
+		strategy_wallets.address AS strategy_wallet_address,
+		strategy_wallets.is_platform_managed AS is_strategy_wallet_managed,
+		tokens.pkey_id AS token_id,
+		tokens.short_name AS token_name,
+		tokens.symbol AS token_symbol,
+		tokens.address AS token_address,
+		tokens.blockchain,
+		uspcab.balance
 	FROM tbl.user_strategy_pool_contract_asset_balance as uspcab
 	INNER JOIN tokens ON tokens.pkey_id = uspcab.fkey_token_id
+	INNER JOIN strategy_wallets ON strategy_wallets.pkey_id = uspcab.fkey_strategy_wallet_id
 	WHERE uspcab.fkey_strategy_pool_contract_id = a_strategy_pool_contract_id
-		AND (a_user_id ISNULL OR uspcab.fkey_user_id = a_user_id)
 		AND (a_token_address ISNULL OR tokens.address = a_token_address)
-		AND (a_blockchain ISNULL OR tokens.blockchain = a_blockchain);
+		AND (a_blockchain ISNULL OR tokens.blockchain = a_blockchain)
+		AND (a_user_id ISNULL OR strategy_wallets.fkey_user_id = a_user_id)
+		AND (a_blockchain ISNULL OR strategy_wallets.blockchain = a_blockchain);
 END
 
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_upsert_user_strategy_pool_contract_asset_balance(a_user_id bigint, a_strategy_pool_contract_id bigint, a_token_address varchar, a_blockchain enum_block_chain, a_old_balance varchar, a_new_balance varchar)
+CREATE OR REPLACE FUNCTION api.fun_user_upsert_user_strategy_pool_contract_asset_balance(a_strategy_wallet_id bigint, a_strategy_pool_contract_id bigint, a_token_address varchar, a_blockchain enum_block_chain, a_old_balance varchar, a_new_balance varchar)
 RETURNS table (
     "user_strategy_pool_contract_asset_balance_id" bigint
 )
@@ -985,10 +1011,10 @@ LANGUAGE plpgsql
 AS $$
     
 DECLARE
-		_token_id BIGINT;
-		_user_strategy_pool_contract_asset_balance_id BIGINT;
-		_user_strategy_pool_contract_asset_balance_old_balance VARCHAR;
-		_pkey_id BIGINT;
+	_token_id BIGINT;
+	_user_strategy_pool_contract_asset_balance_id BIGINT;
+	_user_strategy_pool_contract_asset_balance_old_balance VARCHAR;
+	_pkey_id BIGINT;
 BEGIN
 	SELECT etca.pkey_id INTO _token_id
 	FROM tbl.escrow_token_contract_address AS etca
@@ -999,19 +1025,19 @@ BEGIN
 	SELECT uspcab.pkey_id, uspcab.balance
 	INTO _user_strategy_pool_contract_asset_balance_id, _user_strategy_pool_contract_asset_balance_old_balance
 	FROM tbl.user_strategy_pool_contract_asset_balance AS uspcab
-	WHERE uspcab.fkey_user_id = a_user_id
+	WHERE uspcab.fkey_strategy_wallet_id = a_strategy_wallet_id
 		AND uspcab.fkey_strategy_pool_contract_id = a_strategy_pool_contract_id
 		AND uspcab.fkey_token_id = _token_id;
 
 	-- insert new entry if not exist
 	IF _user_strategy_pool_contract_asset_balance_id ISNULL THEN
 			INSERT INTO tbl.user_strategy_pool_contract_asset_balance (
-				fkey_user_id,
+				fkey_strategy_wallet_id,
 				fkey_strategy_pool_contract_id,
 				fkey_token_id,
 				balance
 			)	VALUES (
-				a_user_id,
+				a_strategy_wallet_id,
 				a_strategy_pool_contract_id,
 				_token_id,
 				a_new_balance
