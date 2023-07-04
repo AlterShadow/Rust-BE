@@ -162,7 +162,7 @@ impl<T: Transport> StrategyPoolContract<T> {
         signer: impl Key,
         assets: Vec<Address>,
         amounts: Vec<U256>,
-        shares: U256,
+        pool_tokens: U256,
         receiver: Address,
         logger: DynLogger,
     ) -> Result<H256> {
@@ -170,7 +170,7 @@ impl<T: Transport> StrategyPoolContract<T> {
             .contract
             .estimate_gas(
                 StrategyPoolFunctions::Deposit.as_str(),
-                (assets.clone(), amounts.clone(), shares, receiver),
+                (assets.clone(), amounts.clone(), pool_tokens, receiver),
                 signer.address(),
                 Options::default(),
             )
@@ -178,20 +178,20 @@ impl<T: Transport> StrategyPoolContract<T> {
 
         let estimated_gas_price = conn.eth().gas_price().await?;
 
-        info!("Depositing amounts {:?} of assets {:?} to mint {:?} shares to receiver {:?} to strategy pool contract {:?} by {:?}",
+        info!("Depositing amounts {:?} of assets {:?} to mint {:?} pool tokens to receiver {:?} to strategy pool contract {:?} by {:?}",
 							amounts.clone(),
 							assets.clone(),
-							shares,
+							pool_tokens,
 							receiver,
 							self.address(),
 							signer.address(),
 				);
         logger.log(
             format!(
-                "Depositing amounts {:?} of assets {:?} to mint {:?} shares to receiver {:?} to strategy pool contract {:?} by {:?}",
+                "Depositing amounts {:?} of assets {:?} to mint {:?} pool tokens to receiver {:?} to strategy pool contract {:?} by {:?}",
                 amounts.clone(),
                 assets.clone(),
-                shares,
+                pool_tokens,
                 receiver,
                 self.address(),
                 signer.address(),
@@ -202,7 +202,7 @@ impl<T: Transport> StrategyPoolContract<T> {
             .contract
             .signed_call(
                 StrategyPoolFunctions::Deposit.as_str(),
-                (assets, amounts, shares, receiver),
+                (assets, amounts, pool_tokens, receiver),
                 Options::with(|options| {
                     options.gas = Some(estimated_gas);
                     options.gas_price = Some(estimated_gas_price);
@@ -229,7 +229,7 @@ impl<T: Transport> StrategyPoolContract<T> {
         &self,
         conn: &EthereumRpcConnection,
         signer: impl Key,
-        shares: U256,
+        pool_tokens: U256,
         receiver: Address,
         owner: Address,
     ) -> Result<H256> {
@@ -237,7 +237,7 @@ impl<T: Transport> StrategyPoolContract<T> {
             .contract
             .estimate_gas(
                 StrategyPoolFunctions::Redeem.as_str(),
-                (owner, receiver, shares),
+                (owner, receiver, pool_tokens),
                 signer.address(),
                 Options::default(),
             )
@@ -245,8 +245,8 @@ impl<T: Transport> StrategyPoolContract<T> {
 
         let estimated_gas_price = conn.eth().gas_price().await?;
 
-        info!("Redeeming {:?} shares to receiver {:?} from owner {:?} from strategy pool contract {:?} by {:?}",
-							shares,
+        info!("Redeeming {:?} pool tokens to receiver {:?} from owner {:?} from strategy pool contract {:?} by {:?}",
+							pool_tokens,
 							receiver,
 							owner,
 							self.address(),
@@ -257,7 +257,7 @@ impl<T: Transport> StrategyPoolContract<T> {
             .contract
             .signed_call(
                 StrategyPoolFunctions::Redeem.as_str(),
-                (owner, receiver, shares),
+                (owner, receiver, pool_tokens),
                 Options::with(|options| {
                     options.gas = Some(estimated_gas);
                     options.gas_price = Some(estimated_gas_price);
