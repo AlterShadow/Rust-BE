@@ -983,6 +983,18 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 Field::new("total_amount_to_back", Type::BlockchainDecimal),
                 Field::new("total_amount_to_back_after_fee", Type::BlockchainDecimal),
                 Field::new(
+                    "user_strategy_wallets",
+                    Type::datatable(
+                        "UserStrategyWallet",
+                        vec![
+                            Field::new("wallet_id", Type::BigInt),
+                            Field::new("address", Type::BlockchainAddress),
+                            Field::new("blockchain", Type::enum_ref("block_chain")),
+                            Field::new("is_platform_address", Type::Boolean),
+                        ],
+                    ),
+                ),
+                Field::new(
                     "estimated_amount_of_strategy_tokens",
                     Type::BlockchainDecimal,
                 ),

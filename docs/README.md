@@ -71,7 +71,7 @@ ID: 2
 |20511|UserGetDepositWithdrawBalance|token_id|balance||
 |20520|UserListEscrowTokenContractAddresses|limit, offset, blockchain, is_stablecoin|tokens_total, tokens||
 |20530|UserListStrategyTokenBalance|limit, offset, strategy_id|tokens_total, tokens||
-|20540|UserGetBackStrategyReviewDetail|strategy_id, token_id, quantity|strategy_fee, total_amount_to_back, total_amount_to_back_after_fee, estimated_amount_of_strategy_tokens, estimated_backed_token_ratios||
+|20540|UserGetBackStrategyReviewDetail|strategy_id, token_id, quantity|strategy_fee, total_amount_to_back, total_amount_to_back_after_fee, user_strategy_wallets, estimated_amount_of_strategy_tokens, estimated_backed_token_ratios||
 
 # admin Server
 ID: 3

@@ -1480,6 +1480,7 @@ END
             ],
             vec![
                 Field::new("total", Type::BigInt),
+                Field::new("wallet_id", Type::BigInt),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("address", Type::BlockchainAddress),
                 Field::new("is_platform_managed", Type::Boolean),
@@ -1489,6 +1490,7 @@ END
 BEGIN
     RETURN QUERY SELECT 
         COUNT(*) OVER() AS total,
+        a.pkey_id,
         a.blockchain,
         a.address, 
         a.is_platform_managed,

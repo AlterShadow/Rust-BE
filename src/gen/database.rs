@@ -461,6 +461,7 @@ pub struct FunUserListStrategyInitialTokenRatiosRespRow {
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserListStrategyWalletsRespRow {
     pub total: i64,
+    pub wallet_id: i64,
     pub blockchain: EnumBlockChain,
     pub address: BlockchainAddress,
     pub is_platform_managed: bool,

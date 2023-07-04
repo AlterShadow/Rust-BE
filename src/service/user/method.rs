@@ -2819,10 +2819,22 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
                     back_value_ratio: ratio,
                 });
             }
+            let wallets = db
+                .execute(FunUserListStrategyWalletsReq {
+                    user_id: ctx.user_id,
+                    blockchain: Some(token.blockchain),
+                })
+                .await?;
             Ok(UserGetBackStrategyReviewDetailResponse {
                 strategy_fee: fees,
                 total_amount_to_back: req.quantity,
                 total_amount_to_back_after_fee: back_usdc_amount_minus_fees,
+                user_strategy_wallets: wallets.map(|x| UserStrategyWallet {
+                    address: x.address.into(),
+                    wallet_id: x.wallet_id,
+                    blockchain: x.blockchain,
+                    is_platform_address: x.is_platform_managed,
+                }),
                 estimated_amount_of_strategy_tokens: strategy_token_to_mint,
                 estimated_backed_token_ratios: ratios,
             })

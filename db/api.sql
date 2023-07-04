@@ -2000,6 +2000,7 @@ $$;
 CREATE OR REPLACE FUNCTION api.fun_user_list_strategy_wallets(a_user_id bigint, a_blockchain enum_block_chain DEFAULT NULL)
 RETURNS table (
     "total" bigint,
+    "wallet_id" bigint,
     "blockchain" enum_block_chain,
     "address" varchar,
     "is_platform_managed" boolean,
@@ -2011,6 +2012,7 @@ AS $$
 BEGIN
     RETURN QUERY SELECT 
         COUNT(*) OVER() AS total,
+        a.pkey_id,
         a.blockchain,
         a.address, 
         a.is_platform_managed,

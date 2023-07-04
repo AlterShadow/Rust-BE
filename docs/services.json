@@ -4304,6 +4304,34 @@
               "ty": "BlockchainDecimal"
             },
             {
+              "name": "user_strategy_wallets",
+              "ty": {
+                "DataTable": {
+                  "name": "UserStrategyWallet",
+                  "fields": [
+                    {
+                      "name": "wallet_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "address",
+                      "ty": "BlockchainAddress"
+                    },
+                    {
+                      "name": "blockchain",
+                      "ty": {
+                        "EnumRef": "block_chain"
+                      }
+                    },
+                    {
+                      "name": "is_platform_address",
+                      "ty": "Boolean"
+                    }
+                  ]
+                }
+              }
+            },
+            {
               "name": "estimated_amount_of_strategy_tokens",
               "ty": "BlockchainDecimal"
             },

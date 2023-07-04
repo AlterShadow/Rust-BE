@@ -1715,6 +1715,7 @@ pub struct UserGetBackStrategyReviewDetailResponse {
     pub total_amount_to_back: U256,
     #[serde(with = "WithBlockchainDecimal")]
     pub total_amount_to_back_after_fee: U256,
+    pub user_strategy_wallets: Vec<UserStrategyWallet>,
     #[serde(with = "WithBlockchainDecimal")]
     pub estimated_amount_of_strategy_tokens: U256,
     pub estimated_backed_token_ratios: Vec<EstimatedBackedTokenRatios>,
@@ -2285,6 +2286,15 @@ pub struct UserRequestRefundRequest {
 #[serde(rename_all = "camelCase")]
 pub struct UserRequestRefundResponse {
     pub success: bool,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserStrategyWallet {
+    pub wallet_id: i64,
+    #[serde(with = "WithBlockchainAddress")]
+    pub address: Address,
+    pub blockchain: EnumBlockChain,
+    pub is_platform_address: bool,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -7157,6 +7167,34 @@ impl WsRequest for UserGetBackStrategyReviewDetailRequest {
     {
       "name": "total_amount_to_back_after_fee",
       "ty": "BlockchainDecimal"
+    },
+    {
+      "name": "user_strategy_wallets",
+      "ty": {
+        "DataTable": {
+          "name": "UserStrategyWallet",
+          "fields": [
+            {
+              "name": "wallet_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "address",
+              "ty": "BlockchainAddress"
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
+            },
+            {
+              "name": "is_platform_address",
+              "ty": "Boolean"
+            }
+          ]
+        }
+      }
     },
     {
       "name": "estimated_amount_of_strategy_tokens",
