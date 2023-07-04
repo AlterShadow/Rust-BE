@@ -156,45 +156,6 @@ impl<T: Transport> StrategyPoolContract<T> {
             .await?)
     }
 
-    pub async fn max_withdraw(&self, owner: Address) -> Result<(Vec<Address>, Vec<U256>)> {
-        Ok(self
-            .contract
-            .query(
-                StrategyPoolFunctions::MaxWithdraw.as_str(),
-                owner,
-                None,
-                Options::default(),
-                None,
-            )
-            .await?)
-    }
-
-    pub async fn max_deposit(&self) -> Result<(Vec<Address>, Vec<U256>)> {
-        Ok(self
-            .contract
-            .query(
-                StrategyPoolFunctions::MaxDeposit.as_str(),
-                (),
-                None,
-                Options::default(),
-                None,
-            )
-            .await?)
-    }
-
-    pub async fn min_deposit(&self) -> Result<(Vec<Address>, Vec<U256>)> {
-        Ok(self
-            .contract
-            .query(
-                StrategyPoolFunctions::MinDeposit.as_str(),
-                (),
-                None,
-                Options::default(),
-                None,
-            )
-            .await?)
-    }
-
     pub async fn deposit(
         &self,
         conn: &EthereumRpcConnection,
@@ -264,32 +225,6 @@ impl<T: Transport> StrategyPoolContract<T> {
             .await?)
     }
 
-    pub async fn min_redeem(&self) -> Result<U256> {
-        Ok(self
-            .contract
-            .query(
-                StrategyPoolFunctions::MinRedeem.as_str(),
-                (),
-                None,
-                Options::default(),
-                None,
-            )
-            .await?)
-    }
-
-    pub async fn preview_redeem(&self, shares: U256) -> Result<(Vec<Address>, Vec<U256>)> {
-        Ok(self
-            .contract
-            .query(
-                StrategyPoolFunctions::PreviewRedeem.as_str(),
-                shares,
-                None,
-                Options::default(),
-                None,
-            )
-            .await?)
-    }
-
     pub async fn redeem(
         &self,
         conn: &EthereumRpcConnection,
@@ -302,7 +237,7 @@ impl<T: Transport> StrategyPoolContract<T> {
             .contract
             .estimate_gas(
                 StrategyPoolFunctions::Redeem.as_str(),
-                (shares, receiver, owner),
+                (owner, receiver, shares),
                 signer.address(),
                 Options::default(),
             )
@@ -322,7 +257,59 @@ impl<T: Transport> StrategyPoolContract<T> {
             .contract
             .signed_call(
                 StrategyPoolFunctions::Redeem.as_str(),
-                (shares, receiver, owner),
+                (owner, receiver, shares),
+                Options::with(|options| {
+                    options.gas = Some(estimated_gas);
+                    options.gas_price = Some(estimated_gas_price);
+                }),
+                signer,
+            )
+            .await?)
+    }
+
+    pub async fn withdraw(
+        &self,
+        conn: &EthereumRpcConnection,
+        signer: impl Key,
+        receiver: Address,
+        assets: Vec<Address>,
+        amounts: Vec<U256>,
+        logger: DynLogger,
+    ) -> Result<H256> {
+        let estimated_gas = self
+            .contract
+            .estimate_gas(
+                StrategyPoolFunctions::Withdraw.as_str(),
+                (receiver, assets.clone(), amounts.clone()),
+                signer.address(),
+                Options::default(),
+            )
+            .await?;
+
+        let estimated_gas_price = conn.eth().gas_price().await?;
+
+        info!("Withdrawing {:?} amounts of {:?} assets to receiver {:?} from strategy pool contract {:?} by {:?}",
+						amounts,
+						assets,
+						receiver,
+						self.address(),
+						signer.address(),
+			);
+        logger.log(
+				format!("Withdrawing {:?} amounts of {:?} assets to receiver {:?} from strategy pool contract {:?} by {:?}",
+						amounts,
+						assets,
+						receiver,
+						self.address(),
+						signer.address(),
+					),
+			);
+
+        Ok(self
+            .contract
+            .signed_call(
+                StrategyPoolFunctions::Withdraw.as_str(),
+                (receiver, assets, amounts),
                 Options::with(|options| {
                     options.gas = Some(estimated_gas);
                     options.gas_price = Some(estimated_gas_price);
@@ -489,14 +476,10 @@ enum StrategyPoolFunctions {
     AssetBalance,
     AssetsAndBalances,
     MaxMint,
-    MaxWithdraw,
-    MaxDeposit,
-    MinDeposit,
     Deposit,
     MaxRedeem,
-    MinRedeem,
-    PreviewRedeem,
     Redeem,
+    Withdraw,
     AcquireAssetBeforeTrade,
     GiveBackAssetsAfterTrade,
     TransferOwnership,
@@ -514,14 +497,10 @@ impl StrategyPoolFunctions {
             Self::AssetBalance => "assetBalance",
             Self::AssetsAndBalances => "assetsAndBalances",
             Self::MaxMint => "maxMint",
-            Self::MaxWithdraw => "maxWithdraw",
-            Self::MaxDeposit => "maxDeposit",
-            Self::MinDeposit => "minDeposit",
             Self::Deposit => "deposit",
             Self::MaxRedeem => "maxRedeem",
-            Self::MinRedeem => "minRedeem",
-            Self::PreviewRedeem => "previewRedeem",
             Self::Redeem => "redeem",
+            Self::Withdraw => "withdraw",
             Self::AcquireAssetBeforeTrade => "acquireAssetBeforeTrade",
             Self::GiveBackAssetsAfterTrade => "giveBackAssetsAfterTrade",
             Self::TransferOwnership => "transferOwnership",
@@ -558,6 +537,34 @@ pub async fn sp_deposit_to_and_ensure_success(
             receiver,
             logger,
         )
+        .await?;
+    let _tx_receipt = wait_for_confirmations(
+        &conn.eth(),
+        tx_hash,
+        poll_interval,
+        max_retry,
+        confirmations,
+    )
+    .await?;
+
+    Ok(tx_hash)
+}
+
+pub async fn withdraw_and_ensure_success(
+    contract: StrategyPoolContract<EitherTransport>,
+    conn: &EthereumRpcConnection,
+    confirmations: u64,
+    max_retry: u64,
+    poll_interval: Duration,
+    signer: impl Key + Clone,
+    assets: Vec<Address>,
+    amounts: Vec<U256>,
+    receiver: Address,
+    logger: DynLogger,
+) -> Result<H256> {
+    /* publish transaction */
+    let tx_hash = contract
+        .withdraw(&conn, signer.clone(), receiver, assets, amounts, logger)
         .await?;
     let _tx_receipt = wait_for_confirmations(
         &conn.eth(),
@@ -650,10 +657,7 @@ pub async fn transfer_ownership_and_ensure_success(
 
 #[derive(Debug, Clone)]
 pub struct StrategyPoolWithdrawEvent {
-    pub sender: Address,
     pub receiver: Address,
-    pub owner: Address,
-    pub strategy_tokens: U256,
     pub strategy_pool_assets: Vec<Address>,
     pub strategy_pool_asset_amounts: Vec<U256>,
 }
@@ -674,29 +678,13 @@ pub fn parse_strategy_pool_withdraw_event(
 						/* address of the contract that fired the event */
 						&& log.address == strategy_pool_address
         {
-            /* 2nd topic is sender of the call, should be strategy wallet address */
+            /* 2nd topic is receiver of the assets, should be backer address */
             /* topics have 32 bytes, so we must fetch the last 20 bytes for an address */
-            let sender_bytes = log.topics[1].as_bytes();
-            if sender_bytes.len() < 32 {
-                return Err(eyre!("invalid topic length"));
-            }
-            let sender = Address::from_slice(&sender_bytes[12..]);
-
-            /* 3rd topic is the receiver of the assets, should be backer address */
-            /* topics have 32 bytes, so we must fetch the last 20 bytes for an address */
-            let receiver_bytes = log.topics[2].as_bytes();
+            let receiver_bytes = log.topics[1].as_bytes();
             if receiver_bytes.len() < 32 {
                 return Err(eyre!("invalid topic length"));
             }
             let receiver = Address::from_slice(&receiver_bytes[12..]);
-
-            /* 4th topic is the owner of the sp tokens, should be strategy wallet address */
-            /* topics have 32 bytes, so we must fetch the last 20 bytes for an address */
-            let owner_bytes = log.topics[3].as_bytes();
-            if owner_bytes.len() < 32 {
-                return Err(eyre!("invalid topic length"));
-            }
-            let owner = Address::from_slice(&owner_bytes[12..]);
 
             /* instantiate an ethabi::Log from raw log to enable access to non indexed data */
             let parsed_log = withdraw_event.parse_log(web3::ethabi::RawLog {
@@ -706,7 +694,7 @@ pub fn parse_strategy_pool_withdraw_event(
 
             /* parse non indexed event data from event log */
             /* ethabi::Log params ignore the first topic, so params[0] is not the event signature */
-            let strategy_pool_assets = parsed_log.params[3]
+            let strategy_pool_assets = parsed_log.params[1]
                 .value
                 .clone()
                 .into_array()
@@ -717,7 +705,7 @@ pub fn parse_strategy_pool_withdraw_event(
                         .ok_or_else(|| eyre!("could not parse asset address from event log"))
                 })
                 .collect::<Result<Vec<Address>, _>>()?;
-            let strategy_pool_asset_amounts = parsed_log.params[4]
+            let strategy_pool_asset_amounts = parsed_log.params[2]
                 .value
                 .clone()
                 .into_array()
@@ -728,17 +716,9 @@ pub fn parse_strategy_pool_withdraw_event(
                         .ok_or_else(|| eyre!("could not parse amount from event log"))
                 })
                 .collect::<Result<Vec<U256>, _>>()?;
-            let strategy_tokens = parsed_log.params[5]
-                .value
-                .clone()
-                .into_uint()
-                .context("could not parse redeemed sp tokens from event log")?;
 
             return Ok(StrategyPoolWithdrawEvent {
-                sender,
                 receiver,
-                owner,
-                strategy_tokens,
                 strategy_pool_assets,
                 strategy_pool_asset_amounts,
             });
