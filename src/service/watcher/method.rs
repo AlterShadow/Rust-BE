@@ -5,6 +5,7 @@ use chrono::Utc;
 use eth_sdk::dex_tracker::{
     get_strategy_id_from_watching_wallet, parse_dex_trade,
     update_expert_listened_wallet_asset_balance_cache,
+    update_user_strategy_pool_asset_balances_on_copy_trade,
 };
 use eth_sdk::erc20::{approve_and_ensure_success, Erc20Token};
 use eth_sdk::escrow_tracker::escrow::parse_escrow;
@@ -148,7 +149,6 @@ pub async fn handle_pancake_swap_transaction(
         .await
         .context("swap transaction is a duplicate")?
         .into_result();
-    // TODO: update strategy_watching_wallet_asset_balance when it is implemented
     if let Some(saved) = saved {
         /* update expert wallet's asset balances in the database */
         let conn = state.eth_pool.get(blockchain).await?;
@@ -162,7 +162,7 @@ pub async fn handle_pancake_swap_transaction(
         )
         .await?;
 
-        // TODO: copy-trade for strategy pools on all deployed chains when we support multi-chain
+        // TODO: for loop to copy-trade for strategy pools on all deployed chains when we support multi-chain
         /* if token_in was already a expert wallet asset trade it from SPs in ratio traded_amount / old_amount */
         let strategy_pool_contract_row = state
             .db
@@ -192,8 +192,8 @@ pub async fn handle_pancake_swap_transaction(
             .into_result()
             .context("strategy pool contract does not hold asset to sell")?;
 
-        let strategy_pool_asset_token_in_amount = strategy_pool_asset_token_in_row.balance.into();
-        if strategy_pool_asset_token_in_amount == U256::zero() {
+        let sp_asset_token_in_previous_amount = strategy_pool_asset_token_in_row.balance.into();
+        if sp_asset_token_in_previous_amount == U256::zero() {
             bail!("strategy pool has no asset to sell");
         }
         /* calculate how much to spend */
@@ -211,7 +211,7 @@ pub async fn handle_pancake_swap_transaction(
                 expert_trade.amount_in
             };
         let amount_to_spend = corrected_amount_in.mul_div(
-            strategy_pool_asset_token_in_amount,
+            sp_asset_token_in_previous_amount,
             *expert_wallet_asset_token_in_previous_amount,
         )?;
         if amount_to_spend == U256::zero() {
@@ -312,7 +312,7 @@ pub async fn handle_pancake_swap_transaction(
                 strategy_pool_contract_id: strategy_pool_contract_row.pkey_id,
                 token_address: expert_trade.token_in.into(),
                 blockchain,
-                new_balance: match strategy_pool_asset_token_in_amount
+                new_balance: match sp_asset_token_in_previous_amount
                     .try_checked_sub(amount_to_spend)
                 {
                     Ok(new_balance) => new_balance,
@@ -348,6 +348,21 @@ pub async fn handle_pancake_swap_transaction(
                 new_balance: strategy_pool_asset_token_out_new_balance.into(),
             })
             .await?;
+
+        /* update user strategy pool contract asset balances & ledger */
+        update_user_strategy_pool_asset_balances_on_copy_trade(
+            &state.db,
+            blockchain,
+            strategy_pool_contract_row.pkey_id,
+            strategy_pool_pending_wallet_trade.token_in,
+            strategy_pool_pending_wallet_trade.amount_in,
+            sp_asset_token_in_previous_amount,
+            strategy_pool_pending_wallet_trade.token_out,
+            strategy_pool_pending_wallet_trade.amount_out,
+        )
+        .await?;
+
+        // TODO: multi-chain for loop ends here
     }
 
     Ok(())

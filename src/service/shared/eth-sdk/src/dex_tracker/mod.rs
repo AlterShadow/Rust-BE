@@ -106,3 +106,109 @@ pub async fn update_expert_listened_wallet_asset_balance_cache(
 
     Ok(())
 }
+
+pub async fn update_user_strategy_pool_asset_balances_on_copy_trade(
+    db: &DbClient,
+    blockchain: EnumBlockChain,
+    strategy_pool_contract_id: i64,
+    sp_sold_asset_address: Address,
+    sp_sold_asset_amount: U256,
+    sp_sold_asset_previous_amount: U256,
+    sp_bought_asset_address: Address,
+    sp_bought_asset_amount: U256,
+) -> Result<()> {
+    /* get strategy wallets that hold sold asset */
+    let strategy_wallet_sold_asset_rows = db
+        .execute(FunUserListUserStrategyPoolContractAssetBalancesReq {
+            strategy_pool_contract_id,
+            token_address: Some(sp_sold_asset_address.into()),
+            blockchain: Some(blockchain),
+            user_id: None,
+            strategy_wallet_id: None,
+        })
+        .await?
+        .into_rows();
+
+    /* update user balances and add ledger entries */
+    for strategy_wallet_sold_asset_row in strategy_wallet_sold_asset_rows {
+        let currently_owned_sold_asset: U256 = strategy_wallet_sold_asset_row.balance.into();
+        let subtracted_sold_amount = currently_owned_sold_asset
+            .mul_div_rounding_up(sp_sold_asset_amount, sp_sold_asset_previous_amount)?;
+        let new_sold_asset_balance = currently_owned_sold_asset
+            .try_checked_sub(subtracted_sold_amount)
+            .unwrap_or(U256::zero());
+        let added_bought_amount = sp_bought_asset_amount
+            .mul_div(currently_owned_sold_asset, sp_sold_asset_previous_amount)?;
+        /* update user strategy pool contract asset balances */
+        db.execute(FunUserUpsertUserStrategyPoolContractAssetBalanceReq {
+            strategy_wallet_id: strategy_wallet_sold_asset_row.strategy_wallet_id,
+            strategy_pool_contract_id,
+            token_address: sp_sold_asset_address.into(),
+            blockchain,
+            old_balance: currently_owned_sold_asset.into(),
+            new_balance: new_sold_asset_balance.into(),
+        })
+        .await?;
+        match db
+            .execute(FunUserListUserStrategyPoolContractAssetBalancesReq {
+                strategy_pool_contract_id,
+                token_address: Some(sp_bought_asset_address.into()),
+                blockchain: Some(blockchain),
+                user_id: Some(strategy_wallet_sold_asset_row.user_id),
+                strategy_wallet_id: Some(strategy_wallet_sold_asset_row.strategy_wallet_id),
+            })
+            .await?
+            .into_result()
+        {
+            Some(bought_asset_old_balance_row) => {
+                let bought_asset_old_balance: U256 = bought_asset_old_balance_row.balance.into();
+                /* if user already held bought asset, add to old balance */
+                db.execute(FunUserUpsertUserStrategyPoolContractAssetBalanceReq {
+                    strategy_wallet_id: strategy_wallet_sold_asset_row.strategy_wallet_id,
+                    strategy_pool_contract_id,
+                    token_address: sp_bought_asset_address.into(),
+                    blockchain,
+                    old_balance: bought_asset_old_balance.into(),
+                    new_balance: bought_asset_old_balance
+                        .try_checked_add(added_bought_amount)?
+                        .into(),
+                })
+                .await?;
+            }
+            None => {
+                /* if user did not hold bought asset, use new amount */
+                db.execute(FunUserUpsertUserStrategyPoolContractAssetBalanceReq {
+                    strategy_wallet_id: strategy_wallet_sold_asset_row.strategy_wallet_id,
+                    strategy_pool_contract_id,
+                    token_address: sp_bought_asset_address.into(),
+                    blockchain,
+                    old_balance: U256::zero().into(),
+                    new_balance: added_bought_amount.into(),
+                })
+                .await?;
+            }
+        }
+
+        /* add entries to ledger */
+        db.execute(FunUserAddUserStrategyPoolContractAssetLedgerEntryReq {
+            strategy_wallet_id: strategy_wallet_sold_asset_row.strategy_wallet_id,
+            strategy_pool_contract_id,
+            token_address: sp_sold_asset_address.into(),
+            blockchain,
+            amount: subtracted_sold_amount.into(),
+            is_add: false,
+        })
+        .await?;
+        db.execute(FunUserAddUserStrategyPoolContractAssetLedgerEntryReq {
+            strategy_wallet_id: strategy_wallet_sold_asset_row.strategy_wallet_id,
+            strategy_pool_contract_id,
+            token_address: sp_bought_asset_address.into(),
+            blockchain,
+            amount: added_bought_amount.into(),
+            is_add: true,
+        })
+        .await?;
+    }
+
+    Ok(())
+}
