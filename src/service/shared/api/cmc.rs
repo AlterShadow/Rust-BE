@@ -1,9 +1,13 @@
 use eyre::*;
+use lru::LruCache;
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::{Client, Response, Url};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::collections::HashMap;
+use std::num::NonZeroUsize;
 use std::str::FromStr;
+use tokio::sync::Mutex;
 use tracing::*;
 use web3::types::Address;
 
@@ -59,13 +63,14 @@ pub struct MapCoinInfo {
 pub struct MapCoinResponse {
     pub data: Vec<MapCoinInfo>,
 }
-#[derive(Clone)]
+
 pub struct CoinMarketCap {
     client: Client,
     base_url: String,
     price_path: String,
     metadata_path: String,
     map_path: String,
+    price_cache: Mutex<LruCache<String, f64>>,
 }
 
 impl CoinMarketCap {
@@ -84,6 +89,7 @@ impl CoinMarketCap {
             price_path: "/v2/cryptocurrency/quotes/latest".to_string(),
             metadata_path: "/v2/cryptocurrency/info".to_string(),
             map_path: "/v1/cryptocurrency/map".to_string(),
+            price_cache: Mutex::new(LruCache::new(NonZeroUsize::new(1000).unwrap())),
         })
     }
 
@@ -152,14 +158,29 @@ impl CoinMarketCap {
     }
 
     pub async fn get_usd_prices_by_symbol(&self, symbols: &[String]) -> Result<Vec<f64>> {
+        let mut result_index = HashMap::new();
+        for (index, symbol) in symbols.iter().enumerate() {
+            result_index.insert(symbol, index);
+        }
+        let mut token_prices: Vec<f64> = Vec::new();
+        token_prices.resize(symbols.len(), 0.0);
+        let mut new_symbols = Vec::new();
+        let mut new_symbols_index = Vec::new();
+        for symbol in symbols {
+            if let Some(price) = self.price_cache.lock().await.get(symbol) {
+                token_prices[result_index[symbol]] = *price;
+            } else {
+                new_symbols.push(symbol.clone());
+                new_symbols_index.push(result_index[symbol]);
+            }
+        }
         let mut url = self.price_url()?;
-        self.append_url_params(&mut url, "symbol", symbols);
+        self.append_url_params(&mut url, "symbol", &new_symbols);
         let payload = &self
             .parse_response(self.client.get(url).send().await?)
             .await?["data"];
-        let mut token_prices: Vec<f64> = Vec::new();
-        for symbol in symbols {
-            let token = &payload[symbol][0];
+        for (symbol, i) in new_symbols.into_iter().zip(new_symbols_index.into_iter()) {
+            let token = &payload[&symbol][0];
             if token["is_active"]
                 .as_u64()
                 .ok_or_else(|| eyre!("status not found"))?
@@ -167,11 +188,10 @@ impl CoinMarketCap {
             {
                 bail!("token status not found")
             }
-            token_prices.push(
-                token["quote"]["USD"]["price"]
-                    .as_f64()
-                    .ok_or_else(|| eyre!("price not found"))?,
-            );
+            token_prices[i] = token["quote"]["USD"]["price"]
+                .as_f64()
+                .ok_or_else(|| eyre!("price not found"))?;
+            self.price_cache.lock().await.put(symbol, token_prices[i]);
         }
         Ok(token_prices)
     }
