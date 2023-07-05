@@ -2368,7 +2368,8 @@ BEGIN
         t.symbol,
         a.back_quantity,
         a.strategy_wallet_address,
-        a.log_id
+        a.log_id,
+        a.happened_at
     FROM tbl.user_back_strategy_attempt AS a
     JOIN tbl.strategy AS s ON a.fkey_strategy_id = s.pkey_id
     JOIN tbl.escrow_token_contract_address AS t ON a.fkey_token_id = t.pkey_id
