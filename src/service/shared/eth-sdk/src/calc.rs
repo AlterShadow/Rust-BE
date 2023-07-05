@@ -9,10 +9,12 @@ pub trait ScaledMath {
     fn mul_f64(&self, factor: f64) -> Result<U256>;
     fn div_as_f64(&self, divisor: U256) -> Result<f64>;
     fn mul_div(&self, factor: U256, divisor: U256) -> Result<U256>;
+    fn mul_div_rounding_up(&self, factor: U256, divisor: U256) -> Result<U256>;
     fn try_checked_add(&self, term: U256) -> Result<U256>;
     fn try_checked_sub(&self, term: U256) -> Result<U256>;
     fn try_checked_mul(&self, factor: U256) -> Result<U256>;
     fn try_checked_div(&self, divisor: U256) -> Result<U256>;
+    fn try_checked_div_rounding_up(&self, divisor: U256) -> Result<U256>;
     fn remove_least_significant_digits(&self, digits: usize) -> Result<U256>;
     fn add_least_significant_digits(&self, digits: usize) -> Result<U256>;
 }
@@ -112,17 +114,13 @@ impl ScaledMath for U256 {
     }
 
     fn mul_div(&self, factor: U256, divisor: U256) -> Result<U256> {
-        /* check if multiplication overflows */
-        let mul_result = self
-            .checked_mul(factor)
-            .ok_or_else(|| eyre!("multiplication would cause overflow"))?;
+        Ok(self.try_checked_mul(factor)?.try_checked_div(divisor)?)
+    }
 
-        /* check if division underflows */
-        let div_result = mul_result
-            .checked_div(divisor)
-            .ok_or_else(|| eyre!("division by zero"))?;
-
-        Ok(div_result)
+    fn mul_div_rounding_up(&self, factor: U256, divisor: U256) -> Result<U256> {
+        Ok(self
+            .try_checked_mul(factor)?
+            .try_checked_div_rounding_up(divisor)?)
     }
 
     fn try_checked_add(&self, term: U256) -> Result<U256> {
@@ -143,6 +141,14 @@ impl ScaledMath for U256 {
     fn try_checked_div(&self, divisor: U256) -> Result<U256> {
         self.checked_div(divisor)
             .ok_or_else(|| eyre!("division by zero"))
+    }
+
+    fn try_checked_div_rounding_up(&self, divisor: U256) -> Result<U256> {
+        /* add the divisor minus one to the dividend */
+        /* standard idiom for integer division rounding up */
+        Ok(self
+            .try_checked_add(divisor.try_checked_sub(U256::one())?)?
+            .try_checked_div(divisor)?)
     }
 
     fn remove_least_significant_digits(&self, digits: usize) -> Result<U256> {
