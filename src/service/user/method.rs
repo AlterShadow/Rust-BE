@@ -2939,7 +2939,6 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
                 req.strategy_id,
                 req.token_id,
                 token.address.into(),
-                escrow_contract,
                 &DexAddresses::new(),
                 master_key,
                 DynLogger::empty(),

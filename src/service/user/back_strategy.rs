@@ -205,7 +205,6 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
     strategy_id: i64,
     token_id: i64,
     token_address: Address,
-    escrow_contract: EscrowContract<EitherTransport>,
     dex_addresses: &DexAddresses,
     master_key: impl Key + Clone,
     logger: DynLogger,
@@ -304,7 +303,7 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
     /* calculate how much of back amount to spend on each strategy pool asset */
     let escrow_allocations_for_tokens = calculate_escrow_allocation_for_strategy_tokens(
         back_usdc_amount_minus_fees,
-        escrow_contract.address(),
+        token_address,
     )?;
     let strategy_pool_assets_bought_for_this_backer = trade_escrow_for_strategy_tokens(
         &conn,
@@ -597,7 +596,6 @@ pub async fn user_back_strategy(
         strategy_id,
         token_id,
         token_address,
-        escrow_contract.clone(),
         dex_addresses.clone(),
         master_key.clone(),
         logger.clone(),

@@ -1256,7 +1256,6 @@ BEGIN
         b.short_name,
         b.address,
         a.quantity,
-        a.relative_token_ratio,
         a.fkey_strategy_id,
         a.updated_at,
         a.created_at 

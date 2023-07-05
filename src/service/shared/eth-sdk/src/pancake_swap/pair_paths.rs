@@ -529,19 +529,19 @@ impl WorkingPancakePairPaths {
         let token_in_enum = self
             .addresses
             .get_by_address(chain, token_in)
-            .ok_or_else(|| eyre!("token_in address not found"))?;
+            .ok_or_else(|| eyre!("token_in {:?} not found", token_out))?;
         let token_out_enum = self
             .addresses
             .get_by_address(chain, token_out)
-            .ok_or_else(|| eyre!("token_out address not found"))?;
+            .ok_or_else(|| eyre!("token_out {:?} not found", token_out))?;
         Ok(self
             .inner
             .get(&chain)
-            .ok_or_else(|| eyre!("chain not found"))?
+            .ok_or_else(|| eyre!("chain {:?} found", chain))?
             .get(&token_in_enum)
-            .ok_or_else(|| eyre!("token_in not found"))?
+            .ok_or_else(|| eyre!("token_in {:?} found", token_in_enum))?
             .get(&token_out_enum)
-            .ok_or_else(|| eyre!("token_out not found"))?
+            .ok_or_else(|| eyre!("token_out {:?} found", token_out_enum))?
             .clone())
     }
 }
