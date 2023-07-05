@@ -76,7 +76,9 @@ async fn main() -> Result<()> {
         cmc: cmc_client.clone(),
     });
     server.add_handler(MethodUserGetStrategyStatistics);
-    server.add_handler(MethodUserGetStrategiesStatistics);
+    server.add_handler(MethodUserGetStrategiesStatistics {
+        cmc: cmc_client.clone(),
+    });
     server.add_handler(MethodUserListBackedStrategies {
         cmc: cmc_client.clone(),
     });

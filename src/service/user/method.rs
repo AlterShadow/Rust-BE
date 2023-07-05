@@ -397,24 +397,64 @@ impl RequestHandler for MethodUserGetStrategyStatistics {
         .boxed()
     }
 }
-pub struct MethodUserGetStrategiesStatistics;
+pub struct MethodUserGetStrategiesStatistics {
+    pub cmc: Arc<CoinMarketCap>,
+}
 impl RequestHandler for MethodUserGetStrategiesStatistics {
     type Request = UserGetStrategiesStatisticsRequest;
 
     fn handle(
         &self,
-        _toolbox: &Toolbox,
+        toolbox: &Toolbox,
         ctx: RequestContext,
         _req: Self::Request,
     ) -> FutureResponse<Self::Request> {
+        let db: DbClient = toolbox.get_db();
+        let cmc = self.cmc.clone();
         async move {
             ensure_user_role(ctx, EnumRole::User)?;
-            // TODO: query from database
+            let strategies = db
+                .execute(FunUserListStrategiesReq {
+                    user_id: ctx.user_id,
+                    limit: 1000,
+                    offset: 0,
+                    strategy_id: None,
+                    strategy_name: None,
+                    expert_public_id: None,
+                    expert_name: None,
+                    description: None,
+                    blockchain: None,
+                    wallet_address: None,
+                })
+                .await?
+                .map_async(|x| convert_strategy_db_to_api_net_value(x, &cmc, &db))
+                .await?;
+            let backing_amount_usd: f64 = db
+                .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
+                    strategy_pool_contract_id: None,
+                    strategy_id: None,
+                    blockchain: None,
+                    token_address: None,
+                })
+                .await?
+                .map_async(|x| {
+                    let cmc = &cmc;
+                    async move {
+                        let price = cmc
+                            .get_usd_prices_by_symbol(&[x.token_symbol])
+                            .await
+                            .context("failed to get price")?[0];
+                        Ok(x.balance.0.div_as_f64(U256::exp10(18))? * price)
+                    }
+                })
+                .await?
+                .into_iter()
+                .sum();
             Ok(UserGetStrategiesStatisticsResponse {
                 tracking_amount_usd: 0.0,
-                backing_amount_usd: 0.0,
+                backing_amount_usd,
                 difference_amount_usd: 0.0,
-                aum_value_usd: 0.0,
+                aum_value_usd: strategies.iter().map(|x| x.aum).sum(),
                 current_value_usd: 0.0,
                 withdrawable_value_usd: 0.0,
             })
