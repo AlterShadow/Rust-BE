@@ -414,14 +414,13 @@ BEGIN
 			ON spt.fkey_user_strategy_wallet_id = usw.pkey_id
 			WHERE spc.fkey_strategy_id = s.pkey_id AND usw.fkey_user_id = a_user_id) AS strategy_pool_token,
       s.blockchain,
+      s.strategy_pool_address,
       (SELECT COUNT(*) FROM tbl.strategy_pool_contract_asset_balance AS sss
         JOIN tbl.strategy_pool_contract AS ss ON ss.pkey_id = sss.fkey_strategy_pool_contract_id
          WHERE ss.fkey_strategy_id = s.pkey_id
         ) AS number_of_tokens,
-
-      s.strategy_pool_address,
       s.swap_fee,
-      (SELECT platform_fee FROM tbl.system_config),
+      (SELECT conf.platform_fee FROM tbl.system_config AS conf),
       s.expert_fee
       
                  FROM tbl.strategy AS s
@@ -510,14 +509,13 @@ BEGIN
 			ON spt.fkey_user_strategy_wallet_id = usw.pkey_id
 			WHERE spc.fkey_strategy_id = s.pkey_id AND usw.fkey_user_id = a_user_id) AS strategy_pool_token,
       s.blockchain,
+      s.strategy_pool_address,
       (SELECT COUNT(*) FROM tbl.strategy_pool_contract_asset_balance AS sss
         JOIN tbl.strategy_pool_contract AS ss ON ss.pkey_id = sss.fkey_strategy_pool_contract_id
          WHERE ss.fkey_strategy_id = s.pkey_id
         ) AS number_of_tokens,
-
-      s.strategy_pool_address,
       s.swap_fee,
-      (SELECT platform_fee FROM tbl.system_config),
+      (SELECT conf.platform_fee FROM tbl.system_config AS conf),
       s.expert_fee
       
                  FROM tbl.strategy AS s
@@ -534,40 +532,6 @@ BEGIN
                 LIMIT a_limit
                 OFFSET a_offset;
 
-
-END
-            
-$$;
-        
-
-CREATE OR REPLACE FUNCTION api.fun_user_list_top_performing_strategies(a_limit bigint, a_offset bigint)
-RETURNS table (
-    "strategy_id" bigint,
-    "strategy_name" varchar,
-    "strategy_description" varchar,
-    "net_value" double precision,
-    "followers" bigint,
-    "backers" bigint,
-    "risk_score" double precision,
-    "aum" double precision
-)
-LANGUAGE plpgsql
-AS $$
-    
-BEGIN
-
-    RETURN QUERY SELECT a.pkey_id AS strategy_id,
-                          a.name AS strategy_name,
-                          a.description AS strategy_description,
-                          0.0::double precision AS net_value,
-                          (SELECT COUNT(*) FROM tbl.user_follow_strategy WHERE fkey_strategy_id = a.pkey_id AND unfollowed = FALSE) AS followers,
-                          (SELECT COUNT(DISTINCT h.fkey_user_id) FROM tbl.user_back_exit_strategy_ledger AS h WHERE fkey_strategy_id = a.pkey_id) AS backers,
-                          a.risk_score as risk_score,
-                          a.aum as aum
-                 FROM tbl.strategy AS a 
-                 ORDER BY a.aum
-                LIMIT a_limit
-                OFFSET a_offset;
 
 END
             
@@ -738,14 +702,13 @@ BEGIN
 			ON spt.fkey_user_strategy_wallet_id = usw.pkey_id
 			WHERE spc.fkey_strategy_id = s.pkey_id AND usw.fkey_user_id = a_user_id) AS strategy_pool_token,
       s.blockchain,
+      s.strategy_pool_address,
       (SELECT COUNT(*) FROM tbl.strategy_pool_contract_asset_balance AS sss
         JOIN tbl.strategy_pool_contract AS ss ON ss.pkey_id = sss.fkey_strategy_pool_contract_id
          WHERE ss.fkey_strategy_id = s.pkey_id
         ) AS number_of_tokens,
-
-      s.strategy_pool_address,
       s.swap_fee,
-      (SELECT platform_fee FROM tbl.system_config),
+      (SELECT conf.platform_fee FROM tbl.system_config AS conf),
       s.expert_fee
       
                  FROM tbl.strategy AS s
@@ -2797,14 +2760,13 @@ BEGIN
 			ON spt.fkey_user_strategy_wallet_id = usw.pkey_id
 			WHERE spc.fkey_strategy_id = s.pkey_id AND usw.fkey_user_id = a_user_id) AS strategy_pool_token,
       s.blockchain,
+      s.strategy_pool_address,
       (SELECT COUNT(*) FROM tbl.strategy_pool_contract_asset_balance AS sss
         JOIN tbl.strategy_pool_contract AS ss ON ss.pkey_id = sss.fkey_strategy_pool_contract_id
          WHERE ss.fkey_strategy_id = s.pkey_id
         ) AS number_of_tokens,
-
-      s.strategy_pool_address,
       s.swap_fee,
-      (SELECT platform_fee FROM tbl.system_config),
+      (SELECT conf.platform_fee FROM tbl.system_config AS conf),
       s.expert_fee
       
                  FROM tbl.strategy AS s

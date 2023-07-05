@@ -466,20 +466,6 @@ pub struct FunUserListStrategyWhitelistedTokensRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
-pub struct FunUserListTopPerformingStrategiesRespRow {
-    pub strategy_id: i64,
-    pub strategy_name: String,
-    pub strategy_description: String,
-    pub net_value: f64,
-    pub followers: i64,
-    pub backers: i64,
-    #[serde(default)]
-    pub risk_score: Option<f64>,
-    #[serde(default)]
-    pub aum: Option<f64>,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserListUserBackStrategyAttemptRespRow {
     pub total: i64,
     pub user_back_strategy_attempt_id: i64,
@@ -1091,26 +1077,6 @@ impl DatabaseRequest for FunUserListStrategiesReq {
             &self.description as &(dyn ToSql + Sync),
             &self.blockchain as &(dyn ToSql + Sync),
             &self.wallet_address as &(dyn ToSql + Sync),
-        ]
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunUserListTopPerformingStrategiesReq {
-    pub limit: i64,
-    pub offset: i64,
-}
-
-#[allow(unused_variables)]
-impl DatabaseRequest for FunUserListTopPerformingStrategiesReq {
-    type ResponseRow = FunUserListTopPerformingStrategiesRespRow;
-    fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_list_top_performing_strategies(a_limit => $1::bigint, a_offset => $2::bigint);"
-    }
-    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
-        vec![
-            &self.limit as &(dyn ToSql + Sync),
-            &self.offset as &(dyn ToSql + Sync),
         ]
     }
 }
