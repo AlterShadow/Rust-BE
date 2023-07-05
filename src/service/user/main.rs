@@ -43,6 +43,7 @@ pub struct Config {
 async fn main() -> Result<()> {
     let config: Config = load_config("user".to_owned())?;
     setup_logs(config.log_level)?;
+    let cmc_client = Arc::new(CoinMarketCap::new(config.cmc_api_key.expose_secret())?);
     let audit_logger = AuditLogger::new()?;
     let mut server = WebsocketServer::new(config.app.clone());
     server.add_database(connect_to_database(config.app_db).await?);
@@ -63,14 +64,22 @@ async fn main() -> Result<()> {
     server.add_handler(MethodUserWhitelistWallet);
     server.add_handler(MethodUserListWhitelistedWallets);
     server.add_handler(MethodUserUnwhitelistWallet);
-    server.add_handler(MethodUserListStrategies);
-    server.add_handler(MethodUserListTopPerformingStrategies);
+    server.add_handler(MethodUserListStrategies {
+        cmc: cmc_client.clone(),
+    });
+    server.add_handler(MethodUserListTopPerformingStrategies {
+        cmc: cmc_client.clone(),
+    });
     server.add_handler(MethodUserListStrategyFollowers);
     server.add_handler(MethodUserListStrategyBackers);
-    server.add_handler(MethodUserGetStrategy);
+    server.add_handler(MethodUserGetStrategy {
+        cmc: cmc_client.clone(),
+    });
     server.add_handler(MethodUserGetStrategyStatistics);
     server.add_handler(MethodUserGetStrategiesStatistics);
-    server.add_handler(MethodUserListBackedStrategies);
+    server.add_handler(MethodUserListBackedStrategies {
+        cmc: cmc_client.clone(),
+    });
 
     server.add_handler(MethodUserListDepositWithdrawLedger);
     server.add_handler(MethodUserListStrategyWallets);
@@ -183,7 +192,7 @@ async fn main() -> Result<()> {
         escrow_contract: escrow_contract.clone(),
         master_key: master_key.clone(),
         dex_addresses: Arc::new(DexAddresses::new()),
-        cmc: CoinMarketCap::new(config.cmc_api_key.expose_secret())?,
+        cmc: cmc_client.clone(),
     });
     let lru = Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(1000).unwrap())));
     server.add_handler(MethodUserBackStrategy {

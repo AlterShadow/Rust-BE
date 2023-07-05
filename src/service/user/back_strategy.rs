@@ -210,7 +210,7 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
     master_key: impl Key + Clone,
     logger: DynLogger,
     dry_run: bool,
-    cmc: Option<CoinMarketCap>,
+    cmc: Option<&CoinMarketCap>,
 ) -> Result<CalculateUserBackStrategyCalculateAmountToMintResult> {
     /* fetch strategy */
     let strategy = db
@@ -940,7 +940,7 @@ async fn trade_escrow_for_strategy_tokens(
     tokens_and_amounts_to_buy: HashMap<Address, U256>,
     logger: DynLogger,
     dry_run: bool,
-    dry_run_with_cmc: Option<CoinMarketCap>,
+    dry_run_with_cmc: Option<&CoinMarketCap>,
 ) -> Result<HashMap<Address, U256>> {
     /* buys tokens and amounts and returns a vector or bought tokens and amounts out */
     // TODO: stop using hardcoded hashmaps and retrieve paths from database

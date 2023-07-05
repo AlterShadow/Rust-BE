@@ -52,7 +52,7 @@ pub async fn convert_strategy_db_to_api_net_value(
     db: &DbClient,
 ) -> Result<ListStrategiesRow> {
     let mut value = convert_strategy_db_to_api(x);
-    let mut usdc = 0.0;
+    let mut usd = 0.0;
     for tokens in db
         .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
             strategy_pool_contract_id: None,
@@ -64,9 +64,10 @@ pub async fn convert_strategy_db_to_api_net_value(
         .into_iter()
     {
         let price = cmc.get_usd_prices_by_symbol(&[tokens.token_symbol]).await?[0];
-        usdc += price * tokens.balance.div_as_f64(U256::exp10(18))?;
+        usd += price * tokens.balance.div_as_f64(U256::exp10(18))?;
     }
-    value.net_value = usdc;
+    value.net_value = usd;
+    value.aum = usd;
     Ok(value)
 }
 pub fn convert_expert_db_to_api(x: FunUserExpertRowType) -> ListExpertsRow {

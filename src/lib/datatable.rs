@@ -1,7 +1,9 @@
 use eyre::*;
+use itertools::Itertools;
 use serde::*;
 use std::cmp::Ordering;
 use std::collections::HashMap;
+use std::future::Future;
 use std::hash::{Hash, Hasher};
 use std::io::Read;
 use std::sync::Arc;
@@ -439,5 +441,18 @@ impl<T> RDataTable<T> {
     }
     pub fn map<R>(self, f: impl Fn(T) -> R) -> Vec<R> {
         self.rows.into_iter().map(f).collect()
+    }
+    pub async fn map_async<R, F: Future<Output = Result<R>>>(
+        self,
+        f: impl Fn(T) -> F,
+    ) -> Result<Vec<R>> {
+        let mut futures = Vec::with_capacity(self.rows.len());
+        for row in self.rows {
+            futures.push(f(row));
+        }
+        futures::future::join_all(futures)
+            .await
+            .into_iter()
+            .try_collect()
     }
 }
