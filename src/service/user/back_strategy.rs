@@ -269,7 +269,7 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
     let divide_scale = 10000;
     let fees = back_usdc_amount
         * (((strategy.swap_fee.unwrap_or_default()
-            + strategy.strategy_fee.unwrap_or_default()
+            + strategy.platform_fee.unwrap_or_default()
             + strategy.expert_fee.unwrap_or_default())
             * divide_scale as f64) as u64)
         / divide_scale;

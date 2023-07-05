@@ -1,5 +1,5 @@
 -- Created by Vertabelo (http://vertabelo.com)
--- Last modification date: 2023-07-05 14:26:28.196
+-- Last modification date: 2023-07-05 16:16:35.25
 
 CREATE SCHEMA IF NOT EXISTS tbl;;
 
@@ -164,7 +164,6 @@ CREATE TABLE tbl.strategy (
     agreed_tos boolean  NOT NULL DEFAULT FALSE,
     minimum_backing_amount_usd double precision  NULL,
     expert_fee double precision  NULL,
-    strategy_fee double precision  NULL,
     updated_at bigint  NOT NULL,
     created_at bigint  NOT NULL,
     requested_at bigint  NULL,
@@ -281,7 +280,7 @@ CREATE TABLE tbl.strategy_whitelisted_token (
 -- Table: system_config
 CREATE TABLE tbl.system_config (
     pkey_id bigint  NOT NULL,
-    config_placeholder_1 bigint  NULL,
+    platform_fee double precision  NULL,
     config_placeholder_2 int  NULL,
     CONSTRAINT system_config_pk PRIMARY KEY (pkey_id)
 );
@@ -427,18 +426,18 @@ CREATE TABLE tbl.user_strategy_balance (
 -- Table: user_strategy_pool_contract_asset_balance
 CREATE TABLE tbl.user_strategy_pool_contract_asset_balance (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_user_strategy_pool_contract_asset_balance_id'),
-    fkey_user_id bigint  NOT NULL,
+    fkey_strategy_wallet_id bigint  NOT NULL,
     fkey_strategy_pool_contract_id bigint  NOT NULL,
     fkey_token_id bigint  NOT NULL,
     balance varchar(64)  NOT NULL,
-    CONSTRAINT user_strategy_pool_contract_asset_balance_ak_1 UNIQUE (fkey_user_id, fkey_strategy_pool_contract_id, fkey_token_id) NOT DEFERRABLE  INITIALLY IMMEDIATE,
+    CONSTRAINT user_strategy_pool_contract_asset_balance_ak_1 UNIQUE (fkey_strategy_wallet_id, fkey_strategy_pool_contract_id, fkey_token_id) NOT DEFERRABLE  INITIALLY IMMEDIATE,
     CONSTRAINT user_strategy_pool_contract_asset_balance_pk PRIMARY KEY (pkey_id)
 );
 
 -- Table: user_strategy_pool_contract_asset_ledger
 CREATE TABLE tbl.user_strategy_pool_contract_asset_ledger (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_user_strategy_pool_contract_asset_ledger_id'),
-    fkey_user_id bigint  NOT NULL,
+    fkey_strategy_wallet_id bigint  NOT NULL,
     fkey_strategy_pool_contract_id bigint  NOT NULL,
     fkey_token_id bigint  NOT NULL,
     amount varchar(64)  NOT NULL,
@@ -603,14 +602,6 @@ ALTER TABLE tbl.strategy_escrow_pending_wallet_balance ADD CONSTRAINT strategy_e
 -- Reference: strategy_initial_token_ratio_escrow_token_contract_address (table: strategy_initial_token_ratio)
 ALTER TABLE tbl.strategy_initial_token_ratio ADD CONSTRAINT strategy_initial_token_ratio_escrow_token_contract_address
     FOREIGN KEY (token_id)
-    REFERENCES tbl.escrow_token_contract_address (pkey_id)  
-    NOT DEFERRABLE 
-    INITIALLY IMMEDIATE
-;
-
--- Reference: strategy_initial_token_ratio_escrow_token_contract_relative (table: strategy_initial_token_ratio)
-ALTER TABLE tbl.strategy_initial_token_ratio ADD CONSTRAINT strategy_initial_token_ratio_escrow_token_contract_relative
-    FOREIGN KEY (<EMPTY>)
     REFERENCES tbl.escrow_token_contract_address (pkey_id)  
     NOT DEFERRABLE 
     INITIALLY IMMEDIATE
@@ -882,7 +873,7 @@ ALTER TABLE tbl.user_strategy_pool_contract_asset_ledger ADD CONSTRAINT user_str
 
 -- Reference: user_strategy_pool_contract_asset_balance_user (table: user_strategy_pool_contract_asset_balance)
 ALTER TABLE tbl.user_strategy_pool_contract_asset_balance ADD CONSTRAINT user_strategy_pool_contract_asset_balance_user
-    FOREIGN KEY (fkey_user_id)
+    FOREIGN KEY (fkey_strategy_wallet_id)
     REFERENCES tbl."user" (pkey_id)  
     NOT DEFERRABLE 
     INITIALLY IMMEDIATE
@@ -898,7 +889,7 @@ ALTER TABLE tbl.user_strategy_pool_contract_asset_ledger ADD CONSTRAINT user_str
 
 -- Reference: user_strategy_pool_contract_asset_ledger_user (table: user_strategy_pool_contract_asset_ledger)
 ALTER TABLE tbl.user_strategy_pool_contract_asset_ledger ADD CONSTRAINT user_strategy_pool_contract_asset_ledger_user
-    FOREIGN KEY (fkey_user_id)
+    FOREIGN KEY (fkey_strategy_wallet_id)
     REFERENCES tbl."user" (pkey_id)  
     NOT DEFERRABLE 
     INITIALLY IMMEDIATE

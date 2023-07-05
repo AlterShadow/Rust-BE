@@ -902,7 +902,7 @@ pub struct AdminGetSystemConfigRequest {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminGetSystemConfigResponse {
-    pub config_placeholder_1: i64,
+    pub platform_fee: f64,
     pub config_placeholder_2: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1122,7 +1122,7 @@ pub struct AdminUnsubscribeDepositLedgerResponse {}
 #[serde(rename_all = "camelCase")]
 pub struct AdminUpdateSystemConfigRequest {
     #[serde(default)]
-    pub config_placeholder_1: Option<i64>,
+    pub platform_fee: Option<f64>,
     #[serde(default)]
     pub config_placeholder_2: Option<i64>,
 }
@@ -1427,7 +1427,6 @@ pub struct ListStrategiesRow {
     pub strategy_id: i64,
     pub strategy_name: String,
     pub strategy_description: String,
-    pub net_value: f64,
     pub followers: i32,
     pub backers: i32,
     pub aum: f64,
@@ -1455,6 +1454,7 @@ pub struct ListStrategiesRow {
     pub expert_fee: f64,
     pub swap_fee: f64,
     pub total_fee: f64,
+    pub number_of_tokens: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -2753,10 +2753,6 @@ impl WsRequest for UserListFollowedStrategiesRequest {
                 "ty": "String"
               },
               {
-                "name": "net_value",
-                "ty": "Numeric"
-              },
-              {
                 "name": "followers",
                 "ty": "Int"
               },
@@ -2859,6 +2855,10 @@ impl WsRequest for UserListFollowedStrategiesRequest {
               {
                 "name": "total_fee",
                 "ty": "Numeric"
+              },
+              {
+                "name": "number_of_tokens",
+                "ty": "BigInt"
               }
             ]
           }
@@ -2991,10 +2991,6 @@ impl WsRequest for UserListStrategiesRequest {
                 "ty": "String"
               },
               {
-                "name": "net_value",
-                "ty": "Numeric"
-              },
-              {
                 "name": "followers",
                 "ty": "Int"
               },
@@ -3097,6 +3093,10 @@ impl WsRequest for UserListStrategiesRequest {
               {
                 "name": "total_fee",
                 "ty": "Numeric"
+              },
+              {
+                "name": "number_of_tokens",
+                "ty": "BigInt"
               }
             ]
           }
@@ -3158,10 +3158,6 @@ impl WsRequest for UserListTopPerformingStrategiesRequest {
                 "ty": "String"
               },
               {
-                "name": "net_value",
-                "ty": "Numeric"
-              },
-              {
                 "name": "followers",
                 "ty": "Int"
               },
@@ -3264,6 +3260,10 @@ impl WsRequest for UserListTopPerformingStrategiesRequest {
               {
                 "name": "total_fee",
                 "ty": "Numeric"
+              },
+              {
+                "name": "number_of_tokens",
+                "ty": "BigInt"
               }
             ]
           }
@@ -3442,10 +3442,6 @@ impl WsRequest for UserGetStrategyRequest {
               "ty": "String"
             },
             {
-              "name": "net_value",
-              "ty": "Numeric"
-            },
-            {
               "name": "followers",
               "ty": "Int"
             },
@@ -3548,6 +3544,10 @@ impl WsRequest for UserGetStrategyRequest {
             {
               "name": "total_fee",
               "ty": "Numeric"
+            },
+            {
+              "name": "number_of_tokens",
+              "ty": "BigInt"
             }
           ]
         }
@@ -4053,10 +4053,6 @@ impl WsRequest for UserListBackedStrategiesRequest {
                 "ty": "String"
               },
               {
-                "name": "net_value",
-                "ty": "Numeric"
-              },
-              {
                 "name": "followers",
                 "ty": "Int"
               },
@@ -4159,6 +4155,10 @@ impl WsRequest for UserListBackedStrategiesRequest {
               {
                 "name": "total_fee",
                 "ty": "Numeric"
+              },
+              {
+                "name": "number_of_tokens",
+                "ty": "BigInt"
               }
             ]
           }
@@ -5034,10 +5034,6 @@ impl WsRequest for UserGetExpertProfileRequest {
                 "ty": "String"
               },
               {
-                "name": "net_value",
-                "ty": "Numeric"
-              },
-              {
                 "name": "followers",
                 "ty": "Int"
               },
@@ -5140,6 +5136,10 @@ impl WsRequest for UserGetExpertProfileRequest {
               {
                 "name": "total_fee",
                 "ty": "Numeric"
+              },
+              {
+                "name": "number_of_tokens",
+                "ty": "BigInt"
               }
             ]
           }
@@ -5306,10 +5306,6 @@ impl WsRequest for UserGetUserProfileRequest {
                 "ty": "String"
               },
               {
-                "name": "net_value",
-                "ty": "Numeric"
-              },
-              {
                 "name": "followers",
                 "ty": "Int"
               },
@@ -5412,6 +5408,10 @@ impl WsRequest for UserGetUserProfileRequest {
               {
                 "name": "total_fee",
                 "ty": "Numeric"
+              },
+              {
+                "name": "number_of_tokens",
+                "ty": "BigInt"
               }
             ]
           }
@@ -5438,10 +5438,6 @@ impl WsRequest for UserGetUserProfileRequest {
                 "ty": "String"
               },
               {
-                "name": "net_value",
-                "ty": "Numeric"
-              },
-              {
                 "name": "followers",
                 "ty": "Int"
               },
@@ -5544,6 +5540,10 @@ impl WsRequest for UserGetUserProfileRequest {
               {
                 "name": "total_fee",
                 "ty": "Numeric"
+              },
+              {
+                "name": "number_of_tokens",
+                "ty": "BigInt"
               }
             ]
           }
@@ -7814,8 +7814,8 @@ impl WsRequest for AdminGetSystemConfigRequest {
   "parameters": [],
   "returns": [
     {
-      "name": "config_placeholder_1",
-      "ty": "BigInt"
+      "name": "platform_fee",
+      "ty": "Numeric"
     },
     {
       "name": "config_placeholder_2",
@@ -7839,9 +7839,9 @@ impl WsRequest for AdminUpdateSystemConfigRequest {
   "code": 30080,
   "parameters": [
     {
-      "name": "config_placeholder_1",
+      "name": "platform_fee",
       "ty": {
-        "Optional": "BigInt"
+        "Optional": "Numeric"
       }
     },
     {
@@ -8237,10 +8237,6 @@ impl WsRequest for AdminListStrategiesRequest {
                 "ty": "String"
               },
               {
-                "name": "net_value",
-                "ty": "Numeric"
-              },
-              {
                 "name": "followers",
                 "ty": "Int"
               },
@@ -8343,6 +8339,10 @@ impl WsRequest for AdminListStrategiesRequest {
               {
                 "name": "total_fee",
                 "ty": "Numeric"
+              },
+              {
+                "name": "number_of_tokens",
+                "ty": "BigInt"
               }
             ]
           }

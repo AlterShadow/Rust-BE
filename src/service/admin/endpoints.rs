@@ -109,7 +109,7 @@ pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
             30070,
             vec![],
             vec![
-                Field::new("config_placeholder_1", Type::BigInt),
+                Field::new("platform_fee", Type::Numeric),
                 Field::new("config_placeholder_2", Type::BigInt),
             ],
         )
@@ -118,7 +118,7 @@ pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
             "AdminUpdateSystemConfig",
             30080,
             vec![
-                Field::new("config_placeholder_1", Type::optional(Type::BigInt)),
+                Field::new("platform_fee", Type::optional(Type::Numeric)),
                 Field::new("config_placeholder_2", Type::optional(Type::BigInt)),
             ],
             vec![Field::new("success", Type::Boolean)],

@@ -32,18 +32,18 @@ pub fn convert_strategy_db_to_api(x: FunUserStrategyRowType) -> ListStrategiesRo
         expert_family_name: x.creator_family_name.unwrap_or_default(),
         expert_given_name: x.creator_given_name.unwrap_or_default(),
         blockchain: x.blockchain,
-        net_value: 0.0,
         swap_price: 233.0,
         price_change: 0.97,
         reputation: 5,
         strategy_pool_token: x.strategy_pool_token.unwrap_or_default(),
-        strategy_fee: x.strategy_fee.unwrap_or_default(),
-        platform_fee: x.strategy_fee.unwrap_or_default() + x.expert_fee.unwrap_or_default(),
+        strategy_fee: x.platform_fee.unwrap_or_default() + x.expert_fee.unwrap_or_default(),
+        platform_fee: x.platform_fee.unwrap_or_default(),
         expert_fee: x.expert_fee.unwrap_or_default(),
         swap_fee: x.swap_fee.unwrap_or_default(),
-        total_fee: x.strategy_fee.unwrap_or_default()
+        total_fee: x.platform_fee.unwrap_or_default()
             + x.expert_fee.unwrap_or_default()
             + x.swap_fee.unwrap_or_default(),
+        number_of_tokens: x.number_of_tokens.unwrap_or_default(),
     }
 }
 pub async fn convert_strategy_db_to_api_net_value(
@@ -67,7 +67,6 @@ pub async fn convert_strategy_db_to_api_net_value(
         usd += price * token.balance.div_as_f64(U256::exp10(18))?;
     }
 
-    value.net_value = usd;
     value.aum = usd;
     Ok(value)
 }

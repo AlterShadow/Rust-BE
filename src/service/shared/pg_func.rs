@@ -45,8 +45,9 @@ pub fn strategy_row_type() -> Type {
                 "strategy_pool_address",
                 Type::optional(Type::BlockchainAddress),
             ),
+            Field::new("number_of_tokens", Type::optional(Type::BigInt)),
             Field::new("swap_fee", Type::optional(Type::Numeric)),
-            Field::new("strategy_fee", Type::optional(Type::Numeric)),
+            Field::new("platform_fee", Type::optional(Type::Numeric)),
             Field::new("expert_fee", Type::optional(Type::Numeric)),
         ],
     )
@@ -86,9 +87,14 @@ pub fn get_strategy(followed: &str) -> String {
 			ON spt.fkey_user_strategy_wallet_id = usw.pkey_id
 			WHERE spc.fkey_strategy_id = s.pkey_id AND usw.fkey_user_id = a_user_id) AS strategy_pool_token,
       s.blockchain,
+      (SELECT COUNT(*) FROM tbl.strategy_pool_contract_asset_balance AS sss
+        JOIN tbl.strategy_pool_contract AS ss ON ss.pkey_id = sss.fkey_strategy_pool_contract_id
+         WHERE ss.fkey_strategy_id = s.pkey_id
+        ) AS number_of_tokens,
+
       s.strategy_pool_address,
       s.swap_fee,
-      s.strategy_fee,
+      (SELECT platform_fee FROM tbl.system_config),
       s.expert_fee
       ",
         followers = get_strategy_followers_count(),

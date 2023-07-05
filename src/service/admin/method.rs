@@ -238,12 +238,12 @@ impl RequestHandler for MethodAdminGetSystemConfig {
                 .into_result()
             {
                 Ok(AdminGetSystemConfigResponse {
-                    config_placeholder_1: ret.config_placeholder_1.unwrap_or_default(),
+                    platform_fee: ret.platform_fee.unwrap_or_default(),
                     config_placeholder_2: ret.config_placeholder_2.unwrap_or_default(),
                 })
             } else {
                 Ok(AdminGetSystemConfigResponse {
-                    config_placeholder_1: 0,
+                    platform_fee: 0.0,
                     config_placeholder_2: 0,
                 })
             }
@@ -268,7 +268,7 @@ impl RequestHandler for MethodAdminUpdateSystemConfig {
             let _ret = db
                 .execute(FunAdminUpdateSystemConfigReq {
                     config_id: 0,
-                    config_placeholder_1: req.config_placeholder_1,
+                    platform_fee: req.platform_fee,
                     config_placeholder_2: req.config_placeholder_2,
                 })
                 .await?;

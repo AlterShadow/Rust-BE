@@ -9,7 +9,6 @@ pub fn strategy_row() -> Type {
             Field::new("strategy_id", Type::BigInt),
             Field::new("strategy_name", Type::String),
             Field::new("strategy_description", Type::String),
-            Field::new("net_value", Type::Numeric),
             Field::new("followers", Type::Int),
             Field::new("backers", Type::Int),
             Field::new("aum", Type::Numeric),
@@ -39,6 +38,7 @@ pub fn strategy_row() -> Type {
             // total fee = strategy fee + swap fee(gas fee)
             Field::new("swap_fee", Type::Numeric),
             Field::new("total_fee", Type::Numeric),
+            Field::new("number_of_tokens", Type::BigInt),
         ],
     )
 }

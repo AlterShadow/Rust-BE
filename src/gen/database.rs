@@ -24,7 +24,7 @@ pub struct FunAdminApproveUserBecomeExpertRespRow {
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunAdminGetSystemConfigRespRow {
     #[serde(default)]
-    pub config_placeholder_1: Option<i64>,
+    pub platform_fee: Option<f64>,
     #[serde(default)]
     pub config_placeholder_2: Option<i64>,
 }
@@ -623,9 +623,11 @@ pub struct FunUserStrategyRowType {
     #[serde(default)]
     pub strategy_pool_address: Option<BlockchainAddress>,
     #[serde(default)]
+    pub number_of_tokens: Option<i64>,
+    #[serde(default)]
     pub swap_fee: Option<f64>,
     #[serde(default)]
-    pub strategy_fee: Option<f64>,
+    pub platform_fee: Option<f64>,
     #[serde(default)]
     pub expert_fee: Option<f64>,
 }
@@ -2620,7 +2622,7 @@ impl DatabaseRequest for FunAdminGetSystemConfigReq {
 pub struct FunAdminUpdateSystemConfigReq {
     pub config_id: i64,
     #[serde(default)]
-    pub config_placeholder_1: Option<i64>,
+    pub platform_fee: Option<f64>,
     #[serde(default)]
     pub config_placeholder_2: Option<i64>,
 }
@@ -2629,12 +2631,12 @@ pub struct FunAdminUpdateSystemConfigReq {
 impl DatabaseRequest for FunAdminUpdateSystemConfigReq {
     type ResponseRow = FunAdminUpdateSystemConfigRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_admin_update_system_config(a_config_id => $1::bigint, a_config_placeholder_1 => $2::bigint, a_config_placeholder_2 => $3::bigint);"
+        "SELECT * FROM api.fun_admin_update_system_config(a_config_id => $1::bigint, a_platform_fee => $2::double precision, a_config_placeholder_2 => $3::bigint);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
             &self.config_id as &(dyn ToSql + Sync),
-            &self.config_placeholder_1 as &(dyn ToSql + Sync),
+            &self.platform_fee as &(dyn ToSql + Sync),
             &self.config_placeholder_2 as &(dyn ToSql + Sync),
         ]
     }

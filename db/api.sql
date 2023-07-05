@@ -372,8 +372,9 @@ RETURNS table (
     "strategy_pool_token" varchar,
     "blockchain" enum_block_chain,
     "strategy_pool_address" varchar,
+    "number_of_tokens" bigint,
     "swap_fee" double precision,
-    "strategy_fee" double precision,
+    "platform_fee" double precision,
     "expert_fee" double precision
 )
 LANGUAGE plpgsql
@@ -413,9 +414,14 @@ BEGIN
 			ON spt.fkey_user_strategy_wallet_id = usw.pkey_id
 			WHERE spc.fkey_strategy_id = s.pkey_id AND usw.fkey_user_id = a_user_id) AS strategy_pool_token,
       s.blockchain,
+      (SELECT COUNT(*) FROM tbl.strategy_pool_contract_asset_balance AS sss
+        JOIN tbl.strategy_pool_contract AS ss ON ss.pkey_id = sss.fkey_strategy_pool_contract_id
+         WHERE ss.fkey_strategy_id = s.pkey_id
+        ) AS number_of_tokens,
+
       s.strategy_pool_address,
       s.swap_fee,
-      s.strategy_fee,
+      (SELECT platform_fee FROM tbl.system_config),
       s.expert_fee
       
                  FROM tbl.strategy AS s
@@ -462,8 +468,9 @@ RETURNS table (
     "strategy_pool_token" varchar,
     "blockchain" enum_block_chain,
     "strategy_pool_address" varchar,
+    "number_of_tokens" bigint,
     "swap_fee" double precision,
-    "strategy_fee" double precision,
+    "platform_fee" double precision,
     "expert_fee" double precision
 )
 LANGUAGE plpgsql
@@ -503,9 +510,14 @@ BEGIN
 			ON spt.fkey_user_strategy_wallet_id = usw.pkey_id
 			WHERE spc.fkey_strategy_id = s.pkey_id AND usw.fkey_user_id = a_user_id) AS strategy_pool_token,
       s.blockchain,
+      (SELECT COUNT(*) FROM tbl.strategy_pool_contract_asset_balance AS sss
+        JOIN tbl.strategy_pool_contract AS ss ON ss.pkey_id = sss.fkey_strategy_pool_contract_id
+         WHERE ss.fkey_strategy_id = s.pkey_id
+        ) AS number_of_tokens,
+
       s.strategy_pool_address,
       s.swap_fee,
-      s.strategy_fee,
+      (SELECT platform_fee FROM tbl.system_config),
       s.expert_fee
       
                  FROM tbl.strategy AS s
@@ -684,8 +696,9 @@ RETURNS table (
     "strategy_pool_token" varchar,
     "blockchain" enum_block_chain,
     "strategy_pool_address" varchar,
+    "number_of_tokens" bigint,
     "swap_fee" double precision,
-    "strategy_fee" double precision,
+    "platform_fee" double precision,
     "expert_fee" double precision
 )
 LANGUAGE plpgsql
@@ -725,9 +738,14 @@ BEGIN
 			ON spt.fkey_user_strategy_wallet_id = usw.pkey_id
 			WHERE spc.fkey_strategy_id = s.pkey_id AND usw.fkey_user_id = a_user_id) AS strategy_pool_token,
       s.blockchain,
+      (SELECT COUNT(*) FROM tbl.strategy_pool_contract_asset_balance AS sss
+        JOIN tbl.strategy_pool_contract AS ss ON ss.pkey_id = sss.fkey_strategy_pool_contract_id
+         WHERE ss.fkey_strategy_id = s.pkey_id
+        ) AS number_of_tokens,
+
       s.strategy_pool_address,
       s.swap_fee,
-      s.strategy_fee,
+      (SELECT platform_fee FROM tbl.system_config),
       s.expert_fee
       
                  FROM tbl.strategy AS s
@@ -2562,7 +2580,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION api.fun_admin_get_system_config(a_config_id bigint)
 RETURNS table (
-    "config_placeholder_1" bigint,
+    "platform_fee" double precision,
     "config_placeholder_2" bigint
 )
 LANGUAGE plpgsql
@@ -2570,7 +2588,7 @@ AS $$
     
 BEGIN
     RETURN QUERY SELECT
-        a.config_placeholder_1,
+        a.platform_fee,
         a.config_placeholder_2
     FROM
         tbl.system_config a
@@ -2581,18 +2599,18 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_admin_update_system_config(a_config_id bigint, a_config_placeholder_1 bigint DEFAULT NULL, a_config_placeholder_2 bigint DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_admin_update_system_config(a_config_id bigint, a_platform_fee double precision DEFAULT NULL, a_config_placeholder_2 bigint DEFAULT NULL)
 RETURNS void
 LANGUAGE plpgsql
 AS $$
     
 BEGIN
     IF NOT EXISTS (SELECT * FROM tbl.system_config WHERE pkey_id = a_config_id) THEN
-        INSERT INTO tbl.system_config (pkey_id, config_placeholder_1, config_placeholder_2)
-        VALUES (a_config_id, a_config_placeholder_1, a_config_placeholder_2);
+        INSERT INTO tbl.system_config (pkey_id, platform_fee, config_placeholder_2)
+        VALUES (a_config_id, a_platform_fee, a_config_placeholder_2);
     ELSE
         UPDATE tbl.system_config SET
-            config_placeholder_1 = coalesce(a_config_placeholder_1, config_placeholder_1),
+            platform_fee = coalesce(a_platform_fee, platform_fee),
             config_placeholder_2 = coalesce(a_config_placeholder_2, config_placeholder_2)
         WHERE
             pkey_id = a_config_id;
@@ -2735,8 +2753,9 @@ RETURNS table (
     "strategy_pool_token" varchar,
     "blockchain" enum_block_chain,
     "strategy_pool_address" varchar,
+    "number_of_tokens" bigint,
     "swap_fee" double precision,
-    "strategy_fee" double precision,
+    "platform_fee" double precision,
     "expert_fee" double precision
 )
 LANGUAGE plpgsql
@@ -2778,9 +2797,14 @@ BEGIN
 			ON spt.fkey_user_strategy_wallet_id = usw.pkey_id
 			WHERE spc.fkey_strategy_id = s.pkey_id AND usw.fkey_user_id = a_user_id) AS strategy_pool_token,
       s.blockchain,
+      (SELECT COUNT(*) FROM tbl.strategy_pool_contract_asset_balance AS sss
+        JOIN tbl.strategy_pool_contract AS ss ON ss.pkey_id = sss.fkey_strategy_pool_contract_id
+         WHERE ss.fkey_strategy_id = s.pkey_id
+        ) AS number_of_tokens,
+
       s.strategy_pool_address,
       s.swap_fee,
-      s.strategy_fee,
+      (SELECT platform_fee FROM tbl.system_config),
       s.expert_fee
       
                  FROM tbl.strategy AS s

@@ -261,10 +261,6 @@
                         "ty": "String"
                       },
                       {
-                        "name": "net_value",
-                        "ty": "Numeric"
-                      },
-                      {
                         "name": "followers",
                         "ty": "Int"
                       },
@@ -367,6 +363,10 @@
                       {
                         "name": "total_fee",
                         "ty": "Numeric"
+                      },
+                      {
+                        "name": "number_of_tokens",
+                        "ty": "BigInt"
                       }
                     ]
                   }
@@ -483,10 +483,6 @@
                         "ty": "String"
                       },
                       {
-                        "name": "net_value",
-                        "ty": "Numeric"
-                      },
-                      {
                         "name": "followers",
                         "ty": "Int"
                       },
@@ -589,6 +585,10 @@
                       {
                         "name": "total_fee",
                         "ty": "Numeric"
+                      },
+                      {
+                        "name": "number_of_tokens",
+                        "ty": "BigInt"
                       }
                     ]
                   }
@@ -642,10 +642,6 @@
                         "ty": "String"
                       },
                       {
-                        "name": "net_value",
-                        "ty": "Numeric"
-                      },
-                      {
                         "name": "followers",
                         "ty": "Int"
                       },
@@ -748,6 +744,10 @@
                       {
                         "name": "total_fee",
                         "ty": "Numeric"
+                      },
+                      {
+                        "name": "number_of_tokens",
+                        "ty": "BigInt"
                       }
                     ]
                   }
@@ -902,10 +902,6 @@
                       "ty": "String"
                     },
                     {
-                      "name": "net_value",
-                      "ty": "Numeric"
-                    },
-                    {
                       "name": "followers",
                       "ty": "Int"
                     },
@@ -1008,6 +1004,10 @@
                     {
                       "name": "total_fee",
                       "ty": "Numeric"
+                    },
+                    {
+                      "name": "number_of_tokens",
+                      "ty": "BigInt"
                     }
                   ]
                 }
@@ -1457,10 +1457,6 @@
                         "ty": "String"
                       },
                       {
-                        "name": "net_value",
-                        "ty": "Numeric"
-                      },
-                      {
                         "name": "followers",
                         "ty": "Int"
                       },
@@ -1563,6 +1559,10 @@
                       {
                         "name": "total_fee",
                         "ty": "Numeric"
+                      },
+                      {
+                        "name": "number_of_tokens",
+                        "ty": "BigInt"
                       }
                     ]
                   }
@@ -2366,10 +2366,6 @@
                         "ty": "String"
                       },
                       {
-                        "name": "net_value",
-                        "ty": "Numeric"
-                      },
-                      {
                         "name": "followers",
                         "ty": "Int"
                       },
@@ -2472,6 +2468,10 @@
                       {
                         "name": "total_fee",
                         "ty": "Numeric"
+                      },
+                      {
+                        "name": "number_of_tokens",
+                        "ty": "BigInt"
                       }
                     ]
                   }
@@ -2630,10 +2630,6 @@
                         "ty": "String"
                       },
                       {
-                        "name": "net_value",
-                        "ty": "Numeric"
-                      },
-                      {
                         "name": "followers",
                         "ty": "Int"
                       },
@@ -2736,6 +2732,10 @@
                       {
                         "name": "total_fee",
                         "ty": "Numeric"
+                      },
+                      {
+                        "name": "number_of_tokens",
+                        "ty": "BigInt"
                       }
                     ]
                   }
@@ -2762,10 +2762,6 @@
                         "ty": "String"
                       },
                       {
-                        "name": "net_value",
-                        "ty": "Numeric"
-                      },
-                      {
                         "name": "followers",
                         "ty": "Int"
                       },
@@ -2868,6 +2864,10 @@
                       {
                         "name": "total_fee",
                         "ty": "Numeric"
+                      },
+                      {
+                        "name": "number_of_tokens",
+                        "ty": "BigInt"
                       }
                     ]
                   }
@@ -4816,8 +4816,8 @@
           "parameters": [],
           "returns": [
             {
-              "name": "config_placeholder_1",
-              "ty": "BigInt"
+              "name": "platform_fee",
+              "ty": "Numeric"
             },
             {
               "name": "config_placeholder_2",
@@ -4833,9 +4833,9 @@
           "code": 30080,
           "parameters": [
             {
-              "name": "config_placeholder_1",
+              "name": "platform_fee",
               "ty": {
-                "Optional": "BigInt"
+                "Optional": "Numeric"
               }
             },
             {
@@ -5207,10 +5207,6 @@
                         "ty": "String"
                       },
                       {
-                        "name": "net_value",
-                        "ty": "Numeric"
-                      },
-                      {
                         "name": "followers",
                         "ty": "Int"
                       },
@@ -5313,6 +5309,10 @@
                       {
                         "name": "total_fee",
                         "ty": "Numeric"
+                      },
+                      {
+                        "name": "number_of_tokens",
+                        "ty": "BigInt"
                       }
                     ]
                   }
