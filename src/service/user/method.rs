@@ -1719,7 +1719,10 @@ impl RequestHandler for MethodExpertCreateStrategy {
                     })?;
                 req.initial_tokens.push(UserCreateStrategyInitialTokenRow {
                     token_id: busd.token_id,
-                    quantity: U256::exp10(18).into(),
+                    quantity: req
+                        .strategy_token_relative_to_usdc_ratio
+                        .unwrap_or(U256::exp10(18))
+                        .into(),
                 });
             }
             if req
@@ -1730,52 +1733,20 @@ impl RequestHandler for MethodExpertCreateStrategy {
             {
                 req.initial_tokens.push(UserCreateStrategyInitialTokenRow {
                     token_id: usdc.token_id,
-                    quantity: 0.into(),
+                    quantity: req
+                        .strategy_token_relative_to_usdc_ratio
+                        .unwrap_or(U256::exp10(18))
+                        .into(),
                 });
             }
 
             for token in req.initial_tokens {
-                let tk = db
-                    .execute(FunUserListEscrowTokenContractAddressReq {
-                        limit: 1,
-                        token_id: Some(token.token_id),
-                        blockchain: None,
-                        address: None,
-                        symbol: None,
-                        offset: 0,
-                        is_stablecoin: None,
-                    })
-                    .await?
-                    .into_result()
-                    .with_context(|| {
-                        CustomError::new(
-                            EnumErrorCode::NotFound,
-                            format!("token not found: {}", token.token_id),
-                        )
-                    })?;
-                if tk.symbol == format!("{:?}", EnumBlockchainCoin::USDC) {
-                    db.execute(FunUserAddStrategyInitialTokenRatioReq {
-                        strategy_id: ret.strategy_id,
-                        token_id: token.token_id,
-                        quantity: token.quantity.into(),
-                        relative_token_id: Some(usdc.token_id),
-                        relative_quantity: Some(
-                            req.strategy_token_relative_to_usdc_ratio
-                                .unwrap_or(U256::exp10(18))
-                                .into(),
-                        ),
-                    })
-                    .await?;
-                } else {
-                    db.execute(FunUserAddStrategyInitialTokenRatioReq {
-                        strategy_id: ret.strategy_id,
-                        token_id: token.token_id,
-                        quantity: token.quantity.into(),
-                        relative_token_id: None,
-                        relative_quantity: None,
-                    })
-                    .await?;
-                }
+                db.execute(FunUserAddStrategyInitialTokenRatioReq {
+                    strategy_id: ret.strategy_id,
+                    token_id: token.token_id,
+                    quantity: token.quantity.into(),
+                })
+                .await?;
             }
 
             Ok(ExpertCreateStrategyResponse {
@@ -2045,9 +2016,7 @@ impl RequestHandler for MethodExpertAddStrategyInitialTokenRatio {
                 .execute(FunUserAddStrategyInitialTokenRatioReq {
                     strategy_id: req.strategy_id,
                     quantity: req.quantity.into(),
-                    relative_token_id: None,
                     token_id: req.token_id,
-                    relative_quantity: None,
                 })
                 .await?
                 .into_result()

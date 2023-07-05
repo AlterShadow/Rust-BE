@@ -304,7 +304,7 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
     /* calculate how much of back amount to spend on each strategy pool asset */
     let escrow_allocations_for_tokens = calculate_escrow_allocation_for_strategy_tokens(
         back_usdc_amount_minus_fees,
-        strategy_initial_token_ratios,
+        escrow_contract.address(),
     )?;
     let strategy_pool_assets_bought_for_this_backer = trade_escrow_for_strategy_tokens(
         &conn,
@@ -335,20 +335,14 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
                 .await?
                 .into_result()
                 .context("initial token not found in strategy")?;
-            let strategy_pool_token_to_mint = if token.relative_token_id.is_some()
-                && token.relative_quantity.is_some()
-            {
-                info!("Calculating strategy token with easy approach");
-                logger.log("calculating strategy tokens with easy approach");
-                calculate_sp_tokens_to_mint_easy_approach(
-                    token,
-                    back_usdc_amount_minus_fees,
-                    escrow_token_contract.decimals().await?,
-                )
-                .await?
-            } else {
-                bail!("relative token id or relative quantity not found in initial token ratio");
-            };
+            info!("Calculating strategy token with easy approach");
+            logger.log("calculating strategy tokens with easy approach");
+            let strategy_pool_token_to_mint = calculate_sp_tokens_to_mint_easy_approach(
+                token,
+                back_usdc_amount_minus_fees,
+                escrow_token_contract.decimals().await?,
+            )
+            .await?;
             strategy_pool_token_to_mint
         }
         true => {
@@ -908,31 +902,19 @@ pub async fn user_back_strategy(
 
 fn calculate_escrow_allocation_for_strategy_tokens(
     escrow_amount: U256,
-    strategy_initial_token_ratios: HashMap<Address, U256>,
+    escrow_address: Address,
 ) -> Result<HashMap<Address, U256>> {
-    let total_initial_token_numbers: U256 = strategy_initial_token_ratios
-        .values()
-        .fold(U256::zero(), |acc, x| acc + x);
-    ensure!(
-        total_initial_token_numbers > U256::zero(),
-        "Total initial token numbers is zero"
-    );
-    /* calculates how much of escrow to spend on each strategy token */
-    /* allocation = (initial_strategy_token_amount * escrow_amount) / total_initial_strategy_token_amounts */
-    let mut escrow_allocations: HashMap<Address, U256> = HashMap::new();
-    for (token_address, token_amount) in strategy_initial_token_ratios {
-        let escrow_allocation = token_amount.mul_div(escrow_amount, total_initial_token_numbers)?;
-        escrow_allocations.insert(token_address, escrow_allocation);
-    }
+    let mut escrow_allocations = HashMap::new();
+    escrow_allocations.insert(escrow_address, escrow_amount);
     Ok(escrow_allocations)
 }
 
 pub async fn calculate_sp_tokens_to_mint_easy_approach(
-    token: FunUserListStrategyInitialTokenRatiosRespRow,
+    token_ratio: FunUserListStrategyInitialTokenRatiosRespRow,
     escrow_amount: U256,
     escrow_decimals: U256,
 ) -> Result<U256> {
-    let relative_quantity = token.relative_quantity.unwrap();
+    let relative_quantity = token_ratio.quantity;
     info!(
         "calculate_sp_tokens_to_mint_easy_approach {:?} {:?} {:?}",
         escrow_amount, relative_quantity, escrow_decimals
@@ -1156,8 +1138,6 @@ mod tests {
             strategy_id,
             token_id: 666,
             quantity: U256::from_dec_str("100000000")?.into(),
-            relative_token_id: None,
-            relative_quantity: None,
         })
         .await?;
 
