@@ -1,6 +1,6 @@
 use bytes::BytesMut;
+use serde::de::Error;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::error::Error;
 use std::fmt::Debug;
 use std::ops::{Deref, DerefMut};
 use std::str::FromStr;
@@ -12,9 +12,10 @@ pub fn amount_to_display(amount: U256) -> String {
     let amount = amount as f64 / 1e18;
     format!("{:.4}", amount)
 }
-pub fn amount_from_display(s: &str) -> U256 {
-    let amount = s.parse::<f64>().unwrap();
-    U256::from((amount * 1e18) as u128)
+pub fn amount_from_display(s: &str) -> Option<U256> {
+    let amount = s.parse::<f64>().ok()?;
+    let amount = U256::from((amount * 1e18) as u128);
+    Some(amount)
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
@@ -27,6 +28,7 @@ impl Debug for BlockchainDecimal {
 #[allow(non_snake_case)]
 pub mod WithBlockchainDecimal {
     use super::*;
+    use serde::de::Error;
 
     pub fn serialize<S>(this: &U256, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -40,7 +42,9 @@ pub mod WithBlockchainDecimal {
         D: Deserializer<'de>,
     {
         let value = String::deserialize(deserializer)?;
-        let value = amount_from_display(&value);
+        let value = amount_from_display(&value).ok_or_else(|| {
+            Error::invalid_value(serde::de::Unexpected::Str(&value), &"a decimal string")
+        })?;
         Ok(value)
     }
 }
@@ -59,12 +63,18 @@ impl<'de> Deserialize<'de> for BlockchainDecimal {
         D: Deserializer<'de>,
     {
         let value = String::deserialize(deserializer)?;
-        let value = amount_from_display(&value);
+        let value = amount_from_display(&value).ok_or_else(|| {
+            D::Error::invalid_value(serde::de::Unexpected::Str(&value), &"a decimal string")
+        })?;
         Ok(BlockchainDecimal(value))
     }
 }
 impl ToSql for BlockchainDecimal {
-    fn to_sql(&self, ty: &Type, out: &mut BytesMut) -> Result<IsNull, Box<dyn Error + Sync + Send>>
+    fn to_sql(
+        &self,
+        ty: &Type,
+        out: &mut BytesMut,
+    ) -> Result<IsNull, Box<dyn std::error::Error + Sync + Send>>
     where
         Self: Sized,
     {
@@ -82,12 +92,15 @@ impl ToSql for BlockchainDecimal {
         &self,
         ty: &Type,
         out: &mut BytesMut,
-    ) -> Result<IsNull, Box<dyn Error + Sync + Send>> {
+    ) -> Result<IsNull, Box<dyn std::error::Error + Sync + Send>> {
         format!("{:?}", self.0).to_sql_checked(ty, out)
     }
 }
 impl<'a> FromSql<'a> for BlockchainDecimal {
-    fn from_sql(ty: &Type, raw: &'a [u8]) -> Result<Self, Box<dyn Error + Sync + Send>> {
+    fn from_sql(
+        ty: &Type,
+        raw: &'a [u8],
+    ) -> Result<Self, Box<dyn std::error::Error + Sync + Send>> {
         let s = String::from_sql(ty, raw)?;
         let u256 = U256::from_dec_str(&s)?;
         Ok(BlockchainDecimal(u256))
@@ -140,7 +153,9 @@ pub mod WithBlockchainAddress {
         D: Deserializer<'de>,
     {
         let value = String::deserialize(deserializer)?;
-        let value = Address::from_str(&value).unwrap();
+        let value = Address::from_str(&value).ok().ok_or_else(|| {
+            D::Error::invalid_value(serde::de::Unexpected::Str(&value), &"a valid address")
+        })?;
         Ok(value)
     }
 }
@@ -158,12 +173,18 @@ impl<'de> Deserialize<'de> for BlockchainAddress {
         D: Deserializer<'de>,
     {
         let value = String::deserialize(deserializer)?;
-        let value = Address::from_str(&value).unwrap();
+        let value = Address::from_str(&value).ok().ok_or_else(|| {
+            D::Error::invalid_value(serde::de::Unexpected::Str(&value), &"a valid address")
+        })?;
         Ok(BlockchainAddress(value))
     }
 }
 impl ToSql for BlockchainAddress {
-    fn to_sql(&self, ty: &Type, out: &mut BytesMut) -> Result<IsNull, Box<dyn Error + Sync + Send>>
+    fn to_sql(
+        &self,
+        ty: &Type,
+        out: &mut BytesMut,
+    ) -> Result<IsNull, Box<dyn std::error::Error + Sync + Send>>
     where
         Self: Sized,
     {
@@ -181,12 +202,15 @@ impl ToSql for BlockchainAddress {
         &self,
         ty: &Type,
         out: &mut BytesMut,
-    ) -> Result<IsNull, Box<dyn Error + Sync + Send>> {
+    ) -> Result<IsNull, Box<dyn std::error::Error + Sync + Send>> {
         format!("{:?}", self.0).to_sql_checked(ty, out)
     }
 }
 impl<'a> FromSql<'a> for BlockchainAddress {
-    fn from_sql(ty: &Type, raw: &'a [u8]) -> Result<Self, Box<dyn Error + Sync + Send>> {
+    fn from_sql(
+        ty: &Type,
+        raw: &'a [u8],
+    ) -> Result<Self, Box<dyn std::error::Error + Sync + Send>> {
         let s = String::from_sql(ty, raw)?;
         let address = Address::from_str(&s)?;
         Ok(BlockchainAddress(address))
@@ -239,7 +263,9 @@ pub mod WithBlockchainTransactionHash {
         D: Deserializer<'de>,
     {
         let value = String::deserialize(deserializer)?;
-        let value = H256::from_str(&value).unwrap();
+        let value = H256::from_str(&value).ok().ok_or_else(|| {
+            D::Error::invalid_value(serde::de::Unexpected::Str(&value), &"a valid hash")
+        })?;
         Ok(value)
     }
 }
@@ -257,12 +283,18 @@ impl<'de> Deserialize<'de> for BlockchainTransactionHash {
         D: Deserializer<'de>,
     {
         let value = String::deserialize(deserializer)?;
-        let value = H256::from_str(&value).unwrap();
+        let value = H256::from_str(&value).ok().ok_or_else(|| {
+            D::Error::invalid_value(serde::de::Unexpected::Str(&value), &"a valid hash")
+        })?;
         Ok(BlockchainTransactionHash(value))
     }
 }
 impl ToSql for BlockchainTransactionHash {
-    fn to_sql(&self, ty: &Type, out: &mut BytesMut) -> Result<IsNull, Box<dyn Error + Sync + Send>>
+    fn to_sql(
+        &self,
+        ty: &Type,
+        out: &mut BytesMut,
+    ) -> Result<IsNull, Box<dyn std::error::Error + Sync + Send>>
     where
         Self: Sized,
     {
@@ -280,12 +312,15 @@ impl ToSql for BlockchainTransactionHash {
         &self,
         ty: &Type,
         out: &mut BytesMut,
-    ) -> Result<IsNull, Box<dyn Error + Sync + Send>> {
+    ) -> Result<IsNull, Box<dyn std::error::Error + Sync + Send>> {
         format!("{:?}", self.0).to_sql_checked(ty, out)
     }
 }
 impl<'a> FromSql<'a> for BlockchainTransactionHash {
-    fn from_sql(ty: &Type, raw: &'a [u8]) -> Result<Self, Box<dyn Error + Sync + Send>> {
+    fn from_sql(
+        ty: &Type,
+        raw: &'a [u8],
+    ) -> Result<Self, Box<dyn std::error::Error + Sync + Send>> {
         let s = String::from_sql(ty, raw)?;
         let hash = H256::from_str(&s)?;
         Ok(BlockchainTransactionHash(hash))
