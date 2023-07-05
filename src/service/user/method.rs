@@ -726,6 +726,7 @@ pub async fn user_exit_strategy(
         .execute(FunUserListUserStrategyPoolContractAssetBalancesReq {
             strategy_pool_contract_id: strategy_pool_contract_row.pkey_id,
             user_id: Some(ctx.user_id),
+            strategy_wallet_id: Some(strategy_wallet_contract_row.wallet_id),
             token_address: None,
             blockchain: Some(blockchain),
         })
@@ -840,6 +841,7 @@ pub async fn user_exit_strategy(
             .execute(FunUserListUserStrategyPoolContractAssetBalancesReq {
                 strategy_pool_contract_id: strategy_pool_contract_row.pkey_id,
                 user_id: Some(ctx.user_id),
+                strategy_wallet_id: Some(strategy_wallet_contract_row.wallet_id),
                 token_address: Some(asset.into()),
                 blockchain: Some(blockchain),
             })

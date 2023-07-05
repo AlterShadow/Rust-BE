@@ -463,6 +463,7 @@ END
             vec![
                 Field::new("strategy_pool_contract_id", Type::BigInt),
                 Field::new("user_id", Type::optional(Type::BigInt)),
+                Field::new("strategy_wallet_id", Type::optional(Type::BigInt)),
                 Field::new("token_address", Type::optional(Type::BlockchainAddress)),
                 Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
             ],
@@ -491,6 +492,7 @@ BEGIN
 		FROM tbl.user_strategy_wallet as usw
 		WHERE (a_user_id ISNULL OR usw.fkey_user_id = a_user_id)
 			AND (a_blockchain ISNULL OR usw.blockchain = a_blockchain)
+			AND (a_strategy_wallet_id ISNULL OR usw.pkey_id = a_strategy_wallet_id)
 	)
 
 	SELECT
@@ -511,7 +513,8 @@ BEGIN
 		AND (a_token_address ISNULL OR tokens.address = a_token_address)
 		AND (a_blockchain ISNULL OR tokens.blockchain = a_blockchain)
 		AND (a_user_id ISNULL OR strategy_wallets.fkey_user_id = a_user_id)
-		AND (a_blockchain ISNULL OR strategy_wallets.blockchain = a_blockchain);
+		AND (a_blockchain ISNULL OR strategy_wallets.blockchain = a_blockchain)
+		AND (a_strategy_wallet_id ISNULL OR strategy_wallets.pkey_id = a_strategy_wallet_id);
 END
 "#,
         ),
