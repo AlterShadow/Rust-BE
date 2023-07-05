@@ -460,7 +460,7 @@ pub async fn handle_eth_escrows(
                     .map(|x| x.balance)
                     .unwrap_or_default();
                 let new_balance = (*old_balance) + escrow.amount;
-                state
+                let resp = state
                     .db
                     .execute(FunWatcherUpsertUserDepositWithdrawBalanceReq {
                         user_id: user.user_id,
@@ -480,13 +480,18 @@ pub async fn handle_eth_escrows(
                             pkey_id: 0,
                             user_id: user.user_id,
                             balance: UserListDepositLedgerRow {
+                                transaction_id: resp
+                                    .first(|x| x.ret_pkey_id)
+                                    .unwrap_or_else(|| Utc::now().timestamp()),
                                 quantity: escrow.amount.into(),
                                 blockchain,
                                 user_address: escrow.owner.into(),
                                 contract_address: called_address.into(),
                                 transaction_hash: tx.get_hash().into(),
+                                is_deposit: false,
                                 receiver_address: escrow.recipient.into(),
-                                created_at: Utc::now().timestamp(),
+
+                                happened_at: Utc::now().timestamp(),
                             },
                         })
                         .await
