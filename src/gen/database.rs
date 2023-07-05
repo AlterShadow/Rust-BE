@@ -369,15 +369,17 @@ pub struct FunUserListBackStrategyLedgerRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
-pub struct FunUserListDepositLedgerRespRow {
+pub struct FunUserListDepositWithdrawLedgerRespRow {
     pub total: i64,
+    pub transaction_id: i64,
     pub blockchain: EnumBlockChain,
     pub user_address: BlockchainAddress,
     pub contract_address: BlockchainAddress,
     pub receiver_address: BlockchainAddress,
     pub quantity: BlockchainDecimal,
     pub transaction_hash: BlockchainTransactionHash,
-    pub created_at: i64,
+    pub is_deposit: bool,
+    pub happened_at: i64,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -390,16 +392,6 @@ pub struct FunUserListEscrowTokenContractAddressRespRow {
     pub short_name: String,
     pub description: String,
     pub is_stablecoin: bool,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
-pub struct FunUserListExitStrategyLedgerRespRow {
-    pub total: i64,
-    pub exit_ledger_id: i64,
-    pub strategy_id: i64,
-    pub exit_quantity: BlockchainDecimal,
-    pub blockchain: EnumBlockChain,
-    pub exit_time: i64,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -1290,27 +1282,6 @@ impl DatabaseRequest for FunUserExitStrategyReq {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunUserListExitStrategyLedgerReq {
-    pub user_id: i64,
-    #[serde(default)]
-    pub strategy_id: Option<i64>,
-}
-
-#[allow(unused_variables)]
-impl DatabaseRequest for FunUserListExitStrategyLedgerReq {
-    type ResponseRow = FunUserListExitStrategyLedgerRespRow;
-    fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_list_exit_strategy_ledger(a_user_id => $1::bigint, a_strategy_id => $2::bigint);"
-    }
-    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
-        vec![
-            &self.user_id as &(dyn ToSql + Sync),
-            &self.strategy_id as &(dyn ToSql + Sync),
-        ]
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserListUserStrategyPoolContractAssetLedgerEntriesReq {
     pub limit: i64,
     pub offset: i64,
@@ -2055,26 +2026,29 @@ impl DatabaseRequest for FunExpertListBackersReq {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunUserListDepositLedgerReq {
+pub struct FunUserListDepositWithdrawLedgerReq {
     pub limit: i64,
     pub offset: i64,
     #[serde(default)]
     pub user_id: Option<i64>,
     #[serde(default)]
+    pub is_deposit: Option<bool>,
+    #[serde(default)]
     pub blockchain: Option<EnumBlockChain>,
 }
 
 #[allow(unused_variables)]
-impl DatabaseRequest for FunUserListDepositLedgerReq {
-    type ResponseRow = FunUserListDepositLedgerRespRow;
+impl DatabaseRequest for FunUserListDepositWithdrawLedgerReq {
+    type ResponseRow = FunUserListDepositWithdrawLedgerRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_list_deposit_ledger(a_limit => $1::bigint, a_offset => $2::bigint, a_user_id => $3::bigint, a_blockchain => $4::enum_block_chain);"
+        "SELECT * FROM api.fun_user_list_deposit_withdraw_ledger(a_limit => $1::bigint, a_offset => $2::bigint, a_user_id => $3::bigint, a_is_deposit => $4::boolean, a_blockchain => $5::enum_block_chain);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
             &self.limit as &(dyn ToSql + Sync),
             &self.offset as &(dyn ToSql + Sync),
             &self.user_id as &(dyn ToSql + Sync),
+            &self.is_deposit as &(dyn ToSql + Sync),
             &self.blockchain as &(dyn ToSql + Sync),
         ]
     }

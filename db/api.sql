@@ -820,37 +820,6 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_list_exit_strategy_ledger(a_user_id bigint, a_strategy_id bigint DEFAULT NULL)
-RETURNS table (
-    "total" bigint,
-    "exit_ledger_id" bigint,
-    "strategy_id" bigint,
-    "exit_quantity" varchar,
-    "blockchain" enum_block_chain,
-    "exit_time" bigint
-)
-LANGUAGE plpgsql
-AS $$
-    
-BEGIN
-
-    RETURN QUERY SELECT 
-                        COUNT(*) OVER() AS total,
-                        a.pkey_id AS exit_ledger_id,
-                        a.fkey_strategy_id			AS strategy_id,
-                        a.quantity_sp_tokens 		AS exit_quantity,
-                        a.blockchain 				AS blockchain,
-                        a.happened_at       		AS exit_time
-				FROM tbl.user_back_exit_strategy_ledger AS a
-				WHERE a.fkey_user_id = a_user_id
-					AND (a_strategy_id NOTNULL OR a_strategy_id = a.fkey_strategy_id)
-					AND a.is_back = FALSE
-				ORDER BY a.happened_at DESC;
-END
-
-$$;
-        
-
 CREATE OR REPLACE FUNCTION api.fun_user_list_user_strategy_pool_contract_asset_ledger_entries(a_limit bigint, a_offset bigint, a_user_id bigint, a_strategy_pool_contract_id bigint)
 RETURNS table (
     "user_strategy_pool_contract_asset_ledger_id" bigint,
@@ -1948,16 +1917,18 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_list_deposit_ledger(a_limit bigint, a_offset bigint, a_user_id bigint DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_user_list_deposit_withdraw_ledger(a_limit bigint, a_offset bigint, a_user_id bigint DEFAULT NULL, a_is_deposit boolean DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL)
 RETURNS table (
     "total" bigint,
+    "transaction_id" bigint,
     "blockchain" enum_block_chain,
     "user_address" varchar,
     "contract_address" varchar,
     "receiver_address" varchar,
     "quantity" varchar,
     "transaction_hash" varchar,
-    "created_at" bigint
+    "is_deposit" boolean,
+    "happened_at" bigint
 )
 LANGUAGE plpgsql
 AS $$
@@ -1965,15 +1936,17 @@ AS $$
 BEGIN
     RETURN QUERY SELECT
             COUNT(*) OVER() AS total,
+            a.pkey_id,
             a.blockchain, 
             a.user_address, 
             a.escrow_contract_address, 
             a.receiver_address, 
             a.quantity, 
             a.transaction_hash, 
+            a.is_deposit,
             a.happened_at
 		FROM tbl.user_deposit_withdraw_ledger AS a
-		WHERE  is_deposit = TRUE
+		WHERE  (a.is_deposit = a_is_deposit OR a_is_deposit IS NULL)
                 AND (a.fkey_user_id = a_user_id OR a_user_id IS NULL)
                 AND (a.blockchain = a_blockchain OR a_blockchain IS NULL)
 		ORDER BY a.pkey_id DESC

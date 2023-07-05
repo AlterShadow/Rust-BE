@@ -368,8 +368,8 @@ pub enum EnumEndpoint {
     #[postgres(name = "UserGetDepositAddresses")]
     UserGetDepositAddresses = 20370,
     ///
-    #[postgres(name = "UserListDepositLedger")]
-    UserListDepositLedger = 20380,
+    #[postgres(name = "UserListDepositWithdrawLedger")]
+    UserListDepositWithdrawLedger = 20380,
     ///
     #[postgres(name = "UserSubscribeDepositLedger")]
     UserSubscribeDepositLedger = 20381,
@@ -1915,23 +1915,8 @@ pub struct UserListBackedStrategiesResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserListDepositLedgerRequest {
-    #[serde(default)]
-    pub limit: Option<i64>,
-    #[serde(default)]
-    pub offset: Option<i64>,
-    #[serde(default)]
-    pub blockchain: Option<EnumBlockChain>,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserListDepositLedgerResponse {
-    pub ledger_total: i64,
-    pub ledger: Vec<UserListDepositLedgerRow>,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
 pub struct UserListDepositLedgerRow {
+    pub transaction_id: i64,
     pub blockchain: EnumBlockChain,
     #[serde(with = "WithBlockchainAddress")]
     pub user_address: Address,
@@ -1943,7 +1928,8 @@ pub struct UserListDepositLedgerRow {
     pub quantity: U256,
     #[serde(with = "WithBlockchainTransactionHash")]
     pub transaction_hash: H256,
-    pub created_at: i64,
+    pub is_deposit: bool,
+    pub happened_at: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1962,6 +1948,24 @@ pub struct UserListDepositWithdrawBalancesRequest {}
 #[serde(rename_all = "camelCase")]
 pub struct UserListDepositWithdrawBalancesResponse {
     pub balances: Vec<UserListDepositWithdrawBalance>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListDepositWithdrawLedgerRequest {
+    #[serde(default)]
+    pub limit: Option<i64>,
+    #[serde(default)]
+    pub offset: Option<i64>,
+    #[serde(default)]
+    pub blockchain: Option<EnumBlockChain>,
+    #[serde(default)]
+    pub id_deposit: Option<bool>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListDepositWithdrawLedgerResponse {
+    pub ledger_total: i64,
+    pub ledger: Vec<UserListDepositLedgerRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -6517,11 +6521,11 @@ impl WsResponse for UserGetDepositAddressesResponse {
     type Request = UserGetDepositAddressesRequest;
 }
 
-impl WsRequest for UserListDepositLedgerRequest {
-    type Response = UserListDepositLedgerResponse;
+impl WsRequest for UserListDepositWithdrawLedgerRequest {
+    type Response = UserListDepositWithdrawLedgerResponse;
     const METHOD_ID: u32 = 20380;
     const SCHEMA: &'static str = r#"{
-  "name": "UserListDepositLedger",
+  "name": "UserListDepositWithdrawLedger",
   "code": 20380,
   "parameters": [
     {
@@ -6543,6 +6547,12 @@ impl WsRequest for UserListDepositLedgerRequest {
           "EnumRef": "block_chain"
         }
       }
+    },
+    {
+      "name": "id_deposit",
+      "ty": {
+        "Optional": "Boolean"
+      }
     }
   ],
   "returns": [
@@ -6557,6 +6567,10 @@ impl WsRequest for UserListDepositLedgerRequest {
           "Struct": {
             "name": "UserListDepositLedgerRow",
             "fields": [
+              {
+                "name": "transaction_id",
+                "ty": "BigInt"
+              },
               {
                 "name": "blockchain",
                 "ty": {
@@ -6584,7 +6598,11 @@ impl WsRequest for UserListDepositLedgerRequest {
                 "ty": "BlockchainTransactionHash"
               },
               {
-                "name": "created_at",
+                "name": "is_deposit",
+                "ty": "Boolean"
+              },
+              {
+                "name": "happened_at",
                 "ty": "BigInt"
               }
             ]
@@ -6598,8 +6616,8 @@ impl WsRequest for UserListDepositLedgerRequest {
   "json_schema": null
 }"#;
 }
-impl WsResponse for UserListDepositLedgerResponse {
-    type Request = UserListDepositLedgerRequest;
+impl WsResponse for UserListDepositWithdrawLedgerResponse {
+    type Request = UserListDepositWithdrawLedgerRequest;
 }
 
 impl WsRequest for UserSubscribeDepositLedgerRequest {
@@ -6636,6 +6654,10 @@ impl WsRequest for UserSubscribeDepositLedgerRequest {
       "name": "UserListDepositLedgerRow",
       "fields": [
         {
+          "name": "transaction_id",
+          "ty": "BigInt"
+        },
+        {
           "name": "blockchain",
           "ty": {
             "EnumRef": "block_chain"
@@ -6662,7 +6684,11 @@ impl WsRequest for UserSubscribeDepositLedgerRequest {
           "ty": "BlockchainTransactionHash"
         },
         {
-          "name": "created_at",
+          "name": "is_deposit",
+          "ty": "Boolean"
+        },
+        {
+          "name": "happened_at",
           "ty": "BigInt"
         }
       ]
@@ -8439,6 +8465,10 @@ impl WsRequest for AdminNotifyEscrowLedgerChangeRequest {
           "name": "UserListDepositLedgerRow",
           "fields": [
             {
+              "name": "transaction_id",
+              "ty": "BigInt"
+            },
+            {
               "name": "blockchain",
               "ty": {
                 "EnumRef": "block_chain"
@@ -8465,7 +8495,11 @@ impl WsRequest for AdminNotifyEscrowLedgerChangeRequest {
               "ty": "BlockchainTransactionHash"
             },
             {
-              "name": "created_at",
+              "name": "is_deposit",
+              "ty": "Boolean"
+            },
+            {
+              "name": "happened_at",
               "ty": "BigInt"
             }
           ]
@@ -8517,6 +8551,10 @@ impl WsRequest for AdminSubscribeDepositLedgerRequest {
       "name": "UserListDepositLedgerRow",
       "fields": [
         {
+          "name": "transaction_id",
+          "ty": "BigInt"
+        },
+        {
           "name": "blockchain",
           "ty": {
             "EnumRef": "block_chain"
@@ -8543,7 +8581,11 @@ impl WsRequest for AdminSubscribeDepositLedgerRequest {
           "ty": "BlockchainTransactionHash"
         },
         {
-          "name": "created_at",
+          "name": "is_deposit",
+          "ty": "Boolean"
+        },
+        {
+          "name": "happened_at",
           "ty": "BigInt"
         }
       ]

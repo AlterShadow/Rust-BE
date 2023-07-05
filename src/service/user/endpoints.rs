@@ -1,7 +1,8 @@
 use model::endpoint::*;
 use model::types::{Field, Type};
 use shared_endpoints::{
-    list_experts_datatable, list_strategies_datatable, strategy_row, user_deposit_ledger_entry,
+    list_experts_datatable, list_strategies_datatable, strategy_row,
+    user_deposit_withdraw_ledger_entry,
 };
 
 #[path = "../shared/endpoints.rs"]
@@ -773,16 +774,17 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
             )],
         ),
         EndpointSchema::new(
-            "UserListDepositLedger",
+            "UserListDepositWithdrawLedger",
             20380,
             vec![
                 Field::new("limit", Type::optional(Type::BigInt)),
                 Field::new("offset", Type::optional(Type::BigInt)),
                 Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
+                Field::new("id_deposit", Type::optional(Type::Boolean)),
             ],
             vec![
                 Field::new("ledger_total", Type::BigInt),
-                Field::new("ledger", Type::vec(user_deposit_ledger_entry())),
+                Field::new("ledger", Type::vec(user_deposit_withdraw_ledger_entry())),
             ],
         ),
         EndpointSchema::new(
@@ -795,7 +797,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
             ],
             vec![],
         )
-        .with_stream_response_type(user_deposit_ledger_entry()),
+        .with_stream_response_type(user_deposit_withdraw_ledger_entry()),
         EndpointSchema::new("UserUnsubscribeDepositLedger", 20382, vec![], vec![]),
         EndpointSchema::new(
             "UserListStrategyWallets",

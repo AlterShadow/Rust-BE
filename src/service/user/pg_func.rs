@@ -355,38 +355,6 @@ END
 "#,
         ),
         ProceduralFunction::new(
-            "fun_user_list_exit_strategy_ledger",
-            vec![
-                Field::new("user_id", Type::BigInt),
-                Field::new("strategy_id", Type::optional(Type::BigInt)),
-            ],
-            vec![
-                Field::new("total", Type::BigInt),
-                Field::new("exit_ledger_id", Type::BigInt),
-                Field::new("strategy_id", Type::BigInt),
-                Field::new("exit_quantity", Type::BlockchainDecimal),
-                Field::new("blockchain", Type::enum_ref("block_chain")),
-                Field::new("exit_time", Type::BigInt),
-            ],
-            r#"
-BEGIN
-
-    RETURN QUERY SELECT 
-                        COUNT(*) OVER() AS total,
-                        a.pkey_id AS exit_ledger_id,
-                        a.fkey_strategy_id			AS strategy_id,
-                        a.quantity_sp_tokens 		AS exit_quantity,
-                        a.blockchain 				AS blockchain,
-                        a.happened_at       		AS exit_time
-				FROM tbl.user_back_exit_strategy_ledger AS a
-				WHERE a.fkey_user_id = a_user_id
-					AND (a_strategy_id NOTNULL OR a_strategy_id = a.fkey_strategy_id)
-					AND a.is_back = FALSE
-				ORDER BY a.happened_at DESC;
-END
-"#,
-        ),
-        ProceduralFunction::new(
             "fun_user_list_user_strategy_pool_contract_asset_ledger_entries",
             vec![
                 Field::new("limit", Type::BigInt),
@@ -1419,36 +1387,41 @@ END
             "#,
         ),
         ProceduralFunction::new(
-            "fun_user_list_deposit_ledger",
+            "fun_user_list_deposit_withdraw_ledger",
             vec![
                 Field::new("limit", Type::BigInt),
                 Field::new("offset", Type::BigInt),
                 Field::new("user_id", Type::optional(Type::BigInt)),
+                Field::new("is_deposit", Type::optional(Type::Boolean)),
                 Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
             ],
             vec![
                 Field::new("total", Type::BigInt),
+                Field::new("transaction_id", Type::BigInt),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("user_address", Type::BlockchainAddress),
                 Field::new("contract_address", Type::BlockchainAddress),
                 Field::new("receiver_address", Type::BlockchainAddress),
                 Field::new("quantity", Type::BlockchainDecimal),
                 Field::new("transaction_hash", Type::BlockchainTransactionHash),
-                Field::new("created_at", Type::BigInt),
+                Field::new("is_deposit", Type::Boolean),
+                Field::new("happened_at", Type::BigInt),
             ],
             r#"
 BEGIN
     RETURN QUERY SELECT
             COUNT(*) OVER() AS total,
+            a.pkey_id,
             a.blockchain, 
             a.user_address, 
             a.escrow_contract_address, 
             a.receiver_address, 
             a.quantity, 
             a.transaction_hash, 
+            a.is_deposit,
             a.happened_at
 		FROM tbl.user_deposit_withdraw_ledger AS a
-		WHERE  is_deposit = TRUE
+		WHERE  (a.is_deposit = a_is_deposit OR a_is_deposit IS NULL)
                 AND (a.fkey_user_id = a_user_id OR a_user_id IS NULL)
                 AND (a.blockchain = a_blockchain OR a_blockchain IS NULL)
 		ORDER BY a.pkey_id DESC

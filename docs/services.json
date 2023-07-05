@@ -3697,7 +3697,7 @@
           "json_schema": null
         },
         {
-          "name": "UserListDepositLedger",
+          "name": "UserListDepositWithdrawLedger",
           "code": 20380,
           "parameters": [
             {
@@ -3719,6 +3719,12 @@
                   "EnumRef": "block_chain"
                 }
               }
+            },
+            {
+              "name": "id_deposit",
+              "ty": {
+                "Optional": "Boolean"
+              }
             }
           ],
           "returns": [
@@ -3733,6 +3739,10 @@
                   "Struct": {
                     "name": "UserListDepositLedgerRow",
                     "fields": [
+                      {
+                        "name": "transaction_id",
+                        "ty": "BigInt"
+                      },
                       {
                         "name": "blockchain",
                         "ty": {
@@ -3760,7 +3770,11 @@
                         "ty": "BlockchainTransactionHash"
                       },
                       {
-                        "name": "created_at",
+                        "name": "is_deposit",
+                        "ty": "Boolean"
+                      },
+                      {
+                        "name": "happened_at",
                         "ty": "BigInt"
                       }
                     ]
@@ -3804,6 +3818,10 @@
               "name": "UserListDepositLedgerRow",
               "fields": [
                 {
+                  "name": "transaction_id",
+                  "ty": "BigInt"
+                },
+                {
                   "name": "blockchain",
                   "ty": {
                     "EnumRef": "block_chain"
@@ -3830,7 +3848,11 @@
                   "ty": "BlockchainTransactionHash"
                 },
                 {
-                  "name": "created_at",
+                  "name": "is_deposit",
+                  "ty": "Boolean"
+                },
+                {
+                  "name": "happened_at",
                   "ty": "BigInt"
                 }
               ]
@@ -5381,6 +5403,10 @@
                   "name": "UserListDepositLedgerRow",
                   "fields": [
                     {
+                      "name": "transaction_id",
+                      "ty": "BigInt"
+                    },
+                    {
                       "name": "blockchain",
                       "ty": {
                         "EnumRef": "block_chain"
@@ -5407,7 +5433,11 @@
                       "ty": "BlockchainTransactionHash"
                     },
                     {
-                      "name": "created_at",
+                      "name": "is_deposit",
+                      "ty": "Boolean"
+                    },
+                    {
+                      "name": "happened_at",
                       "ty": "BigInt"
                     }
                   ]
@@ -5451,6 +5481,10 @@
               "name": "UserListDepositLedgerRow",
               "fields": [
                 {
+                  "name": "transaction_id",
+                  "ty": "BigInt"
+                },
+                {
                   "name": "blockchain",
                   "ty": {
                     "EnumRef": "block_chain"
@@ -5477,7 +5511,11 @@
                   "ty": "BlockchainTransactionHash"
                 },
                 {
-                  "name": "created_at",
+                  "name": "is_deposit",
+                  "ty": "Boolean"
+                },
+                {
+                  "name": "happened_at",
                   "ty": "BigInt"
                 }
               ]

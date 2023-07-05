@@ -536,11 +536,12 @@ impl RequestHandler for MethodAdminSubscribeDepositLedger {
             manager.subscribe(AdminSubscribeTopic::AdminNotifyEscrowLedgerChangeAll, ctx);
             if let Some(limit) = req.initial_data {
                 let resp = db
-                    .execute(FunUserListDepositLedgerReq {
+                    .execute(FunUserListDepositWithdrawLedgerReq {
                         user_id: None,
                         limit,
                         offset: 0,
                         blockchain: req.blockchain,
+                        is_deposit: Some(true),
                     })
                     .await?;
                 let manager = manager.clone();
@@ -552,13 +553,15 @@ impl RequestHandler for MethodAdminSubscribeDepositLedger {
                             &toolbox,
                             AdminSubscribeTopic::AdminNotifyEscrowLedgerChangeAll,
                             &UserListDepositLedgerRow {
+                                transaction_id: row.transaction_id,
                                 quantity: row.quantity.into(),
                                 blockchain: row.blockchain,
                                 user_address: row.user_address.into(),
                                 contract_address: row.contract_address.into(),
                                 transaction_hash: row.transaction_hash.into(),
                                 receiver_address: row.receiver_address.into(),
-                                created_at: row.created_at,
+                                happened_at: row.happened_at,
+                                is_deposit: row.is_deposit,
                             },
                             |x| x.connection_id == ctx.connection_id,
                         )
@@ -576,13 +579,15 @@ impl RequestHandler for MethodAdminSubscribeDepositLedger {
                             &toolbox,
                             AdminSubscribeTopic::AdminNotifyEscrowLedgerChangeAll,
                             &UserListDepositLedgerRow {
+                                transaction_id: 0,
                                 quantity: amount.into(),
                                 blockchain: EnumBlockChain::EthereumMainnet,
                                 user_address: key.address.clone().into(),
                                 contract_address: key.address.clone().into(),
                                 transaction_hash: H256::random().into(),
+                                is_deposit: false,
                                 receiver_address: key.address.clone().into(),
-                                created_at: Utc::now().timestamp(),
+                                happened_at: Utc::now().timestamp(),
                             },
                         )
                     }

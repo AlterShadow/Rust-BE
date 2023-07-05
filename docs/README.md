@@ -58,7 +58,7 @@ ID: 2
 |20350|ExpertListBackers|limit, offset|backers_total, backers||
 |20360|UserGetDepositTokens||tokens||
 |20370|UserGetDepositAddresses||addresses||
-|20380|UserListDepositLedger|limit, offset, blockchain|ledger_total, ledger||
+|20380|UserListDepositWithdrawLedger|limit, offset, blockchain, id_deposit|ledger_total, ledger||
 |20381|UserSubscribeDepositLedger|initial_data, blockchain, mock_data|||
 |20382|UserUnsubscribeDepositLedger||||
 |20390|UserListStrategyWallets|blockchain|wallets_total, wallets||

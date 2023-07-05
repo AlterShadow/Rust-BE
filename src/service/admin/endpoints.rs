@@ -226,7 +226,7 @@ pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
             vec![
                 Field::new("pkey_id", Type::BigInt),
                 Field::new("user_id", Type::BigInt),
-                Field::new("balance", user_deposit_ledger_entry()),
+                Field::new("balance", user_deposit_withdraw_ledger_entry()),
             ],
             vec![],
         ),
@@ -240,7 +240,7 @@ pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
             ],
             vec![],
         )
-        .with_stream_response_type(user_deposit_ledger_entry()),
+        .with_stream_response_type(user_deposit_withdraw_ledger_entry()),
         EndpointSchema::new("AdminUnsubscribeDepositLedger", 32012, vec![], vec![]),
         EndpointSchema::new(
             "AdminAddEscrowTokenContractAddress",

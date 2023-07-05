@@ -1054,42 +1054,7 @@ impl RequestHandler for MethodUserUnfollowStrategy {
         .boxed()
     }
 }
-pub struct MethodUserListExitStrategyLedger;
-impl RequestHandler for MethodUserListExitStrategyLedger {
-    type Request = UserListExitStrategyLedgerRequest;
 
-    fn handle(
-        &self,
-        toolbox: &Toolbox,
-        ctx: RequestContext,
-        _req: Self::Request,
-    ) -> FutureResponse<Self::Request> {
-        let db: DbClient = toolbox.get_db();
-        async move {
-            ensure_user_role(ctx, EnumRole::User)?;
-            let ret = db
-                .execute(FunUserListExitStrategyLedgerReq {
-                    user_id: ctx.user_id,
-                    strategy_id: None,
-                })
-                .await?;
-            Ok(UserListExitStrategyLedgerResponse {
-                exit_ledger_total: ret.first(|x| x.total).unwrap_or_default(),
-                exit_ledger: ret
-                    .into_iter()
-                    .map(|x| ExitStrategyLedgerRow {
-                        exit_ledger_id: x.exit_ledger_id,
-                        strategy_id: x.strategy_id,
-                        exit_quantity: x.exit_quantity.into(),
-                        blockchain: x.blockchain,
-                        exit_time: x.exit_time,
-                    })
-                    .collect(),
-            })
-        }
-        .boxed()
-    }
-}
 pub struct MethodUserFollowExpert;
 impl RequestHandler for MethodUserFollowExpert {
     type Request = UserFollowExpertRequest;
@@ -2297,9 +2262,9 @@ impl RequestHandler for MethodUserGetDepositAddresses {
         async move { Ok(UserGetDepositAddressesResponse { addresses }) }.boxed()
     }
 }
-pub struct MethodUserListDepositLedger;
-impl RequestHandler for MethodUserListDepositLedger {
-    type Request = UserListDepositLedgerRequest;
+pub struct MethodUserListDepositWithdrawLedger;
+impl RequestHandler for MethodUserListDepositWithdrawLedger {
+    type Request = UserListDepositWithdrawLedgerRequest;
 
     fn handle(
         &self,
@@ -2310,25 +2275,28 @@ impl RequestHandler for MethodUserListDepositLedger {
         let db: DbClient = toolbox.get_db();
         async move {
             let resp = db
-                .execute(FunUserListDepositLedgerReq {
+                .execute(FunUserListDepositWithdrawLedgerReq {
                     user_id: Some(ctx.user_id),
                     limit: req.limit.unwrap_or(DEFAULT_LIMIT),
                     offset: req.offset.unwrap_or(DEFAULT_OFFSET),
                     blockchain: req.blockchain,
+                    is_deposit: req.id_deposit,
                 })
                 .await?;
-            Ok(UserListDepositLedgerResponse {
+            Ok(UserListDepositWithdrawLedgerResponse {
                 ledger_total: resp.first(|x| x.total).unwrap_or_default(),
                 ledger: resp
                     .into_iter()
                     .map(|x| UserListDepositLedgerRow {
+                        transaction_id: x.transaction_id,
                         blockchain: x.blockchain,
                         user_address: x.user_address.into(),
                         contract_address: x.contract_address.into(),
                         receiver_address: x.receiver_address.into(),
                         quantity: x.quantity.into(),
                         transaction_hash: x.transaction_hash.into(),
-                        created_at: x.created_at,
+                        is_deposit: x.is_deposit,
+                        happened_at: x.happened_at,
                     })
                     .collect(),
             })
@@ -2355,11 +2323,12 @@ impl RequestHandler for MethodUserSubscribeDepositLedger {
             manager.subscribe(AdminSubscribeTopic::AdminNotifyEscrowLedgerChange, ctx);
             if let Some(limit) = req.initial_data {
                 let resp = db
-                    .execute(FunUserListDepositLedgerReq {
+                    .execute(FunUserListDepositWithdrawLedgerReq {
                         user_id: Some(ctx.user_id),
                         limit,
                         offset: 0,
                         blockchain: req.blockchain,
+                        is_deposit: Some(true),
                     })
                     .await?;
                 let manager = manager.clone();
@@ -2371,13 +2340,15 @@ impl RequestHandler for MethodUserSubscribeDepositLedger {
                             &toolbox,
                             AdminSubscribeTopic::AdminNotifyEscrowLedgerChange,
                             &UserListDepositLedgerRow {
+                                transaction_id: row.transaction_id,
                                 quantity: row.quantity.into(),
                                 blockchain: row.blockchain,
                                 user_address: row.user_address.into(),
                                 contract_address: row.contract_address.into(),
                                 transaction_hash: row.transaction_hash.into(),
                                 receiver_address: row.receiver_address.into(),
-                                created_at: row.created_at,
+                                happened_at: row.happened_at,
+                                is_deposit: row.is_deposit,
                             },
                             |x| x.connection_id == ctx.connection_id,
                         )
@@ -2395,6 +2366,7 @@ impl RequestHandler for MethodUserSubscribeDepositLedger {
                             &toolbox,
                             AdminSubscribeTopic::AdminNotifyEscrowLedgerChange,
                             &UserListDepositLedgerRow {
+                                transaction_id: 0,
                                 quantity: amount.into(),
                                 blockchain: req
                                     .blockchain
@@ -2403,7 +2375,8 @@ impl RequestHandler for MethodUserSubscribeDepositLedger {
                                 contract_address: key.address.clone().into(),
                                 transaction_hash: H256::random().into(),
                                 receiver_address: key.address.clone().into(),
-                                created_at: Utc::now().timestamp(),
+                                happened_at: Utc::now().timestamp(),
+                                is_deposit: false,
                             },
                             |x| x.connection_id == ctx.connection_id,
                         )

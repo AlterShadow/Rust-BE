@@ -75,17 +75,19 @@ pub fn expert_row() -> Type {
 pub fn list_experts_datatable() -> Type {
     Type::vec(expert_row())
 }
-pub fn user_deposit_ledger_entry() -> Type {
+pub fn user_deposit_withdraw_ledger_entry() -> Type {
     Type::struct_(
         "UserListDepositLedgerRow",
         vec![
+            Field::new("transaction_id", Type::BigInt),
             Field::new("blockchain", Type::enum_ref("block_chain")),
             Field::new("user_address", Type::BlockchainAddress),
             Field::new("contract_address", Type::BlockchainAddress),
             Field::new("receiver_address", Type::BlockchainAddress),
             Field::new("quantity", Type::BlockchainDecimal),
             Field::new("transaction_hash", Type::BlockchainTransactionHash),
-            Field::new("created_at", Type::BigInt),
+            Field::new("is_deposit", Type::Boolean),
+            Field::new("happened_at", Type::BigInt),
         ],
     )
 }
