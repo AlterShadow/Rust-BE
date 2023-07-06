@@ -1,3 +1,4 @@
+use api::cmc::CoinMarketCap;
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::{body::Body, routing::post, Router};
@@ -35,13 +36,14 @@ pub struct Config {
     pub god_key: SecretString,
     pub user_url: String,
     pub auth_url: String,
+    pub cmc_api_key: SecretString,
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let config: Config = load_config("watcher".to_owned())?;
     setup_logs(config.log_level)?;
-
+    let cmc_client = CoinMarketCap::new(config.cmc_api_key.expose_secret())?;
     let master_key = Secp256k1SecretKey::from_str(config.god_key.expose_secret())?;
     if let Err(err) = signup(&config.auth_url, "dev-watcher", &master_key.key).await {
         error!("failed to signup: {}", err);
@@ -64,7 +66,9 @@ async fn main() -> Result<()> {
         .route("/eth-goerli-escrows", post(handle_eth_escrows_goerli))
         .route("/bsc-mainnet-swaps", post(handle_bsc_swap_mainnet))
         .route("/bsc-mainnet-escrows", post(handle_bsc_escrows_mainnet))
-        .with_state(Arc::new(AppState::new(db, eth_pool, master_key, client)?));
+        .with_state(Arc::new(AppState::new(
+            db, eth_pool, master_key, client, cmc_client,
+        )?));
 
     let addr = tokio::net::lookup_host((config.host.as_ref(), config.port))
         .await?

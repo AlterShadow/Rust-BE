@@ -1,5 +1,6 @@
 pub mod method;
 
+use api::cmc::CoinMarketCap;
 use eth_sdk::erc20::build_erc_20;
 use eth_sdk::signer::Secp256k1SecretKey;
 use eth_sdk::{
@@ -22,6 +23,7 @@ pub struct AppState {
     pub erc_20: Contract,
     pub master_key: Secp256k1SecretKey,
     pub admin_client: Option<Mutex<WsClient>>,
+    pub cmc_client: CoinMarketCap,
 }
 impl AppState {
     pub fn new(
@@ -29,6 +31,7 @@ impl AppState {
         eth_pool: EthereumRpcConnectionPool,
         master_key: Secp256k1SecretKey,
         admin_client: WsClient,
+        cmc_client: CoinMarketCap,
     ) -> Result<Self> {
         Ok(Self {
             dex_addresses: DexAddresses::new(),
@@ -40,6 +43,7 @@ impl AppState {
             escrow_addresses: EscrowAddresses::new(),
             master_key,
             admin_client: Some(Mutex::new(admin_client)),
+            cmc_client,
         })
     }
 }

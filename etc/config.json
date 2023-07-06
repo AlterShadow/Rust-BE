@@ -1,60 +1,60 @@
 {
-  "ethereum_urls": {
-    "EthereumMainnet": "https://ethereum.publicnode.com",
-    "EthereumGoerli": "https://ethereum-goerli.publicnode.com",
-    "BscMainnet": "https://bsc.publicnode.com",
-    "BscTestnet": "https://bsc-testnet.publicnode.com",
-    "LocalNet": "http://127.0.0.1:8545",
-    "EthereumSepolia": "https://rpc.sepolia.dev"
-  },
-  "god_key": "bc0846d716105203f84e0c841a63faa5d7b20addff1975b1554485b5a13a8061",
-  "app_db": {
-    "host": "localhost",
-    "port": 5432,
-    "user": "postgres",
-    "password": "123456",
-    "dbname": "mc2fi"
-  },
-  "auth_db": {
-    "host": "localhost",
-    "port": 5432,
-    "user": "postgres",
-    "password": "123456",
-    "dbname": "mc2fi"
-  },
-  "auth": {
-    "host": "localhost",
-    "log_level": "trace",
-    "port": 8888
-  },
-  "user": {
-    "host": "localhost",
-    "log_level": "trace",
-    "port": 8889,
-    "cmc_api_key": "cd270acf-14f5-4fa2-8787-4fdafc8570f0",
-    "escrow_addresses": [
-      {
-        "blockchain": "EthereumMainnet",
-        "address": "0x0893abEB433C1a3D63C60F7034c2582Fc7dc8c52",
-        "shortName": "Ethereum mainnet deposit address"
-      },
-      {
-        "blockchain": "EthereumGoerli",
-        "address": "0xd74e67AbE5620E7F442DAD04B2bb06ad784633BF",
-        "shortName": "Ethereum testnet deposit address"
-      },
-      {
-        "blockchain": "BscMainnet",
-        "address": "0x54D4fa025E0239E9BA0c401F8A926b71F804627B",
-        "shortName": "Binance Smart Chain mainnet deposit address"
-      }
-    ]
-  },
-  "watcher": {
-    "host": "localhost",
-    "log_level": "trace",
-    "port": 9000,
-    "user_url": "ws://localhost:8889",
-    "auth_url": "ws://localhost:8888"
-  }
+	"ethereum_urls": {
+		"EthereumMainnet": "https://ethereum.publicnode.com",
+		"EthereumGoerli": "https://ethereum-goerli.publicnode.com",
+		"BscMainnet": "https://bsc.publicnode.com",
+		"BscTestnet": "https://bsc-testnet.publicnode.com",
+		"LocalNet": "http://127.0.0.1:8545",
+		"EthereumSepolia": "https://rpc.sepolia.dev"
+	},
+	"god_key": "bc0846d716105203f84e0c841a63faa5d7b20addff1975b1554485b5a13a8061",
+	"cmc_api_key": "cd270acf-14f5-4fa2-8787-4fdafc8570f0",
+	"app_db": {
+		"host": "localhost",
+		"port": 5432,
+		"user": "postgres",
+		"password": "123456",
+		"dbname": "mc2fi"
+	},
+	"auth_db": {
+		"host": "localhost",
+		"port": 5432,
+		"user": "postgres",
+		"password": "123456",
+		"dbname": "mc2fi"
+	},
+	"auth": {
+		"host": "localhost",
+		"log_level": "trace",
+		"port": 8888
+	},
+	"user": {
+		"host": "localhost",
+		"log_level": "trace",
+		"port": 8889,
+		"escrow_addresses": [
+			{
+				"blockchain": "EthereumMainnet",
+				"address": "0x0893abEB433C1a3D63C60F7034c2582Fc7dc8c52",
+				"shortName": "Ethereum mainnet deposit address"
+			},
+			{
+				"blockchain": "EthereumGoerli",
+				"address": "0xd74e67AbE5620E7F442DAD04B2bb06ad784633BF",
+				"shortName": "Ethereum testnet deposit address"
+			},
+			{
+				"blockchain": "BscMainnet",
+				"address": "0x54D4fa025E0239E9BA0c401F8A926b71F804627B",
+				"shortName": "Binance Smart Chain mainnet deposit address"
+			}
+		]
+	},
+	"watcher": {
+		"host": "localhost",
+		"log_level": "trace",
+		"port": 9000,
+		"user_url": "ws://localhost:8889",
+		"auth_url": "ws://localhost:8888"
+	}
 }
