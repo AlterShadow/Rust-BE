@@ -2015,6 +2015,9 @@ pub async fn on_user_request_refund(
         receiver_address: wallet_address.into(),
         contract_address: escrow_contract.address().into(),
         transaction_hash: hash.into(),
+        // TODO: QUERY THESE FIELDS IN databaase
+        token_id: 0,
+        contract_address_id: 0,
     })
     .await?
     .into_result()
@@ -2302,6 +2305,8 @@ impl RequestHandler for MethodUserListDepositWithdrawLedger {
                     offset: req.offset.unwrap_or(DEFAULT_OFFSET),
                     blockchain: req.blockchain,
                     is_deposit: req.id_deposit,
+                    is_back: None,
+                    is_withdraw: None,
                 })
                 .await?;
             Ok(UserListDepositWithdrawLedgerResponse {
@@ -2350,6 +2355,8 @@ impl RequestHandler for MethodUserSubscribeDepositLedger {
                         offset: 0,
                         blockchain: req.blockchain,
                         is_deposit: Some(true),
+                        is_back: None,
+                        is_withdraw: None,
                     })
                     .await?;
                 let manager = manager.clone();

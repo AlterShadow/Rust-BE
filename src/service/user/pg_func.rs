@@ -1112,12 +1112,73 @@ END
 "#,
         ),
         ProceduralFunction::new(
-            "fun_user_request_refund",
+            "fun_user_reduce_quantity_from_user_deposit_withdraw_ledger",
             vec![
                 Field::new("user_id", Type::BigInt),
+                Field::new("token_id", Type::BigInt),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("user_address", Type::BlockchainAddress),
                 Field::new("contract_address", Type::BlockchainAddress),
+                Field::new("contract_address_id", Type::BigInt),
+                Field::new("receiver_address", Type::BlockchainAddress),
+                Field::new("quantity", Type::BlockchainDecimal),
+                Field::new("transaction_hash", Type::BlockchainTransactionHash),
+            ],
+            vec![Field::new("request_refund_id", Type::BigInt)],
+            r#"
+DECLARE
+    existing_id bigint;
+BEGIN
+    SELECT pkey_id INTO existing_id
+    FROM tbl.user_deposit_withdraw_ledger
+    WHERE transaction_hash = a_transaction_hash AND
+    blockchain = a_blockchain
+    LIMIT 1;
+
+    IF existing_id IS NOT NULL THEN
+            RETURN QUERY SELECT existing_id;
+    END IF;
+
+    RETURN QUERY INSERT INTO tbl.user_deposit_withdraw_ledger (
+        fkey_user_id, 
+        fkey_token_id, 
+        blockchain,
+        user_address,
+        escrow_contract_address,
+        fkey_escrow_contract_address_id,
+        receiver_address,
+        quantity,
+        transaction_hash,
+        is_deposit,
+        is_back,
+        is_withdraw,
+        happened_at
+        ) VALUES (a_user_id,
+                  a_token_id,
+                  a_blockchain,
+                  a_user_address,
+                  a_contract_address,
+                  a_contract_address_id,
+                  a_receiver_address,
+                  a_quantity,
+                  a_transaction_hash,
+                  FALSE,
+                  FALSE,
+                  TRUE,
+                  EXTRACT(EPOCH FROM NOW())::bigint
+        ) RETURNING pkey_id;
+END
+"#,
+        ),
+        ProceduralFunction::new(
+            "fun_user_request_refund",
+            vec![
+                Field::new("user_id", Type::BigInt),
+                Field::new("token_id", Type::BigInt),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("user_address", Type::BlockchainAddress),
+                Field::new("contract_address", Type::BlockchainAddress),
+                Field::new("contract_address_id", Type::BigInt),
                 Field::new("receiver_address", Type::BlockchainAddress),
                 Field::new("quantity", Type::BlockchainDecimal),
                 Field::new("transaction_hash", Type::BlockchainTransactionHash),
@@ -1145,7 +1206,9 @@ BEGIN
         receiver_address,
         quantity,
         transaction_hash,
-				is_deposit,
+        is_deposit,
+        is_back,
+        is_withdraw,
         happened_at
     ) VALUES (
      a_user_id,
@@ -1155,7 +1218,9 @@ BEGIN
      a_receiver_address,
      a_quantity,
      a_transaction_hash,
-		 FALSE,
+     FALSE,
+     FALSE,
+     TRUE,
      EXTRACT(EPOCH FROM NOW())::bigint
     ) RETURNING pkey_id;
 END
@@ -1179,7 +1244,7 @@ END
 BEGIN
     RETURN QUERY SELECT a.pkey_id, a.fkey_user_id, a.blockchain, a.quantity, a.user_address
 		FROM tbl.user_deposit_withdraw_ledger AS a
-		WHERE fkey_user_id = a_user_id AND is_deposit = FALSE
+		WHERE fkey_user_id = a_user_id AND is_withdraw = FALSE
 		ORDER BY a.pkey_id DESC
 		LIMIT a_limit
 		OFFSET a_offset;
@@ -1350,6 +1415,8 @@ END
                 Field::new("offset", Type::BigInt),
                 Field::new("user_id", Type::optional(Type::BigInt)),
                 Field::new("is_deposit", Type::optional(Type::Boolean)),
+                Field::new("is_back", Type::optional(Type::Boolean)),
+                Field::new("is_withdraw", Type::optional(Type::Boolean)),
                 Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
             ],
             vec![
@@ -1379,6 +1446,8 @@ BEGIN
             a.happened_at
 		FROM tbl.user_deposit_withdraw_ledger AS a
 		WHERE  (a.is_deposit = a_is_deposit OR a_is_deposit IS NULL)
+		        AND (a.is_back = a_is_back OR a_is_back IS NULL)
+		        AND (a.is_withdraw = a_is_withdraw OR a_is_withdraw IS NULL)
                 AND (a.fkey_user_id = a_user_id OR a_user_id IS NULL)
                 AND (a.blockchain = a_blockchain OR a_blockchain IS NULL)
 		ORDER BY a.pkey_id DESC
@@ -1606,6 +1675,7 @@ END
                 ),
             ],
             vec![
+                Field::new("deposit_withdraw_balance_id", Type::BigInt),
                 Field::new("user_id", Type::BigInt),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("token_id", Type::BigInt),
@@ -1624,6 +1694,7 @@ BEGIN
     END IF;
    
     RETURN QUERY SELECT
+        a.pkey_id,
         a.fkey_user_id,
         etc.blockchain,
         etc.pkey_id,
@@ -1640,6 +1711,27 @@ BEGIN
     ORDER BY a.pkey_id
     LIMIT a_limit
     OFFSET a_offset;
+END
+"#,
+        ),
+        ProceduralFunction::new(
+            "fun_user_update_user_deposit_withdraw_balance",
+            vec![
+                Field::new("deposit_withdraw_balance_id", Type::BigInt),
+                Field::new("old_balance", Type::BlockchainDecimal),
+                Field::new("new_balance", Type::BlockchainDecimal),
+            ],
+            vec![Field::new("updated", Type::Boolean)],
+            r#"
+DECLARE
+    _old_balance bigint;
+BEGIN
+    SELECT balance INTO _old_balance FROM tbl.user_deposit_withdraw_balance WHERE pkey_id = a_deposit_withdraw_balance_id;
+    IF _old_balance <> a_old_balance THEN
+        RETURN QUERY SELECT FALSE;
+    END IF;
+    UPDATE tbl.user_deposit_withdraw_balance SET balance = a_new_balance WHERE pkey_id = a_deposit_withdraw_balance_id;
+    RETURN QUERY SELECT TRUE;
 END
 "#,
         ),

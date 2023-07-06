@@ -498,6 +498,8 @@ BEGIN
         quantity,
         transaction_hash,
         is_deposit,
+        is_back,
+        is_withdraw,
         happened_at
     ) VALUES (
      a_user_id,
@@ -510,6 +512,8 @@ BEGIN
      a_quantity,
      a_transaction_hash,
      TRUE,
+     FALSE,
+     FALSE,
      EXTRACT(EPOCH FROM NOW())::bigint
     );
     RETURN QUERY SELECT TRUE;

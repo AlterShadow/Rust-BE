@@ -1675,7 +1675,60 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_request_refund(a_user_id bigint, a_blockchain enum_block_chain, a_user_address varchar, a_contract_address varchar, a_receiver_address varchar, a_quantity varchar, a_transaction_hash varchar)
+CREATE OR REPLACE FUNCTION api.fun_user_reduce_quantity_from_user_deposit_withdraw_ledger(a_user_id bigint, a_token_id bigint, a_blockchain enum_block_chain, a_user_address varchar, a_contract_address varchar, a_contract_address_id bigint, a_receiver_address varchar, a_quantity varchar, a_transaction_hash varchar)
+RETURNS table (
+    "request_refund_id" bigint
+)
+LANGUAGE plpgsql
+AS $$
+    
+DECLARE
+    existing_id bigint;
+BEGIN
+    SELECT pkey_id INTO existing_id
+    FROM tbl.user_deposit_withdraw_ledger
+    WHERE transaction_hash = a_transaction_hash AND
+    blockchain = a_blockchain
+    LIMIT 1;
+
+    IF existing_id IS NOT NULL THEN
+            RETURN QUERY SELECT existing_id;
+    END IF;
+
+    RETURN QUERY INSERT INTO tbl.user_deposit_withdraw_ledger (
+        fkey_user_id, 
+        fkey_token_id, 
+        blockchain,
+        user_address,
+        escrow_contract_address,
+        fkey_escrow_contract_address_id,
+        receiver_address,
+        quantity,
+        transaction_hash,
+        is_deposit,
+        is_back,
+        is_withdraw,
+        happened_at
+        ) VALUES (a_user_id,
+                  a_token_id,
+                  a_blockchain,
+                  a_user_address,
+                  a_contract_address,
+                  a_contract_address_id,
+                  a_receiver_address,
+                  a_quantity,
+                  a_transaction_hash,
+                  FALSE,
+                  FALSE,
+                  TRUE,
+                  EXTRACT(EPOCH FROM NOW())::bigint
+        ) RETURNING pkey_id;
+END
+
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_request_refund(a_user_id bigint, a_token_id bigint, a_blockchain enum_block_chain, a_user_address varchar, a_contract_address varchar, a_contract_address_id bigint, a_receiver_address varchar, a_quantity varchar, a_transaction_hash varchar)
 RETURNS table (
     "request_refund_id" bigint
 )
@@ -1703,7 +1756,9 @@ BEGIN
         receiver_address,
         quantity,
         transaction_hash,
-				is_deposit,
+        is_deposit,
+        is_back,
+        is_withdraw,
         happened_at
     ) VALUES (
      a_user_id,
@@ -1713,7 +1768,9 @@ BEGIN
      a_receiver_address,
      a_quantity,
      a_transaction_hash,
-		 FALSE,
+     FALSE,
+     FALSE,
+     TRUE,
      EXTRACT(EPOCH FROM NOW())::bigint
     ) RETURNING pkey_id;
 END
@@ -1735,7 +1792,7 @@ AS $$
 BEGIN
     RETURN QUERY SELECT a.pkey_id, a.fkey_user_id, a.blockchain, a.quantity, a.user_address
 		FROM tbl.user_deposit_withdraw_ledger AS a
-		WHERE fkey_user_id = a_user_id AND is_deposit = FALSE
+		WHERE fkey_user_id = a_user_id AND is_withdraw = FALSE
 		ORDER BY a.pkey_id DESC
 		LIMIT a_limit
 		OFFSET a_offset;
@@ -1891,7 +1948,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_list_deposit_withdraw_ledger(a_limit bigint, a_offset bigint, a_user_id bigint DEFAULT NULL, a_is_deposit boolean DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_user_list_deposit_withdraw_ledger(a_limit bigint, a_offset bigint, a_user_id bigint DEFAULT NULL, a_is_deposit boolean DEFAULT NULL, a_is_back boolean DEFAULT NULL, a_is_withdraw boolean DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL)
 RETURNS table (
     "total" bigint,
     "transaction_id" bigint,
@@ -1921,6 +1978,8 @@ BEGIN
             a.happened_at
 		FROM tbl.user_deposit_withdraw_ledger AS a
 		WHERE  (a.is_deposit = a_is_deposit OR a_is_deposit IS NULL)
+		        AND (a.is_back = a_is_back OR a_is_back IS NULL)
+		        AND (a.is_withdraw = a_is_withdraw OR a_is_withdraw IS NULL)
                 AND (a.fkey_user_id = a_user_id OR a_user_id IS NULL)
                 AND (a.blockchain = a_blockchain OR a_blockchain IS NULL)
 		ORDER BY a.pkey_id DESC
@@ -2138,6 +2197,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION api.fun_user_list_user_deposit_withdraw_balance(a_limit bigint, a_offset bigint, a_user_id bigint, a_blockchain enum_block_chain DEFAULT NULL, a_token_address varchar DEFAULT NULL, a_token_id bigint DEFAULT NULL, a_escrow_contract_address varchar DEFAULT NULL)
 RETURNS table (
+    "deposit_withdraw_balance_id" bigint,
     "user_id" bigint,
     "blockchain" enum_block_chain,
     "token_id" bigint,
@@ -2158,6 +2218,7 @@ BEGIN
     END IF;
    
     RETURN QUERY SELECT
+        a.pkey_id,
         a.fkey_user_id,
         etc.blockchain,
         etc.pkey_id,
@@ -2174,6 +2235,27 @@ BEGIN
     ORDER BY a.pkey_id
     LIMIT a_limit
     OFFSET a_offset;
+END
+
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_update_user_deposit_withdraw_balance(a_deposit_withdraw_balance_id bigint, a_old_balance varchar, a_new_balance varchar)
+RETURNS table (
+    "updated" boolean
+)
+LANGUAGE plpgsql
+AS $$
+    
+DECLARE
+    _old_balance bigint;
+BEGIN
+    SELECT balance INTO _old_balance FROM tbl.user_deposit_withdraw_balance WHERE pkey_id = a_deposit_withdraw_balance_id;
+    IF _old_balance <> a_old_balance THEN
+        RETURN QUERY SELECT FALSE;
+    END IF;
+    UPDATE tbl.user_deposit_withdraw_balance SET balance = a_new_balance WHERE pkey_id = a_deposit_withdraw_balance_id;
+    RETURN QUERY SELECT TRUE;
 END
 
 $$;
@@ -2936,6 +3018,8 @@ BEGIN
         quantity,
         transaction_hash,
         is_deposit,
+        is_back,
+        is_withdraw,
         happened_at
     ) VALUES (
      a_user_id,
@@ -2948,6 +3032,8 @@ BEGIN
      a_quantity,
      a_transaction_hash,
      TRUE,
+     FALSE,
+     FALSE,
      EXTRACT(EPOCH FROM NOW())::bigint
     );
     RETURN QUERY SELECT TRUE;

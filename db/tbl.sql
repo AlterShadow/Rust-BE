@@ -1,5 +1,5 @@
 -- Created by Vertabelo (http://vertabelo.com)
--- Last modification date: 2023-07-05 16:16:35.25
+-- Last modification date: 2023-07-06 16:51:10.262
 
 CREATE SCHEMA IF NOT EXISTS tbl;;
 
@@ -387,6 +387,8 @@ CREATE TABLE tbl.user_deposit_withdraw_ledger (
     quantity varchar(64)  NOT NULL,
     transaction_hash varchar(80)  NOT NULL,
     is_deposit boolean  NOT NULL,
+    is_back boolean  NOT NULL,
+    is_withdraw boolean  NOT NULL,
     happened_at bigint  NOT NULL,
     CONSTRAINT user_deposit_withdraw_ledger_ak_1 UNIQUE (transaction_hash) NOT DEFERRABLE  INITIALLY IMMEDIATE,
     CONSTRAINT user_deposit_withdraw_ledger_pk PRIMARY KEY (pkey_id)

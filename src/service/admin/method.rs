@@ -542,6 +542,8 @@ impl RequestHandler for MethodAdminSubscribeDepositLedger {
                         offset: 0,
                         blockchain: req.blockchain,
                         is_deposit: Some(true),
+                        is_back: None,
+                        is_withdraw: None,
                     })
                     .await?;
                 let manager = manager.clone();

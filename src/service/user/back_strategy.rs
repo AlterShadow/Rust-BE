@@ -21,6 +21,7 @@ use std::collections::HashMap;
 use tracing::{debug, info, warn};
 use web3::signing::Key;
 use web3::types::Address;
+use web3::Transport;
 
 pub async fn deploy_wallet_contract(
     conn: &EthereumRpcConnection,
@@ -463,7 +464,7 @@ pub async fn user_back_strategy(
     strategy_wallet: Option<Address>,
     logger: DynLogger,
 ) -> Result<()> {
-    logger.log("checking back amount");
+    logger.log(format!("checking back amount {:?}", back_usdc_amount));
     if back_usdc_amount == U256::zero() {
         bail!("back zero amount");
     }
@@ -483,13 +484,33 @@ pub async fn user_back_strategy(
         })
         .await?;
     debug!("Fetched {} rows of user balance", user_balance.len());
-
-    let user_balance = user_balance.into_result().context("insufficient balance")?;
-    let user_balance: U256 = user_balance.balance.into();
+    let user_balance_ret = user_balance.into_result().context("insufficient balance")?;
+    let user_balance: U256 = user_balance_ret.balance.into();
     if user_balance < back_usdc_amount {
         bail!("insufficient balance");
     }
-
+    let new_user_balance = user_balance - back_usdc_amount;
+    let mut success = false;
+    for _ in 0..3 {
+        let ret = db
+            .execute(FunUserUpdateUserDepositWithdrawBalanceReq {
+                deposit_withdraw_balance_id: user_balance_ret.deposit_withdraw_balance_id,
+                old_balance: user_balance.into(),
+                new_balance: new_user_balance.into(),
+            })
+            .await?
+            .into_result()
+            .context("could not update user balance")?;
+        if ret.updated {
+            success = true;
+            break;
+        } else {
+            continue;
+        }
+    }
+    if !success {
+        bail!("could not update user balance, error in database");
+    }
     /* fetch user address to receive shares */
     // TODO: fetch the correct address where user desires to receive shares on this chain
     // since users can have multiple addresses, this information is critical
@@ -1229,11 +1250,11 @@ mod tests {
                 description: "TEST".to_string(),
                 strategy_thesis_url: "TEST".to_string(),
                 minimum_backing_amount_usd: 1.0,
-                strategy_fee: 1.0,
                 expert_fee: 1.0,
                 agreed_tos: true,
                 blockchain: EnumBlockChain::BscTestnet,
                 wallet_address: Address::zero().into(),
+                swap_fee: 0.0,
             })
             .await?
             .into_result()
