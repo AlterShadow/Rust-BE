@@ -524,7 +524,6 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 Field::new("description", Type::String),
                 Field::new("strategy_thesis_url", Type::String),
                 Field::new("minimum_backing_amount_usd", Type::optional(Type::Numeric)),
-                Field::new("swap_fee", Type::Numeric),
                 Field::new("expert_fee", Type::Numeric),
                 Field::new("agreed_tos", Type::Boolean),
                 Field::new("wallet_address", Type::BlockchainAddress),

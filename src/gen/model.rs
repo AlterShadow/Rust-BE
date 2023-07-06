@@ -1253,7 +1253,6 @@ pub struct ExpertCreateStrategyRequest {
     pub strategy_thesis_url: String,
     #[serde(default)]
     pub minimum_backing_amount_usd: Option<f64>,
-    pub swap_fee: f64,
     pub expert_fee: f64,
     pub agreed_tos: bool,
     #[serde(with = "WithBlockchainAddress")]
@@ -5763,10 +5762,6 @@ impl WsRequest for ExpertCreateStrategyRequest {
       "ty": {
         "Optional": "Numeric"
       }
-    },
-    {
-      "name": "swap_fee",
-      "ty": "Numeric"
     },
     {
       "name": "expert_fee",

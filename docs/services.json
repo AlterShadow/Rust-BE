@@ -3049,10 +3049,6 @@
               }
             },
             {
-              "name": "swap_fee",
-              "ty": "Numeric"
-            },
-            {
               "name": "expert_fee",
               "ty": "Numeric"
             },
