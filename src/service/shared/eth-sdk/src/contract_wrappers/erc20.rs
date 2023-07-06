@@ -6,6 +6,7 @@ use crate::{
 use eyre::*;
 use gen::model::EnumBlockChain;
 use lib::log::DynLogger;
+use lib::types::amount_to_display;
 use std::fmt::{Debug, Formatter};
 use std::time::Duration;
 use web3::api::Web3;
@@ -208,8 +209,10 @@ impl Erc20Token {
         logger: DynLogger,
     ) -> Result<H256> {
         logger.log(format!(
-            "erc20 approve: {:?} {:?} {:?}",
-            self.address, spender, amount
+            "erc20 approve: {:?} {:?} {}",
+            self.address,
+            spender,
+            amount_to_display(amount)
         ));
         logger.log("erc20 approve: estimate gas");
         let estimated_gas = self

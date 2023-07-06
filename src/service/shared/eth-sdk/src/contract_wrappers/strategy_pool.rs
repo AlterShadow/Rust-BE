@@ -7,6 +7,7 @@ use crate::{
 use eyre::*;
 use gen::model::EnumBlockChain;
 use lib::log::DynLogger;
+use lib::types::amount_to_display;
 use std::collections::HashMap;
 use std::time::Duration;
 use tracing::info;
@@ -189,7 +190,7 @@ impl<T: Transport> StrategyPoolContract<T> {
         logger.log(
             format!(
                 "Depositing amounts {:?} of assets {:?} to mint {:?} pool tokens to receiver {:?} to strategy pool contract {:?} by {:?}",
-                amounts.clone(),
+                amounts.iter().cloned().map(amount_to_display).collect::<Vec<_>>(),
                 assets.clone(),
                 pool_tokens,
                 receiver,
@@ -297,7 +298,7 @@ impl<T: Transport> StrategyPoolContract<T> {
 			);
         logger.log(
 				format!("Withdrawing {:?} amounts of {:?} assets to receiver {:?} from strategy pool contract {:?} by {:?}",
-						amounts,
+						amounts.iter().cloned().map(amount_to_display).collect::<Vec<_>>(),
 						assets,
 						receiver,
 						self.address(),

@@ -47,7 +47,7 @@ pub async fn deploy_contract<T: Transport>(
 
     /* append encoded parameters to bytecode bytes */
     let code_with_constructor = [bin_bytes, constructor_params].concat();
-    logger.log(&format!("estimating gas for deploying {}", contract_name));
+    logger.log(format!("estimating gas for deploying {}", contract_name));
     /* estimate gas */
     let estimated_gas = w3
         .eth()
@@ -70,7 +70,7 @@ pub async fn deploy_contract<T: Transport>(
 
     /* estimate gas price */
     let estimated_gas_price = w3.eth().gas_price().await?;
-    logger.log(&format!(
+    logger.log(format!(
         "estimated gas: {}, estimated gas price: {}",
         estimated_gas, estimated_gas_price
     ));

@@ -9,6 +9,7 @@ use crate::{
 use eyre::*;
 use gen::model::EnumBlockChain;
 use lib::log::DynLogger;
+use lib::types::amount_to_display;
 use tracing::info;
 use web3::api::Eth;
 use web3::contract::{Contract, Options};
@@ -86,9 +87,9 @@ impl<T: Transport> EscrowContract<T> {
             self.address(),
             signer.address(),
         );
-        logger.log(&format!(
-            "Transferring {:?} amount of token {:?} to recipient {:?} from escrow contract {:?} by {:?}",
-            amount,
+        logger.log(format!(
+            "Transferring {} amount of token {:?} to recipient {:?} from escrow contract {:?} by {:?}",
+            amount_to_display(amount),
             token_address,
             recipient,
             self.address(),
@@ -114,9 +115,9 @@ impl<T: Transport> EscrowContract<T> {
             self.address(),
             signer.address(),
         );
-        logger.log(&format!(
-            "Transferring {:?} amount of token {:?} to recipient {:?} from escrow contract {:?} by {:?}",
-            amount,
+        logger.log(format!(
+            "Transferring {} amount of token {:?} to recipient {:?} from escrow contract {:?} by {:?}",
+            amount_to_display(amount),
             token_address,
             recipient,
             self.address(),

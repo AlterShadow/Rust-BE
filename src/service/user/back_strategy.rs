@@ -16,7 +16,7 @@ use gen::model::{EnumBlockChain, EnumDex};
 use lib::database::DbClient;
 use lib::log::DynLogger;
 use lib::toolbox::RequestContext;
-use lib::types::U256;
+use lib::types::{amount_to_display, U256};
 use std::collections::HashMap;
 use tracing::{debug, info, warn};
 use web3::signing::Key;
@@ -37,7 +37,7 @@ pub async fn deploy_wallet_contract(
         StrategyWalletContract::deploy(conn.clone(), key, backer, admin, logger.clone()).await?;
 
     info!("Deploy wallet contract success");
-    logger.log(&format!("Deploying wallet contract {}", wallet.address()));
+    logger.log(&format!("Deploying wallet contract {:?}", wallet.address()));
 
     Ok(wallet)
 }
@@ -277,7 +277,12 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
         fees < back_usdc_amount,
         "fees are too high, back amount is too low"
     );
-    let back_usdc_amount_minus_fees = back_usdc_amount - fees;
+    let back_token_amount_minus_fees = back_usdc_amount - fees;
+    logger.log(format!(
+        "fees: {}, after fee: {}",
+        amount_to_display(fees),
+        amount_to_display(back_token_amount_minus_fees)
+    ));
 
     let mut strategy_pool_active: bool = false;
     let mut sp_assets_and_amounts: HashMap<Address, U256> = HashMap::new();
@@ -303,7 +308,7 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
     }
     /* calculate how much of back amount to spend on each strategy pool asset */
     let escrow_allocations_for_tokens = calculate_escrow_allocation_for_strategy_tokens(
-        back_usdc_amount_minus_fees,
+        back_token_amount_minus_fees,
         token_address,
     )?;
     let strategy_pool_assets_bought_for_this_backer = trade_escrow_for_strategy_tokens(
@@ -339,7 +344,7 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
             logger.log("calculating strategy tokens with easy approach");
             let strategy_pool_token_to_mint = calculate_sp_tokens_to_mint_easy_approach(
                 token,
-                back_usdc_amount_minus_fees,
+                back_token_amount_minus_fees,
                 escrow_token_contract.decimals().await?,
             )
             .await?;
@@ -432,14 +437,14 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
                 total_strategy_tokens,
                 sp_assets_and_amounts.clone(),
                 strategy_pool_asset_last_prices_in_base_token,
-                back_usdc_amount_minus_fees,
+                back_token_amount_minus_fees,
                 escrow_token_contract.address,
             )?
         }
     };
     Ok(CalculateUserBackStrategyCalculateAmountToMintResult {
         fees,
-        back_usdc_amount_minus_fees,
+        back_usdc_amount_minus_fees: back_token_amount_minus_fees,
         strategy_token_to_mint,
         strategy_pool_active,
         sp_assets_and_amounts,
@@ -464,7 +469,10 @@ pub async fn user_back_strategy(
     strategy_wallet: Option<Address>,
     logger: DynLogger,
 ) -> Result<()> {
-    logger.log(format!("checking back amount {:?}", back_token_amount));
+    logger.log(format!(
+        "checking back amount {}",
+        amount_to_display(back_token_amount)
+    ));
     if back_token_amount == U256::zero() {
         bail!("back zero amount");
     }
@@ -700,20 +708,21 @@ pub async fn user_back_strategy(
     .await?;
 
     /* approve tokens and amounts to SP contract */
-    for (token, amount) in trades.iter() {
+    for (&token, &amount) in trades.iter() {
         logger.log(format!(
             "approving {} token {:?} to strategy pool contract",
-            amount, token
+            amount_to_display(amount),
+            token
         ));
         approve_and_ensure_success(
-            Erc20Token::new(conn.clone(), token.clone())?,
+            Erc20Token::new(conn.clone(), token)?,
             &conn,
             CONFIRMATIONS,
             MAX_RETRIES,
             POLL_INTERVAL,
             master_key.clone(),
             sp_contract.address(),
-            amount.clone(),
+            amount,
             logger.clone(),
         )
         .await?;
@@ -927,7 +936,8 @@ pub async fn user_back_strategy(
     }
     logger.log(format!(
         "User backed strategy {:?} with {} USDC",
-        strategy_id, back_token_amount
+        strategy_id,
+        amount_to_display(back_token_amount)
     ));
     Ok(())
 }

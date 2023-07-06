@@ -127,17 +127,17 @@ impl<T: Transport> ContractDeployer<T> {
                             max_fee_per_gas: tx.max_fee_per_gas,
                             max_priority_fee_per_gas: tx.max_priority_fee_per_gas,
                         };
-                        logger.log(&format!("Signing transaction: {:?}", tx));
+                        logger.log(format!("Signing transaction"));
                         let signed_tx = Accounts::new(transport)
                             .sign_transaction(tx, signer)
                             .await?;
-                        logger.log(&format!(
+                        logger.log(format!(
                             "Sending transaction: {:?}",
                             signed_tx.transaction_hash
                         ));
                         // TODO: buggy here
                         let tx_hash = eth.send_raw_transaction(signed_tx.raw_transaction).await?;
-                        logger.log(&format!(
+                        logger.log(format!(
                             "Transaction sent, waiting for confirmations: {:?}",
                             tx_hash
                         ));
@@ -212,11 +212,11 @@ impl<T: Transport> ContractDeployer<T> {
             max_priority_fee_per_gas: options.max_priority_fee_per_gas,
         };
         for _ in 0..self.max_retries {
-            logger.log(&format!("Deploying contract with nonce {:?}", tx.nonce));
+            logger.log(format!("Deploying contract with nonce {:?}", tx.nonce));
             let receipt = send(tx.clone()).await;
             match receipt {
                 Ok(receipt) => {
-                    logger.log(&format!("transaction hash {}", receipt.transaction_hash));
+                    logger.log(format!("transaction hash {}", receipt.transaction_hash));
                     return match receipt.status {
                         Some(status) if status == 0.into() => {
                             Err(Error::ContractDeploymentFailure(receipt.transaction_hash).into())

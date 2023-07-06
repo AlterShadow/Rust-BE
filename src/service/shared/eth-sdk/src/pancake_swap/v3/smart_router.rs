@@ -5,6 +5,7 @@ use crate::PancakePairPathSet;
 use crate::{EitherTransport, EthereumRpcConnection};
 use eyre::*;
 use lib::log::DynLogger;
+use lib::types::amount_to_display;
 use std::str::FromStr;
 use std::time::Duration;
 use web3::contract::{Contract, Options};
@@ -734,7 +735,8 @@ pub async fn copy_trade_and_ensure_success(
 ) -> Result<TransactionReceipt> {
     logger.log(&format!(
         "copy_trade_and_ensure_success: amount_in: {}, amount_out_minimum: {}",
-        amount_in, amount_out_minimum
+        amount_to_display(amount_in),
+        amount_to_display(amount_out_minimum)
     ));
     /* publish transaction */
     let tx_hash = contract
