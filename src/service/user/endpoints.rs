@@ -1070,5 +1070,12 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 ),
             ],
         ),
+        EndpointSchema::new(
+            "UserGetSystemConfig",
+            20570,
+            vec![],
+            vec![Field::new("platform_fee", Type::Numeric)],
+        )
+        .with_description("User get system config"),
     ]
 }

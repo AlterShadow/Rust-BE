@@ -4527,6 +4527,20 @@
           "stream_response": null,
           "description": "",
           "json_schema": null
+        },
+        {
+          "name": "UserGetSystemConfig",
+          "code": 20570,
+          "parameters": [],
+          "returns": [
+            {
+              "name": "platform_fee",
+              "ty": "Numeric"
+            }
+          ],
+          "stream_response": null,
+          "description": "User get system config",
+          "json_schema": null
         }
       ]
     },

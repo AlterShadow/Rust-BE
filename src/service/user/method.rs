@@ -3076,3 +3076,28 @@ impl RequestHandler for MethodUserListUserBackStrategyLog {
         .boxed()
     }
 }
+
+pub struct MethodUserGetSystemConfig;
+impl RequestHandler for MethodUserGetSystemConfig {
+    type Request = UserGetSystemConfigRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        _req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db = toolbox.get_db();
+        async move {
+            ensure_user_role(ctx, EnumRole::User)?;
+            let config = db
+                .execute(FunAdminGetSystemConfigReq { config_id: 0 })
+                .await?
+                .into_result();
+            Ok(UserGetSystemConfigResponse {
+                platform_fee: config.map(|x| x.platform_fee).flatten().unwrap_or_default(),
+            })
+        }
+        .boxed()
+    }
+}

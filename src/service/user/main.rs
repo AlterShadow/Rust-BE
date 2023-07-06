@@ -139,6 +139,7 @@ async fn main() -> Result<()> {
     server.add_handler(MethodUserGetEscrowAddressForStrategy {
         addresses: config.escrow_addresses,
     });
+    server.add_handler(MethodUserGetSystemConfig);
 
     server.add_handler(MethodAdminListUsers);
     server.add_handler(MethodAdminSetUserRole);

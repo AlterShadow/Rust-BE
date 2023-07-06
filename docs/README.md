@@ -74,6 +74,7 @@ ID: 2
 |20540|UserGetBackStrategyReviewDetail|strategy_id, token_id, quantity|strategy_fee, total_amount_to_back, total_amount_to_back_after_fee, user_strategy_wallets, estimated_amount_of_strategy_tokens, estimated_backed_token_ratios||
 |20550|UserListUserBackStrategyAttempt|limit, offset, strategy_id, token_id|total, back_attempts||
 |20560|UserListUserBackStrategyLog|attempt_id, limit, offset|back_logs_total, back_logs||
+|20570|UserGetSystemConfig||platform_fee|User get system config|
 
 # admin Server
 ID: 3

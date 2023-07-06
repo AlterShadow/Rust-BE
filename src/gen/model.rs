@@ -416,6 +416,9 @@ pub enum EnumEndpoint {
     #[postgres(name = "UserListUserBackStrategyLog")]
     UserListUserBackStrategyLog = 20560,
     ///
+    #[postgres(name = "UserGetSystemConfig")]
+    UserGetSystemConfig = 20570,
+    ///
     #[postgres(name = "AdminListUsers")]
     AdminListUsers = 30010,
     ///
@@ -1865,6 +1868,14 @@ pub struct UserGetStrategyStatisticsResponse {
     pub net_value: Vec<NetValuePoint>,
     pub follow_ledger: Vec<FollowLedgerPoint>,
     pub back_ledger: Vec<BackLedgerPoint>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserGetSystemConfigRequest {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserGetSystemConfigResponse {
+    pub platform_fee: f64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -7478,6 +7489,28 @@ impl WsRequest for UserListUserBackStrategyLogRequest {
 }
 impl WsResponse for UserListUserBackStrategyLogResponse {
     type Request = UserListUserBackStrategyLogRequest;
+}
+
+impl WsRequest for UserGetSystemConfigRequest {
+    type Response = UserGetSystemConfigResponse;
+    const METHOD_ID: u32 = 20570;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserGetSystemConfig",
+  "code": 20570,
+  "parameters": [],
+  "returns": [
+    {
+      "name": "platform_fee",
+      "ty": "Numeric"
+    }
+  ],
+  "stream_response": null,
+  "description": "User get system config",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for UserGetSystemConfigResponse {
+    type Request = UserGetSystemConfigRequest;
 }
 
 impl WsRequest for AdminListUsersRequest {
