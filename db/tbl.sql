@@ -281,7 +281,7 @@ CREATE TABLE tbl.strategy_whitelisted_token (
 CREATE TABLE tbl.system_config (
     pkey_id bigint  NOT NULL,
     platform_fee double precision  NULL,
-    config_placeholder_2 int  NULL,
+    config_placeholder_2 bigint  NULL,
     CONSTRAINT system_config_pk PRIMARY KEY (pkey_id)
 );
 

@@ -66,6 +66,7 @@ where
     for _ in 0..max_retry {
         if let Some(receipt) = eth.transaction_receipt(hash).await? {
             receipt_at_beginning = Some(receipt);
+            break;
         }
         tokio::time::sleep(poll_interval).await;
     }
