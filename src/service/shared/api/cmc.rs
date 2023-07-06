@@ -195,6 +195,26 @@ impl CoinMarketCap {
         }
         Ok(token_prices)
     }
+
+    pub async fn get_quote_price_by_symbol(
+        &self,
+        base_symbol: String,
+        quote_symbol: String,
+    ) -> Result<f64> {
+        let mut url = self.price_url()?;
+        self.append_url_params(&mut url, "symbol", &[base_symbol.clone()]);
+        self.append_url_params(&mut url, "convert", &[quote_symbol.clone()]);
+        let payload = &self
+            .parse_response(self.client.get(url).send().await?)
+            .await?["data"];
+        let base = &payload[base_symbol][0];
+        let quote = &base["quote"][quote_symbol];
+        let price = quote["price"]
+            .as_f64()
+            .ok_or_else(|| eyre!("price not found"))?;
+        Ok(price)
+    }
+
     pub async fn get_top_25_coins(&self) -> Result<MapCoinResponse> {
         let mut url = self.map_url()?;
         self.append_url_params(&mut url, "limit", &vec!["25".to_string()]);
@@ -275,6 +295,16 @@ mod tests {
         let cmc = CoinMarketCap::new_debug_key().unwrap();
         let infos = cmc.get_top_25_coins().await?;
         info!("{:?}", infos);
+        Ok(())
+    }
+    #[tokio::test]
+    async fn test_get_quote_price_by_symbol() -> Result<()> {
+        let cmc = CoinMarketCap::new_debug_key().unwrap();
+        let price = cmc
+            .get_quote_price_by_symbol("ETH".to_string(), "USDC".to_string())
+            .await?;
+        println!("PRICE: {:?}", price);
+        assert!(price > 0.0);
         Ok(())
     }
 }
