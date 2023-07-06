@@ -22,8 +22,8 @@ pub fn eth_public_exponent_to_address(public_exponent: &crypto::PublicExponent) 
     Ok(Address::from_slice(&hash[12..]))
 }
 
-pub fn wei_to_eth(wei_val: web3::types::U256) -> f64 {
-    let u = U256::from_str_radix("1000000000000000000", 10).unwrap();
+pub fn wei_to_eth(wei_val: U256) -> f64 {
+    let u = U256::exp10(18);
     let n = wei_val / u;
     let f = wei_val % u;
     (n.as_u128() as f64) + f.as_u128() as f64 / 1e18

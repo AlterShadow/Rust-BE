@@ -452,7 +452,7 @@
               }
             },
             {
-              "name": "wallet_address",
+              "name": "strategy_pool_address",
               "ty": {
                 "Optional": "BlockchainAddress"
               }
@@ -3049,7 +3049,7 @@
               }
             },
             {
-              "name": "strategy_fee",
+              "name": "swap_fee",
               "ty": "Numeric"
             },
             {

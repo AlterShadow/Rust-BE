@@ -132,7 +132,7 @@ impl RequestHandler for MethodUserListStrategies {
                     expert_name: req.expert_name,
                     description: req.description,
                     blockchain: req.blockchain,
-                    wallet_address: req.wallet_address.map(|x| x.into()),
+                    strategy_pool_address: req.strategy_pool_address.map(|x| x.into()),
                 })
                 .await?;
 
@@ -177,7 +177,8 @@ impl RequestHandler for MethodUserListTopPerformingStrategies {
                     expert_name: None,
                     description: None,
                     blockchain: None,
-                    wallet_address: None,
+
+                    strategy_pool_address: None,
                 })
                 .await?;
             Ok(UserListTopPerformingStrategiesResponse {
@@ -287,7 +288,8 @@ impl RequestHandler for MethodUserGetStrategy {
                     expert_name: None,
                     description: None,
                     blockchain: None,
-                    wallet_address: None,
+
+                    strategy_pool_address: None,
                 })
                 .await?
                 .into_result()
@@ -424,7 +426,8 @@ impl RequestHandler for MethodUserGetStrategiesStatistics {
                     expert_name: None,
                     description: None,
                     blockchain: None,
-                    wallet_address: None,
+
+                    strategy_pool_address: None,
                 })
                 .await?
                 .map_async(|x| convert_strategy_db_to_api_net_value(x, &cmc, &db))
@@ -1347,7 +1350,8 @@ impl RequestHandler for MethodUserGetExpertProfile {
                     expert_name: None,
                     description: None,
                     blockchain: None,
-                    wallet_address: None,
+
+                    strategy_pool_address: None,
                 })
                 .await?;
             Ok(UserGetExpertProfileResponse {
@@ -1554,7 +1558,8 @@ impl RequestHandler for MethodUserListWhitelistedWallets {
                         blockchain: None,
                         limit: 1,
                         offset: 0,
-                        wallet_address: None,
+
+                        strategy_pool_address: None,
                     })
                     .await?
                     .into_result()
@@ -1668,27 +1673,12 @@ impl RequestHandler for MethodExpertCreateStrategy {
         let cmc_client = self.cmc_client.clone();
         async move {
             ensure_user_role(ctx, EnumRole::Expert)?;
-            ensure!(
-                0.0 <= req.strategy_fee && req.strategy_fee <= 1.0,
-                CustomError::new(
-                    EnumErrorCode::InvalidArgument,
-                    "Strategy fee must be less than 1.0 and greater than 0.0"
-                )
-            );
+
             ensure!(
                 0.0 <= req.expert_fee && req.expert_fee <= 1.0,
                 CustomError::new(
                     EnumErrorCode::InvalidArgument,
                     "Expert fee must be less than 1.0 and greater than 0.0"
-                )
-            );
-
-            let fee_sum = req.strategy_fee + req.expert_fee;
-            ensure!(
-                fee_sum <= 1.0,
-                CustomError::new(
-                    EnumErrorCode::InvalidArgument,
-                    "Sum of strategy fee and expert fee must be less than 1.0"
                 )
             );
 
@@ -1699,7 +1689,7 @@ impl RequestHandler for MethodExpertCreateStrategy {
                     description: req.description,
                     strategy_thesis_url: req.strategy_thesis_url,
                     minimum_backing_amount_usd: req.minimum_backing_amount_usd.unwrap_or_default(),
-                    strategy_fee: req.strategy_fee,
+                    swap_fee: 0.0,
                     expert_fee: req.expert_fee,
                     agreed_tos: req.agreed_tos,
                     wallet_address: req.wallet_address.into(),
@@ -1845,7 +1835,7 @@ impl RequestHandler for MethodExpertUpdateStrategy {
                     user_id: ctx.user_id,
                     limit: 1,
                     offset: 0,
-                    wallet_address: None,
+                    strategy_pool_address: None,
                 })
                 .await?
                 .into_result()
@@ -1906,7 +1896,8 @@ impl RequestHandler for MethodExpertAddStrategyWatchingWallet {
                     user_id: ctx.user_id,
                     limit: 1,
                     offset: 0,
-                    wallet_address: None,
+
+                    strategy_pool_address: None,
                 })
                 .await?
                 .into_result()
@@ -2061,7 +2052,8 @@ impl RequestHandler for MethodExpertAddStrategyInitialTokenRatio {
                     user_id: ctx.user_id,
                     limit: 1,
                     offset: 0,
-                    wallet_address: None,
+
+                    strategy_pool_address: None,
                 })
                 .await?
                 .into_result()
@@ -2630,7 +2622,8 @@ impl RequestHandler for MethodUserAddStrategyAuditRule {
                     user_id: ctx.user_id,
                     limit: 1,
                     offset: 0,
-                    wallet_address: None,
+
+                    strategy_pool_address: None,
                 })
                 .await?
                 .into_result()
@@ -2678,7 +2671,8 @@ impl RequestHandler for MethodUserRemoveStrategyAuditRule {
                     user_id: ctx.user_id,
                     limit: 1,
                     offset: 0,
-                    wallet_address: None,
+
+                    strategy_pool_address: None,
                 })
                 .await?
                 .into_result()
@@ -2729,7 +2723,8 @@ impl RequestHandler for MethodUserGetEscrowAddressForStrategy {
                     expert_name: None,
                     description: None,
                     blockchain: None,
-                    wallet_address: None,
+
+                    strategy_pool_address: None,
                 })
                 .await?
                 .into_result()

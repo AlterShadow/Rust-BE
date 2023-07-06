@@ -18,7 +18,7 @@ ID: 2
 |20040|UserFollowStrategy|strategy_id|success|User follows a strategy|
 |20050|UserListFollowedStrategies|limit, offset|strategies_total, strategies|User lists followed strategies|
 |20060|UserUnfollowStrategy|strategy_id|success||
-|20061|UserListStrategies|limit, offset, strategy_id, strategy_name, expert_public_id, expert_name, description, blockchain, wallet_address|strategies_total, strategies|User lists strategies|
+|20061|UserListStrategies|limit, offset, strategy_id, strategy_name, expert_public_id, expert_name, description, blockchain, strategy_pool_address|strategies_total, strategies|User lists strategies|
 |20063|UserListTopPerformingStrategies|limit, offset|strategies_total, strategies|User lists top performing strategies|
 |20064|UserListStrategyBackers|strategy_id, limit, offset|backers_total, backers||
 |20065|UserListStrategyFollowers|strategy_id, limit, offset|followers_total, followers||
@@ -44,7 +44,7 @@ ID: 2
 |20200|UserListWhitelistedWallets|limit, offset, wallet_id, blockchain, wallet_address, strategy_id|wallets|User lists wallets|
 |20210|UserUnwhitelistWallet|wallet_id|success|User deregisters a wallet|
 |20220|UserApplyBecomeExpert||success, expert_id|User applies to become an expert|
-|20250|ExpertCreateStrategy|name, description, strategy_thesis_url, minimum_backing_amount_usd, strategy_fee, expert_fee, agreed_tos, wallet_address, wallet_blockchain, strategy_token_relative_to_usdc_ratio, initial_tokens, audit_rules|success, strategy_id|User makes a strategy|
+|20250|ExpertCreateStrategy|name, description, strategy_thesis_url, minimum_backing_amount_usd, swap_fee, expert_fee, agreed_tos, wallet_address, wallet_blockchain, strategy_token_relative_to_usdc_ratio, initial_tokens, audit_rules|success, strategy_id|User makes a strategy|
 |20260|ExpertUpdateStrategy|strategy_id, name, description, social_media|success|Expert updates a strategy|
 |20265|ExpertFreezeStrategy|strategy_id|success|Expert freezes a strategy, by making it immutable|
 |20270|ExpertAddStrategyWatchingWallet|strategy_id, blockchain, wallet_address, ratio|success, wallet_id||

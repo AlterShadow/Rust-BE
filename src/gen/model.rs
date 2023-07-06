@@ -1253,7 +1253,7 @@ pub struct ExpertCreateStrategyRequest {
     pub strategy_thesis_url: String,
     #[serde(default)]
     pub minimum_backing_amount_usd: Option<f64>,
-    pub strategy_fee: f64,
+    pub swap_fee: f64,
     pub expert_fee: f64,
     pub agreed_tos: bool,
     #[serde(with = "WithBlockchainAddress")]
@@ -2107,7 +2107,7 @@ pub struct UserListStrategiesRequest {
     #[serde(default)]
     pub blockchain: Option<EnumBlockChain>,
     #[serde(default)]
-    pub wallet_address: Option<Address>,
+    pub strategy_pool_address: Option<Address>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -2960,7 +2960,7 @@ impl WsRequest for UserListStrategiesRequest {
       }
     },
     {
-      "name": "wallet_address",
+      "name": "strategy_pool_address",
       "ty": {
         "Optional": "BlockchainAddress"
       }
@@ -5765,7 +5765,7 @@ impl WsRequest for ExpertCreateStrategyRequest {
       }
     },
     {
-      "name": "strategy_fee",
+      "name": "swap_fee",
       "ty": "Numeric"
     },
     {

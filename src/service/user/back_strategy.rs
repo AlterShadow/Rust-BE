@@ -223,7 +223,7 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
             user_id: ctx.user_id,
             limit: 1,
             offset: 0,
-            wallet_address: None,
+            strategy_pool_address: None,
         })
         .await?
         .into_result()
@@ -536,7 +536,7 @@ pub async fn user_back_strategy(
             user_id: ctx.user_id,
             limit: 1,
             offset: 0,
-            wallet_address: None,
+            strategy_pool_address: None,
         })
         .await?
         .into_result()

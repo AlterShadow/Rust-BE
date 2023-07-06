@@ -47,7 +47,10 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 Field::new("expert_name", Type::optional(Type::String)),
                 Field::new("description", Type::optional(Type::String)),
                 Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
-                Field::new("wallet_address", Type::optional(Type::BlockchainAddress)),
+                Field::new(
+                    "strategy_pool_address",
+                    Type::optional(Type::BlockchainAddress),
+                ),
             ],
             vec![
                 Field::new("strategies_total", Type::BigInt),
@@ -521,7 +524,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 Field::new("description", Type::String),
                 Field::new("strategy_thesis_url", Type::String),
                 Field::new("minimum_backing_amount_usd", Type::optional(Type::Numeric)),
-                Field::new("strategy_fee", Type::Numeric),
+                Field::new("swap_fee", Type::Numeric),
                 Field::new("expert_fee", Type::Numeric),
                 Field::new("agreed_tos", Type::Boolean),
                 Field::new("wallet_address", Type::BlockchainAddress),

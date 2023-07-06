@@ -438,7 +438,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_list_strategies(a_user_id bigint, a_limit bigint, a_offset bigint, a_strategy_id bigint DEFAULT NULL, a_strategy_name varchar DEFAULT NULL, a_expert_public_id bigint DEFAULT NULL, a_expert_name varchar DEFAULT NULL, a_description varchar DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL, a_wallet_address varchar DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_user_list_strategies(a_user_id bigint, a_limit bigint, a_offset bigint, a_strategy_id bigint DEFAULT NULL, a_strategy_name varchar DEFAULT NULL, a_expert_public_id bigint DEFAULT NULL, a_expert_name varchar DEFAULT NULL, a_description varchar DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL, a_strategy_pool_address varchar DEFAULT NULL)
 RETURNS table (
     "total" bigint,
     "strategy_id" bigint,
@@ -527,7 +527,7 @@ BEGIN
                     AND (a_expert_name ISNULL OR u.username ILIKE a_expert_name || '%')
                     AND (a_description ISNULL OR s.description ILIKE a_description || '%')
                     AND (a_blockchain ISNULL OR s.blockchain = a_blockchain)
-                    -- AND (a_wallet_address ISNULL OR linked_wallet ISNULL OR linked_wallet ILIKE a_wallet_address || '%')
+                    AND (a_strategy_pool_address ISNULL OR s.strategy_pool_address ILIKE a_strategy_pool_address || '%')
                 ORDER BY s.pkey_id
                 LIMIT a_limit
                 OFFSET a_offset;
@@ -1348,7 +1348,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_create_strategy(a_user_id bigint, a_name varchar, a_description varchar, a_strategy_thesis_url varchar, a_minimum_backing_amount_usd double precision, a_strategy_fee double precision, a_expert_fee double precision, a_agreed_tos boolean, a_wallet_address varchar, a_blockchain enum_block_chain)
+CREATE OR REPLACE FUNCTION api.fun_user_create_strategy(a_user_id bigint, a_name varchar, a_description varchar, a_strategy_thesis_url varchar, a_minimum_backing_amount_usd double precision, a_swap_fee double precision, a_expert_fee double precision, a_agreed_tos boolean, a_wallet_address varchar, a_blockchain enum_block_chain)
 RETURNS table (
     "success" boolean,
     "strategy_id" bigint
@@ -1369,7 +1369,7 @@ BEGIN
         total_exited_usdc, 
         strategy_thesis_url,
         minimum_backing_amount_usd,
-        strategy_fee,
+        swap_fee,
         expert_fee,
         agreed_tos,
         updated_at, 
@@ -1387,7 +1387,7 @@ BEGIN
         '0', 
         a_strategy_thesis_url,
         a_minimum_backing_amount_usd,
-        a_strategy_fee,
+        a_swap_fee,
         a_expert_fee,
         a_agreed_tos,
         EXTRACT(EPOCH FROM NOW())::bigint, 

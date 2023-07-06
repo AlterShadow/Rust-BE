@@ -34,7 +34,8 @@ pub async fn validate_audit_rule_user_whitelisted_wallet_same_network(
             description: None,
             blockchain: None,
             offset: 0,
-            wallet_address: None,
+
+            strategy_pool_address: None,
         })
         .await?
         .into_result()
