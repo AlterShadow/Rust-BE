@@ -2248,7 +2248,7 @@ LANGUAGE plpgsql
 AS $$
     
 DECLARE
-    _old_balance bigint;
+    _old_balance varchar;
 BEGIN
     SELECT balance INTO _old_balance FROM tbl.user_deposit_withdraw_balance WHERE pkey_id = a_deposit_withdraw_balance_id;
     IF _old_balance <> a_old_balance THEN

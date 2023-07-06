@@ -454,7 +454,7 @@ pub async fn user_back_strategy(
     db: &DbClient,
     blockchain: EnumBlockChain,
     user_id: i64,
-    back_usdc_amount: U256,
+    back_token_amount: U256,
     strategy_id: i64,
     token_id: i64,
     token_address: Address,
@@ -464,8 +464,8 @@ pub async fn user_back_strategy(
     strategy_wallet: Option<Address>,
     logger: DynLogger,
 ) -> Result<()> {
-    logger.log(format!("checking back amount {:?}", back_usdc_amount));
-    if back_usdc_amount == U256::zero() {
+    logger.log(format!("checking back amount {:?}", back_token_amount));
+    if back_token_amount == U256::zero() {
         bail!("back zero amount");
     }
 
@@ -486,10 +486,22 @@ pub async fn user_back_strategy(
     debug!("Fetched {} rows of user balance", user_balance.len());
     let user_balance_ret = user_balance.into_result().context("insufficient balance")?;
     let user_balance: U256 = user_balance_ret.balance.into();
-    if user_balance < back_usdc_amount {
+    if user_balance < back_token_amount {
         bail!("insufficient balance");
     }
-    let new_user_balance = user_balance - back_usdc_amount;
+    let new_user_balance = user_balance - back_token_amount;
+    db.execute(FunUserReduceQuantityFromUserDepositWithdrawLedgerReq {
+        user_id,
+        token_id,
+        blockchain,
+        user_address: Default::default(),
+        contract_address: token_address.into(),
+        contract_address_id: token_id,
+        receiver_address: Default::default(),
+        quantity: back_token_amount.into(),
+        transaction_hash: Default::default(),
+    })
+    .await?;
     let mut success = false;
     for _ in 0..3 {
         let ret = db
@@ -613,7 +625,7 @@ pub async fn user_back_strategy(
         db,
         blockchain,
         user_id,
-        back_usdc_amount,
+        back_token_amount,
         strategy_id,
         token_id,
         token_address,
@@ -666,7 +678,7 @@ pub async fn user_back_strategy(
         POLL_INTERVAL,
         master_key.clone(),
         pancake_contract.address(),
-        back_usdc_amount,
+        back_token_amount,
         logger.clone(),
     )
     .await?;
@@ -896,10 +908,10 @@ pub async fn user_back_strategy(
         .execute(FunUserBackStrategyReq {
             user_id: ctx.user_id,
             strategy_id: strategy.strategy_id,
-            quantity: back_usdc_amount.into(),
-            new_total_backed_quantity: (*strategy.total_backed_usdc + back_usdc_amount).into(),
+            quantity: back_token_amount.into(),
+            new_total_backed_quantity: (*strategy.total_backed_usdc + back_token_amount).into(),
             old_total_backed_quantity: strategy.total_backed_usdc,
-            new_current_quantity: (*strategy.current_usdc + back_usdc_amount).into(),
+            new_current_quantity: (*strategy.current_usdc + back_token_amount).into(),
             old_current_quantity: strategy.current_usdc,
             blockchain,
             transaction_hash: deposit_transaction_hash.into(),
@@ -915,7 +927,7 @@ pub async fn user_back_strategy(
     }
     logger.log(format!(
         "User backed strategy {:?} with {} USDC",
-        strategy_id, back_usdc_amount
+        strategy_id, back_token_amount
     ));
     Ok(())
 }
