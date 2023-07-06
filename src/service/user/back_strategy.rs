@@ -935,7 +935,7 @@ pub async fn user_back_strategy(
         )
     }
     logger.log(format!(
-        "User backed strategy {:?} with {} USDC. got {} SP tokens",
+        "Everything deployed successfully for Strategy {:?}. Spent {} tokens. got {} SP tokens",
         strategy_id,
         amount_to_display(back_token_amount),
         amount_to_display(strategy_token_to_mint)
