@@ -9,6 +9,7 @@ use eth_sdk::dex_tracker::{
     update_user_strategy_pool_asset_balances_on_copy_trade,
 };
 use eth_sdk::erc20::{approve_and_ensure_success, Erc20Token};
+use eth_sdk::escrow::{transfer_token_to_and_ensure_success, EscrowContract};
 use eth_sdk::escrow_tracker::escrow::parse_escrow;
 use eth_sdk::evm::parse_quickalert_payload;
 use eth_sdk::strategy_pool::{
@@ -452,6 +453,84 @@ pub async fn handle_escrow_transaction(
         .get_from()
         .with_context(|| format!("no caller found for tx: {:?}", tx.get_hash()))?;
 
+    /* get token address that was transferred */
+    let called_address = tx
+        .get_to()
+        .with_context(|| format!("no called address found for tx: {:?}", tx.get_hash()))?;
+
+    let whitelisted_wallet = state
+        .db
+        .execute(FunUserListWhitelistedWalletsReq {
+            limit: 1,
+            offset: 0,
+            user_id: None,
+            blockchain: Some(blockchain),
+            address: Some(caller.into()),
+        })
+        .await?
+        .into_result();
+
+    match whitelisted_wallet {
+        Some(_) => {}
+        None => {
+            /* escrow was not done by a whitelisted wallet, return it minus fees */
+            let conn = state.eth_pool.get(blockchain).await?;
+            let escrow_contract = EscrowContract::new(
+                conn.eth(),
+                state
+                    .escrow_addresses
+                    .get(blockchain, ())
+                    .context("could not find escrow contract address on this chain")?,
+            )?;
+
+            let estimated_refund_gas = escrow_contract
+                .estimate_gas_transfer_token_to(
+                    &conn,
+                    state.master_key.clone(),
+                    called_address,
+                    caller,
+                    escrow.amount,
+                )
+                .await?;
+
+            let estimated_gas_price = conn.eth().gas_price().await?;
+            let estimated_refund_fee = estimated_refund_gas.try_checked_mul(estimated_gas_price)?;
+            let estimated_refund_fee_in_escrow_token = calculate_gas_fee_in_tokens(
+                &state.cmc_client,
+                &conn,
+                &blockchain,
+                called_address,
+                estimated_refund_fee,
+            )
+            .await?;
+
+            let refund_amount = escrow
+                .amount
+                .try_checked_sub(estimated_refund_fee_in_escrow_token)?;
+
+            transfer_token_to_and_ensure_success(
+                escrow_contract,
+                &conn,
+                CONFIRMATIONS,
+                MAX_RETRIES,
+                POLL_INTERVAL,
+                state.master_key.clone(),
+                called_address,
+                caller,
+                refund_amount,
+                DynLogger::empty(),
+            )
+            .await?;
+
+            info!(
+                "escrow was not done by a whitelisted wallet, refunded {:?} tokens to {:?}",
+                refund_amount, caller
+            );
+
+            return Ok(());
+        }
+    }
+
     let user = match state
         .db
         .execute(FunUserGetUserByAddressReq {
@@ -466,11 +545,6 @@ pub async fn handle_escrow_transaction(
             return Ok(());
         }
     };
-
-    /* get token address that was transferred */
-    let called_address = tx
-        .get_to()
-        .with_context(|| format!("no called address found for tx: {:?}", tx.get_hash()))?;
 
     /* insert escrow in ledger */
     state
