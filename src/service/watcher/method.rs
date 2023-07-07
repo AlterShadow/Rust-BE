@@ -504,6 +504,14 @@ pub async fn handle_escrow_transaction(
             )
             .await?;
 
+            if estimated_refund_fee_in_escrow_token >= escrow.amount {
+                info!(
+                    "estimated refund fee {:?} is greater than escrow amount {:?}, not refunding",
+                    estimated_refund_fee_in_escrow_token, escrow.amount
+                );
+                return Ok(());
+            }
+
             let refund_amount = escrow
                 .amount
                 .try_checked_sub(estimated_refund_fee_in_escrow_token)?;
