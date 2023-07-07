@@ -71,6 +71,27 @@ impl<T: Transport> EscrowContract<T> {
         self.contract.address()
     }
 
+    pub async fn estimate_gas_transfer_token_to(
+        &self,
+        conn: &EthereumRpcConnection,
+        signer: impl Key,
+        token_address: Address,
+        recipient: Address,
+        amount: U256,
+    ) -> Result<U256> {
+        let estimated_gas = self
+            .contract
+            .estimate_gas(
+                EscrowFunctions::TransferTokenTo.as_str(),
+                (token_address, recipient, amount),
+                signer.address(),
+                Options::default(),
+            )
+            .await?;
+
+        Ok(estimated_gas)
+    }
+
     pub async fn transfer_token_to(
         &self,
         conn: &EthereumRpcConnection,
