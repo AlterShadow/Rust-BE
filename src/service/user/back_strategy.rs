@@ -306,10 +306,23 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
             );
         }
     }
+    let token_tokens_ret = db
+        .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
+            strategy_pool_contract_id: None,
+            strategy_id: Some(strategy_id),
+            blockchain: Some(blockchain),
+            token_address: Some(token_address.clone().into()),
+        })
+        .await?;
+    let mut token_tokens = HashMap::new();
+    for token_token in token_tokens_ret.into_rows() {
+        token_tokens.insert(token_token.token_address.into(), token_token.balance.into());
+    }
     /* calculate how much of back amount to spend on each strategy pool asset */
     let escrow_allocations_for_tokens = calculate_escrow_allocation_for_strategy_tokens(
         back_token_amount_minus_fees,
         token_address,
+        token_tokens,
     )?;
     let strategy_pool_assets_bought_for_this_backer = trade_escrow_for_strategy_tokens(
         &conn,
@@ -945,10 +958,24 @@ pub async fn user_back_strategy(
 
 fn calculate_escrow_allocation_for_strategy_tokens(
     escrow_amount: U256,
-    escrow_address: Address,
+    escrow_token_address: Address,
+    strategy_token_ratios: HashMap<Address, U256>,
 ) -> Result<HashMap<Address, U256>> {
-    let mut escrow_allocations = HashMap::new();
-    escrow_allocations.insert(escrow_address, escrow_amount);
+    // TODO: should we scale it by value of tokens?
+    let total_token_numbers: U256 = strategy_token_ratios
+        .values()
+        .fold(U256::zero(), |acc, x| acc + x);
+    /* calculates how much of escrow to spend on each strategy token */
+    /* allocation = (initial_strategy_token_amount * escrow_amount) / total_initial_strategy_token_amounts */
+    let mut escrow_allocations: HashMap<Address, U256> = HashMap::new();
+    if total_token_numbers.is_zero() {
+        escrow_allocations.insert(escrow_token_address, escrow_amount);
+    } else {
+        for (token_address, token_amount) in strategy_token_ratios {
+            let escrow_allocation = token_amount.mul_div(escrow_amount, total_token_numbers)?;
+            escrow_allocations.insert(token_address, escrow_allocation);
+        }
+    }
     Ok(escrow_allocations)
 }
 
