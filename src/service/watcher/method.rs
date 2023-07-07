@@ -386,144 +386,162 @@ pub async fn handle_eth_escrows(
         })?;
         let state = state.clone();
         tokio::spawn(async move {
-            let ret: Result<()> = async {
-                /* the transactions from the quickalerts payload might not be yet mined */
-                wait_for_confirmations(
-                    &conn.eth(),
-                    hash,
-                    POLL_INTERVAL,
-                    MAX_RETRIES,
-                    CONFIRMATIONS,
-                )
-                .await
-                .context("escrow tx was not mined")?;
-                let tx = TransactionFetcher::new_and_assume_ready(hash, &conn)
-                    .await
-                    .context("error processing tx")?;
-                if let Err(e) = evm::cache_ethereum_transaction(&tx, &state.db, blockchain).await {
-                    error!("error caching transaction: {:?}", e);
-                };
-
-                /* check if it is an escrow to one of our escrow contracts */
-                let escrow = parse_escrow(blockchain, &tx, &state.token_addresses, &state.erc_20)
-                    .with_context(|| format!("tx {:?} is not an escrow", tx.get_hash()))?;
-                if state
-                    .escrow_addresses
-                    .get_by_address(blockchain, escrow.recipient)
-                    .is_none()
-                {
-                    warn!(
-                        "no transfer to an escrow contract for tx: {:?}",
-                        tx.get_hash()
-                    );
-                    return Ok(());
+            /* the transactions from the quickalerts payload might not be yet mined */
+            match wait_for_confirmations(
+                &conn.eth(),
+                hash,
+                POLL_INTERVAL,
+                MAX_RETRIES,
+                CONFIRMATIONS,
+            )
+            .await
+            {
+                Ok(_) => {}
+                Err(e) => {
+                    error!("escrow tx was not mined: {:?}", e);
+                    return;
                 }
-
-                /* check if transaction is from one of our users */
-                // TODO: handle an escrow made by an unknown user
-                let caller = tx
-                    .get_from()
-                    .with_context(|| format!("no caller found for tx: {:?}", tx.get_hash()))?;
-
-                let user = match state
-                    .db
-                    .execute(FunUserGetUserByAddressReq {
-                        address: caller.into(),
-                    })
-                    .await?
-                    .into_result()
-                {
-                    Some(user) => user,
-                    None => {
-                        info!("no user has address: {:?}", caller);
-                        return Ok(());
-                    }
-                };
-
-                /* get token address that was transferred */
-                let called_address = tx.get_to().with_context(|| {
-                    format!("no called address found for tx: {:?}", tx.get_hash())
-                })?;
-
-                /* insert escrow in ledger */
-                state
-                    .db
-                    .execute(FunWatcherSaveUserDepositWithdrawLedgerReq {
-                        user_id: user.user_id,
-                        quantity: escrow.amount.into(),
-                        blockchain,
-                        user_address: escrow.owner.into(),
-                        contract_address: called_address.into(),
-                        transaction_hash: tx.get_hash().into(),
-                        receiver_address: escrow.recipient.into(),
-                    })
-                    .await
-                    .context("error inserting escrow in ledger")?;
-
-                let old_balance = state
-                    .db
-                    .execute(FunUserListUserDepositWithdrawBalanceReq {
-                        limit: 1,
-                        offset: 0,
-                        user_id: user.user_id,
-                        blockchain: Some(blockchain),
-                        token_address: Some(called_address.into()),
-                        token_id: None,
-                        escrow_contract_address: Some(escrow.recipient.into()),
-                    })
-                    .await?
-                    .into_result()
-                    .map(|x| x.balance)
-                    .unwrap_or_default();
-                let new_balance = (*old_balance) + escrow.amount;
-                let resp = state
-                    .db
-                    .execute(FunWatcherUpsertUserDepositWithdrawBalanceReq {
-                        user_id: user.user_id,
-                        blockchain,
-                        old_balance,
-                        new_balance: new_balance.into(),
-                        token_address: called_address.into(),
-                        escrow_contract_address: escrow.recipient.into(),
-                    })
-                    .await?;
-
-                if let Some(admin_client) = state.admin_client.as_ref() {
-                    if let Err(err) = admin_client
-                        .lock()
-                        .await
-                        .request(AdminNotifyEscrowLedgerChangeRequest {
-                            pkey_id: 0,
-                            user_id: user.user_id,
-                            balance: UserListDepositLedgerRow {
-                                transaction_id: resp
-                                    .first(|x| x.ret_pkey_id)
-                                    .unwrap_or_else(|| Utc::now().timestamp()),
-                                quantity: escrow.amount.into(),
-                                blockchain,
-                                user_address: escrow.owner.into(),
-                                contract_address: called_address.into(),
-                                transaction_hash: tx.get_hash().into(),
-                                is_deposit: false,
-                                receiver_address: escrow.recipient.into(),
-
-                                happened_at: Utc::now().timestamp(),
-                            },
-                        })
-                        .await
-                    {
-                        error!("error notifying admin of escrow ledger change: {:?}", err);
-                    }
-                }
-                Ok::<_, Error>(())
             }
-            .await;
-            if let Err(err) = ret {
-                error!("Error handling ethereum escrow {:?}", err)
+            let tx = match TransactionFetcher::new_and_assume_ready(hash, &conn).await {
+                Ok(tx) => tx,
+                Err(e) => {
+                    error!("error processing tx: {}", e);
+                    return;
+                }
+            };
+            if let Err(e) = evm::cache_ethereum_transaction(&tx, &state.db, blockchain).await {
+                error!("error caching transaction: {:?}", e);
+                return;
+            };
+
+            match handle_escrow_transaction(state.clone(), blockchain, tx).await {
+                Ok(_) => {}
+                Err(e) => {
+                    error!("error handling escrow: {:?}", e);
+                }
             }
         });
     }
 
+    Ok(())
+}
+
+pub async fn handle_escrow_transaction(
+    state: Arc<AppState>,
+    blockchain: EnumBlockChain,
+    tx: TransactionReady,
+) -> Result<()> {
+    /* check if it is an escrow to one of our escrow contracts */
+    let escrow = parse_escrow(blockchain, &tx, &state.token_addresses, &state.erc_20)
+        .with_context(|| format!("tx {:?} is not an escrow", tx.get_hash()))?;
+    if state
+        .escrow_addresses
+        .get_by_address(blockchain, escrow.recipient)
+        .is_none()
+    {
+        warn!(
+            "no transfer to an escrow contract for tx: {:?}",
+            tx.get_hash()
+        );
+        return Ok(());
+    }
+
+    /* check if transaction is from one of our users */
+    // TODO: handle an escrow made by an unknown user
+    let caller = tx
+        .get_from()
+        .with_context(|| format!("no caller found for tx: {:?}", tx.get_hash()))?;
+
+    let user = match state
+        .db
+        .execute(FunUserGetUserByAddressReq {
+            address: caller.into(),
+        })
+        .await?
+        .into_result()
+    {
+        Some(user) => user,
+        None => {
+            info!("no user has address: {:?}", caller);
+            return Ok(());
+        }
+    };
+
+    /* get token address that was transferred */
+    let called_address = tx
+        .get_to()
+        .with_context(|| format!("no called address found for tx: {:?}", tx.get_hash()))?;
+
+    /* insert escrow in ledger */
+    state
+        .db
+        .execute(FunWatcherSaveUserDepositWithdrawLedgerReq {
+            user_id: user.user_id,
+            quantity: escrow.amount.into(),
+            blockchain,
+            user_address: escrow.owner.into(),
+            contract_address: called_address.into(),
+            transaction_hash: tx.get_hash().into(),
+            receiver_address: escrow.recipient.into(),
+        })
+        .await
+        .context("error inserting escrow in ledger")?;
+
+    let old_balance = state
+        .db
+        .execute(FunUserListUserDepositWithdrawBalanceReq {
+            limit: 1,
+            offset: 0,
+            user_id: user.user_id,
+            blockchain: Some(blockchain),
+            token_address: Some(called_address.into()),
+            token_id: None,
+            escrow_contract_address: Some(escrow.recipient.into()),
+        })
+        .await?
+        .into_result()
+        .map(|x| x.balance)
+        .unwrap_or_default();
+    let new_balance = (*old_balance) + escrow.amount;
+    let resp = state
+        .db
+        .execute(FunWatcherUpsertUserDepositWithdrawBalanceReq {
+            user_id: user.user_id,
+            blockchain,
+            old_balance,
+            new_balance: new_balance.into(),
+            token_address: called_address.into(),
+            escrow_contract_address: escrow.recipient.into(),
+        })
+        .await?;
+
+    if let Some(admin_client) = state.admin_client.as_ref() {
+        if let Err(err) = admin_client
+            .lock()
+            .await
+            .request(AdminNotifyEscrowLedgerChangeRequest {
+                pkey_id: 0,
+                user_id: user.user_id,
+                balance: UserListDepositLedgerRow {
+                    transaction_id: resp
+                        .first(|x| x.ret_pkey_id)
+                        .unwrap_or_else(|| Utc::now().timestamp()),
+                    quantity: escrow.amount.into(),
+                    blockchain,
+                    user_address: escrow.owner.into(),
+                    contract_address: called_address.into(),
+                    transaction_hash: tx.get_hash().into(),
+                    is_deposit: false,
+                    receiver_address: escrow.recipient.into(),
+
+                    happened_at: Utc::now().timestamp(),
+                },
+            })
+            .await
+        {
+            error!("error notifying admin of escrow ledger change: {:?}", err);
+        }
+    }
     Ok(())
 }
 
