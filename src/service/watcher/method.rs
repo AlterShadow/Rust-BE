@@ -1,4 +1,5 @@
 use crate::AppState;
+use api::cmc::CoinMarketCap;
 use axum::http::StatusCode;
 use bytes::Bytes;
 use chrono::Utc;
@@ -17,8 +18,8 @@ use eth_sdk::strategy_pool::{
 use eth_sdk::utils::{wait_for_confirmations, wait_for_confirmations_simple};
 use eth_sdk::v3::smart_router::{copy_trade_and_ensure_success, PancakeSmartRouterV3Contract};
 use eth_sdk::{
-    evm, ScaledMath, TransactionFetcher, TransactionReady, CONFIRMATIONS, MAX_RETRIES,
-    POLL_INTERVAL,
+    evm, EthereumRpcConnection, ScaledMath, TransactionFetcher, TransactionReady, CONFIRMATIONS,
+    MAX_RETRIES, POLL_INTERVAL,
 };
 use eyre::*;
 use gen::database::*;
@@ -524,4 +525,69 @@ pub async fn handle_eth_escrows(
     }
 
     Ok(())
+}
+
+pub async fn calculate_gas_fee_in_tokens(
+    cmc: &CoinMarketCap,
+    conn: &EthereumRpcConnection,
+    blockchain: &EnumBlockChain,
+    token_address: Address,
+    total_gas_fee_in_wei: U256,
+) -> Result<U256> {
+    let token_contract = Erc20Token::new(conn.clone(), token_address)?;
+    let token_decimals = token_contract.decimals().await?;
+    let token_symbol = token_contract.symbol().await?;
+
+    let native_symbol = match blockchain {
+        EnumBlockChain::EthereumMainnet => "ETH",
+        EnumBlockChain::EthereumGoerli => "ETH",
+        EnumBlockChain::EthereumSepolia => "ETH",
+        EnumBlockChain::BscMainnet => "BNB",
+        EnumBlockChain::BscTestnet => "BNB",
+        _ => bail!("unsupported blockchain"),
+    };
+
+    /* get token value of 1 native token */
+    let native_price = cmc
+        .get_quote_price_by_symbol(native_symbol.to_string(), token_symbol)
+        .await?;
+
+    let gas_fee_in_tokens = total_gas_fee_in_wei
+        /* native price doesn't consider decimals */
+        .mul_f64(native_price)?
+        /* so multiply native price without decimals by proportion the token decimals take in native decimals */
+        .mul_div(U256::exp10(token_decimals.as_usize()), U256::exp10(18))?;
+
+    Ok(gas_fee_in_tokens)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use eth_sdk::EthereumRpcConnectionPool;
+    use std::str::FromStr;
+
+    #[tokio::test]
+    async fn test_calculate_gas_amount_in_token() -> Result<()> {
+        let cmc = CoinMarketCap::new_debug_key().unwrap();
+        let eth_pool = EthereumRpcConnectionPool::new();
+        let conn = eth_pool.get(EnumBlockChain::EthereumMainnet).await?;
+        let usdc_address_in_ethereum =
+            Address::from_str("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48")?;
+        // 0.001 ETH or 1000000000000000 WEI
+        let total_gas_fee = U256::from_dec_str("1000000000000000")?;
+        let gas_fee_in_tokens = calculate_gas_fee_in_tokens(
+            &cmc,
+            &conn,
+            &EnumBlockChain::EthereumMainnet,
+            usdc_address_in_ethereum,
+            total_gas_fee,
+        )
+        .await?;
+        // divide the ETH current price in USDC by 1000, and this should be the result
+        // with 6 extra digits of decimals (USDC decimals on Ethereum)
+        // e.g. ETH price is 1k USDC, gas fee in USDC is 1, with decimals that is 1000000
+        println!("gas_fee_in_tokens: {:?}", gas_fee_in_tokens);
+        Ok(())
+    }
 }
