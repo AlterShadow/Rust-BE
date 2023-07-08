@@ -48,6 +48,7 @@ crypto = { path = "../shared/crypto" }
 eth-sdk = { path = "../shared/eth-sdk" }
 api = { path = "../shared/api" }
 mc2fi_auth = { path = "../auth" }
+mc2fi_user = { path = "../user" }
 [dependencies.uuid]
 version = "1.1.2"
 features = [

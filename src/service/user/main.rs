@@ -1,10 +1,8 @@
 use api::cmc::CoinMarketCap;
 use eth_sdk::escrow::AbstractEscrowContract;
+use eth_sdk::pair_paths::WorkingPancakePairPaths;
 use eth_sdk::signer::Secp256k1SecretKey;
-use eth_sdk::{
-    BlockchainCoinAddresses, DexAddresses, EscrowAddresses, EthereumConns,
-    EthereumRpcConnectionPool,
-};
+use eth_sdk::{DexAddresses, EscrowAddresses, EthereumConns, EthereumRpcConnectionPool};
 use eyre::*;
 use gen::model::{EnumService, UserGetDepositAddressesRow};
 use lib::config::{load_config, WsServerConfig};
@@ -46,7 +44,8 @@ async fn main() -> Result<()> {
     let cmc_client = Arc::new(CoinMarketCap::new(config.cmc_api_key.expose_secret())?);
     let audit_logger = AuditLogger::new()?;
     let mut server = WebsocketServer::new(config.app.clone());
-    server.add_database(connect_to_database(config.app_db).await?);
+    let db = connect_to_database(config.app_db).await?;
+    server.add_database(db.clone());
     server.add_database(connect_to_database(config.auth_db).await?);
 
     let mut auth_controller = EndpointAuthController::new();
@@ -57,6 +56,9 @@ async fn main() -> Result<()> {
         },
     );
     server.add_auth_controller(auth_controller);
+
+    let mut coin_addresses = load_coin_addresses(&db).await?;
+
     server.add_handler(MethodUserFollowStrategy);
     server.add_handler(MethodUserListFollowedStrategies);
     server.add_handler(MethodUserUnfollowStrategy);
@@ -127,7 +129,9 @@ async fn main() -> Result<()> {
         logger: audit_logger.clone(),
     });
     server.add_handler(MethodUserListStrategyInitialTokenRatio);
-    server.add_handler(MethodUserGetDepositTokens);
+    server.add_handler(MethodUserGetDepositTokens {
+        coin_addresses: coin_addresses.clone(),
+    });
     server.add_handler(MethodUserListStrategyAuditRules);
     server.add_handler(MethodUserListDepositWithdrawBalances);
     server.add_handler(MethodUserGetDepositWithdrawBalance);
@@ -184,11 +188,13 @@ async fn main() -> Result<()> {
     server.add_handler(MethodAdminAddEscrowContractAddress);
 
     let eth_pool = EthereumRpcConnectionPool::from_conns(config.ethereum_urls);
-    let coin_addresses = Arc::new(BlockchainCoinAddresses::new());
+
     let escrow_contract_addresses = EscrowAddresses::new();
     let escrow_contract = Arc::new(AbstractEscrowContract::new2(escrow_contract_addresses));
     let master_key = Secp256k1SecretKey::from_str(config.god_key.expose_secret())?;
 
+    let pancake_paths = WorkingPancakePairPaths::new(coin_addresses.clone())?;
+    let pancake_paths = Arc::new(pancake_paths);
     server.add_handler(MethodUserCreateStrategyWallet {
         pool: eth_pool.clone(),
         master_key: master_key.clone(),
@@ -199,6 +205,7 @@ async fn main() -> Result<()> {
         master_key: master_key.clone(),
         dex_addresses: Arc::new(DexAddresses::new()),
         cmc: cmc_client.clone(),
+        pancake_paths: pancake_paths.clone(),
     });
     let lru = Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(1000).unwrap())));
     server.add_handler(MethodUserBackStrategy {
@@ -208,6 +215,7 @@ async fn main() -> Result<()> {
         dex_addresses: Arc::new(DexAddresses::new()),
         subscribe_manager: Arc::clone(&sub_manager),
         lru: lru.clone(),
+        pancake_paths: pancake_paths.clone(),
     });
     server.add_handler(MethodUserExitStrategy {
         pool: eth_pool.clone(),

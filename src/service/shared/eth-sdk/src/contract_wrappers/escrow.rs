@@ -74,7 +74,6 @@ impl<T: Transport> EscrowContract<T> {
 
     pub async fn estimate_gas_transfer_token_to(
         &self,
-        conn: &EthereumRpcConnection,
         signer: impl Key,
         token_address: Address,
         recipient: Address,

@@ -1,6 +1,6 @@
 use crate::{BlockchainCoinAddresses, ContractCall, EscrowTransfer, TransactionReady};
 use eyre::*;
-use gen::model::{EnumBlockChain, EnumBlockchainCoin};
+use gen::model::EnumBlockChain;
 use tracing::info;
 
 fn get_method_by_name(name: &str) -> Option<Erc20Method> {

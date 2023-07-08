@@ -35,7 +35,6 @@ pub use conn::*;
 pub use contract_wrappers::*;
 pub use dex::*;
 pub use escrow_addresses::*;
-use gen::model::EnumBlockchainCoin;
 pub use pancake_swap::*;
 pub use pool::*;
 pub use strategy_pool_herald_addresses::*;

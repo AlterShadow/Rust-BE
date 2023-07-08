@@ -1,7 +1,7 @@
 use crate::evm::DexTrade;
 use crate::{DexAddresses, PancakeSwap, TransactionReady};
 use eyre::*;
-use gen::model::{EnumBlockChain, EnumDex};
+use gen::model::EnumBlockChain;
 
 pub async fn parse_dex_trade(
     chain: EnumBlockChain,
@@ -15,7 +15,7 @@ pub async fn parse_dex_trade(
         .unwrap();
     let trade = match dex {
         "PancakeSwap" => pancake_swap.parse_trade(tx, chain.clone())?,
-        d => {
+        _ => {
             bail!("does not support dex: {}", dex);
         }
     };

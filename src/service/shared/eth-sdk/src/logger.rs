@@ -3,7 +3,7 @@ use lib::types::H256;
 use once_cell::sync::Lazy;
 use std::io::Write;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 
 pub struct BlockchainLogger {
     enabled: AtomicBool,

@@ -2044,6 +2044,7 @@ dependencies = [
  "itertools",
  "lib",
  "mc2fi_auth",
+ "mc2fi_user",
  "model",
  "num",
  "peroxide",

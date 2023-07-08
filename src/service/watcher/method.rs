@@ -28,7 +28,7 @@ use gen::model::*;
 use lib::log::DynLogger;
 use std::sync::Arc;
 use std::time::Duration;
-use tracing::{error, info, trace, warn};
+use tracing::*;
 use web3::ethabi::Address;
 use web3::types::U256;
 
@@ -485,7 +485,6 @@ pub async fn handle_escrow_transaction(
 
             let estimated_refund_gas = escrow_contract
                 .estimate_gas_transfer_token_to(
-                    &conn,
                     state.master_key.clone(),
                     called_address,
                     caller,

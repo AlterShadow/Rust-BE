@@ -21,7 +21,6 @@ use std::collections::HashMap;
 use tracing::{debug, info, warn};
 use web3::signing::Key;
 use web3::types::Address;
-use web3::Transport;
 
 pub async fn deploy_wallet_contract(
     conn: &EthereumRpcConnection,
@@ -201,7 +200,6 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
     ctx: &RequestContext,
     db: &DbClient,
     blockchain: EnumBlockChain,
-    user_id: i64,
     back_usdc_amount: U256,
     strategy_id: i64,
     token_id: i64,
@@ -211,6 +209,7 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
     logger: DynLogger,
     dry_run: bool,
     cmc: Option<&CoinMarketCap>,
+    pancake_paths: &WorkingPancakePairPaths,
 ) -> Result<CalculateUserBackStrategyCalculateAmountToMintResult> {
     /* fetch strategy */
     let strategy = db
@@ -286,7 +285,7 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
 
     let mut strategy_pool_active: bool = false;
     let mut sp_assets_and_amounts: HashMap<Address, U256> = HashMap::new();
-    if let Some((strategy_pool_contract_id, sp_contract)) = sp_contract.as_ref() {
+    if let Some((strategy_pool_contract_id, _sp_contract)) = sp_contract.as_ref() {
         let strategy_pool_assets = db
             .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
                 strategy_pool_contract_id: Some(*strategy_pool_contract_id),
@@ -335,6 +334,7 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
         logger.clone(),
         true,
         cmc.clone(),
+        pancake_paths,
     )
     .await?;
 
@@ -385,6 +385,7 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
                 logger.clone(),
                 dry_run,
                 cmc,
+                pancake_paths,
             )
             .await?;
 
@@ -481,6 +482,7 @@ pub async fn user_back_strategy(
     master_key: impl Key + Clone,
     strategy_wallet: Option<Address>,
     logger: DynLogger,
+    pancake_paths: &WorkingPancakePairPaths,
 ) -> Result<()> {
     logger.log(format!(
         "checking back amount {}",
@@ -632,7 +634,6 @@ pub async fn user_back_strategy(
     let escrow_token_contract = Erc20Token::new(conn.clone(), token_address)?;
 
     let CalculateUserBackStrategyCalculateAmountToMintResult {
-        fees,
         back_usdc_amount_minus_fees,
         // we discard this value because it's not really exactly the value
         strategy_token_to_mint: _strategy_token_to_mint,
@@ -645,7 +646,6 @@ pub async fn user_back_strategy(
         ctx,
         db,
         blockchain,
-        user_id,
         back_token_amount,
         strategy_id,
         token_id,
@@ -655,6 +655,7 @@ pub async fn user_back_strategy(
         logger.clone(),
         true,
         None,
+        pancake_paths,
     )
     .await?;
 
@@ -717,6 +718,7 @@ pub async fn user_back_strategy(
         logger.clone(),
         false,
         None,
+        pancake_paths,
     )
     .await?;
 
@@ -1011,11 +1013,11 @@ async fn trade_escrow_for_strategy_tokens(
     logger: DynLogger,
     dry_run: bool,
     dry_run_with_cmc: Option<&CoinMarketCap>,
+    pancake_paths: &WorkingPancakePairPaths,
 ) -> Result<HashMap<Address, U256>> {
     /* buys tokens and amounts and returns a vector or bought tokens and amounts out */
     // TODO: stop using hardcoded hashmaps and retrieve paths from database
     let pancake_trade_parser = build_pancake_swap()?;
-    let pancake_paths = WorkingPancakePairPaths::new()?;
     let mut deposit_amounts: HashMap<Address, U256> = HashMap::new();
 
     for (token_address, amount_to_spend_on_it) in tokens_and_amounts_to_buy {

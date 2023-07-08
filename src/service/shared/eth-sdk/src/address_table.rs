@@ -3,7 +3,6 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::marker::PhantomData;
-use std::path::Path;
 use web3::types::Address;
 
 pub struct AddressTable<ENUM> {
@@ -53,7 +52,7 @@ impl<ENUM: Copy + Eq + Hash + Debug> MultiChainAddressTable<ENUM> {
         &mut self,
         index: i64,
         chain: EnumBlockChain,
-        enum_: ENUM,
+        enum_: String,
         address: Address,
     ) {
         self.inner
@@ -63,13 +62,13 @@ impl<ENUM: Copy + Eq + Hash + Debug> MultiChainAddressTable<ENUM> {
         let enum_ = format!("{enum_:?}");
         self.inner
             .iter()
-            .find(|(id, c, e, _)| *c == chain && *e == enum_)
+            .find(|(_id, c, e, _)| *c == chain && *e == enum_)
             .map(|(_, _, _, address)| *address)
     }
     pub fn get_by_address(&self, chain: EnumBlockChain, address: Address) -> Option<&str> {
         self.inner
             .iter()
-            .find(|(id, c, e, a)| *c == chain && *a == address)
+            .find(|(_id, c, _e, a)| *c == chain && *a == address)
             .map(|(_, _, e, _)| e.as_str())
     }
     pub fn iter(&self) -> impl Iterator<Item = &(i64, EnumBlockChain, String, Address)> + '_ {

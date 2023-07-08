@@ -9,7 +9,6 @@ use std::collections::HashMap;
 use std::num::NonZeroUsize;
 use std::str::FromStr;
 use tokio::sync::Mutex;
-use tracing::*;
 use web3::types::Address;
 
 const API_KEY: &str = "ec6c4b09-03e6-4bd6-84f9-95406fc2ce81";
@@ -105,21 +104,17 @@ impl CoinMarketCap {
         let mut token_infos: Vec<CoinMarketCapTokenInfo> = Vec::new();
         for symbol in symbols {
             let token = &payload[symbol][0];
-            if token["status"]
-                .as_str()
-                .ok_or_else(|| eyre!("status not found"))?
-                != "active"
-            {
+            if token["status"].as_str().context("status not found")? != "active" {
                 bail!("token is not active");
             }
             let mut addresses: Vec<TokenAddress> = Vec::new();
             for address_to_platform in token["contract_address"]
                 .as_array()
-                .ok_or_else(|| eyre!("contract addresses not found"))?
+                .context("contract addresses not found")?
             {
                 let symbol: &str = address_to_platform["platform"]["coin"]["symbol"]
                     .as_str()
-                    .ok_or_else(|| eyre!("symbol not found"))?;
+                    .context("symbol not found")?;
                 match self.coin_symbol_to_chain(&symbol) {
                     Ok(chain) => {
                         addresses.push(TokenAddress {
@@ -129,25 +124,25 @@ impl CoinMarketCap {
                                     None => bail!("address not found"),
                                 },
                             )?,
-                            chain: chain,
+                            chain,
                         });
                     }
                     Err(_) => continue,
                 }
             }
             token_infos.push(CoinMarketCapTokenInfo {
-                cmc_id: token["id"].as_u64().ok_or_else(|| eyre!("id not found"))?,
+                cmc_id: token["id"].as_u64().context("id not found")?,
                 name: token["name"]
                     .as_str()
-                    .ok_or_else(|| eyre!("name not found"))?
+                    .context("name not found")?
                     .to_string(),
                 symbol: token["symbol"]
                     .as_str()
-                    .ok_or_else(|| eyre!("symbol not found"))?
+                    .context("symbol not found")?
                     .to_string(),
                 slug: token["slug"]
                     .as_str()
-                    .ok_or_else(|| eyre!("slug not found"))?
+                    .context("slug not found")?
                     .to_string(),
                 addresses: addresses,
             })
@@ -180,16 +175,12 @@ impl CoinMarketCap {
             .await?["data"];
         for (symbol, i) in new_symbols.into_iter().zip(new_symbols_index.into_iter()) {
             let token = &payload[&symbol][0];
-            if token["is_active"]
-                .as_u64()
-                .ok_or_else(|| eyre!("status not found"))?
-                != 1
-            {
+            if token["is_active"].as_u64().context("status not found")? != 1 {
                 bail!("token status not found")
             }
             token_prices[i] = token["quote"]["USD"]["price"]
                 .as_f64()
-                .ok_or_else(|| eyre!("price not found"))?;
+                .context("price not found")?;
             self.price_cache.lock().await.put(symbol, token_prices[i]);
         }
         Ok(token_prices)
@@ -303,9 +294,7 @@ impl CoinMarketCap {
         let payload = &payload["data"];
         let base = &payload[symbol][0];
         let quote = &base["quote"]["USD"];
-        let price = quote["price"]
-            .as_f64()
-            .ok_or_else(|| eyre!("price not found"))?;
+        let price = quote["price"].as_f64().context("price not found")?;
         Ok(price)
     }
     pub async fn get_quote_price_by_symbol(
@@ -321,9 +310,7 @@ impl CoinMarketCap {
             .await?["data"];
         let base = &payload[base_symbol][0];
         let quote = &base["quote"][quote_symbol];
-        let price = quote["price"]
-            .as_f64()
-            .ok_or_else(|| eyre!("price not found"))?;
+        let price = quote["price"].as_f64().context("price not found")?;
         Ok(price)
     }
 

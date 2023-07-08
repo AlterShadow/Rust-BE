@@ -1,25 +1,23 @@
-use std::collections::HashMap;
-use std::str::FromStr;
-
-use eyre::*;
-use web3::types::{Address, U256};
-
 use crate::evm::DexPath;
 use crate::pancake_swap::PancakeV3SingleHopPath;
 use crate::BlockchainCoinAddresses;
 use crate::PancakePairPathSet;
+use eyre::*;
 use gen::model::{EnumBlockChain, EnumBlockchainCoin};
+use std::str::FromStr;
+use std::sync::Arc;
+use web3::types::{Address, U256};
 
 pub struct WorkingPancakePairPaths {
     inner: Vec<(i64, EnumBlockChain, String, String, PancakePairPathSet)>,
-    addresses: BlockchainCoinAddresses,
+    addresses: Arc<BlockchainCoinAddresses>,
 }
 
 impl WorkingPancakePairPaths {
-    pub fn empty() -> Self {
+    pub fn empty(addresses: Arc<BlockchainCoinAddresses>) -> Self {
         Self {
             inner: Default::default(),
-            addresses: BlockchainCoinAddresses::new(),
+            addresses,
         }
     }
     fn insert(
@@ -38,8 +36,8 @@ impl WorkingPancakePairPaths {
             pair_paths,
         ));
     }
-    pub fn new() -> Result<Self> {
-        let mut this = Self::empty();
+    pub fn new(addresses: Arc<BlockchainCoinAddresses>) -> Result<Self> {
+        let mut this = Self::empty(addresses);
 
         this.insert(
             EnumBlockChain::EthereumMainnet,

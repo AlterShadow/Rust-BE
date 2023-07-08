@@ -1,5 +1,4 @@
 use num_traits::FromPrimitive;
-use web3::Transport;
 
 pub fn ensure_user_role(ctx: RequestContext, role: EnumRole) -> Result<()> {
     let ctx_role = EnumRole::from_u32(ctx.role).context("Invalid role")?;
@@ -93,4 +92,29 @@ pub fn convert_expert_db_to_api(x: FunUserExpertRowType) -> ListExpertsRow {
         approved_expert: x.approved_expert,
         followed: x.followed,
     }
+}
+
+pub async fn load_coin_addresses(db: &DbClient) -> Result<Arc<BlockchainCoinAddresses>> {
+    let mut coin_addresses = BlockchainCoinAddresses::empty();
+    let coins_from_db = db
+        .execute(FunUserListEscrowTokenContractAddressReq {
+            limit: 10000,
+            offset: 0,
+            token_id: None,
+            blockchain: None,
+            address: None,
+            symbol: None,
+            is_stablecoin: None,
+        })
+        .await?;
+    for coin in coins_from_db.into_iter() {
+        coin_addresses.insert_record(
+            coin.token_id,
+            coin.blockchain,
+            coin.symbol,
+            coin.address.into(),
+        );
+    }
+    let coin_addresses = Arc::new(coin_addresses);
+    Ok(coin_addresses)
 }

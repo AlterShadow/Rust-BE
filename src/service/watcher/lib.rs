@@ -10,6 +10,7 @@ use eth_sdk::{
 use eyre::*;
 use lib::database::DbClient;
 use lib::ws::WsClient;
+use std::sync::Arc;
 use tokio::sync::Mutex;
 use web3::ethabi::Contract;
 
@@ -18,7 +19,7 @@ pub struct AppState {
     pub eth_pool: EthereumRpcConnectionPool,
     pub pancake_swap: PancakeSwap,
     pub db: DbClient,
-    pub token_addresses: BlockchainCoinAddresses,
+    pub token_addresses: Arc<BlockchainCoinAddresses>,
     pub escrow_addresses: EscrowAddresses,
     pub erc_20: Contract,
     pub master_key: Secp256k1SecretKey,
@@ -32,13 +33,14 @@ impl AppState {
         master_key: Secp256k1SecretKey,
         admin_client: WsClient,
         cmc_client: CoinMarketCap,
+        token_addresses: Arc<BlockchainCoinAddresses>,
     ) -> Result<Self> {
         Ok(Self {
             dex_addresses: DexAddresses::new(),
             eth_pool,
             pancake_swap: build_pancake_swap()?,
             db,
-            token_addresses: BlockchainCoinAddresses::new(),
+            token_addresses,
             erc_20: build_erc_20()?,
             escrow_addresses: EscrowAddresses::new(),
             master_key,

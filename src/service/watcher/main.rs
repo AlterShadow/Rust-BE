@@ -12,6 +12,7 @@ use lib::config::load_config;
 use lib::database::{connect_to_database, DatabaseConfig};
 use lib::log::{setup_logs, LogLevel};
 use mc2fi_auth::{connect_user, signup};
+use mc2fi_user::method::load_coin_addresses;
 use mc2fi_watcher::{method, AppState};
 use secrecy::{ExposeSecret, SecretString};
 use serde::Deserialize;
@@ -59,6 +60,7 @@ async fn main() -> Result<()> {
     let db = connect_to_database(config.app_db).await?;
 
     let eth_pool = EthereumRpcConnectionPool::from_conns(config.ethereum_urls);
+    let coin_addresses = load_coin_addresses(&db).await?;
     let app: Router<(), Body> = Router::new()
         .route("/eth-mainnet-swaps", post(handle_eth_swap_mainnet))
         .route("/eth-goerli-swaps", post(handle_eth_swap_goerli))
@@ -67,7 +69,12 @@ async fn main() -> Result<()> {
         .route("/bsc-mainnet-swaps", post(handle_bsc_swap_mainnet))
         .route("/bsc-mainnet-escrows", post(handle_bsc_escrows_mainnet))
         .with_state(Arc::new(AppState::new(
-            db, eth_pool, master_key, client, cmc_client,
+            db,
+            eth_pool,
+            master_key,
+            client,
+            cmc_client,
+            coin_addresses,
         )?));
 
     let addr = tokio::net::lookup_host((config.host.as_ref(), config.port))

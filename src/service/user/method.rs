@@ -11,6 +11,7 @@ use api::cmc::CoinMarketCap;
 use chrono::Utc;
 use eth_sdk::escrow::transfer_token_to_and_ensure_success;
 use eth_sdk::escrow::{AbstractEscrowContract, EscrowContract};
+use eth_sdk::pair_paths::WorkingPancakePairPaths;
 use eth_sdk::signer::Secp256k1SecretKey;
 use eth_sdk::strategy_pool::{withdraw_and_ensure_success, StrategyPoolContract};
 use eth_sdk::strategy_pool_herald::parse_herald_redeem_event;
@@ -576,6 +577,7 @@ pub struct MethodUserBackStrategy {
     pub master_key: Secp256k1SecretKey,
     pub dex_addresses: Arc<DexAddresses>,
     pub subscribe_manager: Arc<SubscribeManager<AdminSubscribeTopic>>,
+    pub pancake_paths: Arc<WorkingPancakePairPaths>,
     pub lru: Arc<Mutex<LruCache<i64, ()>>>,
 }
 impl RequestHandler for MethodUserBackStrategy {
@@ -595,6 +597,7 @@ impl RequestHandler for MethodUserBackStrategy {
         let master_key = self.master_key.clone();
         let subscribe_manager = self.subscribe_manager.clone();
         let lru = self.lru.clone();
+        let pancake_swap = self.pancake_paths.clone();
         async move {
             {
                 let mut lru = lru.lock().await;
@@ -688,6 +691,7 @@ impl RequestHandler for MethodUserBackStrategy {
                     master_key,
                     req.strategy_wallet,
                     logger.clone(),
+                    &pancake_swap,
                 )
                 .await
                 {
@@ -2312,7 +2316,9 @@ impl RequestHandler for MethodExpertListBackers {
         .boxed()
     }
 }
-pub struct MethodUserGetDepositTokens;
+pub struct MethodUserGetDepositTokens {
+    pub coin_addresses: Arc<BlockchainCoinAddresses>,
+}
 impl RequestHandler for MethodUserGetDepositTokens {
     type Request = UserGetDepositTokensRequest;
 
@@ -2322,12 +2328,18 @@ impl RequestHandler for MethodUserGetDepositTokens {
         _ctx: RequestContext,
         _req: Self::Request,
     ) -> FutureResponse<Self::Request> {
+        let tokens = self.coin_addresses.clone();
+
         async move {
-            let tokens = BlockchainCoinAddresses::new();
             Ok(UserGetDepositTokensResponse {
                 tokens: tokens
                     .iter()
-                    .map(|(i, blockchain, token, address)| UserGetDepositTokensRow {
+                    .filter(|x| match x.2.as_str() {
+                        // filter for stablecoins
+                        "USDC" | "USDT" | "BUSD" => true,
+                        _ => false,
+                    })
+                    .map(|(_i, blockchain, token, address)| UserGetDepositTokensRow {
                         blockchain: *blockchain,
                         token: token.clone(),
                         address: *address,
@@ -2964,6 +2976,7 @@ pub struct MethodUserGetBackStrategyReviewDetail {
     pub master_key: Secp256k1SecretKey,
     pub dex_addresses: Arc<DexAddresses>,
     pub cmc: Arc<CoinMarketCap>,
+    pub pancake_paths: Arc<WorkingPancakePairPaths>,
 }
 
 impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
@@ -2977,9 +2990,9 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
     ) -> FutureResponse<Self::Request> {
         let db = toolbox.get_db();
         let pool = self.pool.clone();
-        let escrow_contract = self.escrow_contract.clone();
         let master_key = self.master_key.clone();
         let cmc = self.cmc.clone();
+        let pancake_paths = self.pancake_paths.clone();
         async move {
             ensure_user_role(ctx, EnumRole::User)?;
             let token = db
@@ -2995,22 +3008,20 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
                 .await?
                 .into_result()
                 .with_context(|| CustomError::new(EnumErrorCode::NotFound, "Token not found"))?;
-            let escrow_contract = escrow_contract.get(&pool, token.blockchain).await?;
+
             let eth_conn = pool.get(token.blockchain).await?;
             let CalculateUserBackStrategyCalculateAmountToMintResult {
                 fees,
                 back_usdc_amount_minus_fees,
                 strategy_token_to_mint,
-                strategy_pool_active,
                 sp_assets_and_amounts,
-                escrow_allocations_for_tokens,
                 strategy_pool_assets_bought_for_this_backer,
+                ..
             } = calculate_user_back_strategy_calculate_amount_to_mint(
                 &eth_conn,
                 &ctx,
                 &db,
                 token.blockchain,
-                ctx.user_id,
                 req.quantity,
                 req.strategy_id,
                 req.token_id,
@@ -3020,6 +3031,7 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
                 DynLogger::empty(),
                 true,
                 Some(&cmc),
+                &pancake_paths,
             )
             .await?;
             let mut ratios: Vec<EstimatedBackedTokenRatios> = vec![];
@@ -3138,6 +3150,7 @@ impl RequestHandler for MethodUserListUserBackStrategyLog {
     ) -> FutureResponse<Self::Request> {
         let db = toolbox.get_db();
         async move {
+            ensure_user_role(ctx, EnumRole::User)?;
             let logs = db
                 .execute(FunUserListUserBackStrategyLogReq {
                     limit: req.limit.unwrap_or(DEFAULT_LIMIT),
