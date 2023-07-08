@@ -1,5 +1,6 @@
 use eyre::*;
 
+use lib::types::amount_to_display;
 use web3::contract::{Contract, Options};
 use web3::signing::Key;
 use web3::types::{Address, H256, U256};
@@ -131,7 +132,11 @@ impl<T: Transport> WrappedTokenContract<T> {
             )
             .await?;
         get_blockchain_logger().log(
-            format!("Approved {:?} on {:?}", amount, self.address()),
+            format!(
+                "Approved {:?} on {:?}",
+                amount_to_display(amount),
+                self.address()
+            ),
             tx_hash,
         )?;
         Ok(tx_hash)

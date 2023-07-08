@@ -280,16 +280,16 @@ impl Erc20Token {
             .await?;
 
         logger.log(format!(
-            "erc20 approve: approved {:?} {} for {} on {:?}",
-            amount,
+            "erc20 approve: approved {} {} for {:?} on {:?}",
+            amount_to_display(amount),
             self.symbol().await?,
             spender,
             self.address
         ));
         get_blockchain_logger().log(
             format!(
-                "Approved {:?} {} for {} on {:?}",
-                amount,
+                "Approved {} {} for {:?} on {:?}",
+                amount_to_display(amount),
                 self.symbol().await?,
                 spender,
                 self.address

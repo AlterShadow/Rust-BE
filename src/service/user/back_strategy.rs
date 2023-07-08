@@ -261,7 +261,6 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
         strategy_initial_token_ratios.insert(x.token_address.into(), x.quantity.into());
     }
 
-    logger.log("calculating fees");
     /* deduce fees from back amount */
     // TODO: use (back amount - fees) to calculate trade spenditure and SP shares
     // TODO: distribute fees for the treasury and the strategy creator
@@ -278,7 +277,7 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
     );
     let back_token_amount_minus_fees = back_usdc_amount - fees;
     logger.log(format!(
-        "fees: {}, after fee: {}",
+        "fees: {}, back token minus fees: {}",
         amount_to_display(fees),
         amount_to_display(back_token_amount_minus_fees)
     ));
