@@ -1,4 +1,5 @@
 use crate::contract::AbstractContract;
+use crate::logger::get_blockchain_logger;
 use crate::utils::wait_for_confirmations;
 use crate::{
     deploy_contract, EitherTransport, EthereumRpcConnection, EthereumRpcConnectionPool,
@@ -160,7 +161,7 @@ impl<T: Transport> StrategyPoolContract<T> {
     pub async fn deposit(
         &self,
         conn: &EthereumRpcConnection,
-        signer: impl Key,
+        signer: impl Key + Clone,
         assets: Vec<Address>,
         amounts: Vec<U256>,
         pool_tokens: U256,
@@ -198,19 +199,31 @@ impl<T: Transport> StrategyPoolContract<T> {
                 signer.address(),
             ),
         );
-
-        Ok(self
+        let tx_hash = self
             .contract
             .signed_call(
                 StrategyPoolFunctions::Deposit.as_str(),
-                (assets, amounts, pool_tokens, receiver),
+                (assets.clone(), amounts.clone(), pool_tokens, receiver),
                 Options::with(|options| {
                     options.gas = Some(estimated_gas);
                     options.gas_price = Some(estimated_gas_price);
                 }),
-                signer,
+                signer.clone(),
             )
-            .await?)
+            .await?;
+        get_blockchain_logger().log(
+            format!(
+                "Depositing amounts {:?} of assets {:?} to mint {:?} pool tokens to receiver {:?} to strategy pool contract {:?} by {:?}",
+                amounts.iter().cloned().map(amount_to_display).collect::<Vec<_>>(),
+                assets.clone(),
+                pool_tokens,
+                receiver,
+                self.address(),
+                signer.address(),
+            ),
+        tx_hash
+        )?;
+        Ok(tx_hash)
     }
 
     pub async fn max_redeem(&self, owner: Address) -> Result<U256> {
@@ -229,7 +242,7 @@ impl<T: Transport> StrategyPoolContract<T> {
     pub async fn redeem(
         &self,
         conn: &EthereumRpcConnection,
-        signer: impl Key,
+        signer: impl Key + Clone,
         pool_tokens: U256,
         receiver: Address,
         owner: Address,
@@ -253,8 +266,7 @@ impl<T: Transport> StrategyPoolContract<T> {
 							self.address(),
 							signer.address(),
 				);
-
-        Ok(self
+        let tx_hash = self
             .contract
             .signed_call(
                 StrategyPoolFunctions::Redeem.as_str(),
@@ -263,15 +275,27 @@ impl<T: Transport> StrategyPoolContract<T> {
                     options.gas = Some(estimated_gas);
                     options.gas_price = Some(estimated_gas_price);
                 }),
-                signer,
+                signer.clone(),
             )
-            .await?)
+            .await?;
+        get_blockchain_logger().log(
+            format!(
+                "Redeeming {:?} pool tokens to receiver {:?} from owner {:?} from strategy pool contract {:?} by {:?}",
+                pool_tokens,
+                receiver,
+                owner,
+                self.address(),
+                signer.address(),
+            ),
+            tx_hash,
+        )?;
+        Ok(tx_hash)
     }
 
     pub async fn withdraw(
         &self,
         conn: &EthereumRpcConnection,
-        signer: impl Key,
+        signer: impl Key + Clone,
         receiver: Address,
         assets: Vec<Address>,
         amounts: Vec<U256>,
@@ -305,25 +329,35 @@ impl<T: Transport> StrategyPoolContract<T> {
 						signer.address(),
 					),
 			);
-
-        Ok(self
+        let tx_hash = self
             .contract
             .signed_call(
                 StrategyPoolFunctions::Withdraw.as_str(),
-                (receiver, assets, amounts),
+                (receiver.clone(), assets.clone(), amounts.clone()),
                 Options::with(|options| {
                     options.gas = Some(estimated_gas);
                     options.gas_price = Some(estimated_gas_price);
                 }),
-                signer,
+                signer.clone(),
             )
-            .await?)
+            .await?;
+        get_blockchain_logger().log(
+                format!("Withdrawing {:?} amounts of {:?} assets to receiver {:?} from strategy pool contract {:?} by {:?}",
+                        amounts.iter().cloned().map(amount_to_display).collect::<Vec<_>>(),
+                        assets,
+                        receiver,
+                        self.address(),
+                        signer.address(),
+                    ),
+                tx_hash,
+            )?;
+        Ok(tx_hash)
     }
 
     pub async fn acquire_asset_before_trade(
         &self,
         conn: &EthereumRpcConnection,
-        signer: impl Key,
+        signer: impl Key + Clone,
         asset: Address,
         amount: U256,
     ) -> Result<H256> {
@@ -344,10 +378,9 @@ impl<T: Transport> StrategyPoolContract<T> {
 						amount,
             asset,
             self.address(),
-						signer.address(),
+            signer.address(),
         );
-
-        Ok(self
+        let tx_hash = self
             .contract
             .signed_call(
                 StrategyPoolFunctions::AcquireAssetBeforeTrade.as_str(),
@@ -356,15 +389,26 @@ impl<T: Transport> StrategyPoolContract<T> {
                     options.gas = Some(estimated_gas);
                     options.gas_price = Some(estimated_gas_price);
                 }),
-                signer,
+                signer.clone(),
             )
-            .await?)
+            .await?;
+        get_blockchain_logger().log(
+            format!(
+                "Acquiring {:?} amount of asset {:?} before trade from strategy pool contract {:?} by {:?}",
+                amount,
+                asset,
+                self.address(),
+                signer.address(),
+            ),
+            tx_hash,
+        )?;
+        Ok(tx_hash)
     }
 
     pub async fn give_back_assets_after_trade(
         &self,
         conn: &EthereumRpcConnection,
-        signer: impl Key,
+        signer: impl Key + Clone,
         assets: Vec<Address>,
         amounts: Vec<U256>,
     ) -> Result<H256> {
@@ -381,31 +425,41 @@ impl<T: Transport> StrategyPoolContract<T> {
         let estimated_gas_price = conn.eth().gas_price().await?;
 
         info!(
-						"Giving back {:?} amounts of assets {:?} after trade to strategy pool contract {:?} by {:?}",
-						amounts.clone(),
-						assets.clone(),
-						self.address(),
-						signer.address(),
-				);
-
-        Ok(self
+            "Giving back {:?} amounts of assets {:?} after trade to strategy pool contract {:?} by {:?}",
+            amounts.clone(),
+            assets.clone(),
+            self.address(),
+            signer.address(),
+        );
+        let tx_hash = self
             .contract
             .signed_call(
                 StrategyPoolFunctions::GiveBackAssetsAfterTrade.as_str(),
-                (assets, amounts),
+                (assets.clone(), amounts.clone()),
                 Options::with(|options| {
                     options.gas = Some(estimated_gas);
                     options.gas_price = Some(estimated_gas_price);
                 }),
-                signer,
+                signer.clone(),
             )
-            .await?)
+            .await?;
+        get_blockchain_logger().log(
+            format!(
+                "Giving back {:?} amounts of assets {:?} after trade to strategy pool contract {:?} by {:?}",
+                amounts.iter().cloned().map(amount_to_display).collect::<Vec<_>>(),
+                assets,
+                self.address(),
+                signer.address(),
+            ),
+            tx_hash,
+        )?;
+        Ok(tx_hash)
     }
 
     pub async fn transfer_ownership(
         &self,
         conn: &EthereumRpcConnection,
-        signer: impl Key,
+        signer: impl Key + Clone,
         new_owner: Address,
     ) -> Result<H256> {
         let estimated_gas = self
@@ -427,8 +481,7 @@ impl<T: Transport> StrategyPoolContract<T> {
             new_owner,
             signer.address(),
         );
-
-        Ok(self
+        let tx_hash = self
             .contract
             .signed_call(
                 StrategyPoolFunctions::TransferOwnership.as_str(),
@@ -437,9 +490,20 @@ impl<T: Transport> StrategyPoolContract<T> {
                     options.gas = Some(estimated_gas);
                     options.gas_price = Some(estimated_gas_price);
                 }),
-                signer,
+                signer.clone(),
             )
-            .await?)
+            .await?;
+        get_blockchain_logger().log(
+            format!(
+                "Transferring strategy pool contract {:?} ownership from {:?} to {:?} by {:?}",
+                self.address(),
+                self.owner().await?,
+                new_owner,
+                signer.address(),
+            ),
+            tx_hash,
+        )?;
+        Ok(tx_hash)
     }
 
     pub async fn owner(&self) -> Result<Address> {

@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use crate::contract::AbstractContract;
+use crate::logger::get_blockchain_logger;
 use crate::utils::wait_for_confirmations;
 use crate::{
     deploy_contract, EitherTransport, EscrowAddresses, EthereumRpcConnection,
@@ -101,21 +102,6 @@ impl<T: Transport> EscrowContract<T> {
         amount: U256,
         logger: DynLogger,
     ) -> Result<H256> {
-        info!("Transferring {:?} amount of token {:?} to recipient {:?} from escrow contract {:?} by {:?}",
-            amount,
-            token_address,
-            recipient,
-            self.address(),
-            signer.address(),
-        );
-        logger.log(format!(
-            "Transferring {} amount of token {:?} to recipient {:?} from escrow contract {:?} by {:?}",
-            amount_to_display(amount),
-            token_address,
-            recipient,
-            self.address(),
-            signer.address(),
-        ));
         let estimated_gas = self
             .contract
             .estimate_gas(
@@ -144,8 +130,7 @@ impl<T: Transport> EscrowContract<T> {
             self.address(),
             signer.address(),
         ));
-
-        Ok(self
+        let tx_hash = self
             .contract
             .signed_call(
                 EscrowFunctions::TransferTokenTo.as_str(),
@@ -156,7 +141,15 @@ impl<T: Transport> EscrowContract<T> {
                 }),
                 signer,
             )
-            .await?)
+            .await?;
+        get_blockchain_logger().log(
+            format!(
+                "Transfer {:?} to {:?} tx_hash {:?}",
+                amount, recipient, tx_hash
+            ),
+            tx_hash,
+        )?;
+        Ok(tx_hash)
     }
 
     pub async fn transfer_ownership(

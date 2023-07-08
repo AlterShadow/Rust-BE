@@ -1,3 +1,4 @@
+use crate::logger::get_blockchain_logger;
 use crate::{
     EitherTransport, EthereumRpcConnectionGuard, EthereumRpcConnectionPool, MultiChainAddressTable,
     CONFIRMATIONS,
@@ -137,6 +138,10 @@ impl<T: Transport> ContractDeployer<T> {
                         ));
                         // TODO: buggy here
                         let tx_hash = eth.send_raw_transaction(signed_tx.raw_transaction).await?;
+                        get_blockchain_logger().log(
+                            format!("Transaction sent, waiting for confirmations",),
+                            tx_hash,
+                        )?;
                         logger.log(format!(
                             "Transaction sent, waiting for confirmations: {:?}",
                             tx_hash

@@ -5,6 +5,7 @@ use web3::signing::Key;
 use web3::types::{Address, H256, U256};
 use web3::{Transport, Web3};
 
+use crate::logger::get_blockchain_logger;
 use crate::EthereumRpcConnection;
 
 const WRAPPED_ABI_JSON: &str = include_str!("weth.json");
@@ -43,8 +44,7 @@ impl<T: Transport> WrappedTokenContract<T> {
             .await?;
 
         let estimated_gas_price = conn.eth().gas_price().await?;
-
-        Ok(self
+        let tx_hash = self
             .contract
             .signed_call(
                 WrappedTokenFunctions::Wrap.as_str(),
@@ -56,7 +56,12 @@ impl<T: Transport> WrappedTokenContract<T> {
                 }),
                 signer,
             )
-            .await?)
+            .await?;
+        get_blockchain_logger().log(
+            format!("Wrapped {:?} on {:?}", amount, self.address()),
+            tx_hash,
+        )?;
+        Ok(tx_hash)
     }
 
     pub async fn unwrap(
@@ -76,8 +81,7 @@ impl<T: Transport> WrappedTokenContract<T> {
             .await?;
 
         let estimated_gas_price = conn.eth().gas_price().await?;
-
-        Ok(self
+        let tx_hash = self
             .contract
             .signed_call(
                 WrappedTokenFunctions::Unwrap.as_str(),
@@ -88,7 +92,12 @@ impl<T: Transport> WrappedTokenContract<T> {
                 }),
                 signer,
             )
-            .await?)
+            .await?;
+        get_blockchain_logger().log(
+            format!("Unwrapped {:?} on {:?}", amount, self.address()),
+            tx_hash,
+        )?;
+        Ok(tx_hash)
     }
 
     pub async fn approve(
@@ -109,8 +118,7 @@ impl<T: Transport> WrappedTokenContract<T> {
             .await?;
 
         let estimated_gas_price = conn.eth().gas_price().await?;
-
-        Ok(self
+        let tx_hash = self
             .contract
             .signed_call(
                 WrappedTokenFunctions::Approve.as_str(),
@@ -121,7 +129,12 @@ impl<T: Transport> WrappedTokenContract<T> {
                 }),
                 signer,
             )
-            .await?)
+            .await?;
+        get_blockchain_logger().log(
+            format!("Approved {:?} on {:?}", amount, self.address()),
+            tx_hash,
+        )?;
+        Ok(tx_hash)
     }
 
     pub async fn balance_of(&self, owner: Address) -> Result<U256> {

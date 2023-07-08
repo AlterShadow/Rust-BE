@@ -8,6 +8,7 @@ use web3::types::{Address, H256, U256};
 use web3::{ethabi, Transport, Web3};
 
 use crate::contract::AbstractContract;
+use crate::logger::get_blockchain_logger;
 use crate::utils::wait_for_confirmations;
 use crate::{
     deploy_contract, EitherTransport, EthereumRpcConnection, EthereumRpcConnectionPool,
@@ -53,6 +54,7 @@ impl<T: Transport> StrategyWalletContract<T> {
     ) -> Result<Self> {
         let contract =
             deploy_contract(w3.clone(), key, (backer, admin), "StrategyWallet", logger).await?;
+
         Ok(Self { contract })
     }
 
@@ -94,7 +96,7 @@ impl<T: Transport> StrategyWalletContract<T> {
     pub async fn redeem_from_strategy(
         &self,
         conn: &EthereumRpcConnection,
-        signer: impl Key,
+        signer: impl Key + Clone,
         strategy: Address,
         shares: U256,
     ) -> Result<H256> {
@@ -117,8 +119,7 @@ impl<T: Transport> StrategyWalletContract<T> {
             self.address(),
             signer.address(),
         );
-
-        Ok(self
+        let tx_hash = self
             .contract
             .signed_call(
                 StrategyWalletFunctions::RedeemFromStrategy.as_str(),
@@ -127,15 +128,23 @@ impl<T: Transport> StrategyWalletContract<T> {
                     options.gas = Some(estimated_gas);
                     options.gas_price = Some(estimated_gas_price);
                 }),
-                signer,
+                signer.clone(),
             )
-            .await?)
+            .await?;
+        get_blockchain_logger().log(format!(
+            "Redeeming {:?} shares from strategy pool contract {:?} using strategy wallet contract {:?} by {:?}",
+            shares,
+            strategy,
+            self.address(),
+            signer.address(),
+        ), tx_hash)?;
+        Ok(tx_hash)
     }
 
     pub async fn full_redeem_from_strategy(
         &self,
         conn: &EthereumRpcConnection,
-        signer: impl Key,
+        signer: impl Key + Clone,
         strategy: Address,
     ) -> Result<H256> {
         let estimated_gas = self
@@ -151,13 +160,12 @@ impl<T: Transport> StrategyWalletContract<T> {
         let estimated_gas_price = conn.eth().gas_price().await?;
 
         info!(
-						"Redeeming all shares from strategy pool contract {:?} using strategy wallet contract {:?} by {:?}",
-						strategy,
-						self.address(),
-						signer.address(),
-				);
-
-        Ok(self
+            "Redeeming all shares from strategy pool contract {:?} using strategy wallet contract {:?} by {:?}",
+            strategy,
+            self.address(),
+            signer.address(),
+        );
+        let tx_hash = self
             .contract
             .signed_call(
                 StrategyWalletFunctions::FullRedeemFromStrategy.as_str(),
@@ -166,9 +174,19 @@ impl<T: Transport> StrategyWalletContract<T> {
                     options.gas = Some(estimated_gas);
                     options.gas_price = Some(estimated_gas_price);
                 }),
-                signer,
+                signer.clone(),
             )
-            .await?)
+            .await?;
+        get_blockchain_logger().log(
+            format!(
+            "Redeeming all shares from strategy pool contract {:?} using strategy wallet contract {:?} by {:?}",
+            strategy,
+            self.address(),
+            signer.address(),
+        ),
+            tx_hash,
+        )?;
+        Ok(tx_hash)
     }
 
     pub async fn transfer_adminship(
@@ -195,8 +213,7 @@ impl<T: Transport> StrategyWalletContract<T> {
             new_admin,
             signer.address(),
         );
-
-        Ok(self
+        let tx_hash = self
             .contract
             .signed_call(
                 StrategyWalletFunctions::TransferAdminship.as_str(),
@@ -207,7 +224,12 @@ impl<T: Transport> StrategyWalletContract<T> {
                 }),
                 signer,
             )
-            .await?)
+            .await?;
+        get_blockchain_logger().log(
+            format!("TransferAdminship new_admin={:?}", new_admin),
+            tx_hash,
+        )?;
+        Ok(tx_hash)
     }
 
     pub async fn revoke_adminship(
@@ -232,8 +254,7 @@ impl<T: Transport> StrategyWalletContract<T> {
             self.address(),
             signer.address(),
         );
-
-        Ok(self
+        let tx_hash = self
             .contract
             .signed_call(
                 StrategyWalletFunctions::RevokeAdminship.as_str(),
@@ -244,7 +265,8 @@ impl<T: Transport> StrategyWalletContract<T> {
                 }),
                 signer,
             )
-            .await?)
+            .await?;
+        Ok(tx_hash)
     }
 }
 

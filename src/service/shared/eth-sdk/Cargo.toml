@@ -26,6 +26,8 @@ deadpool = { version = "0.9.5", features = ["managed", "rt_tokio_1"] }
 gen = { path = "../../../gen" }
 lib = { path = "../../../lib" }
 http = "*"
+chrono = "0.4.24"
+tracing-appender = "0.2.2"
 
 [features]
 default = []

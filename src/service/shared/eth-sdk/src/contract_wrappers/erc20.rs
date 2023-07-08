@@ -1,4 +1,5 @@
 use crate::contract::AbstractContract;
+use crate::logger::get_blockchain_logger;
 use crate::utils::wait_for_confirmations;
 use crate::{
     EitherTransport, EthereumRpcConnection, EthereumRpcConnectionPool, MultiChainAddressTable,
@@ -90,8 +91,7 @@ impl Erc20Token {
             .await?;
 
         let estimated_gas_price = conn.eth().gas_price().await?;
-
-        Ok(self
+        let tx_hash = self
             .contract
             .signed_call(
                 "mint",
@@ -102,7 +102,12 @@ impl Erc20Token {
                 }),
                 secret,
             )
-            .await?)
+            .await?;
+        get_blockchain_logger().log(
+            format!("Minted {} {} to {}", amount, self.symbol().await?, to),
+            tx_hash,
+        )?;
+        Ok(tx_hash)
     }
 
     pub async fn burn(
@@ -118,8 +123,7 @@ impl Erc20Token {
             .await?;
 
         let estimated_gas_price = conn.eth().gas_price().await?;
-
-        Ok(self
+        let tx_hash = self
             .contract
             .signed_call(
                 "burn",
@@ -130,7 +134,18 @@ impl Erc20Token {
                 }),
                 secret,
             )
-            .await?)
+            .await?;
+        get_blockchain_logger().log(
+            format!(
+                "Burned {} {:?} {}",
+                amount,
+                self.address,
+                self.symbol().await?
+            ),
+            tx_hash,
+        )?;
+
+        Ok(tx_hash)
     }
 
     pub async fn transfer(
@@ -151,8 +166,7 @@ impl Erc20Token {
             .await?;
 
         let estimated_gas_price = conn.eth().gas_price().await?;
-
-        Ok(self
+        let tx_hash = self
             .contract
             .signed_call(
                 "transfer",
@@ -163,7 +177,18 @@ impl Erc20Token {
                 }),
                 secret,
             )
-            .await?)
+            .await?;
+        get_blockchain_logger().log(
+            format!(
+                "Transferred {:?} {} to {} on {:?}",
+                amount,
+                self.symbol().await?,
+                to,
+                self.address
+            ),
+            tx_hash,
+        )?;
+        Ok(tx_hash)
     }
 
     pub async fn transfer_from(
@@ -185,8 +210,7 @@ impl Erc20Token {
             .await?;
 
         let estimated_gas_price = conn.eth().gas_price().await?;
-
-        Ok(self
+        let tx_hash = self
             .contract
             .signed_call(
                 "transferFrom",
@@ -197,7 +221,19 @@ impl Erc20Token {
                 }),
                 secret,
             )
-            .await?)
+            .await?;
+        get_blockchain_logger().log(
+            format!(
+                "Transferred {:?} {} from {} to {} on {:?}",
+                amount,
+                self.symbol().await?,
+                from,
+                to,
+                self.address
+            ),
+            tx_hash,
+        )?;
+        Ok(tx_hash)
     }
 
     pub async fn approve(
@@ -214,7 +250,6 @@ impl Erc20Token {
             spender,
             amount_to_display(amount)
         ));
-        logger.log("erc20 approve: estimate gas");
         let estimated_gas = self
             .contract
             .estimate_gas(
@@ -226,8 +261,12 @@ impl Erc20Token {
             .await?;
 
         let estimated_gas_price = conn.eth().gas_price().await?;
-        logger.log(format!("erc20 approve: estimated gas: {:?}", estimated_gas));
-        Ok(self
+        logger.log(format!(
+            "erc20 approve: estimated gas {:?} for price {:?}",
+            estimated_gas, estimated_gas_price
+        ));
+
+        let tx_hash = self
             .contract
             .signed_call(
                 "approve",
@@ -238,7 +277,26 @@ impl Erc20Token {
                 }),
                 secret,
             )
-            .await?)
+            .await?;
+
+        logger.log(format!(
+            "erc20 approve: approved {:?} {} for {} on {:?}",
+            amount,
+            self.symbol().await?,
+            spender,
+            self.address
+        ));
+        get_blockchain_logger().log(
+            format!(
+                "Approved {:?} {} for {} on {:?}",
+                amount,
+                self.symbol().await?,
+                spender,
+                self.address
+            ),
+            tx_hash,
+        )?;
+        Ok(tx_hash)
     }
 
     pub async fn balance_of(&self, owner: Address) -> Result<U256> {

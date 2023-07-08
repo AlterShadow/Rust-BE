@@ -20,11 +20,13 @@ pub mod dex_tracker;
 mod escrow_addresses;
 pub mod escrow_tracker;
 pub mod evm;
+pub mod logger;
 mod pool;
 pub mod signer;
 mod strategy_pool_herald_addresses;
 mod tx;
 pub mod utils;
+
 pub use address_table::*;
 pub use calc::*;
 pub use calldata::*;
