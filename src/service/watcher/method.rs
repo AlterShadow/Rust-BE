@@ -263,7 +263,7 @@ pub async fn handle_pancake_swap_transaction(
             MAX_RETRIES,
             POLL_INTERVAL,
             state.master_key.clone(),
-            expert_trade.get_pancake_pair_paths()?,
+            &expert_trade.get_pancake_pair_paths()?,
             amount_to_spend,
             U256::from(1),
             DynLogger::empty(),

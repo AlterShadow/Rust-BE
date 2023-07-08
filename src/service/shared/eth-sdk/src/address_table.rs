@@ -1,6 +1,9 @@
 use gen::model::EnumBlockChain;
 use std::collections::HashMap;
+use std::fmt::Debug;
 use std::hash::Hash;
+use std::marker::PhantomData;
+use std::path::Path;
 use web3::types::Address;
 
 pub struct AddressTable<ENUM> {
@@ -32,32 +35,44 @@ impl<ENUM: Copy + Eq + Hash> AddressTable<ENUM> {
     }
 }
 pub struct MultiChainAddressTable<ENUM> {
-    inner: HashMap<EnumBlockChain, AddressTable<ENUM>>,
+    inner: Vec<(i64, EnumBlockChain, String, Address)>,
+    _phantom: PhantomData<ENUM>,
 }
-impl<ENUM: Copy + Eq + Hash> MultiChainAddressTable<ENUM> {
+impl<ENUM: Copy + Eq + Hash + Debug> MultiChainAddressTable<ENUM> {
     pub fn empty() -> Self {
         Self {
-            inner: HashMap::new(),
+            inner: Default::default(),
+            _phantom: Default::default(),
         }
     }
     pub fn insert(&mut self, chain: EnumBlockChain, enum_: ENUM, address: Address) {
-        let table = self.inner.entry(chain).or_insert_with(AddressTable::new);
-        table.insert(enum_, address);
+        let id = self.inner.len() as i64;
+        self.inner.push((id, chain, format!("{enum_:?}"), address));
+    }
+    pub fn insert_record(
+        &mut self,
+        index: i64,
+        chain: EnumBlockChain,
+        enum_: ENUM,
+        address: Address,
+    ) {
+        self.inner
+            .push((index, chain, format!("{enum_:?}"), address));
     }
     pub fn get(&self, chain: EnumBlockChain, enum_: ENUM) -> Option<Address> {
-        self.inner.get(&chain)?.get(enum_)
-    }
-    pub fn get_by_address(&self, chain: EnumBlockChain, address: Address) -> Option<ENUM> {
-        self.inner.get(&chain)?.get_by_address(address)
-    }
-    pub fn iter(&self) -> impl Iterator<Item = (EnumBlockChain, ENUM, Address)> + '_ {
+        let enum_ = format!("{enum_:?}");
         self.inner
             .iter()
-            .map(|(k, v)| {
-                v.inner
-                    .iter()
-                    .map(move |(enum_, address)| (*k, *enum_, *address))
-            })
-            .flatten()
+            .find(|(id, c, e, _)| *c == chain && *e == enum_)
+            .map(|(_, _, _, address)| *address)
+    }
+    pub fn get_by_address(&self, chain: EnumBlockChain, address: Address) -> Option<&str> {
+        self.inner
+            .iter()
+            .find(|(id, c, e, a)| *c == chain && *a == address)
+            .map(|(_, _, e, _)| e.as_str())
+    }
+    pub fn iter(&self) -> impl Iterator<Item = &(i64, EnumBlockChain, String, Address)> + '_ {
+        self.inner.iter()
     }
 }

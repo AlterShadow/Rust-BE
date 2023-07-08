@@ -11,31 +11,39 @@ use crate::PancakePairPathSet;
 use gen::model::{EnumBlockChain, EnumBlockchainCoin};
 
 pub struct WorkingPancakePairPaths {
-    inner: HashMap<
-        EnumBlockChain,
-        HashMap<EnumBlockchainCoin, HashMap<EnumBlockchainCoin, PancakePairPathSet>>,
-    >,
+    inner: Vec<(i64, EnumBlockChain, String, String, PancakePairPathSet)>,
     addresses: BlockchainCoinAddresses,
 }
 
 impl WorkingPancakePairPaths {
+    pub fn empty() -> Self {
+        Self {
+            inner: Default::default(),
+            addresses: BlockchainCoinAddresses::new(),
+        }
+    }
+    fn insert(
+        &mut self,
+        chain: EnumBlockChain,
+        token_in: EnumBlockchainCoin,
+        token_out: EnumBlockchainCoin,
+        pair_paths: PancakePairPathSet,
+    ) {
+        let id = self.inner.len() as i64;
+        self.inner.push((
+            id,
+            chain,
+            format!("{token_in:?}"),
+            format!("{token_out:?}"),
+            pair_paths,
+        ));
+    }
     pub fn new() -> Result<Self> {
-        let mut this = HashMap::new();
-        this.insert(EnumBlockChain::EthereumMainnet, HashMap::new());
-        this.insert(EnumBlockChain::EthereumGoerli, HashMap::new());
-        this.insert(EnumBlockChain::BscMainnet, HashMap::new());
-        this.insert(EnumBlockChain::BscTestnet, HashMap::new());
+        let mut this = Self::empty();
 
-        let ethereum_mainnet_pairs = this.get_mut(&EnumBlockChain::EthereumMainnet).unwrap();
-        ethereum_mainnet_pairs.insert(EnumBlockchainCoin::USDC, HashMap::new());
-        ethereum_mainnet_pairs.insert(EnumBlockchainCoin::USDT, HashMap::new());
-        ethereum_mainnet_pairs.insert(EnumBlockchainCoin::BUSD, HashMap::new());
-        ethereum_mainnet_pairs.insert(EnumBlockchainCoin::WETH, HashMap::new());
-
-        let ethereum_mainnet_usdc_pairs = ethereum_mainnet_pairs
-            .get_mut(&EnumBlockchainCoin::USDC)
-            .unwrap();
-        ethereum_mainnet_usdc_pairs.insert(
+        this.insert(
+            EnumBlockChain::EthereumMainnet,
+            EnumBlockchainCoin::USDC,
             EnumBlockchainCoin::USDT,
             PancakePairPathSet::new(
                 Address::from_str("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48")?,
@@ -50,7 +58,9 @@ impl WorkingPancakePairPaths {
                 )],
             )?,
         );
-        ethereum_mainnet_usdc_pairs.insert(
+        this.insert(
+            EnumBlockChain::EthereumMainnet,
+            EnumBlockchainCoin::USDC,
             EnumBlockchainCoin::BUSD,
             PancakePairPathSet::new(
                 Address::from_str("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48")?,
@@ -64,7 +74,10 @@ impl WorkingPancakePairPaths {
                 )],
             )?,
         );
-        ethereum_mainnet_usdc_pairs.insert(
+
+        this.insert(
+            EnumBlockChain::EthereumMainnet,
+            EnumBlockchainCoin::USDC,
             EnumBlockchainCoin::WETH,
             PancakePairPathSet::new(
                 Address::from_str("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48")?,
@@ -79,10 +92,9 @@ impl WorkingPancakePairPaths {
             )?,
         );
 
-        let ethereum_mainnet_usdt_pairs = ethereum_mainnet_pairs
-            .get_mut(&EnumBlockchainCoin::USDT)
-            .unwrap();
-        ethereum_mainnet_usdt_pairs.insert(
+        this.insert(
+            EnumBlockChain::EthereumMainnet,
+            EnumBlockchainCoin::USDT,
             EnumBlockchainCoin::USDC,
             PancakePairPathSet::new(
                 Address::from_str("0xdac17f958d2ee523a2206206994597c13d831ec7")?,
@@ -97,7 +109,9 @@ impl WorkingPancakePairPaths {
                 )],
             )?,
         );
-        ethereum_mainnet_usdt_pairs.insert(
+        this.insert(
+            EnumBlockChain::EthereumMainnet,
+            EnumBlockchainCoin::USDT,
             EnumBlockchainCoin::BUSD,
             PancakePairPathSet::new(
                 Address::from_str("0xdac17f958d2ee523a2206206994597c13d831ec7")?,
@@ -111,7 +125,9 @@ impl WorkingPancakePairPaths {
                 )],
             )?,
         );
-        ethereum_mainnet_usdt_pairs.insert(
+        this.insert(
+            EnumBlockChain::EthereumMainnet,
+            EnumBlockchainCoin::USDT,
             EnumBlockchainCoin::WETH,
             PancakePairPathSet::new(
                 Address::from_str("0xdac17f958d2ee523a2206206994597c13d831ec7")?,
@@ -126,10 +142,10 @@ impl WorkingPancakePairPaths {
                 )],
             )?,
         );
-        let ethereum_mainnet_busd_pairs = ethereum_mainnet_pairs
-            .get_mut(&EnumBlockchainCoin::BUSD)
-            .unwrap();
-        ethereum_mainnet_busd_pairs.insert(
+
+        this.insert(
+            EnumBlockChain::EthereumMainnet,
+            EnumBlockchainCoin::BUSD,
             EnumBlockchainCoin::USDC,
             PancakePairPathSet::new(
                 Address::from_str("0x4fabb145d64652a948d72533023f6e7a623c7c53")?,
@@ -143,7 +159,9 @@ impl WorkingPancakePairPaths {
                 )],
             )?,
         );
-        ethereum_mainnet_busd_pairs.insert(
+        this.insert(
+            EnumBlockChain::EthereumMainnet,
+            EnumBlockchainCoin::BUSD,
             EnumBlockchainCoin::USDT,
             PancakePairPathSet::new(
                 Address::from_str("0x4fabb145d64652a948d72533023f6e7a623c7c53")?,
@@ -157,7 +175,9 @@ impl WorkingPancakePairPaths {
                 )],
             )?,
         );
-        ethereum_mainnet_busd_pairs.insert(
+        this.insert(
+            EnumBlockChain::EthereumMainnet,
+            EnumBlockchainCoin::BUSD,
             EnumBlockchainCoin::WETH,
             PancakePairPathSet::new(
                 Address::from_str("0x4fabb145d64652a948d72533023f6e7a623c7c53")?,
@@ -171,10 +191,10 @@ impl WorkingPancakePairPaths {
                 )],
             )?,
         );
-        let ethereum_mainnet_weth_pairs = ethereum_mainnet_pairs
-            .get_mut(&EnumBlockchainCoin::WETH)
-            .unwrap();
-        ethereum_mainnet_weth_pairs.insert(
+
+        this.insert(
+            EnumBlockChain::EthereumMainnet,
+            EnumBlockchainCoin::WETH,
             EnumBlockchainCoin::USDC,
             PancakePairPathSet::new(
                 Address::from_str("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2")?,
@@ -188,7 +208,9 @@ impl WorkingPancakePairPaths {
                 )],
             )?,
         );
-        ethereum_mainnet_weth_pairs.insert(
+        this.insert(
+            EnumBlockChain::EthereumMainnet,
+            EnumBlockchainCoin::WETH,
             EnumBlockchainCoin::USDT,
             PancakePairPathSet::new(
                 Address::from_str("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2")?,
@@ -202,7 +224,9 @@ impl WorkingPancakePairPaths {
                 )],
             )?,
         );
-        ethereum_mainnet_weth_pairs.insert(
+        this.insert(
+            EnumBlockChain::EthereumMainnet,
+            EnumBlockchainCoin::WETH,
             EnumBlockchainCoin::BUSD,
             PancakePairPathSet::new(
                 Address::from_str("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2")?,
@@ -217,14 +241,9 @@ impl WorkingPancakePairPaths {
             )?,
         );
 
-        let ethereum_goerli_pairs = this.get_mut(&EnumBlockChain::EthereumGoerli).unwrap();
-        ethereum_goerli_pairs.insert(EnumBlockchainCoin::USDC, HashMap::new());
-        ethereum_goerli_pairs.insert(EnumBlockchainCoin::WETH, HashMap::new());
-
-        let ethereum_goerli_usdc_pairs = ethereum_goerli_pairs
-            .get_mut(&EnumBlockchainCoin::USDC)
-            .unwrap();
-        ethereum_goerli_usdc_pairs.insert(
+        this.insert(
+            EnumBlockChain::EthereumGoerli,
+            EnumBlockchainCoin::USDC,
             EnumBlockchainCoin::WETH,
             PancakePairPathSet::new(
                 Address::from_str("0x07865c6e87b9f70255377e024ace6630c1eaa37f")?,
@@ -240,10 +259,9 @@ impl WorkingPancakePairPaths {
             )?,
         );
 
-        let ethereum_goerli_weth_pairs = ethereum_goerli_pairs
-            .get_mut(&EnumBlockchainCoin::WETH)
-            .unwrap();
-        ethereum_goerli_weth_pairs.insert(
+        this.insert(
+            EnumBlockChain::EthereumGoerli,
+            EnumBlockchainCoin::WETH,
             EnumBlockchainCoin::USDC,
             PancakePairPathSet::new(
                 Address::from_str("0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6")?,
@@ -258,17 +276,9 @@ impl WorkingPancakePairPaths {
             )?,
         );
 
-        let bsc_mainnet_pairs = this.get_mut(&EnumBlockChain::BscMainnet).unwrap();
-        bsc_mainnet_pairs.insert(EnumBlockchainCoin::USDC, HashMap::new());
-        bsc_mainnet_pairs.insert(EnumBlockchainCoin::USDT, HashMap::new());
-        bsc_mainnet_pairs.insert(EnumBlockchainCoin::BUSD, HashMap::new());
-        bsc_mainnet_pairs.insert(EnumBlockchainCoin::WBNB, HashMap::new());
-
-        let bsc_mainnet_usdc_pairs = bsc_mainnet_pairs
-            .get_mut(&EnumBlockchainCoin::USDC)
-            .unwrap();
-
-        bsc_mainnet_usdc_pairs.insert(
+        this.insert(
+            EnumBlockChain::BscMainnet,
+            EnumBlockchainCoin::USDC,
             EnumBlockchainCoin::USDT,
             PancakePairPathSet::new(
                 Address::from_str("0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d")?,
@@ -282,7 +292,9 @@ impl WorkingPancakePairPaths {
                 )],
             )?,
         );
-        bsc_mainnet_usdc_pairs.insert(
+        this.insert(
+            EnumBlockChain::BscMainnet,
+            EnumBlockchainCoin::USDC,
             EnumBlockchainCoin::BUSD,
             PancakePairPathSet::new(
                 Address::from_str("0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d")?,
@@ -297,7 +309,9 @@ impl WorkingPancakePairPaths {
                 )],
             )?,
         );
-        bsc_mainnet_usdc_pairs.insert(
+        this.insert(
+            EnumBlockChain::BscMainnet,
+            EnumBlockchainCoin::USDC,
             EnumBlockchainCoin::WBNB,
             PancakePairPathSet::new(
                 Address::from_str("0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d")?,
@@ -313,10 +327,9 @@ impl WorkingPancakePairPaths {
             )?,
         );
 
-        let bsc_mainnet_usdt_pairs = bsc_mainnet_pairs
-            .get_mut(&EnumBlockchainCoin::USDT)
-            .unwrap();
-        bsc_mainnet_usdt_pairs.insert(
+        this.insert(
+            EnumBlockChain::BscMainnet,
+            EnumBlockchainCoin::USDT,
             EnumBlockchainCoin::USDC,
             PancakePairPathSet::new(
                 Address::from_str("0x55d398326f99059ff775485246999027b3197955")?,
@@ -331,7 +344,9 @@ impl WorkingPancakePairPaths {
                 )],
             )?,
         );
-        bsc_mainnet_usdt_pairs.insert(
+        this.insert(
+            EnumBlockChain::BscMainnet,
+            EnumBlockchainCoin::USDT,
             EnumBlockchainCoin::BUSD,
             PancakePairPathSet::new(
                 Address::from_str("0x55d398326f99059ff775485246999027b3197955")?,
@@ -346,7 +361,9 @@ impl WorkingPancakePairPaths {
                 )],
             )?,
         );
-        bsc_mainnet_usdt_pairs.insert(
+        this.insert(
+            EnumBlockChain::BscMainnet,
+            EnumBlockchainCoin::USDT,
             EnumBlockchainCoin::WBNB,
             PancakePairPathSet::new(
                 Address::from_str("0x55d398326f99059ff775485246999027b3197955")?,
@@ -362,10 +379,9 @@ impl WorkingPancakePairPaths {
             )?,
         );
 
-        let bsc_mainnet_busd_pairs = bsc_mainnet_pairs
-            .get_mut(&EnumBlockchainCoin::BUSD)
-            .unwrap();
-        bsc_mainnet_busd_pairs.insert(
+        this.insert(
+            EnumBlockChain::BscMainnet,
+            EnumBlockchainCoin::BUSD,
             EnumBlockchainCoin::USDC,
             PancakePairPathSet::new(
                 Address::from_str("0xe9e7cea3dedca5984780bafc599bd69add087d56")?,
@@ -380,7 +396,9 @@ impl WorkingPancakePairPaths {
                 )],
             )?,
         );
-        bsc_mainnet_busd_pairs.insert(
+        this.insert(
+            EnumBlockChain::BscMainnet,
+            EnumBlockchainCoin::BUSD,
             EnumBlockchainCoin::USDT,
             PancakePairPathSet::new(
                 Address::from_str("0xe9e7cea3dedca5984780bafc599bd69add087d56")?,
@@ -395,7 +413,9 @@ impl WorkingPancakePairPaths {
                 )],
             )?,
         );
-        bsc_mainnet_busd_pairs.insert(
+        this.insert(
+            EnumBlockChain::BscMainnet,
+            EnumBlockchainCoin::BUSD,
             EnumBlockchainCoin::WBNB,
             PancakePairPathSet::new(
                 Address::from_str("0xe9e7cea3dedca5984780bafc599bd69add087d56")?,
@@ -410,10 +430,10 @@ impl WorkingPancakePairPaths {
                 )],
             )?,
         );
-        let bsc_mainnet_wbnb_pairs = bsc_mainnet_pairs
-            .get_mut(&EnumBlockchainCoin::WBNB)
-            .unwrap();
-        bsc_mainnet_wbnb_pairs.insert(
+
+        this.insert(
+            EnumBlockChain::BscMainnet,
+            EnumBlockchainCoin::WBNB,
             EnumBlockchainCoin::USDC,
             PancakePairPathSet::new(
                 Address::from_str("0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c")?,
@@ -427,7 +447,9 @@ impl WorkingPancakePairPaths {
                 )],
             )?,
         );
-        bsc_mainnet_wbnb_pairs.insert(
+        this.insert(
+            EnumBlockChain::BscMainnet,
+            EnumBlockchainCoin::WBNB,
             EnumBlockchainCoin::USDT,
             PancakePairPathSet::new(
                 Address::from_str("0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c")?,
@@ -441,7 +463,9 @@ impl WorkingPancakePairPaths {
                 )],
             )?,
         );
-        bsc_mainnet_wbnb_pairs.insert(
+        this.insert(
+            EnumBlockChain::BscMainnet,
+            EnumBlockchainCoin::WBNB,
             EnumBlockchainCoin::BUSD,
             PancakePairPathSet::new(
                 Address::from_str("0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c")?,
@@ -456,14 +480,9 @@ impl WorkingPancakePairPaths {
             )?,
         );
 
-        let bsc_testnet_pairs = this.get_mut(&EnumBlockChain::BscTestnet).unwrap();
-        bsc_testnet_pairs.insert(EnumBlockchainCoin::BUSD, HashMap::new());
-        bsc_testnet_pairs.insert(EnumBlockchainCoin::WBNB, HashMap::new());
-
-        let bsc_testnet_busd_pairs = bsc_testnet_pairs
-            .get_mut(&EnumBlockchainCoin::BUSD)
-            .unwrap();
-        bsc_testnet_busd_pairs.insert(
+        this.insert(
+            EnumBlockChain::BscTestnet,
+            EnumBlockchainCoin::BUSD,
             EnumBlockchainCoin::WBNB,
             PancakePairPathSet::new(
                 Address::from_str("0xab1a4d4f1d656d2450692d237fdd6c7f9146e814")?,
@@ -478,10 +497,10 @@ impl WorkingPancakePairPaths {
                 )],
             )?,
         );
-        let bsc_testnet_wbnb_pairs = bsc_testnet_pairs
-            .get_mut(&EnumBlockchainCoin::WBNB)
-            .unwrap();
-        bsc_testnet_wbnb_pairs.insert(
+
+        this.insert(
+            EnumBlockChain::BscTestnet,
+            EnumBlockchainCoin::WBNB,
             EnumBlockchainCoin::BUSD,
             PancakePairPathSet::new(
                 Address::from_str("0xae13d989dac2f0debff460ac112a837c89baa7cd")?,
@@ -497,27 +516,25 @@ impl WorkingPancakePairPaths {
             )?,
         );
 
-        Ok(Self {
-            inner: this,
-            addresses: BlockchainCoinAddresses::new(),
-        })
+        Ok(this)
     }
 
     pub fn get_pair(
         &self,
         chain: EnumBlockChain,
-        token_in: EnumBlockchainCoin,
-        token_out: EnumBlockchainCoin,
-    ) -> Result<PancakePairPathSet> {
-        Ok(self
-            .inner
-            .get(&chain)
-            .ok_or_else(|| eyre!("chain not found"))?
-            .get(&token_in)
-            .ok_or_else(|| eyre!("token_in not found"))?
-            .get(&token_out)
-            .ok_or_else(|| eyre!("token_out not found"))?
-            .clone())
+        token_in: &str,
+        token_out: &str,
+    ) -> Result<&PancakePairPathSet> {
+        self.inner
+            .iter()
+            .find(|(_, c, ti, to, _)| *c == chain && *ti == token_in && *to == token_out)
+            .map(|(_, _, _, _, p)| p)
+            .with_context(|| {
+                format!(
+                    "pair not found: chain {:?}, token_in {:?}, token_out {:?}",
+                    chain, token_in, token_out
+                )
+            })
     }
 
     pub fn get_pair_by_address(
@@ -525,7 +542,7 @@ impl WorkingPancakePairPaths {
         chain: EnumBlockChain,
         token_in: Address,
         token_out: Address,
-    ) -> Result<PancakePairPathSet> {
+    ) -> Result<&PancakePairPathSet> {
         let token_in_enum = self
             .addresses
             .get_by_address(chain, token_in)
@@ -534,14 +551,6 @@ impl WorkingPancakePairPaths {
             .addresses
             .get_by_address(chain, token_out)
             .ok_or_else(|| eyre!("token_out {:?} not found", token_out))?;
-        Ok(self
-            .inner
-            .get(&chain)
-            .ok_or_else(|| eyre!("chain {:?} found", chain))?
-            .get(&token_in_enum)
-            .ok_or_else(|| eyre!("token_in {:?} found", token_in_enum))?
-            .get(&token_out_enum)
-            .ok_or_else(|| eyre!("token_out {:?} found", token_out_enum))?
-            .clone())
+        self.get_pair(chain, token_in_enum, token_out_enum)
     }
 }

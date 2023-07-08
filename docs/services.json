@@ -3637,9 +3637,7 @@
                     },
                     {
                       "name": "token",
-                      "ty": {
-                        "EnumRef": "blockchain_coin"
-                      }
+                      "ty": "String"
                     },
                     {
                       "name": "address",

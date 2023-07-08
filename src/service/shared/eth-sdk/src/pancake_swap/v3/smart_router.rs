@@ -728,7 +728,7 @@ pub async fn copy_trade_and_ensure_success(
     max_retry: u64,
     poll_interval: Duration,
     signer: impl Key + Clone,
-    paths: PancakePairPathSet,
+    paths: &PancakePairPathSet,
     amount_in: U256,
     amount_out_minimum: U256,
     logger: DynLogger,

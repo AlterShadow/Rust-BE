@@ -28,10 +28,10 @@ pub fn parse_escrow(
         .context("unsupported coin")?;
 
     match token {
-        EnumBlockchainCoin::USDC => {}
-        EnumBlockchainCoin::USDT => {}
-        EnumBlockchainCoin::BUSD => {}
-        _ => bail!("unsupported coin"),
+        "USDC" => {}
+        "USDT" => {}
+        "BUSD" => {}
+        _ => bail!("unsupported coin: {:?}", token),
     }
 
     let sender = tx.get_from().context("No sender")?;
@@ -46,7 +46,7 @@ pub fn parse_escrow(
             let recipient = call
                 .get_param("_to")
                 .or_else(|_| call.get_param("to"))
-                .or_else(|_| Err(eyre!("no recipient address")))?
+                .context("no recipient address")?
                 .get_value()
                 .into_address()?;
 
@@ -55,12 +55,12 @@ pub fn parse_escrow(
                 .or_else(|_| call.get_param("value"))
                 .or_else(|_| call.get_param("_amount"))
                 .or_else(|_| call.get_param("amount"))
-                .or_else(|_| Err(eyre!("no amount")))?
+                .context("no amount")?
                 .get_value()
                 .into_uint()?;
 
             EscrowTransfer {
-                token,
+                token: token.to_string(),
                 token_address: called_contract,
                 amount,
                 recipient,
@@ -71,14 +71,14 @@ pub fn parse_escrow(
             let owner = call
                 .get_param("_from")
                 .or_else(|_| call.get_param("from"))
-                .or_else(|_| Err(eyre!("no owner address")))?
+                .context("no owner address")?
                 .get_value()
                 .into_address()?;
 
             let recipient = call
                 .get_param("_to")
                 .or_else(|_| call.get_param("to"))
-                .or_else(|_| Err(eyre!("no recipient address")))?
+                .context("no recipient address")?
                 .get_value()
                 .into_address()?;
 
@@ -92,7 +92,7 @@ pub fn parse_escrow(
                 .into_uint()?;
 
             EscrowTransfer {
-                token,
+                token: token.to_string(),
                 token_address: called_contract,
                 amount,
                 recipient,

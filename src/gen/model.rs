@@ -1791,7 +1791,7 @@ pub struct UserGetDepositTokensResponse {
 #[serde(rename_all = "camelCase")]
 pub struct UserGetDepositTokensRow {
     pub blockchain: EnumBlockChain,
-    pub token: EnumBlockchainCoin,
+    pub token: String,
     #[serde(with = "WithBlockchainAddress")]
     pub address: Address,
     pub short_name: String,
@@ -6472,9 +6472,7 @@ impl WsRequest for UserGetDepositTokensRequest {
             },
             {
               "name": "token",
-              "ty": {
-                "EnumRef": "blockchain_coin"
-              }
+              "ty": "String"
             },
             {
               "name": "address",

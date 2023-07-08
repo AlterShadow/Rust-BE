@@ -109,7 +109,7 @@ impl Debug for EthereumToken {
 // TODO: put it in proper module
 #[derive(Clone, Debug)]
 pub struct EscrowTransfer {
-    pub token: EnumBlockchainCoin,
+    pub token: String,
     pub token_address: Address,
     pub amount: U256,
     pub recipient: Address,

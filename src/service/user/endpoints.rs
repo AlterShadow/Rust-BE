@@ -752,7 +752,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                     "UserGetDepositTokensRow",
                     vec![
                         Field::new("blockchain", Type::enum_ref("block_chain")),
-                        Field::new("token", Type::enum_ref("blockchain_coin")),
+                        Field::new("token", Type::String),
                         Field::new("address", Type::BlockchainAddress),
                         Field::new("short_name", Type::String),
                         Field::new("icon_url", Type::String),

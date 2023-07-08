@@ -14,12 +14,9 @@ pub async fn parse_dex_trade(
         .get_by_address(chain, called_contract)
         .unwrap();
     let trade = match dex {
-        EnumDex::PancakeSwap => pancake_swap.parse_trade(tx, chain.clone())?,
-        EnumDex::UniSwap => {
-            bail!("does not support dex: UniSwap");
-        }
-        EnumDex::SushiSwap => {
-            bail!("does not support dex: SushiSwap");
+        "PancakeSwap" => pancake_swap.parse_trade(tx, chain.clone())?,
+        d => {
+            bail!("does not support dex: {}", dex);
         }
     };
 

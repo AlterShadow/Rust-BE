@@ -2327,13 +2327,15 @@ impl RequestHandler for MethodUserGetDepositTokens {
             Ok(UserGetDepositTokensResponse {
                 tokens: tokens
                     .iter()
-                    .map(|(blockchain, token, address)| UserGetDepositTokensRow {
-                        blockchain,
-                        token,
-                        address: address.into(),
-                        short_name: format!("{:?}", token),
-                        icon_url: "https://etherscan.io/token/images/centre-usdc_28.png"
-                            .to_string(),
+                    .map(|(i, blockchain, token, address)| UserGetDepositTokensRow {
+                        blockchain: *blockchain,
+                        token: token.clone(),
+                        address: *address,
+                        short_name: token.to_string(),
+                        icon_url: format!(
+                            "https://etherscan.io/token/images/centre-{}_28.png",
+                            token.to_ascii_lowercase()
+                        ),
                         conversion: 1.0, // TODO: register this conversion rate
                     })
                     .collect(),

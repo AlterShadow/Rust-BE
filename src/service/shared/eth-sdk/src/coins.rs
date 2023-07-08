@@ -7,6 +7,7 @@ impl BlockchainCoinAddresses {
     pub fn empty() -> Self {
         Self(MultiChainAddressTable::empty())
     }
+    #[deprecated]
     pub fn new() -> Self {
         let mut this = MultiChainAddressTable::empty();
         this.insert(

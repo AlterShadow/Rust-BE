@@ -265,7 +265,7 @@ impl<ENUM> Debug for AbstractContract<ENUM> {
             .finish_non_exhaustive()
     }
 }
-impl<ENUM: Copy + Eq + Hash> AbstractContract<ENUM> {
+impl<ENUM: Copy + Eq + Hash + Debug> AbstractContract<ENUM> {
     pub fn to_concrete_contract(
         &self,
         eth: Eth<EitherTransport>,
