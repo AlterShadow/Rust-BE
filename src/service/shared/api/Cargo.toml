@@ -21,5 +21,6 @@ serde = { version = "1", features = ["derive"] }
 tracing = "*"
 lib = { path = "../../../lib" }
 lru = "0.10.0"
+chrono = "0.4.24"
 [lib]
 path = "lib.rs"
