@@ -101,6 +101,7 @@ ID: 3
 |32020|AdminAddEscrowTokenContractAddress|pkey_id, symbol, short_name, description, address, blockchain, is_stablecoin|||
 |32030|AdminAddEscrowContractAddress|pkey_id, address, blockchain|||
 |32040|AdminListBackStrategyLedger|limit, offset, strategy_id|back_ledger_total, back_ledger||
+|32050|AdminSetBlockchainLogger|enabled|||
 
 # watcher Server
 ID: 4

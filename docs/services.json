@@ -5687,6 +5687,20 @@
           "stream_response": null,
           "description": "",
           "json_schema": null
+        },
+        {
+          "name": "AdminSetBlockchainLogger",
+          "code": 32050,
+          "parameters": [
+            {
+              "name": "enabled",
+              "ty": "Boolean"
+            }
+          ],
+          "returns": [],
+          "stream_response": null,
+          "description": "",
+          "json_schema": null
         }
       ]
     },

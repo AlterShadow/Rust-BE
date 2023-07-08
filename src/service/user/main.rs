@@ -157,6 +157,7 @@ async fn main() -> Result<()> {
     server.add_handler(MethodAdminListBackStrategyLedger);
     server.add_handler(MethodAdminApproveStrategy);
     server.add_handler(MethodAdminRejectStrategy);
+    server.add_handler(MethodAdminSetBlockchainLogger);
     let sub_manager = SubscribeManager::new();
     sub_manager.add_topic(AdminSubscribeTopic::AdminNotifyEscrowLedgerChange);
     let sub_manager = Arc::new(sub_manager);

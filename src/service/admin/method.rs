@@ -1,5 +1,6 @@
 use crate::method::{convert_expert_db_to_api, convert_strategy_db_to_api, ensure_user_role};
 use chrono::Utc;
+use eth_sdk::logger::get_blockchain_logger;
 use eth_sdk::signer::Secp256k1SecretKey;
 use eyre::ContextCompat;
 use futures::FutureExt;
@@ -720,6 +721,23 @@ impl RequestHandler for MethodAdminListBackStrategyLedger {
                     happened_at: x.happened_at,
                 }),
             })
+        }
+        .boxed()
+    }
+}
+pub struct MethodAdminSetBlockchainLogger;
+impl RequestHandler for MethodAdminSetBlockchainLogger {
+    type Request = AdminSetBlockchainLoggerRequest;
+    fn handle(
+        &self,
+        _toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        async move {
+            ensure_user_role(ctx, EnumRole::Admin)?;
+            get_blockchain_logger().set_enabled(req.enabled);
+            Ok(AdminSetBlockchainLoggerResponse {})
         }
         .boxed()
     }

@@ -478,6 +478,9 @@ pub enum EnumEndpoint {
     ///
     #[postgres(name = "AdminListBackStrategyLedger")]
     AdminListBackStrategyLedger = 32040,
+    ///
+    #[postgres(name = "AdminSetBlockchainLogger")]
+    AdminSetBlockchainLogger = 32050,
 }
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -1093,6 +1096,14 @@ pub struct AdminSetBlockUserRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminSetBlockUserResponse {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminSetBlockchainLoggerRequest {
+    pub enabled: bool,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminSetBlockchainLoggerResponse {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminSetUserRoleRequest {
@@ -8813,4 +8824,26 @@ impl WsRequest for AdminListBackStrategyLedgerRequest {
 }
 impl WsResponse for AdminListBackStrategyLedgerResponse {
     type Request = AdminListBackStrategyLedgerRequest;
+}
+
+impl WsRequest for AdminSetBlockchainLoggerRequest {
+    type Response = AdminSetBlockchainLoggerResponse;
+    const METHOD_ID: u32 = 32050;
+    const SCHEMA: &'static str = r#"{
+  "name": "AdminSetBlockchainLogger",
+  "code": 32050,
+  "parameters": [
+    {
+      "name": "enabled",
+      "ty": "Boolean"
+    }
+  ],
+  "returns": [],
+  "stream_response": null,
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for AdminSetBlockchainLoggerResponse {
+    type Request = AdminSetBlockchainLoggerRequest;
 }

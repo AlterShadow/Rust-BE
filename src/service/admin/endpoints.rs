@@ -293,5 +293,11 @@ pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
                 ),
             ],
         ),
+        EndpointSchema::new(
+            "AdminSetBlockchainLogger",
+            32050,
+            vec![Field::new("enabled", Type::Boolean)],
+            vec![],
+        ),
     ]
 }

@@ -15,6 +15,7 @@
   "AdminRejectStrategy",
   "AdminRejectUserBecomeExpert",
   "AdminSetBlockUser",
+  "AdminSetBlockchainLogger",
   "AdminSetUserRole",
   "AdminSubscribeDepositLedger",
   "AdminUnsubscribeDepositLedger",
