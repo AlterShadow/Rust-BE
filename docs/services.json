@@ -2323,6 +2323,10 @@
               "ty": "Int"
             },
             {
+              "name": "backers_count",
+              "ty": "Int"
+            },
+            {
               "name": "description",
               "ty": "String"
             },
@@ -2341,6 +2345,10 @@
             {
               "name": "aum",
               "ty": "Numeric"
+            },
+            {
+              "name": "followed",
+              "ty": "Boolean"
             },
             {
               "name": "strategies_total",

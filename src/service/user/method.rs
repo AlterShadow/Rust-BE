@@ -1318,7 +1318,9 @@ impl RequestHandler for MethodUserListFeaturedExperts {
         .boxed()
     }
 }
-pub struct MethodUserGetExpertProfile;
+pub struct MethodUserGetExpertProfile {
+    pub cmc: Arc<CoinMarketCap>,
+}
 impl RequestHandler for MethodUserGetExpertProfile {
     type Request = UserGetExpertProfileRequest;
 
@@ -1329,6 +1331,7 @@ impl RequestHandler for MethodUserGetExpertProfile {
         req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
+        let cmc = self.cmc.clone();
         async move {
             ensure_user_role(ctx, EnumRole::User)?;
             let ret = db
@@ -1358,13 +1361,17 @@ impl RequestHandler for MethodUserGetExpertProfile {
                 expert_id: ret.expert_id,
                 name: ret.username,
                 follower_count: ret.follower_count as _,
+                backers_count: ret.backer_count as _,
                 description: ret.description.unwrap_or_default(),
                 social_media: ret.social_media.unwrap_or_default(),
                 risk_score: ret.risk_score.unwrap_or_default(),
                 aum: ret.aum.unwrap_or_default(),
                 reputation_score: ret.reputation_score.unwrap_or_default(),
                 strategies_total: strategies.first(|x| x.total).unwrap_or_default(),
-                strategies: strategies.map(convert_strategy_db_to_api),
+                strategies: strategies
+                    .map_async(|x| convert_strategy_db_to_api_net_value(x, &cmc, &db))
+                    .await?,
+                followed: ret.followed,
             })
         }
         .boxed()

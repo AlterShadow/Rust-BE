@@ -1821,11 +1821,13 @@ pub struct UserGetExpertProfileResponse {
     pub expert_id: i64,
     pub name: String,
     pub follower_count: i32,
+    pub backers_count: i32,
     pub description: String,
     pub social_media: String,
     pub risk_score: f64,
     pub reputation_score: f64,
     pub aum: f64,
+    pub followed: bool,
     pub strategies_total: i64,
     pub strategies: Vec<ListStrategiesRow>,
 }
@@ -5001,6 +5003,10 @@ impl WsRequest for UserGetExpertProfileRequest {
       "ty": "Int"
     },
     {
+      "name": "backers_count",
+      "ty": "Int"
+    },
+    {
       "name": "description",
       "ty": "String"
     },
@@ -5019,6 +5025,10 @@ impl WsRequest for UserGetExpertProfileRequest {
     {
       "name": "aum",
       "ty": "Numeric"
+    },
+    {
+      "name": "followed",
+      "ty": "Boolean"
     },
     {
       "name": "strategies_total",

@@ -95,7 +95,9 @@ async fn main() -> Result<()> {
     server.add_handler(MethodUserListExperts);
     server.add_handler(MethodUserListTopPerformingExperts);
     server.add_handler(MethodUserListFeaturedExperts);
-    server.add_handler(MethodUserGetExpertProfile);
+    server.add_handler(MethodUserGetExpertProfile {
+        cmc: cmc_client.clone(),
+    });
 
     server.add_handler(MethodUserGetUserProfile);
     server.add_handler(MethodUserUpdateUserProfile);
