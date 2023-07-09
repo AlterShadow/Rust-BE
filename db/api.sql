@@ -714,7 +714,7 @@ BEGIN
                  FROM tbl.strategy AS s
                       JOIN tbl.user_back_exit_strategy_ledger AS b ON b.fkey_strategy_id = s.pkey_id AND b.fkey_user_id = a_user_id
                       JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id
-											JOIN tbl.expert_watched_wallet AS w ON w.fkey_user_id = u.pkey_id
+                      JOIN tbl.expert_watched_wallet AS w ON w.fkey_user_id = u.pkey_id
                  WHERE b.fkey_user_id = a_user_id
                  ORDER BY s.pkey_id
                  LIMIT a_limit
@@ -751,6 +751,41 @@ BEGIN
                  WHERE (a_user_id ISNULL OR a.fkey_user_id = a_user_id)
                     AND (a_strategy_id ISNULL OR a_strategy_id = a.fkey_strategy_id)
                         AND a.is_back = TRUE
+                 ORDER BY a.happened_at
+                 LIMIT a_limit
+                 OFFSET a_offset;
+END
+
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_list_exit_strategy_ledger(a_limit bigint, a_offset bigint, a_user_id bigint DEFAULT NULL, a_strategy_id bigint DEFAULT NULL)
+RETURNS table (
+    "total" bigint,
+    "back_ledger_id" bigint,
+    "user_id" bigint,
+    "strategy_id" bigint,
+    "quantity" varchar,
+    "blockchain" enum_block_chain,
+    "transaction_hash" varchar,
+    "happened_at" bigint
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY SELECT COUNT(*) OVER() AS total,
+                        a.pkey_id          AS back_ledger_id,
+                        a.fkey_user_id     AS user_id,
+                        a.fkey_strategy_id AS strategy_id,
+                        a.quantity_of_usdc         AS quantity,
+                        a.blockchain       AS blockchain,
+                        a.transaction_hash AS transaction_hash,
+                        a.happened_at             AS happened_at
+                 FROM tbl.user_back_exit_strategy_ledger AS a
+                 WHERE (a_user_id ISNULL OR a.fkey_user_id = a_user_id)
+                    AND (a_strategy_id ISNULL OR a_strategy_id = a.fkey_strategy_id)
+                        AND a.is_back = FALSE
                  ORDER BY a.happened_at
                  LIMIT a_limit
                  OFFSET a_offset;

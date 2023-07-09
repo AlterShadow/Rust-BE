@@ -725,6 +725,44 @@ impl RequestHandler for MethodAdminListBackStrategyLedger {
         .boxed()
     }
 }
+
+pub struct MethodAdminListExitStrategyLedger;
+impl RequestHandler for MethodAdminListExitStrategyLedger {
+    type Request = AdminListExitStrategyLedgerRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db = toolbox.get_db();
+        async move {
+            ensure_user_role(ctx, EnumRole::Admin)?;
+            let ledger = db
+                .execute(FunUserListExitStrategyLedgerReq {
+                    limit: req.limit.unwrap_or(DEFAULT_LIMIT),
+                    offset: req.offset.unwrap_or(DEFAULT_OFFSET),
+                    strategy_id: req.strategy_id,
+                    user_id: None,
+                })
+                .await?;
+            Ok(AdminListExitStrategyLedgerResponse {
+                exit_ledger_total: ledger.first(|x| x.total).unwrap_or_default(),
+                exit_ledger: ledger.map(|x| AdminExitStrategyLedgerRow {
+                    user_id: x.user_id,
+                    back_ledger_id: x.back_ledger_id,
+                    strategy_id: x.strategy_id,
+                    quantity: x.quantity.into(),
+                    blockchain: x.blockchain,
+                    transaction_hash: x.transaction_hash.into(),
+                    happened_at: x.happened_at,
+                }),
+            })
+        }
+        .boxed()
+    }
+}
 pub struct MethodAdminSetBlockchainLogger;
 impl RequestHandler for MethodAdminSetBlockchainLogger {
     type Request = AdminSetBlockchainLoggerRequest;

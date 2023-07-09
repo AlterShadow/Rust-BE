@@ -57,7 +57,7 @@ async fn main() -> Result<()> {
     );
     server.add_auth_controller(auth_controller);
 
-    let mut coin_addresses = load_coin_addresses(&db).await?;
+    let coin_addresses = load_coin_addresses(&db).await?;
 
     server.add_handler(MethodUserFollowStrategy);
     server.add_handler(MethodUserListFollowedStrategies);
@@ -128,6 +128,8 @@ async fn main() -> Result<()> {
     server.add_handler(MethodExpertRemoveStrategyWatchingWallet {
         logger: audit_logger.clone(),
     });
+    server.add_handler(MethodExpertListBackStrategyLedger);
+    server.add_handler(MethodExpertListExitStrategyLedger);
     server.add_handler(MethodUserListStrategyInitialTokenRatio);
     server.add_handler(MethodUserGetDepositTokens {
         coin_addresses: coin_addresses.clone(),
@@ -137,6 +139,7 @@ async fn main() -> Result<()> {
     server.add_handler(MethodUserGetDepositWithdrawBalance);
     server.add_handler(MethodUserListEscrowTokenContractAddresses);
     server.add_handler(MethodUserListBackStrategyLedger);
+    server.add_handler(MethodUserListExitStrategyLedger);
     server.add_handler(MethodUserListStrategyTokenBalance);
     // they are basically the same but MethodUserGetEscrowAddressForStrategy is more user friendly
     server.add_handler(MethodUserGetDepositAddresses {
@@ -159,6 +162,7 @@ async fn main() -> Result<()> {
     server.add_handler(MethodAdminListExperts);
     server.add_handler(MethodAdminListStrategies);
     server.add_handler(MethodAdminListBackStrategyLedger);
+    server.add_handler(MethodAdminListExitStrategyLedger);
     server.add_handler(MethodAdminApproveStrategy);
     server.add_handler(MethodAdminRejectStrategy);
     server.add_handler(MethodAdminSetBlockchainLogger);

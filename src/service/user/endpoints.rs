@@ -324,7 +324,32 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 ),
             ],
         ),
-        // endpoint_user_exit_strategy(),
+        EndpointSchema::new(
+            "ExpertListBackStrategyLedger",
+            20101,
+            vec![
+                Field::new("limit", Type::optional(Type::BigInt)),
+                Field::new("offset", Type::optional(Type::BigInt)),
+                Field::new("strategy_id", Type::optional(Type::BigInt)),
+            ],
+            vec![
+                Field::new("back_ledger_total", Type::BigInt),
+                Field::new(
+                    "back_ledger",
+                    Type::datatable(
+                        "BackStrategyLedgerRow",
+                        vec![
+                            Field::new("back_ledger_id", Type::BigInt),
+                            Field::new("strategy_id", Type::BigInt),
+                            Field::new("quantity", Type::BlockchainDecimal),
+                            Field::new("blockchain", Type::enum_ref("block_chain")),
+                            Field::new("transaction_hash", Type::BlockchainTransactionHash),
+                            Field::new("happened_at", Type::BigInt),
+                        ],
+                    ),
+                ),
+            ],
+        ),
         EndpointSchema::new(
             "UserListExitStrategyLedger",
             20120,
@@ -342,9 +367,36 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                         vec![
                             Field::new("exit_ledger_id", Type::BigInt),
                             Field::new("strategy_id", Type::BigInt),
-                            Field::new("exit_quantity", Type::BlockchainDecimal),
+                            Field::new("quantity", Type::BlockchainDecimal),
                             Field::new("blockchain", Type::enum_ref("block_chain")),
-                            Field::new("exit_time", Type::BigInt),
+                            Field::new("transaction_hash", Type::BlockchainTransactionHash),
+                            Field::new("happened_at", Type::BigInt),
+                        ],
+                    ),
+                ),
+            ],
+        ),
+        EndpointSchema::new(
+            "ExpertListExitStrategyLedger",
+            20121,
+            vec![
+                Field::new("strategy_id", Type::optional(Type::BigInt)),
+                Field::new("limit", Type::optional(Type::BigInt)),
+                Field::new("offset", Type::optional(Type::BigInt)),
+            ],
+            vec![
+                Field::new("exit_ledger_total", Type::BigInt),
+                Field::new(
+                    "exit_ledger",
+                    Type::datatable(
+                        "ExitStrategyLedgerRow",
+                        vec![
+                            Field::new("exit_ledger_id", Type::BigInt),
+                            Field::new("strategy_id", Type::BigInt),
+                            Field::new("quantity", Type::BlockchainDecimal),
+                            Field::new("blockchain", Type::enum_ref("block_chain")),
+                            Field::new("transaction_hash", Type::BlockchainTransactionHash),
+                            Field::new("happened_at", Type::BigInt),
                         ],
                     ),
                 ),

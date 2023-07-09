@@ -31,7 +31,9 @@ ID: 2
 |20081|UserRequestRefund|quantity, wallet_address, blockchain, nonce|success||
 |20090|UserListBackedStrategies|limit, offset|strategies_total, strategies||
 |20100|UserListBackStrategyLedger|limit, offset, strategy_id|back_ledger_total, back_ledger||
+|20101|ExpertListBackStrategyLedger|limit, offset, strategy_id|back_ledger_total, back_ledger||
 |20120|UserListExitStrategyLedger|strategy_id, limit, offset|exit_ledger_total, exit_ledger||
+|20121|ExpertListExitStrategyLedger|strategy_id, limit, offset|exit_ledger_total, exit_ledger||
 |20130|UserFollowExpert|expert_id|success|User follows an expert|
 |20140|UserListFollowedExperts|limit, offset|experts_total, experts|User lists followed experts|
 |20150|UserUnfollowExpert|expert_id|success|User unfollows an expert|
@@ -101,6 +103,7 @@ ID: 3
 |32020|AdminAddEscrowTokenContractAddress|pkey_id, symbol, short_name, description, address, blockchain, is_stablecoin|||
 |32030|AdminAddEscrowContractAddress|pkey_id, address, blockchain|||
 |32040|AdminListBackStrategyLedger|limit, offset, strategy_id|back_ledger_total, back_ledger||
+|32041|AdminListExitStrategyLedger|limit, offset, strategy_id|exit_ledger_total, exit_ledger||
 |32050|AdminSetBlockchainLogger|enabled|||
 
 # watcher Server

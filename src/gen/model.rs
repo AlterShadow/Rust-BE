@@ -287,8 +287,14 @@ pub enum EnumEndpoint {
     #[postgres(name = "UserListBackStrategyLedger")]
     UserListBackStrategyLedger = 20100,
     ///
+    #[postgres(name = "ExpertListBackStrategyLedger")]
+    ExpertListBackStrategyLedger = 20101,
+    ///
     #[postgres(name = "UserListExitStrategyLedger")]
     UserListExitStrategyLedger = 20120,
+    ///
+    #[postgres(name = "ExpertListExitStrategyLedger")]
+    ExpertListExitStrategyLedger = 20121,
     ///
     #[postgres(name = "UserFollowExpert")]
     UserFollowExpert = 20130,
@@ -478,6 +484,9 @@ pub enum EnumEndpoint {
     ///
     #[postgres(name = "AdminListBackStrategyLedger")]
     AdminListBackStrategyLedger = 32040,
+    ///
+    #[postgres(name = "AdminListExitStrategyLedger")]
+    AdminListExitStrategyLedger = 32041,
     ///
     #[postgres(name = "AdminSetBlockchainLogger")]
     AdminSetBlockchainLogger = 32050,
@@ -904,6 +913,19 @@ pub struct AdminBackStrategyLedgerRow {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct AdminExitStrategyLedgerRow {
+    pub back_ledger_id: i64,
+    pub user_id: i64,
+    pub strategy_id: i64,
+    #[serde(with = "WithBlockchainDecimal")]
+    pub quantity: U256,
+    pub blockchain: EnumBlockChain,
+    #[serde(with = "WithBlockchainTransactionHash")]
+    pub transaction_hash: H256,
+    pub happened_at: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct AdminGetSystemConfigRequest {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -962,6 +984,22 @@ pub struct AdminListBackersRow {
     pub total_platform_fee_paid: f64,
     pub total_strategy_fee_paid: f64,
     pub total_backing_amount: f64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminListExitStrategyLedgerRequest {
+    #[serde(default)]
+    pub limit: Option<i64>,
+    #[serde(default)]
+    pub offset: Option<i64>,
+    #[serde(default)]
+    pub strategy_id: Option<i64>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminListExitStrategyLedgerResponse {
+    pub exit_ledger_total: i64,
+    pub exit_ledger: Vec<AdminExitStrategyLedgerRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1226,9 +1264,11 @@ pub struct ExitStrategyLedgerRow {
     pub exit_ledger_id: i64,
     pub strategy_id: i64,
     #[serde(with = "WithBlockchainDecimal")]
-    pub exit_quantity: U256,
+    pub quantity: U256,
     pub blockchain: EnumBlockChain,
-    pub exit_time: i64,
+    #[serde(with = "WithBlockchainTransactionHash")]
+    pub transaction_hash: H256,
+    pub happened_at: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1296,6 +1336,22 @@ pub struct ExpertFreezeStrategyResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct ExpertListBackStrategyLedgerRequest {
+    #[serde(default)]
+    pub limit: Option<i64>,
+    #[serde(default)]
+    pub offset: Option<i64>,
+    #[serde(default)]
+    pub strategy_id: Option<i64>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ExpertListBackStrategyLedgerResponse {
+    pub back_ledger_total: i64,
+    pub back_ledger: Vec<BackStrategyLedgerRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct ExpertListBackersRequest {
     #[serde(default)]
     pub limit: Option<i64>,
@@ -1319,6 +1375,22 @@ pub struct ExpertListBackersRow {
     pub given_name: Option<String>,
     pub backed_at: i64,
     pub joined_at: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ExpertListExitStrategyLedgerRequest {
+    #[serde(default)]
+    pub strategy_id: Option<i64>,
+    #[serde(default)]
+    pub limit: Option<i64>,
+    #[serde(default)]
+    pub offset: Option<i64>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ExpertListExitStrategyLedgerResponse {
+    pub exit_ledger_total: i64,
+    pub exit_ledger: Vec<ExitStrategyLedgerRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -4275,6 +4347,83 @@ impl WsResponse for UserListBackStrategyLedgerResponse {
     type Request = UserListBackStrategyLedgerRequest;
 }
 
+impl WsRequest for ExpertListBackStrategyLedgerRequest {
+    type Response = ExpertListBackStrategyLedgerResponse;
+    const METHOD_ID: u32 = 20101;
+    const SCHEMA: &'static str = r#"{
+  "name": "ExpertListBackStrategyLedger",
+  "code": 20101,
+  "parameters": [
+    {
+      "name": "limit",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "offset",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "strategy_id",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    }
+  ],
+  "returns": [
+    {
+      "name": "back_ledger_total",
+      "ty": "BigInt"
+    },
+    {
+      "name": "back_ledger",
+      "ty": {
+        "DataTable": {
+          "name": "BackStrategyLedgerRow",
+          "fields": [
+            {
+              "name": "back_ledger_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "quantity",
+              "ty": "BlockchainDecimal"
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
+            },
+            {
+              "name": "transaction_hash",
+              "ty": "BlockchainTransactionHash"
+            },
+            {
+              "name": "happened_at",
+              "ty": "BigInt"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": null,
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for ExpertListBackStrategyLedgerResponse {
+    type Request = ExpertListBackStrategyLedgerRequest;
+}
+
 impl WsRequest for UserListExitStrategyLedgerRequest {
     type Response = UserListExitStrategyLedgerResponse;
     const METHOD_ID: u32 = 20120;
@@ -4321,7 +4470,7 @@ impl WsRequest for UserListExitStrategyLedgerRequest {
               "ty": "BigInt"
             },
             {
-              "name": "exit_quantity",
+              "name": "quantity",
               "ty": "BlockchainDecimal"
             },
             {
@@ -4331,7 +4480,11 @@ impl WsRequest for UserListExitStrategyLedgerRequest {
               }
             },
             {
-              "name": "exit_time",
+              "name": "transaction_hash",
+              "ty": "BlockchainTransactionHash"
+            },
+            {
+              "name": "happened_at",
               "ty": "BigInt"
             }
           ]
@@ -4346,6 +4499,83 @@ impl WsRequest for UserListExitStrategyLedgerRequest {
 }
 impl WsResponse for UserListExitStrategyLedgerResponse {
     type Request = UserListExitStrategyLedgerRequest;
+}
+
+impl WsRequest for ExpertListExitStrategyLedgerRequest {
+    type Response = ExpertListExitStrategyLedgerResponse;
+    const METHOD_ID: u32 = 20121;
+    const SCHEMA: &'static str = r#"{
+  "name": "ExpertListExitStrategyLedger",
+  "code": 20121,
+  "parameters": [
+    {
+      "name": "strategy_id",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "limit",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "offset",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    }
+  ],
+  "returns": [
+    {
+      "name": "exit_ledger_total",
+      "ty": "BigInt"
+    },
+    {
+      "name": "exit_ledger",
+      "ty": {
+        "DataTable": {
+          "name": "ExitStrategyLedgerRow",
+          "fields": [
+            {
+              "name": "exit_ledger_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "quantity",
+              "ty": "BlockchainDecimal"
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
+            },
+            {
+              "name": "transaction_hash",
+              "ty": "BlockchainTransactionHash"
+            },
+            {
+              "name": "happened_at",
+              "ty": "BigInt"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": null,
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for ExpertListExitStrategyLedgerResponse {
+    type Request = ExpertListExitStrategyLedgerRequest;
 }
 
 impl WsRequest for UserFollowExpertRequest {
@@ -8822,6 +9052,87 @@ impl WsRequest for AdminListBackStrategyLedgerRequest {
 }
 impl WsResponse for AdminListBackStrategyLedgerResponse {
     type Request = AdminListBackStrategyLedgerRequest;
+}
+
+impl WsRequest for AdminListExitStrategyLedgerRequest {
+    type Response = AdminListExitStrategyLedgerResponse;
+    const METHOD_ID: u32 = 32041;
+    const SCHEMA: &'static str = r#"{
+  "name": "AdminListExitStrategyLedger",
+  "code": 32041,
+  "parameters": [
+    {
+      "name": "limit",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "offset",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "strategy_id",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    }
+  ],
+  "returns": [
+    {
+      "name": "exit_ledger_total",
+      "ty": "BigInt"
+    },
+    {
+      "name": "exit_ledger",
+      "ty": {
+        "DataTable": {
+          "name": "AdminExitStrategyLedgerRow",
+          "fields": [
+            {
+              "name": "back_ledger_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "user_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "quantity",
+              "ty": "BlockchainDecimal"
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
+            },
+            {
+              "name": "transaction_hash",
+              "ty": "BlockchainTransactionHash"
+            },
+            {
+              "name": "happened_at",
+              "ty": "BigInt"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": null,
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for AdminListExitStrategyLedgerResponse {
+    type Request = AdminListExitStrategyLedgerRequest;
 }
 
 impl WsRequest for AdminSetBlockchainLoggerRequest {

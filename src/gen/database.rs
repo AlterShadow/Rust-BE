@@ -395,6 +395,18 @@ pub struct FunUserListEscrowTokenContractAddressRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunUserListExitStrategyLedgerRespRow {
+    pub total: i64,
+    pub back_ledger_id: i64,
+    pub user_id: i64,
+    pub strategy_id: i64,
+    pub quantity: BlockchainDecimal,
+    pub blockchain: EnumBlockChain,
+    pub transaction_hash: BlockchainTransactionHash,
+    pub happened_at: i64,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserListRequestRefundLedgerRespRow {
     pub request_refund_id: i64,
     pub user_id: i64,
@@ -1213,6 +1225,32 @@ impl DatabaseRequest for FunUserListBackStrategyLedgerReq {
     type ResponseRow = FunUserListBackStrategyLedgerRespRow;
     fn statement(&self) -> &str {
         "SELECT * FROM api.fun_user_list_back_strategy_ledger(a_limit => $1::bigint, a_offset => $2::bigint, a_user_id => $3::bigint, a_strategy_id => $4::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.limit as &(dyn ToSql + Sync),
+            &self.offset as &(dyn ToSql + Sync),
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.strategy_id as &(dyn ToSql + Sync),
+        ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserListExitStrategyLedgerReq {
+    pub limit: i64,
+    pub offset: i64,
+    #[serde(default)]
+    pub user_id: Option<i64>,
+    #[serde(default)]
+    pub strategy_id: Option<i64>,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunUserListExitStrategyLedgerReq {
+    type ResponseRow = FunUserListExitStrategyLedgerRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_list_exit_strategy_ledger(a_limit => $1::bigint, a_offset => $2::bigint, a_user_id => $3::bigint, a_strategy_id => $4::bigint);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![

@@ -2937,6 +2937,117 @@ impl RequestHandler for MethodUserListBackStrategyLedger {
     }
 }
 
+pub struct MethodExpertListBackStrategyLedger;
+impl RequestHandler for MethodExpertListBackStrategyLedger {
+    type Request = ExpertListBackStrategyLedgerRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db = toolbox.get_db();
+        async move {
+            ensure_user_role(ctx, EnumRole::Expert)?;
+            let ledger = db
+                .execute(FunUserListBackStrategyLedgerReq {
+                    limit: req.limit.unwrap_or(DEFAULT_LIMIT),
+                    offset: req.offset.unwrap_or(DEFAULT_OFFSET),
+                    strategy_id: req.strategy_id,
+                    user_id: None,
+                })
+                .await?;
+            Ok(ExpertListBackStrategyLedgerResponse {
+                back_ledger_total: ledger.first(|x| x.total).unwrap_or_default(),
+                back_ledger: ledger.map(|x| BackStrategyLedgerRow {
+                    back_ledger_id: x.back_ledger_id,
+                    strategy_id: x.strategy_id,
+                    quantity: x.quantity.into(),
+                    blockchain: x.blockchain,
+                    transaction_hash: x.transaction_hash.into(),
+                    happened_at: x.happened_at,
+                }),
+            })
+        }
+        .boxed()
+    }
+}
+
+pub struct MethodUserListExitStrategyLedger;
+impl RequestHandler for MethodUserListExitStrategyLedger {
+    type Request = UserListExitStrategyLedgerRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db = toolbox.get_db();
+        async move {
+            ensure_user_role(ctx, EnumRole::User)?;
+            let ledger = db
+                .execute(FunUserListExitStrategyLedgerReq {
+                    limit: req.limit.unwrap_or(DEFAULT_LIMIT),
+                    offset: req.offset.unwrap_or(DEFAULT_OFFSET),
+                    strategy_id: req.strategy_id,
+                    user_id: Some(ctx.user_id),
+                })
+                .await?;
+            Ok(UserListExitStrategyLedgerResponse {
+                exit_ledger_total: ledger.first(|x| x.total).unwrap_or_default(),
+                exit_ledger: ledger.map(|x| ExitStrategyLedgerRow {
+                    exit_ledger_id: x.back_ledger_id,
+                    strategy_id: x.strategy_id,
+                    quantity: x.quantity.into(),
+                    blockchain: x.blockchain,
+                    transaction_hash: x.transaction_hash.into(),
+                    happened_at: x.happened_at,
+                }),
+            })
+        }
+        .boxed()
+    }
+}
+
+pub struct MethodExpertListExitStrategyLedger;
+impl RequestHandler for MethodExpertListExitStrategyLedger {
+    type Request = ExpertListExitStrategyLedgerRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db = toolbox.get_db();
+        async move {
+            ensure_user_role(ctx, EnumRole::Expert)?;
+            let ledger = db
+                .execute(FunUserListExitStrategyLedgerReq {
+                    limit: req.limit.unwrap_or(DEFAULT_LIMIT),
+                    offset: req.offset.unwrap_or(DEFAULT_OFFSET),
+                    strategy_id: req.strategy_id,
+                    user_id: None,
+                })
+                .await?;
+            Ok(ExpertListExitStrategyLedgerResponse {
+                exit_ledger_total: ledger.first(|x| x.total).unwrap_or_default(),
+                exit_ledger: ledger.map(|x| ExitStrategyLedgerRow {
+                    exit_ledger_id: x.back_ledger_id,
+                    strategy_id: x.strategy_id,
+                    quantity: x.quantity.into(),
+                    blockchain: x.blockchain,
+                    transaction_hash: x.transaction_hash.into(),
+                    happened_at: x.happened_at,
+                }),
+            })
+        }
+        .boxed()
+    }
+}
+
 pub struct MethodUserListStrategyTokenBalance;
 impl RequestHandler for MethodUserListStrategyTokenBalance {
     type Request = UserListStrategyTokenBalanceRequest;
