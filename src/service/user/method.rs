@@ -433,26 +433,25 @@ impl RequestHandler for MethodUserGetStrategiesStatistics {
                 .await?
                 .map_async(|x| convert_strategy_db_to_api_net_value(x, &cmc, &db))
                 .await?;
-            let backing_amount_usd: f64 = db
+            let list_strategy_pool_contract_asset_balances = db
                 .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
                     strategy_pool_contract_id: None,
                     strategy_id: None,
                     blockchain: None,
                     token_address: None,
                 })
-                .await?
-                .map_async(|x| {
-                    let cmc = &cmc;
-                    async move {
-                        let price = cmc
-                            .get_usd_prices_by_symbol(&[x.token_symbol])
-                            .await
-                            .context("failed to get price")?[0];
-                        Ok(x.balance.0.div_as_f64(U256::exp10(18))? * price)
-                    }
-                })
-                .await?
+                .await?;
+            let token_prices = list_strategy_pool_contract_asset_balances
+                .clone()
+                .map(|x| x.token_symbol);
+            let prices = cmc
+                .get_usd_prices_by_symbol(&token_prices)
+                .await
+                .context("failed to get price")?;
+            let backing_amount_usd: f64 = list_strategy_pool_contract_asset_balances
                 .into_iter()
+                .zip(prices.into_iter())
+                .map(|(x, price)| x.balance.0.div_as_f64(U256::exp10(18)).unwrap() * price)
                 .sum();
             Ok(UserGetStrategiesStatisticsResponse {
                 tracking_amount_usd: 0.0,
