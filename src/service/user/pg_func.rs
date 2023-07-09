@@ -225,7 +225,7 @@ END
             format!(
                 r#"
 BEGIN
-    RETURN QUERY SELECT {strategy}
+    RETURN QUERY SELECT DISTINCT ON (s.pkey_id) {strategy}
                  FROM tbl.strategy AS s
                       JOIN tbl.user_back_exit_strategy_ledger AS b ON b.fkey_strategy_id = s.pkey_id AND b.fkey_user_id = a_user_id
                       JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id
