@@ -921,7 +921,7 @@ pub async fn user_exit_strategy(
             strategy_pool_contract_id: strategy_pool_contract_row.pkey_id,
             strategy_wallet_id: strategy_wallet_contract_row.wallet_id,
             token_address: asset.into(),
-            blockchain: blockchain,
+            blockchain,
             old_balance: asset_old_balance.into(),
             new_balance: match asset_old_balance.try_checked_sub(amount) {
                 Ok(new_balance) => new_balance.into(),
@@ -2287,6 +2287,7 @@ impl RequestHandler for MethodExpertListFollowers {
                         username: x.username,
                         family_name: x.family_name,
                         given_name: x.given_name,
+                        linked_wallet: x.linked_wallet.into(),
                         followed_at: x.followed_at,
                         joined_at: x.joined_at,
                     })
@@ -2329,6 +2330,7 @@ impl RequestHandler for MethodExpertListBackers {
                         username: x.username,
                         family_name: x.family_name,
                         given_name: x.given_name,
+                        linked_wallet: x.linked_wallet.into(),
                         backed_at: x.backed_at,
                         joined_at: x.joined_at,
                     })

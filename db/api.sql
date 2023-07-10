@@ -1930,6 +1930,7 @@ RETURNS table (
     "username" varchar,
     "family_name" varchar,
     "given_name" varchar,
+    "linked_wallet" varchar,
     "followed_at" bigint,
     "joined_at" bigint
 )
@@ -1943,6 +1944,7 @@ BEGIN
                 b.username, 
                 b.family_name,
                 b.given_name, 
+                b.address,
                 a.created_at, 
                 b.created_at 
             FROM tbl.user_follow_expert AS a
@@ -1964,6 +1966,7 @@ RETURNS table (
     "username" varchar,
     "family_name" varchar,
     "given_name" varchar,
+    "linked_wallet" varchar,
     "backed_at" bigint,
     "joined_at" bigint
 )
@@ -1977,6 +1980,7 @@ BEGIN
                 b.username, 
                 b.family_name,
                 b.given_name,
+                b.address,
                 a.happened_at,
                 b.created_at
             FROM tbl.user_back_exit_strategy_ledger AS a

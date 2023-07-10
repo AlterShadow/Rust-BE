@@ -1390,6 +1390,7 @@ END
                 Field::new("username", Type::String),
                 Field::new("family_name", Type::optional(Type::String)),
                 Field::new("given_name", Type::optional(Type::String)),
+                Field::new("linked_wallet", Type::BlockchainAddress),
                 Field::new("followed_at", Type::BigInt),
                 Field::new("joined_at", Type::BigInt),
             ],
@@ -1401,6 +1402,7 @@ BEGIN
                 b.username, 
                 b.family_name,
                 b.given_name, 
+                b.address,
                 a.created_at, 
                 b.created_at 
             FROM tbl.user_follow_expert AS a
@@ -1426,6 +1428,7 @@ END
                 Field::new("username", Type::String),
                 Field::new("family_name", Type::optional(Type::String)),
                 Field::new("given_name", Type::optional(Type::String)),
+                Field::new("linked_wallet", Type::BlockchainAddress),
                 Field::new("backed_at", Type::BigInt),
                 Field::new("joined_at", Type::BigInt),
             ],
@@ -1437,6 +1440,7 @@ BEGIN
                 b.username, 
                 b.family_name,
                 b.given_name,
+                b.address,
                 a.happened_at,
                 b.created_at
             FROM tbl.user_back_exit_strategy_ledger AS a

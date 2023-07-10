@@ -3773,6 +3773,10 @@
                       }
                     },
                     {
+                      "name": "linked_wallet",
+                      "ty": "BlockchainAddress"
+                    },
+                    {
                       "name": "followed_at",
                       "ty": "BigInt"
                     },
@@ -3836,6 +3840,10 @@
                       "ty": {
                         "Optional": "String"
                       }
+                    },
+                    {
+                      "name": "linked_wallet",
+                      "ty": "BlockchainAddress"
                     },
                     {
                       "name": "backed_at",

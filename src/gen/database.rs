@@ -159,6 +159,7 @@ pub struct FunExpertListBackersRespRow {
     pub family_name: Option<String>,
     #[serde(default)]
     pub given_name: Option<String>,
+    pub linked_wallet: BlockchainAddress,
     pub backed_at: i64,
     pub joined_at: i64,
 }
@@ -172,6 +173,7 @@ pub struct FunExpertListFollowersRespRow {
     pub family_name: Option<String>,
     #[serde(default)]
     pub given_name: Option<String>,
+    pub linked_wallet: BlockchainAddress,
     pub followed_at: i64,
     pub joined_at: i64,
 }

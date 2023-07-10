@@ -1379,6 +1379,8 @@ pub struct ExpertListBackersRow {
     pub family_name: Option<String>,
     #[serde(default)]
     pub given_name: Option<String>,
+    #[serde(with = "WithBlockchainAddress")]
+    pub linked_wallet: Address,
     pub backed_at: i64,
     pub joined_at: i64,
 }
@@ -1421,6 +1423,8 @@ pub struct ExpertListFollowersRow {
     pub family_name: Option<String>,
     #[serde(default)]
     pub given_name: Option<String>,
+    #[serde(with = "WithBlockchainAddress")]
+    pub linked_wallet: Address,
     pub followed_at: i64,
     pub joined_at: i64,
 }
@@ -6741,6 +6745,10 @@ impl WsRequest for ExpertListFollowersRequest {
               }
             },
             {
+              "name": "linked_wallet",
+              "ty": "BlockchainAddress"
+            },
+            {
               "name": "followed_at",
               "ty": "BigInt"
             },
@@ -6812,6 +6820,10 @@ impl WsRequest for ExpertListBackersRequest {
               "ty": {
                 "Optional": "String"
               }
+            },
+            {
+              "name": "linked_wallet",
+              "ty": "BlockchainAddress"
             },
             {
               "name": "backed_at",
