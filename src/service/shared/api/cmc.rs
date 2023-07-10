@@ -168,20 +168,22 @@ impl CoinMarketCap {
                 new_symbols_index.push(result_index[symbol]);
             }
         }
-        let mut url = self.price_url();
-        self.append_url_params(&mut url, "symbol", &new_symbols);
-        let payload = &self
-            .parse_response(self.client.get(url).send().await?)
-            .await?["data"];
-        for (symbol, i) in new_symbols.into_iter().zip(new_symbols_index.into_iter()) {
-            let token = &payload[&symbol][0];
-            if token["is_active"].as_u64().context("status not found")? != 1 {
-                bail!("token status not found")
+        if !new_symbols.is_empty() {
+            let mut url = self.price_url();
+            self.append_url_params(&mut url, "symbol", &new_symbols);
+            let payload = &self
+                .parse_response(self.client.get(url).send().await?)
+                .await?["data"];
+            for (symbol, i) in new_symbols.into_iter().zip(new_symbols_index.into_iter()) {
+                let token = &payload[&symbol][0];
+                if token["is_active"].as_u64().context("status not found")? != 1 {
+                    bail!("token status not found")
+                }
+                token_prices[i] = token["quote"]["USD"]["price"]
+                    .as_f64()
+                    .context("price not found")?;
+                self.price_cache.lock().await.put(symbol, token_prices[i]);
             }
-            token_prices[i] = token["quote"]["USD"]["price"]
-                .as_f64()
-                .context("price not found")?;
-            self.price_cache.lock().await.put(symbol, token_prices[i]);
         }
         Ok(token_prices)
     }
@@ -365,6 +367,7 @@ impl CoinMarketCap {
 mod tests {
     use super::*;
     use lib::log::{setup_logs, LogLevel};
+    use tracing::info;
 
     #[tokio::test]
     async fn test_get_usd_price_by_symbol() -> Result<()> {
