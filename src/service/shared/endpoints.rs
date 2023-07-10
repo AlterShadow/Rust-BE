@@ -57,6 +57,7 @@ pub fn expert_row() -> Type {
             Field::new("given_name", Type::optional(Type::String)),
             Field::new("follower_count", Type::BigInt),
             Field::new("backer_count", Type::BigInt),
+            Field::new("strategy_count", Type::BigInt),
             Field::new("description", Type::String),
             Field::new("social_media", Type::String),
             Field::new("risk_score", Type::Numeric),

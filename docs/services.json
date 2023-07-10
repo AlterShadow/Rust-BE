@@ -2001,6 +2001,10 @@
                         "ty": "BigInt"
                       },
                       {
+                        "name": "strategy_count",
+                        "ty": "BigInt"
+                      },
+                      {
                         "name": "description",
                         "ty": "String"
                       },
@@ -2199,6 +2203,10 @@
                         "ty": "BigInt"
                       },
                       {
+                        "name": "strategy_count",
+                        "ty": "BigInt"
+                      },
+                      {
                         "name": "description",
                         "ty": "String"
                       },
@@ -2324,6 +2332,10 @@
                         "ty": "BigInt"
                       },
                       {
+                        "name": "strategy_count",
+                        "ty": "BigInt"
+                      },
+                      {
                         "name": "description",
                         "ty": "String"
                       },
@@ -2446,6 +2458,10 @@
                       },
                       {
                         "name": "backer_count",
+                        "ty": "BigInt"
+                      },
+                      {
+                        "name": "strategy_count",
                         "ty": "BigInt"
                       },
                       {
@@ -2777,6 +2793,10 @@
                       },
                       {
                         "name": "backer_count",
+                        "ty": "BigInt"
+                      },
+                      {
+                        "name": "strategy_count",
                         "ty": "BigInt"
                       },
                       {
@@ -5198,6 +5218,10 @@
                       },
                       {
                         "name": "backer_count",
+                        "ty": "BigInt"
+                      },
+                      {
+                        "name": "strategy_count",
                         "ty": "BigInt"
                       },
                       {

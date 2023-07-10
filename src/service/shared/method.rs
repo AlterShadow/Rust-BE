@@ -78,6 +78,7 @@ pub fn convert_expert_db_to_api(x: FunUserExpertRowType) -> ListExpertsRow {
         given_name: x.given_name,
         follower_count: x.follower_count,
         backer_count: x.backer_count,
+        strategy_count: x.strategy_count,
         description: x.description.unwrap_or_default(),
         social_media: x.social_media.unwrap_or_default(),
         risk_score: x.risk_score.unwrap_or_default(),

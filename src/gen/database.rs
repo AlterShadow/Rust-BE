@@ -260,6 +260,7 @@ pub struct FunUserExpertRowType {
     pub given_name: Option<String>,
     pub follower_count: i64,
     pub backer_count: i64,
+    pub strategy_count: i64,
     #[serde(default)]
     pub description: Option<String>,
     #[serde(default)]

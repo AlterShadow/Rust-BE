@@ -1476,6 +1476,7 @@ pub struct ListExpertsRow {
     pub given_name: Option<String>,
     pub follower_count: i64,
     pub backer_count: i64,
+    pub strategy_count: i64,
     pub description: String,
     pub social_media: String,
     pub risk_score: f64,
@@ -4766,6 +4767,10 @@ impl WsRequest for UserListFollowedExpertsRequest {
                 "ty": "BigInt"
               },
               {
+                "name": "strategy_count",
+                "ty": "BigInt"
+              },
+              {
                 "name": "description",
                 "ty": "String"
               },
@@ -4980,6 +4985,10 @@ impl WsRequest for UserListExpertsRequest {
                 "ty": "BigInt"
               },
               {
+                "name": "strategy_count",
+                "ty": "BigInt"
+              },
+              {
                 "name": "description",
                 "ty": "String"
               },
@@ -5113,6 +5122,10 @@ impl WsRequest for UserListTopPerformingExpertsRequest {
                 "ty": "BigInt"
               },
               {
+                "name": "strategy_count",
+                "ty": "BigInt"
+              },
+              {
                 "name": "description",
                 "ty": "String"
               },
@@ -5243,6 +5256,10 @@ impl WsRequest for UserListFeaturedExpertsRequest {
               },
               {
                 "name": "backer_count",
+                "ty": "BigInt"
+              },
+              {
+                "name": "strategy_count",
                 "ty": "BigInt"
               },
               {
@@ -5590,6 +5607,10 @@ impl WsRequest for UserGetUserProfileRequest {
               },
               {
                 "name": "backer_count",
+                "ty": "BigInt"
+              },
+              {
+                "name": "strategy_count",
                 "ty": "BigInt"
               },
               {
@@ -8357,6 +8378,10 @@ impl WsRequest for AdminListExpertsRequest {
               },
               {
                 "name": "backer_count",
+                "ty": "BigInt"
+              },
+              {
+                "name": "strategy_count",
                 "ty": "BigInt"
               },
               {
