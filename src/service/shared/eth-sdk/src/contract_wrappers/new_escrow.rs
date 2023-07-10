@@ -430,7 +430,7 @@ pub async fn reject_deposit_and_ensure_success(
     Ok(tx_hash)
 }
 
-pub async fn transfer_assets_from_and_ensure_success(
+pub async fn transfer_asset_from_and_ensure_success(
     contract: EscrowContract<EitherTransport>,
     conn: &EthereumRpcConnection,
     confirmations: u64,
