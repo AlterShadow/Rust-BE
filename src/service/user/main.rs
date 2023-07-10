@@ -92,6 +92,8 @@ async fn main() -> Result<()> {
     server.add_handler(MethodExpertListFollowers);
     server.add_handler(MethodExpertListBackers);
     server.add_handler(MethodUserListFollowedExperts);
+    server.add_handler(MethodExpertListPublishedStrategies);
+    server.add_handler(MethodExpertListUnpublishedStrategies);
 
     server.add_handler(MethodUserUnfollowExpert);
     server.add_handler(MethodUserListExperts);

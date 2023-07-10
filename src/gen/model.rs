@@ -368,6 +368,12 @@ pub enum EnumEndpoint {
     #[postgres(name = "ExpertListBackers")]
     ExpertListBackers = 20350,
     ///
+    #[postgres(name = "ExpertListPublishedStrategies")]
+    ExpertListPublishedStrategies = 20355,
+    ///
+    #[postgres(name = "ExpertListUnpublishedStrategies")]
+    ExpertListUnpublishedStrategies = 20356,
+    ///
     #[postgres(name = "UserGetDepositTokens")]
     UserGetDepositTokens = 20360,
     ///
@@ -1417,6 +1423,34 @@ pub struct ExpertListFollowersRow {
     pub given_name: Option<String>,
     pub followed_at: i64,
     pub joined_at: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ExpertListPublishedStrategiesRequest {
+    #[serde(default)]
+    pub limit: Option<i64>,
+    #[serde(default)]
+    pub offset: Option<i64>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ExpertListPublishedStrategiesResponse {
+    pub strategies_total: i64,
+    pub strategies: Vec<ListStrategiesRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ExpertListUnpublishedStrategiesRequest {
+    #[serde(default)]
+    pub limit: Option<i64>,
+    #[serde(default)]
+    pub offset: Option<i64>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ExpertListUnpublishedStrategiesResponse {
+    pub strategies_total: i64,
+    pub strategies: Vec<ListStrategiesRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -6799,6 +6833,340 @@ impl WsRequest for ExpertListBackersRequest {
 }
 impl WsResponse for ExpertListBackersResponse {
     type Request = ExpertListBackersRequest;
+}
+
+impl WsRequest for ExpertListPublishedStrategiesRequest {
+    type Response = ExpertListPublishedStrategiesResponse;
+    const METHOD_ID: u32 = 20355;
+    const SCHEMA: &'static str = r#"{
+  "name": "ExpertListPublishedStrategies",
+  "code": 20355,
+  "parameters": [
+    {
+      "name": "limit",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "offset",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    }
+  ],
+  "returns": [
+    {
+      "name": "strategies_total",
+      "ty": "BigInt"
+    },
+    {
+      "name": "strategies",
+      "ty": {
+        "Vec": {
+          "Struct": {
+            "name": "ListStrategiesRow",
+            "fields": [
+              {
+                "name": "strategy_id",
+                "ty": "BigInt"
+              },
+              {
+                "name": "strategy_name",
+                "ty": "String"
+              },
+              {
+                "name": "strategy_description",
+                "ty": "String"
+              },
+              {
+                "name": "followers",
+                "ty": "Int"
+              },
+              {
+                "name": "backers",
+                "ty": "Int"
+              },
+              {
+                "name": "aum",
+                "ty": "Numeric"
+              },
+              {
+                "name": "followed",
+                "ty": "Boolean"
+              },
+              {
+                "name": "swap_price",
+                "ty": "Numeric"
+              },
+              {
+                "name": "price_change",
+                "ty": "Numeric"
+              },
+              {
+                "name": "strategy_pool_address",
+                "ty": {
+                  "Optional": "BlockchainAddress"
+                }
+              },
+              {
+                "name": "approved",
+                "ty": "Boolean"
+              },
+              {
+                "name": "approved_at",
+                "ty": {
+                  "Optional": "BigInt"
+                }
+              },
+              {
+                "name": "blockchain",
+                "ty": {
+                  "EnumRef": "block_chain"
+                }
+              },
+              {
+                "name": "requested_at",
+                "ty": {
+                  "Optional": "BigInt"
+                }
+              },
+              {
+                "name": "created_at",
+                "ty": "BigInt"
+              },
+              {
+                "name": "expert_public_id",
+                "ty": "BigInt"
+              },
+              {
+                "name": "expert_username",
+                "ty": "String"
+              },
+              {
+                "name": "expert_family_name",
+                "ty": "String"
+              },
+              {
+                "name": "expert_given_name",
+                "ty": "String"
+              },
+              {
+                "name": "reputation",
+                "ty": "Int"
+              },
+              {
+                "name": "risk_score",
+                "ty": "Numeric"
+              },
+              {
+                "name": "strategy_pool_token",
+                "ty": "String"
+              },
+              {
+                "name": "strategy_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "platform_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "expert_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "swap_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "total_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "number_of_tokens",
+                "ty": "BigInt"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "stream_response": null,
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for ExpertListPublishedStrategiesResponse {
+    type Request = ExpertListPublishedStrategiesRequest;
+}
+
+impl WsRequest for ExpertListUnpublishedStrategiesRequest {
+    type Response = ExpertListUnpublishedStrategiesResponse;
+    const METHOD_ID: u32 = 20356;
+    const SCHEMA: &'static str = r#"{
+  "name": "ExpertListUnpublishedStrategies",
+  "code": 20356,
+  "parameters": [
+    {
+      "name": "limit",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "offset",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    }
+  ],
+  "returns": [
+    {
+      "name": "strategies_total",
+      "ty": "BigInt"
+    },
+    {
+      "name": "strategies",
+      "ty": {
+        "Vec": {
+          "Struct": {
+            "name": "ListStrategiesRow",
+            "fields": [
+              {
+                "name": "strategy_id",
+                "ty": "BigInt"
+              },
+              {
+                "name": "strategy_name",
+                "ty": "String"
+              },
+              {
+                "name": "strategy_description",
+                "ty": "String"
+              },
+              {
+                "name": "followers",
+                "ty": "Int"
+              },
+              {
+                "name": "backers",
+                "ty": "Int"
+              },
+              {
+                "name": "aum",
+                "ty": "Numeric"
+              },
+              {
+                "name": "followed",
+                "ty": "Boolean"
+              },
+              {
+                "name": "swap_price",
+                "ty": "Numeric"
+              },
+              {
+                "name": "price_change",
+                "ty": "Numeric"
+              },
+              {
+                "name": "strategy_pool_address",
+                "ty": {
+                  "Optional": "BlockchainAddress"
+                }
+              },
+              {
+                "name": "approved",
+                "ty": "Boolean"
+              },
+              {
+                "name": "approved_at",
+                "ty": {
+                  "Optional": "BigInt"
+                }
+              },
+              {
+                "name": "blockchain",
+                "ty": {
+                  "EnumRef": "block_chain"
+                }
+              },
+              {
+                "name": "requested_at",
+                "ty": {
+                  "Optional": "BigInt"
+                }
+              },
+              {
+                "name": "created_at",
+                "ty": "BigInt"
+              },
+              {
+                "name": "expert_public_id",
+                "ty": "BigInt"
+              },
+              {
+                "name": "expert_username",
+                "ty": "String"
+              },
+              {
+                "name": "expert_family_name",
+                "ty": "String"
+              },
+              {
+                "name": "expert_given_name",
+                "ty": "String"
+              },
+              {
+                "name": "reputation",
+                "ty": "Int"
+              },
+              {
+                "name": "risk_score",
+                "ty": "Numeric"
+              },
+              {
+                "name": "strategy_pool_token",
+                "ty": "String"
+              },
+              {
+                "name": "strategy_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "platform_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "expert_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "swap_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "total_fee",
+                "ty": "Numeric"
+              },
+              {
+                "name": "number_of_tokens",
+                "ty": "BigInt"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "stream_response": null,
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for ExpertListUnpublishedStrategiesResponse {
+    type Request = ExpertListUnpublishedStrategiesRequest;
 }
 
 impl WsRequest for UserGetDepositTokensRequest {

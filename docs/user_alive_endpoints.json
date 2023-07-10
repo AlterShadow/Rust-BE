@@ -27,6 +27,8 @@
   "ExpertListBackers",
   "ExpertListExitStrategyLedger",
   "ExpertListFollowers",
+  "ExpertListPublishedStrategies",
+  "ExpertListUnpublishedStrategies",
   "ExpertRemoveStrategyWatchingWallet",
   "ExpertUpdateStrategy",
   "UserApplyBecomeExpert",

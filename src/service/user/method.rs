@@ -134,6 +134,7 @@ impl RequestHandler for MethodUserListStrategies {
                     description: req.description,
                     blockchain: req.blockchain,
                     strategy_pool_address: req.strategy_pool_address.map(|x| x.into()),
+                    approved: None,
                 })
                 .await?;
 
@@ -178,8 +179,8 @@ impl RequestHandler for MethodUserListTopPerformingStrategies {
                     expert_name: None,
                     description: None,
                     blockchain: None,
-
                     strategy_pool_address: None,
+                    approved: None,
                 })
                 .await?;
             Ok(UserListTopPerformingStrategiesResponse {
@@ -289,8 +290,8 @@ impl RequestHandler for MethodUserGetStrategy {
                     expert_name: None,
                     description: None,
                     blockchain: None,
-
                     strategy_pool_address: None,
+                    approved: None,
                 })
                 .await?
                 .into_result()
@@ -427,8 +428,8 @@ impl RequestHandler for MethodUserGetStrategiesStatistics {
                     expert_name: None,
                     description: None,
                     blockchain: None,
-
                     strategy_pool_address: None,
+                    approved: None,
                 })
                 .await?
                 .map_async(|x| convert_strategy_db_to_api_net_value(x, &cmc, &db))
@@ -1375,8 +1376,8 @@ impl RequestHandler for MethodUserGetExpertProfile {
                     expert_name: None,
                     description: None,
                     blockchain: None,
-
                     strategy_pool_address: None,
+                    approved: None,
                 })
                 .await?;
             Ok(UserGetExpertProfileResponse {
@@ -1589,8 +1590,8 @@ impl RequestHandler for MethodUserListWhitelistedWallets {
                         blockchain: None,
                         limit: 1,
                         offset: 0,
-
                         strategy_pool_address: None,
+                        approved: None,
                     })
                     .await?
                     .into_result()
@@ -1867,6 +1868,7 @@ impl RequestHandler for MethodExpertUpdateStrategy {
                     limit: 1,
                     offset: 0,
                     strategy_pool_address: None,
+                    approved: None,
                 })
                 .await?
                 .into_result()
@@ -1927,8 +1929,8 @@ impl RequestHandler for MethodExpertAddStrategyWatchingWallet {
                     user_id: ctx.user_id,
                     limit: 1,
                     offset: 0,
-
                     strategy_pool_address: None,
+                    approved: None,
                 })
                 .await?
                 .into_result()
@@ -2151,8 +2153,8 @@ impl RequestHandler for MethodExpertAddStrategyInitialTokenRatio {
                     user_id: ctx.user_id,
                     limit: 1,
                     offset: 0,
-
                     strategy_pool_address: None,
+                    approved: None,
                 })
                 .await?
                 .into_result()
@@ -2735,8 +2737,8 @@ impl RequestHandler for MethodUserAddStrategyAuditRule {
                     user_id: ctx.user_id,
                     limit: 1,
                     offset: 0,
-
                     strategy_pool_address: None,
+                    approved: None,
                 })
                 .await?
                 .into_result()
@@ -2784,8 +2786,8 @@ impl RequestHandler for MethodUserRemoveStrategyAuditRule {
                     user_id: ctx.user_id,
                     limit: 1,
                     offset: 0,
-
                     strategy_pool_address: None,
+                    approved: None,
                 })
                 .await?
                 .into_result()
@@ -2836,8 +2838,8 @@ impl RequestHandler for MethodUserGetEscrowAddressForStrategy {
                     expert_name: None,
                     description: None,
                     blockchain: None,
-
                     strategy_pool_address: None,
+                    approved: None,
                 })
                 .await?
                 .into_result()
@@ -3321,6 +3323,80 @@ impl RequestHandler for MethodUserGetSystemConfig {
                 .into_result();
             Ok(UserGetSystemConfigResponse {
                 platform_fee: config.map(|x| x.platform_fee).flatten().unwrap_or_default(),
+            })
+        }
+        .boxed()
+    }
+}
+
+pub struct MethodExpertListPublishedStrategies;
+impl RequestHandler for MethodExpertListPublishedStrategies {
+    type Request = ExpertListPublishedStrategiesRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db = toolbox.get_db();
+        async move {
+            ensure_user_role(ctx, EnumRole::Expert)?;
+            let strategies = db
+                .execute(FunUserListStrategiesReq {
+                    user_id: ctx.user_id,
+                    limit: req.limit.unwrap_or(DEFAULT_LIMIT),
+                    offset: req.offset.unwrap_or(DEFAULT_OFFSET),
+                    strategy_id: None,
+                    strategy_name: None,
+                    expert_public_id: None,
+                    expert_name: None,
+                    description: None,
+                    blockchain: None,
+                    strategy_pool_address: None,
+                    approved: Some(true),
+                })
+                .await?;
+            Ok(ExpertListPublishedStrategiesResponse {
+                strategies_total: strategies.first(|x| x.total).unwrap_or_default(),
+                strategies: strategies.map(convert_strategy_db_to_api),
+            })
+        }
+        .boxed()
+    }
+}
+pub struct MethodExpertListUnpublishedStrategies;
+
+impl RequestHandler for MethodExpertListUnpublishedStrategies {
+    type Request = ExpertListUnpublishedStrategiesRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db = toolbox.get_db();
+        async move {
+            ensure_user_role(ctx, EnumRole::Expert)?;
+            let strategies = db
+                .execute(FunUserListStrategiesReq {
+                    user_id: ctx.user_id,
+                    limit: req.limit.unwrap_or(DEFAULT_LIMIT),
+                    offset: req.offset.unwrap_or(DEFAULT_OFFSET),
+                    strategy_id: None,
+                    strategy_name: None,
+                    expert_public_id: None,
+                    expert_name: None,
+                    description: None,
+                    blockchain: None,
+                    strategy_pool_address: None,
+                    approved: Some(false),
+                })
+                .await?;
+            Ok(ExpertListUnpublishedStrategiesResponse {
+                strategies_total: strategies.first(|x| x.total).unwrap_or_default(),
+                strategies: strategies.map(convert_strategy_db_to_api),
             })
         }
         .boxed()

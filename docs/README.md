@@ -58,6 +58,8 @@ ID: 2
 |20330|UserListStrategyInitialTokenRatio|strategy_id|token_ratios_total, token_ratios||
 |20340|ExpertListFollowers|limit, offset|followers_total, followers||
 |20350|ExpertListBackers|limit, offset|backers_total, backers||
+|20355|ExpertListPublishedStrategies|limit, offset|strategies_total, strategies||
+|20356|ExpertListUnpublishedStrategies|limit, offset|strategies_total, strategies||
 |20360|UserGetDepositTokens||tokens||
 |20370|UserGetDepositAddresses||addresses||
 |20380|UserListDepositWithdrawLedger|limit, offset, blockchain, id_deposit|ledger_total, ledger||

@@ -3855,6 +3855,324 @@
           "json_schema": null
         },
         {
+          "name": "ExpertListPublishedStrategies",
+          "code": 20355,
+          "parameters": [
+            {
+              "name": "limit",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "offset",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "name": "strategies_total",
+              "ty": "BigInt"
+            },
+            {
+              "name": "strategies",
+              "ty": {
+                "Vec": {
+                  "Struct": {
+                    "name": "ListStrategiesRow",
+                    "fields": [
+                      {
+                        "name": "strategy_id",
+                        "ty": "BigInt"
+                      },
+                      {
+                        "name": "strategy_name",
+                        "ty": "String"
+                      },
+                      {
+                        "name": "strategy_description",
+                        "ty": "String"
+                      },
+                      {
+                        "name": "followers",
+                        "ty": "Int"
+                      },
+                      {
+                        "name": "backers",
+                        "ty": "Int"
+                      },
+                      {
+                        "name": "aum",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "followed",
+                        "ty": "Boolean"
+                      },
+                      {
+                        "name": "swap_price",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "price_change",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "strategy_pool_address",
+                        "ty": {
+                          "Optional": "BlockchainAddress"
+                        }
+                      },
+                      {
+                        "name": "approved",
+                        "ty": "Boolean"
+                      },
+                      {
+                        "name": "approved_at",
+                        "ty": {
+                          "Optional": "BigInt"
+                        }
+                      },
+                      {
+                        "name": "blockchain",
+                        "ty": {
+                          "EnumRef": "block_chain"
+                        }
+                      },
+                      {
+                        "name": "requested_at",
+                        "ty": {
+                          "Optional": "BigInt"
+                        }
+                      },
+                      {
+                        "name": "created_at",
+                        "ty": "BigInt"
+                      },
+                      {
+                        "name": "expert_public_id",
+                        "ty": "BigInt"
+                      },
+                      {
+                        "name": "expert_username",
+                        "ty": "String"
+                      },
+                      {
+                        "name": "expert_family_name",
+                        "ty": "String"
+                      },
+                      {
+                        "name": "expert_given_name",
+                        "ty": "String"
+                      },
+                      {
+                        "name": "reputation",
+                        "ty": "Int"
+                      },
+                      {
+                        "name": "risk_score",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "strategy_pool_token",
+                        "ty": "String"
+                      },
+                      {
+                        "name": "strategy_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "platform_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "expert_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "swap_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "total_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "number_of_tokens",
+                        "ty": "BigInt"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ],
+          "stream_response": null,
+          "description": "",
+          "json_schema": null
+        },
+        {
+          "name": "ExpertListUnpublishedStrategies",
+          "code": 20356,
+          "parameters": [
+            {
+              "name": "limit",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "offset",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "name": "strategies_total",
+              "ty": "BigInt"
+            },
+            {
+              "name": "strategies",
+              "ty": {
+                "Vec": {
+                  "Struct": {
+                    "name": "ListStrategiesRow",
+                    "fields": [
+                      {
+                        "name": "strategy_id",
+                        "ty": "BigInt"
+                      },
+                      {
+                        "name": "strategy_name",
+                        "ty": "String"
+                      },
+                      {
+                        "name": "strategy_description",
+                        "ty": "String"
+                      },
+                      {
+                        "name": "followers",
+                        "ty": "Int"
+                      },
+                      {
+                        "name": "backers",
+                        "ty": "Int"
+                      },
+                      {
+                        "name": "aum",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "followed",
+                        "ty": "Boolean"
+                      },
+                      {
+                        "name": "swap_price",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "price_change",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "strategy_pool_address",
+                        "ty": {
+                          "Optional": "BlockchainAddress"
+                        }
+                      },
+                      {
+                        "name": "approved",
+                        "ty": "Boolean"
+                      },
+                      {
+                        "name": "approved_at",
+                        "ty": {
+                          "Optional": "BigInt"
+                        }
+                      },
+                      {
+                        "name": "blockchain",
+                        "ty": {
+                          "EnumRef": "block_chain"
+                        }
+                      },
+                      {
+                        "name": "requested_at",
+                        "ty": {
+                          "Optional": "BigInt"
+                        }
+                      },
+                      {
+                        "name": "created_at",
+                        "ty": "BigInt"
+                      },
+                      {
+                        "name": "expert_public_id",
+                        "ty": "BigInt"
+                      },
+                      {
+                        "name": "expert_username",
+                        "ty": "String"
+                      },
+                      {
+                        "name": "expert_family_name",
+                        "ty": "String"
+                      },
+                      {
+                        "name": "expert_given_name",
+                        "ty": "String"
+                      },
+                      {
+                        "name": "reputation",
+                        "ty": "Int"
+                      },
+                      {
+                        "name": "risk_score",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "strategy_pool_token",
+                        "ty": "String"
+                      },
+                      {
+                        "name": "strategy_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "platform_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "expert_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "swap_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "total_fee",
+                        "ty": "Numeric"
+                      },
+                      {
+                        "name": "number_of_tokens",
+                        "ty": "BigInt"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ],
+          "stream_response": null,
+          "description": "",
+          "json_schema": null
+        },
+        {
           "name": "UserGetDepositTokens",
           "code": 20360,
           "parameters": [],

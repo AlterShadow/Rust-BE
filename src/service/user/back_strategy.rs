@@ -224,6 +224,7 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
             limit: 1,
             offset: 0,
             strategy_pool_address: None,
+            approved: None,
         })
         .await?
         .into_result()
@@ -592,6 +593,7 @@ pub async fn user_back_strategy(
             limit: 1,
             offset: 0,
             strategy_pool_address: None,
+            approved: None,
         })
         .await?
         .into_result()
@@ -1376,8 +1378,8 @@ mod tests {
             &ctx,
             &db,
             EnumBlockChain::BscTestnet,
-            U256::from(10).try_checked_mul(U256::from(busd_decimals))?,
             ret.user_id,
+            U256::from(10).try_checked_mul(U256::from(busd_decimals))?,
             strategy.strategy_id,
             token.token_id,
             busd_address_on_bsc_testnet,

@@ -825,6 +825,30 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
             ],
         ),
         EndpointSchema::new(
+            "ExpertListPublishedStrategies",
+            20355,
+            vec![
+                Field::new("limit", Type::optional(Type::BigInt)),
+                Field::new("offset", Type::optional(Type::BigInt)),
+            ],
+            vec![
+                Field::new("strategies_total", Type::BigInt),
+                Field::new("strategies", list_strategies_datatable()),
+            ],
+        ),
+        EndpointSchema::new(
+            "ExpertListUnpublishedStrategies",
+            20356,
+            vec![
+                Field::new("limit", Type::optional(Type::BigInt)),
+                Field::new("offset", Type::optional(Type::BigInt)),
+            ],
+            vec![
+                Field::new("strategies_total", Type::BigInt),
+                Field::new("strategies", list_strategies_datatable()),
+            ],
+        ),
+        EndpointSchema::new(
             "UserGetDepositTokens",
             20360,
             vec![],

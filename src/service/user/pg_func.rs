@@ -94,6 +94,7 @@ END
                     "strategy_pool_address",
                     Type::optional(Type::BlockchainAddress),
                 ),
+                Field::new("approved", Type::optional(Type::Boolean)),
             ],
             strategy_row_type(),
             format!(
@@ -110,6 +111,7 @@ BEGIN
                     AND (a_description ISNULL OR s.description ILIKE a_description || '%')
                     AND (a_blockchain ISNULL OR s.blockchain = a_blockchain)
                     AND (a_strategy_pool_address ISNULL OR s.strategy_pool_address ILIKE a_strategy_pool_address || '%')
+                    AND (a_approved ISNULL OR s.approved = a_approved)
                 ORDER BY s.pkey_id
                 LIMIT a_limit
                 OFFSET a_offset;
