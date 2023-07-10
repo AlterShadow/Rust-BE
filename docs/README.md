@@ -24,7 +24,7 @@ ID: 2
 |20065|UserListStrategyFollowers|strategy_id, limit, offset|followers_total, followers||
 |20062|UserGetStrategy|strategy_id|strategy, watching_wallets, aum_ledger, audit_rules, whitelisted_tokens|User gets a strategy|
 |20070|UserGetStrategyStatistics|strategy_id|strategy_id, net_value, follow_ledger, back_ledger|User gets a strategy statistics|
-|20071|UserGetStrategiesStatistics||tracking_amount_usd, backing_amount_usd, difference_amount_usd, aum_value_usd, current_value_usd, withdrawable_value_usd|User gets statistics of all strategies related to the user|
+|20071|UserGetStrategiesStatistics||tracking_amount_usd, backing_amount_usd, difference_amount_usd, aum_value_usd, current_value_usd, withdrawable_value_usd, strategy_pool_tokens, aum_list_history|User gets statistics of all strategies related to the user|
 |20172|UserUpdateUserProfile|username, family_name, given_name, description, social_media||User update its expert profile|
 |20080|UserBackStrategy|strategy_id, quantity, token_id, strategy_wallet, nonce|||
 |20110|UserExitStrategy|strategy_id, quantity, blockchain, nonce|success, transaction_hash||
@@ -40,7 +40,7 @@ ID: 2
 |20160|UserListExperts|limit, offset, expert_id, user_id, user_public_id, username, family_name, given_name, description, social_media, sort_by_followers|experts_total, experts|User lists experts|
 |20161|UserListTopPerformingExperts|limit, offset|experts_total, experts|User lists experts|
 |20162|UserListFeaturedExperts|limit, offset|experts_total, experts|User lists experts|
-|20170|UserGetExpertProfile|expert_id|expert_id, name, follower_count, backers_count, description, social_media, risk_score, reputation_score, aum, followed, strategies_total, strategies|User gets an expert profile|
+|20170|UserGetExpertProfile|expert_id|expert_id, name, family_name, given_name, follower_count, backers_count, description, social_media, risk_score, reputation_score, aum, followed, strategies_total, strategies|User gets an expert profile|
 |20180|UserGetUserProfile||name, login_wallet, joined_at, follower_count, description, social_media, followed_experts, followed_strategies, backed_strategies|User gets an user profile|
 |20190|UserWhitelistWallet|blockchain, wallet_address|success, wallet_id|User registers a wallet|
 |20200|UserListWhitelistedWallets|limit, offset, wallet_id, blockchain, wallet_address, strategy_id|wallets|User lists wallets|

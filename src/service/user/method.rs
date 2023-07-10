@@ -453,6 +453,15 @@ impl RequestHandler for MethodUserGetStrategiesStatistics {
                 .zip(prices.into_iter())
                 .map(|(x, price)| x.balance.0.div_as_f64(U256::exp10(18)).unwrap() * price)
                 .sum();
+            let tokens = db
+                .execute(FunUserListUserStrategyPoolContractAssetBalancesReq {
+                    strategy_pool_contract_id: None,
+                    user_id: None,
+                    strategy_wallet_id: None,
+                    token_address: None,
+                    blockchain: None,
+                })
+                .await?;
             Ok(UserGetStrategiesStatisticsResponse {
                 tracking_amount_usd: 0.0,
                 backing_amount_usd,
@@ -460,6 +469,16 @@ impl RequestHandler for MethodUserGetStrategiesStatistics {
                 aum_value_usd: strategies.iter().map(|x| x.aum).sum(),
                 current_value_usd: 0.0,
                 withdrawable_value_usd: 0.0,
+                strategy_pool_tokens: tokens.map(|x| {
+                    UserGetStrategiesStatisticsStrategyPoolToken {
+                        token_id: x.token_id,
+                        token_name: x.token_name,
+                        token_symbol: x.token_symbol,
+                        total_quantity: x.balance.into(),
+                        total_quantity_usd: 0.0, // TODO: get price
+                    }
+                }),
+                aum_list_history: vec![], // TODO: get history
             })
         }
         .boxed()
@@ -770,7 +789,7 @@ pub async fn user_exit_strategy(
     /* get user strategy pool contract assets owned by this strategy wallet */
     let asset_balances_owned_by_strategy_wallet = db
         .execute(FunUserListUserStrategyPoolContractAssetBalancesReq {
-            strategy_pool_contract_id: strategy_pool_contract_row.pkey_id,
+            strategy_pool_contract_id: Some(strategy_pool_contract_row.pkey_id),
             user_id: Some(ctx.user_id),
             strategy_wallet_id: Some(strategy_wallet_contract_row.wallet_id),
             token_address: None,
@@ -885,7 +904,7 @@ pub async fn user_exit_strategy(
         let amount = amounts_to_transfer[idx];
         let asset_old_balance: U256 = db
             .execute(FunUserListUserStrategyPoolContractAssetBalancesReq {
-                strategy_pool_contract_id: strategy_pool_contract_row.pkey_id,
+                strategy_pool_contract_id: Some(strategy_pool_contract_row.pkey_id),
                 user_id: Some(ctx.user_id),
                 strategy_wallet_id: Some(strategy_wallet_contract_row.wallet_id),
                 token_address: Some(asset.into()),
@@ -1363,6 +1382,8 @@ impl RequestHandler for MethodUserGetExpertProfile {
             Ok(UserGetExpertProfileResponse {
                 expert_id: ret.expert_id,
                 name: ret.username,
+                family_name: ret.family_name.unwrap_or_default(),
+                given_name: ret.given_name.unwrap_or_default(),
                 follower_count: ret.follower_count as _,
                 backers_count: ret.backer_count as _,
                 description: ret.description.unwrap_or_default(),

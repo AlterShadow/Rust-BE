@@ -467,7 +467,7 @@ END
         ProceduralFunction::new(
             "fun_user_list_user_strategy_pool_contract_asset_balances",
             vec![
-                Field::new("strategy_pool_contract_id", Type::BigInt),
+                Field::new("strategy_pool_contract_id", Type::optional(Type::BigInt)),
                 Field::new("user_id", Type::optional(Type::BigInt)),
                 Field::new("strategy_wallet_id", Type::optional(Type::BigInt)),
                 Field::new("token_address", Type::optional(Type::BlockchainAddress)),
@@ -515,7 +515,7 @@ BEGIN
 	FROM tbl.user_strategy_pool_contract_asset_balance as uspcab
 	INNER JOIN tokens ON tokens.pkey_id = uspcab.fkey_token_id
 	INNER JOIN strategy_wallets ON strategy_wallets.pkey_id = uspcab.fkey_strategy_wallet_id
-	WHERE uspcab.fkey_strategy_pool_contract_id = a_strategy_pool_contract_id
+	WHERE (a_strategy_pool_contract_id ISNULL OR uspcab.fkey_strategy_pool_contract_id = a_strategy_pool_contract_id)
 		AND (a_token_address ISNULL OR tokens.address = a_token_address)
 		AND (a_blockchain ISNULL OR tokens.blockchain = a_blockchain)
 		AND (a_user_id ISNULL OR strategy_wallets.fkey_user_id = a_user_id)

@@ -934,7 +934,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_list_user_strategy_pool_contract_asset_balances(a_strategy_pool_contract_id bigint, a_user_id bigint DEFAULT NULL, a_strategy_wallet_id bigint DEFAULT NULL, a_token_address varchar DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_user_list_user_strategy_pool_contract_asset_balances(a_strategy_pool_contract_id bigint DEFAULT NULL, a_user_id bigint DEFAULT NULL, a_strategy_wallet_id bigint DEFAULT NULL, a_token_address varchar DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL)
 RETURNS table (
     "user_id" bigint,
     "strategy_wallet_id" bigint,
@@ -979,7 +979,7 @@ BEGIN
 	FROM tbl.user_strategy_pool_contract_asset_balance as uspcab
 	INNER JOIN tokens ON tokens.pkey_id = uspcab.fkey_token_id
 	INNER JOIN strategy_wallets ON strategy_wallets.pkey_id = uspcab.fkey_strategy_wallet_id
-	WHERE uspcab.fkey_strategy_pool_contract_id = a_strategy_pool_contract_id
+	WHERE (a_strategy_pool_contract_id ISNULL OR uspcab.fkey_strategy_pool_contract_id = a_strategy_pool_contract_id)
 		AND (a_token_address ISNULL OR tokens.address = a_token_address)
 		AND (a_blockchain ISNULL OR tokens.blockchain = a_blockchain)
 		AND (a_user_id ISNULL OR strategy_wallets.fkey_user_id = a_user_id)

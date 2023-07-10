@@ -882,7 +882,7 @@ pub async fn user_back_strategy(
 
         match db
             .execute(FunUserListUserStrategyPoolContractAssetBalancesReq {
-                strategy_pool_contract_id,
+                strategy_pool_contract_id: Some(strategy_pool_contract_id),
                 user_id: Some(ctx.user_id),
                 strategy_wallet_id: Some(strategy_wallet_row.wallet_id),
                 token_address: Some(token.into()),

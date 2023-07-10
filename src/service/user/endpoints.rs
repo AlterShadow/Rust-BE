@@ -225,6 +225,34 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 Field::new("aum_value_usd", Type::Numeric),
                 Field::new("current_value_usd", Type::Numeric),
                 Field::new("withdrawable_value_usd", Type::Numeric),
+                Field::new(
+                    "strategy_pool_tokens",
+                    Type::datatable(
+                        "UserGetStrategiesStatisticsStrategyPoolToken",
+                        vec![
+                            Field::new("token_id", Type::BigInt),
+                            Field::new("token_name", Type::String),
+                            Field::new("token_symbol", Type::String),
+                            Field::new("total_quantity", Type::BlockchainDecimal),
+                            Field::new("total_quantity_usd", Type::Numeric),
+                        ],
+                    ),
+                ),
+                Field::new(
+                    "aum_list_history",
+                    Type::datatable(
+                        "UserGetStrategiesStatisticsAumListHistory",
+                        vec![
+                            Field::new("token_id", Type::BigInt),
+                            Field::new("token_name", Type::String),
+                            Field::new("token_symbol", Type::String),
+                            Field::new("side", Type::String),
+                            Field::new("quantity", Type::BlockchainDecimal),
+                            Field::new("quantity_usd", Type::Numeric),
+                            Field::new("happened_at", Type::BigInt),
+                        ],
+                    ),
+                ),
             ],
         )
         .with_description("User gets statistics of all strategies related to the user"),
@@ -484,6 +512,8 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
             vec![
                 Field::new("expert_id", Type::BigInt),
                 Field::new("name", Type::String),
+                Field::new("family_name", Type::String),
+                Field::new("given_name", Type::String),
                 Field::new("follower_count", Type::Int),
                 Field::new("backers_count", Type::Int),
                 Field::new("description", Type::String),

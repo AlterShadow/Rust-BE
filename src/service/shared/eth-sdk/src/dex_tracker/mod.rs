@@ -120,7 +120,7 @@ pub async fn update_user_strategy_pool_asset_balances_on_copy_trade(
     /* get strategy wallets that hold sold asset */
     let strategy_wallet_sold_asset_rows = db
         .execute(FunUserListUserStrategyPoolContractAssetBalancesReq {
-            strategy_pool_contract_id,
+            strategy_pool_contract_id: Some(strategy_pool_contract_id),
             token_address: Some(sp_sold_asset_address.into()),
             blockchain: Some(blockchain),
             user_id: None,
@@ -151,7 +151,7 @@ pub async fn update_user_strategy_pool_asset_balances_on_copy_trade(
         .await?;
         match db
             .execute(FunUserListUserStrategyPoolContractAssetBalancesReq {
-                strategy_pool_contract_id,
+                strategy_pool_contract_id: Some(strategy_pool_contract_id),
                 token_address: Some(sp_bought_asset_address.into()),
                 blockchain: Some(blockchain),
                 user_id: Some(strategy_wallet_sold_asset_row.user_id),

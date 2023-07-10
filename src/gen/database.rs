@@ -1344,7 +1344,8 @@ impl DatabaseRequest for FunUserAddUserStrategyPoolContractAssetLedgerEntryReq {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserListUserStrategyPoolContractAssetBalancesReq {
-    pub strategy_pool_contract_id: i64,
+    #[serde(default)]
+    pub strategy_pool_contract_id: Option<i64>,
     #[serde(default)]
     pub user_id: Option<i64>,
     #[serde(default)]

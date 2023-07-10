@@ -1247,6 +1247,74 @@
             {
               "name": "withdrawable_value_usd",
               "ty": "Numeric"
+            },
+            {
+              "name": "strategy_pool_tokens",
+              "ty": {
+                "DataTable": {
+                  "name": "UserGetStrategiesStatisticsStrategyPoolToken",
+                  "fields": [
+                    {
+                      "name": "token_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "token_name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "token_symbol",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "total_quantity",
+                      "ty": "BlockchainDecimal"
+                    },
+                    {
+                      "name": "total_quantity_usd",
+                      "ty": "Numeric"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "aum_list_history",
+              "ty": {
+                "DataTable": {
+                  "name": "UserGetStrategiesStatisticsAumListHistory",
+                  "fields": [
+                    {
+                      "name": "token_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "token_name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "token_symbol",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "side",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "quantity",
+                      "ty": "BlockchainDecimal"
+                    },
+                    {
+                      "name": "quantity_usd",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "happened_at",
+                      "ty": "BigInt"
+                    }
+                  ]
+                }
+              }
             }
           ],
           "stream_response": null,
@@ -2456,6 +2524,14 @@
             },
             {
               "name": "name",
+              "ty": "String"
+            },
+            {
+              "name": "family_name",
+              "ty": "String"
+            },
+            {
+              "name": "given_name",
               "ty": "String"
             },
             {

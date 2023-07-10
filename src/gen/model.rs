@@ -1903,6 +1903,8 @@ pub struct UserGetExpertProfileRequest {
 pub struct UserGetExpertProfileResponse {
     pub expert_id: i64,
     pub name: String,
+    pub family_name: String,
+    pub given_name: String,
     pub follower_count: i32,
     pub backers_count: i32,
     pub description: String,
@@ -1916,6 +1918,18 @@ pub struct UserGetExpertProfileResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct UserGetStrategiesStatisticsAumListHistory {
+    pub token_id: i64,
+    pub token_name: String,
+    pub token_symbol: String,
+    pub side: String,
+    #[serde(with = "WithBlockchainDecimal")]
+    pub quantity: U256,
+    pub quantity_usd: f64,
+    pub happened_at: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct UserGetStrategiesStatisticsRequest {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1926,6 +1940,18 @@ pub struct UserGetStrategiesStatisticsResponse {
     pub aum_value_usd: f64,
     pub current_value_usd: f64,
     pub withdrawable_value_usd: f64,
+    pub strategy_pool_tokens: Vec<UserGetStrategiesStatisticsStrategyPoolToken>,
+    pub aum_list_history: Vec<UserGetStrategiesStatisticsAumListHistory>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserGetStrategiesStatisticsStrategyPoolToken {
+    pub token_id: i64,
+    pub token_name: String,
+    pub token_symbol: String,
+    #[serde(with = "WithBlockchainDecimal")]
+    pub total_quantity: U256,
+    pub total_quantity_usd: f64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -3898,6 +3924,74 @@ impl WsRequest for UserGetStrategiesStatisticsRequest {
     {
       "name": "withdrawable_value_usd",
       "ty": "Numeric"
+    },
+    {
+      "name": "strategy_pool_tokens",
+      "ty": {
+        "DataTable": {
+          "name": "UserGetStrategiesStatisticsStrategyPoolToken",
+          "fields": [
+            {
+              "name": "token_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "token_name",
+              "ty": "String"
+            },
+            {
+              "name": "token_symbol",
+              "ty": "String"
+            },
+            {
+              "name": "total_quantity",
+              "ty": "BlockchainDecimal"
+            },
+            {
+              "name": "total_quantity_usd",
+              "ty": "Numeric"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "aum_list_history",
+      "ty": {
+        "DataTable": {
+          "name": "UserGetStrategiesStatisticsAumListHistory",
+          "fields": [
+            {
+              "name": "token_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "token_name",
+              "ty": "String"
+            },
+            {
+              "name": "token_symbol",
+              "ty": "String"
+            },
+            {
+              "name": "side",
+              "ty": "String"
+            },
+            {
+              "name": "quantity",
+              "ty": "BlockchainDecimal"
+            },
+            {
+              "name": "quantity_usd",
+              "ty": "Numeric"
+            },
+            {
+              "name": "happened_at",
+              "ty": "BigInt"
+            }
+          ]
+        }
+      }
     }
   ],
   "stream_response": null,
@@ -5235,6 +5329,14 @@ impl WsRequest for UserGetExpertProfileRequest {
     },
     {
       "name": "name",
+      "ty": "String"
+    },
+    {
+      "name": "family_name",
+      "ty": "String"
+    },
+    {
+      "name": "given_name",
       "ty": "String"
     },
     {
