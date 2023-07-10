@@ -2002,13 +2002,17 @@ END
                 Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("deposit_address", Type::optional(Type::BlockchainAddress)),
             ],
-            vec![Field::new("balance", Type::BlockchainDecimal)],
+            vec![
+                Field::new("wallet_address", Type::BlockchainAddress),
+                Field::new("balance", Type::BlockchainDecimal),
+            ],
             r#"
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM tbl.user_whitelisted_wallet WHERE fkey_user_id = a_user_id AND address = a_deposit_address AND blockchain = a_blockchain) THEN
         a_deposit_address := NULL;
     END IF;
     RETURN QUERY SELECT
+						a.user_address,
             CAST(SUM(CAST(a.quantity AS NUMERIC) 
                 * CASE
                      WHEN a.is_deposit THEN 1

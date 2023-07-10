@@ -226,6 +226,7 @@ pub struct FunUserBackStrategyRespRow {
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserCalculateUserEscrowBalanceFromLedgerRespRow {
+    pub wallet_address: BlockchainAddress,
     pub balance: BlockchainDecimal,
 }
 

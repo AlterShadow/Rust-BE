@@ -2505,6 +2505,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION api.fun_user_calculate_user_escrow_balance_from_ledger(a_user_id bigint, a_token_id bigint, a_blockchain enum_block_chain, a_deposit_address varchar DEFAULT NULL)
 RETURNS table (
+    "wallet_address" varchar,
     "balance" varchar
 )
 LANGUAGE plpgsql
@@ -2515,6 +2516,7 @@ BEGIN
         a_deposit_address := NULL;
     END IF;
     RETURN QUERY SELECT
+						a.user_address,
             CAST(SUM(CAST(a.quantity AS NUMERIC) 
                 * CASE
                      WHEN a.is_deposit THEN 1
