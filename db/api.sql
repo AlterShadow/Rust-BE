@@ -1790,8 +1790,11 @@ BEGIN
 				RETURN QUERY SELECT existing_id;
 		END IF;
 
+
     RETURN QUERY INSERT INTO tbl.user_deposit_withdraw_ledger (
         fkey_user_id,
+        fkey_token_id,
+        fkey_escrow_contract_address_id,
         blockchain,
         user_address,
         escrow_contract_address,
@@ -1804,6 +1807,8 @@ BEGIN
         happened_at
     ) VALUES (
      a_user_id,
+     a_token_id,
+     a_contract_address_id,
      a_blockchain,
      a_user_address,
      a_contract_address,
@@ -2493,6 +2498,35 @@ BEGIN
     ORDER BY l.pkey_id
     LIMIT a_limit
     OFFSET a_offset;
+END
+            
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_calculate_user_escrow_balance_from_ledger(a_user_id bigint, a_token_id bigint, a_blockchain enum_block_chain, a_deposit_address varchar DEFAULT NULL)
+RETURNS table (
+    "balance" varchar
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM tbl.user_whitelisted_wallet WHERE fkey_user_id = a_user_id AND address = a_deposit_address AND blockchain = a_blockchain) THEN
+        a_deposit_address := NULL;
+    END IF;
+    RETURN QUERY SELECT
+            CAST(SUM(CAST(a.quantity AS NUMERIC) 
+                * CASE
+                     WHEN a.is_deposit THEN 1
+                     ELSE -1 
+                 END
+            ) AS VARCHAR)
+		FROM tbl.user_deposit_withdraw_ledger AS a
+		WHERE a.blockchain = a_blockchain
+		    AND a.fkey_user_id = a_user_id
+            AND a.fkey_token_id = a_token_id
+            AND  (a_deposit_address ISNULL OR a.user_address = a_deposit_address)
+        ;
 END
             
 $$;
