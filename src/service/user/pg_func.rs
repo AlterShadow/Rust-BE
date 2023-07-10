@@ -2000,7 +2000,7 @@ END
                 Field::new("user_id", Type::BigInt),
                 Field::new("token_id", Type::BigInt),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
-                Field::new("deposit_address", Type::optional(Type::BlockchainAddress)),
+                Field::new("wallet_address", Type::optional(Type::BlockchainAddress)),
             ],
             vec![
                 Field::new("wallet_address", Type::BlockchainAddress),
@@ -2008,8 +2008,8 @@ END
             ],
             r#"
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM tbl.user_whitelisted_wallet WHERE fkey_user_id = a_user_id AND address = a_deposit_address AND blockchain = a_blockchain) THEN
-        a_deposit_address := NULL;
+    IF NOT EXISTS (SELECT 1 FROM tbl.user_whitelisted_wallet WHERE fkey_user_id = a_user_id AND address = a_wallet_address AND blockchain = a_blockchain) THEN
+        a_wallet_address := NULL;
     END IF;
     RETURN QUERY SELECT
 						a.user_address,
@@ -2023,7 +2023,8 @@ BEGIN
 		WHERE a.blockchain = a_blockchain
 		    AND a.fkey_user_id = a_user_id
             AND a.fkey_token_id = a_token_id
-            AND  (a_deposit_address ISNULL OR a.user_address = a_deposit_address)
+            AND  (a_wallet_address ISNULL OR a.user_address = a_wallet_address)
+						GROUP BY a.user_address
         ;
 END
             "#,

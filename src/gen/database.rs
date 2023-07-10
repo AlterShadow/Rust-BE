@@ -2575,21 +2575,21 @@ pub struct FunUserCalculateUserEscrowBalanceFromLedgerReq {
     pub token_id: i64,
     pub blockchain: EnumBlockChain,
     #[serde(default)]
-    pub deposit_address: Option<BlockchainAddress>,
+    pub wallet_address: Option<BlockchainAddress>,
 }
 
 #[allow(unused_variables)]
 impl DatabaseRequest for FunUserCalculateUserEscrowBalanceFromLedgerReq {
     type ResponseRow = FunUserCalculateUserEscrowBalanceFromLedgerRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_calculate_user_escrow_balance_from_ledger(a_user_id => $1::bigint, a_token_id => $2::bigint, a_blockchain => $3::enum_block_chain, a_deposit_address => $4::varchar);"
+        "SELECT * FROM api.fun_user_calculate_user_escrow_balance_from_ledger(a_user_id => $1::bigint, a_token_id => $2::bigint, a_blockchain => $3::enum_block_chain, a_wallet_address => $4::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
             &self.user_id as &(dyn ToSql + Sync),
             &self.token_id as &(dyn ToSql + Sync),
             &self.blockchain as &(dyn ToSql + Sync),
-            &self.deposit_address as &(dyn ToSql + Sync),
+            &self.wallet_address as &(dyn ToSql + Sync),
         ]
     }
 }

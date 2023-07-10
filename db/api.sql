@@ -2503,7 +2503,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_calculate_user_escrow_balance_from_ledger(a_user_id bigint, a_token_id bigint, a_blockchain enum_block_chain, a_deposit_address varchar DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_user_calculate_user_escrow_balance_from_ledger(a_user_id bigint, a_token_id bigint, a_blockchain enum_block_chain, a_wallet_address varchar DEFAULT NULL)
 RETURNS table (
     "wallet_address" varchar,
     "balance" varchar
@@ -2512,8 +2512,8 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM tbl.user_whitelisted_wallet WHERE fkey_user_id = a_user_id AND address = a_deposit_address AND blockchain = a_blockchain) THEN
-        a_deposit_address := NULL;
+    IF NOT EXISTS (SELECT 1 FROM tbl.user_whitelisted_wallet WHERE fkey_user_id = a_user_id AND address = a_wallet_address AND blockchain = a_blockchain) THEN
+        a_wallet_address := NULL;
     END IF;
     RETURN QUERY SELECT
 						a.user_address,
@@ -2527,7 +2527,8 @@ BEGIN
 		WHERE a.blockchain = a_blockchain
 		    AND a.fkey_user_id = a_user_id
             AND a.fkey_token_id = a_token_id
-            AND  (a_deposit_address ISNULL OR a.user_address = a_deposit_address)
+            AND  (a_wallet_address ISNULL OR a.user_address = a_wallet_address)
+						GROUP BY a.user_address
         ;
 END
             
