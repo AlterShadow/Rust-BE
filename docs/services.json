@@ -1353,9 +1353,7 @@
             },
             {
               "name": "quantity",
-              "ty": {
-                "Optional": "BlockchainDecimal"
-              }
+              "ty": "BlockchainDecimal"
             },
             {
               "name": "blockchain",

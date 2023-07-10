@@ -1781,8 +1781,8 @@ pub struct UserCreateStrategyWalletResponse {
 #[serde(rename_all = "camelCase")]
 pub struct UserExitStrategyRequest {
     pub strategy_id: i64,
-    #[serde(default)]
-    pub quantity: Option<U256>,
+    #[serde(with = "WithBlockchainDecimal")]
+    pub quantity: U256,
     pub blockchain: EnumBlockChain,
     pub nonce: i64,
 }
@@ -4028,9 +4028,7 @@ impl WsRequest for UserExitStrategyRequest {
     },
     {
       "name": "quantity",
-      "ty": {
-        "Optional": "BlockchainDecimal"
-      }
+      "ty": "BlockchainDecimal"
     },
     {
       "name": "blockchain",

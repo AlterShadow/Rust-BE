@@ -60,6 +60,16 @@ impl ToRust for Type {
                         Type::BlockchainTransactionHash if serde_with => {
                             "WithBlockchainTransactionHash"
                         }
+                        // TODO: handle optional decimals
+                        // Type::Optional(t) if matches!(**t, Type::BlockchainDecimal) => {
+                        //     "WithBlockchainDecimal"
+                        // }
+                        // Type::Optional(t) if matches!(**t, Type::BlockchainAddress) => {
+                        //     "WithBlockchainAddress"
+                        // }
+                        // Type::Optional(t) if matches!(**t, Type::BlockchainTransactionHash) => {
+                        //     "WithBlockchainTransactionHash"
+                        // }
                         _ => "",
                     };
                     format!(

@@ -1020,7 +1020,7 @@ impl RequestHandler for MethodUserExitStrategy {
                 &db,
                 req.blockchain,
                 req.strategy_id,
-                req.quantity.map(|x| x.into()),
+                Some(req.quantity),
                 master_key,
             )
             .await?;

@@ -266,7 +266,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
             20110,
             vec![
                 Field::new("strategy_id", Type::BigInt),
-                Field::new("quantity", Type::optional(Type::BlockchainDecimal)),
+                Field::new("quantity", Type::BlockchainDecimal),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("nonce", Type::BigInt),
             ],
