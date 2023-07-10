@@ -224,26 +224,21 @@ impl<T: Transport> EscrowContract<T> {
         Ok(tx_hash)
     }
 
-    pub async fn transfer_assets_from(
+    pub async fn transfer_asset_from(
         &self,
         conn: &EthereumRpcConnection,
         signer: impl Key,
-        proprietors: Vec<Address>,
-        assets: Vec<Address>,
-        amounts: Vec<U256>,
         recipient: Address,
+        asset: Address,
+        proprietors: Vec<Address>,
+        amounts: Vec<U256>,
         logger: DynLogger,
     ) -> Result<H256> {
         let estimated_gas = self
             .contract
             .estimate_gas(
                 EscrowFunctions::TransferAssetsFrom.as_str(),
-                (
-                    proprietors.clone(),
-                    assets.clone(),
-                    amounts.clone(),
-                    recipient,
-                ),
+                (recipient, asset, proprietors.clone(), amounts.clone()),
                 signer.address(),
                 Options::default(),
             )
@@ -252,20 +247,20 @@ impl<T: Transport> EscrowContract<T> {
         let estimated_gas_price = conn.eth().gas_price().await?;
 
         info!(
-            "Transferring {:?} amount of assets {:?} from proprietors {:?} to recipient {:?} from escrow contract {:?} by {:?}",
+            "Transferring {:?} amounts from proprietors {:?} of asset {:?} to recipient {:?} from escrow contract {:?} by {:?}",
             amounts.clone(),
-            assets.clone(),
 						proprietors.clone(),
+            asset,
             recipient,
             self.address(),
             signer.address(),
         );
 
         logger.log(format!(
-					"Transferring {:?} amount of assets {:?} from proprietors {:?} to recipient {:?} from escrow contract {:?} by {:?}",
+					"Transferring {:?} amounts from proprietors {:?} of asset {:?} to recipient {:?} from escrow contract {:?} by {:?}",
 					amounts.clone(),
-					assets.clone(),
 					proprietors.clone(),
+					asset,
 					recipient,
 					self.address(),
 					signer.address(),
@@ -275,12 +270,7 @@ impl<T: Transport> EscrowContract<T> {
             .contract
             .signed_call(
                 EscrowFunctions::TransferAssetsFrom.as_str(),
-                (
-                    proprietors.clone(),
-                    assets.clone(),
-                    amounts.clone(),
-                    recipient,
-                ),
+                (recipient, asset, proprietors.clone(), amounts.clone()),
                 Options::with(|options| {
                     options.gas = Some(estimated_gas);
                     options.gas_price = Some(estimated_gas_price);
@@ -291,10 +281,10 @@ impl<T: Transport> EscrowContract<T> {
 
         get_blockchain_logger().log(
             format!(
-                "Transfer {:?} of assets {:?} from proprietors {:?} to {:?} tx_hash {:?}",
+                "Transfer {:?} amounts from proprietors {:?} of asset {:?} to {:?} tx_hash {:?}",
                 amounts.clone(),
-                assets.clone(),
                 proprietors.clone(),
+                asset,
                 recipient,
                 tx_hash,
             ),
@@ -447,20 +437,20 @@ pub async fn transfer_assets_from_and_ensure_success(
     max_retry: u64,
     poll_interval: Duration,
     signer: impl Key + Clone,
-    proprietors: Vec<Address>,
-    assets: Vec<Address>,
-    amounts: Vec<U256>,
     recipient: Address,
+    asset: Address,
+    proprietors: Vec<Address>,
+    amounts: Vec<U256>,
     logger: DynLogger,
 ) -> Result<H256> {
     let tx_hash = contract
-        .transfer_assets_from(
+        .transfer_asset_from(
             &conn,
             signer.clone(),
-            proprietors,
-            assets,
-            amounts,
             recipient,
+            asset,
+            proprietors,
+            amounts,
             logger,
         )
         .await?;
