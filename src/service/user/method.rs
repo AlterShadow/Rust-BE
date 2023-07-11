@@ -134,7 +134,7 @@ impl RequestHandler for MethodUserListStrategies {
                     description: req.description,
                     blockchain: req.blockchain,
                     strategy_pool_address: req.strategy_pool_address.map(|x| x.into()),
-                    approved: None,
+                    approved: Some(true),
                 })
                 .await?;
 
@@ -1421,7 +1421,7 @@ impl RequestHandler for MethodUserGetExpertProfile {
                     description: None,
                     blockchain: None,
                     strategy_pool_address: None,
-                    approved: None,
+                    approved: Some(true),
                 })
                 .await?;
             Ok(UserGetExpertProfileResponse {
