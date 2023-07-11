@@ -9,7 +9,7 @@ use crate::back_strategy::{
 };
 use api::cmc::CoinMarketCap;
 use chrono::Utc;
-use eth_sdk::escrow::transfer_token_to_and_ensure_success;
+use eth_sdk::escrow::refund_asset_and_ensure_success;
 use eth_sdk::escrow::{AbstractEscrowContract, EscrowContract};
 use eth_sdk::pair_paths::WorkingPancakePairPaths;
 use eth_sdk::signer::Secp256k1SecretKey;
@@ -1163,6 +1163,153 @@ impl RequestHandler for MethodUserRequestRefund {
         .boxed()
     }
 }
+
+pub async fn on_user_request_refund(
+    _conn: &EthereumRpcConnection,
+    ctx: &RequestContext,
+    db: &DbClient,
+    chain: EnumBlockChain,
+    stablecoin_addresses: &BlockchainCoinAddresses,
+    escrow_contract: EscrowContract<EitherTransport>,
+    quantity: U256,
+    wallet_address: Address,
+    escrow_signer: impl Key + Clone,
+    token: EnumBlockchainCoin,
+    logger: DynLogger,
+) -> Result<H256> {
+    info!(
+        "on_user_request_refund {:?} from {:?} transfer {:?} {:?} to {:?}",
+        chain,
+        escrow_contract.address(),
+        quantity,
+        token,
+        wallet_address
+    );
+
+    let token_address = stablecoin_addresses
+        .get(chain, token)
+        .context("no stablecoin address")?;
+
+    let refunded_token_row = db
+        .execute(FunUserListEscrowTokenContractAddressReq {
+            limit: 1,
+            offset: 0,
+            token_id: None,
+            blockchain: Some(chain),
+            address: Some(token_address.into()),
+            symbol: None,
+            is_stablecoin: None,
+        })
+        .await?
+        .into_result()
+        .context("could not get refunded token contract from database")?;
+
+    let deposit_withdraw_balance_row = db
+        .execute(FunUserListUserDepositWithdrawBalanceReq {
+            limit: 1,
+            offset: 0,
+            user_id: ctx.user_id,
+            blockchain: Some(chain),
+            token_id: Some(refunded_token_row.token_id),
+            token_address: Some(token_address.into()),
+            escrow_contract_address: Some(escrow_contract.address().into()),
+        })
+        .await?
+        .into_result()
+        .context("could not get deposit withdraw balance from database")?;
+
+    let old_balance: U256 = deposit_withdraw_balance_row.balance.into();
+    if old_balance < quantity {
+        bail!("unsufficient balance for refund");
+    }
+
+    /* get amount deposited by whitelisted wallets necessary for refund */
+    let positive_deposit_balance_of_wallet_row = db
+        .execute(FunUserCalculateUserEscrowBalanceFromLedgerReq {
+            user_id: ctx.user_id,
+            blockchain: chain,
+            token_id: refunded_token_row.token_id,
+            wallet_address: Some(wallet_address.into()),
+        })
+        .await?
+        .into_result()
+        .context("couldn't find deposits in ledger made by this wallet")?;
+
+    /* check this wallet has enough registered deposits for the refund */
+    let positive_deposit_balance_of_wallet: U256 =
+        positive_deposit_balance_of_wallet_row.balance.into();
+    if positive_deposit_balance_of_wallet < quantity {
+        bail!("not enough balance for back amount deposited by this wallet")
+    }
+
+    let hash = refund_asset_and_ensure_success(
+        escrow_contract.clone(),
+        &_conn,
+        14,
+        10,
+        Duration::from_secs(10),
+        escrow_signer,
+        wallet_address,
+        token_address,
+        quantity,
+        logger.clone(),
+    )
+    .await?;
+
+    let escrow_contract_row = db
+        .execute(FunAdminListEscrowContractAddressReq {
+            limit: 1,
+            offset: 0,
+            blockchain: Some(chain),
+        })
+        .await?
+        .into_result()
+        .context("could not get escrow contract from database")?;
+
+    /* update ledger for this wallet address and amount */
+    db.execute(FunUserRequestRefundReq {
+        user_id: ctx.user_id,
+        quantity: quantity.into(),
+        blockchain: chain,
+        user_address: wallet_address.into(),
+        receiver_address: wallet_address.into(),
+        contract_address: escrow_contract.address().into(),
+        transaction_hash: hash.into(),
+        token_id: refunded_token_row.token_id,
+        contract_address_id: escrow_contract_row.pkey_id,
+    })
+    .await?
+    .into_result()
+    .context("could not add entry to deposit withdraw ledger on request refund")?;
+
+    /* update user balance cache */
+    let deposit_withdraw_balance_row = db
+        .execute(FunUserListUserDepositWithdrawBalanceReq {
+            limit: 1,
+            offset: 0,
+            user_id: ctx.user_id,
+            blockchain: Some(chain),
+            token_id: Some(refunded_token_row.token_id),
+            token_address: Some(token_address.into()),
+            escrow_contract_address: Some(escrow_contract.address().into()),
+        })
+        .await?
+        .into_result()
+        .context("could not get deposit withdraw balance from database")?;
+
+    let old_balance: U256 = deposit_withdraw_balance_row.balance.into();
+    db.execute(FunUserUpdateUserDepositWithdrawBalanceReq {
+        deposit_withdraw_balance_id: deposit_withdraw_balance_row.deposit_withdraw_balance_id,
+        old_balance: deposit_withdraw_balance_row.balance,
+        new_balance: old_balance
+            .try_checked_sub(quantity)
+            .unwrap_or(U256::zero())
+            .into(),
+    })
+    .await?;
+
+    Ok(hash)
+}
 pub struct MethodUserUnfollowStrategy;
 impl RequestHandler for MethodUserUnfollowStrategy {
     type Request = UserUnfollowStrategyRequest;
@@ -2054,132 +2201,6 @@ impl RequestHandler for MethodExpertRemoveStrategyWatchingWallet {
         }
         .boxed()
     }
-}
-
-pub async fn on_user_request_refund(
-    _conn: &EthereumRpcConnection,
-    ctx: &RequestContext,
-    db: &DbClient,
-    chain: EnumBlockChain,
-    stablecoin_addresses: &BlockchainCoinAddresses,
-    escrow_contract: EscrowContract<EitherTransport>,
-    quantity: U256,
-    wallet_address: Address,
-    escrow_signer: impl Key + Clone,
-    token: EnumBlockchainCoin,
-    logger: DynLogger,
-) -> Result<H256> {
-    info!(
-        "on_user_request_refund {:?} from {:?} transfer {:?} {:?} to {:?}",
-        chain,
-        escrow_contract.address(),
-        quantity,
-        token,
-        wallet_address
-    );
-
-    let token_address = stablecoin_addresses
-        .get(chain, token)
-        .context("no stablecoin address")?;
-
-    let refunded_token_row = db
-        .execute(FunUserListEscrowTokenContractAddressReq {
-            limit: 1,
-            offset: 0,
-            token_id: None,
-            blockchain: Some(chain),
-            address: Some(token_address.into()),
-            symbol: None,
-            is_stablecoin: None,
-        })
-        .await?
-        .into_result()
-        .context("could not get refunded token contract from database")?;
-
-    let deposit_withdraw_balance_row = db
-        .execute(FunUserListUserDepositWithdrawBalanceReq {
-            limit: 1,
-            offset: 0,
-            user_id: ctx.user_id,
-            blockchain: Some(chain),
-            token_id: Some(refunded_token_row.token_id),
-            token_address: Some(token_address.into()),
-            escrow_contract_address: Some(escrow_contract.address().into()),
-        })
-        .await?
-        .into_result()
-        .context("could not get deposit withdraw balance from database")?;
-
-    let old_balance: U256 = deposit_withdraw_balance_row.balance.into();
-    if old_balance < quantity {
-        bail!("unsufficient balance for refund");
-    }
-
-    let hash = transfer_token_to_and_ensure_success(
-        escrow_contract.clone(),
-        &_conn,
-        14,
-        10,
-        Duration::from_secs(10),
-        escrow_signer,
-        token_address,
-        wallet_address,
-        quantity,
-        logger.clone(),
-    )
-    .await?;
-
-    let escrow_contract_row = db
-        .execute(FunAdminListEscrowContractAddressReq {
-            limit: 1,
-            offset: 0,
-            blockchain: Some(chain),
-        })
-        .await?
-        .into_result()
-        .context("could not get escrow contract from database")?;
-
-    db.execute(FunUserRequestRefundReq {
-        user_id: ctx.user_id,
-        quantity: quantity.into(),
-        blockchain: chain,
-        user_address: wallet_address.into(),
-        receiver_address: wallet_address.into(),
-        contract_address: escrow_contract.address().into(),
-        transaction_hash: hash.into(),
-        token_id: refunded_token_row.token_id,
-        contract_address_id: escrow_contract_row.pkey_id,
-    })
-    .await?
-    .into_result()
-    .context("could not add entry to deposit withdraw ledger on request refund")?;
-
-    let deposit_withdraw_balance_row = db
-        .execute(FunUserListUserDepositWithdrawBalanceReq {
-            limit: 1,
-            offset: 0,
-            user_id: ctx.user_id,
-            blockchain: Some(chain),
-            token_id: Some(refunded_token_row.token_id),
-            token_address: Some(token_address.into()),
-            escrow_contract_address: Some(escrow_contract.address().into()),
-        })
-        .await?
-        .into_result()
-        .context("could not get deposit withdraw balance from database")?;
-
-    let old_balance: U256 = deposit_withdraw_balance_row.balance.into();
-    db.execute(FunUserUpdateUserDepositWithdrawBalanceReq {
-        deposit_withdraw_balance_id: deposit_withdraw_balance_row.deposit_withdraw_balance_id,
-        old_balance: deposit_withdraw_balance_row.balance,
-        new_balance: old_balance
-            .try_checked_sub(quantity)
-            .unwrap_or(U256::zero())
-            .into(),
-    })
-    .await?;
-
-    Ok(hash)
 }
 
 pub struct MethodExpertAddStrategyInitialTokenRatio {
