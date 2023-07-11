@@ -71,6 +71,48 @@ impl<T: Transport> EscrowContract<T> {
         self.contract.address()
     }
 
+    pub async fn assets(&self, proprietor: Address) -> Result<Vec<Address>> {
+        Ok(self
+            .contract
+            .query(
+                EscrowFunctions::Assets.as_str(),
+                proprietor,
+                None,
+                Options::default(),
+                None,
+            )
+            .await?)
+    }
+
+    pub async fn asset_balance(&self, proprietor: Address, asset: Address) -> Result<U256> {
+        Ok(self
+            .contract
+            .query(
+                EscrowFunctions::AssetBalance.as_str(),
+                (proprietor, asset),
+                None,
+                Options::default(),
+                None,
+            )
+            .await?)
+    }
+
+    pub async fn assets_and_balances(
+        &self,
+        proprietor: Address,
+    ) -> Result<(Vec<Address>, Vec<U256>)> {
+        Ok(self
+            .contract
+            .query(
+                EscrowFunctions::AssetsAndBalances.as_str(),
+                proprietor,
+                None,
+                Options::default(),
+                None,
+            )
+            .await?)
+    }
+
     pub async fn accept_deposit(
         &self,
         conn: &EthereumRpcConnection,
@@ -202,7 +244,7 @@ impl<T: Transport> EscrowContract<T> {
         let tx_hash = self
             .contract
             .signed_call(
-                EscrowFunctions::TransferAssetsFrom.as_str(),
+                EscrowFunctions::RejectDeposit.as_str(),
                 (proprietor, asset, deposit_amount, fee_recipient, fee_amount),
                 Options::with(|options| {
                     options.gas = Some(estimated_gas);
@@ -227,17 +269,17 @@ impl<T: Transport> EscrowContract<T> {
         &self,
         conn: &EthereumRpcConnection,
         signer: impl Key,
-        recipient: Address,
+        proprietor: Address,
         asset: Address,
-        proprietors: Vec<Address>,
-        amounts: Vec<U256>,
+        amount: U256,
+        recipient: Address,
         logger: DynLogger,
     ) -> Result<H256> {
         let estimated_gas = self
             .contract
             .estimate_gas(
-                EscrowFunctions::TransferAssetsFrom.as_str(),
-                (recipient, asset, proprietors.clone(), amounts.clone()),
+                EscrowFunctions::TransferAssetFrom.as_str(),
+                (proprietor, asset, amount, recipient),
                 signer.address(),
                 Options::default(),
             )
@@ -246,20 +288,20 @@ impl<T: Transport> EscrowContract<T> {
         let estimated_gas_price = conn.eth().gas_price().await?;
 
         info!(
-            "Transferring {:?} amounts from proprietors {:?} of asset {:?} to recipient {:?} from escrow contract {:?} by {:?}",
-            amounts.clone(),
-						proprietors.clone(),
-            asset,
+            "Transferring {:?} amount of {:?} asset from {:?} proprietor to {:?} recipient from escrow contract {:?} by {:?}",
+						amount,
+						asset,
+						proprietor,
             recipient,
             self.address(),
             signer.address(),
         );
 
         logger.log(format!(
-					"Transferring {:?} amounts from proprietors {:?} of asset {:?} to recipient {:?} from escrow contract {:?} by {:?}",
-					amounts.clone(),
-					proprietors.clone(),
+					"Transferring {:?} amount of {:?} asset from {:?} proprietor to {:?} recipient from escrow contract {:?} by {:?}",
+					amount,
 					asset,
+					proprietor,
 					recipient,
 					self.address(),
 					signer.address(),
@@ -268,8 +310,8 @@ impl<T: Transport> EscrowContract<T> {
         let tx_hash = self
             .contract
             .signed_call(
-                EscrowFunctions::TransferAssetsFrom.as_str(),
-                (recipient, asset, proprietors.clone(), amounts.clone()),
+                EscrowFunctions::TransferAssetFrom.as_str(),
+                (proprietor, asset, amount, recipient),
                 Options::with(|options| {
                     options.gas = Some(estimated_gas);
                     options.gas_price = Some(estimated_gas_price);
@@ -280,16 +322,281 @@ impl<T: Transport> EscrowContract<T> {
 
         get_blockchain_logger().log(
             format!(
-                "Transfer {:?} amounts from proprietors {:?} of asset {:?} to {:?} tx_hash {:?}",
+                "Transfer {:?} amount of {:?} asset from {:?} proprietor to {:?} tx_hash {:?}",
+                amount, asset, proprietor, recipient, tx_hash,
+            ),
+            tx_hash,
+        )?;
+        Ok(tx_hash)
+    }
+
+    pub async fn refund_asset(
+        &self,
+        conn: &EthereumRpcConnection,
+        signer: impl Key,
+        proprietor: Address,
+        asset: Address,
+        amount: U256,
+        logger: DynLogger,
+    ) -> Result<H256> {
+        let estimated_gas = self
+            .contract
+            .estimate_gas(
+                EscrowFunctions::RefundAsset.as_str(),
+                (proprietor, asset, amount),
+                signer.address(),
+                Options::default(),
+            )
+            .await?;
+
+        let estimated_gas_price = conn.eth().gas_price().await?;
+
+        info!(
+						"Refunding {:?} amount of {:?} asset to {:?} proprietor from escrow contract {:?} by {:?}",
+						amount,
+						asset,
+						proprietor,
+						self.address(),
+						signer.address(),
+				);
+
+        logger.log(format!(
+					"Refunding {:?} amount of {:?} asset to {:?} proprietor from escrow contract {:?} by {:?}",
+					amount,
+					asset,
+					proprietor,
+					self.address(),
+					signer.address(),
+				));
+
+        let tx_hash = self
+            .contract
+            .signed_call(
+                EscrowFunctions::RefundAsset.as_str(),
+                (proprietor, asset, amount),
+                Options::with(|options| {
+                    options.gas = Some(estimated_gas);
+                    options.gas_price = Some(estimated_gas_price);
+                }),
+                signer,
+            )
+            .await?;
+
+        get_blockchain_logger().log(
+            format!(
+                "Refund {:?} amount of {:?} asset to {:?} proprietor tx_hash {:?}",
+                amount, asset, proprietor, tx_hash,
+            ),
+            tx_hash,
+        )?;
+        Ok(tx_hash)
+    }
+
+    pub async fn rescue_assets(
+        &self,
+        conn: &EthereumRpcConnection,
+        signer: impl Key,
+        recipient: Address,
+        assets: Vec<Address>,
+        amounts: Vec<U256>,
+        logger: DynLogger,
+    ) -> Result<H256> {
+        let estimated_gas = self
+            .contract
+            .estimate_gas(
+                EscrowFunctions::RescueAssets.as_str(),
+                (recipient, assets.clone(), amounts.clone()),
+                signer.address(),
+                Options::default(),
+            )
+            .await?;
+
+        let estimated_gas_price = conn.eth().gas_price().await?;
+
+        info!(
+            "Rescuing {:?} amounts of {:?} assets to {:?} from escrow contract {:?} by {:?}",
+            amounts.clone(),
+            assets.clone(),
+            recipient,
+            self.address(),
+            signer.address(),
+        );
+
+        logger.log(format!(
+            "Rescuing {:?} amounts of {:?} assets to {:?} from escrow contract {:?} by {:?}",
+            amounts.clone(),
+            assets.clone(),
+            recipient,
+            self.address(),
+            signer.address(),
+        ));
+
+        let tx_hash = self
+            .contract
+            .signed_call(
+                EscrowFunctions::RescueAssets.as_str(),
+                (recipient, assets.clone(), amounts.clone()),
+                Options::with(|options| {
+                    options.gas = Some(estimated_gas);
+                    options.gas_price = Some(estimated_gas_price);
+                }),
+                signer,
+            )
+            .await?;
+
+        get_blockchain_logger().log(
+            format!(
+                "Rescue {:?} amounts of {:?} assets to {:?} proprietor tx_hash {:?}",
                 amounts.clone(),
-                proprietors.clone(),
-                asset,
+                assets.clone(),
                 recipient,
                 tx_hash,
             ),
             tx_hash,
         )?;
         Ok(tx_hash)
+    }
+
+    pub async fn add_blacklisted_account(
+        &self,
+        conn: &EthereumRpcConnection,
+        signer: impl Key,
+        blacklisted_account: Address,
+        logger: DynLogger,
+    ) -> Result<H256> {
+        let estimated_gas = self
+            .contract
+            .estimate_gas(
+                EscrowFunctions::AddBlacklistedAccount.as_str(),
+                blacklisted_account,
+                signer.address(),
+                Options::default(),
+            )
+            .await?;
+
+        let estimated_gas_price = conn.eth().gas_price().await?;
+
+        info!(
+            "Adding {:?} blacklisted account to escrow contract {:?} by {:?}",
+            blacklisted_account,
+            self.address(),
+            signer.address(),
+        );
+
+        logger.log(format!(
+            "Adding {:?} blacklisted account to escrow contract {:?} by {:?}",
+            blacklisted_account,
+            self.address(),
+            signer.address(),
+        ));
+
+        let tx_hash = self
+            .contract
+            .signed_call(
+                EscrowFunctions::AddBlacklistedAccount.as_str(),
+                blacklisted_account,
+                Options::with(|options| {
+                    options.gas = Some(estimated_gas);
+                    options.gas_price = Some(estimated_gas_price);
+                }),
+                signer,
+            )
+            .await?;
+
+        get_blockchain_logger().log(
+            format!(
+                "Add {:?} blacklisted account to escrow contract {:?} tx_hash {:?}",
+                blacklisted_account,
+                self.address(),
+                tx_hash,
+            ),
+            tx_hash,
+        )?;
+        Ok(tx_hash)
+    }
+
+    pub async fn remove_blacklisted_account(
+        &self,
+        conn: &EthereumRpcConnection,
+        signer: impl Key,
+        blacklisted_account: Address,
+        logger: DynLogger,
+    ) -> Result<H256> {
+        let estimated_gas = self
+            .contract
+            .estimate_gas(
+                EscrowFunctions::RemoveBlacklistedAccount.as_str(),
+                blacklisted_account,
+                signer.address(),
+                Options::default(),
+            )
+            .await?;
+
+        let estimated_gas_price = conn.eth().gas_price().await?;
+
+        info!(
+            "Removing {:?} blacklisted account to escrow contract {:?} by {:?}",
+            blacklisted_account,
+            self.address(),
+            signer.address(),
+        );
+
+        logger.log(format!(
+            "Removing {:?} blacklisted account to escrow contract {:?} by {:?}",
+            blacklisted_account,
+            self.address(),
+            signer.address(),
+        ));
+
+        let tx_hash = self
+            .contract
+            .signed_call(
+                EscrowFunctions::RemoveBlacklistedAccount.as_str(),
+                blacklisted_account,
+                Options::with(|options| {
+                    options.gas = Some(estimated_gas);
+                    options.gas_price = Some(estimated_gas_price);
+                }),
+                signer,
+            )
+            .await?;
+
+        get_blockchain_logger().log(
+            format!(
+                "Remove {:?} blacklisted account to escrow contract {:?} tx_hash {:?}",
+                blacklisted_account,
+                self.address(),
+                tx_hash,
+            ),
+            tx_hash,
+        )?;
+        Ok(tx_hash)
+    }
+
+    pub async fn blacklisted_accounts(&self) -> Result<Address> {
+        Ok(self
+            .contract
+            .query(
+                EscrowFunctions::BlacklistedAccounts.as_str(),
+                (),
+                None,
+                Options::default(),
+                None,
+            )
+            .await?)
+    }
+
+    pub async fn account_is_blacklisted(&self, account: Address) -> Result<bool> {
+        Ok(self
+            .contract
+            .query(
+                EscrowFunctions::AccountIsBlacklisted.as_str(),
+                account,
+                None,
+                Options::default(),
+                None,
+            )
+            .await?)
     }
 
     pub async fn transfer_ownership(
@@ -347,9 +654,18 @@ impl<T: Transport> EscrowContract<T> {
 }
 
 enum EscrowFunctions {
+    Assets,
+    AssetBalance,
+    AssetsAndBalances,
     AcceptDeposit,
     RejectDeposit,
-    TransferAssetsFrom,
+    TransferAssetFrom,
+    RefundAsset,
+    RescueAssets,
+    AddBlacklistedAccount,
+    RemoveBlacklistedAccount,
+    BlacklistedAccounts,
+    AccountIsBlacklisted,
     TransferOwnership,
     Owner,
 }
@@ -357,9 +673,18 @@ enum EscrowFunctions {
 impl EscrowFunctions {
     fn as_str(&self) -> &'static str {
         match self {
+            Self::Assets => "assets",
+            Self::AssetBalance => "assetBalance",
+            Self::AssetsAndBalances => "assetsAndBalances",
             Self::AcceptDeposit => "acceptDeposit",
             Self::RejectDeposit => "rejectDeposit",
-            Self::TransferAssetsFrom => "transferAssetsFrom",
+            Self::TransferAssetFrom => "transferAssetFrom",
+            Self::RefundAsset => "refundAsset",
+            Self::RescueAssets => "rescueAssets",
+            Self::AddBlacklistedAccount => "addBlacklistedAccount",
+            Self::RemoveBlacklistedAccount => "removeBlacklistedAccount",
+            Self::BlacklistedAccounts => "blacklistedAccounts",
+            Self::AccountIsBlacklisted => "accountIsBlacklisted",
             Self::TransferOwnership => "transferOwnership",
             Self::Owner => "owner",
         }
@@ -436,22 +761,122 @@ pub async fn transfer_asset_from_and_ensure_success(
     max_retry: u64,
     poll_interval: Duration,
     signer: impl Key + Clone,
-    recipient: Address,
+    proprietor: Address,
     asset: Address,
-    proprietors: Vec<Address>,
-    amounts: Vec<U256>,
+    amount: U256,
+    recipient: Address,
     logger: DynLogger,
 ) -> Result<H256> {
     let tx_hash = contract
         .transfer_asset_from(
             &conn,
             signer.clone(),
-            recipient,
+            proprietor,
             asset,
-            proprietors,
-            amounts,
+            amount,
+            recipient,
             logger,
         )
+        .await?;
+    wait_for_confirmations(
+        &conn.eth(),
+        tx_hash,
+        poll_interval,
+        max_retry,
+        confirmations,
+    )
+    .await?;
+    Ok(tx_hash)
+}
+
+pub async fn refund_asset_and_ensure_success(
+    contract: EscrowContract<EitherTransport>,
+    conn: &EthereumRpcConnection,
+    confirmations: u64,
+    max_retry: u64,
+    poll_interval: Duration,
+    signer: impl Key + Clone,
+    proprietor: Address,
+    asset: Address,
+    amount: U256,
+    logger: DynLogger,
+) -> Result<H256> {
+    let tx_hash = contract
+        .refund_asset(&conn, signer.clone(), proprietor, asset, amount, logger)
+        .await?;
+    wait_for_confirmations(
+        &conn.eth(),
+        tx_hash,
+        poll_interval,
+        max_retry,
+        confirmations,
+    )
+    .await?;
+    Ok(tx_hash)
+}
+
+pub async fn rescue_assets_and_ensure_success(
+    contract: EscrowContract<EitherTransport>,
+    conn: &EthereumRpcConnection,
+    confirmations: u64,
+    max_retry: u64,
+    poll_interval: Duration,
+    signer: impl Key + Clone,
+    recipient: Address,
+    assets: Vec<Address>,
+    amounts: Vec<U256>,
+    logger: DynLogger,
+) -> Result<H256> {
+    let tx_hash = contract
+        .rescue_assets(&conn, signer.clone(), recipient, assets, amounts, logger)
+        .await?;
+    wait_for_confirmations(
+        &conn.eth(),
+        tx_hash,
+        poll_interval,
+        max_retry,
+        confirmations,
+    )
+    .await?;
+    Ok(tx_hash)
+}
+
+pub async fn add_blacklisted_account_and_ensure_success(
+    contract: EscrowContract<EitherTransport>,
+    conn: &EthereumRpcConnection,
+    confirmations: u64,
+    max_retry: u64,
+    poll_interval: Duration,
+    signer: impl Key + Clone,
+    blacklisted_account: Address,
+    logger: DynLogger,
+) -> Result<H256> {
+    let tx_hash = contract
+        .add_blacklisted_account(&conn, signer.clone(), blacklisted_account, logger)
+        .await?;
+    wait_for_confirmations(
+        &conn.eth(),
+        tx_hash,
+        poll_interval,
+        max_retry,
+        confirmations,
+    )
+    .await?;
+    Ok(tx_hash)
+}
+
+pub async fn remove_blacklisted_account_and_ensure_success(
+    contract: EscrowContract<EitherTransport>,
+    conn: &EthereumRpcConnection,
+    confirmations: u64,
+    max_retry: u64,
+    poll_interval: Duration,
+    signer: impl Key + Clone,
+    blacklisted_account: Address,
+    logger: DynLogger,
+) -> Result<H256> {
+    let tx_hash = contract
+        .remove_blacklisted_account(&conn, signer.clone(), blacklisted_account, logger)
         .await?;
     wait_for_confirmations(
         &conn.eth(),
@@ -473,7 +898,6 @@ pub async fn transfer_ownership_and_ensure_success(
     signer: impl Key + Clone,
     new_owner: Address,
 ) -> Result<H256> {
-    /* publish transaction */
     let tx_hash = contract
         .transfer_ownership(&conn, signer.clone(), new_owner)
         .await?;
