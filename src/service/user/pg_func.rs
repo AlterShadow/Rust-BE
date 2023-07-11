@@ -2081,9 +2081,6 @@ END
             ],
             r#"
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM tbl.user_whitelisted_wallet WHERE fkey_user_id = a_user_id AND address = a_wallet_address AND blockchain = a_blockchain) THEN
-        a_wallet_address := NULL;
-    END IF;
     RETURN QUERY SELECT
 						a.user_address,
             CAST(SUM(CAST(a.quantity AS NUMERIC) 
