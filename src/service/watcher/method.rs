@@ -9,7 +9,9 @@ use eth_sdk::dex_tracker::{
     update_user_strategy_pool_asset_balances_on_copy_trade,
 };
 use eth_sdk::erc20::{approve_and_ensure_success, Erc20Token};
-use eth_sdk::escrow::{transfer_token_to_and_ensure_success, EscrowContract};
+use eth_sdk::escrow::{
+    accept_deposit_and_ensure_success, reject_deposit_and_ensure_success, EscrowContract,
+};
 use eth_sdk::escrow_tracker::escrow::parse_escrow;
 use eth_sdk::evm::parse_quickalert_payload;
 use eth_sdk::strategy_pool::{
@@ -30,6 +32,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use tracing::*;
 use web3::ethabi::Address;
+use web3::signing::Key;
 use web3::types::U256;
 
 pub async fn handle_ethereum_dex_transactions(
@@ -448,7 +451,14 @@ pub async fn handle_escrow_transaction(
         return Ok(());
     }
 
-    /* check if transaction is from one of our users */
+    /* check escrow has positive non-zero value */
+    // TODO: minimum escrow value?
+    if escrow.amount == U256::zero() {
+        warn!("escrow amount is zero");
+        return Ok(());
+    }
+
+    /* get caller */
     // TODO: handle an escrow made by an unknown user
     let caller = tx
         .get_from()
@@ -459,6 +469,7 @@ pub async fn handle_escrow_transaction(
         .get_to()
         .with_context(|| format!("no called address found for tx: {:?}", tx.get_hash()))?;
 
+    /* check if transaction was made by a whitelisted wallet */
     let whitelisted_wallet = state
         .db
         .execute(FunUserListWhitelistedWalletsReq {
@@ -471,25 +482,29 @@ pub async fn handle_escrow_transaction(
         .await?
         .into_result();
 
+    /* instantiate escrow contract */
+    let conn = state.eth_pool.get(blockchain).await?;
+    let escrow_contract = EscrowContract::new(
+        conn.eth(),
+        state
+            .escrow_addresses
+            .get(blockchain, ())
+            .context("could not find escrow contract address on this chain")?,
+    )?;
+
     match whitelisted_wallet {
         Some(_) => {}
         None => {
             /* escrow was not done by a whitelisted wallet, return it minus fees */
-            let conn = state.eth_pool.get(blockchain).await?;
-            let escrow_contract = EscrowContract::new(
-                conn.eth(),
-                state
-                    .escrow_addresses
-                    .get(blockchain, ())
-                    .context("could not find escrow contract address on this chain")?,
-            )?;
-
+            /* estimate gas of deposit rejection using dummy values */
             let estimated_refund_gas = escrow_contract
-                .estimate_gas_transfer_token_to(
+                .estimate_gas_reject_deposit(
                     state.master_key.clone(),
-                    called_address,
                     caller,
-                    escrow.amount,
+                    called_address,
+                    escrow.amount.try_checked_sub(U256::one())?,
+                    state.master_key.address(),
+                    U256::one(),
                 )
                 .await?;
 
@@ -505,6 +520,7 @@ pub async fn handle_escrow_transaction(
             .await?;
 
             if estimated_refund_fee_in_escrow_token >= escrow.amount {
+                // TODO: insert into a table non-registered tokens owned by the escrow contract
                 info!(
                     "estimated refund fee {:?} is greater than escrow amount {:?}, not refunding",
                     estimated_refund_fee_in_escrow_token, escrow.amount
@@ -516,16 +532,20 @@ pub async fn handle_escrow_transaction(
                 .amount
                 .try_checked_sub(estimated_refund_fee_in_escrow_token)?;
 
-            transfer_token_to_and_ensure_success(
+            // TODO: insert into a table tokens received by pending wallet
+            /* run actual reject transaction and transfer estimated fee to pending wallet */
+            reject_deposit_and_ensure_success(
                 escrow_contract,
                 &conn,
                 CONFIRMATIONS,
                 MAX_RETRIES,
                 POLL_INTERVAL,
                 state.master_key.clone(),
-                called_address,
                 caller,
+                called_address,
                 refund_amount,
+                state.master_key.address(),
+                estimated_refund_fee_in_escrow_token,
                 DynLogger::empty(),
             )
             .await?;
@@ -539,6 +559,7 @@ pub async fn handle_escrow_transaction(
         }
     }
 
+    /* deposit was done by a whitelisted wallet, write it to contract and database */
     let user = match state
         .db
         .execute(FunUserGetUserByAddressReq {
@@ -553,6 +574,21 @@ pub async fn handle_escrow_transaction(
             return Ok(());
         }
     };
+
+    /* write deposit to escrow contract */
+    accept_deposit_and_ensure_success(
+        escrow_contract,
+        &conn,
+        CONFIRMATIONS,
+        MAX_RETRIES,
+        POLL_INTERVAL,
+        state.master_key.clone(),
+        caller,
+        called_address,
+        escrow.amount,
+        DynLogger::empty(),
+    )
+    .await?;
 
     /* insert escrow in ledger */
     state
@@ -569,7 +605,7 @@ pub async fn handle_escrow_transaction(
         .await
         .context("error inserting escrow in ledger")?;
 
-    let old_balance = state
+    let old_balance: U256 = state
         .db
         .execute(FunUserListUserDepositWithdrawBalanceReq {
             limit: 1,
@@ -583,14 +619,15 @@ pub async fn handle_escrow_transaction(
         .await?
         .into_result()
         .map(|x| x.balance)
-        .unwrap_or_default();
-    let new_balance = (*old_balance) + escrow.amount;
+        .unwrap_or_default()
+        .into();
+    let new_balance = old_balance.try_checked_add(escrow.amount)?;
     let resp = state
         .db
         .execute(FunWatcherUpsertUserDepositWithdrawBalanceReq {
             user_id: user.user_id,
             blockchain,
-            old_balance,
+            old_balance: old_balance.into(),
             new_balance: new_balance.into(),
             token_address: called_address.into(),
             escrow_contract_address: escrow.recipient.into(),
