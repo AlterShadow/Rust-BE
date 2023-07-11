@@ -60,7 +60,9 @@ async fn main() -> Result<()> {
     let coin_addresses = load_coin_addresses(&db).await?;
 
     server.add_handler(MethodUserFollowStrategy);
-    server.add_handler(MethodUserListFollowedStrategies);
+    server.add_handler(MethodUserListFollowedStrategies {
+        cmc: cmc_client.clone(),
+    });
     server.add_handler(MethodUserUnfollowStrategy);
 
     server.add_handler(MethodUserWhitelistWallet);
@@ -92,8 +94,12 @@ async fn main() -> Result<()> {
     server.add_handler(MethodExpertListFollowers);
     server.add_handler(MethodExpertListBackers);
     server.add_handler(MethodUserListFollowedExperts);
-    server.add_handler(MethodExpertListPublishedStrategies);
-    server.add_handler(MethodExpertListUnpublishedStrategies);
+    server.add_handler(MethodExpertListPublishedStrategies {
+        cmc: cmc_client.clone(),
+    });
+    server.add_handler(MethodExpertListUnpublishedStrategies {
+        cmc: cmc_client.clone(),
+    });
 
     server.add_handler(MethodUserUnfollowExpert);
     server.add_handler(MethodUserListExperts);
@@ -103,7 +109,9 @@ async fn main() -> Result<()> {
         cmc: cmc_client.clone(),
     });
 
-    server.add_handler(MethodUserGetUserProfile);
+    server.add_handler(MethodUserGetUserProfile {
+        cmc: cmc_client.clone(),
+    });
     server.add_handler(MethodUserUpdateUserProfile);
     server.add_handler(MethodUserApplyBecomeExpert);
 
@@ -162,7 +170,9 @@ async fn main() -> Result<()> {
     server.add_handler(MethodAdminUpdateSystemConfig);
     server.add_handler(MethodAdminListBackers);
     server.add_handler(MethodAdminListExperts);
-    server.add_handler(MethodAdminListStrategies);
+    server.add_handler(MethodAdminListStrategies {
+        cmc: cmc_client.clone(),
+    });
     server.add_handler(MethodAdminListBackStrategyLedger);
     server.add_handler(MethodAdminListExitStrategyLedger);
     server.add_handler(MethodAdminApproveStrategy);

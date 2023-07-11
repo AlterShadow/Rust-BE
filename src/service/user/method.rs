@@ -73,7 +73,9 @@ impl RequestHandler for MethodUserFollowStrategy {
         .boxed()
     }
 }
-pub struct MethodUserListFollowedStrategies;
+pub struct MethodUserListFollowedStrategies {
+    pub cmc: Arc<CoinMarketCap>,
+}
 
 impl RequestHandler for MethodUserListFollowedStrategies {
     type Request = UserListFollowedStrategiesRequest;
@@ -85,6 +87,7 @@ impl RequestHandler for MethodUserListFollowedStrategies {
         req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
+        let cmc = self.cmc.clone();
         async move {
             ensure_user_role(ctx, EnumRole::User)?;
 
@@ -97,7 +100,9 @@ impl RequestHandler for MethodUserListFollowedStrategies {
                 .await?;
             Ok(UserListFollowedStrategiesResponse {
                 strategies_total: ret.first(|x| x.total).unwrap_or_default(),
-                strategies: ret.map(convert_strategy_db_to_api),
+                strategies: ret
+                    .map_async(|x| convert_strategy_db_to_api_net_value(x, &cmc, &db))
+                    .await?,
             })
         }
         .boxed()
@@ -1508,7 +1513,9 @@ impl RequestHandler for MethodUserUpdateUserProfile {
         .boxed()
     }
 }
-pub struct MethodUserGetUserProfile;
+pub struct MethodUserGetUserProfile {
+    pub cmc: Arc<CoinMarketCap>,
+}
 impl RequestHandler for MethodUserGetUserProfile {
     type Request = UserGetUserProfileRequest;
 
@@ -1519,6 +1526,7 @@ impl RequestHandler for MethodUserGetUserProfile {
         _req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
+        let cmc = self.cmc.clone();
         async move {
             ensure_user_role(ctx, EnumRole::User)?;
             let ret = db
@@ -1559,13 +1567,11 @@ impl RequestHandler for MethodUserGetUserProfile {
                 social_media: ret.social_media.unwrap_or_default(),
                 followed_experts: experts.map(convert_expert_db_to_api),
                 followed_strategies: followed_strategies
-                    .into_iter()
-                    .map(convert_strategy_db_to_api)
-                    .collect(),
+                    .map_async(|x| convert_strategy_db_to_api_net_value(x, &cmc, &db))
+                    .await?,
                 backed_strategies: backed_strategies
-                    .into_iter()
-                    .map(convert_strategy_db_to_api)
-                    .collect(),
+                    .map_async(|x| convert_strategy_db_to_api_net_value(x, &cmc, &db))
+                    .await?,
             })
         }
         .boxed()
@@ -3387,7 +3393,9 @@ impl RequestHandler for MethodUserGetSystemConfig {
     }
 }
 
-pub struct MethodExpertListPublishedStrategies;
+pub struct MethodExpertListPublishedStrategies {
+    pub cmc: Arc<CoinMarketCap>,
+}
 impl RequestHandler for MethodExpertListPublishedStrategies {
     type Request = ExpertListPublishedStrategiesRequest;
 
@@ -3398,6 +3406,7 @@ impl RequestHandler for MethodExpertListPublishedStrategies {
         req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         let db = toolbox.get_db();
+        let cmc = self.cmc.clone();
         async move {
             ensure_user_role(ctx, EnumRole::Expert)?;
             let strategies = db
@@ -3418,13 +3427,17 @@ impl RequestHandler for MethodExpertListPublishedStrategies {
                 .await?;
             Ok(ExpertListPublishedStrategiesResponse {
                 strategies_total: strategies.first(|x| x.total).unwrap_or_default(),
-                strategies: strategies.map(convert_strategy_db_to_api),
+                strategies: strategies
+                    .map_async(|x| convert_strategy_db_to_api_net_value(x, &cmc, &db))
+                    .await?,
             })
         }
         .boxed()
     }
 }
-pub struct MethodExpertListUnpublishedStrategies;
+pub struct MethodExpertListUnpublishedStrategies {
+    pub cmc: Arc<CoinMarketCap>,
+}
 
 impl RequestHandler for MethodExpertListUnpublishedStrategies {
     type Request = ExpertListUnpublishedStrategiesRequest;
@@ -3436,6 +3449,7 @@ impl RequestHandler for MethodExpertListUnpublishedStrategies {
         req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         let db = toolbox.get_db();
+        let cmc = self.cmc.clone();
         async move {
             ensure_user_role(ctx, EnumRole::Expert)?;
             let strategies = db
@@ -3456,7 +3470,9 @@ impl RequestHandler for MethodExpertListUnpublishedStrategies {
                 .await?;
             Ok(ExpertListUnpublishedStrategiesResponse {
                 strategies_total: strategies.first(|x| x.total).unwrap_or_default(),
-                strategies: strategies.map(convert_strategy_db_to_api),
+                strategies: strategies
+                    .map_async(|x| convert_strategy_db_to_api_net_value(x, &cmc, &db))
+                    .await?,
             })
         }
         .boxed()

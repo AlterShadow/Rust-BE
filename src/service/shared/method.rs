@@ -11,7 +11,8 @@ pub fn ensure_user_role(ctx: RequestContext, role: EnumRole) -> Result<()> {
     );
     Ok(())
 }
-pub fn convert_strategy_db_to_api(x: FunUserStrategyRowType) -> ListStrategiesRow {
+
+fn convert_strategy_db_to_api(x: FunUserStrategyRowType) -> ListStrategiesRow {
     ListStrategiesRow {
         strategy_id: x.strategy_id,
         strategy_name: x.strategy_name,
@@ -31,8 +32,8 @@ pub fn convert_strategy_db_to_api(x: FunUserStrategyRowType) -> ListStrategiesRo
         expert_family_name: x.creator_family_name.unwrap_or_default(),
         expert_given_name: x.creator_given_name.unwrap_or_default(),
         blockchain: x.blockchain,
-        swap_price: 233.0,
-        price_change: 0.97,
+        swap_price: 0.0,
+        price_change: 0.0,
         reputation: 5,
         strategy_pool_token: x.strategy_pool_token.unwrap_or_default(),
         strategy_fee: x.platform_fee.unwrap_or_default() + x.expert_fee.unwrap_or_default(),

@@ -1,4 +1,7 @@
-use crate::method::{convert_expert_db_to_api, convert_strategy_db_to_api, ensure_user_role};
+use crate::method::{
+    convert_expert_db_to_api, convert_strategy_db_to_api_net_value, ensure_user_role,
+};
+use api::cmc::CoinMarketCap;
 use chrono::Utc;
 use eth_sdk::logger::get_blockchain_logger;
 use eth_sdk::signer::Secp256k1SecretKey;
@@ -359,7 +362,9 @@ impl RequestHandler for MethodAdminListBackers {
         .boxed()
     }
 }
-pub struct MethodAdminListStrategies;
+pub struct MethodAdminListStrategies {
+    pub cmc: Arc<CoinMarketCap>,
+}
 impl RequestHandler for MethodAdminListStrategies {
     type Request = AdminListStrategiesRequest;
 
@@ -370,6 +375,7 @@ impl RequestHandler for MethodAdminListStrategies {
         req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
+        let cmc = self.cmc.clone();
         async move {
             ensure_user_role(ctx, EnumRole::Admin)?;
 
@@ -389,7 +395,9 @@ impl RequestHandler for MethodAdminListStrategies {
 
             Ok(AdminListStrategiesResponse {
                 strategies_total: ret.first(|x| x.total).unwrap_or_default(),
-                strategies: ret.map(convert_strategy_db_to_api),
+                strategies: ret
+                    .map_async(|x| convert_strategy_db_to_api_net_value(x, &cmc, &db))
+                    .await?,
             })
         }
         .boxed()
