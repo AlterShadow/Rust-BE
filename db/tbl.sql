@@ -1,5 +1,5 @@
 -- Created by Vertabelo (http://vertabelo.com)
--- Last modification date: 2023-07-06 16:51:10.262
+-- Last modification date: 2023-07-10 16:46:34.006
 
 CREATE SCHEMA IF NOT EXISTS tbl;;
 
@@ -237,6 +237,18 @@ CREATE TABLE tbl.strategy_pool_contract_asset_balance (
     balance varchar(64)  NOT NULL,
     CONSTRAINT strategy_pool_contract_asset_balance_ak_1 UNIQUE (fkey_strategy_pool_contract_id, fkey_token_id) NOT DEFERRABLE  INITIALLY IMMEDIATE,
     CONSTRAINT strategy_pool_contract_asset_balance_pk PRIMARY KEY (pkey_id)
+);
+-- Table: strategy_pool_contract_asset_ledger
+CREATE TABLE tbl.strategy_pool_contract_asset_ledger (
+    pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_strategy_pool_contract_asset_ledger_id'),
+    fkey_strategy_id bigint  NOT NULL,
+    fkey_token_id bigint  NOT NULL,
+    blockchain enum_block_chain  NOT NULL,
+    transaction_hash varchar(80)  NOT NULL,
+    dex varchar(20)  NULL,
+    amount varchar(64)  NOT NULL,
+    happened_at bigint  NOT NULL,
+    CONSTRAINT strategy_pool_contract_asset_ledger_pk PRIMARY KEY (pkey_id)
 );
 
 -- Table: strategy_watched_wallet
@@ -605,6 +617,22 @@ ALTER TABLE tbl.strategy_escrow_pending_wallet_balance ADD CONSTRAINT strategy_e
 ALTER TABLE tbl.strategy_initial_token_ratio ADD CONSTRAINT strategy_initial_token_ratio_escrow_token_contract_address
     FOREIGN KEY (token_id)
     REFERENCES tbl.escrow_token_contract_address (pkey_id)  
+    NOT DEFERRABLE 
+    INITIALLY IMMEDIATE
+;
+
+-- Reference: strategy_pool_asset_ledger_escrow_token_contract_address (table: strategy_pool_contract_asset_ledger)
+ALTER TABLE tbl.strategy_pool_contract_asset_ledger ADD CONSTRAINT strategy_pool_asset_ledger_escrow_token_contract_address
+    FOREIGN KEY (fkey_token_id)
+    REFERENCES tbl.escrow_token_contract_address (pkey_id)  
+    NOT DEFERRABLE 
+    INITIALLY IMMEDIATE
+;
+
+-- Reference: strategy_pool_asset_ledger_strategy (table: strategy_pool_contract_asset_ledger)
+ALTER TABLE tbl.strategy_pool_contract_asset_ledger ADD CONSTRAINT strategy_pool_asset_ledger_strategy
+    FOREIGN KEY (fkey_strategy_id)
+    REFERENCES tbl.strategy (pkey_id)  
     NOT DEFERRABLE 
     INITIALLY IMMEDIATE
 ;
@@ -999,6 +1027,13 @@ CREATE SEQUENCE tbl.seq_strategy_pool_contract_asset_balance_id
       NO CYCLE
 ;
 
+-- Sequence: seq_strategy_pool_contract_asset_ledger_id
+CREATE SEQUENCE tbl.seq_strategy_pool_contract_asset_ledger_id
+      NO MINVALUE
+      NO MAXVALUE
+      NO CYCLE
+;
+
 -- Sequence: seq_strategy_pool_contract_id
 CREATE SEQUENCE tbl.seq_strategy_pool_contract_id
       NO MINVALUE
@@ -1008,13 +1043,6 @@ CREATE SEQUENCE tbl.seq_strategy_pool_contract_id
 
 -- Sequence: seq_strategy_wallet_id
 CREATE SEQUENCE tbl.seq_strategy_wallet_id
-      NO MINVALUE
-      NO MAXVALUE
-      NO CYCLE
-;
-
--- Sequence: seq_strategy_watching_wallet_activity_ledger_id
-CREATE SEQUENCE tbl.seq_strategy_watching_wallet_activity_ledger_id
       NO MINVALUE
       NO MAXVALUE
       NO CYCLE

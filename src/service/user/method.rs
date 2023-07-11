@@ -296,7 +296,24 @@ impl RequestHandler for MethodUserGetStrategy {
                 .await?
                 .into_result()
                 .context("failed to get strategy")?;
-
+            let balances = db
+                .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
+                    strategy_pool_contract_id: None,
+                    strategy_id: Some(req.strategy_id),
+                    blockchain: None,
+                    token_address: None,
+                })
+                .await?;
+            let ledger = db
+                .execute(FunUserListStrategyPoolContractAssetLedgerReq {
+                    limit: 1000,
+                    offset: 0,
+                    strategy_id: Some(req.strategy_id),
+                    token_id: None,
+                    blockchain: None,
+                })
+                .await?
+                .into_rows();
             Ok(UserGetStrategyResponse {
                 strategy: convert_strategy_db_to_api_net_value(ret, &cmc, &db).await?,
                 watching_wallets: db
@@ -310,7 +327,31 @@ impl RequestHandler for MethodUserGetStrategy {
                         blockchain: x.blockchain,
                         ratio_distribution: x.ratio,
                     }),
-                aum_ledger: vec![],
+                strategy_pool_asset_updated_at: ledger
+                    .last()
+                    .map(|x| x.happened_at)
+                    .unwrap_or_else(|| Utc::now().timestamp_nanos()),
+                strategy_pool_asset_balances: balances.map(|x| StrategyPoolAssetBalancesRow {
+                    name: x.token_name,
+                    symbol: x.token_symbol,
+                    address: x.token_address.into(),
+                    blockchain: x.blockchain,
+                    balance: x.balance.into(),
+                }),
+                strategy_pool_asset_ledger: ledger
+                    .into_iter()
+                    .map(|x| StrategyPoolAssetLedgerRow {
+                        aum_ledger_id: x.entry_id,
+                        symbol: x.token_symbol,
+                        token_id: x.token_id,
+                        blockchain: x.blockchain,
+                        dex: x.dex.unwrap_or_default(),
+                        transaction_hash: x.transaction_hash.into(),
+                        quantity: x.amount.into(),
+                        is_add: x.is_add,
+                        happened_at: x.happened_at,
+                    })
+                    .collect(),
                 audit_rules: db
                     .execute(FunUserListStrategyAuditRulesReq {
                         strategy_id: req.strategy_id,
@@ -884,7 +925,7 @@ pub async fn user_exit_strategy(
     let logger = DynLogger::new(Arc::new(move |msg| {
         println!("{}", msg);
     }));
-    withdraw_and_ensure_success(
+    let transaction_hash = withdraw_and_ensure_success(
         strategy_pool_contract,
         &conn,
         CONFIRMATIONS,
@@ -927,6 +968,9 @@ pub async fn user_exit_strategy(
                 Ok(new_balance) => new_balance.into(),
                 Err(_) => U256::zero().into(),
             },
+            amount: amount.into(),
+            is_add: true,
+            transaction_hash: transaction_hash.into(),
         })
         .await?;
 
@@ -955,7 +999,7 @@ pub async fn user_exit_strategy(
         db.execute(FunWatcherUpsertStrategyPoolContractAssetBalanceReq {
             strategy_pool_contract_id: strategy_pool_contract_row.pkey_id,
             token_address: asset.into(),
-            blockchain: blockchain,
+            blockchain,
             new_balance: old_asset_balance_row
                 .balance
                 .try_checked_sub(amount)

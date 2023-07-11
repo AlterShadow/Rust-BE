@@ -991,7 +991,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_upsert_user_strategy_pool_contract_asset_balance(a_strategy_wallet_id bigint, a_strategy_pool_contract_id bigint, a_token_address varchar, a_blockchain enum_block_chain, a_old_balance varchar, a_new_balance varchar)
+CREATE OR REPLACE FUNCTION api.fun_user_upsert_user_strategy_pool_contract_asset_balance(a_strategy_wallet_id bigint, a_strategy_pool_contract_id bigint, a_token_address varchar, a_blockchain enum_block_chain, a_old_balance varchar, a_new_balance varchar, a_amount varchar, a_is_add boolean, a_transaction_hash varchar)
 RETURNS table (
     "user_strategy_pool_contract_asset_balance_id" bigint
 )
@@ -1000,16 +1000,39 @@ AS $$
     
 DECLARE
 	_token_id BIGINT;
+    _strategy_id BIGINT;
+	_blockchain enum_block_chain;
 	_user_strategy_pool_contract_asset_balance_id BIGINT;
 	_user_strategy_pool_contract_asset_balance_old_balance VARCHAR;
 	_pkey_id BIGINT;
 BEGIN
-	SELECT etca.pkey_id INTO _token_id
+	SELECT etca.pkey_id, etca.blockchain INTO _token_id, _blockchain
 	FROM tbl.escrow_token_contract_address AS etca
 	WHERE etca.address = a_token_address AND etca.blockchain = a_blockchain;
-
+    
 	ASSERT _token_id IS NOT NULL;
-
+	
+	SELECT usw.fkey_strategy_id INTO _strategy_id
+	FROM tbl.strategy_pool_contract AS usw
+	WHERE usw.pkey_id = a_strategy_wallet_id;
+	ASSERT _strategy_id IS NOT NULL;
+    INSERT INTO tbl.strategy_pool_contract_asset_ledger (
+        fkey_strategy_id,
+        fkey_token_id,
+        blockchain,
+        amount,
+        is_add,
+        happened_at,
+        transaction_hash
+    ) VALUES (
+        _strategy_id,
+        _token_id,
+        _blockchain,
+        a_amount,
+        a_is_add,
+        EXTRACT(EPOCH FROM NOW()),
+        a_transaction_hash
+    );
 	SELECT uspcab.pkey_id, uspcab.balance
 	INTO _user_strategy_pool_contract_asset_balance_id, _user_strategy_pool_contract_asset_balance_old_balance
 	FROM tbl.user_strategy_pool_contract_asset_balance AS uspcab
@@ -1045,6 +1068,47 @@ BEGIN
 	RETURN QUERY SELECT _pkey_id;
 END
 
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_user_list_strategy_pool_contract_asset_ledger(a_limit bigint, a_offset bigint, a_strategy_id bigint DEFAULT NULL, a_token_id bigint DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL)
+RETURNS table (
+    "entry_id" bigint,
+    "strategy_id" bigint,
+    "token_id" bigint,
+    "token_symbol" varchar,
+    "blockchain" enum_block_chain,
+    "transaction_hash" varchar,
+    "dex" varchar,
+    "amount" varchar,
+    "is_add" boolean,
+    "happened_at" bigint
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+RETURN QUERY SELECT
+            spcal.pkey_id,
+            spcal.fkey_strategy_id,
+            spcal.fkey_token_id,
+            etca.symbol,
+            spcal.blockchain,
+            spcal.transaction_hash,
+            spcal.dex,
+            spcal.amount,
+            spcal.is_add,
+            spcal.happened_at
+        FROM tbl.strategy_pool_contract_asset_ledger AS spcal
+        JOIN tbl.escrow_token_contract_address AS etca ON spcal.fkey_token_id = etca.pkey_id
+        WHERE (a_strategy_id ISNULL OR spcal.fkey_strategy_id = a_strategy_id)
+        AND (a_token_id ISNULL OR spcal.fkey_token_id = a_token_id)
+        AND (a_blockchain ISNULL OR spcal.blockchain = a_blockchain)
+        ORDER BY spcal.happened_at DESC
+        LIMIT a_limit
+        OFFSET a_offset;
+END
+            
 $$;
         
 

@@ -361,6 +361,7 @@ pub async fn handle_pancake_swap_transaction(
             sp_asset_token_in_previous_amount,
             strategy_pool_pending_wallet_trade.token_out,
             strategy_pool_pending_wallet_trade.amount_out,
+            trade_hash.transaction_hash,
         )
         .await?;
 

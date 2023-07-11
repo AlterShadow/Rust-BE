@@ -1191,24 +1191,6 @@ pub struct AdminUpdateSystemConfigResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct AumLedgerRow {
-    pub aum_ledger_id: i64,
-    pub base_token: String,
-    pub quote_token: String,
-    pub blockchain: EnumBlockChain,
-    pub dex: String,
-    pub action: String,
-    #[serde(with = "WithBlockchainAddress")]
-    pub wallet_address: Address,
-    pub price: f64,
-    pub current_price: f64,
-    #[serde(with = "WithBlockchainDecimal")]
-    pub quantity: U256,
-    pub yield_7d: f64,
-    pub yield_30d: f64,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
 pub struct AuthorizeRequest {
     pub address: String,
     pub token: uuid::Uuid,
@@ -1725,6 +1707,32 @@ pub struct SignupResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct StrategyPoolAssetBalancesRow {
+    pub name: String,
+    pub symbol: String,
+    #[serde(with = "WithBlockchainAddress")]
+    pub address: Address,
+    pub blockchain: EnumBlockChain,
+    #[serde(with = "WithBlockchainDecimal")]
+    pub balance: U256,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct StrategyPoolAssetLedgerRow {
+    pub aum_ledger_id: i64,
+    pub symbol: String,
+    pub token_id: i64,
+    pub blockchain: EnumBlockChain,
+    pub dex: String,
+    #[serde(with = "WithBlockchainTransactionHash")]
+    pub transaction_hash: H256,
+    #[serde(with = "WithBlockchainDecimal")]
+    pub quantity: U256,
+    pub is_add: bool,
+    pub happened_at: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct UserAddStrategyAuditRuleRequest {
     pub strategy_id: i64,
     pub rule_id: i64,
@@ -2002,7 +2010,9 @@ pub struct UserGetStrategyRequest {
 pub struct UserGetStrategyResponse {
     pub strategy: ListStrategiesRow,
     pub watching_wallets: Vec<WatchingWalletRow>,
-    pub aum_ledger: Vec<AumLedgerRow>,
+    pub strategy_pool_asset_updated_at: i64,
+    pub strategy_pool_asset_balances: Vec<StrategyPoolAssetBalancesRow>,
+    pub strategy_pool_asset_ledger: Vec<StrategyPoolAssetLedgerRow>,
     pub audit_rules: Vec<UserListStrategyAuditRulesRow>,
     pub whitelisted_tokens: Vec<String>,
 }
@@ -3742,22 +3752,58 @@ impl WsRequest for UserGetStrategyRequest {
       }
     },
     {
-      "name": "aum_ledger",
+      "name": "strategy_pool_asset_updated_at",
+      "ty": "BigInt"
+    },
+    {
+      "name": "strategy_pool_asset_balances",
       "ty": {
         "DataTable": {
-          "name": "AumLedgerRow",
+          "name": "StrategyPoolAssetBalancesRow",
+          "fields": [
+            {
+              "name": "name",
+              "ty": "String"
+            },
+            {
+              "name": "symbol",
+              "ty": "String"
+            },
+            {
+              "name": "address",
+              "ty": "BlockchainAddress"
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
+            },
+            {
+              "name": "balance",
+              "ty": "BlockchainDecimal"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "strategy_pool_asset_ledger",
+      "ty": {
+        "DataTable": {
+          "name": "StrategyPoolAssetLedgerRow",
           "fields": [
             {
               "name": "aum_ledger_id",
               "ty": "BigInt"
             },
             {
-              "name": "base_token",
+              "name": "symbol",
               "ty": "String"
             },
             {
-              "name": "quote_token",
-              "ty": "String"
+              "name": "token_id",
+              "ty": "BigInt"
             },
             {
               "name": "blockchain",
@@ -3770,32 +3816,20 @@ impl WsRequest for UserGetStrategyRequest {
               "ty": "String"
             },
             {
-              "name": "action",
-              "ty": "String"
-            },
-            {
-              "name": "wallet_address",
-              "ty": "BlockchainAddress"
-            },
-            {
-              "name": "price",
-              "ty": "Numeric"
-            },
-            {
-              "name": "current_price",
-              "ty": "Numeric"
+              "name": "transaction_hash",
+              "ty": "BlockchainTransactionHash"
             },
             {
               "name": "quantity",
               "ty": "BlockchainDecimal"
             },
             {
-              "name": "yield_7d",
-              "ty": "Numeric"
+              "name": "is_add",
+              "ty": "Boolean"
             },
             {
-              "name": "yield_30d",
-              "ty": "Numeric"
+              "name": "happened_at",
+              "ty": "BigInt"
             }
           ]
         }
