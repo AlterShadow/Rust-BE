@@ -180,7 +180,7 @@ impl RequestHandler for MethodUserListTopPerformingStrategies {
                     description: None,
                     blockchain: None,
                     strategy_pool_address: None,
-                    approved: None,
+                    approved: Some(true),
                 })
                 .await?;
             Ok(UserListTopPerformingStrategiesResponse {
