@@ -161,7 +161,11 @@ pub async fn connect_to_database(config: DatabaseConfig) -> Result<DbClient> {
         keepalives_idle: config.keepalives_idle,
         target_session_attrs: config.target_session_attrs,
         channel_binding: config.channel_binding,
-        manager: config.manager,
+        manager: config.manager.or_else(|| {
+            Some(ManagerConfig {
+                recycling_method: RecyclingMethod::Fast,
+            })
+        }),
         pool: config.pool,
     };
     info!(
@@ -175,6 +179,7 @@ pub async fn connect_to_database(config: DatabaseConfig) -> Result<DbClient> {
     config.port.hash(&mut hasher);
     config.dbname.hash(&mut hasher);
     let conn_hash = hasher.finish();
+
     let pool = config.create_pool(Some(Runtime::Tokio1), NoTls)?;
     Ok(DbClient {
         pool,
