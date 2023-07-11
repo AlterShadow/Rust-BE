@@ -85,6 +85,31 @@
 			{
 				"indexed": true,
 				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "RefundAsset",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "proprietor",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"internalType": "contract IERC20",
+				"name": "asset",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"internalType": "uint256",
 				"name": "depositAmount",
 				"type": "uint256"
 			},
@@ -128,14 +153,8 @@
 			},
 			{
 				"indexed": false,
-				"internalType": "contract IERC20",
-				"name": "asset",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "address[]",
-				"name": "proprietors",
+				"internalType": "contract IERC20[]",
+				"name": "assets",
 				"type": "address[]"
 			},
 			{
@@ -143,6 +162,37 @@
 				"internalType": "uint256[]",
 				"name": "amounts",
 				"type": "uint256[]"
+			}
+		],
+		"name": "RescueAssets",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "proprietor",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"internalType": "contract IERC20",
+				"name": "asset",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "recipient",
+				"type": "address"
 			}
 		],
 		"name": "TransferAssetFrom",
@@ -335,6 +385,29 @@
 			},
 			{
 				"internalType": "uint256",
+				"name": "_amount",
+				"type": "uint256"
+			}
+		],
+		"name": "refundAsset",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_proprietor",
+				"type": "address"
+			},
+			{
+				"internalType": "contract IERC20",
+				"name": "_asset",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
 				"name": "_depositAmount",
 				"type": "uint256"
 			},
@@ -382,19 +455,42 @@
 				"type": "address"
 			},
 			{
-				"internalType": "contract IERC20",
-				"name": "_asset",
-				"type": "address"
-			},
-			{
-				"internalType": "address[]",
-				"name": "_proprietors",
+				"internalType": "contract IERC20[]",
+				"name": "_assets",
 				"type": "address[]"
 			},
 			{
 				"internalType": "uint256[]",
 				"name": "_amounts",
 				"type": "uint256[]"
+			}
+		],
+		"name": "rescueAssets",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_proprietor",
+				"type": "address"
+			},
+			{
+				"internalType": "contract IERC20",
+				"name": "_asset",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_amount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "_recipient",
+				"type": "address"
 			}
 		],
 		"name": "transferAssetFrom",
