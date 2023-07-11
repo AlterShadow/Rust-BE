@@ -1,6 +1,6 @@
 use api::cmc::CoinMarketCap;
 use eth_sdk::erc20::{approve_and_ensure_success, Erc20Token};
-use eth_sdk::escrow::{transfer_token_to_and_ensure_success, EscrowContract};
+use eth_sdk::escrow::{transfer_asset_from_and_ensure_success, EscrowContract};
 use eth_sdk::pair_paths::WorkingPancakePairPaths;
 use eth_sdk::strategy_pool::{sp_deposit_to_and_ensure_success, StrategyPoolContract};
 use eth_sdk::strategy_wallet::StrategyWalletContract;
@@ -513,19 +513,20 @@ pub async fn user_back_strategy(
     if user_balance < back_token_amount {
         bail!("insufficient balance");
     }
+
+    /* get amount deposited by whitelisted wallets necessary for back amount */
+    let (wallets_that_deposited, amount_from_each_wallet) =
+        get_user_deposit_balances_by_wallet_to_fill_value(
+            &db,
+            blockchain,
+            user_id,
+            token_id,
+            back_token_amount,
+        )
+        .await
+        .context("not enough balance found in ledger for back amount")?;
+
     let new_user_balance = user_balance - back_token_amount;
-    db.execute(FunUserReduceQuantityFromUserDepositWithdrawLedgerReq {
-        user_id,
-        token_id,
-        blockchain,
-        user_address: Default::default(),
-        contract_address: token_address.into(),
-        contract_address_id: token_id,
-        receiver_address: Default::default(),
-        quantity: back_token_amount.into(),
-        transaction_hash: Default::default(),
-    })
-    .await?;
     let mut success = false;
     for _ in 0..3 {
         let ret = db
@@ -679,19 +680,45 @@ pub async fn user_back_strategy(
         master_key.address()
     );
 
-    transfer_token_to_and_ensure_success(
-        escrow_contract,
-        &conn,
-        CONFIRMATIONS,
-        MAX_RETRIES,
-        POLL_INTERVAL,
-        master_key.clone(),
-        token_address,
-        master_key.address(),
-        back_usdc_amount_minus_fees,
-        logger.clone(),
-    )
-    .await?;
+    /* for each wallet that deposited to add to back_token_amount */
+    for (wallet, amount) in wallets_that_deposited
+        .iter()
+        .zip(amount_from_each_wallet.iter())
+    {
+        /* transfer from escrow contract to pending wallet */
+        transfer_asset_from_and_ensure_success(
+            escrow_contract.clone(),
+            &conn,
+            CONFIRMATIONS,
+            MAX_RETRIES,
+            POLL_INTERVAL,
+            master_key.clone(),
+            wallet.clone(),
+            token_address,
+            amount.into(),
+            master_key.address(),
+            logger.clone(),
+        )
+        .await?;
+
+        /* reduce the value used from ledger */
+        db.execute(FunUserReduceQuantityFromUserDepositWithdrawLedgerReq {
+            user_id,
+            token_id,
+            blockchain,
+            user_address: wallet.clone().into(),
+            contract_address: token_address.into(),
+            contract_address_id: token_id,
+            receiver_address: Default::default(),
+            quantity: amount.clone().into(),
+            transaction_hash: Default::default(),
+        })
+        .await?;
+    }
+
+    /* TODO: fees are now in the pending wallet, we should add it to the database */
+    /* TODO: add table to register treasury fees and strategy fees */
+    let fees = back_token_amount.try_checked_sub(back_usdc_amount_minus_fees)?;
 
     /* approve pancakeswap to trade escrow token */
     info!("approve pancakeswap to trade escrow token");
@@ -965,6 +992,58 @@ pub async fn user_back_strategy(
         amount_to_display(strategy_token_to_mint)
     ));
     Ok(())
+}
+
+pub async fn get_user_deposit_balances_by_wallet_to_fill_value(
+    db: &DbClient,
+    chain: EnumBlockChain,
+    user_id: i64,
+    token_id: i64,
+    value_to_fill: U256,
+) -> Result<(Vec<Address>, Vec<U256>)> {
+    let wallet_positive_asset_balances = db
+        .execute(FunUserCalculateUserEscrowBalanceFromLedgerReq {
+            user_id: user_id,
+            blockchain: chain,
+            token_id: token_id,
+            wallet_address: None,
+        })
+        .await?
+        .into_rows();
+
+    let mut wallets_that_deposited: Vec<Address> = Vec::new();
+    let mut amount_from_each_wallet: Vec<U256> = Vec::new();
+    let mut total_amount_found: U256 = U256::zero();
+    for wallet_balance_row in wallet_positive_asset_balances {
+        let wallet_balance: U256 = wallet_balance_row.balance.into();
+        if wallet_balance > U256::zero() {
+            continue;
+        }
+        if total_amount_found == value_to_fill {
+            /* if entire amount was filled, the wallet balances fetched so far are enough */
+            break;
+        }
+        /* if entire amount was not filled, keep looking for other positive balances from wallets */
+        wallets_that_deposited.push(wallet_balance_row.wallet_address.into());
+        let necessary_amount_to_fill = value_to_fill.try_checked_sub(total_amount_found)?;
+        if wallet_balance >= necessary_amount_to_fill {
+            /* if the deposited amount of this wallet can fill the rest for the refund amount */
+            /* use only the necessary */
+            amount_from_each_wallet.push(necessary_amount_to_fill);
+            total_amount_found = total_amount_found.try_checked_add(necessary_amount_to_fill)?;
+        } else {
+            /* if the deposited amount of this wallet cannot fill the rest for the refund amount */
+            /* use entire amount */
+            amount_from_each_wallet.push(wallet_balance);
+            total_amount_found = total_amount_found.try_checked_add(wallet_balance)?;
+        }
+    }
+
+    if total_amount_found < value_to_fill {
+        bail!("not enough user balance to fill the amount");
+    }
+
+    Ok((wallets_that_deposited, amount_from_each_wallet))
 }
 
 fn calculate_escrow_allocation_for_strategy_tokens(
