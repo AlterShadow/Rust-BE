@@ -216,6 +216,7 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
         .execute(FunUserListStrategiesReq {
             strategy_id: Some(strategy_id),
             strategy_name: None,
+            expert_id: None,
             expert_public_id: None,
             expert_name: None,
             description: None,
@@ -585,6 +586,7 @@ pub async fn user_back_strategy(
         .execute(FunUserListStrategiesReq {
             strategy_id: Some(strategy_id),
             strategy_name: None,
+            expert_id: None,
             expert_public_id: None,
             expert_name: None,
             description: None,

@@ -1095,6 +1095,8 @@ pub struct FunUserListStrategiesReq {
     #[serde(default)]
     pub strategy_name: Option<String>,
     #[serde(default)]
+    pub expert_id: Option<i64>,
+    #[serde(default)]
     pub expert_public_id: Option<i64>,
     #[serde(default)]
     pub expert_name: Option<String>,
@@ -1112,7 +1114,7 @@ pub struct FunUserListStrategiesReq {
 impl DatabaseRequest for FunUserListStrategiesReq {
     type ResponseRow = FunUserStrategyRowType;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_list_strategies(a_user_id => $1::bigint, a_limit => $2::bigint, a_offset => $3::bigint, a_strategy_id => $4::bigint, a_strategy_name => $5::varchar, a_expert_public_id => $6::bigint, a_expert_name => $7::varchar, a_description => $8::varchar, a_blockchain => $9::enum_block_chain, a_strategy_pool_address => $10::varchar, a_approved => $11::boolean);"
+        "SELECT * FROM api.fun_user_list_strategies(a_user_id => $1::bigint, a_limit => $2::bigint, a_offset => $3::bigint, a_strategy_id => $4::bigint, a_strategy_name => $5::varchar, a_expert_id => $6::bigint, a_expert_public_id => $7::bigint, a_expert_name => $8::varchar, a_description => $9::varchar, a_blockchain => $10::enum_block_chain, a_strategy_pool_address => $11::varchar, a_approved => $12::boolean);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -1121,6 +1123,7 @@ impl DatabaseRequest for FunUserListStrategiesReq {
             &self.offset as &(dyn ToSql + Sync),
             &self.strategy_id as &(dyn ToSql + Sync),
             &self.strategy_name as &(dyn ToSql + Sync),
+            &self.expert_id as &(dyn ToSql + Sync),
             &self.expert_public_id as &(dyn ToSql + Sync),
             &self.expert_name as &(dyn ToSql + Sync),
             &self.description as &(dyn ToSql + Sync),

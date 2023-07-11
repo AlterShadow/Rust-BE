@@ -10,7 +10,6 @@ use crate::{
 use eyre::*;
 use gen::model::EnumBlockChain;
 use lib::log::DynLogger;
-use lib::types::amount_to_display;
 use tracing::info;
 use web3::api::Eth;
 use web3::contract::{Contract, Options};

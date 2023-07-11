@@ -29,6 +29,7 @@ pub async fn validate_audit_rule_user_whitelisted_wallet_same_network(
             limit: 1,
             strategy_id: Some(strategy_id),
             strategy_name: None,
+            expert_id: None,
             expert_public_id: None,
             expert_name: None,
             description: None,

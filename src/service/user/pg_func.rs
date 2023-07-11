@@ -86,6 +86,7 @@ END
                 Field::new("offset", Type::BigInt),
                 Field::new("strategy_id", Type::optional(Type::BigInt)),
                 Field::new("strategy_name", Type::optional(Type::String)),
+                Field::new("expert_id", Type::optional(Type::BigInt)),
                 Field::new("expert_public_id", Type::optional(Type::BigInt)),
                 Field::new("expert_name", Type::optional(Type::String)),
                 Field::new("description", Type::optional(Type::String)),
@@ -103,9 +104,10 @@ BEGIN
     RETURN QUERY SELECT {strategy}
                  FROM tbl.strategy AS s
                         JOIN tbl.user AS u ON u.pkey_id = s.fkey_user_id
-												JOIN tbl.expert_watched_wallet AS w ON w.fkey_user_id = u.pkey_id
+                        JOIN tbl.expert_watched_wallet AS w ON w.fkey_user_id = u.pkey_id
                  WHERE (a_strategy_id ISNULL OR s.pkey_id = a_strategy_id)
                     AND (a_strategy_name ISNULL OR s.name ILIKE a_strategy_name || '%')
+                    AND (a_expert_id ISNULL OR u.pkey_id = a_expert_id)
                     AND (a_expert_public_id ISNULL OR u.public_id = a_expert_public_id)
                     AND (a_expert_name ISNULL OR u.username ILIKE a_expert_name || '%')
                     AND (a_description ISNULL OR s.description ILIKE a_description || '%')
