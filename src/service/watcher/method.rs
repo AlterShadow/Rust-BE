@@ -482,19 +482,18 @@ pub async fn handle_escrow_transaction(
         .await?
         .into_result();
 
-    /* instantiate escrow contract */
-    let conn = state.eth_pool.get(blockchain).await?;
-    let escrow_contract = EscrowContract::new(
-        conn.eth(),
-        state
-            .escrow_addresses
-            .get(blockchain, ())
-            .context("could not find escrow contract address on this chain")?,
-    )?;
-
     match whitelisted_wallet {
         Some(_) => {}
         None => {
+            /* instantiate escrow contract */
+            let conn = state.eth_pool.get(blockchain).await?;
+            let escrow_contract = EscrowContract::new(
+                conn.eth(),
+                state
+                    .escrow_addresses
+                    .get(blockchain, ())
+                    .context("could not find escrow contract address on this chain")?,
+            )?;
             /* escrow was not done by a whitelisted wallet, return it minus fees */
             /* estimate gas of deposit rejection using dummy values */
             let estimated_refund_gas = escrow_contract

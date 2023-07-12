@@ -136,21 +136,21 @@ impl<T: Transport> EscrowContract<T> {
         let estimated_gas_price = conn.eth().gas_price().await?;
 
         info!(
-						"Accepting {:?} amount of asset {:?} from proprietor {:?} from escrow contract {:?} by {:?}",
-						amount,
-						asset,
-						proprietor,
-						self.address(),
-						signer.address(),
-				);
+            "Accepting {:?} amount of asset {:?} from proprietor {:?} from escrow contract {:?} by {:?}",
+            amount,
+            asset,
+            proprietor,
+            self.address(),
+            signer.address(),
+        );
         logger.log(format!(
-					"Accepting {:?} amount of asset {:?} from proprietor {:?} from escrow contract {:?} by {:?}",
-					amount,
-					asset,
-					proprietor,
-					self.address(),
-					signer.address(),
-				));
+            "Accepting {:?} amount of asset {:?} from proprietor {:?} from escrow contract {:?} by {:?}",
+            amount,
+            asset,
+            proprietor,
+            self.address(),
+            signer.address(),
+        ));
 
         let tx_hash = self
             .contract
