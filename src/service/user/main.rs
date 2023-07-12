@@ -2,9 +2,9 @@ use api::cmc::CoinMarketCap;
 use eth_sdk::escrow::AbstractEscrowContract;
 use eth_sdk::pair_paths::WorkingPancakePairPaths;
 use eth_sdk::signer::Secp256k1SecretKey;
-use eth_sdk::{DexAddresses, EscrowAddresses, EthereumConns, EthereumRpcConnectionPool};
+use eth_sdk::{DexAddresses, EthereumConns, EthereumRpcConnectionPool};
 use eyre::*;
-use gen::model::{EnumService, UserGetDepositAddressesRow};
+use gen::model::EnumService;
 use lib::config::{load_config, WsServerConfig};
 use lib::database::{connect_to_database, DatabaseConfig};
 use lib::log::{setup_logs, LogLevel};
@@ -33,7 +33,6 @@ pub struct Config {
     pub ethereum_urls: EthereumConns,
     #[serde(default)]
     pub setup_ethereum_localnet: bool,
-    pub escrow_addresses: Vec<UserGetDepositAddressesRow>,
     pub god_key: SecretString,
     pub cmc_api_key: SecretString,
 }
@@ -58,7 +57,7 @@ async fn main() -> Result<()> {
     server.add_auth_controller(auth_controller);
 
     let coin_addresses = load_coin_addresses(&db).await?;
-
+    let escrow_contract_address = load_escrow_address(&db).await?;
     server.add_handler(MethodUserFollowStrategy);
     server.add_handler(MethodUserListFollowedStrategies {
         cmc: cmc_client.clone(),
@@ -153,10 +152,10 @@ async fn main() -> Result<()> {
     server.add_handler(MethodUserListStrategyTokenBalance);
     // they are basically the same but MethodUserGetEscrowAddressForStrategy is more user friendly
     server.add_handler(MethodUserGetDepositAddresses {
-        addresses: config.escrow_addresses.clone(),
+        addresses: escrow_contract_address.clone(),
     });
     server.add_handler(MethodUserGetEscrowAddressForStrategy {
-        addresses: config.escrow_addresses,
+        addresses: escrow_contract_address.clone(),
     });
     server.add_handler(MethodUserGetSystemConfig);
 
@@ -205,8 +204,9 @@ async fn main() -> Result<()> {
 
     let eth_pool = EthereumRpcConnectionPool::from_conns(config.ethereum_urls);
 
-    let escrow_contract_addresses = EscrowAddresses::new();
-    let escrow_contract = Arc::new(AbstractEscrowContract::new2(escrow_contract_addresses));
+    let escrow_contract = Arc::new(AbstractEscrowContract::new2(
+        escrow_contract_address.clone(),
+    ));
     let master_key = Secp256k1SecretKey::from_str(config.god_key.expose_secret())?;
 
     let pancake_paths = WorkingPancakePairPaths::new(coin_addresses.clone())?;

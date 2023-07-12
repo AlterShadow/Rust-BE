@@ -126,3 +126,15 @@ pub async fn load_coin_addresses(db: &DbClient) -> Result<Arc<BlockchainCoinAddr
     let coin_addresses = Arc::new(coin_addresses);
     Ok(coin_addresses)
 }
+
+pub async fn load_escrow_address(db: &DbClient) -> Result<Arc<EscrowAddresses>> {
+    let mut this = EscrowAddresses::empty();
+    let rows = db
+        .execute(FunUserListEscrowContractAddressReqReq { blockchain: None })
+        .await?;
+    for row in rows.into_iter() {
+        this.insert(row.blockchain, (), row.address.into());
+    }
+
+    Ok(Arc::new(this))
+}

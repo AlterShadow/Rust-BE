@@ -715,5 +715,28 @@ BEGIN
 END
         "#,
         ),
+        ProceduralFunction::new(
+            "fun_user_list_escrow_contract_address_req",
+            vec![Field::new(
+                "blockchain",
+                Type::optional(Type::enum_ref("block_chain")),
+            )],
+            vec![
+                Field::new("pkey_id", Type::BigInt),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("address", Type::BlockchainAddress),
+            ],
+            r#"
+BEGIN
+    RETURN QUERY SELECT
+        eca.pkey_id,
+        eca.blockchain,
+        eca.address
+    FROM tbl.escrow_contract_address AS eca
+    WHERE (a_blockchain ISNULL OR eca.blockchain = a_blockchain)
+    ORDER BY eca.pkey_id;
+END
+        "#,
+        ),
     ]
 }

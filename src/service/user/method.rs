@@ -2484,7 +2484,7 @@ impl RequestHandler for MethodUserGetDepositTokens {
     }
 }
 pub struct MethodUserGetDepositAddresses {
-    pub addresses: Vec<UserGetDepositAddressesRow>,
+    pub addresses: Arc<EscrowAddresses>,
 }
 impl RequestHandler for MethodUserGetDepositAddresses {
     type Request = UserGetDepositAddressesRequest;
@@ -2496,7 +2496,19 @@ impl RequestHandler for MethodUserGetDepositAddresses {
         _req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         let addresses = self.addresses.clone();
-        async move { Ok(UserGetDepositAddressesResponse { addresses }) }.boxed()
+        async move {
+            Ok(UserGetDepositAddressesResponse {
+                addresses: addresses
+                    .iter()
+                    .map(|x| UserGetDepositAddressesRow {
+                        blockchain: x.1,
+                        address: x.3,
+                        short_name: x.1.to_string(),
+                    })
+                    .collect(),
+            })
+        }
+        .boxed()
     }
 }
 pub struct MethodUserListDepositWithdrawLedger;
@@ -2920,7 +2932,7 @@ impl RequestHandler for MethodUserRemoveStrategyAuditRule {
     }
 }
 pub struct MethodUserGetEscrowAddressForStrategy {
-    pub addresses: Vec<UserGetDepositAddressesRow>,
+    pub addresses: Arc<EscrowAddresses>,
 }
 impl RequestHandler for MethodUserGetEscrowAddressForStrategy {
     type Request = UserGetEscrowAddressForStrategyRequest;
@@ -2969,13 +2981,9 @@ impl RequestHandler for MethodUserGetEscrowAddressForStrategy {
                 .into_rows();
             let mut tokens = vec![];
             for token in tokens_contracts {
-                for address in &escrow_addresses {
-                    if address.blockchain != strategy.blockchain {
-                        continue;
-                    }
-
+                if let Some(escrow_address) = escrow_addresses.get(strategy.blockchain, ()) {
                     let tk = UserAllowedEscrowTransferInfo {
-                        receiver_address: address.address.clone(),
+                        receiver_address: escrow_address,
                         blockchain: token.blockchain,
                         token_id: token.token_id,
                         token_symbol: token.symbol.clone(),

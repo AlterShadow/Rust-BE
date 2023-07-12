@@ -33,6 +33,7 @@ impl<ENUM: Copy + Eq + Hash> AddressTable<ENUM> {
         self.reverse_inner.get(&address).copied()
     }
 }
+#[derive(Clone)]
 pub struct MultiChainAddressTable<ENUM> {
     inner: Vec<(i64, EnumBlockChain, String, Address)>,
     _phantom: PhantomData<ENUM>,

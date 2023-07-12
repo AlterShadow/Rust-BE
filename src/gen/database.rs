@@ -392,6 +392,13 @@ pub struct FunUserListDepositWithdrawLedgerRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunUserListEscrowContractAddressReqRespRow {
+    pub pkey_id: i64,
+    pub blockchain: EnumBlockChain,
+    pub address: BlockchainAddress,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserListEscrowTokenContractAddressRespRow {
     pub total: i64,
     pub token_id: i64,
@@ -3545,5 +3552,22 @@ impl DatabaseRequest for FunWatcherListStrategyPoolContractReq {
             &self.blockchain as &(dyn ToSql + Sync),
             &self.address as &(dyn ToSql + Sync),
         ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserListEscrowContractAddressReqReq {
+    #[serde(default)]
+    pub blockchain: Option<EnumBlockChain>,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunUserListEscrowContractAddressReqReq {
+    type ResponseRow = FunUserListEscrowContractAddressReqRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_list_escrow_contract_address_req(a_blockchain => $1::enum_block_chain);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![&self.blockchain as &(dyn ToSql + Sync)]
     }
 }

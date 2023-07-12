@@ -3849,6 +3849,28 @@ END
 $$;
         
 
+CREATE OR REPLACE FUNCTION api.fun_user_list_escrow_contract_address_req(a_blockchain enum_block_chain DEFAULT NULL)
+RETURNS table (
+    "pkey_id" bigint,
+    "blockchain" enum_block_chain,
+    "address" varchar
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    RETURN QUERY SELECT
+        eca.pkey_id,
+        eca.blockchain,
+        eca.address
+    FROM tbl.escrow_contract_address AS eca
+    WHERE (a_blockchain ISNULL OR eca.blockchain = a_blockchain)
+    ORDER BY eca.pkey_id;
+END
+        
+$$;
+        
+
 CREATE OR REPLACE FUNCTION api.AUTH_SERVICE()
 RETURNS table (
     "code" int

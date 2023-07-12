@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use std::time::Duration;
 
 use crate::contract::AbstractContract;
@@ -30,13 +31,13 @@ impl AbstractEscrowContract {
             contract_addresses: table,
         })
     }
-    pub fn new2(table: EscrowAddresses) -> Self {
+    pub fn new2(table: Arc<EscrowAddresses>) -> Self {
         let abi = ethabi::Contract::load(ESCROW_ABI_JSON.as_bytes()).unwrap();
 
         Self(AbstractContract {
             name: "Escrow".to_string(),
             abi,
-            contract_addresses: table.0,
+            contract_addresses: table.0.clone(),
         })
     }
 
