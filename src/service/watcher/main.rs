@@ -66,8 +66,11 @@ async fn main() -> Result<()> {
         .route("/eth-goerli-swaps", post(handle_eth_swap_goerli))
         .route("/eth-mainnet-escrows", post(handle_eth_escrows_mainnet))
         .route("/eth-goerli-escrows", post(handle_eth_escrows_goerli))
+        .route("/eth-mainnet-withdraws", post(handle_eth_withdraws_mainnet))
+        .route("/eth-goerli-withdraws", post(handle_eth_withdraws_goerli))
         .route("/bsc-mainnet-swaps", post(handle_bsc_swap_mainnet))
         .route("/bsc-mainnet-escrows", post(handle_bsc_escrows_mainnet))
+        .route("/bsc-mainnet-withdraws", post(handle_bsc_withdraws_mainnet))
         .with_state(Arc::new(
             AppState::new(db, eth_pool, master_key, client, cmc_client, coin_addresses).await?,
         ));
@@ -132,4 +135,25 @@ pub async fn handle_bsc_escrows_mainnet(
     body: Bytes,
 ) -> Result<(), StatusCode> {
     method::handle_eth_escrows(state.0, body, EnumBlockChain::BscMainnet).await
+}
+
+pub async fn handle_eth_withdraws_mainnet(
+    state: State<Arc<AppState>>,
+    body: Bytes,
+) -> Result<(), StatusCode> {
+    method::handle_eth_withdraws(state.0, body, EnumBlockChain::EthereumMainnet).await
+}
+
+pub async fn handle_eth_withdraws_goerli(
+    state: State<Arc<AppState>>,
+    body: Bytes,
+) -> Result<(), StatusCode> {
+    method::handle_eth_withdraws(state.0, body, EnumBlockChain::EthereumGoerli).await
+}
+
+pub async fn handle_bsc_withdraws_mainnet(
+    state: State<Arc<AppState>>,
+    body: Bytes,
+) -> Result<(), StatusCode> {
+    method::handle_eth_withdraws(state.0, body, EnumBlockChain::BscMainnet).await
 }
