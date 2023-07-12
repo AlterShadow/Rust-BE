@@ -242,7 +242,7 @@ impl RequestHandler for MethodAdminGetSystemConfig {
             let escrow_contract_address = db
                 .execute(FunUserListEscrowContractAddressReqReq { blockchain: None })
                 .await?;
-            Ok(AdminGetSystemConfigResponse {
+            let x = Ok(AdminGetSystemConfigResponse {
                 platform_fee: ret
                     .as_ref()
                     .map(|x| x.platform_fee)
@@ -272,7 +272,8 @@ impl RequestHandler for MethodAdminGetSystemConfig {
                     .map(|x| x.address)
                     .unwrap_or_default()
                     .into(),
-            })
+            });
+            x
         }
         .boxed()
     }
