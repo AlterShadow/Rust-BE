@@ -997,7 +997,7 @@ pub async fn user_exit_strategy(
 
     /* update strategy pool asset balances & ledgers */
     for idx in 0..assets_to_transfer.len() {
-        /* update user strategy pool asset balance & ledger */
+        /* update per-user strategy pool asset balance & ledger */
         let asset = assets_to_transfer[idx];
         let amount = amounts_to_transfer[idx];
         let asset_old_balance: U256 = db
@@ -1037,7 +1037,7 @@ pub async fn user_exit_strategy(
         })
         .await?;
 
-        /* update strategy pool contract balance table */
+        /* update strategy pool asset balances & ledger */
         let old_asset_balance_row = db
             .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
                 strategy_pool_contract_id: Some(strategy_pool_contract_row.pkey_id),
@@ -1058,6 +1058,16 @@ pub async fn user_exit_strategy(
                 .try_checked_sub(amount)
                 .context("redeemed amount is greater than known balance of strategy pool asset")?
                 .into(),
+        })
+        .await?;
+
+        db.execute(FunUserAddStrategyPoolContractAssetLedgerEntryReq {
+            strategy_pool_contract_id: strategy_pool_contract_row.pkey_id,
+            token_address: asset.into(),
+            blockchain,
+            amount: amount.into(),
+            is_add: false,
+            transaction_hash: transaction_hash.into(),
         })
         .await?;
     }
