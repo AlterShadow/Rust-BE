@@ -999,3 +999,126 @@ pub fn parse_escrow_withdraw_event(
     }
     Err(eyre!("could not find Withdraw event in receipt"))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::Arc;
+    use std::time::Duration;
+
+    use once_cell::sync::Lazy;
+    use tokio::sync::Mutex;
+
+    use crate::contract_wrappers::mock_erc20::deploy_mock_erc20;
+    use crate::signer::Secp256k1SecretKey;
+    use crate::{
+        wait_for_confirmations_simple, EthereumRpcConnectionGuard, EthereumRpcConnectionPool,
+        ANVIL_PRIV_KEY_1,
+    };
+    use gen::model::EnumBlockChain;
+
+    static TX_CONN: Lazy<Arc<Mutex<Option<EthereumRpcConnectionGuard>>>> =
+        Lazy::new(|| Arc::new(Mutex::new(None)));
+
+    async fn get_tx_conn() -> Result<Arc<Mutex<Option<EthereumRpcConnectionGuard>>>> {
+        /* since tests are parallel and use a single key, ensure only one test publishes transactions at a time */
+        /* to avoid "nonce too low" errors */
+        let tx_conn_arc = TX_CONN.clone();
+        let mut tx_conn = tx_conn_arc.lock().await;
+        if tx_conn.is_none() {
+            *tx_conn = Some(
+                EthereumRpcConnectionPool::new()
+                    .get(EnumBlockChain::LocalNet)
+                    .await?,
+            );
+        }
+        Ok(tx_conn_arc.clone())
+    }
+
+    #[tokio::test]
+    async fn test_parse_escrow_withdraw_event() -> Result<()> {
+        let tx_conn_wrapper = get_tx_conn().await?;
+        let mut tx_conn_guard = tx_conn_wrapper.lock().await;
+        let tx_conn = tx_conn_guard.as_mut().unwrap();
+
+        let god_key = Secp256k1SecretKey::from_str(ANVIL_PRIV_KEY_1)?;
+
+        let escrow_contract = EscrowContract::deploy(tx_conn.clone(), god_key.clone()).await?;
+
+        let mock_erc20 = deploy_mock_erc20(tx_conn.clone(), god_key.clone()).await?;
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            mock_erc20
+                .mint(
+                    &tx_conn,
+                    god_key.clone(),
+                    god_key.address(),
+                    U256::from(100),
+                )
+                .await?,
+            Duration::from_secs(1),
+            10,
+        )
+        .await?;
+
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            mock_erc20
+                .transfer(
+                    &tx_conn,
+                    god_key.clone(),
+                    escrow_contract.address(),
+                    U256::from(100),
+                )
+                .await?,
+            Duration::from_secs(1),
+            10,
+        )
+        .await?;
+
+        let logger = DynLogger::new(Arc::new(move |msg| {
+            println!("{}", msg);
+        }));
+        wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            escrow_contract
+                .accept_deposit(
+                    &tx_conn,
+                    god_key.clone(),
+                    god_key.address(),
+                    mock_erc20.address,
+                    U256::from(100),
+                    logger,
+                )
+                .await?,
+            Duration::from_secs(1),
+            10,
+        )
+        .await?;
+
+        let withdraw_receipt = wait_for_confirmations_simple(
+            &tx_conn.clone().eth(),
+            escrow_contract
+                .withdraw(
+                    &tx_conn,
+                    god_key.clone(),
+                    mock_erc20.address,
+                    U256::from(100),
+                )
+                .await?,
+            Duration::from_secs(1),
+            10,
+        )
+        .await?;
+
+        let withdraw_event =
+            parse_escrow_withdraw_event(escrow_contract.address(), withdraw_receipt)?;
+
+        assert_eq!(withdraw_event.proprietor, god_key.address());
+        assert_eq!(withdraw_event.asset, mock_erc20.address);
+        assert_eq!(withdraw_event.amount, U256::from(100));
+
+        Ok(())
+    }
+}
