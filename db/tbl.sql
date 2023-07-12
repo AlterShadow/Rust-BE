@@ -1,5 +1,5 @@
 -- Created by Vertabelo (http://vertabelo.com)
--- Last modification date: 2023-07-10 16:46:34.006
+-- Last modification date: 2023-07-11 12:54:43.608
 
 CREATE SCHEMA IF NOT EXISTS tbl;;
 
@@ -238,6 +238,7 @@ CREATE TABLE tbl.strategy_pool_contract_asset_balance (
     CONSTRAINT strategy_pool_contract_asset_balance_ak_1 UNIQUE (fkey_strategy_pool_contract_id, fkey_token_id) NOT DEFERRABLE  INITIALLY IMMEDIATE,
     CONSTRAINT strategy_pool_contract_asset_balance_pk PRIMARY KEY (pkey_id)
 );
+
 -- Table: strategy_pool_contract_asset_ledger
 CREATE TABLE tbl.strategy_pool_contract_asset_ledger (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_strategy_pool_contract_asset_ledger_id'),
@@ -247,6 +248,7 @@ CREATE TABLE tbl.strategy_pool_contract_asset_ledger (
     transaction_hash varchar(80)  NOT NULL,
     dex varchar(20)  NULL,
     amount varchar(64)  NOT NULL,
+    is_add boolean  NOT NULL,
     happened_at bigint  NOT NULL,
     CONSTRAINT strategy_pool_contract_asset_ledger_pk PRIMARY KEY (pkey_id)
 );
