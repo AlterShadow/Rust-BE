@@ -1859,6 +1859,69 @@ END
 $$;
         
 
+CREATE OR REPLACE FUNCTION api.fun_user_add_user_deposit_withdraw_ledger_entry(a_user_id bigint, a_token_address varchar, a_blockchain enum_block_chain, a_user_address varchar, a_escrow_contract_address varchar, a_receiver_address varchar, a_quantity varchar, a_transaction_hash varchar, a_is_deposit boolean, a_is_back boolean, a_is_withdraw boolean)
+RETURNS table (
+    "ledger_entry_id" bigint
+)
+LANGUAGE plpgsql
+AS $$
+    
+DECLARE
+	_existing_id bigint;
+	_token_id bigint;
+	_escrow_contract_id bigint;
+BEGIN
+	SELECT udwl.pkey_id INTO _existing_id
+	FROM tbl.user_deposit_withdraw_ledger AS udwl
+	WHERE udwl.transaction_hash = a_transaction_hash AND udwl.blockchain = a_blockchain
+	LIMIT 1;
+
+	IF _existing_id IS NOT NULL THEN
+			RETURN QUERY SELECT _existing_id;
+	END IF;
+
+	SELECT etca.pkey_id INTO _token_id FROM tbl.escrow_token_contract_address AS etca
+		WHERE etca.address = a_token_address AND etca.blockchain = a_blockchain;
+
+	SELECT eca.pkey_id INTO _escrow_contract_id FROM tbl.escrow_contract_address AS eca
+		WHERE eca.address = a_escrow_contract_address AND eca.blockchain = a_blockchain;
+
+	ASSERT _token_id IS NOT NULL AND _escrow_contract_id IS NOT NULL;
+
+	RETURN QUERY INSERT INTO tbl.user_deposit_withdraw_ledger (
+		fkey_user_id,
+		fkey_token_id,
+		blockchain,
+		user_address,
+		escrow_contract_address,
+		fkey_escrow_contract_address_id,
+		receiver_address,
+		quantity,
+		transaction_hash,
+		is_deposit,
+		is_back,
+		is_withdraw,
+		happened_at
+		) VALUES (a_user_id,
+							_token_id,
+							a_blockchain,
+							a_user_address,
+							a_escrow_contract_address,
+							_contract_address_id,
+							a_receiver_address,
+							a_quantity,
+							a_transaction_hash,
+							a_is_deposit,
+							a_is_back,
+							a_is_withdraw,
+							EXTRACT(EPOCH FROM NOW())::bigint
+		) RETURNING pkey_id;
+
+END
+
+$$;
+        
+
 CREATE OR REPLACE FUNCTION api.fun_user_request_refund(a_user_id bigint, a_token_id bigint, a_blockchain enum_block_chain, a_user_address varchar, a_contract_address varchar, a_contract_address_id bigint, a_receiver_address varchar, a_quantity varchar, a_transaction_hash varchar)
 RETURNS table (
     "request_refund_id" bigint

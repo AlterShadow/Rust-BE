@@ -1308,6 +1308,77 @@ END
 "#,
         ),
         ProceduralFunction::new(
+            "fun_user_add_user_deposit_withdraw_ledger_entry",
+            vec![
+                Field::new("user_id", Type::BigInt),
+                Field::new("token_address", Type::BlockchainAddress),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("user_address", Type::BlockchainAddress),
+                Field::new("escrow_contract_address", Type::BlockchainAddress),
+                Field::new("receiver_address", Type::BlockchainAddress),
+                Field::new("quantity", Type::BlockchainDecimal),
+                Field::new("transaction_hash", Type::BlockchainTransactionHash),
+                Field::new("is_deposit", Type::Boolean),
+                Field::new("is_back", Type::Boolean),
+                Field::new("is_withdraw", Type::Boolean),
+            ],
+            vec![Field::new("ledger_entry_id", Type::BigInt)],
+            r#"
+DECLARE
+	_existing_id bigint;
+	_token_id bigint;
+	_escrow_contract_id bigint;
+BEGIN
+	SELECT udwl.pkey_id INTO _existing_id
+	FROM tbl.user_deposit_withdraw_ledger AS udwl
+	WHERE udwl.transaction_hash = a_transaction_hash AND udwl.blockchain = a_blockchain
+	LIMIT 1;
+
+	IF _existing_id IS NOT NULL THEN
+			RETURN QUERY SELECT _existing_id;
+	END IF;
+
+	SELECT etca.pkey_id INTO _token_id FROM tbl.escrow_token_contract_address AS etca
+		WHERE etca.address = a_token_address AND etca.blockchain = a_blockchain;
+
+	SELECT eca.pkey_id INTO _escrow_contract_id FROM tbl.escrow_contract_address AS eca
+		WHERE eca.address = a_escrow_contract_address AND eca.blockchain = a_blockchain;
+
+	ASSERT _token_id IS NOT NULL AND _escrow_contract_id IS NOT NULL;
+
+	RETURN QUERY INSERT INTO tbl.user_deposit_withdraw_ledger (
+		fkey_user_id,
+		fkey_token_id,
+		blockchain,
+		user_address,
+		escrow_contract_address,
+		fkey_escrow_contract_address_id,
+		receiver_address,
+		quantity,
+		transaction_hash,
+		is_deposit,
+		is_back,
+		is_withdraw,
+		happened_at
+		) VALUES (a_user_id,
+							_token_id,
+							a_blockchain,
+							a_user_address,
+							a_escrow_contract_address,
+							_contract_address_id,
+							a_receiver_address,
+							a_quantity,
+							a_transaction_hash,
+							a_is_deposit,
+							a_is_back,
+							a_is_withdraw,
+							EXTRACT(EPOCH FROM NOW())::bigint
+		) RETURNING pkey_id;
+
+END
+"#,
+        ),
+        ProceduralFunction::new(
             "fun_user_request_refund",
             vec![
                 Field::new("user_id", Type::BigInt),

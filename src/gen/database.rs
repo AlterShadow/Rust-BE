@@ -212,6 +212,11 @@ pub struct FunUserAddStrategyWatchWalletRespRow {
 pub struct FunUserAddStrategyWhitelistedTokenRespRow {}
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunUserAddUserDepositWithdrawLedgerEntryRespRow {
+    pub ledger_entry_id: i64,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserAddUserStrategyPoolContractAssetLedgerEntryRespRow {
     pub success: bool,
 }
@@ -1977,6 +1982,44 @@ impl DatabaseRequest for FunUserReduceQuantityFromUserDepositWithdrawLedgerReq {
             &self.receiver_address as &(dyn ToSql + Sync),
             &self.quantity as &(dyn ToSql + Sync),
             &self.transaction_hash as &(dyn ToSql + Sync),
+        ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserAddUserDepositWithdrawLedgerEntryReq {
+    pub user_id: i64,
+    pub token_address: BlockchainAddress,
+    pub blockchain: EnumBlockChain,
+    pub user_address: BlockchainAddress,
+    pub escrow_contract_address: BlockchainAddress,
+    pub receiver_address: BlockchainAddress,
+    pub quantity: BlockchainDecimal,
+    pub transaction_hash: BlockchainTransactionHash,
+    pub is_deposit: bool,
+    pub is_back: bool,
+    pub is_withdraw: bool,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunUserAddUserDepositWithdrawLedgerEntryReq {
+    type ResponseRow = FunUserAddUserDepositWithdrawLedgerEntryRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_add_user_deposit_withdraw_ledger_entry(a_user_id => $1::bigint, a_token_address => $2::varchar, a_blockchain => $3::enum_block_chain, a_user_address => $4::varchar, a_escrow_contract_address => $5::varchar, a_receiver_address => $6::varchar, a_quantity => $7::varchar, a_transaction_hash => $8::varchar, a_is_deposit => $9::boolean, a_is_back => $10::boolean, a_is_withdraw => $11::boolean);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.token_address as &(dyn ToSql + Sync),
+            &self.blockchain as &(dyn ToSql + Sync),
+            &self.user_address as &(dyn ToSql + Sync),
+            &self.escrow_contract_address as &(dyn ToSql + Sync),
+            &self.receiver_address as &(dyn ToSql + Sync),
+            &self.quantity as &(dyn ToSql + Sync),
+            &self.transaction_hash as &(dyn ToSql + Sync),
+            &self.is_deposit as &(dyn ToSql + Sync),
+            &self.is_back as &(dyn ToSql + Sync),
+            &self.is_withdraw as &(dyn ToSql + Sync),
         ]
     }
 }
