@@ -31,24 +31,7 @@
 	"user": {
 		"host": "localhost",
 		"log_level": "trace",
-		"port": 8889,
-		"escrow_addresses": [
-			{
-				"blockchain": "EthereumMainnet",
-				"address": "0x0893abEB433C1a3D63C60F7034c2582Fc7dc8c52",
-				"shortName": "Ethereum mainnet deposit address"
-			},
-			{
-				"blockchain": "EthereumGoerli",
-				"address": "0xd74e67AbE5620E7F442DAD04B2bb06ad784633BF",
-				"shortName": "Ethereum testnet deposit address"
-			},
-			{
-				"blockchain": "BscMainnet",
-				"address": "0x54D4fa025E0239E9BA0c401F8A926b71F804627B",
-				"shortName": "Binance Smart Chain mainnet deposit address"
-			}
-		]
+		"port": 8889
 	},
 	"watcher": {
 		"host": "localhost",

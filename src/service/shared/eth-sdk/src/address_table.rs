@@ -56,8 +56,7 @@ impl<ENUM: Copy + Eq + Hash + Debug> MultiChainAddressTable<ENUM> {
         enum_: String,
         address: Address,
     ) {
-        self.inner
-            .push((index, chain, format!("{enum_:?}"), address));
+        self.inner.push((index, chain, enum_, address));
     }
     pub fn get(&self, chain: EnumBlockChain, enum_: ENUM) -> Option<Address> {
         let enum_ = format!("{enum_:?}");
