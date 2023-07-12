@@ -1426,16 +1426,13 @@ pub struct FunUserUpsertUserStrategyPoolContractAssetBalanceReq {
     pub blockchain: EnumBlockChain,
     pub old_balance: BlockchainDecimal,
     pub new_balance: BlockchainDecimal,
-    pub amount: BlockchainDecimal,
-    pub is_add: bool,
-    pub transaction_hash: BlockchainTransactionHash,
 }
 
 #[allow(unused_variables)]
 impl DatabaseRequest for FunUserUpsertUserStrategyPoolContractAssetBalanceReq {
     type ResponseRow = FunUserUpsertUserStrategyPoolContractAssetBalanceRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_upsert_user_strategy_pool_contract_asset_balance(a_strategy_wallet_id => $1::bigint, a_strategy_pool_contract_id => $2::bigint, a_token_address => $3::varchar, a_blockchain => $4::enum_block_chain, a_old_balance => $5::varchar, a_new_balance => $6::varchar, a_amount => $7::varchar, a_is_add => $8::boolean, a_transaction_hash => $9::varchar);"
+        "SELECT * FROM api.fun_user_upsert_user_strategy_pool_contract_asset_balance(a_strategy_wallet_id => $1::bigint, a_strategy_pool_contract_id => $2::bigint, a_token_address => $3::varchar, a_blockchain => $4::enum_block_chain, a_old_balance => $5::varchar, a_new_balance => $6::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -1445,9 +1442,6 @@ impl DatabaseRequest for FunUserUpsertUserStrategyPoolContractAssetBalanceReq {
             &self.blockchain as &(dyn ToSql + Sync),
             &self.old_balance as &(dyn ToSql + Sync),
             &self.new_balance as &(dyn ToSql + Sync),
-            &self.amount as &(dyn ToSql + Sync),
-            &self.is_add as &(dyn ToSql + Sync),
-            &self.transaction_hash as &(dyn ToSql + Sync),
         ]
     }
 }

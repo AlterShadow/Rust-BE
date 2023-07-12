@@ -149,9 +149,6 @@ pub async fn update_user_strategy_pool_asset_balances_on_copy_trade(
             blockchain,
             old_balance: currently_owned_sold_asset.into(),
             new_balance: new_sold_asset_balance.into(),
-            amount: subtracted_sold_amount.into(),
-            is_add: false,
-            transaction_hash: transaction_hash.into(),
         })
         .await?;
         match db
@@ -177,9 +174,6 @@ pub async fn update_user_strategy_pool_asset_balances_on_copy_trade(
                     new_balance: bought_asset_old_balance
                         .try_checked_add(added_bought_amount)?
                         .into(),
-                    amount: added_bought_amount.into(),
-                    is_add: true,
-                    transaction_hash: transaction_hash.into(),
                 })
                 .await?;
             }
@@ -192,9 +186,6 @@ pub async fn update_user_strategy_pool_asset_balances_on_copy_trade(
                     blockchain,
                     old_balance: U256::zero().into(),
                     new_balance: added_bought_amount.into(),
-                    amount: added_bought_amount.into(),
-                    is_add: true,
-                    transaction_hash: transaction_hash.into(),
                 })
                 .await?;
             }

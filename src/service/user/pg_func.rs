@@ -537,9 +537,6 @@ END
                 Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("old_balance", Type::BlockchainDecimal),
                 Field::new("new_balance", Type::BlockchainDecimal),
-                Field::new("amount", Type::BlockchainDecimal),
-                Field::new("is_add", Type::Boolean),
-                Field::new("transaction_hash", Type::BlockchainTransactionHash),
             ],
             vec![Field::new(
                 "user_strategy_pool_contract_asset_balance_id",
@@ -547,73 +544,50 @@ END
             )],
             r#"
 DECLARE
-	_token_id BIGINT;
-    _strategy_id BIGINT;
-	_blockchain enum_block_chain;
-	_user_strategy_pool_contract_asset_balance_id BIGINT;
-	_user_strategy_pool_contract_asset_balance_old_balance VARCHAR;
-	_pkey_id BIGINT;
+		_token_id BIGINT;
+		_user_strategy_pool_contract_asset_balance_id BIGINT;
+		_user_strategy_pool_contract_asset_balance_old_balance VARCHAR;
+		_pkey_id BIGINT;
 BEGIN
-	SELECT etca.pkey_id, etca.blockchain INTO _token_id, _blockchain
-	FROM tbl.escrow_token_contract_address AS etca
-	WHERE etca.address = a_token_address AND etca.blockchain = a_blockchain;
-    
-	ASSERT _token_id IS NOT NULL;
-	
-	SELECT usw.fkey_strategy_id INTO _strategy_id
-	FROM tbl.strategy_pool_contract AS usw
-	WHERE usw.pkey_id = a_strategy_pool_contract_id;
-	ASSERT _strategy_id IS NOT NULL;
-    INSERT INTO tbl.strategy_pool_contract_asset_ledger (
-        fkey_strategy_id,
-        fkey_token_id,
-        blockchain,
-        amount,
-        is_add,
-        happened_at,
-        transaction_hash
-    ) VALUES (
-        _strategy_id,
-        _token_id,
-        _blockchain,
-        a_amount,
-        a_is_add,
-        EXTRACT(EPOCH FROM NOW()),
-        a_transaction_hash
-    );
-	SELECT uspcab.pkey_id, uspcab.balance
-	INTO _user_strategy_pool_contract_asset_balance_id, _user_strategy_pool_contract_asset_balance_old_balance
-	FROM tbl.user_strategy_pool_contract_asset_balance AS uspcab
-	WHERE uspcab.fkey_strategy_wallet_id = a_strategy_wallet_id
-		AND uspcab.fkey_strategy_pool_contract_id = a_strategy_pool_contract_id
-		AND uspcab.fkey_token_id = _token_id;
+		SELECT etca.pkey_id INTO _token_id
+		FROM tbl.escrow_token_contract_address AS etca
+		WHERE etca.address = a_token_address AND etca.blockchain = a_blockchain;
 
-	-- insert new entry if not exist
-	IF _user_strategy_pool_contract_asset_balance_id ISNULL THEN
-			INSERT INTO tbl.user_strategy_pool_contract_asset_balance (
-				fkey_strategy_wallet_id,
-				fkey_strategy_pool_contract_id,
-				fkey_token_id,
-				balance
-			)	VALUES (
-				a_strategy_wallet_id,
-				a_strategy_pool_contract_id,
-				_token_id,
-				a_new_balance
-			)	RETURNING pkey_id	INTO _pkey_id;
-	ELSE
-			-- update old balance if exist and equals to old balance
-			IF _user_strategy_pool_contract_asset_balance_old_balance NOTNULL AND _user_strategy_pool_contract_asset_balance_old_balance != a_old_balance THEN
-					RETURN;
-			END IF;
-			UPDATE tbl.user_strategy_pool_contract_asset_balance
-			SET balance = a_new_balance
-			WHERE pkey_id = _user_strategy_pool_contract_asset_balance_id
-			RETURNING pkey_id
-					INTO _pkey_id;
-	END IF;
+		ASSERT _token_id IS NOT NULL;
 
-	RETURN QUERY SELECT _pkey_id;
+		SELECT uspcab.pkey_id, uspcab.balance
+		INTO _user_strategy_pool_contract_asset_balance_id, _user_strategy_pool_contract_asset_balance_old_balance
+		FROM tbl.user_strategy_pool_contract_asset_balance AS uspcab
+		WHERE uspcab.fkey_strategy_wallet_id = a_strategy_wallet_id
+			AND uspcab.fkey_strategy_pool_contract_id = a_strategy_pool_contract_id
+			AND uspcab.fkey_token_id = _token_id;
+
+		-- insert new entry if not exist
+		IF _user_strategy_pool_contract_asset_balance_id ISNULL THEN
+				INSERT INTO tbl.user_strategy_pool_contract_asset_balance (
+					fkey_strategy_wallet_id,
+					fkey_strategy_pool_contract_id,
+					fkey_token_id,
+					balance
+				)	VALUES (
+					a_strategy_wallet_id,
+					a_strategy_pool_contract_id,
+					_token_id,
+					a_new_balance
+				)	RETURNING pkey_id	INTO _pkey_id;
+		ELSE
+				-- update old balance if exist and equals to old balance
+				IF _user_strategy_pool_contract_asset_balance_old_balance NOTNULL AND _user_strategy_pool_contract_asset_balance_old_balance != a_old_balance THEN
+						RETURN;
+				END IF;
+				UPDATE tbl.user_strategy_pool_contract_asset_balance
+				SET balance = a_new_balance
+				WHERE pkey_id = _user_strategy_pool_contract_asset_balance_id
+				RETURNING pkey_id
+						INTO _pkey_id;
+		END IF;
+
+		RETURN QUERY SELECT _pkey_id;
 END
 "#,
         ),

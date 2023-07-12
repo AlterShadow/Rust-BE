@@ -932,9 +932,6 @@ pub async fn user_back_strategy(
                     blockchain,
                     old_balance: old_amount.into(),
                     new_balance: new_amount.into(),
-                    amount: amount.into(),
-                    is_add: true,
-                    transaction_hash: deposit_transaction_hash.into(),
                 })
                 .await?;
             }
@@ -946,9 +943,6 @@ pub async fn user_back_strategy(
                     blockchain,
                     old_balance: U256::zero().into(),
                     new_balance: amount.into(),
-                    amount: amount.into(),
-                    is_add: true,
-                    transaction_hash: deposit_transaction_hash.into(),
                 })
                 .await?;
             }

@@ -1024,9 +1024,6 @@ pub async fn user_exit_strategy(
                 Ok(new_balance) => new_balance.into(),
                 Err(_) => U256::zero().into(),
             },
-            amount: amount.into(),
-            is_add: true,
-            transaction_hash: transaction_hash.into(),
         })
         .await?;
 
