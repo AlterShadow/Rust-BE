@@ -469,6 +469,15 @@ pub async fn handle_escrow_transaction(
         .get_to()
         .with_context(|| format!("no called address found for tx: {:?}", tx.get_hash()))?;
 
+    /* instantiate escrow contract */
+    let conn = state.eth_pool.get(blockchain).await?;
+    let escrow_contract = EscrowContract::new(
+        conn.eth(),
+        state
+            .escrow_addresses
+            .get(blockchain, ())
+            .context("could not find escrow contract address on this chain")?,
+    )?;
     /* check if transaction was made by a whitelisted wallet */
     let whitelisted_wallet = state
         .db
@@ -482,80 +491,68 @@ pub async fn handle_escrow_transaction(
         .await?
         .into_result();
 
-    match whitelisted_wallet {
-        Some(_) => {}
-        None => {
-            /* instantiate escrow contract */
-            let conn = state.eth_pool.get(blockchain).await?;
-            let escrow_contract = EscrowContract::new(
-                conn.eth(),
-                state
-                    .escrow_addresses
-                    .get(blockchain, ())
-                    .context("could not find escrow contract address on this chain")?,
-            )?;
-            /* escrow was not done by a whitelisted wallet, return it minus fees */
-            /* estimate gas of deposit rejection using dummy values */
-            let estimated_refund_gas = escrow_contract
-                .estimate_gas_reject_deposit(
-                    state.master_key.clone(),
-                    caller,
-                    called_address,
-                    escrow.amount.try_checked_sub(U256::one())?,
-                    state.master_key.address(),
-                    U256::one(),
-                )
-                .await?;
-
-            let estimated_gas_price = conn.eth().gas_price().await?;
-            let estimated_refund_fee = estimated_refund_gas.try_checked_mul(estimated_gas_price)?;
-            let estimated_refund_fee_in_escrow_token = calculate_gas_fee_in_tokens(
-                &state.cmc_client,
-                &conn,
-                &blockchain,
-                called_address,
-                estimated_refund_fee,
-            )
-            .await?;
-
-            if estimated_refund_fee_in_escrow_token >= escrow.amount {
-                // TODO: insert into a table non-registered tokens owned by the escrow contract
-                info!(
-                    "estimated refund fee {:?} is greater than escrow amount {:?}, not refunding",
-                    estimated_refund_fee_in_escrow_token, escrow.amount
-                );
-                return Ok(());
-            }
-
-            let refund_amount = escrow
-                .amount
-                .try_checked_sub(estimated_refund_fee_in_escrow_token)?;
-
-            // TODO: insert into a table tokens received by pending wallet
-            /* run actual reject transaction and transfer estimated fee to pending wallet */
-            reject_deposit_and_ensure_success(
-                escrow_contract,
-                &conn,
-                CONFIRMATIONS,
-                MAX_RETRIES,
-                POLL_INTERVAL,
+    if whitelisted_wallet.is_none() {
+        /* escrow was not done by a whitelisted wallet, return it minus fees */
+        /* estimate gas of deposit rejection using dummy values */
+        let estimated_refund_gas = escrow_contract
+            .estimate_gas_reject_deposit(
                 state.master_key.clone(),
                 caller,
                 called_address,
-                refund_amount,
+                escrow.amount.try_checked_sub(U256::one())?,
                 state.master_key.address(),
-                estimated_refund_fee_in_escrow_token,
-                DynLogger::empty(),
+                U256::one(),
             )
             .await?;
 
-            info!(
-                "escrow was not done by a whitelisted wallet, refunded {:?} tokens to {:?}",
-                refund_amount, caller
-            );
+        let estimated_gas_price = conn.eth().gas_price().await?;
+        let estimated_refund_fee = estimated_refund_gas.try_checked_mul(estimated_gas_price)?;
+        let estimated_refund_fee_in_escrow_token = calculate_gas_fee_in_tokens(
+            &state.cmc_client,
+            &conn,
+            &blockchain,
+            called_address,
+            estimated_refund_fee,
+        )
+        .await?;
 
+        if estimated_refund_fee_in_escrow_token >= escrow.amount {
+            // TODO: insert into a table non-registered tokens owned by the escrow contract
+            info!(
+                "estimated refund fee {:?} is greater than escrow amount {:?}, not refunding",
+                estimated_refund_fee_in_escrow_token, escrow.amount
+            );
             return Ok(());
         }
+
+        let refund_amount = escrow
+            .amount
+            .try_checked_sub(estimated_refund_fee_in_escrow_token)?;
+
+        // TODO: insert into a table tokens received by pending wallet
+        /* run actual reject transaction and transfer estimated fee to pending wallet */
+        reject_deposit_and_ensure_success(
+            escrow_contract,
+            &conn,
+            CONFIRMATIONS,
+            MAX_RETRIES,
+            POLL_INTERVAL,
+            state.master_key.clone(),
+            caller,
+            called_address,
+            refund_amount,
+            state.master_key.address(),
+            estimated_refund_fee_in_escrow_token,
+            DynLogger::empty(),
+        )
+        .await?;
+
+        info!(
+            "escrow was not done by a whitelisted wallet, refunded {:?} tokens to {:?}",
+            refund_amount, caller
+        );
+
+        return Ok(());
     }
 
     /* deposit was done by a whitelisted wallet, write it to contract and database */
