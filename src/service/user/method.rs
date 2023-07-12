@@ -32,10 +32,13 @@ use lib::toolbox::*;
 use lib::ws::SubscribeManager;
 use lib::{DEFAULT_LIMIT, DEFAULT_OFFSET};
 use lru::LruCache;
+use reqwest::get;
+use std::process::exit;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::Mutex;
 use tokio::time::sleep;
+use tracing::callsite::register;
 use tracing::{error, info};
 use web3::signing::Key;
 use web3::types::{Address, H256, U256};
@@ -629,7 +632,9 @@ impl RequestHandler for MethodUserListDepositWithdrawBalances {
     }
 }
 
-pub struct MethodUserGetDepositWithdrawBalance;
+pub struct MethodUserGetDepositWithdrawBalance {
+    pub escrow_addresses: Arc<EscrowAddresses>,
+}
 impl RequestHandler for MethodUserGetDepositWithdrawBalance {
     type Request = UserGetDepositWithdrawBalanceRequest;
 
@@ -640,7 +645,21 @@ impl RequestHandler for MethodUserGetDepositWithdrawBalance {
         req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
+        let escrow_addresses = self.escrow_addresses.clone();
         async move {
+            let token = db
+                .execute(FunUserListEscrowTokenContractAddressReq {
+                    limit: 1,
+                    blockchain: None,
+                    address: None,
+                    symbol: None,
+                    token_id: Some(req.token_id),
+                    offset: 0,
+                    is_stablecoin: None,
+                })
+                .await?
+                .into_result()
+                .with_context(|| CustomError::new(EnumErrorCode::NotFound, "no such token"))?;
             let balance = db
                 .execute(FunUserListUserDepositWithdrawBalanceReq {
                     limit: 1000,
@@ -649,7 +668,12 @@ impl RequestHandler for MethodUserGetDepositWithdrawBalance {
                     blockchain: None,
                     token_address: None,
                     token_id: Some(req.token_id),
-                    escrow_contract_address: None,
+                    escrow_contract_address: Some(
+                        escrow_addresses
+                            .get(token.blockchain, ())
+                            .context("no such blockchain")?
+                            .into(),
+                    ),
                 })
                 .await?
                 .into_result()
