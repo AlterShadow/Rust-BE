@@ -259,7 +259,7 @@ pub async fn handle_pancake_swap_transaction(
         .await?;
 
         /* trade token_in for token_out */
-        let trade_hash = copy_trade_and_ensure_success(
+        let pending_wallet_trade_receipt = copy_trade_and_ensure_success(
             pancake_contract,
             &conn,
             CONFIRMATIONS,
@@ -276,7 +276,11 @@ pub async fn handle_pancake_swap_transaction(
         /* parse trade to find amount_out */
         let strategy_pool_pending_wallet_trade = parse_dex_trade(
             blockchain,
-            &TransactionFetcher::new_and_assume_ready(trade_hash.transaction_hash, &conn).await?,
+            &TransactionFetcher::new_and_assume_ready(
+                pending_wallet_trade_receipt.transaction_hash,
+                &conn,
+            )
+            .await?,
             &state.dex_addresses,
             &state.pancake_swap,
         )
@@ -309,8 +313,7 @@ pub async fn handle_pancake_swap_transaction(
         )
         .await?;
 
-        // TODO: update strategy pool contract asset ledger when it is implemented
-        /* write new strategy pool contract asset balances to database */
+        /* update strategy pool contract asset balances & ledger */
         state
             .db
             .execute(FunWatcherUpsertStrategyPoolContractAssetBalanceReq {
@@ -354,7 +357,31 @@ pub async fn handle_pancake_swap_transaction(
             })
             .await?;
 
-        /* update user strategy pool contract asset balances & ledger */
+        state
+            .db
+            .execute(FunUserAddStrategyPoolContractAssetLedgerEntryReq {
+                strategy_pool_contract_id: strategy_pool_contract_row.pkey_id,
+                token_address: strategy_pool_pending_wallet_trade.token_in.into(),
+                blockchain: blockchain,
+                amount: strategy_pool_pending_wallet_trade.amount_in.into(),
+                transaction_hash: pending_wallet_trade_receipt.transaction_hash.into(),
+                is_add: false,
+            })
+            .await?;
+
+        state
+            .db
+            .execute(FunUserAddStrategyPoolContractAssetLedgerEntryReq {
+                strategy_pool_contract_id: strategy_pool_contract_row.pkey_id,
+                token_address: strategy_pool_pending_wallet_trade.token_out.into(),
+                blockchain: blockchain,
+                amount: strategy_pool_pending_wallet_trade.amount_out.into(),
+                transaction_hash: pending_wallet_trade_receipt.transaction_hash.into(),
+                is_add: true,
+            })
+            .await?;
+
+        /* update per-user strategy pool contract asset balances & ledger */
         update_user_strategy_pool_asset_balances_on_copy_trade(
             &state.db,
             blockchain,
@@ -364,7 +391,7 @@ pub async fn handle_pancake_swap_transaction(
             sp_asset_token_in_previous_amount,
             strategy_pool_pending_wallet_trade.token_out,
             strategy_pool_pending_wallet_trade.amount_out,
-            trade_hash.transaction_hash,
+            pending_wallet_trade_receipt.transaction_hash,
         )
         .await?;
 
