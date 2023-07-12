@@ -562,7 +562,7 @@ BEGIN
 	
 	SELECT usw.fkey_strategy_id INTO _strategy_id
 	FROM tbl.strategy_pool_contract AS usw
-	WHERE usw.pkey_id = a_strategy_wallet_id;
+	WHERE usw.pkey_id = a_strategy_pool_contract_id;
 	ASSERT _strategy_id IS NOT NULL;
     INSERT INTO tbl.strategy_pool_contract_asset_ledger (
         fkey_strategy_id,
