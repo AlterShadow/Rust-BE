@@ -937,7 +937,14 @@ pub struct AdminGetSystemConfigRequest {}
 #[serde(rename_all = "camelCase")]
 pub struct AdminGetSystemConfigResponse {
     pub platform_fee: f64,
-    pub config_placeholder_2: i64,
+    #[serde(with = "WithBlockchainAddress")]
+    pub escrow_contract_address_ethereum: Address,
+    #[serde(with = "WithBlockchainAddress")]
+    pub escrow_contract_address_goerli: Address,
+    #[serde(with = "WithBlockchainAddress")]
+    pub escrow_contract_address_bsc: Address,
+    #[serde(with = "WithBlockchainAddress")]
+    pub escrow_contract_address_bsc_testnet: Address,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1182,7 +1189,13 @@ pub struct AdminUpdateSystemConfigRequest {
     #[serde(default)]
     pub platform_fee: Option<f64>,
     #[serde(default)]
-    pub config_placeholder_2: Option<i64>,
+    pub escrow_contract_address_ethereum: Option<Address>,
+    #[serde(default)]
+    pub escrow_contract_address_goerli: Option<Address>,
+    #[serde(default)]
+    pub escrow_contract_address_bsc: Option<Address>,
+    #[serde(default)]
+    pub escrow_contract_address_bsc_testnet: Option<Address>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -8675,8 +8688,20 @@ impl WsRequest for AdminGetSystemConfigRequest {
       "ty": "Numeric"
     },
     {
-      "name": "config_placeholder_2",
-      "ty": "BigInt"
+      "name": "escrow_contract_address_ethereum",
+      "ty": "BlockchainAddress"
+    },
+    {
+      "name": "escrow_contract_address_goerli",
+      "ty": "BlockchainAddress"
+    },
+    {
+      "name": "escrow_contract_address_bsc",
+      "ty": "BlockchainAddress"
+    },
+    {
+      "name": "escrow_contract_address_bsc_testnet",
+      "ty": "BlockchainAddress"
     }
   ],
   "stream_response": null,
@@ -8702,9 +8727,27 @@ impl WsRequest for AdminUpdateSystemConfigRequest {
       }
     },
     {
-      "name": "config_placeholder_2",
+      "name": "escrow_contract_address_ethereum",
       "ty": {
-        "Optional": "BigInt"
+        "Optional": "BlockchainAddress"
+      }
+    },
+    {
+      "name": "escrow_contract_address_goerli",
+      "ty": {
+        "Optional": "BlockchainAddress"
+      }
+    },
+    {
+      "name": "escrow_contract_address_bsc",
+      "ty": {
+        "Optional": "BlockchainAddress"
+      }
+    },
+    {
+      "name": "escrow_contract_address_bsc_testnet",
+      "ty": {
+        "Optional": "BlockchainAddress"
       }
     }
   ],

@@ -110,7 +110,13 @@ pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
             vec![],
             vec![
                 Field::new("platform_fee", Type::Numeric),
-                Field::new("config_placeholder_2", Type::BigInt),
+                Field::new("escrow_contract_address_ethereum", Type::BlockchainAddress),
+                Field::new("escrow_contract_address_goerli", Type::BlockchainAddress),
+                Field::new("escrow_contract_address_bsc", Type::BlockchainAddress),
+                Field::new(
+                    "escrow_contract_address_bsc_testnet",
+                    Type::BlockchainAddress,
+                ),
             ],
         )
         .with_description("Admin get system config"),
@@ -119,7 +125,22 @@ pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
             30080,
             vec![
                 Field::new("platform_fee", Type::optional(Type::Numeric)),
-                Field::new("config_placeholder_2", Type::optional(Type::BigInt)),
+                Field::new(
+                    "escrow_contract_address_ethereum",
+                    Type::optional(Type::BlockchainAddress),
+                ),
+                Field::new(
+                    "escrow_contract_address_goerli",
+                    Type::optional(Type::BlockchainAddress),
+                ),
+                Field::new(
+                    "escrow_contract_address_bsc",
+                    Type::optional(Type::BlockchainAddress),
+                ),
+                Field::new(
+                    "escrow_contract_address_bsc_testnet",
+                    Type::optional(Type::BlockchainAddress),
+                ),
             ],
             vec![Field::new("success", Type::Boolean)],
         )

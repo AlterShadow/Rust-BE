@@ -235,22 +235,44 @@ impl RequestHandler for MethodAdminGetSystemConfig {
         let db: DbClient = toolbox.get_db();
         async move {
             ensure_user_role(ctx, EnumRole::Admin)?;
-
-            if let Some(ret) = db
+            let ret = db
                 .execute(FunAdminGetSystemConfigReq { config_id: 0 })
                 .await?
-                .into_result()
-            {
-                Ok(AdminGetSystemConfigResponse {
-                    platform_fee: ret.platform_fee.unwrap_or_default(),
-                    config_placeholder_2: ret.config_placeholder_2.unwrap_or_default(),
-                })
-            } else {
-                Ok(AdminGetSystemConfigResponse {
-                    platform_fee: 0.0,
-                    config_placeholder_2: 0,
-                })
-            }
+                .into_result();
+            let escrow_contract_address = db
+                .execute(FunUserListEscrowContractAddressReqReq { blockchain: None })
+                .await?;
+            Ok(AdminGetSystemConfigResponse {
+                platform_fee: ret
+                    .as_ref()
+                    .map(|x| x.platform_fee)
+                    .flatten()
+                    .unwrap_or_default(),
+                escrow_contract_address_ethereum: escrow_contract_address
+                    .iter()
+                    .find(|x| x.blockchain == EnumBlockChain::EthereumMainnet)
+                    .map(|x| x.address)
+                    .unwrap_or_default()
+                    .into(),
+                escrow_contract_address_goerli: escrow_contract_address
+                    .iter()
+                    .find(|x| x.blockchain == EnumBlockChain::EthereumGoerli)
+                    .map(|x| x.address)
+                    .unwrap_or_default()
+                    .into(),
+                escrow_contract_address_bsc: escrow_contract_address
+                    .iter()
+                    .find(|x| x.blockchain == EnumBlockChain::BscMainnet)
+                    .map(|x| x.address)
+                    .unwrap_or_default()
+                    .into(),
+                escrow_contract_address_bsc_testnet: escrow_contract_address
+                    .iter()
+                    .find(|x| x.blockchain == EnumBlockChain::BscTestnet)
+                    .map(|x| x.address)
+                    .unwrap_or_default()
+                    .into(),
+            })
         }
         .boxed()
     }
@@ -273,7 +295,7 @@ impl RequestHandler for MethodAdminUpdateSystemConfig {
                 .execute(FunAdminUpdateSystemConfigReq {
                     config_id: 0,
                     platform_fee: req.platform_fee,
-                    config_placeholder_2: req.config_placeholder_2,
+                    config_placeholder_2: None,
                 })
                 .await?;
 

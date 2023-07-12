@@ -5458,8 +5458,20 @@
               "ty": "Numeric"
             },
             {
-              "name": "config_placeholder_2",
-              "ty": "BigInt"
+              "name": "escrow_contract_address_ethereum",
+              "ty": "BlockchainAddress"
+            },
+            {
+              "name": "escrow_contract_address_goerli",
+              "ty": "BlockchainAddress"
+            },
+            {
+              "name": "escrow_contract_address_bsc",
+              "ty": "BlockchainAddress"
+            },
+            {
+              "name": "escrow_contract_address_bsc_testnet",
+              "ty": "BlockchainAddress"
             }
           ],
           "stream_response": null,
@@ -5477,9 +5489,27 @@
               }
             },
             {
-              "name": "config_placeholder_2",
+              "name": "escrow_contract_address_ethereum",
               "ty": {
-                "Optional": "BigInt"
+                "Optional": "BlockchainAddress"
+              }
+            },
+            {
+              "name": "escrow_contract_address_goerli",
+              "ty": {
+                "Optional": "BlockchainAddress"
+              }
+            },
+            {
+              "name": "escrow_contract_address_bsc",
+              "ty": {
+                "Optional": "BlockchainAddress"
+              }
+            },
+            {
+              "name": "escrow_contract_address_bsc_testnet",
+              "ty": {
+                "Optional": "BlockchainAddress"
               }
             }
           ],

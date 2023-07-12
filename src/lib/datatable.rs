@@ -426,6 +426,9 @@ impl<T> RDataTable<T> {
     pub fn into_iter(self) -> impl Iterator<Item = T> {
         self.rows.into_iter()
     }
+    pub fn iter(&self) -> impl Iterator<Item = &T> {
+        self.rows.iter()
+    }
     pub fn len(&self) -> usize {
         self.rows.len()
     }
