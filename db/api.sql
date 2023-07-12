@@ -2130,7 +2130,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_get_user_by_address(a_address varchar)
+CREATE OR REPLACE FUNCTION api.fun_user_get_user_by_address(a_address varchar, a_blockchain enum_block_chain)
 RETURNS table (
     "user_id" bigint,
     "user_public_id" bigint,
@@ -2142,7 +2142,26 @@ RETURNS table (
 LANGUAGE plpgsql
 AS $$
     
+DECLARE
+		_user_id BIGINT;
 BEGIN
+		-- search for user id in user table by address
+		SELECT pkey_id INTO _user_id FROM tbl.user AS a WHERE a.address = a_address;
+
+		-- if address is not registered in user table, search for a whitelisted wallet
+		IF _user_id IS NULL THEN
+					SELECT uww.fkey_user_id INTO _user_id FROM tbl.user_whitelisted_wallet AS uww
+							WHERE uww.address = a_address AND uww.blockchain = a_blockchain;
+		END IF;
+
+		-- if address not whitelisted, search for previously whitelisted addresses in the ledger
+		IF _user_id IS NULL THEN
+					SELECT udwl.fkey_user_id INTO _user_id FROM tbl.user_deposit_withdraw_ledger AS udwl
+							WHERE udwl.user_address = a_address AND udwl.blockchain = a_blockchain;
+		END IF;
+
+		ASSERT _user_id IS NOT NULL;
+
     RETURN QUERY SELECT 
             a.pkey_id, 
             a.public_id,
@@ -2150,7 +2169,7 @@ BEGIN
             a.family_name,
             a.given_name, 
             a.created_at 
-            FROM tbl.user AS a WHERE a.address = a_address;
+            FROM tbl.user AS a WHERE a.pkey_id = _user_id;
 END
             
 $$;

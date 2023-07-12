@@ -1604,7 +1604,10 @@ END
         ),
         ProceduralFunction::new(
             "fun_user_get_user_by_address",
-            vec![Field::new("address", Type::BlockchainAddress)],
+            vec![
+                Field::new("address", Type::BlockchainAddress),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+            ],
             vec![
                 Field::new("user_id", Type::BigInt),
                 Field::new("user_public_id", Type::BigInt),
@@ -1613,9 +1616,27 @@ END
                 Field::new("given_name", Type::optional(Type::String)),
                 Field::new("joined_at", Type::BigInt),
             ],
-            // TODO: it should later looking up user_registered_wallet table
             r#"
+DECLARE
+		_user_id BIGINT;
 BEGIN
+		-- search for user id in user table by address
+		SELECT pkey_id INTO _user_id FROM tbl.user AS a WHERE a.address = a_address;
+
+		-- if address is not registered in user table, search for a whitelisted wallet
+		IF _user_id IS NULL THEN
+					SELECT uww.fkey_user_id INTO _user_id FROM tbl.user_whitelisted_wallet AS uww
+							WHERE uww.address = a_address AND uww.blockchain = a_blockchain;
+		END IF;
+
+		-- if address not whitelisted, search for previously whitelisted addresses in the ledger
+		IF _user_id IS NULL THEN
+					SELECT udwl.fkey_user_id INTO _user_id FROM tbl.user_deposit_withdraw_ledger AS udwl
+							WHERE udwl.user_address = a_address AND udwl.blockchain = a_blockchain;
+		END IF;
+
+		ASSERT _user_id IS NOT NULL;
+
     RETURN QUERY SELECT 
             a.pkey_id, 
             a.public_id,
@@ -1623,7 +1644,7 @@ BEGIN
             a.family_name,
             a.given_name, 
             a.created_at 
-            FROM tbl.user AS a WHERE a.address = a_address;
+            FROM tbl.user AS a WHERE a.pkey_id = _user_id;
 END
             "#,
         ),

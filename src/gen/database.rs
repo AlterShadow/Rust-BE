@@ -2210,16 +2210,20 @@ impl DatabaseRequest for FunUserListDepositWithdrawLedgerReq {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserGetUserByAddressReq {
     pub address: BlockchainAddress,
+    pub blockchain: EnumBlockChain,
 }
 
 #[allow(unused_variables)]
 impl DatabaseRequest for FunUserGetUserByAddressReq {
     type ResponseRow = FunUserGetUserByAddressRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_get_user_by_address(a_address => $1::varchar);"
+        "SELECT * FROM api.fun_user_get_user_by_address(a_address => $1::varchar, a_blockchain => $2::enum_block_chain);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
-        vec![&self.address as &(dyn ToSql + Sync)]
+        vec![
+            &self.address as &(dyn ToSql + Sync),
+            &self.blockchain as &(dyn ToSql + Sync),
+        ]
     }
 }
 

@@ -586,6 +586,7 @@ pub async fn handle_escrow_transaction(
         .db
         .execute(FunUserGetUserByAddressReq {
             address: caller.into(),
+            blockchain: blockchain,
         })
         .await?
         .into_result()
