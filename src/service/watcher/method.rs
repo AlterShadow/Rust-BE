@@ -10,7 +10,8 @@ use eth_sdk::dex_tracker::{
 };
 use eth_sdk::erc20::{approve_and_ensure_success, Erc20Token};
 use eth_sdk::escrow::{
-    accept_deposit_and_ensure_success, reject_deposit_and_ensure_success, EscrowContract,
+    accept_deposit_and_ensure_success, parse_escrow_withdraw_event,
+    reject_deposit_and_ensure_success, EscrowContract,
 };
 use eth_sdk::escrow_tracker::escrow::parse_escrow;
 use eth_sdk::evm::parse_quickalert_payload;
@@ -719,6 +720,138 @@ pub async fn calculate_gas_fee_in_tokens(
         .mul_div(U256::exp10(token_decimals.as_usize()), U256::exp10(18))?;
 
     Ok(gas_fee_in_tokens)
+}
+
+pub async fn handle_eth_withdraws(
+    state: Arc<AppState>,
+    body: Bytes,
+    blockchain: EnumBlockChain,
+) -> Result<(), StatusCode> {
+    let hashes = parse_quickalert_payload(body).map_err(|e| {
+        error!("failed to parse QuickAlerts payload: {:?}", e);
+        StatusCode::BAD_REQUEST
+    })?;
+
+    for hash in hashes {
+        let conn = state.eth_pool.get(blockchain).await.map_err(|err| {
+            error!("error fetching connection guard: {}", err);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+        let state = state.clone();
+        tokio::spawn(async move {
+            /* the transactions from the quickalerts payload might not be yet mined */
+            match wait_for_confirmations_simple(&conn.eth(), hash, Duration::from_secs(10), 10)
+                .await
+            {
+                Ok(_) => {}
+                Err(e) => {
+                    error!("swap tx was not mined: {:?}", e);
+                    return;
+                }
+            }
+            // TODO: wait for confirmations blocks before processing to properly handle ommer blocks & reorgs
+            let tx = match TransactionFetcher::new_and_assume_ready(hash, &conn).await {
+                Ok(tx) => tx,
+                Err(err) => {
+                    error!("error processing tx: {:?}", err);
+                    return;
+                }
+            };
+            if let Err(e) = evm::cache_ethereum_transaction(&tx, &state.db, blockchain).await {
+                error!("error caching transaction: {:?}", e);
+            };
+            match handle_pancake_swap_transaction(state.clone(), blockchain, tx).await {
+                Ok(_) => {}
+                Err(e) => {
+                    error!("error handling swap: {:?}", e);
+                }
+            }
+        });
+    }
+
+    Ok(())
+}
+
+pub async fn handle_withdraw_transaction(
+    state: Arc<AppState>,
+    blockchain: EnumBlockChain,
+    tx: TransactionReady,
+) -> Result<()> {
+    /* parse withdraw event, check it was emitted by the escrow contract */
+    let escrow_contract_address = state
+        .escrow_addresses
+        .get(blockchain, ())
+        .context("could not find escrow contract address on withdraw handler")?;
+    let withdraw = parse_escrow_withdraw_event(escrow_contract_address, tx.get_receipt().clone())?;
+
+    /* get user */
+    let user = match state
+        .db
+        .execute(FunUserGetUserByAddressReq {
+            address: withdraw.proprietor.into(),
+            blockchain: blockchain,
+        })
+        .await?
+        .into_result()
+    {
+        Some(user) => user,
+        None => {
+            info!("no user has address: {:?}", withdraw.proprietor);
+            return Ok(());
+        }
+    };
+
+    /* update user deposit withdraw balance & ledger */
+    state
+        .db
+        .execute(FunUserAddUserDepositWithdrawLedgerEntryReq {
+            user_id: user.user_id,
+            quantity: withdraw.amount.into(),
+            blockchain,
+            user_address: withdraw.proprietor.into(),
+            token_address: withdraw.asset.into(),
+            escrow_contract_address: escrow_contract_address.into(),
+            transaction_hash: tx.get_hash().into(),
+            receiver_address: withdraw.proprietor.into(),
+            is_deposit: false,
+            is_back: false,
+            is_withdraw: true,
+        })
+        .await
+        .context("error inserting withdraw in ledger")?;
+
+    let old_balance: U256 = state
+        .db
+        .execute(FunUserListUserDepositWithdrawBalanceReq {
+            limit: 1,
+            offset: 0,
+            user_id: user.user_id,
+            blockchain: Some(blockchain),
+            token_address: Some(withdraw.asset.into()),
+            token_id: None,
+            escrow_contract_address: Some(escrow_contract_address.into()),
+        })
+        .await?
+        .into_result()
+        .map(|x| x.balance)
+        .unwrap_or_default()
+        .into();
+    let new_balance = old_balance
+        .try_checked_sub(withdraw.amount)
+        .unwrap_or(U256::zero());
+    state
+        .db
+        .execute(FunWatcherUpsertUserDepositWithdrawBalanceReq {
+            user_id: user.user_id,
+            blockchain,
+            old_balance: old_balance.into(),
+            new_balance: new_balance.into(),
+            token_address: withdraw.asset.into(),
+            escrow_contract_address: escrow_contract_address.into(),
+        })
+        .await?;
+
+    Ok(())
 }
 
 #[cfg(test)]
