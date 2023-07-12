@@ -10,6 +10,7 @@ use eth_sdk::{
 use eyre::*;
 use lib::database::DbClient;
 use lib::ws::WsClient;
+use mc2fi_user::method::load_escrow_address;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use web3::ethabi::Contract;
@@ -20,14 +21,14 @@ pub struct AppState {
     pub pancake_swap: PancakeSwap,
     pub db: DbClient,
     pub token_addresses: Arc<BlockchainCoinAddresses>,
-    pub escrow_addresses: EscrowAddresses,
+    pub escrow_addresses: Arc<EscrowAddresses>,
     pub erc_20: Contract,
     pub master_key: Secp256k1SecretKey,
     pub admin_client: Option<Mutex<WsClient>>,
     pub cmc_client: CoinMarketCap,
 }
 impl AppState {
-    pub fn new(
+    pub async fn new(
         db: DbClient,
         eth_pool: EthereumRpcConnectionPool,
         master_key: Secp256k1SecretKey,
@@ -39,10 +40,10 @@ impl AppState {
             dex_addresses: DexAddresses::new(),
             eth_pool,
             pancake_swap: build_pancake_swap()?,
+            escrow_addresses: load_escrow_address(&db).await?,
             db,
             token_addresses,
             erc_20: build_erc_20()?,
-            escrow_addresses: EscrowAddresses::new(),
             master_key,
             admin_client: Some(Mutex::new(admin_client)),
             cmc_client,

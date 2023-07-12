@@ -68,14 +68,9 @@ async fn main() -> Result<()> {
         .route("/eth-goerli-escrows", post(handle_eth_escrows_goerli))
         .route("/bsc-mainnet-swaps", post(handle_bsc_swap_mainnet))
         .route("/bsc-mainnet-escrows", post(handle_bsc_escrows_mainnet))
-        .with_state(Arc::new(AppState::new(
-            db,
-            eth_pool,
-            master_key,
-            client,
-            cmc_client,
-            coin_addresses,
-        )?));
+        .with_state(Arc::new(
+            AppState::new(db, eth_pool, master_key, client, cmc_client, coin_addresses).await?,
+        ));
 
     let addr = tokio::net::lookup_host((config.host.as_ref(), config.port))
         .await?
