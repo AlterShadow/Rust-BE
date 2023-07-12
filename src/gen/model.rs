@@ -1715,6 +1715,9 @@ pub struct StrategyPoolAssetBalancesRow {
     pub blockchain: EnumBlockChain,
     #[serde(with = "WithBlockchainDecimal")]
     pub balance: U256,
+    pub price_usd: f64,
+    pub price_usd_7d: f64,
+    pub price_usd_30d: f64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1974,6 +1977,9 @@ pub struct UserGetStrategiesStatisticsAumListHistory {
     pub quantity: U256,
     pub quantity_usd: f64,
     pub happened_at: i64,
+    pub current_price_usd: f64,
+    pub price_change_7d: f64,
+    pub price_change_30d: f64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1999,6 +2005,9 @@ pub struct UserGetStrategiesStatisticsStrategyPoolToken {
     #[serde(with = "WithBlockchainDecimal")]
     pub total_quantity: U256,
     pub total_quantity_usd: f64,
+    pub current_price_usd: f64,
+    pub price_change_7d: f64,
+    pub price_change_30d: f64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -3782,6 +3791,18 @@ impl WsRequest for UserGetStrategyRequest {
             {
               "name": "balance",
               "ty": "BlockchainDecimal"
+            },
+            {
+              "name": "price_usd",
+              "ty": "Numeric"
+            },
+            {
+              "name": "price_usd_7d",
+              "ty": "Numeric"
+            },
+            {
+              "name": "price_usd_30d",
+              "ty": "Numeric"
             }
           ]
         }
@@ -4023,6 +4044,18 @@ impl WsRequest for UserGetStrategiesStatisticsRequest {
             {
               "name": "total_quantity_usd",
               "ty": "Numeric"
+            },
+            {
+              "name": "current_price_usd",
+              "ty": "Numeric"
+            },
+            {
+              "name": "price_change_7d",
+              "ty": "Numeric"
+            },
+            {
+              "name": "price_change_30d",
+              "ty": "Numeric"
             }
           ]
         }
@@ -4061,6 +4094,18 @@ impl WsRequest for UserGetStrategiesStatisticsRequest {
             {
               "name": "happened_at",
               "ty": "BigInt"
+            },
+            {
+              "name": "current_price_usd",
+              "ty": "Numeric"
+            },
+            {
+              "name": "price_change_7d",
+              "ty": "Numeric"
+            },
+            {
+              "name": "price_change_30d",
+              "ty": "Numeric"
             }
           ]
         }

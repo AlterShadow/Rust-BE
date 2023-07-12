@@ -281,13 +281,13 @@ impl CoinMarketCap {
 
 
         */
-    pub async fn get_usd_price_30days_ago(&self, symbol: String) -> Result<f64> {
+    pub async fn get_usd_price_days_ago(&self, symbol: String, days: u32) -> Result<f64> {
         let mut url = self.quotes_historical_url();
         let today = Utc::now();
-        let a_month_ago = today - Duration::days(30);
+        let ago = today - Duration::days(days as i64);
 
         self.append_url_params(&mut url, "symbol", &[symbol.clone()]);
-        self.append_url_params(&mut url, "time_start", &[a_month_ago.to_rfc3339()]);
+        self.append_url_params(&mut url, "time_start", &[ago.to_rfc3339()]);
         self.append_url_params(&mut url, "interval", &["daily".to_string()]);
         self.append_url_params(&mut url, "count", &["1".to_string()]);
         let payload = &self
@@ -415,7 +415,7 @@ mod tests {
     async fn test_get_price_in_usd_30_days_ago() -> Result<()> {
         setup_logs(LogLevel::Info)?;
         let cmc = CoinMarketCap::new_debug_key().unwrap();
-        let price = cmc.get_usd_price_30days_ago("ETH".to_string()).await?;
+        let price = cmc.get_usd_price_days_ago("ETH".to_string()).await?;
         println!("PRICE: {:?}", price);
         assert!(price > 0.0);
         Ok(())

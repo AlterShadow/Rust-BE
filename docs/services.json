@@ -1072,6 +1072,18 @@
                     {
                       "name": "balance",
                       "ty": "BlockchainDecimal"
+                    },
+                    {
+                      "name": "price_usd",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "price_usd_7d",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "price_usd_30d",
+                      "ty": "Numeric"
                     }
                   ]
                 }
@@ -1297,6 +1309,18 @@
                     {
                       "name": "total_quantity_usd",
                       "ty": "Numeric"
+                    },
+                    {
+                      "name": "current_price_usd",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "price_change_7d",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "price_change_30d",
+                      "ty": "Numeric"
                     }
                   ]
                 }
@@ -1335,6 +1359,18 @@
                     {
                       "name": "happened_at",
                       "ty": "BigInt"
+                    },
+                    {
+                      "name": "current_price_usd",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "price_change_7d",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "price_change_30d",
+                      "ty": "Numeric"
                     }
                   ]
                 }

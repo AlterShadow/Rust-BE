@@ -53,6 +53,11 @@ pub async fn convert_strategy_db_to_api_net_value(
 ) -> Result<ListStrategiesRow> {
     let mut value = convert_strategy_db_to_api(x);
     let mut usd = 0.0;
+    info!(
+        "Querying strategy pool tokens {} {:?}",
+        value.strategy_id, value.blockchain
+    );
+
     let tokens = db
         .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
             strategy_pool_contract_id: None,
@@ -61,6 +66,7 @@ pub async fn convert_strategy_db_to_api_net_value(
             token_address: None,
         })
         .await?;
+    info!("Tokens {:?}", tokens);
     let symbols = tokens.clone().map(|x| x.token_symbol);
     let prices = cmc.get_usd_prices_by_symbol(&symbols).await?;
     for (token, price) in tokens.into_iter().zip(prices) {

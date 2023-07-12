@@ -322,6 +322,22 @@ impl RequestHandler for MethodUserGetStrategy {
                 })
                 .await?
                 .into_rows();
+            let list_strategy_pool_contract_asset_balances = db
+                .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
+                    strategy_pool_contract_id: None,
+                    strategy_id: Some(req.strategy_id),
+                    blockchain: None,
+                    token_address: None,
+                })
+                .await?;
+            let token_symbols = list_strategy_pool_contract_asset_balances
+                .clone()
+                .map(|x| x.token_symbol);
+            let prices = cmc
+                .get_usd_prices_by_symbol(&token_symbols)
+                .await
+                .context("failed to get price")?;
+
             Ok(UserGetStrategyResponse {
                 strategy: convert_strategy_db_to_api_net_value(ret, &cmc, &db).await?,
                 watching_wallets: db
@@ -339,13 +355,37 @@ impl RequestHandler for MethodUserGetStrategy {
                     .last()
                     .map(|x| x.happened_at)
                     .unwrap_or_else(|| Utc::now().timestamp_nanos()),
-                strategy_pool_asset_balances: balances.map(|x| StrategyPoolAssetBalancesRow {
-                    name: x.token_name,
-                    symbol: x.token_symbol,
-                    address: x.token_address.into(),
-                    blockchain: x.blockchain,
-                    balance: x.balance.into(),
-                }),
+                strategy_pool_asset_balances: balances
+                    .map_async(|x| {
+                        let cmc = &cmc;
+                        let token_symbols = &token_symbols;
+                        let prices = &prices;
+                        async move {
+                            let price_usd = token_symbols
+                                .iter()
+                                .zip(prices.iter())
+                                .find(|(k, _v)| k.as_str() == x.token_symbol.as_str())
+                                .map(|y| *y.1)
+                                .unwrap_or_default();
+                            let price_usd_7d = cmc
+                                .get_usd_price_days_ago(x.token_symbol.clone(), 7)
+                                .await?;
+                            let price_usd_30d = cmc
+                                .get_usd_price_days_ago(x.token_symbol.clone(), 30)
+                                .await?;
+                            Ok(StrategyPoolAssetBalancesRow {
+                                name: x.token_name,
+                                symbol: x.token_symbol,
+                                address: x.token_address.into(),
+                                blockchain: x.blockchain,
+                                balance: x.balance.into(),
+                                price_usd,
+                                price_usd_7d,
+                                price_usd_30d,
+                            })
+                        }
+                    })
+                    .await?,
                 strategy_pool_asset_ledger: ledger
                     .into_iter()
                     .map(|x| StrategyPoolAssetLedgerRow {
@@ -504,31 +544,14 @@ impl RequestHandler for MethodUserGetStrategiesStatistics {
                 .zip(prices.into_iter())
                 .map(|(x, price)| x.balance.0.div_as_f64(U256::exp10(18)).unwrap() * price)
                 .sum();
-            let tokens = db
-                .execute(FunUserListUserStrategyPoolContractAssetBalancesReq {
-                    strategy_pool_contract_id: None,
-                    user_id: None,
-                    strategy_wallet_id: None,
-                    token_address: None,
-                    blockchain: None,
-                })
-                .await?;
             Ok(UserGetStrategiesStatisticsResponse {
                 tracking_amount_usd: 0.0,
                 backing_amount_usd,
                 difference_amount_usd: 0.0,
                 aum_value_usd: strategies.iter().map(|x| x.aum).sum(),
-                current_value_usd: 0.0,
-                withdrawable_value_usd: 0.0,
-                strategy_pool_tokens: tokens.map(|x| {
-                    UserGetStrategiesStatisticsStrategyPoolToken {
-                        token_id: x.token_id,
-                        token_name: x.token_name,
-                        token_symbol: x.token_symbol,
-                        total_quantity: x.balance.into(),
-                        total_quantity_usd: 0.0, // TODO: get price
-                    }
-                }),
+                current_value_usd: backing_amount_usd,
+                withdrawable_value_usd: backing_amount_usd,
+                strategy_pool_tokens: vec![],
                 aum_list_history: vec![], // TODO: get history
             })
         }
