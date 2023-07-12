@@ -126,7 +126,7 @@ impl<T: Transport> EscrowContract<T> {
         let estimated_gas = self
             .contract
             .estimate_gas(
-                EscrowFunctions::RejectDeposit.as_str(),
+                EscrowFunctions::AcceptDeposit.as_str(),
                 (proprietor, asset, amount),
                 signer.address(),
                 Options::default(),
