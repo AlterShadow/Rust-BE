@@ -880,6 +880,7 @@ pub async fn user_back_strategy(
     })
     .await?;
     for (token, amount) in trades.clone() {
+        /* update strategy pool contract asset balances & ledger */
         let sp_asset_token = db
             .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
                 strategy_pool_contract_id: Some(strategy_pool_contract_id),
@@ -901,7 +902,17 @@ pub async fn user_back_strategy(
         })
         .await?;
 
-        /* update user strategy pool contract asset balance & add entry to ledger */
+        db.execute(FunUserAddStrategyPoolContractAssetLedgerEntryReq {
+            strategy_pool_contract_id,
+            token_address: token.into(),
+            blockchain,
+            amount: amount.into(),
+            transaction_hash: deposit_transaction_hash.into(),
+            is_add: true,
+        })
+        .await?;
+
+        /* update per-user strategy pool contract asset balances & ledger */
         let strategy_wallet_row = db
             .execute(FunUserListStrategyWalletsReq {
                 user_id: ctx.user_id,
