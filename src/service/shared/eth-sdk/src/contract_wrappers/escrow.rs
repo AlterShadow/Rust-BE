@@ -266,6 +266,41 @@ impl<T: Transport> EscrowContract<T> {
         Ok(tx_hash)
     }
 
+    pub async fn withdraw(
+        &self,
+        conn: &EthereumRpcConnection,
+        signer: impl Key,
+        asset: Address,
+        amount: U256,
+    ) -> Result<H256> {
+        let estimated_gas = self
+            .contract
+            .estimate_gas(
+                EscrowFunctions::Withdraw.as_str(),
+                (asset, amount),
+                signer.address(),
+                Options::default(),
+            )
+            .await?;
+
+        let estimated_gas_price = conn.eth().gas_price().await?;
+
+        let tx_hash = self
+            .contract
+            .signed_call(
+                EscrowFunctions::Withdraw.as_str(),
+                (asset, amount),
+                Options::with(|options| {
+                    options.gas = Some(estimated_gas);
+                    options.gas_price = Some(estimated_gas_price);
+                }),
+                signer,
+            )
+            .await?;
+
+        Ok(tx_hash)
+    }
+
     pub async fn transfer_asset_from(
         &self,
         conn: &EthereumRpcConnection,
@@ -660,6 +695,7 @@ enum EscrowFunctions {
     AssetsAndBalances,
     AcceptDeposit,
     RejectDeposit,
+    Withdraw,
     TransferAssetFrom,
     RefundAsset,
     RescueAssets,
@@ -679,6 +715,7 @@ impl EscrowFunctions {
             Self::AssetsAndBalances => "assetsAndBalances",
             Self::AcceptDeposit => "acceptDeposit",
             Self::RejectDeposit => "rejectDeposit",
+            Self::Withdraw => "withdraw",
             Self::TransferAssetFrom => "transferAssetFrom",
             Self::RefundAsset => "refundAsset",
             Self::RescueAssets => "rescueAssets",
