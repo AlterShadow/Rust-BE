@@ -299,6 +299,34 @@ impl RequestHandler for MethodAdminUpdateSystemConfig {
                     config_placeholder_2: None,
                 })
                 .await?;
+            if let Some(addr) = req.escrow_contract_address_ethereum {
+                db.execute(FunAdminUpdateEscrowContractAddressReq {
+                    blockchain: EnumBlockChain::EthereumMainnet,
+                    address: addr.into(),
+                })
+                .await?;
+            }
+            if let Some(addr) = req.escrow_contract_address_goerli {
+                db.execute(FunAdminUpdateEscrowContractAddressReq {
+                    blockchain: EnumBlockChain::EthereumGoerli,
+                    address: addr.into(),
+                })
+                .await?;
+            }
+            if let Some(addr) = req.escrow_contract_address_bsc {
+                db.execute(FunAdminUpdateEscrowContractAddressReq {
+                    blockchain: EnumBlockChain::BscMainnet,
+                    address: addr.into(),
+                })
+                .await?;
+            }
+            if let Some(addr) = req.escrow_contract_address_bsc_testnet {
+                db.execute(FunAdminUpdateEscrowContractAddressReq {
+                    blockchain: EnumBlockChain::BscTestnet,
+                    address: addr.into(),
+                })
+                .await?;
+            }
 
             Ok(AdminUpdateSystemConfigResponse { success: true })
         }

@@ -520,5 +520,20 @@ BEGIN
 END
             "#,
         ),
+        ProceduralFunction::new(
+            "fun_admin_update_escrow_contract_address",
+            vec![
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("address", Type::BlockchainAddress),
+            ],
+            vec![],
+            r#"
+BEGIN
+    UPDATE tbl.escrow_contract_address
+         SET address = a_address
+         WHERE blockchain = a_blockchain;
+END
+            "#,
+        ),
     ]
 }

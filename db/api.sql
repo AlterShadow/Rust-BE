@@ -3189,6 +3189,20 @@ END
 $$;
         
 
+CREATE OR REPLACE FUNCTION api.fun_admin_update_escrow_contract_address(a_blockchain enum_block_chain, a_address varchar)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    UPDATE tbl.escrow_contract_address
+         SET address = a_address
+         WHERE blockchain = a_blockchain;
+END
+            
+$$;
+        
+
 CREATE OR REPLACE FUNCTION api.fun_watcher_save_raw_transaction(a_transaction_hash varchar, a_blockchain enum_block_chain, a_raw_transaction varchar, a_dex varchar DEFAULT NULL)
 RETURNS table (
     "transaction_cache_id" bigint

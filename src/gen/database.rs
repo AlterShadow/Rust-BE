@@ -115,6 +115,9 @@ pub struct FunAdminSetBlockUserRespRow {}
 pub struct FunAdminSetUserRoleRespRow {}
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunAdminUpdateEscrowContractAddressRespRow {}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunAdminUpdateSystemConfigRespRow {}
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -3119,6 +3122,26 @@ impl DatabaseRequest for FunWatcherSaveUserDepositWithdrawLedgerReq {
             &self.receiver_address as &(dyn ToSql + Sync),
             &self.quantity as &(dyn ToSql + Sync),
             &self.transaction_hash as &(dyn ToSql + Sync),
+        ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAdminUpdateEscrowContractAddressReq {
+    pub blockchain: EnumBlockChain,
+    pub address: BlockchainAddress,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunAdminUpdateEscrowContractAddressReq {
+    type ResponseRow = FunAdminUpdateEscrowContractAddressRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_admin_update_escrow_contract_address(a_blockchain => $1::enum_block_chain, a_address => $2::varchar);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.blockchain as &(dyn ToSql + Sync),
+            &self.address as &(dyn ToSql + Sync),
         ]
     }
 }
