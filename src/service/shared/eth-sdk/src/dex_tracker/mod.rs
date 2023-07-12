@@ -117,7 +117,6 @@ pub async fn update_user_strategy_pool_asset_balances_on_copy_trade(
     sp_sold_asset_previous_amount: U256,
     sp_bought_asset_address: Address,
     sp_bought_asset_amount: U256,
-    transaction_hash: H256,
 ) -> Result<()> {
     /* get strategy wallets that hold sold asset */
     let strategy_wallet_sold_asset_rows = db
