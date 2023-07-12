@@ -9,6 +9,7 @@ use std::collections::HashMap;
 use std::num::NonZeroUsize;
 use std::str::FromStr;
 use tokio::sync::Mutex;
+use tracing::{debug, info};
 use web3::types::Address;
 
 const API_KEY: &str = "ec6c4b09-03e6-4bd6-84f9-95406fc2ce81";
@@ -98,9 +99,7 @@ impl CoinMarketCap {
         let mut url = self.metadata_url();
         self.append_url_params(&mut url, "symbol", symbols);
         self.append_url_params(&mut url, "aux", &vec!["status".to_string()]);
-        let payload = &self
-            .parse_response(self.client.get(url).send().await?)
-            .await?["data"];
+        let payload = &self.send_and_parse_response(&url).await?["data"];
         let mut token_infos: Vec<CoinMarketCapTokenInfo> = Vec::new();
         for symbol in symbols {
             let token = &payload[symbol][0];
@@ -171,9 +170,7 @@ impl CoinMarketCap {
         if !new_symbols.is_empty() {
             let mut url = self.price_url();
             self.append_url_params(&mut url, "symbol", &new_symbols);
-            let payload = &self
-                .parse_response(self.client.get(url).send().await?)
-                .await?["data"];
+            let payload = &self.send_and_parse_response(&url).await?["data"];
             for (symbol, i) in new_symbols.into_iter().zip(new_symbols_index.into_iter()) {
                 let token = &payload[&symbol][0];
                 if token["is_active"].as_u64().context("status not found")? != 1 {
@@ -290,12 +287,10 @@ impl CoinMarketCap {
         self.append_url_params(&mut url, "time_start", &[ago.to_rfc3339()]);
         self.append_url_params(&mut url, "interval", &["daily".to_string()]);
         self.append_url_params(&mut url, "count", &["1".to_string()]);
-        let payload = &self
-            .parse_response(self.client.get(url).send().await?)
-            .await?;
+        let payload = self.send_and_parse_response(&url).await?;
         let payload = &payload["data"];
         let base = &payload[symbol][0];
-        let quote = &base["quote"]["USD"];
+        let quote = &base["quotes"][0]["quote"]["USD"];
         let price = quote["price"].as_f64().context("price not found")?;
         Ok(price)
     }
@@ -342,9 +337,16 @@ impl CoinMarketCap {
         let mut params = url.query_pairs_mut();
         params.append_pair(param_key, &param_values.join(","));
     }
+    pub async fn send_and_parse_response(&self, url: &Url) -> Result<Value> {
+        debug!("Request: {}", url);
+        let response = self.client.get(url.clone()).send().await?;
+        self.parse_response(response).await
+    }
 
     pub async fn parse_response(&self, response: Response) -> Result<Value> {
         let text = response.text().await?;
+        debug!("Response: {}", text);
+
         let json = Value::from_str(&text)?;
         if let Some(err) = json["status"].get("error_message") {
             if !err.is_null() {
@@ -415,7 +417,7 @@ mod tests {
     async fn test_get_price_in_usd_30_days_ago() -> Result<()> {
         setup_logs(LogLevel::Info)?;
         let cmc = CoinMarketCap::new_debug_key().unwrap();
-        let price = cmc.get_usd_price_days_ago("ETH".to_string()).await?;
+        let price = cmc.get_usd_price_days_ago("ETH".to_string(), 30).await?;
         println!("PRICE: {:?}", price);
         assert!(price > 0.0);
         Ok(())
