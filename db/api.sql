@@ -1072,6 +1072,53 @@ END
 $$;
         
 
+CREATE OR REPLACE FUNCTION api.fun_user_add_strategy_pool_contract_asset_ledger_entry(a_strategy_pool_contract_id bigint, a_token_address varchar, a_blockchain enum_block_chain, a_transaction_hash varchar, a_amount varchar, a_is_add boolean)
+RETURNS table (
+    "success" boolean
+)
+LANGUAGE plpgsql
+AS $$
+    
+DECLARE
+		_strategy_id BIGINT;
+		_token_id BIGINT;
+BEGIN
+		SELECT spc.fkey_strategy_id INTO _strategy_id
+		FROM tbl.strategy_pool_contract AS spc
+		WHERE spc.pkey_id = a_strategy_pool_contract_id;
+
+		ASSERT _strategy_id IS NOT NULL;
+
+		SELECT etca.pkey_id INTO _token_id
+		FROM tbl.escrow_token_contract_address AS etca
+		WHERE etca.address = a_token_address AND etca.blockchain = a_blockchain;
+
+		ASSERT _token_id IS NOT NULL;
+
+		INSERT INTO tbl.strategy_pool_contract_asset_ledger (
+			fkey_strategy_id,
+			fkey_token_id,
+			blockchain,
+			transaction_hash,
+			amount,
+			is_add,
+			happened_at
+	) VALUES (
+			_strategy_id,
+			_token_id,
+			a_blockchain,
+			a_transaction_hash,
+			a_amount,
+			a_is_add,
+			EXTRACT(EPOCH FROM NOW())
+		);
+
+		RETURN QUERY SELECT TRUE;
+END
+
+$$;
+        
+
 CREATE OR REPLACE FUNCTION api.fun_user_list_strategy_pool_contract_asset_ledger(a_limit bigint, a_offset bigint, a_strategy_id bigint DEFAULT NULL, a_token_id bigint DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL)
 RETURNS table (
     "entry_id" bigint,

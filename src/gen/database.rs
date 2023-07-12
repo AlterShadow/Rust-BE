@@ -190,6 +190,11 @@ pub struct FunUserAddStrategyInitialTokenRatioRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunUserAddStrategyPoolContractAssetLedgerEntryRespRow {
+    pub success: bool,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserAddStrategyPoolContractRespRow {
     pub strategy_pool_contract_id: i64,
 }
@@ -1443,6 +1448,34 @@ impl DatabaseRequest for FunUserUpsertUserStrategyPoolContractAssetBalanceReq {
             &self.amount as &(dyn ToSql + Sync),
             &self.is_add as &(dyn ToSql + Sync),
             &self.transaction_hash as &(dyn ToSql + Sync),
+        ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserAddStrategyPoolContractAssetLedgerEntryReq {
+    pub strategy_pool_contract_id: i64,
+    pub token_address: BlockchainAddress,
+    pub blockchain: EnumBlockChain,
+    pub transaction_hash: BlockchainTransactionHash,
+    pub amount: BlockchainDecimal,
+    pub is_add: bool,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunUserAddStrategyPoolContractAssetLedgerEntryReq {
+    type ResponseRow = FunUserAddStrategyPoolContractAssetLedgerEntryRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_add_strategy_pool_contract_asset_ledger_entry(a_strategy_pool_contract_id => $1::bigint, a_token_address => $2::varchar, a_blockchain => $3::enum_block_chain, a_transaction_hash => $4::varchar, a_amount => $5::varchar, a_is_add => $6::boolean);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.strategy_pool_contract_id as &(dyn ToSql + Sync),
+            &self.token_address as &(dyn ToSql + Sync),
+            &self.blockchain as &(dyn ToSql + Sync),
+            &self.transaction_hash as &(dyn ToSql + Sync),
+            &self.amount as &(dyn ToSql + Sync),
+            &self.is_add as &(dyn ToSql + Sync),
         ]
     }
 }

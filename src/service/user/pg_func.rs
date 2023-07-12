@@ -618,6 +618,56 @@ END
 "#,
         ),
         ProceduralFunction::new(
+            "fun_user_add_strategy_pool_contract_asset_ledger_entry",
+            vec![
+                Field::new("strategy_pool_contract_id", Type::BigInt),
+                Field::new("token_address", Type::BlockchainAddress),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("transaction_hash", Type::BlockchainTransactionHash),
+                Field::new("amount", Type::BlockchainDecimal),
+                Field::new("is_add", Type::Boolean),
+            ],
+            vec![Field::new("success", Type::Boolean)],
+            r#"
+DECLARE
+		_strategy_id BIGINT;
+		_token_id BIGINT;
+BEGIN
+		SELECT spc.fkey_strategy_id INTO _strategy_id
+		FROM tbl.strategy_pool_contract AS spc
+		WHERE spc.pkey_id = a_strategy_pool_contract_id;
+
+		ASSERT _strategy_id IS NOT NULL;
+
+		SELECT etca.pkey_id INTO _token_id
+		FROM tbl.escrow_token_contract_address AS etca
+		WHERE etca.address = a_token_address AND etca.blockchain = a_blockchain;
+
+		ASSERT _token_id IS NOT NULL;
+
+		INSERT INTO tbl.strategy_pool_contract_asset_ledger (
+			fkey_strategy_id,
+			fkey_token_id,
+			blockchain,
+			transaction_hash,
+			amount,
+			is_add,
+			happened_at
+	) VALUES (
+			_strategy_id,
+			_token_id,
+			a_blockchain,
+			a_transaction_hash,
+			a_amount,
+			a_is_add,
+			EXTRACT(EPOCH FROM NOW())
+		);
+
+		RETURN QUERY SELECT TRUE;
+END
+"#,
+        ),
+        ProceduralFunction::new(
             "fun_user_list_strategy_pool_contract_asset_ledger",
             vec![
                 Field::new("limit", Type::BigInt),
