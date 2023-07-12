@@ -1,5 +1,4 @@
 use eyre::*;
-use itertools::Itertools;
 use serde::*;
 use std::cmp::Ordering;
 use std::collections::HashMap;
@@ -448,11 +447,8 @@ impl<T> RDataTable<T> {
     ) -> Result<Vec<R>> {
         let mut futures = Vec::with_capacity(self.rows.len());
         for row in self.rows {
-            futures.push(f(row));
+            futures.push(f(row).await?);
         }
-        futures::future::join_all(futures)
-            .await
-            .into_iter()
-            .try_collect()
+        Ok(futures)
     }
 }

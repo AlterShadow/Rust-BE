@@ -134,7 +134,7 @@ impl RequestHandler for MethodUserListStrategies {
                     offset: req.offset.unwrap_or(DEFAULT_OFFSET),
                     strategy_id: req.strategy_id,
                     strategy_name: req.strategy_name,
-                    expert_id: Some(ctx.user_id),
+                    expert_id: None,
                     expert_public_id: req.expert_public_id,
                     expert_name: req.expert_name,
                     description: req.description,
