@@ -48,7 +48,7 @@ impl AppState {
             master_key,
             admin_client: Some(Mutex::new(admin_client)),
             cmc_client,
-            pool_herald_addresses: StrategyPoolHeraldAddresses::new(),
+            pool_herald_addresses: Arc::new(StrategyPoolHeraldAddresses::new()),
         })
     }
 }
