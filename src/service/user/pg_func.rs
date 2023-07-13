@@ -1249,65 +1249,6 @@ END
 "#,
         ),
         ProceduralFunction::new(
-            "fun_user_reduce_quantity_from_user_deposit_withdraw_ledger",
-            vec![
-                Field::new("user_id", Type::BigInt),
-                Field::new("token_id", Type::BigInt),
-                Field::new("blockchain", Type::enum_ref("block_chain")),
-                Field::new("user_address", Type::BlockchainAddress),
-                Field::new("contract_address", Type::BlockchainAddress),
-                Field::new("contract_address_id", Type::BigInt),
-                Field::new("receiver_address", Type::BlockchainAddress),
-                Field::new("quantity", Type::BlockchainDecimal),
-                Field::new("transaction_hash", Type::BlockchainTransactionHash),
-            ],
-            vec![Field::new("request_refund_id", Type::BigInt)],
-            r#"
-DECLARE
-    existing_id bigint;
-BEGIN
-    SELECT pkey_id INTO existing_id
-    FROM tbl.user_deposit_withdraw_ledger
-    WHERE transaction_hash = a_transaction_hash AND
-    blockchain = a_blockchain
-    LIMIT 1;
-
-    IF existing_id IS NOT NULL THEN
-            RETURN QUERY SELECT existing_id;
-    END IF;
-
-    RETURN QUERY INSERT INTO tbl.user_deposit_withdraw_ledger (
-        fkey_user_id, 
-        fkey_token_id, 
-        blockchain,
-        user_address,
-        escrow_contract_address,
-        fkey_escrow_contract_address_id,
-        receiver_address,
-        quantity,
-        transaction_hash,
-        is_deposit,
-        is_back,
-        is_withdraw,
-        happened_at
-        ) VALUES (a_user_id,
-                  a_token_id,
-                  a_blockchain,
-                  a_user_address,
-                  a_contract_address,
-                  a_contract_address_id,
-                  a_receiver_address,
-                  a_quantity,
-                  a_transaction_hash,
-                  FALSE,
-                  FALSE,
-                  TRUE,
-                  EXTRACT(EPOCH FROM NOW())::bigint
-        ) RETURNING pkey_id;
-END
-"#,
-        ),
-        ProceduralFunction::new(
             "fun_user_add_user_deposit_withdraw_ledger_entry",
             vec![
                 Field::new("user_id", Type::BigInt),

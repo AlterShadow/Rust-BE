@@ -703,16 +703,18 @@ pub async fn user_back_strategy(
         .await?;
 
         /* reduce the value used from ledger */
-        db.execute(FunUserReduceQuantityFromUserDepositWithdrawLedgerReq {
+        db.execute(FunUserAddUserDepositWithdrawLedgerEntryReq {
             user_id,
-            token_id,
             blockchain,
             user_address: wallet.clone().into(),
-            contract_address: token_address.into(),
-            contract_address_id: token_id,
             receiver_address: Default::default(),
             quantity: amount.clone().into(),
             transaction_hash: Default::default(),
+            is_deposit: false,
+            is_back: true,
+            token_address: token_address.into(),
+            escrow_contract_address: escrow_contract.address().into(),
+            is_withdraw: false,
         })
         .await?;
     }

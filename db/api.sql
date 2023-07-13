@@ -1806,59 +1806,6 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_reduce_quantity_from_user_deposit_withdraw_ledger(a_user_id bigint, a_token_id bigint, a_blockchain enum_block_chain, a_user_address varchar, a_contract_address varchar, a_contract_address_id bigint, a_receiver_address varchar, a_quantity varchar, a_transaction_hash varchar)
-RETURNS table (
-    "request_refund_id" bigint
-)
-LANGUAGE plpgsql
-AS $$
-    
-DECLARE
-    existing_id bigint;
-BEGIN
-    SELECT pkey_id INTO existing_id
-    FROM tbl.user_deposit_withdraw_ledger
-    WHERE transaction_hash = a_transaction_hash AND
-    blockchain = a_blockchain
-    LIMIT 1;
-
-    IF existing_id IS NOT NULL THEN
-            RETURN QUERY SELECT existing_id;
-    END IF;
-
-    RETURN QUERY INSERT INTO tbl.user_deposit_withdraw_ledger (
-        fkey_user_id, 
-        fkey_token_id, 
-        blockchain,
-        user_address,
-        escrow_contract_address,
-        fkey_escrow_contract_address_id,
-        receiver_address,
-        quantity,
-        transaction_hash,
-        is_deposit,
-        is_back,
-        is_withdraw,
-        happened_at
-        ) VALUES (a_user_id,
-                  a_token_id,
-                  a_blockchain,
-                  a_user_address,
-                  a_contract_address,
-                  a_contract_address_id,
-                  a_receiver_address,
-                  a_quantity,
-                  a_transaction_hash,
-                  FALSE,
-                  FALSE,
-                  TRUE,
-                  EXTRACT(EPOCH FROM NOW())::bigint
-        ) RETURNING pkey_id;
-END
-
-$$;
-        
-
 CREATE OR REPLACE FUNCTION api.fun_user_add_user_deposit_withdraw_ledger_entry(a_user_id bigint, a_token_address varchar, a_blockchain enum_block_chain, a_user_address varchar, a_escrow_contract_address varchar, a_receiver_address varchar, a_quantity varchar, a_transaction_hash varchar, a_is_deposit boolean, a_is_back boolean, a_is_withdraw boolean)
 RETURNS table (
     "ledger_entry_id" bigint

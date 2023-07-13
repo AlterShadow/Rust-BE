@@ -604,11 +604,6 @@ pub struct FunUserListWhitelistedWalletsRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
-pub struct FunUserReduceQuantityFromUserDepositWithdrawLedgerRespRow {
-    pub request_refund_id: i64,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserRemoveStrategyInitialTokenRatioRespRow {}
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -1948,40 +1943,6 @@ impl DatabaseRequest for FunUserListWhitelistedWalletsReq {
             &self.user_id as &(dyn ToSql + Sync),
             &self.blockchain as &(dyn ToSql + Sync),
             &self.address as &(dyn ToSql + Sync),
-        ]
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunUserReduceQuantityFromUserDepositWithdrawLedgerReq {
-    pub user_id: i64,
-    pub token_id: i64,
-    pub blockchain: EnumBlockChain,
-    pub user_address: BlockchainAddress,
-    pub contract_address: BlockchainAddress,
-    pub contract_address_id: i64,
-    pub receiver_address: BlockchainAddress,
-    pub quantity: BlockchainDecimal,
-    pub transaction_hash: BlockchainTransactionHash,
-}
-
-#[allow(unused_variables)]
-impl DatabaseRequest for FunUserReduceQuantityFromUserDepositWithdrawLedgerReq {
-    type ResponseRow = FunUserReduceQuantityFromUserDepositWithdrawLedgerRespRow;
-    fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_reduce_quantity_from_user_deposit_withdraw_ledger(a_user_id => $1::bigint, a_token_id => $2::bigint, a_blockchain => $3::enum_block_chain, a_user_address => $4::varchar, a_contract_address => $5::varchar, a_contract_address_id => $6::bigint, a_receiver_address => $7::varchar, a_quantity => $8::varchar, a_transaction_hash => $9::varchar);"
-    }
-    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
-        vec![
-            &self.user_id as &(dyn ToSql + Sync),
-            &self.token_id as &(dyn ToSql + Sync),
-            &self.blockchain as &(dyn ToSql + Sync),
-            &self.user_address as &(dyn ToSql + Sync),
-            &self.contract_address as &(dyn ToSql + Sync),
-            &self.contract_address_id as &(dyn ToSql + Sync),
-            &self.receiver_address as &(dyn ToSql + Sync),
-            &self.quantity as &(dyn ToSql + Sync),
-            &self.transaction_hash as &(dyn ToSql + Sync),
         ]
     }
 }
