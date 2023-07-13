@@ -1907,7 +1907,7 @@ BEGIN
 							a_blockchain,
 							a_user_address,
 							a_escrow_contract_address,
-							_contract_address_id,
+							_escrow_contract_id,
 							a_receiver_address,
 							a_quantity,
 							a_transaction_hash,
