@@ -748,7 +748,7 @@ pub async fn handle_eth_withdraws(
             {
                 Ok(_) => {}
                 Err(e) => {
-                    error!("swap tx was not mined: {:?}", e);
+                    error!("withdraw tx was not mined: {:?}", e);
                     return;
                 }
             }
@@ -763,10 +763,10 @@ pub async fn handle_eth_withdraws(
             if let Err(e) = evm::cache_ethereum_transaction(&tx, &state.db, blockchain).await {
                 error!("error caching transaction: {:?}", e);
             };
-            match handle_pancake_swap_transaction(state.clone(), blockchain, tx).await {
+            match handle_withdraw_transaction(state.clone(), blockchain, tx).await {
                 Ok(_) => {}
                 Err(e) => {
-                    error!("error handling swap: {:?}", e);
+                    error!("error handling withdraw: {:?}", e);
                 }
             }
         });
