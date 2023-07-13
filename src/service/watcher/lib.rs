@@ -5,7 +5,7 @@ use eth_sdk::erc20::build_erc_20;
 use eth_sdk::signer::Secp256k1SecretKey;
 use eth_sdk::{
     build_pancake_swap, BlockchainCoinAddresses, DexAddresses, EscrowAddresses,
-    EthereumRpcConnectionPool, PancakeSwap,
+    EthereumRpcConnectionPool, PancakeSwap, StrategyPoolHeraldAddresses,
 };
 use eyre::*;
 use lib::database::DbClient;
@@ -22,6 +22,7 @@ pub struct AppState {
     pub db: DbClient,
     pub token_addresses: Arc<BlockchainCoinAddresses>,
     pub escrow_addresses: Arc<EscrowAddresses>,
+    pub pool_herald_addresses: Arc<StrategyPoolHeraldAddresses>,
     pub erc_20: Contract,
     pub master_key: Secp256k1SecretKey,
     pub admin_client: Option<Mutex<WsClient>>,
@@ -47,6 +48,7 @@ impl AppState {
             master_key,
             admin_client: Some(Mutex::new(admin_client)),
             cmc_client,
+            pool_herald_addresses: StrategyPoolHeraldAddresses::new(),
         })
     }
 }
