@@ -1026,7 +1026,7 @@ pub async fn get_user_deposit_balances_by_wallet_to_fill_value(
     let mut total_amount_found: U256 = U256::zero();
     for wallet_balance_row in wallet_positive_asset_balances {
         let wallet_balance: U256 = wallet_balance_row.balance.into();
-        if wallet_balance > U256::zero() {
+        if wallet_balance == U256::zero() {
             continue;
         }
         if total_amount_found == value_to_fill {
@@ -1050,7 +1050,11 @@ pub async fn get_user_deposit_balances_by_wallet_to_fill_value(
     }
 
     if total_amount_found < value_to_fill {
-        bail!("not enough user balance to fill the amount");
+        bail!(
+            "not enough user balance to fill the amount: {} < {}",
+            amount_to_display(total_amount_found),
+            amount_to_display(value_to_fill)
+        );
     }
 
     Ok((wallets_that_deposited, amount_from_each_wallet))
