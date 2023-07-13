@@ -19,20 +19,10 @@ const HISTORICAL_QUOTE_URL: &str = "/v2/cryptocurrency/quotes/historical";
 const METADATA_URL: &str = "/v1/cryptocurrency/info";
 const MAP_URL: &str = "/v1/cryptocurrency/map";
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum EnumBlockChain {
-    EthereumMainnet,
-    EthereumGoerli,
-    BscMainnet,
-    BscTestnet,
-    LocalNet,
-    EthereumSepolia,
-}
-
 #[derive(Debug, Clone)]
 pub struct TokenAddress {
     pub address: Address,
-    pub chain: EnumBlockChain,
+    pub chain: String,
 }
 
 #[derive(Debug, Clone)]
@@ -354,14 +344,6 @@ impl CoinMarketCap {
             }
         }
         Ok(json)
-    }
-
-    fn coin_symbol_to_chain(&self, coin_symbol: &str) -> Result<EnumBlockChain> {
-        match coin_symbol {
-            "ETH" => Ok(EnumBlockChain::EthereumMainnet),
-            "BNB" => Ok(EnumBlockChain::BscMainnet),
-            _ => bail!("chain not supported"),
-        }
     }
 }
 

@@ -2,16 +2,21 @@
 pub mod audit;
 pub mod tools;
 use crate::audit::get_audit_rules;
+use api::cmc::CoinMarketCap;
 use eth_sdk::signer::Secp256k1SecretKey;
 use eth_sdk::utils::get_signed_text;
 use eth_sdk::{BlockchainCoinAddresses, EscrowAddresses};
 use eyre::*;
 use futures::future::join_all;
+use gen::database::FunAdminAddEscrowTokenContractAddressReq;
 use gen::model::*;
+use lib::config::load_config;
 #[allow(unused_imports)]
 use lib::database::drop_and_recreate_database;
+use lib::database::{connect_to_database, DatabaseConfig, DbClient};
 use lib::log::{setup_logs, LogLevel};
 use rand::random;
+use serde::Deserialize;
 use std::future::Future;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -242,29 +247,36 @@ pub async fn populate_audit_rules() -> Result<()> {
     }
     Ok(())
 }
-pub async fn populate_escrow_token_contract_address() -> Result<()> {
+pub async fn populate_escrow_token_contract_address(db: &DbClient) -> Result<()> {
     let admin_signer = get_admin_key();
     let mut admin_client = connect_user("dev-0", &admin_signer.key).await?;
-    let addresses = BlockchainCoinAddresses::new();
-    for (i, (blockchain, coin, address)) in addresses.iter().enumerate() {
-        if let Err(err) = admin_client
-            .request(AdminAddEscrowTokenContractAddressRequest {
-                pkey_id: i as _,
-                address: format!("{:?}", address),
-                symbol: coin.to_string(),
-                short_name: coin.to_string(),
-                blockchain,
-                description: format!("This is {:?}", coin),
-                is_stablecoin: match coin {
-                    EnumBlockchainCoin::USDC
-                    | EnumBlockchainCoin::USDT
-                    | EnumBlockchainCoin::BUSD => true,
-                    _ => false,
-                },
+    // TODO: should get a properly list from somewhere
+    let mostly_needed_coins = vec![
+        "WBTC", "USDC", "USDT", "DAI", "BUSD", "WETH", "LINK", "UNI", "AAVE", "YFI", "SNX", "MKR",
+        "COMP", "SUSHI", "CRV", "REN", "BAL", "KNC", "OMG", "ZRX", "BAT", "MANA", "ENJ", "GRT",
+        "1INCH", "BNT", "CEL", "CHZ", "CVC", "DNT", "FET", "GNO", "GNT", "KAVA", "KIN", "KNC",
+        "LOOM", "LRC", "DOGE", "MATIC", "MLN", "NMR", "NXT", "OCEAN", "OGN", "PAX", "PAXG", "POLY",
+        "POWR", "RCN", "REP", "RLC", "RSR", "SNT", "STORJ", "STX", "TRB", "TUSD", "UMA", "USDP",
+    ];
+    let cmc = CoinMarketCap::new_debug_key()?;
+    let tokens = cmc
+        .get_cmc_token_infos_by_symbol(&mostly_needed_coins.into_iter().cloned().collect())
+        .await?;
+    for (i, token) in tokens.into_iter().enumerate() {
+        let symbol = token.symbol;
+        for address in token.addresses {
+            let blockchain = address.chain;
+            let address = address.address;
+            db.execute(FunAdminAddEscrowTokenContractAddressReq {
+                pkey_id: i as _, // TODO: should be a proper pkey_id
+                symbol: symbol.clone(),
+                short_name: token.name.clone(),
+                description: token.slug.clone()
+                address: address.into(),
+                blockchain: blockchain,
+                is_stablecoin: false,
             })
-            .await
-        {
-            warn!("Error when inserting token: {:?}", err);
+            .await?;
         }
     }
     Ok(())
@@ -306,11 +318,9 @@ pub async fn populate_user_register_wallets() -> Result<()> {
                 EnumBlockChain::LocalNet,
             ] {
                 if let Err(err) = client
-                    .request(UserRegisterWalletRequest {
+                    .request(UserWhitelistWalletRequest {
                         blockchain,
-                        wallet_address: format!("{:?}", signer.address),
-                        message_to_sign: txt.clone(),
-                        message_signature: sig.clone(),
+                        wallet_address: signer.address.into(),
                     })
                     .await
                 {
@@ -354,11 +364,12 @@ pub async fn populate_user_apply_become_experts() -> Result<()> {
                         description: "this is a test strategy".to_string(),
                         strategy_thesis_url: "".to_string(),
                         minimum_backing_amount_usd: None,
-                        strategy_fee: random(),
                         expert_fee: random(),
                         agreed_tos: true,
-                        wallet_address: format!("{:?}", signer.address),
+                        wallet_address: signer.address.into(),
                         wallet_blockchain: EnumBlockChain::EthereumMainnet,
+                        strategy_token_relative_to_usdc_ratio: None,
+                        initial_tokens: vec![],
                         audit_rules: None,
                     })
                     .await?;
@@ -382,11 +393,17 @@ pub async fn populate_user_apply_become_experts() -> Result<()> {
     Ok(())
 }
 
+#[derive(Debug, Clone, Deserialize)]
+pub struct Config {
+    pub app_db: DatabaseConfig,
+}
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<()> {
     setup_logs(LogLevel::Debug)?;
+    let config: Config = load_config("user".to_string())?;
     // drop_and_recreate_database()?;
-    populate_escrow_token_contract_address().await?;
+    let db = connect_to_database(config.app_db).await?;
+    populate_escrow_token_contract_address(&db).await?;
     populate_escrow_contract_address().await?;
     populate_users().await?;
     populate_user_register_wallets().await?;
