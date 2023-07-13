@@ -906,7 +906,7 @@ ALTER TABLE tbl.user_strategy_pool_contract_asset_ledger ADD CONSTRAINT user_str
 -- Reference: user_strategy_pool_contract_asset_balance_user (table: user_strategy_pool_contract_asset_balance)
 ALTER TABLE tbl.user_strategy_pool_contract_asset_balance ADD CONSTRAINT user_strategy_pool_contract_asset_balance_user
     FOREIGN KEY (fkey_strategy_wallet_id)
-    REFERENCES tbl."user" (pkey_id)  
+    REFERENCES tbl.user_strategy_wallet (pkey_id)
     NOT DEFERRABLE 
     INITIALLY IMMEDIATE
 ;
