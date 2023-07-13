@@ -615,20 +615,23 @@ pub async fn handle_escrow_transaction(
     .await?;
 
     /* insert escrow in ledger */
+
     state
         .db
-        .execute(FunWatcherSaveUserDepositWithdrawLedgerReq {
+        .execute(FunUserAddUserDepositWithdrawLedgerEntryReq {
             user_id: user.user_id,
-            quantity: escrow.amount.into(),
+            token_address: called_address.into(),
             blockchain,
             user_address: escrow.owner.into(),
-            contract_address: called_address.into(),
-            transaction_hash: tx.get_hash().into(),
+            escrow_contract_address: escrow.recipient.into(),
             receiver_address: escrow.recipient.into(),
+            quantity: escrow.amount.into(),
+            transaction_hash: tx.get_hash().into(),
+            is_deposit: true,
+            is_back: false,
+            is_withdraw: false,
         })
-        .await
-        .context("error inserting escrow in ledger")?;
-
+        .await?;
     let old_balance: U256 = state
         .db
         .execute(FunUserListUserDepositWithdrawBalanceReq {

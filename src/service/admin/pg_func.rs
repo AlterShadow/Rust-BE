@@ -463,64 +463,6 @@ END
             "#,
         ),
         ProceduralFunction::new(
-            "fun_watcher_save_user_deposit_withdraw_ledger",
-            vec![
-                Field::new("user_id", Type::BigInt),
-                Field::new("blockchain", Type::enum_ref("block_chain")),
-                Field::new("user_address", Type::BlockchainAddress),
-                Field::new("contract_address", Type::BlockchainAddress),
-                Field::new("receiver_address", Type::BlockchainAddress),
-                Field::new("quantity", Type::BlockchainDecimal),
-                Field::new("transaction_hash", Type::BlockchainTransactionHash),
-            ],
-            vec![Field::new("success", Type::Boolean)],
-            r#"
-DECLARE
-    _token_id bigint;
-    _fkey_escrow_contract_address_id bigint;
-BEGIN
-    IF EXISTS(SELECT * FROM  tbl.user_deposit_withdraw_ledger
-			WHERE transaction_hash = a_transaction_hash AND
-			blockchain = a_blockchain
-		) THEN
-        RETURN QUERY SELECT FALSE;
-    END IF;
-    SELECT pkey_id INTO _token_id FROM tbl.escrow_token_contract_address WHERE address = a_contract_address AND blockchain = a_blockchain;
-    SELECT pkey_id INTO _fkey_escrow_contract_address_id FROM tbl.escrow_contract_address WHERE address = a_receiver_address AND blockchain = a_blockchain;
-    INSERT INTO tbl.user_deposit_withdraw_ledger (
-        fkey_user_id,
-        fkey_token_id,
-        blockchain,
-        user_address,
-        escrow_contract_address,
-        fkey_escrow_contract_address_id,
-        receiver_address,
-        quantity,
-        transaction_hash,
-        is_deposit,
-        is_back,
-        is_withdraw,
-        happened_at
-    ) VALUES (
-     a_user_id,
-     _token_id,
-     a_blockchain,
-     a_user_address,
-     a_contract_address,
-     _fkey_escrow_contract_address_id,
-     a_receiver_address,
-     a_quantity,
-     a_transaction_hash,
-     TRUE,
-     FALSE,
-     FALSE,
-     EXTRACT(EPOCH FROM NOW())::bigint
-    );
-    RETURN QUERY SELECT TRUE;
-END
-            "#,
-        ),
-        ProceduralFunction::new(
             "fun_admin_update_escrow_contract_address",
             vec![
                 Field::new("blockchain", Type::enum_ref("block_chain")),

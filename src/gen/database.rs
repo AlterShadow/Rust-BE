@@ -810,11 +810,6 @@ pub struct FunWatcherSaveStrategyWatchingWalletTradeLedgerRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
-pub struct FunWatcherSaveUserDepositWithdrawLedgerRespRow {
-    pub success: bool,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunWatcherUpsertExpertListenedWalletAssetBalanceRespRow {
     pub expert_listened_wallet_asset_balance_id: i64,
 }
@@ -3129,36 +3124,6 @@ impl DatabaseRequest for FunAdminListEscrowContractAddressReq {
             &self.limit as &(dyn ToSql + Sync),
             &self.offset as &(dyn ToSql + Sync),
             &self.blockchain as &(dyn ToSql + Sync),
-        ]
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunWatcherSaveUserDepositWithdrawLedgerReq {
-    pub user_id: i64,
-    pub blockchain: EnumBlockChain,
-    pub user_address: BlockchainAddress,
-    pub contract_address: BlockchainAddress,
-    pub receiver_address: BlockchainAddress,
-    pub quantity: BlockchainDecimal,
-    pub transaction_hash: BlockchainTransactionHash,
-}
-
-#[allow(unused_variables)]
-impl DatabaseRequest for FunWatcherSaveUserDepositWithdrawLedgerReq {
-    type ResponseRow = FunWatcherSaveUserDepositWithdrawLedgerRespRow;
-    fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_watcher_save_user_deposit_withdraw_ledger(a_user_id => $1::bigint, a_blockchain => $2::enum_block_chain, a_user_address => $3::varchar, a_contract_address => $4::varchar, a_receiver_address => $5::varchar, a_quantity => $6::varchar, a_transaction_hash => $7::varchar);"
-    }
-    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
-        vec![
-            &self.user_id as &(dyn ToSql + Sync),
-            &self.blockchain as &(dyn ToSql + Sync),
-            &self.user_address as &(dyn ToSql + Sync),
-            &self.contract_address as &(dyn ToSql + Sync),
-            &self.receiver_address as &(dyn ToSql + Sync),
-            &self.quantity as &(dyn ToSql + Sync),
-            &self.transaction_hash as &(dyn ToSql + Sync),
         ]
     }
 }
