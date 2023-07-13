@@ -11,6 +11,7 @@ use crate::{
 use eyre::*;
 use gen::model::EnumBlockChain;
 use lib::log::DynLogger;
+use lib::types::amount_to_display;
 use tracing::info;
 use web3::api::Eth;
 use web3::contract::{Contract, Options};
@@ -137,7 +138,7 @@ impl<T: Transport> EscrowContract<T> {
 
         info!(
             "Accepting {:?} amount of asset {:?} from proprietor {:?} from escrow contract {:?} by {:?}",
-            amount,
+            amount_to_display(amount),
             asset,
             proprietor,
             self.address(),
@@ -145,7 +146,7 @@ impl<T: Transport> EscrowContract<T> {
         );
         logger.log(format!(
             "Accepting {:?} amount of asset {:?} from proprietor {:?} from escrow contract {:?} by {:?}",
-            amount,
+            amount_to_display(amount),
             asset,
             proprietor,
             self.address(),
@@ -168,7 +169,10 @@ impl<T: Transport> EscrowContract<T> {
         get_blockchain_logger().log(
             format!(
                 "Accepting {:?} amount of asset {:?} from proprietor {:?} tx_hash {:?}",
-                amount, asset, proprietor, tx_hash
+                amount_to_display(amount),
+                asset,
+                proprietor,
+                tx_hash
             ),
             tx_hash,
         )?;
@@ -223,7 +227,7 @@ impl<T: Transport> EscrowContract<T> {
 
         info!(
             "Rejecting {:?} amount of asset {:?} from proprietor {:?}, and transferring fee amount {:?} to fee recipient {:?} from escrow contract {:?} by {:?}",
-            deposit_amount,
+            amount_to_display(deposit_amount),
             asset,
             proprietor,
 						fee_amount,
@@ -233,7 +237,7 @@ impl<T: Transport> EscrowContract<T> {
         );
         logger.log(format!(
 					"Rejecting {:?} amount of asset {:?} from proprietor {:?}, and transferring fee amount {:?} to fee recipient {:?} from escrow contract {:?} by {:?}",
-					deposit_amount,
+					amount_to_display(deposit_amount),
 					asset,
 					proprietor,
 					fee_amount,
@@ -258,7 +262,7 @@ impl<T: Transport> EscrowContract<T> {
         get_blockchain_logger().log(
             format!(
                 "Reject deposit amount {:?} of asset {:?} from proprietor {:?} and send {:?} as fees to {:?} tx_hash {:?}",
-                deposit_amount, asset, proprietor, fee_amount, fee_recipient, tx_hash
+                amount_to_display(deposit_amount), asset, proprietor, fee_amount, fee_recipient, tx_hash
             ),
             tx_hash,
         )?;
@@ -325,7 +329,7 @@ impl<T: Transport> EscrowContract<T> {
 
         info!(
             "Transferring {:?} amount of {:?} asset from {:?} proprietor to {:?} recipient from escrow contract {:?} by {:?}",
-						amount,
+						amount_to_display(amount),
 						asset,
 						proprietor,
             recipient,
@@ -335,7 +339,7 @@ impl<T: Transport> EscrowContract<T> {
 
         logger.log(format!(
 					"Transferring {:?} amount of {:?} asset from {:?} proprietor to {:?} recipient from escrow contract {:?} by {:?}",
-					amount,
+					amount_to_display(amount),
 					asset,
 					proprietor,
 					recipient,
@@ -359,7 +363,11 @@ impl<T: Transport> EscrowContract<T> {
         get_blockchain_logger().log(
             format!(
                 "Transfer {:?} amount of {:?} asset from {:?} proprietor to {:?} tx_hash {:?}",
-                amount, asset, proprietor, recipient, tx_hash,
+                amount_to_display(amount),
+                asset,
+                proprietor,
+                recipient,
+                tx_hash,
             ),
             tx_hash,
         )?;
@@ -389,7 +397,7 @@ impl<T: Transport> EscrowContract<T> {
 
         info!(
 						"Refunding {:?} amount of {:?} asset to {:?} proprietor from escrow contract {:?} by {:?}",
-						amount,
+						amount_to_display(amount),
 						asset,
 						proprietor,
 						self.address(),
@@ -398,7 +406,7 @@ impl<T: Transport> EscrowContract<T> {
 
         logger.log(format!(
 					"Refunding {:?} amount of {:?} asset to {:?} proprietor from escrow contract {:?} by {:?}",
-					amount,
+					amount_to_display(amount),
 					asset,
 					proprietor,
 					self.address(),
@@ -421,7 +429,10 @@ impl<T: Transport> EscrowContract<T> {
         get_blockchain_logger().log(
             format!(
                 "Refund {:?} amount of {:?} asset to {:?} proprietor tx_hash {:?}",
-                amount, asset, proprietor, tx_hash,
+                amount_to_display(amount),
+                asset,
+                proprietor,
+                tx_hash,
             ),
             tx_hash,
         )?;
@@ -451,7 +462,11 @@ impl<T: Transport> EscrowContract<T> {
 
         info!(
             "Rescuing {:?} amounts of {:?} assets to {:?} from escrow contract {:?} by {:?}",
-            amounts.clone(),
+            amounts
+                .iter()
+                .cloned()
+                .map(amount_to_display)
+                .collect::<Vec<_>>(),
             assets.clone(),
             recipient,
             self.address(),
@@ -460,7 +475,11 @@ impl<T: Transport> EscrowContract<T> {
 
         logger.log(format!(
             "Rescuing {:?} amounts of {:?} assets to {:?} from escrow contract {:?} by {:?}",
-            amounts.clone(),
+            amounts
+                .iter()
+                .cloned()
+                .map(amount_to_display)
+                .collect::<Vec<_>>(),
             assets.clone(),
             recipient,
             self.address(),
@@ -483,7 +502,11 @@ impl<T: Transport> EscrowContract<T> {
         get_blockchain_logger().log(
             format!(
                 "Rescue {:?} amounts of {:?} assets to {:?} proprietor tx_hash {:?}",
-                amounts.clone(),
+                amounts
+                    .iter()
+                    .cloned()
+                    .map(amount_to_display)
+                    .collect::<Vec<_>>(),
                 assets.clone(),
                 recipient,
                 tx_hash,
