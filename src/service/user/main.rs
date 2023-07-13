@@ -2,7 +2,7 @@ use api::cmc::CoinMarketCap;
 use eth_sdk::escrow::AbstractEscrowContract;
 use eth_sdk::pair_paths::WorkingPancakePairPaths;
 use eth_sdk::signer::Secp256k1SecretKey;
-use eth_sdk::{DexAddresses, EscrowAddresses, EthereumConns, EthereumRpcConnectionPool};
+use eth_sdk::{DexAddresses, EthereumConns, EthereumRpcConnectionPool};
 use eyre::*;
 use gen::model::EnumService;
 use lib::config::{load_config, WsServerConfig};

@@ -1574,6 +1574,7 @@ pub struct ListStrategiesRow {
     pub swap_fee: f64,
     pub total_fee: f64,
     pub number_of_tokens: i64,
+    pub backed: bool,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -3051,6 +3052,10 @@ impl WsRequest for UserListFollowedStrategiesRequest {
               {
                 "name": "number_of_tokens",
                 "ty": "BigInt"
+              },
+              {
+                "name": "backed",
+                "ty": "Boolean"
               }
             ]
           }
@@ -3289,6 +3294,10 @@ impl WsRequest for UserListStrategiesRequest {
               {
                 "name": "number_of_tokens",
                 "ty": "BigInt"
+              },
+              {
+                "name": "backed",
+                "ty": "Boolean"
               }
             ]
           }
@@ -3456,6 +3465,10 @@ impl WsRequest for UserListTopPerformingStrategiesRequest {
               {
                 "name": "number_of_tokens",
                 "ty": "BigInt"
+              },
+              {
+                "name": "backed",
+                "ty": "Boolean"
               }
             ]
           }
@@ -3740,6 +3753,10 @@ impl WsRequest for UserGetStrategyRequest {
             {
               "name": "number_of_tokens",
               "ty": "BigInt"
+            },
+            {
+              "name": "backed",
+              "ty": "Boolean"
             }
           ]
         }
@@ -4477,6 +4494,10 @@ impl WsRequest for UserListBackedStrategiesRequest {
               {
                 "name": "number_of_tokens",
                 "ty": "BigInt"
+              },
+              {
+                "name": "backed",
+                "ty": "Boolean"
               }
             ]
           }
@@ -5648,6 +5669,10 @@ impl WsRequest for UserGetExpertProfileRequest {
               {
                 "name": "number_of_tokens",
                 "ty": "BigInt"
+              },
+              {
+                "name": "backed",
+                "ty": "Boolean"
               }
             ]
           }
@@ -5924,6 +5949,10 @@ impl WsRequest for UserGetUserProfileRequest {
               {
                 "name": "number_of_tokens",
                 "ty": "BigInt"
+              },
+              {
+                "name": "backed",
+                "ty": "Boolean"
               }
             ]
           }
@@ -6056,6 +6085,10 @@ impl WsRequest for UserGetUserProfileRequest {
               {
                 "name": "number_of_tokens",
                 "ty": "BigInt"
+              },
+              {
+                "name": "backed",
+                "ty": "Boolean"
               }
             ]
           }
@@ -7090,6 +7123,10 @@ impl WsRequest for ExpertListPublishedStrategiesRequest {
               {
                 "name": "number_of_tokens",
                 "ty": "BigInt"
+              },
+              {
+                "name": "backed",
+                "ty": "Boolean"
               }
             ]
           }
@@ -7257,6 +7294,10 @@ impl WsRequest for ExpertListUnpublishedStrategiesRequest {
               {
                 "name": "number_of_tokens",
                 "ty": "BigInt"
+              },
+              {
+                "name": "backed",
+                "ty": "Boolean"
               }
             ]
           }
@@ -9247,6 +9288,10 @@ impl WsRequest for AdminListStrategiesRequest {
               {
                 "name": "number_of_tokens",
                 "ty": "BigInt"
+              },
+              {
+                "name": "backed",
+                "ty": "Boolean"
               }
             ]
           }

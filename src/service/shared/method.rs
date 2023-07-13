@@ -44,6 +44,7 @@ fn convert_strategy_db_to_api(x: FunUserStrategyRowType) -> ListStrategiesRow {
             + x.expert_fee.unwrap_or_default()
             + x.swap_fee.unwrap_or_default(),
         number_of_tokens: x.number_of_tokens.unwrap_or_default(),
+        backed: x.backed,
     }
 }
 pub async fn convert_strategy_db_to_api_net_value(

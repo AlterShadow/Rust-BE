@@ -367,6 +367,10 @@
                       {
                         "name": "number_of_tokens",
                         "ty": "BigInt"
+                      },
+                      {
+                        "name": "backed",
+                        "ty": "Boolean"
                       }
                     ]
                   }
@@ -589,6 +593,10 @@
                       {
                         "name": "number_of_tokens",
                         "ty": "BigInt"
+                      },
+                      {
+                        "name": "backed",
+                        "ty": "Boolean"
                       }
                     ]
                   }
@@ -748,6 +756,10 @@
                       {
                         "name": "number_of_tokens",
                         "ty": "BigInt"
+                      },
+                      {
+                        "name": "backed",
+                        "ty": "Boolean"
                       }
                     ]
                   }
@@ -1008,6 +1020,10 @@
                     {
                       "name": "number_of_tokens",
                       "ty": "BigInt"
+                    },
+                    {
+                      "name": "backed",
+                      "ty": "Boolean"
                     }
                   ]
                 }
@@ -1689,6 +1705,10 @@
                       {
                         "name": "number_of_tokens",
                         "ty": "BigInt"
+                      },
+                      {
+                        "name": "backed",
+                        "ty": "Boolean"
                       }
                     ]
                   }
@@ -2772,6 +2792,10 @@
                       {
                         "name": "number_of_tokens",
                         "ty": "BigInt"
+                      },
+                      {
+                        "name": "backed",
+                        "ty": "Boolean"
                       }
                     ]
                   }
@@ -3040,6 +3064,10 @@
                       {
                         "name": "number_of_tokens",
                         "ty": "BigInt"
+                      },
+                      {
+                        "name": "backed",
+                        "ty": "Boolean"
                       }
                     ]
                   }
@@ -3172,6 +3200,10 @@
                       {
                         "name": "number_of_tokens",
                         "ty": "BigInt"
+                      },
+                      {
+                        "name": "backed",
+                        "ty": "Boolean"
                       }
                     ]
                   }
@@ -4070,6 +4102,10 @@
                       {
                         "name": "number_of_tokens",
                         "ty": "BigInt"
+                      },
+                      {
+                        "name": "backed",
+                        "ty": "Boolean"
                       }
                     ]
                   }
@@ -4229,6 +4265,10 @@
                       {
                         "name": "number_of_tokens",
                         "ty": "BigInt"
+                      },
+                      {
+                        "name": "backed",
+                        "ty": "Boolean"
                       }
                     ]
                   }
@@ -5985,6 +6025,10 @@
                       {
                         "name": "number_of_tokens",
                         "ty": "BigInt"
+                      },
+                      {
+                        "name": "backed",
+                        "ty": "Boolean"
                       }
                     ]
                   }

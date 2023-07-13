@@ -9,7 +9,7 @@ use std::collections::HashMap;
 use std::num::NonZeroUsize;
 use std::str::FromStr;
 use tokio::sync::Mutex;
-use tracing::{debug, info};
+use tracing::*;
 use web3::types::Address;
 
 const API_KEY: &str = "ec6c4b09-03e6-4bd6-84f9-95406fc2ce81";

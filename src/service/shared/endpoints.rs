@@ -39,6 +39,7 @@ pub fn strategy_row() -> Type {
             Field::new("swap_fee", Type::Numeric),
             Field::new("total_fee", Type::Numeric),
             Field::new("number_of_tokens", Type::BigInt),
+            Field::new("backed", Type::Boolean),
         ],
     )
 }
