@@ -32,13 +32,10 @@ use lib::toolbox::*;
 use lib::ws::SubscribeManager;
 use lib::{DEFAULT_LIMIT, DEFAULT_OFFSET};
 use lru::LruCache;
-use reqwest::get;
-use std::process::exit;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::Mutex;
 use tokio::time::sleep;
-use tracing::callsite::register;
 use tracing::{error, info};
 use web3::signing::Key;
 use web3::types::{Address, H256, U256};
@@ -1284,6 +1281,7 @@ pub async fn on_user_request_refund(
             blockchain: chain,
             token_id: refunded_token_row.token_id,
             wallet_address: Some(wallet_address.into()),
+            escrow_contract_address: escrow_contract.address().into(),
         })
         .await?
         .into_result()

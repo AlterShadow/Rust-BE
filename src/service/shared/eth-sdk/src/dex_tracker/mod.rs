@@ -4,7 +4,6 @@ use eyre::*;
 use gen::database::*;
 use gen::model::EnumBlockChain;
 use lib::database::DbClient;
-use lib::types::H256;
 use web3::types::{Address, U256};
 
 mod parse;

@@ -522,6 +522,7 @@ pub async fn user_back_strategy(
             user_id,
             token_id,
             back_token_amount,
+            escrow_contract.address(),
         )
         .await
         .context("not enough balance found in ledger for back amount")?;
@@ -1005,6 +1006,7 @@ pub async fn get_user_deposit_balances_by_wallet_to_fill_value(
     user_id: i64,
     token_id: i64,
     value_to_fill: U256,
+    escrow_contract_address: Address,
 ) -> Result<(Vec<Address>, Vec<U256>)> {
     let wallet_positive_asset_balances = db
         .execute(FunUserCalculateUserEscrowBalanceFromLedgerReq {
@@ -1012,6 +1014,7 @@ pub async fn get_user_deposit_balances_by_wallet_to_fill_value(
             blockchain: chain,
             token_id: token_id,
             wallet_address: None,
+            escrow_contract_address: escrow_contract_address.into(),
         })
         .await?
         .into_rows();

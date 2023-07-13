@@ -2674,7 +2674,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_calculate_user_escrow_balance_from_ledger(a_user_id bigint, a_token_id bigint, a_blockchain enum_block_chain, a_wallet_address varchar DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_user_calculate_user_escrow_balance_from_ledger(a_user_id bigint, a_token_id bigint, a_blockchain enum_block_chain, a_escrow_contract_address varchar, a_wallet_address varchar DEFAULT NULL)
 RETURNS table (
     "wallet_address" varchar,
     "balance" varchar
@@ -2684,7 +2684,7 @@ AS $$
     
 BEGIN
     RETURN QUERY SELECT
-						a.user_address,
+            a.user_address,
             CAST(SUM(CAST(a.quantity AS NUMERIC) 
                 * CASE
                      WHEN a.is_deposit THEN 1
@@ -2695,8 +2695,9 @@ BEGIN
 		WHERE a.blockchain = a_blockchain
 		    AND a.fkey_user_id = a_user_id
             AND a.fkey_token_id = a_token_id
+            AND a.escrow_contract_address = a_escrow_contract_address
             AND  (a_wallet_address ISNULL OR a.user_address = a_wallet_address)
-						GROUP BY a.user_address
+            GROUP BY a.user_address
         ;
 END
             

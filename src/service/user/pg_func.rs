@@ -2189,6 +2189,7 @@ END
                 Field::new("user_id", Type::BigInt),
                 Field::new("token_id", Type::BigInt),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("escrow_contract_address", Type::BlockchainAddress),
                 Field::new("wallet_address", Type::optional(Type::BlockchainAddress)),
             ],
             vec![
@@ -2198,7 +2199,7 @@ END
             r#"
 BEGIN
     RETURN QUERY SELECT
-						a.user_address,
+            a.user_address,
             CAST(SUM(CAST(a.quantity AS NUMERIC) 
                 * CASE
                      WHEN a.is_deposit THEN 1
@@ -2209,8 +2210,9 @@ BEGIN
 		WHERE a.blockchain = a_blockchain
 		    AND a.fkey_user_id = a_user_id
             AND a.fkey_token_id = a_token_id
+            AND a.escrow_contract_address = a_escrow_contract_address
             AND  (a_wallet_address ISNULL OR a.user_address = a_wallet_address)
-						GROUP BY a.user_address
+            GROUP BY a.user_address
         ;
 END
             "#,
