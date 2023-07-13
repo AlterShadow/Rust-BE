@@ -979,6 +979,8 @@ pub async fn user_exit_strategy(
     let logger = DynLogger::new(Arc::new(move |msg| {
         println!("{}", msg);
     }));
+
+    // TODO: cache this and withdraw later if strategy pool started trading between redeem and withdraw
     let transaction_hash = withdraw_and_ensure_success(
         strategy_pool_contract,
         &conn,
