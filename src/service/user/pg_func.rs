@@ -1679,12 +1679,17 @@ END
         ProceduralFunction::new(
             "fun_user_list_strategy_wallets",
             vec![
-                Field::new("user_id", Type::BigInt),
+                Field::new("user_id", Type::optional(Type::BigInt)),
+                Field::new(
+                    "strategy_wallet_address",
+                    Type::optional(Type::BlockchainAddress),
+                ),
                 Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
             ],
             vec![
                 Field::new("total", Type::BigInt),
                 Field::new("wallet_id", Type::BigInt),
+                Field::new("user_id", Type::BigInt),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("address", Type::BlockchainAddress),
                 Field::new("is_platform_managed", Type::Boolean),
@@ -1695,12 +1700,14 @@ BEGIN
     RETURN QUERY SELECT 
         COUNT(*) OVER() AS total,
         a.pkey_id,
+				a.fkey_user_id,
         a.blockchain,
         a.address, 
         a.is_platform_managed,
         a.created_at 
     FROM tbl.user_strategy_wallet AS a 
-    WHERE a.fkey_user_id = a_user_id 
+    WHERE (a_user_id ISNULL OR a.fkey_user_id = a_user_id)
+				AND (a_strategy_wallet_address ISNULL OR a.address = a_strategy_wallet_address)
         AND (a_blockchain ISNULL OR a.blockchain = a_blockchain);
 END
             "#,

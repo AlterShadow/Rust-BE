@@ -2204,10 +2204,11 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_list_strategy_wallets(a_user_id bigint, a_blockchain enum_block_chain DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_user_list_strategy_wallets(a_user_id bigint DEFAULT NULL, a_strategy_wallet_address varchar DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL)
 RETURNS table (
     "total" bigint,
     "wallet_id" bigint,
+    "user_id" bigint,
     "blockchain" enum_block_chain,
     "address" varchar,
     "is_platform_managed" boolean,
@@ -2220,12 +2221,14 @@ BEGIN
     RETURN QUERY SELECT 
         COUNT(*) OVER() AS total,
         a.pkey_id,
+				a.fkey_user_id,
         a.blockchain,
         a.address, 
         a.is_platform_managed,
         a.created_at 
     FROM tbl.user_strategy_wallet AS a 
-    WHERE a.fkey_user_id = a_user_id 
+    WHERE (a_user_id ISNULL OR a.fkey_user_id = a_user_id)
+				AND (a_strategy_wallet_address ISNULL OR a.address = a_strategy_wallet_address)
         AND (a_blockchain ISNULL OR a.blockchain = a_blockchain);
 END
             

@@ -830,8 +830,9 @@ pub async fn user_exit_strategy(
     /* instantiate strategy wallet */
     let strategy_wallet_contract_row = db
         .execute(FunUserListStrategyWalletsReq {
-            user_id: ctx.user_id,
+            user_id: Some(ctx.user_id),
             blockchain: Some(blockchain),
+            strategy_wallet_address: None,
         })
         .await?
         .into_result()
@@ -2709,8 +2710,9 @@ impl RequestHandler for MethodUserListStrategyWallets {
         async move {
             let resp = db
                 .execute(FunUserListStrategyWalletsReq {
-                    user_id: ctx.user_id,
+                    user_id: Some(ctx.user_id),
                     blockchain: req.blockchain,
+                    strategy_wallet_address: None,
                 })
                 .await?;
             Ok(UserListStrategyWalletsResponse {
@@ -3356,8 +3358,9 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
             }
             let wallets = db
                 .execute(FunUserListStrategyWalletsReq {
-                    user_id: ctx.user_id,
+                    user_id: Some(ctx.user_id),
                     blockchain: Some(token.blockchain),
+                    strategy_wallet_address: None,
                 })
                 .await?;
             Ok(UserGetBackStrategyReviewDetailResponse {

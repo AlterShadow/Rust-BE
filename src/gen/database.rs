@@ -502,6 +502,7 @@ pub struct FunUserListStrategyPoolContractAssetLedgerRespRow {
 pub struct FunUserListStrategyWalletsRespRow {
     pub total: i64,
     pub wallet_id: i64,
+    pub user_id: i64,
     pub blockchain: EnumBlockChain,
     pub address: BlockchainAddress,
     pub is_platform_managed: bool,
@@ -2253,7 +2254,10 @@ impl DatabaseRequest for FunUserAddStrategyWalletReq {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserListStrategyWalletsReq {
-    pub user_id: i64,
+    #[serde(default)]
+    pub user_id: Option<i64>,
+    #[serde(default)]
+    pub strategy_wallet_address: Option<BlockchainAddress>,
     #[serde(default)]
     pub blockchain: Option<EnumBlockChain>,
 }
@@ -2262,11 +2266,12 @@ pub struct FunUserListStrategyWalletsReq {
 impl DatabaseRequest for FunUserListStrategyWalletsReq {
     type ResponseRow = FunUserListStrategyWalletsRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_list_strategy_wallets(a_user_id => $1::bigint, a_blockchain => $2::enum_block_chain);"
+        "SELECT * FROM api.fun_user_list_strategy_wallets(a_user_id => $1::bigint, a_strategy_wallet_address => $2::varchar, a_blockchain => $3::enum_block_chain);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
             &self.user_id as &(dyn ToSql + Sync),
+            &self.strategy_wallet_address as &(dyn ToSql + Sync),
             &self.blockchain as &(dyn ToSql + Sync),
         ]
     }

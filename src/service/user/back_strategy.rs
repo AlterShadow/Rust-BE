@@ -84,8 +84,9 @@ async fn user_get_or_deploy_strategy_wallet(
     }
     match db
         .execute(FunUserListStrategyWalletsReq {
-            user_id: ctx.user_id,
+            user_id: Some(ctx.user_id),
             blockchain: Some(blockchain),
+            strategy_wallet_address: None,
         })
         .await?
         .into_result()
@@ -918,8 +919,9 @@ pub async fn user_back_strategy(
         /* update per-user strategy pool contract asset balances & ledger */
         let strategy_wallet_row = db
             .execute(FunUserListStrategyWalletsReq {
-                user_id: ctx.user_id,
+                user_id: Some(ctx.user_id),
                 blockchain: Some(blockchain),
+                strategy_wallet_address: None,
             })
             .await?
             .into_result()
@@ -1517,8 +1519,9 @@ mod tests {
         /* fetch user's strategy wallet address on this chain */
         let strategy_wallet_address = Address::from_str(
             &db.execute(FunUserListStrategyWalletsReq {
-                user_id: ret.user_id,
+                user_id: Some(ret.user_id),
                 blockchain: Some(EnumBlockChain::BscTestnet),
+                strategy_wallet_address: None,
             })
             .await?
             .into_result()
