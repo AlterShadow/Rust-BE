@@ -3348,7 +3348,7 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
                         CustomError::new(EnumErrorCode::NotFound, "Token not found")
                     })?;
                 let price = cmc
-                    .get_usd_prices_by_symbol(&[token.short_name.clone()])
+                    .get_usd_prices_by_symbol(&[token.symbol.clone()])
                     .await?[0];
                 ratios.push(EstimatedBackedTokenRatios {
                     token_id: token.token_id,
