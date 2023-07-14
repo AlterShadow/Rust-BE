@@ -124,6 +124,15 @@ impl<T: Transport> EscrowContract<T> {
         amount: U256,
         logger: DynLogger,
     ) -> Result<H256> {
+        info!(
+					"Accepting {:?} amount of asset {:?} from proprietor {:?} from escrow contract {:?} by {:?}",
+					amount_to_display(amount),
+					asset,
+					proprietor,
+					self.address(),
+					signer.address(),
+			);
+
         let estimated_gas = self
             .contract
             .estimate_gas(
@@ -136,14 +145,6 @@ impl<T: Transport> EscrowContract<T> {
 
         let estimated_gas_price = conn.eth().gas_price().await?;
 
-        info!(
-            "Accepting {:?} amount of asset {:?} from proprietor {:?} from escrow contract {:?} by {:?}",
-            amount_to_display(amount),
-            asset,
-            proprietor,
-            self.address(),
-            signer.address(),
-        );
         logger.log(format!(
             "Accepting {:?} amount of asset {:?} from proprietor {:?} from escrow contract {:?} by {:?}",
             amount_to_display(amount),
@@ -213,6 +214,17 @@ impl<T: Transport> EscrowContract<T> {
         fee_amount: U256,
         logger: DynLogger,
     ) -> Result<H256> {
+        info!(
+					"Rejecting {:?} amount of asset {:?} from proprietor {:?}, and transferring fee amount {:?} to fee recipient {:?} from escrow contract {:?} by {:?}",
+					amount_to_display(deposit_amount),
+					asset,
+					proprietor,
+					fee_amount,
+					fee_recipient,
+					self.address(),
+					signer.address(),
+			);
+
         let estimated_gas = self
             .contract
             .estimate_gas(
@@ -225,16 +237,6 @@ impl<T: Transport> EscrowContract<T> {
 
         let estimated_gas_price = conn.eth().gas_price().await?;
 
-        info!(
-            "Rejecting {:?} amount of asset {:?} from proprietor {:?}, and transferring fee amount {:?} to fee recipient {:?} from escrow contract {:?} by {:?}",
-            amount_to_display(deposit_amount),
-            asset,
-            proprietor,
-						fee_amount,
-						fee_recipient,
-            self.address(),
-            signer.address(),
-        );
         logger.log(format!(
 					"Rejecting {:?} amount of asset {:?} from proprietor {:?}, and transferring fee amount {:?} to fee recipient {:?} from escrow contract {:?} by {:?}",
 					amount_to_display(deposit_amount),
@@ -315,6 +317,16 @@ impl<T: Transport> EscrowContract<T> {
         recipient: Address,
         logger: DynLogger,
     ) -> Result<H256> {
+        info!(
+					"Transferring {:?} amount of {:?} asset from {:?} proprietor to {:?} recipient from escrow contract {:?} by {:?}",
+					amount_to_display(amount),
+					asset,
+					proprietor,
+					recipient,
+					self.address(),
+					signer.address(),
+			);
+
         let estimated_gas = self
             .contract
             .estimate_gas(
@@ -326,16 +338,6 @@ impl<T: Transport> EscrowContract<T> {
             .await?;
 
         let estimated_gas_price = conn.eth().gas_price().await?;
-
-        info!(
-            "Transferring {:?} amount of {:?} asset from {:?} proprietor to {:?} recipient from escrow contract {:?} by {:?}",
-						amount_to_display(amount),
-						asset,
-						proprietor,
-            recipient,
-            self.address(),
-            signer.address(),
-        );
 
         logger.log(format!(
 					"Transferring {:?} amount of {:?} asset from {:?} proprietor to {:?} recipient from escrow contract {:?} by {:?}",
@@ -383,6 +385,15 @@ impl<T: Transport> EscrowContract<T> {
         amount: U256,
         logger: DynLogger,
     ) -> Result<H256> {
+        info!(
+					"Refunding {:?} amount of {:?} asset to {:?} proprietor from escrow contract {:?} by {:?}",
+					amount_to_display(amount),
+					asset,
+					proprietor,
+					self.address(),
+					signer.address(),
+			);
+
         let estimated_gas = self
             .contract
             .estimate_gas(
@@ -394,15 +405,6 @@ impl<T: Transport> EscrowContract<T> {
             .await?;
 
         let estimated_gas_price = conn.eth().gas_price().await?;
-
-        info!(
-						"Refunding {:?} amount of {:?} asset to {:?} proprietor from escrow contract {:?} by {:?}",
-						amount_to_display(amount),
-						asset,
-						proprietor,
-						self.address(),
-						signer.address(),
-				);
 
         logger.log(format!(
 					"Refunding {:?} amount of {:?} asset to {:?} proprietor from escrow contract {:?} by {:?}",
@@ -448,18 +450,6 @@ impl<T: Transport> EscrowContract<T> {
         amounts: Vec<U256>,
         logger: DynLogger,
     ) -> Result<H256> {
-        let estimated_gas = self
-            .contract
-            .estimate_gas(
-                EscrowFunctions::RescueAssets.as_str(),
-                (recipient, assets.clone(), amounts.clone()),
-                signer.address(),
-                Options::default(),
-            )
-            .await?;
-
-        let estimated_gas_price = conn.eth().gas_price().await?;
-
         info!(
             "Rescuing {:?} amounts of {:?} assets to {:?} from escrow contract {:?} by {:?}",
             amounts
@@ -472,6 +462,18 @@ impl<T: Transport> EscrowContract<T> {
             self.address(),
             signer.address(),
         );
+
+        let estimated_gas = self
+            .contract
+            .estimate_gas(
+                EscrowFunctions::RescueAssets.as_str(),
+                (recipient, assets.clone(), amounts.clone()),
+                signer.address(),
+                Options::default(),
+            )
+            .await?;
+
+        let estimated_gas_price = conn.eth().gas_price().await?;
 
         logger.log(format!(
             "Rescuing {:?} amounts of {:?} assets to {:?} from escrow contract {:?} by {:?}",
@@ -523,6 +525,13 @@ impl<T: Transport> EscrowContract<T> {
         blacklisted_account: Address,
         logger: DynLogger,
     ) -> Result<H256> {
+        info!(
+            "Adding {:?} blacklisted account to escrow contract {:?} by {:?}",
+            blacklisted_account,
+            self.address(),
+            signer.address(),
+        );
+
         let estimated_gas = self
             .contract
             .estimate_gas(
@@ -534,13 +543,6 @@ impl<T: Transport> EscrowContract<T> {
             .await?;
 
         let estimated_gas_price = conn.eth().gas_price().await?;
-
-        info!(
-            "Adding {:?} blacklisted account to escrow contract {:?} by {:?}",
-            blacklisted_account,
-            self.address(),
-            signer.address(),
-        );
 
         logger.log(format!(
             "Adding {:?} blacklisted account to escrow contract {:?} by {:?}",
@@ -581,6 +583,13 @@ impl<T: Transport> EscrowContract<T> {
         blacklisted_account: Address,
         logger: DynLogger,
     ) -> Result<H256> {
+        info!(
+            "Removing {:?} blacklisted account to escrow contract {:?} by {:?}",
+            blacklisted_account,
+            self.address(),
+            signer.address(),
+        );
+
         let estimated_gas = self
             .contract
             .estimate_gas(
@@ -592,13 +601,6 @@ impl<T: Transport> EscrowContract<T> {
             .await?;
 
         let estimated_gas_price = conn.eth().gas_price().await?;
-
-        info!(
-            "Removing {:?} blacklisted account to escrow contract {:?} by {:?}",
-            blacklisted_account,
-            self.address(),
-            signer.address(),
-        );
 
         logger.log(format!(
             "Removing {:?} blacklisted account to escrow contract {:?} by {:?}",

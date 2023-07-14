@@ -168,6 +168,15 @@ impl<T: Transport> StrategyPoolContract<T> {
         receiver: Address,
         logger: DynLogger,
     ) -> Result<H256> {
+        info!("Depositing amounts {:?} of assets {:?} to mint {:?} pool tokens to receiver {:?} to strategy pool contract {:?} by {:?}",
+						amounts.iter().cloned().map(amount_to_display).collect::<Vec<_>>(),
+						assets.clone(),
+						pool_tokens,
+						receiver,
+						self.address(),
+						signer.address(),
+				);
+
         let estimated_gas = self
             .contract
             .estimate_gas(
@@ -180,14 +189,6 @@ impl<T: Transport> StrategyPoolContract<T> {
 
         let estimated_gas_price = conn.eth().gas_price().await?;
 
-        info!("Depositing amounts {:?} of assets {:?} to mint {:?} pool tokens to receiver {:?} to strategy pool contract {:?} by {:?}",
-							amounts.clone(),
-							assets.clone(),
-							pool_tokens,
-							receiver,
-							self.address(),
-							signer.address(),
-				);
         logger.log(
             format!(
                 "Depositing amounts {:?} of assets {:?} to mint {:?} pool tokens to receiver {:?} to strategy pool contract {:?} by {:?}",
@@ -247,6 +248,14 @@ impl<T: Transport> StrategyPoolContract<T> {
         receiver: Address,
         owner: Address,
     ) -> Result<H256> {
+        info!("Redeeming {:?} pool tokens to receiver {:?} from owner {:?} from strategy pool contract {:?} by {:?}",
+					amount_to_display(pool_tokens),
+					receiver,
+					owner,
+					self.address(),
+					signer.address(),
+			);
+
         let estimated_gas = self
             .contract
             .estimate_gas(
@@ -259,13 +268,6 @@ impl<T: Transport> StrategyPoolContract<T> {
 
         let estimated_gas_price = conn.eth().gas_price().await?;
 
-        info!("Redeeming {:?} pool tokens to receiver {:?} from owner {:?} from strategy pool contract {:?} by {:?}",
-							pool_tokens,
-							receiver,
-							owner,
-							self.address(),
-							signer.address(),
-				);
         let tx_hash = self
             .contract
             .signed_call(
@@ -281,7 +283,7 @@ impl<T: Transport> StrategyPoolContract<T> {
         get_blockchain_logger().log(
             format!(
                 "Redeeming {:?} pool tokens to receiver {:?} from owner {:?} from strategy pool contract {:?} by {:?}",
-                pool_tokens,
+                amount_to_display(pool_tokens),
                 receiver,
                 owner,
                 self.address(),
@@ -301,6 +303,14 @@ impl<T: Transport> StrategyPoolContract<T> {
         amounts: Vec<U256>,
         logger: DynLogger,
     ) -> Result<H256> {
+        info!("Withdrawing {:?} amounts of {:?} assets to receiver {:?} from strategy pool contract {:?} by {:?}",
+						amounts.iter().cloned().map(amount_to_display).collect::<Vec<_>>(),
+						assets,
+						receiver,
+						self.address(),
+						signer.address(),
+				);
+
         let estimated_gas = self
             .contract
             .estimate_gas(
@@ -313,13 +323,6 @@ impl<T: Transport> StrategyPoolContract<T> {
 
         let estimated_gas_price = conn.eth().gas_price().await?;
 
-        info!("Withdrawing {:?} amounts of {:?} assets to receiver {:?} from strategy pool contract {:?} by {:?}",
-						amounts,
-						assets,
-						receiver,
-						self.address(),
-						signer.address(),
-			);
         logger.log(
 				format!("Withdrawing {:?} amounts of {:?} assets to receiver {:?} from strategy pool contract {:?} by {:?}",
 						amounts.iter().cloned().map(amount_to_display).collect::<Vec<_>>(),
@@ -361,6 +364,14 @@ impl<T: Transport> StrategyPoolContract<T> {
         asset: Address,
         amount: U256,
     ) -> Result<H256> {
+        info!(
+						"Acquiring {:?} amount of asset {:?} before trade from strategy pool contract {:?} by {:?}",
+						amount_to_display(amount),
+						asset,
+						self.address(),
+						signer.address(),
+				);
+
         let estimated_gas = self
             .contract
             .estimate_gas(
@@ -373,13 +384,6 @@ impl<T: Transport> StrategyPoolContract<T> {
 
         let estimated_gas_price = conn.eth().gas_price().await?;
 
-        info!(
-            "Acquiring {:?} amount of asset {:?} before trade from strategy pool contract {:?} by {:?}",
-						amount,
-            asset,
-            self.address(),
-            signer.address(),
-        );
         let tx_hash = self
             .contract
             .signed_call(
@@ -395,7 +399,7 @@ impl<T: Transport> StrategyPoolContract<T> {
         get_blockchain_logger().log(
             format!(
                 "Acquiring {:?} amount of asset {:?} before trade from strategy pool contract {:?} by {:?}",
-                amount,
+                amount_to_display(amount),
                 asset,
                 self.address(),
                 signer.address(),
@@ -412,6 +416,14 @@ impl<T: Transport> StrategyPoolContract<T> {
         assets: Vec<Address>,
         amounts: Vec<U256>,
     ) -> Result<H256> {
+        info!(
+						"Giving back {:?} amounts of assets {:?} after trade to strategy pool contract {:?} by {:?}",
+						amounts.iter().cloned().map(amount_to_display).collect::<Vec<_>>(),
+						assets.clone(),
+						self.address(),
+						signer.address(),
+				);
+
         let estimated_gas = self
             .contract
             .estimate_gas(
@@ -424,13 +436,6 @@ impl<T: Transport> StrategyPoolContract<T> {
 
         let estimated_gas_price = conn.eth().gas_price().await?;
 
-        info!(
-            "Giving back {:?} amounts of assets {:?} after trade to strategy pool contract {:?} by {:?}",
-            amounts.clone(),
-            assets.clone(),
-            self.address(),
-            signer.address(),
-        );
         let tx_hash = self
             .contract
             .signed_call(
@@ -462,6 +467,14 @@ impl<T: Transport> StrategyPoolContract<T> {
         signer: impl Key + Clone,
         new_owner: Address,
     ) -> Result<H256> {
+        info!(
+            "Transferring strategy pool contract {:?} ownership from {:?} to {:?} by {:?}",
+            self.address(),
+            self.owner().await?,
+            new_owner,
+            signer.address(),
+        );
+
         let estimated_gas = self
             .contract
             .estimate_gas(
@@ -474,13 +487,6 @@ impl<T: Transport> StrategyPoolContract<T> {
 
         let estimated_gas_price = conn.eth().gas_price().await?;
 
-        info!(
-            "Transferring strategy pool contract {:?} ownership from {:?} to {:?} by {:?}",
-            self.address(),
-            self.owner().await?,
-            new_owner,
-            signer.address(),
-        );
         let tx_hash = self
             .contract
             .signed_call(
