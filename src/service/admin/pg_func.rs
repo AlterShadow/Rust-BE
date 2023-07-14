@@ -393,9 +393,19 @@ END
             vec![],
             r#"
 BEGIN
-    INSERT INTO tbl.escrow_token_contract_address (pkey_id, symbol, short_name, description, address, blockchain, is_stablecoin, decimals)
-         VALUES (a_pkey_id, a_symbol, a_short_name, a_description, a_address, a_blockchain, a_is_stablecoin, a_decimals)
-;
+    IF EXISTS (SELECT 1 FROM tbl.escrow_token_contract_address WHERE blockchain = a_blockchain AND symbol = a_symbol) THEN
+        UPDATE tbl.escrow_token_contract_address 
+        SET short_name = a_short_name,
+            description = a_description,
+            address = a_address,
+            is_stablecoin = a_is_stablecoin,
+            decimals = a_decimals
+        WHERE blockchain = a_blockchain AND symbol = a_symbol;
+    ELSE
+        INSERT INTO tbl.escrow_token_contract_address (pkey_id, symbol, short_name, description, address, blockchain, is_stablecoin, decimals)
+             VALUES (a_pkey_id, a_symbol, a_short_name, a_description, a_address, a_blockchain, a_is_stablecoin, a_decimals);
+    END IF;
+
 END
             "#,
         ),
