@@ -2510,7 +2510,7 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-            SELECT 
+            RETURN QUERY SELECT 
                     COUNT(*) OVER() AS total,
                     spc.fkey_strategy_id,
                     s.pkey_id,
