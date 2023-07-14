@@ -100,6 +100,14 @@ impl<T: Transport> StrategyWalletContract<T> {
         strategy: Address,
         shares: U256,
     ) -> Result<H256> {
+        info!(
+					"Redeeming {:?} shares from strategy pool contract {:?} using strategy wallet contract {:?} by {:?}",
+					shares,
+					strategy,
+					self.address(),
+					signer.address(),
+				);
+
         let estimated_gas = self
             .contract
             .estimate_gas(
@@ -112,13 +120,6 @@ impl<T: Transport> StrategyWalletContract<T> {
 
         let estimated_gas_price = conn.eth().gas_price().await?;
 
-        info!(
-            "Redeeming {:?} shares from strategy pool contract {:?} using strategy wallet contract {:?} by {:?}",
-            shares,
-            strategy,
-            self.address(),
-            signer.address(),
-        );
         let tx_hash = self
             .contract
             .signed_call(
@@ -147,6 +148,13 @@ impl<T: Transport> StrategyWalletContract<T> {
         signer: impl Key + Clone,
         strategy: Address,
     ) -> Result<H256> {
+        info!(
+					"Redeeming all shares from strategy pool contract {:?} using strategy wallet contract {:?} by {:?}",
+					strategy,
+					self.address(),
+					signer.address(),
+				);
+
         let estimated_gas = self
             .contract
             .estimate_gas(
@@ -159,12 +167,6 @@ impl<T: Transport> StrategyWalletContract<T> {
 
         let estimated_gas_price = conn.eth().gas_price().await?;
 
-        info!(
-            "Redeeming all shares from strategy pool contract {:?} using strategy wallet contract {:?} by {:?}",
-            strategy,
-            self.address(),
-            signer.address(),
-        );
         let tx_hash = self
             .contract
             .signed_call(
