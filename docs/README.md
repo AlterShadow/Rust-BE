@@ -79,6 +79,7 @@ ID: 2
 |20550|UserListUserBackStrategyAttempt|limit, offset, strategy_id, token_id|total, back_attempts||
 |20560|UserListUserBackStrategyLog|attempt_id, limit, offset|back_logs_total, back_logs||
 |20570|UserGetSystemConfig||platform_fee|User get system config|
+|20580|UserListUserStrategyBalance|limit, offset, strategy_id|balances_total, balances||
 
 # admin Server
 ID: 3

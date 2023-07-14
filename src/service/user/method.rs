@@ -3564,3 +3564,38 @@ impl RequestHandler for MethodExpertListUnpublishedStrategies {
         .boxed()
     }
 }
+pub struct MethodUserListUserStrategyBalance;
+impl RequestHandler for MethodUserListUserStrategyBalance {
+    type Request = UserListUserStrategyBalanceRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db = toolbox.get_db();
+        async move {
+            ensure_user_role(ctx, EnumRole::User)?;
+            let balances = db
+                .execute(FunUserListUserStrategyBalanceReq {
+                    user_id: ctx.user_id,
+                    strategy_id: req.strategy_id,
+                    limit: req.limit.unwrap_or(DEFAULT_LIMIT),
+                    offset: req.offset.unwrap_or(DEFAULT_OFFSET),
+                })
+                .await?;
+            Ok(UserListUserStrategyBalanceResponse {
+                balances_total: balances.first(|x| x.total).unwrap_or_default(),
+                balances: balances.map(|x| UserStrategyBalance {
+                    strategy_id: x.strategy_id,
+                    strategy_name: x.strategy_name,
+                    balance: x.balance.into(),
+                    address: x.user_strategy_wallet_address.into(),
+                    blockchain: x.blockchain,
+                }),
+            })
+        }
+        .boxed()
+    }
+}

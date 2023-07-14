@@ -1207,5 +1207,30 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
             vec![Field::new("platform_fee", Type::Numeric)],
         )
         .with_description("User get system config"),
+        EndpointSchema::new(
+            "UserListUserStrategyBalance",
+            20580,
+            vec![
+                Field::new("limit", Type::optional(Type::BigInt)),
+                Field::new("offset", Type::optional(Type::BigInt)),
+                Field::new("strategy_id", Type::optional(Type::BigInt)),
+            ],
+            vec![
+                Field::new("balances_total", Type::BigInt),
+                Field::new(
+                    "balances",
+                    Type::datatable(
+                        "UserStrategyBalance",
+                        vec![
+                            Field::new("strategy_id", Type::BigInt),
+                            Field::new("strategy_name", Type::String),
+                            Field::new("balance", Type::BlockchainDecimal),
+                            Field::new("address", Type::BlockchainAddress),
+                            Field::new("blockchain", Type::enum_ref("block_chain")),
+                        ],
+                    ),
+                ),
+            ],
+        ),
     ]
 }

@@ -5209,6 +5209,71 @@
           "stream_response": null,
           "description": "User get system config",
           "json_schema": null
+        },
+        {
+          "name": "UserListUserStrategyBalance",
+          "code": 20580,
+          "parameters": [
+            {
+              "name": "limit",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "offset",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "strategy_id",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "name": "balances_total",
+              "ty": "BigInt"
+            },
+            {
+              "name": "balances",
+              "ty": {
+                "DataTable": {
+                  "name": "UserStrategyBalance",
+                  "fields": [
+                    {
+                      "name": "strategy_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "strategy_name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "balance",
+                      "ty": "BlockchainDecimal"
+                    },
+                    {
+                      "name": "address",
+                      "ty": "BlockchainAddress"
+                    },
+                    {
+                      "name": "blockchain",
+                      "ty": {
+                        "EnumRef": "block_chain"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "stream_response": null,
+          "description": "",
+          "json_schema": null
         }
       ]
     },

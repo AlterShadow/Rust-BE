@@ -431,6 +431,9 @@ pub enum EnumEndpoint {
     #[postgres(name = "UserGetSystemConfig")]
     UserGetSystemConfig = 20570,
     ///
+    #[postgres(name = "UserListUserStrategyBalance")]
+    UserListUserStrategyBalance = 20580,
+    ///
     #[postgres(name = "AdminListUsers")]
     AdminListUsers = 30010,
     ///
@@ -2491,6 +2494,22 @@ pub struct UserListUserBackStrategyLogResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct UserListUserStrategyBalanceRequest {
+    #[serde(default)]
+    pub limit: Option<i64>,
+    #[serde(default)]
+    pub offset: Option<i64>,
+    #[serde(default)]
+    pub strategy_id: Option<i64>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListUserStrategyBalanceResponse {
+    pub balances_total: i64,
+    pub balances: Vec<UserStrategyBalance>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct UserListWalletActivityLedgerRequest {
     #[serde(with = "WithBlockchainAddress")]
     pub wallet_address: Address,
@@ -2546,6 +2565,17 @@ pub struct UserRequestRefundRequest {
 #[serde(rename_all = "camelCase")]
 pub struct UserRequestRefundResponse {
     pub success: bool,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserStrategyBalance {
+    pub strategy_id: i64,
+    pub strategy_name: String,
+    #[serde(with = "WithBlockchainDecimal")]
+    pub balance: U256,
+    #[serde(with = "WithBlockchainAddress")]
+    pub address: Address,
+    pub blockchain: EnumBlockChain,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -8394,6 +8424,79 @@ impl WsRequest for UserGetSystemConfigRequest {
 }
 impl WsResponse for UserGetSystemConfigResponse {
     type Request = UserGetSystemConfigRequest;
+}
+
+impl WsRequest for UserListUserStrategyBalanceRequest {
+    type Response = UserListUserStrategyBalanceResponse;
+    const METHOD_ID: u32 = 20580;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserListUserStrategyBalance",
+  "code": 20580,
+  "parameters": [
+    {
+      "name": "limit",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "offset",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "strategy_id",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    }
+  ],
+  "returns": [
+    {
+      "name": "balances_total",
+      "ty": "BigInt"
+    },
+    {
+      "name": "balances",
+      "ty": {
+        "DataTable": {
+          "name": "UserStrategyBalance",
+          "fields": [
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "strategy_name",
+              "ty": "String"
+            },
+            {
+              "name": "balance",
+              "ty": "BlockchainDecimal"
+            },
+            {
+              "name": "address",
+              "ty": "BlockchainAddress"
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": null,
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for UserListUserStrategyBalanceResponse {
+    type Request = UserListUserStrategyBalanceRequest;
 }
 
 impl WsRequest for AdminListUsersRequest {

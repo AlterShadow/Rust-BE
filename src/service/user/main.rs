@@ -160,6 +160,7 @@ async fn main() -> Result<()> {
         addresses: escrow_contract_address.clone(),
     });
     server.add_handler(MethodUserGetSystemConfig);
+    server.add_handler(MethodUserListUserStrategyBalance);
 
     server.add_handler(MethodAdminListUsers);
     server.add_handler(MethodAdminSetUserRole);
