@@ -708,6 +708,7 @@ impl RequestHandler for MethodAdminAddEscrowTokenContractAddress {
                     description: req.description,
                     address: req.address.into(),
                     blockchain: req.blockchain,
+                    decimals: 18,
                     is_stablecoin: req.is_stablecoin,
                 })
                 .await?;

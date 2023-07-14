@@ -386,13 +386,14 @@ END
                 Field::new("description", Type::String),
                 Field::new("address", Type::BlockchainAddress),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("decimals", Type::Int),
                 Field::new("is_stablecoin", Type::Boolean),
             ],
             vec![],
             r#"
 BEGIN
-    INSERT INTO tbl.escrow_token_contract_address (pkey_id, symbol, short_name, description, address, blockchain, is_stablecoin)
-         VALUES (a_pkey_id, a_symbol, a_short_name, a_description, a_address, a_blockchain, a_is_stablecoin)
+    INSERT INTO tbl.escrow_token_contract_address (pkey_id, symbol, short_name, description, address, blockchain, is_stablecoin, decimals)
+         VALUES (a_pkey_id, a_symbol, a_short_name, a_description, a_address, a_blockchain, a_is_stablecoin, a_decimals)
 ;
 END
             "#,

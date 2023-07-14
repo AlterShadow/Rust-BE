@@ -22,5 +22,7 @@ tracing = "*"
 lib = { path = "../../../lib" }
 lru = "0.10.0"
 chrono = "0.4.24"
+gen = { path = "../../../gen" }
+serde_path_to_error = "0.1.11"
 [lib]
 path = "lib.rs"

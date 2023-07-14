@@ -3,9 +3,10 @@ pub mod audit;
 pub mod tools;
 use crate::audit::get_audit_rules;
 use api::cmc::CoinMarketCap;
+use eth_sdk::erc20::Erc20Token;
 use eth_sdk::signer::Secp256k1SecretKey;
 use eth_sdk::utils::get_signed_text;
-use eth_sdk::{BlockchainCoinAddresses, EscrowAddresses};
+use eth_sdk::{EthereumConns, EthereumRpcConnectionPool};
 use eyre::*;
 use futures::future::join_all;
 use gen::database::FunAdminAddEscrowTokenContractAddressReq;
@@ -23,6 +24,8 @@ use tokio::sync::Mutex;
 use tokio::task::JoinHandle;
 use tools::*;
 use tracing::*;
+use web3::types::Address;
+use web3::Web3;
 
 const ADMIN_KEY: (&str, &str) = (
     "d34ffbe32eea1de01e30f5cccb3f9863b07c1ac600c09bae80370fc14c899913",
@@ -247,54 +250,61 @@ pub async fn populate_audit_rules() -> Result<()> {
     }
     Ok(())
 }
-pub async fn populate_escrow_token_contract_address(db: &DbClient) -> Result<()> {
-    let admin_signer = get_admin_key();
-    let mut admin_client = connect_user("dev-0", &admin_signer.key).await?;
+pub async fn populate_escrow_token_contract_address(
+    db: &DbClient,
+    pool: EthereumRpcConnectionPool,
+) -> Result<()> {
     // TODO: should get a properly list from somewhere
-    let mostly_needed_coins = vec![
+    let coins = [
         "WBTC", "USDC", "USDT", "DAI", "BUSD", "WETH", "LINK", "UNI", "AAVE", "YFI", "SNX", "MKR",
         "COMP", "SUSHI", "CRV", "REN", "BAL", "KNC", "OMG", "ZRX", "BAT", "MANA", "ENJ", "GRT",
         "1INCH", "BNT", "CEL", "CHZ", "CVC", "DNT", "FET", "GNO", "GNT", "KAVA", "KIN", "KNC",
-        "LOOM", "LRC", "DOGE", "MATIC", "MLN", "NMR", "NXT", "OCEAN", "OGN", "PAX", "PAXG", "POLY",
+        "LOOM", "LRC", "DOGE", "MATIC", "MLN", "NMR", "NXT", "OCEAN", "OGN", "PAXG", "POLY",
         "POWR", "RCN", "REP", "RLC", "RSR", "SNT", "STORJ", "STX", "TRB", "TUSD", "UMA", "USDP",
     ];
     let cmc = CoinMarketCap::new_debug_key()?;
     let tokens = cmc
-        .get_cmc_token_infos_by_symbol(&mostly_needed_coins.into_iter().cloned().collect())
+        .get_token_infos_by_symbol_v2(&coins.into_iter().map(|x| x.to_owned()).collect::<Vec<_>>())
         .await?;
-    for (i, token) in tokens.into_iter().enumerate() {
+    for token in tokens.into_values() {
         let symbol = token.symbol;
-        for address in token.addresses {
-            let blockchain = address.chain;
-            let address = address.address;
-            db.execute(FunAdminAddEscrowTokenContractAddressReq {
-                pkey_id: i as _, // TODO: should be a proper pkey_id
-                symbol: symbol.clone(),
-                short_name: token.name.clone(),
-                description: token.slug.clone()
-                address: address.into(),
-                blockchain: blockchain,
-                is_stablecoin: false,
-            })
-            .await?;
-        }
-    }
-    Ok(())
-}
-pub async fn populate_escrow_contract_address() -> Result<()> {
-    let admin_signer = get_admin_key();
-    let mut admin_client = connect_user("dev-0", &admin_signer.key).await?;
-    let addresses = EscrowAddresses::new();
-    for (i, (blockchain, _, address)) in addresses.iter().enumerate() {
-        if let Err(err) = admin_client
-            .request(AdminAddEscrowContractAddressRequest {
-                pkey_id: i as _,
-                address: format!("{:?}", address),
-                blockchain,
-            })
-            .await
-        {
-            warn!("Error when inserting token: {:?}", err);
+        for (i, address) in token.contract_address.into_iter().enumerate() {
+            let blockchain = if let Ok(x) = cmc.coin_symbol_to_chain(&address.platform.coin.symbol)
+            {
+                x
+            } else {
+                continue;
+            };
+            let address: Address = match address
+                .contract_address
+                .parse()
+                .with_context(|| format!("address {}", address.contract_address))
+            {
+                Ok(x) => x,
+                Err(err) => {
+                    error!(
+                        "Error parsing address {}: {:?}",
+                        address.contract_address, err
+                    );
+                    continue;
+                }
+            };
+            let conn = pool.get(blockchain).await?;
+            let abstract_erc20 = Erc20Token::new(Web3::new(conn.transport().clone()), address)?;
+            let decimals = abstract_erc20.decimals().await?;
+            let ret = db
+                .execute(FunAdminAddEscrowTokenContractAddressReq {
+                    pkey_id: token.id * 100 + (i as i64),
+                    symbol: symbol.clone(),
+                    short_name: token.slug.clone(),
+                    description: token.name.clone(),
+                    address: address.into(),
+                    blockchain,
+                    decimals: decimals.as_u64() as _,
+                    is_stablecoin: false,
+                })
+                .await;
+            info!("Add escrow token contract address: {:?}", ret);
         }
     }
     Ok(())
@@ -307,8 +317,6 @@ pub async fn populate_user_register_wallets() -> Result<()> {
             let signer = get_user_key(i).unwrap();
 
             let mut client = connect_user(format!("user-{}", i), &signer.key).await?;
-            let (txt, sig) =
-                get_signed_text(format!("User register wallet request {}", i), &signer.key)?;
 
             for blockchain in [
                 EnumBlockChain::EthereumMainnet,
@@ -396,19 +404,21 @@ pub async fn populate_user_apply_become_experts() -> Result<()> {
 #[derive(Debug, Clone, Deserialize)]
 pub struct Config {
     pub app_db: DatabaseConfig,
+    pub ethereum_urls: EthereumConns,
 }
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<()> {
     setup_logs(LogLevel::Debug)?;
     let config: Config = load_config("user".to_string())?;
+    let pool = EthereumRpcConnectionPool::from_conns(config.ethereum_urls);
     // drop_and_recreate_database()?;
     let db = connect_to_database(config.app_db).await?;
-    populate_escrow_token_contract_address(&db).await?;
-    populate_escrow_contract_address().await?;
-    populate_users().await?;
-    populate_user_register_wallets().await?;
-    populate_audit_rules().await?;
-    populate_user_apply_become_experts().await?;
+    populate_escrow_token_contract_address(&db, pool).await?;
+    // populate_escrow_contract_address().await?;
+    // populate_users().await?;
+    // populate_user_register_wallets().await?;
+    // populate_audit_rules().await?;
+    // populate_user_apply_become_experts().await?;
 
     Ok(())
 }

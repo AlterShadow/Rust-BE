@@ -1,5 +1,6 @@
 use chrono::{Duration, Utc};
 use eyre::*;
+use gen::model::EnumBlockChain;
 use lru::LruCache;
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::{Client, Response, Url};
@@ -22,7 +23,7 @@ const MAP_URL: &str = "/v1/cryptocurrency/map";
 #[derive(Debug, Clone)]
 pub struct TokenAddress {
     pub address: Address,
-    pub chain: String,
+    pub chain: EnumBlockChain,
 }
 
 #[derive(Debug, Clone)]
@@ -65,6 +66,50 @@ pub struct CoinMarketCap {
     price_cache: Mutex<LruCache<String, f64>>,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct NativeCoin {
+    pub id: String,
+    pub name: String,
+    pub symbol: String,
+    pub slug: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Platform {
+    pub name: String,
+    pub coin: NativeCoin,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ContractAddress {
+    pub contract_address: String,
+    pub platform: Platform,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct CoinInfo {
+    pub id: i64,
+    pub name: String,
+    pub symbol: String,
+    pub category: String,
+    pub slug: String,
+    pub subreddit: String,
+    #[serde(default, rename = "tag-names")]
+    pub tag_names: Option<Vec<String>>,
+    #[serde(rename = "tag-groups")]
+    pub tag_groups: Option<Vec<String>>,
+    pub twitter_username: String,
+    pub is_hidden: i64,
+    pub date_launched: Option<Value>,
+    #[serde(default)]
+    pub contract_address: Vec<ContractAddress>,
+    pub self_reported_circulating_supply: Option<Value>,
+    pub self_reported_tags: Option<Value>,
+    pub self_reported_market_cap: Option<Value>,
+    pub infinite_supply: bool,
+    pub status: String,
+}
+
 impl CoinMarketCap {
     pub fn new_debug_key() -> Result<Self> {
         Self::new(API_KEY)
@@ -81,63 +126,31 @@ impl CoinMarketCap {
             price_cache: Mutex::new(LruCache::new(NonZeroUsize::new(1000).unwrap())),
         })
     }
-
-    pub async fn get_cmc_token_infos_by_symbol(
-        &self,
-        symbols: &Vec<String>,
-    ) -> Result<Vec<CoinMarketCapTokenInfo>> {
+    pub async fn get_token_infos_by_symbol_raw(&self, symbols: &[String]) -> Result<Value> {
         let mut url = self.metadata_url();
         self.append_url_params(&mut url, "symbol", symbols);
-        self.append_url_params(&mut url, "aux", &vec!["status".to_string()]);
-        let payload = &self.send_and_parse_response(&url).await?["data"];
-        let mut token_infos: Vec<CoinMarketCapTokenInfo> = Vec::new();
-        for symbol in symbols {
-            let token = &payload[symbol][0];
-            if token["status"].as_str().context("status not found")? != "active" {
-                bail!("token is not active");
-            }
-            let mut addresses: Vec<TokenAddress> = Vec::new();
-            for address_to_platform in token["contract_address"]
-                .as_array()
-                .context("contract addresses not found")?
-            {
-                let symbol: &str = address_to_platform["platform"]["coin"]["symbol"]
-                    .as_str()
-                    .context("symbol not found")?;
-                match self.coin_symbol_to_chain(&symbol) {
-                    Ok(chain) => {
-                        addresses.push(TokenAddress {
-                            address: Address::from_str(
-                                match address_to_platform["contract_address"].as_str() {
-                                    Some(address) => address,
-                                    None => bail!("address not found"),
-                                },
-                            )?,
-                            chain,
-                        });
-                    }
-                    Err(_) => continue,
-                }
-            }
-            token_infos.push(CoinMarketCapTokenInfo {
-                cmc_id: token["id"].as_u64().context("id not found")?,
-                name: token["name"]
-                    .as_str()
-                    .context("name not found")?
-                    .to_string(),
-                symbol: token["symbol"]
-                    .as_str()
-                    .context("symbol not found")?
-                    .to_string(),
-                slug: token["slug"]
-                    .as_str()
-                    .context("slug not found")?
-                    .to_string(),
-                addresses: addresses,
-            })
+        self.append_url_params(&mut url, "aux", &["status".to_string()]);
+        let payload = self.send_and_parse_response(&url).await?;
+        Ok(payload)
+    }
+    pub async fn get_token_infos_by_symbol_v2(
+        &self,
+        symbols: &[String],
+    ) -> Result<HashMap<String, CoinInfo>> {
+        let mut url = self.metadata_url();
+        self.append_url_params(&mut url, "symbol", symbols);
+        self.append_url_params(&mut url, "aux", &["status".to_string()]);
+        let payload = self.send_and_parse_response(&url).await?;
+        if payload["status"]["error_code"].as_i64().unwrap() != 0 {
+            bail!("error code: {}", payload["status"]["error_code"]);
         }
+        let data = &payload["data"];
+        // let tokens: HashMap<String, CoinInfo> = serde_json::from_value(data.clone())?;
+        let data = serde_json::to_string(&data)?;
+        let jd = &mut serde_json::Deserializer::from_str(&data);
+        let tokens: HashMap<String, CoinInfo> = serde_path_to_error::deserialize(jd)?;
 
-        Ok(token_infos)
+        Ok(tokens)
     }
 
     pub async fn get_usd_prices_by_symbol(&self, symbols: &[String]) -> Result<Vec<f64>> {
@@ -345,6 +358,13 @@ impl CoinMarketCap {
         }
         Ok(json)
     }
+    pub fn coin_symbol_to_chain(&self, coin_symbol: &str) -> Result<EnumBlockChain> {
+        match coin_symbol {
+            "ETH" => Ok(EnumBlockChain::EthereumMainnet),
+            "BNB" => Ok(EnumBlockChain::BscMainnet),
+            _ => bail!("chain not supported {}", coin_symbol),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -364,19 +384,6 @@ mod tests {
         Ok(())
     }
 
-    #[tokio::test]
-    async fn test_get_cmc_id_by_symbol() -> Result<()> {
-        let cmc = CoinMarketCap::new_debug_key().unwrap();
-        let infos = cmc
-            .get_cmc_token_infos_by_symbol(&vec!["ETH".to_string()])
-            .await?;
-        assert_eq!(infos.len(), 1);
-        assert_eq!(infos[0].cmc_id, 1027);
-        assert_eq!(infos[0].name, "Ethereum");
-        assert_eq!(infos[0].symbol, "ETH");
-        assert_eq!(infos[0].slug, "ethereum");
-        Ok(())
-    }
     #[tokio::test]
     async fn test_get_cmc_top_25_tokens() -> Result<()> {
         setup_logs(LogLevel::Debug)?;
@@ -402,6 +409,26 @@ mod tests {
         let price = cmc.get_usd_price_days_ago("ETH".to_string(), 30).await?;
         println!("PRICE: {:?}", price);
         assert!(price > 0.0);
+        Ok(())
+    }
+    #[tokio::test]
+    async fn test_get_token_info_raw() -> Result<()> {
+        setup_logs(LogLevel::Debug)?;
+        let cmc = CoinMarketCap::new_debug_key()?;
+        let info = cmc
+            .get_token_infos_by_symbol_raw(&vec!["USDC".to_string()])
+            .await?;
+        info!("{:?}", info);
+        Ok(())
+    }
+    #[tokio::test]
+    async fn test_get_token_info_v2() -> Result<()> {
+        setup_logs(LogLevel::Debug)?;
+        let cmc = CoinMarketCap::new_debug_key()?;
+        let info = cmc
+            .get_token_infos_by_symbol_v2(&["USDC".to_string()])
+            .await?;
+        info!("{:?}", info);
         Ok(())
     }
 }

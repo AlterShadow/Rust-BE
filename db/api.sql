@@ -3127,14 +3127,14 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_admin_add_escrow_token_contract_address(a_pkey_id bigint, a_symbol varchar, a_short_name varchar, a_description varchar, a_address varchar, a_blockchain enum_block_chain, a_is_stablecoin boolean)
+CREATE OR REPLACE FUNCTION api.fun_admin_add_escrow_token_contract_address(a_pkey_id bigint, a_symbol varchar, a_short_name varchar, a_description varchar, a_address varchar, a_blockchain enum_block_chain, a_decimals int, a_is_stablecoin boolean)
 RETURNS void
 LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    INSERT INTO tbl.escrow_token_contract_address (pkey_id, symbol, short_name, description, address, blockchain, is_stablecoin)
-         VALUES (a_pkey_id, a_symbol, a_short_name, a_description, a_address, a_blockchain, a_is_stablecoin)
+    INSERT INTO tbl.escrow_token_contract_address (pkey_id, symbol, short_name, description, address, blockchain, is_stablecoin, decimals)
+         VALUES (a_pkey_id, a_symbol, a_short_name, a_description, a_address, a_blockchain, a_is_stablecoin, a_decimals)
 ;
 END
             

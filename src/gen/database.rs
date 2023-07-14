@@ -3044,6 +3044,7 @@ pub struct FunAdminAddEscrowTokenContractAddressReq {
     pub description: String,
     pub address: BlockchainAddress,
     pub blockchain: EnumBlockChain,
+    pub decimals: i32,
     pub is_stablecoin: bool,
 }
 
@@ -3051,7 +3052,7 @@ pub struct FunAdminAddEscrowTokenContractAddressReq {
 impl DatabaseRequest for FunAdminAddEscrowTokenContractAddressReq {
     type ResponseRow = FunAdminAddEscrowTokenContractAddressRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_admin_add_escrow_token_contract_address(a_pkey_id => $1::bigint, a_symbol => $2::varchar, a_short_name => $3::varchar, a_description => $4::varchar, a_address => $5::varchar, a_blockchain => $6::enum_block_chain, a_is_stablecoin => $7::boolean);"
+        "SELECT * FROM api.fun_admin_add_escrow_token_contract_address(a_pkey_id => $1::bigint, a_symbol => $2::varchar, a_short_name => $3::varchar, a_description => $4::varchar, a_address => $5::varchar, a_blockchain => $6::enum_block_chain, a_decimals => $7::int, a_is_stablecoin => $8::boolean);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -3061,6 +3062,7 @@ impl DatabaseRequest for FunAdminAddEscrowTokenContractAddressReq {
             &self.description as &(dyn ToSql + Sync),
             &self.address as &(dyn ToSql + Sync),
             &self.blockchain as &(dyn ToSql + Sync),
+            &self.decimals as &(dyn ToSql + Sync),
             &self.is_stablecoin as &(dyn ToSql + Sync),
         ]
     }
