@@ -1,5 +1,5 @@
 -- Created by Vertabelo (http://vertabelo.com)
--- Last modification date: 2023-07-11 12:54:43.608
+-- Last modification date: 2023-07-14 16:14:34.746
 
 CREATE SCHEMA IF NOT EXISTS tbl;;
 
@@ -62,7 +62,7 @@ CREATE TABLE tbl.escrow_contract_address (
     address varchar(64)  NOT NULL,
     CONSTRAINT escrow_contract_address_pk PRIMARY KEY (pkey_id)
 );
-ALTER TABLE tbl.escrow_token_contract_address ADD COLUMN decimals int NOT NULL DEFAULT 18;
+
 -- Table: escrow_token_contract_address
 CREATE TABLE tbl.escrow_token_contract_address (
     pkey_id bigint  NOT NULL,
@@ -72,7 +72,7 @@ CREATE TABLE tbl.escrow_token_contract_address (
     description varchar(256)  NOT NULL,
     address varchar(64)  NOT NULL,
     is_stablecoin boolean  NOT NULL,
-    decimals int NOT NULL DEFAULT 18,
+    decimals int  NOT NULL DEFAULT 18,
     CONSTRAINT escrow_token_address_ak_1 UNIQUE (blockchain, symbol) NOT DEFERRABLE  INITIALLY IMMEDIATE,
     CONSTRAINT escrow_token_contract_address_pk PRIMARY KEY (pkey_id)
 );
@@ -904,10 +904,10 @@ ALTER TABLE tbl.user_strategy_pool_contract_asset_ledger ADD CONSTRAINT user_str
     INITIALLY IMMEDIATE
 ;
 
--- Reference: user_strategy_pool_contract_asset_balance_user (table: user_strategy_pool_contract_asset_balance)
-ALTER TABLE tbl.user_strategy_pool_contract_asset_balance ADD CONSTRAINT user_strategy_pool_contract_asset_balance_user
+-- Reference: user_strategy_pool_contract_asset_balance_user_strategy_wallet (table: user_strategy_pool_contract_asset_balance)
+ALTER TABLE tbl.user_strategy_pool_contract_asset_balance ADD CONSTRAINT user_strategy_pool_contract_asset_balance_user_strategy_wallet
     FOREIGN KEY (fkey_strategy_wallet_id)
-    REFERENCES tbl.user_strategy_wallet (pkey_id)
+    REFERENCES tbl.user_strategy_wallet (pkey_id)  
     NOT DEFERRABLE 
     INITIALLY IMMEDIATE
 ;
@@ -920,10 +920,10 @@ ALTER TABLE tbl.user_strategy_pool_contract_asset_ledger ADD CONSTRAINT user_str
     INITIALLY IMMEDIATE
 ;
 
--- Reference: user_strategy_pool_contract_asset_ledger_user (table: user_strategy_pool_contract_asset_ledger)
-ALTER TABLE tbl.user_strategy_pool_contract_asset_ledger ADD CONSTRAINT user_strategy_pool_contract_asset_ledger_user
+-- Reference: user_strategy_pool_contract_asset_ledger_user_strategy_wallet (table: user_strategy_pool_contract_asset_ledger)
+ALTER TABLE tbl.user_strategy_pool_contract_asset_ledger ADD CONSTRAINT user_strategy_pool_contract_asset_ledger_user_strategy_wallet
     FOREIGN KEY (fkey_strategy_wallet_id)
-    REFERENCES tbl."user" (pkey_id)  
+    REFERENCES tbl.user_strategy_wallet (pkey_id)  
     NOT DEFERRABLE 
     INITIALLY IMMEDIATE
 ;

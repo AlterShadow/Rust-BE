@@ -29,6 +29,7 @@ use lib::database::DbClient;
 use lib::handler::{FutureResponse, RequestHandler};
 use lib::log::DynLogger;
 use lib::toolbox::*;
+use lib::types::amount_to_display;
 use lib::ws::SubscribeManager;
 use lib::{DEFAULT_LIMIT, DEFAULT_OFFSET};
 use lru::LruCache;
@@ -902,7 +903,11 @@ pub async fn user_exit_strategy(
         Some(strategy_tokens_to_redeem) => {
             /* check balance first */
             if user_strategy_balance < strategy_tokens_to_redeem.into() {
-                bail!("not enough strategy tokens");
+                bail!(
+                    "not enough strategy tokens {} < {}",
+                    amount_to_display(*user_strategy_balance),
+                    amount_to_display(strategy_tokens_to_redeem)
+                );
             }
 
             /* get assets and amounts to withdraw */
@@ -1141,7 +1146,7 @@ impl RequestHandler for MethodUserExitStrategy {
             let eth_conn = pool.get(req.blockchain).await?;
             // TODO: decide if we should ensure user role
             ensure_user_role(ctx, EnumRole::User)?;
-            let tx_hash = user_exit_strategy(
+            let tx_hash = match user_exit_strategy(
                 &eth_conn,
                 &ctx,
                 &db,
@@ -1150,7 +1155,16 @@ impl RequestHandler for MethodUserExitStrategy {
                 Some(req.quantity),
                 master_key,
             )
-            .await?;
+            .await
+            {
+                Ok(tx_hash) => tx_hash,
+                Err(e) => {
+                    error!("error on user exit strategy: {:?}", e);
+                    let err = format!("{}", e);
+                    return Err(CustomError::new(EnumErrorCode::InvalidArgument, err).into());
+                }
+            };
+
             Ok(UserExitStrategyResponse {
                 success: true,
                 transaction_hash: tx_hash.into(),

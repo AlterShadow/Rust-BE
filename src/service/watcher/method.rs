@@ -678,7 +678,7 @@ pub async fn handle_escrow_transaction(
                     user_address: escrow.owner.into(),
                     contract_address: called_address.into(),
                     transaction_hash: tx.get_hash().into(),
-                    is_deposit: false,
+                    is_deposit: true,
                     receiver_address: escrow.recipient.into(),
 
                     happened_at: Utc::now().timestamp(),
