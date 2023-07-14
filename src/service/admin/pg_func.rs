@@ -246,6 +246,7 @@ BEGIN
                         AND (a_given_name ISNULL OR u.given_name ILIKE a_given_name || '%')
                         AND (a_description ISNULL OR e.description ILIKE a_description || '%')
                         AND (a_social_media ISNULL OR e.social_media ILIKE a_social_media || '%')
+                        AND e.approved_expert = TRUE
                  ORDER BY e.pkey_id
                  OFFSET a_offset
                  LIMIT a_limit;
