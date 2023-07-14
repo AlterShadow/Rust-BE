@@ -92,17 +92,6 @@ pub async fn handle_pancake_swap_transaction(
     blockchain: EnumBlockChain,
     tx: TransactionReady,
 ) -> Result<()> {
-    /* check if caller is a strategy watching wallet & get strategy id */
-    let caller = tx.get_from().context("no from address found")?;
-    let strategy_id =
-        match get_strategy_id_from_watching_wallet(&state.db, blockchain, caller).await? {
-            Some(strategy_id) => strategy_id,
-            None => {
-                /* caller is not a strategy watching wallet */
-                return Ok(());
-            }
-        };
-    let conn = state.eth_pool.get(blockchain).await?;
     /* parse trade */
     let expert_trade =
         parse_dex_trade(blockchain, &tx, &state.dex_addresses, &state.pancake_swap).await?;
@@ -120,6 +109,18 @@ pub async fn handle_pancake_swap_transaction(
             amount_out: expert_trade.amount_out.into(),
         })
         .await?;
+
+    /* check if caller is a strategy watching wallet & get strategy id */
+    let caller = tx.get_from().context("no from address found")?;
+    let strategy_id =
+        match get_strategy_id_from_watching_wallet(&state.db, blockchain, caller).await? {
+            Some(strategy_id) => strategy_id,
+            None => {
+                /* caller is not a strategy watching wallet */
+                return Ok(());
+            }
+        };
+    let conn = state.eth_pool.get(blockchain).await?;
 
     /* instantiate token_in and token_out contracts from expert's trade */
     let token_in_contract = Erc20Token::new(conn.clone(), expert_trade.token_in)?;
