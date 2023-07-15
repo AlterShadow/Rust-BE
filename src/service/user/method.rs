@@ -955,9 +955,9 @@ pub async fn user_exit_strategy(
             redeem_tx_hash = full_redeem_from_strategy_and_ensure_success(
                 strategy_wallet_contract.clone(),
                 &conn,
-                12,
-                10,
-                Duration::from_secs(10),
+                CONFIRMATIONS,
+                MAX_RETRIES,
+                POLL_INTERVAL,
                 master_key.clone(),
                 strategy_pool_contract.address(),
             )

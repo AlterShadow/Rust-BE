@@ -44,7 +44,7 @@ impl AuditLogger {
         self.appender
             .lock()
             .unwrap()
-            .write_fmt(format_args!("[AUDIT] [{time}] [{rule}] {text}"))?;
+            .write_fmt(format_args!("[AUDIT] [{time}] [{rule}] {text}\n"))?;
         Ok(())
     }
 }

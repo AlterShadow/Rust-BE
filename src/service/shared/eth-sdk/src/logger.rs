@@ -21,10 +21,9 @@ impl BlockchainLogger {
     pub fn log(&self, text: impl AsRef<str>, transaction_hash: H256) -> Result<()> {
         let time = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S");
         let text = text.as_ref();
-        self.appender
-            .lock()
-            .unwrap()
-            .write_fmt(format_args!("[TX] [{time}] [{transaction_hash:?}] {text}"))?;
+        self.appender.lock().unwrap().write_fmt(format_args!(
+            "[TX] [{time}] [{transaction_hash:?}] {text}\n"
+        ))?;
         Ok(())
     }
     pub fn set_enabled(&self, enabled: bool) {
