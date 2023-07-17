@@ -3,8 +3,10 @@ use crate::method::{
 };
 use api::cmc::CoinMarketCap;
 use chrono::Utc;
+use eth_sdk::erc20::Erc20Token;
 use eth_sdk::logger::get_blockchain_logger;
 use eth_sdk::signer::Secp256k1SecretKey;
+use eth_sdk::EthereumRpcConnectionPool;
 use eyre::ContextCompat;
 use futures::FutureExt;
 use gen::database::*;
@@ -455,7 +457,9 @@ impl RequestHandler for MethodAdminListStrategies {
     }
 }
 
-pub struct MethodAdminApproveStrategy;
+pub struct MethodAdminApproveStrategy {
+    pub pool: EthereumRpcConnectionPool,
+}
 impl RequestHandler for MethodAdminApproveStrategy {
     type Request = AdminApproveStrategyRequest;
 
@@ -466,6 +470,7 @@ impl RequestHandler for MethodAdminApproveStrategy {
         req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
+        let pool = self.pool.clone();
         async move {
             ensure_user_role(ctx, EnumRole::Admin)?;
 

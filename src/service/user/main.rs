@@ -177,7 +177,6 @@ async fn main() -> Result<()> {
     });
     server.add_handler(MethodAdminListBackStrategyLedger);
     server.add_handler(MethodAdminListExitStrategyLedger);
-    server.add_handler(MethodAdminApproveStrategy);
     server.add_handler(MethodAdminRejectStrategy);
     server.add_handler(MethodAdminSetBlockchainLogger);
     let sub_manager = SubscribeManager::new();
@@ -213,6 +212,9 @@ async fn main() -> Result<()> {
 
     let pancake_paths = WorkingPancakePairPaths::new(coin_addresses.clone())?;
     let pancake_paths = Arc::new(pancake_paths);
+    server.add_handler(MethodAdminApproveStrategy {
+        pool: eth_pool.clone(),
+    });
     server.add_handler(MethodUserCreateStrategyWallet {
         pool: eth_pool.clone(),
         master_key: master_key.clone(),
