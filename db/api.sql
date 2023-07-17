@@ -3703,12 +3703,15 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_watcher_list_expert_listened_wallet_asset_balance(a_limit bigint, a_offset bigint, a_address varchar DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL, a_token_id bigint DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_watcher_list_expert_listened_wallet_asset_balance(a_limit bigint DEFAULT NULL, a_offset bigint DEFAULT NULL, a_strategy_id bigint DEFAULT NULL, a_address varchar DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL, a_token_id bigint DEFAULT NULL)
 RETURNS table (
     "pkey_id" bigint,
     "address" varchar,
     "blockchain" enum_block_chain,
     "token_id" bigint,
+    "token_address" varchar,
+    "token_symbol" varchar,
+    "token_decimals" int,
     "balance" varchar
 )
 LANGUAGE plpgsql
@@ -3716,17 +3719,23 @@ AS $$
     
 BEGIN
     RETURN QUERY SELECT 
-        elwal.pkey_id,
+        elwab.pkey_id,
         eww.address,
         eww.blockchain,
-        elwal.fkey_token_id,
-        elwal.balance
-    FROM tbl.expert_listened_wallet_asset_balance AS elwal
-            JOIN tbl.expert_watched_wallet AS eww ON eww.pkey_id = elwal.fkey_expert_watched_wallet_id
-    WHERE (a_token_id ISNULL OR elwal.fkey_token_id = a_token_id)
+        elwab.fkey_token_id,
+				etca.address,
+				etca.symbol,
+				etca.decimals,
+        elwab.balance
+    FROM tbl.expert_listened_wallet_asset_balance AS elwab
+            JOIN tbl.expert_watched_wallet AS eww ON eww.pkey_id = elwab.fkey_expert_watched_wallet_id
+						JOIN tbl.escrow_token_contract_address AS etca ON etca.pkey_id = elwab.fkey_token_id
+						JOIN tbl.strategy_watched_wallet AS sww ON sww.fkey_expert_watched_wallet_id = eww.pkey_id
+    WHERE (a_token_id ISNULL OR elwab.fkey_token_id = a_token_id)
      AND (a_address ISNULL OR eww.address = a_address)
      AND (a_blockchain ISNULL OR eww.blockchain = a_blockchain)
-     ORDER BY elwal.pkey_id DESC
+		 AND (a_strategy_id ISNULL OR sww.fkey_strategy_id = a_strategy_id)
+     ORDER BY elwab.pkey_id DESC
     LIMIT a_limit
     OFFSET a_offset;
 END

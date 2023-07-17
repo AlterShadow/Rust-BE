@@ -60,11 +60,12 @@ pub async fn update_expert_listened_wallet_asset_balance_cache(
     let expert_watched_wallet_address = trade.caller;
     let old_amount: U256 = db
         .execute(FunWatcherListExpertListenedWalletAssetBalanceReq {
-            limit: 1,
+            limit: Some(1),
             blockchain: Some(blockchain),
             address: Some(expert_watched_wallet_address.into()),
             token_id: Some(token_in_id),
-            offset: 0,
+            offset: None,
+            strategy_id: None,
         })
         .await?
         .into_result()
@@ -84,11 +85,12 @@ pub async fn update_expert_listened_wallet_asset_balance_cache(
     };
     let old_amount: U256 = db
         .execute(FunWatcherListExpertListenedWalletAssetBalanceReq {
-            limit: 1,
+            limit: Some(1),
             blockchain: Some(blockchain),
             address: Some(expert_watched_wallet_address.into()),
             token_id: Some(token_out_id),
-            offset: 0,
+            offset: None,
+            strategy_id: None,
         })
         .await?
         .into_result()

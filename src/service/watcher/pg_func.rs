@@ -524,8 +524,9 @@ END
         ProceduralFunction::new(
             "fun_watcher_list_expert_listened_wallet_asset_balance",
             vec![
-                Field::new("limit", Type::BigInt),
-                Field::new("offset", Type::BigInt),
+                Field::new("limit", Type::optional(Type::BigInt)),
+                Field::new("offset", Type::optional(Type::BigInt)),
+                Field::new("strategy_id", Type::optional(Type::BigInt)),
                 Field::new("address", Type::optional(Type::BlockchainAddress)),
                 Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
                 Field::new("token_id", Type::optional(Type::BigInt)),
@@ -535,22 +536,31 @@ END
                 Field::new("address", Type::BlockchainAddress),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("token_id", Type::BigInt),
+                Field::new("token_address", Type::BlockchainAddress),
+                Field::new("token_symbol", Type::String),
+                Field::new("token_decimals", Type::Int),
                 Field::new("balance", Type::BlockchainDecimal),
             ],
             r#"
 BEGIN
     RETURN QUERY SELECT 
-        elwal.pkey_id,
+        elwab.pkey_id,
         eww.address,
         eww.blockchain,
-        elwal.fkey_token_id,
-        elwal.balance
-    FROM tbl.expert_listened_wallet_asset_balance AS elwal
-            JOIN tbl.expert_watched_wallet AS eww ON eww.pkey_id = elwal.fkey_expert_watched_wallet_id
-    WHERE (a_token_id ISNULL OR elwal.fkey_token_id = a_token_id)
+        elwab.fkey_token_id,
+				etca.address,
+				etca.symbol,
+				etca.decimals,
+        elwab.balance
+    FROM tbl.expert_listened_wallet_asset_balance AS elwab
+            JOIN tbl.expert_watched_wallet AS eww ON eww.pkey_id = elwab.fkey_expert_watched_wallet_id
+						JOIN tbl.escrow_token_contract_address AS etca ON etca.pkey_id = elwab.fkey_token_id
+						JOIN tbl.strategy_watched_wallet AS sww ON sww.fkey_expert_watched_wallet_id = eww.pkey_id
+    WHERE (a_token_id ISNULL OR elwab.fkey_token_id = a_token_id)
      AND (a_address ISNULL OR eww.address = a_address)
      AND (a_blockchain ISNULL OR eww.blockchain = a_blockchain)
-     ORDER BY elwal.pkey_id DESC
+		 AND (a_strategy_id ISNULL OR sww.fkey_strategy_id = a_strategy_id)
+     ORDER BY elwab.pkey_id DESC
     LIMIT a_limit
     OFFSET a_offset;
 END
