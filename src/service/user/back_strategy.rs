@@ -124,7 +124,6 @@ async fn user_get_or_deploy_strategy_wallet(
 
 async fn user_get_or_deploy_strategy_pool(
     conn: &EthereumRpcConnection,
-    _ctx: &RequestContext,
     db: &DbClient,
     master_key: impl Key + Clone,
     strategy_id: i64,
@@ -195,13 +194,13 @@ pub struct CalculateUserBackStrategyCalculateAmountToMintResult {
     pub sp_assets_and_amounts: HashMap<Address, U256>,
     pub escrow_allocations_for_tokens: HashMap<Address, U256>,
     pub strategy_pool_assets_bought_for_this_backer: HashMap<Address, U256>,
+    pub user_deposit_amounts: HashMap<Address, U256>,
 }
 pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
     conn: &EthereumRpcConnection,
-    ctx: &RequestContext,
     db: &DbClient,
     blockchain: EnumBlockChain,
-    back_usdc_amount: U256,
+    back_total_amount: U256,
     strategy_id: i64,
     token_id: i64,
     token_address: Address,
@@ -211,6 +210,8 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
     dry_run: bool,
     cmc: Option<&CoinMarketCap>,
     pancake_paths: &WorkingPancakePairPaths,
+    user_id: i64,
+    escrow_contract_address: Address,
 ) -> Result<CalculateUserBackStrategyCalculateAmountToMintResult> {
     /* fetch strategy */
     let strategy = db
@@ -222,7 +223,7 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
             expert_name: None,
             description: None,
             blockchain: None,
-            user_id: ctx.user_id,
+            user_id,
             limit: 1,
             offset: 0,
             strategy_pool_address: None,
@@ -234,7 +235,6 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
     /* instantiate strategy contract wrapper */
     let sp_contract = user_get_or_deploy_strategy_pool(
         &conn,
-        &ctx,
         &db,
         master_key.clone(),
         strategy_id,
@@ -268,17 +268,17 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
     // TODO: use (back amount - fees) to calculate trade spenditure and SP shares
     // TODO: distribute fees for the treasury and the strategy creator
     let divide_scale = 10000;
-    let fees = back_usdc_amount
+    let fees = back_total_amount
         * (((strategy.swap_fee.unwrap_or_default()
             + strategy.platform_fee.unwrap_or_default()
             + strategy.expert_fee.unwrap_or_default())
             * divide_scale as f64) as u64)
         / divide_scale;
     ensure!(
-        fees < back_usdc_amount,
+        fees < back_total_amount,
         "fees are too high, back amount is too low"
     );
-    let back_token_amount_minus_fees = back_usdc_amount - fees;
+    let back_token_amount_minus_fees = back_total_amount - fees;
     logger.log(format!(
         "fees: {}, back token minus fees: {}",
         amount_to_display(fees),
@@ -458,6 +458,16 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
             )?
         }
     };
+    let user_deposit_amounts = get_user_deposit_balances_by_wallet_to_fill_value(
+        &db,
+        blockchain,
+        user_id,
+        token_id,
+        back_total_amount,
+        escrow_contract_address,
+    )
+    .await
+    .context("not enough balance found in ledger for back amount")?;
     Ok(CalculateUserBackStrategyCalculateAmountToMintResult {
         fees,
         back_usdc_amount_minus_fees: back_token_amount_minus_fees,
@@ -466,6 +476,7 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
         sp_assets_and_amounts,
         escrow_allocations_for_tokens,
         strategy_pool_assets_bought_for_this_backer,
+        user_deposit_amounts,
     })
 }
 
@@ -516,17 +527,16 @@ pub async fn user_back_strategy(
     }
 
     /* get amount deposited by whitelisted wallets necessary for back amount */
-    let (wallets_that_deposited, amount_from_each_wallet) =
-        get_user_deposit_balances_by_wallet_to_fill_value(
-            &db,
-            blockchain,
-            user_id,
-            token_id,
-            back_token_amount,
-            escrow_contract.address(),
-        )
-        .await
-        .context("not enough balance found in ledger for back amount")?;
+    let wallet_deposit_amounts = get_user_deposit_balances_by_wallet_to_fill_value(
+        &db,
+        blockchain,
+        user_id,
+        token_id,
+        back_token_amount,
+        escrow_contract.address(),
+    )
+    .await
+    .context("not enough balance found in ledger for back amount")?;
 
     let new_user_balance = user_balance - back_token_amount;
     let mut success = false;
@@ -623,7 +633,6 @@ pub async fn user_back_strategy(
     /* instantiate strategy contract wrapper */
     let (strategy_pool_contract_id, sp_contract) = user_get_or_deploy_strategy_pool(
         &conn,
-        &ctx,
         &db,
         master_key.clone(),
         strategy_id,
@@ -641,6 +650,9 @@ pub async fn user_back_strategy(
 
     let CalculateUserBackStrategyCalculateAmountToMintResult {
         back_usdc_amount_minus_fees,
+        /* TODO: fees are now in the pending wallet, we should add it to the database */
+        /* TODO: add table to register treasury fees and strategy fees */
+        fees,
         // we discard this value because it's not really exactly the value
         strategy_token_to_mint: _strategy_token_to_mint,
         strategy_pool_active,
@@ -649,7 +661,6 @@ pub async fn user_back_strategy(
         ..
     } = calculate_user_back_strategy_calculate_amount_to_mint(
         conn,
-        ctx,
         db,
         blockchain,
         back_token_amount,
@@ -662,6 +673,8 @@ pub async fn user_back_strategy(
         true,
         None,
         pancake_paths,
+        user_id,
+        escrow_contract.address(),
     )
     .await?;
 
@@ -683,10 +696,7 @@ pub async fn user_back_strategy(
     );
 
     /* for each wallet that deposited to add to back_token_amount */
-    for (wallet, amount) in wallets_that_deposited
-        .iter()
-        .zip(amount_from_each_wallet.iter())
-    {
+    for (wallet, amount) in wallet_deposit_amounts {
         /* transfer from escrow contract to pending wallet */
         transfer_asset_from_and_ensure_success(
             escrow_contract.clone(),
@@ -719,10 +729,6 @@ pub async fn user_back_strategy(
         })
         .await?;
     }
-
-    /* TODO: fees are now in the pending wallet, we should add it to the database */
-    /* TODO: add table to register treasury fees and strategy fees */
-    let fees = back_token_amount.try_checked_sub(back_usdc_amount_minus_fees)?;
 
     /* approve pancakeswap to trade escrow token */
     info!("approve pancakeswap to trade escrow token");
@@ -1011,7 +1017,7 @@ pub async fn get_user_deposit_balances_by_wallet_to_fill_value(
     token_id: i64,
     value_to_fill: U256,
     escrow_contract_address: Address,
-) -> Result<(Vec<Address>, Vec<U256>)> {
+) -> Result<HashMap<Address, U256>> {
     let wallet_positive_asset_balances = db
         .execute(FunUserCalculateUserEscrowBalanceFromLedgerReq {
             user_id: user_id,
@@ -1023,8 +1029,7 @@ pub async fn get_user_deposit_balances_by_wallet_to_fill_value(
         .await?
         .into_rows();
 
-    let mut wallets_that_deposited: Vec<Address> = Vec::new();
-    let mut amount_from_each_wallet: Vec<U256> = Vec::new();
+    let mut wallet_deposit_amounts: HashMap<Address, U256> = HashMap::new();
     let mut total_amount_found: U256 = U256::zero();
     for wallet_balance_row in wallet_positive_asset_balances {
         let wallet_balance: U256 = wallet_balance_row.balance.into();
@@ -1036,17 +1041,22 @@ pub async fn get_user_deposit_balances_by_wallet_to_fill_value(
             break;
         }
         /* if entire amount was not filled, keep looking for other positive balances from wallets */
-        wallets_that_deposited.push(wallet_balance_row.wallet_address.into());
+
         let necessary_amount_to_fill = value_to_fill.try_checked_sub(total_amount_found)?;
         if wallet_balance >= necessary_amount_to_fill {
             /* if the deposited amount of this wallet can fill the rest for the refund amount */
             /* use only the necessary */
-            amount_from_each_wallet.push(necessary_amount_to_fill);
+
+            wallet_deposit_amounts.insert(
+                wallet_balance_row.wallet_address.into(),
+                necessary_amount_to_fill,
+            );
             total_amount_found = total_amount_found.try_checked_add(necessary_amount_to_fill)?;
         } else {
             /* if the deposited amount of this wallet cannot fill the rest for the refund amount */
             /* use entire amount */
-            amount_from_each_wallet.push(wallet_balance);
+
+            wallet_deposit_amounts.insert(wallet_balance_row.wallet_address.into(), wallet_balance);
             total_amount_found = total_amount_found.try_checked_add(wallet_balance)?;
         }
     }
@@ -1059,7 +1069,7 @@ pub async fn get_user_deposit_balances_by_wallet_to_fill_value(
         );
     }
 
-    Ok((wallets_that_deposited, amount_from_each_wallet))
+    Ok(wallet_deposit_amounts)
 }
 
 fn calculate_escrow_allocation_for_strategy_tokens(

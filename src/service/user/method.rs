@@ -3289,6 +3289,7 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
         let master_key = self.master_key.clone();
         let cmc = self.cmc.clone();
         let pancake_paths = self.pancake_paths.clone();
+        let escrow_contract = self.escrow_contract.clone();
         async move {
             ensure_user_role(ctx, EnumRole::User)?;
             let token = db
@@ -3306,6 +3307,7 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
                 .with_context(|| CustomError::new(EnumErrorCode::NotFound, "Token not found"))?;
 
             let eth_conn = pool.get(token.blockchain).await?;
+            let escrow_contract_address = escrow_contract.get(&pool, token.blockchain).await?;
             let CalculateUserBackStrategyCalculateAmountToMintResult {
                 fees,
                 back_usdc_amount_minus_fees,
@@ -3315,7 +3317,6 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
                 ..
             } = calculate_user_back_strategy_calculate_amount_to_mint(
                 &eth_conn,
-                &ctx,
                 &db,
                 token.blockchain,
                 req.quantity,
@@ -3328,6 +3329,8 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
                 true,
                 Some(&cmc),
                 &pancake_paths,
+                ctx.user_id,
+                escrow_contract_address.address(),
             )
             .await?;
             let mut ratios: Vec<EstimatedBackedTokenRatios> = vec![];
