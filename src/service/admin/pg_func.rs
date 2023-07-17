@@ -412,8 +412,8 @@ END
         ProceduralFunction::new(
             "fun_admin_list_escrow_token_contract_address",
             vec![
-                Field::new("limit", Type::BigInt),
-                Field::new("offset", Type::BigInt),
+                Field::new("limit", Type::optional(Type::BigInt)),
+                Field::new("offset", Type::optional(Type::BigInt)),
                 Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
             ],
             vec![
@@ -423,16 +423,27 @@ END
                 Field::new("description", Type::String),
                 Field::new("address", Type::BlockchainAddress),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("symbol", Type::String),
+                Field::new("decimals", Type::Int),
                 Field::new("is_stablecoin", Type::Boolean),
             ],
             r#"
 BEGIN
-    RETURN QUERY SELECT pkey_id, symbol, short_name, description, address, blockchain, is_stablecoin
-                 FROM tbl.escrow_token_contract_address
-                WHERE (a_blockchain ISNULL OR blockchain = a_blockchain)
-                 ORDER BY pkey_id
-                 OFFSET a_offset
-                 LIMIT a_limit;
+    RETURN QUERY SELECT
+				etca.pkey_id,
+				etca.symbol,
+				etca.short_name,
+				etca.description,
+				etca.address,
+				etca.blockchain,
+				etca.symbol,
+				etca.decimals,
+				etca.is_stablecoin
+			FROM tbl.escrow_token_contract_address AS etca
+			WHERE (a_blockchain ISNULL OR etca.blockchain = a_blockchain)
+			ORDER BY etca.pkey_id
+			OFFSET a_offset
+			LIMIT a_limit;
 END
             "#,
         ),

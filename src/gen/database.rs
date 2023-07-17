@@ -54,6 +54,8 @@ pub struct FunAdminListEscrowTokenContractAddressRespRow {
     pub description: String,
     pub address: BlockchainAddress,
     pub blockchain: EnumBlockChain,
+    pub symbol: String,
+    pub decimals: i32,
     pub is_stablecoin: bool,
 }
 
@@ -3074,8 +3076,10 @@ impl DatabaseRequest for FunAdminAddEscrowTokenContractAddressReq {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAdminListEscrowTokenContractAddressReq {
-    pub limit: i64,
-    pub offset: i64,
+    #[serde(default)]
+    pub limit: Option<i64>,
+    #[serde(default)]
+    pub offset: Option<i64>,
     #[serde(default)]
     pub blockchain: Option<EnumBlockChain>,
 }

@@ -3151,7 +3151,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_admin_list_escrow_token_contract_address(a_limit bigint, a_offset bigint, a_blockchain enum_block_chain DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_admin_list_escrow_token_contract_address(a_limit bigint DEFAULT NULL, a_offset bigint DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL)
 RETURNS table (
     "pkey_id" bigint,
     "symbol" varchar,
@@ -3159,18 +3159,29 @@ RETURNS table (
     "description" varchar,
     "address" varchar,
     "blockchain" enum_block_chain,
+    "symbol" varchar,
+    "decimals" int,
     "is_stablecoin" boolean
 )
 LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY SELECT pkey_id, symbol, short_name, description, address, blockchain, is_stablecoin
-                 FROM tbl.escrow_token_contract_address
-                WHERE (a_blockchain ISNULL OR blockchain = a_blockchain)
-                 ORDER BY pkey_id
-                 OFFSET a_offset
-                 LIMIT a_limit;
+    RETURN QUERY SELECT
+				etca.pkey_id,
+				etca.symbol,
+				etca.short_name,
+				etca.description,
+				etca.address,
+				etca.blockchain,
+				etca.symbol,
+				etca.decimals,
+				etca.is_stablecoin
+			FROM tbl.escrow_token_contract_address AS etca
+			WHERE (a_blockchain ISNULL OR etca.blockchain = a_blockchain)
+			ORDER BY etca.pkey_id
+			OFFSET a_offset
+			LIMIT a_limit;
 END
             
 $$;
