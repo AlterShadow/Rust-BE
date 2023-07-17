@@ -347,7 +347,7 @@ impl RequestHandler for MethodUserGetStrategy {
                     })
                     .await?
                     .map(|x| WatchingWalletRow {
-                        watching_wallet_id: x.watch_wallet_id,
+                        watching_wallet_id: x.strategy_watch_wallet_id,
                         wallet_address: x.wallet_address.into(),
                         blockchain: x.blockchain,
                         ratio_distribution: x.ratio,

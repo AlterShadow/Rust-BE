@@ -1675,7 +1675,8 @@ $$;
 
 CREATE OR REPLACE FUNCTION api.fun_user_list_strategy_watch_wallets(a_strategy_id bigint)
 RETURNS table (
-    "watch_wallet_id" bigint,
+    "strategy_watch_wallet_id" bigint,
+    "expert_watch_wallet_id" bigint,
     "wallet_address" varchar,
     "blockchain" enum_block_chain,
     "ratio" double precision
@@ -1686,7 +1687,8 @@ AS $$
 BEGIN
 		RETURN QUERY
 		SELECT
-				sw.pkey_id AS watch_wallet_id,
+				sw.pkey_id AS strategy_watch_wallet_id,
+				sw.fkey_expert_watched_wallet_id AS expert_watch_wallet_id,
 				ew.address AS wallet_address,
 				ew.blockchain AS blockchain,
 				sw.ratio_distribution AS ratio

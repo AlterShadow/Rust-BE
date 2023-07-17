@@ -1114,7 +1114,8 @@ END
             "fun_user_list_strategy_watch_wallets",
             vec![Field::new("strategy_id", Type::BigInt)],
             vec![
-                Field::new("watch_wallet_id", Type::BigInt),
+                Field::new("strategy_watch_wallet_id", Type::BigInt),
+                Field::new("expert_watch_wallet_id", Type::BigInt),
                 Field::new("wallet_address", Type::BlockchainAddress),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("ratio", Type::Numeric), // TODO: insert ratio into database
@@ -1123,7 +1124,8 @@ END
 BEGIN
 		RETURN QUERY
 		SELECT
-				sw.pkey_id AS watch_wallet_id,
+				sw.pkey_id AS strategy_watch_wallet_id,
+				sw.fkey_expert_watched_wallet_id AS expert_watch_wallet_id,
 				ew.address AS wallet_address,
 				ew.blockchain AS blockchain,
 				sw.ratio_distribution AS ratio

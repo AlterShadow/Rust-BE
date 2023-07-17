@@ -513,7 +513,8 @@ pub struct FunUserListStrategyWalletsRespRow {
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserListStrategyWatchWalletsRespRow {
-    pub watch_wallet_id: i64,
+    pub strategy_watch_wallet_id: i64,
+    pub expert_watch_wallet_id: i64,
     pub wallet_address: BlockchainAddress,
     pub blockchain: EnumBlockChain,
     pub ratio: f64,
