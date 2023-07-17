@@ -2175,6 +2175,7 @@ impl RequestHandler for MethodExpertUpdateStrategy {
 // pub struct MethodUserDeleteStrategy;
 pub struct MethodExpertAddStrategyWatchingWallet {
     pub logger: AuditLogger,
+    pub pool: EthereumRpcConnectionPool,
 }
 impl RequestHandler for MethodExpertAddStrategyWatchingWallet {
     type Request = ExpertAddStrategyWatchingWalletRequest;
@@ -2187,6 +2188,7 @@ impl RequestHandler for MethodExpertAddStrategyWatchingWallet {
     ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
         let logger = self.logger.clone();
+        let pool = self.pool.clone();
         async move {
             ensure_user_role(ctx, EnumRole::Expert)?;
 

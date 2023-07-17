@@ -131,9 +131,6 @@ async fn main() -> Result<()> {
     //     logger: audit_logger.clone(),
     // });
 
-    server.add_handler(MethodExpertAddStrategyWatchingWallet {
-        logger: audit_logger.clone(),
-    });
     server.add_handler(MethodExpertRemoveStrategyWatchingWallet {
         logger: audit_logger.clone(),
     });
@@ -212,6 +209,10 @@ async fn main() -> Result<()> {
 
     let pancake_paths = WorkingPancakePairPaths::new(coin_addresses.clone())?;
     let pancake_paths = Arc::new(pancake_paths);
+    server.add_handler(MethodExpertAddStrategyWatchingWallet {
+        logger: audit_logger.clone(),
+        pool: eth_pool.clone(),
+    });
     server.add_handler(MethodAdminApproveStrategy {
         pool: eth_pool.clone(),
     });
