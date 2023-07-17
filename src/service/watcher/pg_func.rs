@@ -135,6 +135,7 @@ END
                 Field::new("token_name", Type::String),
                 Field::new("token_symbol", Type::String),
                 Field::new("token_address", Type::BlockchainAddress),
+                Field::new("token_decimals", Type::Int),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("amount", Type::BlockchainDecimal),
             ],
@@ -189,6 +190,7 @@ BEGIN
 				etca.symbol AS token_symbol,
 				etca.short_name AS token_name,
 				etca.address AS token_address,
+				etca.decimals AS token_decimals,
 				etca.blockchain AS etca_blockchain
 			FROM tbl.escrow_token_contract_address AS etca
 		)
@@ -198,6 +200,7 @@ BEGIN
 			tc.token_name,
 			tc.token_symbol,
 			tc.token_address,
+			tc.token_decimals,
 			tc.etca_blockchain AS blockchain,
 			CAST(tb.token_balance AS VARCHAR) AS amount
 		FROM token_balances AS tb

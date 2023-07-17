@@ -714,6 +714,7 @@ pub struct FunWatcherGetExpertWalletAssetsFromLedgerRespRow {
     pub token_name: String,
     pub token_symbol: String,
     pub token_address: BlockchainAddress,
+    pub token_decimals: i32,
     pub blockchain: EnumBlockChain,
     pub amount: BlockchainDecimal,
 }
