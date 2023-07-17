@@ -8,6 +8,7 @@ use eth_sdk::logger::get_blockchain_logger;
 use eth_sdk::signer::Secp256k1SecretKey;
 use eth_sdk::EthereumRpcConnectionPool;
 use eyre::ContextCompat;
+use eyre::*;
 use futures::FutureExt;
 use gen::database::*;
 use gen::model::*;
@@ -479,11 +480,87 @@ impl RequestHandler for MethodAdminApproveStrategy {
             })
             .await?;
 
+            fetch_and_update_strategy_watched_wallet_asset_balances(&db, &pool, req.strategy_id)
+                .await?;
+
             Ok(AdminApproveStrategyResponse { success: true })
         }
         .boxed()
     }
 }
+
+pub async fn fetch_and_update_strategy_watched_wallet_asset_balances(
+    db: &DbClient,
+    pool: &EthereumRpcConnectionPool,
+    strategy_id: i64,
+) -> Result<()> {
+    let strategy_watched_wallet_rows = db
+        .execute(FunUserListStrategyWatchWalletsReq { strategy_id })
+        .await?
+        .into_rows();
+
+    if strategy_watched_wallet_rows.len() == 0 {
+        bail!(
+            "no strategy watched wallet found for strategy id: {:?}",
+            strategy_id
+        );
+    }
+
+    for strategy_watched_wallet in strategy_watched_wallet_rows {
+        let wallet_chain = strategy_watched_wallet.blockchain;
+        let wallet_address = strategy_watched_wallet.wallet_address;
+
+        let conn = pool.get(wallet_chain).await?;
+
+        let known_token_contract_rows = db
+            .execute(FunAdminListEscrowTokenContractAddressReq {
+                limit: None,
+                offset: None,
+                blockchain: Some(wallet_chain),
+            })
+            .await?
+            .into_rows();
+
+        if known_token_contract_rows.len() == 0 {
+            bail!(
+                "no known token contracts found in watched wallet chain: {:?}",
+                wallet_chain
+            );
+        }
+
+        for known_token_contract in known_token_contract_rows {
+            let token_address = known_token_contract.address;
+            let token_id = known_token_contract.pkey_id;
+            let token_contract = Erc20Token::new(conn.clone(), token_address.into())?;
+            let wallet_balance = token_contract.balance_of(wallet_address.into()).await?;
+
+            let wallet_old_balance = db
+                .execute(FunWatcherListExpertListenedWalletAssetBalanceReq {
+                    limit: Some(1),
+                    offset: None,
+                    strategy_id: Some(strategy_id),
+                    address: Some(wallet_address),
+                    blockchain: Some(wallet_chain),
+                    token_id: Some(token_id),
+                })
+                .await?
+                .first(|x| x.balance)
+                .unwrap_or_default();
+
+            db.execute(FunWatcherUpsertExpertListenedWalletAssetBalanceReq {
+                address: wallet_address,
+                blockchain: wallet_chain,
+                token_id,
+                old_balance: wallet_old_balance,
+                new_balance: wallet_balance.into(),
+            })
+            .await?;
+        }
+    }
+
+    Ok(())
+}
+
 pub struct MethodAdminRejectStrategy;
 impl RequestHandler for MethodAdminRejectStrategy {
     type Request = AdminRejectStrategyRequest;
