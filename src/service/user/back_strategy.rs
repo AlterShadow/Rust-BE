@@ -614,20 +614,6 @@ pub async fn user_back_strategy(
         .into_result()
         .context("strategy is not registered in the database")?;
 
-    /* fetch strategy's tokens */
-    let strategy_initial_ratios = db
-        .execute(FunUserListStrategyInitialTokenRatiosReq {
-            strategy_id,
-            token_id: None,
-            token_address: None,
-            blockchain: Some(blockchain),
-        })
-        .await?
-        .into_rows();
-    ensure!(
-        !strategy_initial_ratios.is_empty(),
-        "strategy has no initial ratios"
-    );
     logger.log("calculating fees");
 
     /* instantiate strategy contract wrapper */
