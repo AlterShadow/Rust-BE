@@ -423,7 +423,6 @@ END
                 Field::new("description", Type::String),
                 Field::new("address", Type::BlockchainAddress),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
-                Field::new("symbol", Type::String),
                 Field::new("decimals", Type::Int),
                 Field::new("is_stablecoin", Type::Boolean),
             ],
@@ -436,7 +435,6 @@ BEGIN
 				etca.description,
 				etca.address,
 				etca.blockchain,
-				etca.symbol,
 				etca.decimals,
 				etca.is_stablecoin
 			FROM tbl.escrow_token_contract_address AS etca

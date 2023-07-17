@@ -54,7 +54,6 @@ pub struct FunAdminListEscrowTokenContractAddressRespRow {
     pub description: String,
     pub address: BlockchainAddress,
     pub blockchain: EnumBlockChain,
-    pub symbol: String,
     pub decimals: i32,
     pub is_stablecoin: bool,
 }

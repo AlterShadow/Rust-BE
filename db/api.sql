@@ -3161,7 +3161,6 @@ RETURNS table (
     "description" varchar,
     "address" varchar,
     "blockchain" enum_block_chain,
-    "symbol" varchar,
     "decimals" int,
     "is_stablecoin" boolean
 )
@@ -3176,7 +3175,6 @@ BEGIN
 				etca.description,
 				etca.address,
 				etca.blockchain,
-				etca.symbol,
 				etca.decimals,
 				etca.is_stablecoin
 			FROM tbl.escrow_token_contract_address AS etca
