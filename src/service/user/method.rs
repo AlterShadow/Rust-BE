@@ -9,6 +9,7 @@ use crate::back_strategy::{
 };
 use api::cmc::CoinMarketCap;
 use chrono::Utc;
+use eth_sdk::erc20::Erc20Token;
 use eth_sdk::escrow::refund_asset_and_ensure_success;
 use eth_sdk::escrow::{AbstractEscrowContract, EscrowContract};
 use eth_sdk::pair_paths::WorkingPancakePairPaths;
@@ -19,6 +20,7 @@ use eth_sdk::strategy_wallet::{
     full_redeem_from_strategy_and_ensure_success, redeem_from_strategy_and_ensure_success,
     StrategyWalletContract,
 };
+
 use eth_sdk::*;
 use eyre::*;
 use futures::FutureExt;
@@ -2231,6 +2233,9 @@ impl RequestHandler for MethodExpertAddStrategyWatchingWallet {
                 .into_result()
                 .context("failed to add strategy watching wallet")?;
 
+            fetch_and_update_wallet_balances(&db, &pool, req.blockchain, req.wallet_address.into())
+                .await?;
+
             Ok(ExpertAddStrategyWatchingWalletResponse {
                 success: ret.success,
                 wallet_id: ret.watch_wallet_id,
@@ -2239,6 +2244,62 @@ impl RequestHandler for MethodExpertAddStrategyWatchingWallet {
         .boxed()
     }
 }
+
+pub async fn fetch_and_update_wallet_balances(
+    db: &DbClient,
+    pool: &EthereumRpcConnectionPool,
+    chain: EnumBlockChain,
+    wallet_address: Address,
+) -> Result<()> {
+    let conn = pool.get(chain).await?;
+    let known_token_contract_rows = db
+        .execute(FunAdminListEscrowTokenContractAddressReq {
+            limit: None,
+            offset: None,
+            blockchain: Some(chain),
+        })
+        .await?
+        .into_rows();
+
+    if known_token_contract_rows.len() == 0 {
+        bail!(
+            "no known token contracts found in watched wallet chain: {:?}",
+            chain
+        );
+    }
+
+    for known_token_contract in known_token_contract_rows {
+        let token_address = known_token_contract.address;
+        let token_id = known_token_contract.pkey_id;
+        let token_contract = Erc20Token::new(conn.clone(), token_address.into())?;
+        let wallet_balance = token_contract.balance_of(wallet_address.into()).await?;
+
+        let wallet_old_balance = db
+            .execute(FunWatcherListExpertListenedWalletAssetBalanceReq {
+                limit: Some(1),
+                offset: None,
+                strategy_id: None,
+                address: Some(wallet_address.into()),
+                blockchain: Some(chain),
+                token_id: Some(token_id),
+            })
+            .await?
+            .first(|x| x.balance)
+            .unwrap_or_default();
+
+        db.execute(FunWatcherUpsertExpertListenedWalletAssetBalanceReq {
+            address: wallet_address.into(),
+            blockchain: chain,
+            token_id,
+            old_balance: wallet_old_balance,
+            new_balance: wallet_balance.into(),
+        })
+        .await?;
+    }
+
+    Ok(())
+}
+
 pub struct MethodExpertRemoveStrategyWatchingWallet {
     pub logger: AuditLogger,
 }
