@@ -10,6 +10,7 @@ use tracing::error;
 use web3::types::{Address, H160, H256, U256};
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[deprecated = "need to rename to a better name"]
 pub enum DexPath {
     /* every path for every token_in token_out pair in every dex in every chain must be recorded in the database */
     /* so that we can trigger our own trades in the futures */

@@ -263,7 +263,7 @@ pub async fn handle_pancake_swap_transaction(
 
         /* trade token_in for token_out */
         let pending_wallet_trade_receipt = copy_trade_and_ensure_success(
-            pancake_contract,
+            &pancake_contract,
             &conn,
             CONFIRMATIONS,
             MAX_RETRIES,

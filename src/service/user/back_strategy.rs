@@ -708,7 +708,7 @@ pub async fn user_back_strategy(
                 let pancake_path_set =
                     pancake_paths.get_pair_by_address(blockchain, token_address, out_token)?;
                 let trade_hash = copy_trade_and_ensure_success(
-                    pancake_contract,
+                    &pancake_contract,
                     &conn,
                     CONFIRMATIONS,
                     MAX_RETRIES,

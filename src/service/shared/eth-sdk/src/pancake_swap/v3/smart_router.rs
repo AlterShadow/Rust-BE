@@ -722,7 +722,7 @@ impl PancakeSmartRouterV3Functions {
 }
 
 pub async fn copy_trade_and_ensure_success(
-    contract: PancakeSmartRouterV3Contract<EitherTransport>,
+    contract: &PancakeSmartRouterV3Contract<EitherTransport>,
     conn: &EthereumRpcConnection,
     confirmations: u64,
     max_retry: u64,
