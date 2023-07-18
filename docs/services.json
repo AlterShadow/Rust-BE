@@ -6694,6 +6694,28 @@
     },
     {
       "Enum": {
+        "name": "dex_path_format",
+        "variants": [
+          {
+            "name": "Json",
+            "value": 0,
+            "comment": ""
+          },
+          {
+            "name": "TransactionData",
+            "value": 1,
+            "comment": ""
+          },
+          {
+            "name": "TransactionHash",
+            "value": 2,
+            "comment": ""
+          }
+        ]
+      }
+    },
+    {
+      "Enum": {
         "name": "service",
         "variants": [
           {

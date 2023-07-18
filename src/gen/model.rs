@@ -189,6 +189,35 @@ pub enum EnumDexVersion {
     Display,
     Hash,
 )]
+#[postgres(name = "enum_dex_path_format")]
+pub enum EnumDexPathFormat {
+    ///
+    #[postgres(name = "Json")]
+    Json = 0,
+    ///
+    #[postgres(name = "TransactionData")]
+    TransactionData = 1,
+    ///
+    #[postgres(name = "TransactionHash")]
+    TransactionHash = 2,
+}
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    ToSql,
+    FromSql,
+    Serialize,
+    Deserialize,
+    FromPrimitive,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    EnumString,
+    Display,
+    Hash,
+)]
 #[postgres(name = "enum_service")]
 pub enum EnumService {
     ///

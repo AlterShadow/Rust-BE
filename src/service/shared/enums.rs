@@ -59,6 +59,14 @@ pub fn get_enums() -> Vec<Type> {
                 EnumVariant::new("V3", 2),
             ],
         ),
+        Type::enum_(
+            "dex_path_format".to_owned(),
+            vec![
+                EnumVariant::new("Json", 0),
+                EnumVariant::new("TransactionData", 1),
+                EnumVariant::new("TransactionHash", 2),
+            ],
+        ),
         get_service_enum(),
     ]
 }
