@@ -85,6 +85,21 @@ pub async fn fetch_strategy_pool_contract_asset_balances_and_decimals(
     Ok((strategy_pool_balances, strategy_pool_decimals))
 }
 
+pub fn calculate_asset_ratios(amounts: HashMap<Address, U256>) -> Result<HashMap<Address, f64>> {
+    let mut asset_ratios: HashMap<Address, f64> = HashMap::new();
+
+    let mut total_amount: U256 = U256::zero();
+    for (_, amount) in amounts.clone() {
+        total_amount = total_amount.try_checked_add(amount)?;
+    }
+
+    for (asset, amount) in amounts {
+        asset_ratios.insert(asset, amount.div_as_f64(total_amount)?);
+    }
+
+    Ok(asset_ratios)
+}
+
 pub fn normalize_decimals_to(
     normalize_to: usize,
     token_amount: U256,
