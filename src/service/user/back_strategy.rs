@@ -685,23 +685,6 @@ pub async fn user_back_strategy(
         let pancake_trade_parser = pancake_trade_parser.clone();
         let sp_contract = sp_contract.clone();
         async move {
-            logger.log(format!(
-                "approving {} token {:?} to strategy pool contract",
-                amount_to_display(amount),
-                token_address
-            ));
-            approve_and_ensure_success(
-                Erc20Token::new(conn.clone(), token_address)?,
-                &conn,
-                CONFIRMATIONS,
-                MAX_RETRIES,
-                POLL_INTERVAL,
-                master_key.clone(),
-                sp_contract.address(),
-                amount,
-                logger.clone(),
-            )
-            .await?;
             let pancake_path_set =
                 pancake_paths.get_pair_by_address(blockchain, token_address, out_token)?;
             let trade_hash = copy_trade_and_ensure_success(
@@ -734,6 +717,23 @@ pub async fn user_back_strategy(
                 amount_in: trade.amount_in.into(),
                 amount_out: trade.amount_out.into(),
             })
+            .await?;
+            logger.log(format!(
+                "approving {} token {:?} to strategy pool contract",
+                amount_to_display(amount),
+                out_token
+            ));
+            approve_and_ensure_success(
+                Erc20Token::new(conn.clone(), out_token)?,
+                &conn,
+                CONFIRMATIONS,
+                MAX_RETRIES,
+                POLL_INTERVAL,
+                master_key.clone(),
+                sp_contract.address(),
+                amount,
+                logger.clone(),
+            )
             .await?;
             Ok(trade.amount_out)
         }
@@ -788,7 +788,7 @@ pub async fn user_back_strategy(
         MAX_RETRIES,
         POLL_INTERVAL,
         master_key.clone(),
-        sp_assets_and_amounts.clone(),
+        strategy_pool_assets_bought_for_this_backer.clone(),
         strategy_token_to_mint,
         strategy_wallet_contract.address(),
         logger.clone(),
