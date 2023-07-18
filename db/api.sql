@@ -3571,6 +3571,7 @@ RETURNS table (
     "token_name" varchar,
     "token_symbol" varchar,
     "token_address" varchar,
+    "token_decimals" int,
     "blockchain" enum_block_chain,
     "balance" varchar
 )
@@ -3583,6 +3584,7 @@ BEGIN
 			tc.short_name,
 			tc.symbol,
 			tc.address,
+			tc.decimals,
 			tc.blockchain,
 			spcab.balance AS balance
 			FROM tbl.strategy_pool_contract_asset_balance AS spcab
