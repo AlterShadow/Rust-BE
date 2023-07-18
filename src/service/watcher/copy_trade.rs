@@ -11,6 +11,27 @@ use gen::database::*;
 use gen::model::EnumBlockChain;
 use lib::database::DbClient;
 
+pub async fn get_strategy_pool_contract_asset_balances_and_ratios(
+    db: &DbClient,
+    chain: EnumBlockChain,
+    strategy_id: i64,
+) -> Result<(HashMap<Address, U256>, HashMap<Address, f64>)> {
+    let (asset_balances, asset_decimals) =
+        fetch_strategy_pool_contract_asset_balances_and_decimals(db, chain, strategy_id).await?;
+
+    let mut normalized_asset_balances: HashMap<Address, U256> = HashMap::new();
+    for (asset_address, asset_balance) in asset_balances.clone() {
+        normalized_asset_balances.insert(
+            asset_address,
+            normalize_decimals_to(18, asset_balance, asset_decimals[&asset_address])?,
+        );
+    }
+
+    let asset_ratios = calculate_asset_ratios(normalized_asset_balances)?;
+
+    Ok((asset_balances, asset_ratios))
+}
+
 pub async fn fetch_listened_wallet_asset_balances_and_decimals(
     db: &DbClient,
     chain: EnumBlockChain,
