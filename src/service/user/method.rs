@@ -3351,7 +3351,6 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
         let pool = self.pool.clone();
         let master_key = self.master_key.clone();
         let cmc = self.cmc.clone();
-        let pancake_paths = self.pancake_paths.clone();
         let escrow_contract = self.escrow_contract.clone();
         async move {
             ensure_user_role(ctx, EnumRole::User)?;
@@ -3386,12 +3385,10 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
                 req.strategy_id,
                 req.token_id,
                 token.address.into(),
-                &DexAddresses::new(),
                 master_key,
                 DynLogger::empty(),
                 true,
                 Some(&cmc),
-                &pancake_paths,
                 ctx.user_id,
                 escrow_contract_address.address(),
             )

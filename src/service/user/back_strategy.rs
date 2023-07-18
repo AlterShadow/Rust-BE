@@ -18,6 +18,7 @@ use lib::log::DynLogger;
 use lib::toolbox::RequestContext;
 use lib::types::{amount_to_display, U256};
 use std::collections::HashMap;
+use std::future::Future;
 use tracing::{debug, info, warn};
 use web3::signing::Key;
 use web3::types::Address;
@@ -204,12 +205,10 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
     strategy_id: i64,
     token_id: i64,
     token_address: Address,
-    dex_addresses: &DexAddresses,
     master_key: impl Key + Clone,
     logger: DynLogger,
     dry_run: bool,
     cmc: Option<&CoinMarketCap>,
-    pancake_paths: &WorkingPancakePairPaths,
     user_id: i64,
     escrow_contract_address: Address,
 ) -> Result<CalculateUserBackStrategyCalculateAmountToMintResult> {
@@ -325,18 +324,58 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
         token_address,
         token_tokens,
     )?;
+    let get_token_out = |out_token: Address, amount: U256| async move {
+        match cmc {
+            Some(cmc) => {
+                let tk = db
+                    .execute(FunUserListEscrowTokenContractAddressReq {
+                        limit: 1,
+                        offset: 0,
+                        token_id: None,
+                        blockchain: Some(blockchain),
+                        address: Some(out_token.into()),
+                        symbol: None,
+                        is_stablecoin: None,
+                    })
+                    .await?
+                    .into_result()
+                    .with_context(|| {
+                        format!("No escrow token found for {:?} {:?}", out_token, blockchain)
+                    })?;
+                let price = *cmc
+                    .get_usd_prices_by_symbol(&vec![tk.symbol])
+                    .await?
+                    .first()
+                    .with_context(|| {
+                        format!("No price found for {:?} {:?}", token_address, blockchain)
+                    })?;
+                amount.mul_f64(price)
+            }
+            None => {
+                let trade = db
+                    .execute(FunWatcherListLastDexTradesForPairReq {
+                        token_in_address: token_address.into(),
+                        token_out_address: out_token.into(),
+                        blockchain,
+                        dex: Some(EnumDex::PancakeSwap),
+                    })
+                    .await?
+                    .into_result()
+                    .with_context(|| {
+                        format!(
+                            "No last dex trade found for pair {:?} -> {:?}",
+                            token_address, out_token
+                        )
+                    })?;
+                Ok(amount * trade.amount_out.0 / trade.amount_in.0)
+            }
+        }
+    };
     let strategy_pool_assets_bought_for_this_backer = trade_escrow_for_strategy_tokens(
-        &conn,
-        &db,
-        master_key.clone(),
-        blockchain,
         token_address,
-        None,
         escrow_allocations_for_tokens.clone(),
         logger.clone(),
-        true,
-        cmc.clone(),
-        pancake_paths,
+        get_token_out,
     )
     .await?;
 
@@ -368,28 +407,6 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint(
         true => {
             /* instantiate base token contract, and pancake contract */
             let escrow_token_contract = Erc20Token::new(conn.clone(), token_address)?;
-            let pancake_contract = PancakeSmartRouterV3Contract::new(
-                conn.clone(),
-                dex_addresses
-                    .get(blockchain, EnumDex::PancakeSwap)
-                    .ok_or_else(|| eyre!("pancake swap not available on this chain"))?,
-            )?;
-
-            /* trade base token for strategy pool assets */
-            let strategy_pool_assets_bought_for_this_backer = trade_escrow_for_strategy_tokens(
-                &conn,
-                &db,
-                master_key.clone(),
-                blockchain,
-                token_address,
-                Some(&pancake_contract),
-                escrow_allocations_for_tokens.clone(),
-                logger.clone(),
-                dry_run,
-                cmc,
-                pancake_paths,
-            )
-            .await?;
 
             /* calculate strategy tokens to mint for backer */
 
@@ -653,12 +670,10 @@ pub async fn user_back_strategy(
         strategy_id,
         token_id,
         token_address,
-        dex_addresses.clone(),
         master_key.clone(),
         logger.clone(),
         true,
         None,
-        pancake_paths,
         user_id,
         escrow_contract.address(),
     )
@@ -733,18 +748,56 @@ pub async fn user_back_strategy(
 
     /* trade escrow token for strategy's tokens */
     info!("trade escrow token for strategy's tokens");
+    let pancake_trade_parser = build_pancake_swap()?;
+    let get_out_amount = |out_token, amount| {
+        let db = db.clone();
+        let conn = conn.clone();
+        let master_key = master_key.clone();
+        let pancake_contract = pancake_contract.clone();
+        let logger = logger.clone();
+        let pancake_trade_parser = pancake_trade_parser.clone();
+        async move {
+            let pancake_path_set =
+                pancake_paths.get_pair_by_address(blockchain, token_address, out_token)?;
+            let trade_hash = copy_trade_and_ensure_success(
+                pancake_contract,
+                &conn,
+                CONFIRMATIONS,
+                MAX_RETRIES,
+                POLL_INTERVAL,
+                master_key.clone(),
+                pancake_path_set,
+                amount,
+                U256::one(), // TODO: find a way to estimate amount out
+                logger.clone(),
+            )
+            .await?;
+
+            let trade = pancake_trade_parser.parse_trade(
+                &TransactionFetcher::new_and_assume_ready(trade_hash.transaction_hash, &conn)
+                    .await?,
+                blockchain,
+            )?;
+
+            /* update last dex trade cache table */
+            db.execute(FunWatcherUpsertLastDexTradeForPairReq {
+                transaction_hash: trade_hash.transaction_hash.into(),
+                blockchain: blockchain.into(),
+                dex: EnumDex::PancakeSwap,
+                token_in_address: token_address.into(),
+                token_out_address: out_token.into(),
+                amount_in: trade.amount_in.into(),
+                amount_out: trade.amount_out.into(),
+            })
+            .await?;
+            Ok(trade.amount_out)
+        }
+    };
     let trades = trade_escrow_for_strategy_tokens(
-        &conn,
-        &db,
-        master_key.clone(),
-        blockchain,
         token_address,
-        Some(&pancake_contract),
         escrow_allocations_for_tokens.clone(),
         logger.clone(),
-        false,
-        None,
-        pancake_paths,
+        get_out_amount,
     )
     .await?;
 
@@ -1102,22 +1155,13 @@ pub async fn calculate_sp_tokens_to_mint_easy_approach(
     Ok(result)
 }
 
-async fn trade_escrow_for_strategy_tokens(
-    conn: &EthereumRpcConnection,
-    db: &DbClient,
-    master_key: impl Key + Clone,
-    blockchain: EnumBlockChain,
+async fn trade_escrow_for_strategy_tokens<Fut: Future<Output = Result<U256>>>(
     escrow_token_address: Address,
-    dex_contract: Option<&PancakeSmartRouterV3Contract<EitherTransport>>,
     tokens_and_amounts_to_buy: HashMap<Address, U256>,
     logger: DynLogger,
-    dry_run: bool,
-    dry_run_with_cmc: Option<&CoinMarketCap>,
-    pancake_paths: &WorkingPancakePairPaths,
+    get_token_out: impl Fn(Address, U256) -> Fut,
 ) -> Result<HashMap<Address, U256>> {
     /* buys tokens and amounts and returns a vector or bought tokens and amounts out */
-    // TODO: stop using hardcoded hashmaps and retrieve paths from database
-    let pancake_trade_parser = build_pancake_swap()?;
     let mut deposit_amounts: HashMap<Address, U256> = HashMap::new();
 
     for (token_address, amount_to_spend_on_it) in tokens_and_amounts_to_buy {
@@ -1130,88 +1174,8 @@ async fn trade_escrow_for_strategy_tokens(
             "Trading {} for {}",
             token_address, escrow_token_address
         ));
-        let pancake_path_set =
-            pancake_paths.get_pair_by_address(blockchain, escrow_token_address, token_address)?;
-        if dry_run {
-            if let Some(cmc) = &dry_run_with_cmc {
-                let tk = db
-                    .execute(FunUserListEscrowTokenContractAddressReq {
-                        limit: 1,
-                        offset: 0,
-                        token_id: None,
-                        blockchain: Some(blockchain),
-                        address: Some(token_address.into()),
-                        symbol: None,
-                        is_stablecoin: None,
-                    })
-                    .await?
-                    .into_result()
-                    .with_context(|| {
-                        format!(
-                            "No escrow token found for {:?} {:?}",
-                            token_address, blockchain
-                        )
-                    })?;
-                let price = *cmc
-                    .get_usd_prices_by_symbol(&vec![tk.symbol])
-                    .await?
-                    .first()
-                    .with_context(|| {
-                        format!("No price found for {:?} {:?}", token_address, blockchain)
-                    })?;
-                deposit_amounts.insert(token_address, amount_to_spend_on_it.mul_f64(price)?);
-            } else {
-                let trade = db
-                    .execute(FunWatcherListLastDexTradesForPairReq {
-                        token_in_address: escrow_token_address.into(),
-                        token_out_address: token_address.into(),
-                        blockchain,
-                        dex: Some(EnumDex::PancakeSwap),
-                    })
-                    .await?
-                    .into_result()
-                    .with_context(|| {
-                        format!(
-                            "No last dex trade found for pair {:?} -> {:?}",
-                            escrow_token_address, token_address
-                        )
-                    })?;
-                deposit_amounts.insert(token_address, trade.amount_out.into());
-            }
-        } else {
-            let trade_hash = copy_trade_and_ensure_success(
-                dex_contract.cloned().unwrap(),
-                &conn,
-                CONFIRMATIONS,
-                MAX_RETRIES,
-                POLL_INTERVAL,
-                master_key.clone(),
-                pancake_path_set,
-                amount_to_spend_on_it,
-                U256::one(), // TODO: find a way to estimate amount out
-                logger.clone(),
-            )
-            .await?;
-
-            let trade = pancake_trade_parser.parse_trade(
-                &TransactionFetcher::new_and_assume_ready(trade_hash.transaction_hash, &conn)
-                    .await?,
-                blockchain,
-            )?;
-            deposit_amounts.insert(token_address, trade.amount_out);
-
-            /* update last dex trade cache table */
-            db.execute(FunWatcherUpsertLastDexTradeForPairReq {
-                transaction_hash: trade_hash.transaction_hash.into(),
-                blockchain: blockchain.into(),
-                dex: EnumDex::PancakeSwap,
-                token_in_address: escrow_token_address.into(),
-                token_out_address: token_address.into(),
-                amount_in: trade.amount_in.into(),
-                amount_out: trade.amount_out.into(),
-            })
-            .await?;
-        }
+        let output_amount = get_token_out(token_address, amount_to_spend_on_it).await?;
+        deposit_amounts.insert(token_address, output_amount);
     }
     Ok(deposit_amounts)
 }
