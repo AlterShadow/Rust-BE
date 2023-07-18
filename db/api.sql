@@ -3430,6 +3430,112 @@ END
 $$;
         
 
+CREATE OR REPLACE FUNCTION api.fun_watcher_list_dex_path_for_pair(a_token_in_address varchar, a_token_out_address varchar, a_blockchain enum_block_chain, a_dex enum_dex DEFAULT NULL, a_format enum_dex_path_format DEFAULT NULL)
+RETURNS table (
+    "pkey_id" bigint,
+    "token_in_id" bigint,
+    "token_out_id" bigint,
+    "blockchain" enum_block_chain,
+    "dex" enum_dex,
+    "format" enum_dex_path_format,
+    "path_data" varchar,
+    "updated_at" bigint
+)
+LANGUAGE plpgsql
+AS $$
+    
+DECLARE
+		_token_in_id BIGINT;
+		_token_out_id BIGINT;
+BEGIN
+		SELECT etca.pkey_id INTO _token_in_id FROM tbl.escrow_token_contract_address AS etca
+		WHERE etca.address = a_token_in_address AND etca.blockchain = a_blockchain;
+
+		SELECT etca.pkey_id INTO _token_out_id FROM tbl.escrow_token_contract_address AS etca
+		WHERE etca.address = a_token_out_address AND etca.blockchain = a_blockchain;
+
+		ASSERT _token_in_id IS NOT NULL;
+		ASSERT _token_out_id IS NOT NULL;
+
+		RETURN QUERY SELECT
+			dpfp.pkey_id,
+			dpfp.fkey_token_in,
+			dpfp.fkey_token_out,
+			dpfp.blockchain,
+			dpfp.dex,
+			dpfp.format,
+			dpfp.path_data,
+			dpfp.updated_at
+		FROM tbl.dex_path_for_pair AS dpfp
+		WHERE dpfp.fkey_token_in = _token_in_id AND dpfp.fkey_token_out = _token_out_id
+		AND (a_dex ISNULL OR dpfp.dex = a_dex)
+		AND (a_format ISNULL OR dpfp.format = a_format);
+END
+
+$$;
+        
+
+CREATE OR REPLACE FUNCTION api.fun_watcher_upsert_dex_path_for_pair(a_token_in_address varchar, a_token_out_address varchar, a_blockchain enum_block_chain, a_dex enum_dex, a_format enum_dex_path_format, a_path_data varchar)
+RETURNS table (
+    "dex_path_for_pair_id" bigint
+)
+LANGUAGE plpgsql
+AS $$
+    
+DECLARE
+		_token_in_id BIGINT;
+		_token_out_id BIGINT;
+		_dex_path_for_pair_id BIGINT;
+BEGIN
+
+		SELECT etca.pkey_id INTO _token_in_id FROM tbl.escrow_token_contract_address AS etca
+		WHERE etca.address = a_token_in_address AND etca.blockchain = a_blockchain;
+
+		SELECT etca.pkey_id INTO _token_out_id FROM tbl.escrow_token_contract_address AS etca
+		WHERE etca.address = a_token_out_address AND etca.blockchain = a_blockchain;
+
+		ASSERT _token_in_id IS NOT NULL;
+		ASSERT _token_out_id IS NOT NULL;
+
+		SELECT dpfp.pkey_id INTO _dex_path_for_pair_id FROM tbl.dex_path_for_pair AS dpfp
+		WHERE dpfp.fkey_token_in = _token_in_id
+			AND dpfp.fkey_token_out = _token_out_id
+			AND dpfp.blockchain = a_blockchain
+			AND dpfp.dex = a_dex
+			AND dpfp.format = a_format;
+
+		-- if the dex path for this token_in, token_out, blockchain, dex, and format does not exist, create one
+		IF _dex_path_for_pair_id IS NULL THEN
+			INSERT INTO tbl.dex_path_for_pair (
+				fkey_token_in,
+				fkey_token_out,
+				blockchain,
+				dex,
+				format,
+				path_data,
+				updated_at
+			) VALUES (
+				_token_in_id,
+				_token_out_id,
+				a_blockchain,
+				a_dex,
+				a_format,
+				a_path_data,
+				EXTRACT(EPOCH FROM NOW())
+			) RETURNING pkey_id INTO _dex_path_for_pair_id;
+		ELSE
+			UPDATE tbl.dex_path_for_pair
+			SET path_data = a_path_data,
+				updated_at = EXTRACT(EPOCH FROM NOW())
+			WHERE pkey_id = _dex_path_for_pair_id;
+		END IF;
+
+		RETURN QUERY SELECT _dex_path_for_pair_id;
+END
+
+$$;
+        
+
 CREATE OR REPLACE FUNCTION api.fun_watcher_list_last_dex_trades_for_pair(a_token_in_address varchar, a_token_out_address varchar, a_blockchain enum_block_chain, a_dex enum_dex DEFAULT NULL)
 RETURNS table (
     "transaction_hash" varchar,

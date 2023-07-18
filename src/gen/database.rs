@@ -733,6 +733,18 @@ pub struct FunWatcherGetRawTransactionRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunWatcherListDexPathForPairRespRow {
+    pub pkey_id: i64,
+    pub token_in_id: i64,
+    pub token_out_id: i64,
+    pub blockchain: EnumBlockChain,
+    pub dex: EnumDex,
+    pub format: EnumDexPathFormat,
+    pub path_data: String,
+    pub updated_at: i64,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunWatcherListExpertListenedWalletAssetBalanceRespRow {
     pub pkey_id: i64,
     pub address: BlockchainAddress,
@@ -816,6 +828,11 @@ pub struct FunWatcherSaveStrategyWatchingWalletTradeLedgerRespRow {
     pub fkey_token_in_name: String,
     pub fkey_token_out: i64,
     pub fkey_token_out_name: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunWatcherUpsertDexPathForPairRespRow {
+    pub dex_path_for_pair_id: i64,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -3275,6 +3292,62 @@ impl DatabaseRequest for FunWatcherGetExpertWalletAssetsFromLedgerReq {
             &self.strategy_id as &(dyn ToSql + Sync),
             &self.blockchain as &(dyn ToSql + Sync),
             &self.symbol as &(dyn ToSql + Sync),
+        ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunWatcherListDexPathForPairReq {
+    pub token_in_address: BlockchainAddress,
+    pub token_out_address: BlockchainAddress,
+    pub blockchain: EnumBlockChain,
+    #[serde(default)]
+    pub dex: Option<EnumDex>,
+    #[serde(default)]
+    pub format: Option<EnumDexPathFormat>,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunWatcherListDexPathForPairReq {
+    type ResponseRow = FunWatcherListDexPathForPairRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_watcher_list_dex_path_for_pair(a_token_in_address => $1::varchar, a_token_out_address => $2::varchar, a_blockchain => $3::enum_block_chain, a_dex => $4::enum_dex, a_format => $5::enum_dex_path_format);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.token_in_address as &(dyn ToSql + Sync),
+            &self.token_out_address as &(dyn ToSql + Sync),
+            &self.blockchain as &(dyn ToSql + Sync),
+            &self.dex as &(dyn ToSql + Sync),
+            &self.format as &(dyn ToSql + Sync),
+        ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunWatcherUpsertDexPathForPairReq {
+    pub token_in_address: BlockchainAddress,
+    pub token_out_address: BlockchainAddress,
+    pub blockchain: EnumBlockChain,
+    pub dex: EnumDex,
+    pub format: EnumDexPathFormat,
+    pub path_data: String,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunWatcherUpsertDexPathForPairReq {
+    type ResponseRow = FunWatcherUpsertDexPathForPairRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_watcher_upsert_dex_path_for_pair(a_token_in_address => $1::varchar, a_token_out_address => $2::varchar, a_blockchain => $3::enum_block_chain, a_dex => $4::enum_dex, a_format => $5::enum_dex_path_format, a_path_data => $6::varchar);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.token_in_address as &(dyn ToSql + Sync),
+            &self.token_out_address as &(dyn ToSql + Sync),
+            &self.blockchain as &(dyn ToSql + Sync),
+            &self.dex as &(dyn ToSql + Sync),
+            &self.format as &(dyn ToSql + Sync),
+            &self.path_data as &(dyn ToSql + Sync),
         ]
     }
 }
