@@ -685,57 +685,78 @@ pub async fn user_back_strategy(
         let pancake_trade_parser = pancake_trade_parser.clone();
         let sp_contract = sp_contract.clone();
         async move {
-            let pancake_path_set =
-                pancake_paths.get_pair_by_address(blockchain, token_address, out_token)?;
-            let trade_hash = copy_trade_and_ensure_success(
-                pancake_contract,
-                &conn,
-                CONFIRMATIONS,
-                MAX_RETRIES,
-                POLL_INTERVAL,
-                master_key.clone(),
-                pancake_path_set,
-                amount,
-                U256::one(), // TODO: find a way to estimate amount out
-                logger.clone(),
-            )
-            .await?;
+            if token_address == out_token {
+                logger.log(format!(
+                    "approving {} token {:?} to strategy pool contract",
+                    amount_to_display(amount),
+                    out_token
+                ));
+                approve_and_ensure_success(
+                    Erc20Token::new(conn.clone(), out_token)?,
+                    &conn,
+                    CONFIRMATIONS,
+                    MAX_RETRIES,
+                    POLL_INTERVAL,
+                    master_key.clone(),
+                    sp_contract.address(),
+                    amount,
+                    logger.clone(),
+                )
+                .await?;
+                Ok(amount)
+            } else {
+                let pancake_path_set =
+                    pancake_paths.get_pair_by_address(blockchain, token_address, out_token)?;
+                let trade_hash = copy_trade_and_ensure_success(
+                    pancake_contract,
+                    &conn,
+                    CONFIRMATIONS,
+                    MAX_RETRIES,
+                    POLL_INTERVAL,
+                    master_key.clone(),
+                    pancake_path_set,
+                    amount,
+                    U256::one(), // TODO: find a way to estimate amount out
+                    logger.clone(),
+                )
+                .await?;
 
-            let trade = pancake_trade_parser.parse_trade(
-                &TransactionFetcher::new_and_assume_ready(trade_hash.transaction_hash, &conn)
-                    .await?,
-                blockchain,
-            )?;
+                let trade = pancake_trade_parser.parse_trade(
+                    &TransactionFetcher::new_and_assume_ready(trade_hash.transaction_hash, &conn)
+                        .await?,
+                    blockchain,
+                )?;
 
-            /* update last dex trade cache table */
-            db.execute(FunWatcherUpsertLastDexTradeForPairReq {
-                transaction_hash: trade_hash.transaction_hash.into(),
-                blockchain: blockchain.into(),
-                dex: EnumDex::PancakeSwap,
-                token_in_address: token_address.into(),
-                token_out_address: out_token.into(),
-                amount_in: trade.amount_in.into(),
-                amount_out: trade.amount_out.into(),
-            })
-            .await?;
-            logger.log(format!(
-                "approving {} token {:?} to strategy pool contract",
-                amount_to_display(amount),
-                out_token
-            ));
-            approve_and_ensure_success(
-                Erc20Token::new(conn.clone(), out_token)?,
-                &conn,
-                CONFIRMATIONS,
-                MAX_RETRIES,
-                POLL_INTERVAL,
-                master_key.clone(),
-                sp_contract.address(),
-                amount,
-                logger.clone(),
-            )
-            .await?;
-            Ok(trade.amount_out)
+                /* update last dex trade cache table */
+                db.execute(FunWatcherUpsertLastDexTradeForPairReq {
+                    transaction_hash: trade_hash.transaction_hash.into(),
+                    blockchain: blockchain.into(),
+                    dex: EnumDex::PancakeSwap,
+                    token_in_address: token_address.into(),
+                    token_out_address: out_token.into(),
+                    amount_in: trade.amount_in.into(),
+                    amount_out: trade.amount_out.into(),
+                })
+                .await?;
+                logger.log(format!(
+                    "approving {} token {:?} to strategy pool contract",
+                    amount_to_display(trade.amount_out),
+                    out_token
+                ));
+                approve_and_ensure_success(
+                    Erc20Token::new(conn.clone(), out_token)?,
+                    &conn,
+                    CONFIRMATIONS,
+                    MAX_RETRIES,
+                    POLL_INTERVAL,
+                    master_key.clone(),
+                    sp_contract.address(),
+                    trade.amount_out,
+                    logger.clone(),
+                )
+                .await?;
+                Ok(trade.amount_out)
+            }
         }
     };
 
@@ -1040,11 +1061,6 @@ async fn trade_escrow_for_strategy_tokens<Fut: Future<Output = Result<U256>>>(
     let mut deposit_amounts: HashMap<Address, U256> = HashMap::new();
 
     for (token_address, amount_to_spend_on_it) in tokens_and_amounts_to_buy {
-        if token_address == escrow_token_address {
-            /* if sp holds escrow token, deposit it directly */
-            deposit_amounts.insert(token_address, amount_to_spend_on_it);
-            continue;
-        }
         logger.log(format!(
             "Trading {} for {}",
             token_address, escrow_token_address
