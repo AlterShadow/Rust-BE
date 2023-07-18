@@ -3370,6 +3370,37 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
 
             let eth_conn = pool.get(token.blockchain).await?;
             let escrow_contract_address = escrow_contract.get(&pool, token.blockchain).await?;
+            let blockchain = token.blockchain;
+            let token_address = token.address.0;
+            let get_token_out = |out_token: Address, amount: U256| {
+                let db = db.clone();
+                let cmc = cmc.clone();
+                async move {
+                    let tk = db
+                        .execute(FunUserListEscrowTokenContractAddressReq {
+                            limit: 1,
+                            offset: 0,
+                            token_id: None,
+                            blockchain: Some(blockchain),
+                            address: Some(out_token.into()),
+                            symbol: None,
+                            is_stablecoin: None,
+                        })
+                        .await?
+                        .into_result()
+                        .with_context(|| {
+                            format!("No escrow token found for {:?} {:?}", out_token, blockchain)
+                        })?;
+                    let price = *cmc
+                        .get_usd_prices_by_symbol(&vec![tk.symbol])
+                        .await?
+                        .first()
+                        .with_context(|| {
+                            format!("No price found for {:?} {:?}", token_address, blockchain)
+                        })?;
+                    amount.mul_f64(price)
+                }
+            };
             let CalculateUserBackStrategyCalculateAmountToMintResult {
                 fees,
                 back_usdc_amount_minus_fees,
@@ -3388,9 +3419,9 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
                 master_key,
                 DynLogger::empty(),
                 true,
-                Some(&cmc),
                 ctx.user_id,
                 escrow_contract_address.address(),
+                get_token_out,
             )
             .await?;
             let mut ratios: Vec<EstimatedBackedTokenRatios> = vec![];
