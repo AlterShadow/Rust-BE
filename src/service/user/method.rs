@@ -2020,7 +2020,7 @@ impl RequestHandler for MethodExpertCreateStrategy {
             }
             if audit_rules.iter().contains(&AUDIT_TOP25_TOKENS.id) {
                 let token_list = cmc_client.get_top_25_coins().await?;
-                for token in token_list.data {
+                for token in token_list {
                     db.execute(FunUserAddStrategyWhitelistedTokenReq {
                         strategy_id: ret.strategy_id,
                         token_name: token.symbol,

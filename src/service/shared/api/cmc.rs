@@ -4,8 +4,9 @@ use gen::model::EnumBlockChain;
 use lru::LruCache;
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::{Client, Response, Url};
+use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde_json::{from_value, Value};
 use std::collections::HashMap;
 use std::num::NonZeroUsize;
 use std::str::FromStr;
@@ -19,6 +20,7 @@ const LATEST_QUOTES_URL: &str = "/v2/cryptocurrency/quotes/latest";
 const HISTORICAL_QUOTE_URL: &str = "/v2/cryptocurrency/quotes/historical";
 const METADATA_URL: &str = "/v1/cryptocurrency/info";
 const MAP_URL: &str = "/v1/cryptocurrency/map";
+const LISTING_URL: &str = "/v1/cryptocurrency/listings/latest";
 
 #[derive(Debug, Clone)]
 pub struct TokenAddress {
@@ -55,10 +57,6 @@ pub struct MapCoinInfo {
     pub last_historical_data: String,
     pub platform: Option<MapCoinPlatform>,
 }
-#[derive(Debug, Serialize, Deserialize)]
-pub struct MapCoinResponse {
-    pub data: Vec<MapCoinInfo>,
-}
 
 pub struct CoinMarketCap {
     client: Client,
@@ -75,7 +73,7 @@ pub struct NativeCoin {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Platform {
+pub struct Platform2 {
     pub name: String,
     pub coin: NativeCoin,
 }
@@ -83,7 +81,7 @@ pub struct Platform {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ContractAddress {
     pub contract_address: String,
-    pub platform: Platform,
+    pub platform: Platform2,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -110,6 +108,47 @@ pub struct CoinInfo {
     pub status: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QuoteToken {
+    pub price: f64,
+    pub volume_24h: f64,
+    pub volume_change_24h: f64,
+    pub percent_change_1h: f64,
+    pub percent_change_24h: f64,
+    pub percent_change_7d: f64,
+    pub market_cap: f64,
+    pub market_cap_dominance: f64,
+    pub fully_diluted_market_cap: f64,
+    pub last_updated: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ListingLatestToken {
+    pub id: i64,
+    pub name: String,
+    pub symbol: String,
+    pub slug: String,
+    pub cmc_rank: i64,
+    pub num_market_pairs: i64,
+    pub circulating_supply: f64,
+    pub total_supply: f64,
+    pub max_supply: Option<i64>,
+    pub infinite_supply: bool,
+    pub last_updated: String,
+    pub date_added: String,
+    pub tags: Vec<String>,
+    pub platform: Option<MapCoinPlatform>,
+    pub self_reported_circulating_supply: Option<f64>,
+    pub self_reported_market_cap: Option<f64>,
+    pub quote: HashMap<String, QuoteToken>,
+}
+
+pub fn try_deserialize<T: DeserializeOwned>(data: Value) -> Result<T> {
+    let data = serde_json::to_string(&data)?;
+    let jd = &mut serde_json::Deserializer::from_str(&data);
+    let value = serde_path_to_error::deserialize(jd)?;
+    Ok(value)
+}
 impl CoinMarketCap {
     pub fn new_debug_key() -> Result<Self> {
         Self::new(API_KEY)
@@ -126,13 +165,7 @@ impl CoinMarketCap {
             price_cache: Mutex::new(LruCache::new(NonZeroUsize::new(1000).unwrap())),
         })
     }
-    pub async fn get_token_infos_by_symbol_raw(&self, symbols: &[String]) -> Result<Value> {
-        let mut url = self.metadata_url();
-        self.append_url_params(&mut url, "symbol", symbols);
-        self.append_url_params(&mut url, "aux", &["status".to_string()]);
-        let payload = self.send_and_parse_response(&url).await?;
-        Ok(payload)
-    }
+
     pub async fn get_token_infos_by_symbol_v2(
         &self,
         symbols: &[String],
@@ -140,15 +173,7 @@ impl CoinMarketCap {
         let mut url = self.metadata_url();
         self.append_url_params(&mut url, "symbol", symbols);
         self.append_url_params(&mut url, "aux", &["status".to_string()]);
-        let payload = self.send_and_parse_response(&url).await?;
-        if payload["status"]["error_code"].as_i64().unwrap() != 0 {
-            bail!("error code: {}", payload["status"]["error_code"]);
-        }
-        let data = &payload["data"];
-        // let tokens: HashMap<String, CoinInfo> = serde_json::from_value(data.clone())?;
-        let data = serde_json::to_string(&data)?;
-        let jd = &mut serde_json::Deserializer::from_str(&data);
-        let tokens: HashMap<String, CoinInfo> = serde_path_to_error::deserialize(jd)?;
+        let tokens: HashMap<String, CoinInfo> = self.send_and_parse_response(&url).await?;
 
         Ok(tokens)
     }
@@ -173,7 +198,7 @@ impl CoinMarketCap {
         if !new_symbols.is_empty() {
             let mut url = self.price_url();
             self.append_url_params(&mut url, "symbol", &new_symbols);
-            let payload = &self.send_and_parse_response(&url).await?["data"];
+            let payload: Value = self.send_and_parse_response(&url).await?;
             for (symbol, i) in new_symbols.into_iter().zip(new_symbols_index.into_iter()) {
                 let token = &payload[&symbol][0];
                 if token["is_active"].as_u64().context("status not found")? != 1 {
@@ -290,8 +315,7 @@ impl CoinMarketCap {
         self.append_url_params(&mut url, "time_start", &[ago.to_rfc3339()]);
         self.append_url_params(&mut url, "interval", &["daily".to_string()]);
         self.append_url_params(&mut url, "count", &["1".to_string()]);
-        let payload = self.send_and_parse_response(&url).await?;
-        let payload = &payload["data"];
+        let payload: Value = self.send_and_parse_response(&url).await?;
         let base = &payload[symbol][0];
         let quote = &base["quotes"][0]["quote"]["USD"];
         let price = quote["price"].as_f64().context("price not found")?;
@@ -305,22 +329,19 @@ impl CoinMarketCap {
         let mut url = self.price_url();
         self.append_url_params(&mut url, "symbol", &[base_symbol.clone()]);
         self.append_url_params(&mut url, "convert", &[quote_symbol.clone()]);
-        let payload = &self
-            .parse_response(self.client.get(url).send().await?)
-            .await?["data"];
+        let payload: Value = self.send_and_parse_response(&url).await?;
         let base = &payload[base_symbol][0];
         let quote = &base["quote"][quote_symbol];
         let price = quote["price"].as_f64().context("price not found")?;
         Ok(price)
     }
 
-    pub async fn get_top_25_coins(&self) -> Result<MapCoinResponse> {
+    pub async fn get_top_25_coins(&self) -> Result<Vec<MapCoinInfo>> {
         let mut url = self.map_url();
         self.append_url_params(&mut url, "limit", &vec!["25".to_string()]);
         self.append_url_params(&mut url, "sort", &vec!["cmc_rank".to_string()]);
-        let result = self.client.get(url).send().await?;
-        let msg = result.text().await?;
-        let data: MapCoinResponse = serde_json::from_str(&msg)?;
+
+        let data: Vec<MapCoinInfo> = self.send_and_parse_response(&url).await?;
         Ok(data)
     }
     fn price_url(&self) -> Url {
@@ -340,13 +361,13 @@ impl CoinMarketCap {
         let mut params = url.query_pairs_mut();
         params.append_pair(param_key, &param_values.join(","));
     }
-    pub async fn send_and_parse_response(&self, url: &Url) -> Result<Value> {
+    pub async fn send_and_parse_response<T: DeserializeOwned>(&self, url: &Url) -> Result<T> {
         debug!("Request: {}", url);
         let response = self.client.get(url.clone()).send().await?;
         self.parse_response(response).await
     }
 
-    pub async fn parse_response(&self, response: Response) -> Result<Value> {
+    pub async fn parse_response<T: DeserializeOwned>(&self, response: Response) -> Result<T> {
         let text = response.text().await?;
         debug!("Response: {}", text);
 
@@ -356,7 +377,8 @@ impl CoinMarketCap {
                 bail!("error_message: {}", err);
             }
         }
-        Ok(json)
+        // Ok(try_deserialize(json["data"].clone())?)
+        Ok(from_value(json["data"].clone())?)
     }
     pub fn coin_symbol_to_chain(&self, coin_symbol: &str) -> Result<EnumBlockChain> {
         match coin_symbol {
@@ -364,6 +386,13 @@ impl CoinMarketCap {
             "BNB" => Ok(EnumBlockChain::BscMainnet),
             _ => bail!("chain not supported {}", coin_symbol),
         }
+    }
+    pub async fn get_listing(&self) -> Result<Vec<ListingLatestToken>> {
+        let mut url: Url = format!("{}{}", self.base_url, LISTING_URL).parse()?;
+        self.append_url_params(&mut url, "limit", &vec!["500".to_string()]);
+        self.append_url_params(&mut url, "sort", &vec!["market_cap".to_string()]);
+        let resp = self.send_and_parse_response(&url).await?;
+        Ok(resp)
     }
 }
 
@@ -411,16 +440,7 @@ mod tests {
         assert!(price > 0.0);
         Ok(())
     }
-    #[tokio::test]
-    async fn test_get_token_info_raw() -> Result<()> {
-        setup_logs(LogLevel::Debug)?;
-        let cmc = CoinMarketCap::new_debug_key()?;
-        let info = cmc
-            .get_token_infos_by_symbol_raw(&vec!["USDC".to_string()])
-            .await?;
-        info!("{:?}", info);
-        Ok(())
-    }
+
     #[tokio::test]
     async fn test_get_token_info_v2() -> Result<()> {
         setup_logs(LogLevel::Debug)?;
@@ -429,6 +449,14 @@ mod tests {
             .get_token_infos_by_symbol_v2(&["USDC".to_string()])
             .await?;
         info!("{:?}", info);
+        Ok(())
+    }
+    #[tokio::test]
+    async fn test_get_token_info() -> Result<()> {
+        setup_logs(LogLevel::Debug)?;
+        let cmc = CoinMarketCap::new_debug_key()?;
+        let listings = cmc.get_listing().await?;
+        info!("{:?}", listings);
         Ok(())
     }
 }

@@ -19,7 +19,7 @@ pub async fn validate_audit_rule_top25_tokens(
 ) -> Result<()> {
     if cache.is_empty() {
         let tokens = cmc.get_top_25_coins().await?;
-        for t in tokens.data {
+        for t in tokens {
             cache.insert(t.symbol);
         }
     }

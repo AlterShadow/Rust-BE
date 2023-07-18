@@ -254,18 +254,14 @@ pub async fn populate_escrow_token_contract_address(
     db: &DbClient,
     pool: EthereumRpcConnectionPool,
 ) -> Result<()> {
-    // TODO: should get a properly list from somewhere
-    let coins = [
-        "WBTC", "USDC", "USDT", "DAI", "BUSD", "WETH", "LINK", "UNI", "AAVE", "YFI", "SNX", "MKR",
-        "COMP", "SUSHI", "CRV", "REN", "BAL", "KNC", "OMG", "ZRX", "BAT", "MANA", "ENJ", "GRT",
-        "1INCH", "BNT", "CEL", "CHZ", "CVC", "DNT", "FET", "GNO", "GNT", "KAVA", "KIN", "KNC",
-        "LOOM", "LRC", "DOGE", "MATIC", "MLN", "NMR", "NXT", "OCEAN", "OGN", "PAXG", "POLY",
-        "POWR", "RCN", "REP", "RLC", "RSR", "SNT", "STORJ", "STX", "TRB", "TUSD", "UMA", "USDP",
-    ];
     let cmc = CoinMarketCap::new_debug_key()?;
-    let tokens = cmc
-        .get_token_infos_by_symbol_v2(&coins.into_iter().map(|x| x.to_owned()).collect::<Vec<_>>())
-        .await?;
+    let coins: Vec<_> = cmc
+        .get_listing()
+        .await?
+        .into_iter()
+        .map(|x| x.symbol)
+        .collect();
+    let tokens = cmc.get_token_infos_by_symbol_v2(&coins).await?;
     for token in tokens.into_values() {
         let symbol = token.symbol;
         for (i, address) in token.contract_address.into_iter().enumerate() {
@@ -291,7 +287,13 @@ pub async fn populate_escrow_token_contract_address(
             };
             let conn = pool.get(blockchain).await?;
             let abstract_erc20 = Erc20Token::new(Web3::new(conn.transport().clone()), address)?;
-            let decimals = abstract_erc20.decimals().await?;
+            let decimals = match abstract_erc20.decimals().await {
+                Ok(x) => x,
+                Err(err) => {
+                    error!("Error getting decimals for {}: {:?}", symbol, err);
+                    continue;
+                }
+            };
             let ret = db
                 .execute(FunAdminAddEscrowTokenContractAddressReq {
                     pkey_id: token.id * 100 + (i as i64),
