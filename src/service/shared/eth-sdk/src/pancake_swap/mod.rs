@@ -15,6 +15,7 @@ use crate::{ContractCall, SerializableToken, TransactionReady};
 use eyre::bail;
 use eyre::*;
 use gen::model::{EnumBlockChain, EnumDex, EnumDexVersion};
+use serde::{Deserialize, Serialize};
 use std::io::Cursor;
 use std::str::FromStr;
 use web3::ethabi::Contract;
@@ -485,7 +486,7 @@ pub fn build_pancake_swap() -> Result<PancakeSwap> {
     Ok(pancake)
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct PancakePairPathSet {
     token_in: Address,
     token_out: Address,
