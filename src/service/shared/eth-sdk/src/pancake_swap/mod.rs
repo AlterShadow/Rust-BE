@@ -12,33 +12,17 @@ use web3::types::{Address, H160, U256};
 pub struct PancakePairPathSet {
     /* some trades go through multiple swap calls because of pool availability */
     /* this means that for some pairs, we must keep track of all swap calls made in order and their paths */
-    token_in: Address,
-    token_out: Address,
     func_names_and_paths: Vec<(String, PancakePoolIndex)>,
 }
 
 impl PancakePairPathSet {
-    pub fn new(
-        token_in: Address,
-        token_out: Address,
-        func_names_and_paths: Vec<(String, PancakePoolIndex)>,
-    ) -> Result<Self> {
+    pub fn new(func_names_and_paths: Vec<(String, PancakePoolIndex)>) -> Result<Self> {
         if func_names_and_paths.len() == 0 {
             bail!("empty names and paths");
         }
         Ok(Self {
-            token_in,
-            token_out,
             func_names_and_paths,
         })
-    }
-
-    pub fn get_token_in(&self) -> Address {
-        self.token_in
-    }
-
-    pub fn get_token_out(&self) -> Address {
-        self.token_out
     }
 
     pub fn len(&self) -> usize {

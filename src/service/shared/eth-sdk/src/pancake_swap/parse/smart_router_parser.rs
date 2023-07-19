@@ -191,8 +191,6 @@ impl PancakeSwapParser {
             func_names_and_paths.push((call.get_name(), swap.path.clone()));
         }
         Ok(PancakePairPathSet {
-            token_in: swap_infos[0].0.token_in,
-            token_out: swap_infos[swap_infos.len() - 1].0.token_out,
             func_names_and_paths: func_names_and_paths,
         })
     }
@@ -432,8 +430,6 @@ impl PancakeSwapParser {
             amount_in: swap_infos[0].0.amount_in.unwrap(),
             amount_out: swap_infos[swap_infos.len() - 1].0.amount_out.unwrap(),
             paths: DexPairPathSet::PancakeSwap(PancakePairPathSet {
-                token_in: swap_infos[0].0.token_in,
-                token_out: swap_infos[swap_infos.len() - 1].0.token_out,
                 func_names_and_paths: func_names_and_paths,
             }),
         })
