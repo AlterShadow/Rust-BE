@@ -1,13 +1,14 @@
 use eth_sdk::erc20::{approve_and_ensure_success, Erc20Token};
 use eth_sdk::escrow::{transfer_asset_from_and_ensure_success, EscrowContract};
-use eth_sdk::pair_paths::WorkingPancakePairPaths;
-use eth_sdk::smart_router::{copy_trade_and_ensure_success, PancakeSmartRouterContract};
+use eth_sdk::pancake_swap::execute::{copy_trade_and_ensure_success, PancakeSmartRouterContract};
+use eth_sdk::pancake_swap::pair_paths::WorkingPancakePairPaths;
+use eth_sdk::pancake_swap::parse::build_pancake_swap_parser;
 use eth_sdk::strategy_pool::{sp_deposit_to_and_ensure_success, StrategyPoolContract};
 use eth_sdk::strategy_wallet::StrategyWalletContract;
 use eth_sdk::StrategyPoolHeraldAddresses;
 use eth_sdk::{
-    build_pancake_swap_parser, DexAddresses, EitherTransport, EthereumRpcConnection, ScaledMath,
-    TransactionFetcher, CONFIRMATIONS, MAX_RETRIES, POLL_INTERVAL,
+    DexAddresses, EitherTransport, EthereumRpcConnection, ScaledMath, TransactionFetcher,
+    CONFIRMATIONS, MAX_RETRIES, POLL_INTERVAL,
 };
 use eyre::*;
 use gen::database::*;

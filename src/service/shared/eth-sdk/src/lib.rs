@@ -10,7 +10,7 @@ mod calldata;
 mod conn;
 pub mod contract;
 mod contract_wrappers;
-mod pancake_swap;
+pub mod pancake_swap;
 // #[cfg(test)]
 mod address_table;
 mod calc;
@@ -35,7 +35,6 @@ pub use conn::*;
 pub use contract_wrappers::*;
 pub use dex::*;
 pub use escrow_addresses::*;
-pub use pancake_swap::*;
 pub use pool::*;
 pub use strategy_pool_herald_addresses::*;
 pub use tx::*;

@@ -3,10 +3,11 @@ pub mod method;
 
 use api::cmc::CoinMarketCap;
 use eth_sdk::erc20::build_erc_20;
+use eth_sdk::pancake_swap::parse::{build_pancake_swap_parser, PancakeSwapParser};
 use eth_sdk::signer::Secp256k1SecretKey;
 use eth_sdk::{
-    build_pancake_swap_parser, BlockchainCoinAddresses, DexAddresses, EscrowAddresses,
-    EthereumRpcConnectionPool, PancakeSwapParser, StrategyPoolHeraldAddresses,
+    BlockchainCoinAddresses, DexAddresses, EscrowAddresses, EthereumRpcConnectionPool,
+    StrategyPoolHeraldAddresses,
 };
 use eyre::*;
 use lib::database::DbClient;

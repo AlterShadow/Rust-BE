@@ -1,3 +1,4 @@
+use super::super::SMART_ROUTER_ABI_JSON;
 use super::v2::{swap_exact_tokens_for_tokens, swap_tokens_for_exact_tokens};
 use super::v3::multi_hop::MultiHopPath;
 use super::v3::{
@@ -5,7 +6,6 @@ use super::v3::{
     single_hop::{exact_input_single, exact_output_single},
 };
 use crate::evm::{DexPairPathSet, DexTrade};
-use crate::SMART_ROUTER_ABI_JSON;
 use crate::{ContractCall, SerializableToken, TransactionReady};
 use eyre::bail;
 use eyre::*;

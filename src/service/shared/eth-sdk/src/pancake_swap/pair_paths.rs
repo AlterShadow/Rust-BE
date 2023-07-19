@@ -1,7 +1,8 @@
-use crate::pancake_swap::PancakeV3SingleHopPath;
-use crate::PancakePoolIndex;
-use crate::{build_pancake_swap_parser, PancakePairPathSet};
-use crate::{BlockchainCoinAddresses, PancakeSwapParser};
+use super::parse::{
+    build_pancake_swap_parser, PancakePairPathSet, PancakePoolIndex, PancakeSwapParser,
+    PancakeV3SingleHopPath,
+};
+use crate::BlockchainCoinAddresses;
 use eyre::*;
 use gen::database::FunWatcherListDexPathForPairReq;
 use gen::model::{EnumBlockChain, EnumBlockchainCoin, EnumDex, EnumDexPathFormat};

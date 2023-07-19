@@ -1,5 +1,6 @@
 use crate::evm::DexTrade;
-use crate::{DexAddresses, PancakeSwapParser, TransactionReady};
+use crate::pancake_swap::parse::PancakeSwapParser;
+use crate::{DexAddresses, TransactionReady};
 use eyre::*;
 use gen::model::EnumBlockChain;
 

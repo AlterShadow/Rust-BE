@@ -12,7 +12,7 @@ use chrono::Utc;
 use eth_sdk::erc20::Erc20Token;
 use eth_sdk::escrow::refund_asset_and_ensure_success;
 use eth_sdk::escrow::{AbstractEscrowContract, EscrowContract};
-use eth_sdk::pair_paths::WorkingPancakePairPaths;
+use eth_sdk::pancake_swap::pair_paths::WorkingPancakePairPaths;
 use eth_sdk::signer::Secp256k1SecretKey;
 use eth_sdk::strategy_pool::{withdraw_and_ensure_success, StrategyPoolContract};
 use eth_sdk::strategy_pool_herald::parse_herald_redeem_event;

@@ -1,6 +1,6 @@
 use api::cmc::CoinMarketCap;
 use eth_sdk::escrow::AbstractEscrowContract;
-use eth_sdk::pair_paths::WorkingPancakePairPaths;
+use eth_sdk::pancake_swap::pair_paths::WorkingPancakePairPaths;
 use eth_sdk::signer::Secp256k1SecretKey;
 use eth_sdk::{DexAddresses, EthereumConns, EthereumRpcConnectionPool};
 use eyre::*;
