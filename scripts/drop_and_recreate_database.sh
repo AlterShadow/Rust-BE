@@ -22,4 +22,6 @@ pg_exec2 -f db/model.sql
 # run twice because of wrong dependencies
 pg_exec2 -f db/tbl.sql
 pg_exec2 -f db/tbl.sql
+pg_exec2 -f db/escrow_contract_address.sql
+pg_exec2 -f db/escrow_token_contract_address.sql
 pg_exec2 -f db/api.sql

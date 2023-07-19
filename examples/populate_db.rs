@@ -1,6 +1,7 @@
 #[path = "../src/service/shared/audit/mod.rs"]
 pub mod audit;
 pub mod tools;
+
 use crate::audit::get_audit_rules;
 use api::cmc::CoinMarketCap;
 use eth_sdk::erc20::Erc20Token;
@@ -9,7 +10,7 @@ use eth_sdk::utils::get_signed_text;
 use eth_sdk::{EthereumConns, EthereumRpcConnectionPool};
 use eyre::*;
 use futures::future::join_all;
-use gen::database::FunAdminAddEscrowTokenContractAddressReq;
+use gen::database::{FunAdminAddEscrowTokenContractAddressReq, FunWatcherUpsertDexPathForPairReq};
 use gen::model::*;
 use lib::config::load_config;
 #[allow(unused_imports)]
@@ -17,7 +18,8 @@ use lib::database::drop_and_recreate_database;
 use lib::database::{connect_to_database, DatabaseConfig, DbClient};
 use lib::log::{setup_logs, LogLevel};
 use rand::random;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+use std::fs::File;
 use std::future::Future;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -403,6 +405,31 @@ pub async fn populate_user_apply_become_experts() -> Result<()> {
     Ok(())
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct DexPathTransactionData {
+    pub token_in_symbol: String,
+    pub token_in_address: Address,
+    pub token_out_symbol: String,
+    pub token_out_address: Address,
+    pub transaction_data: String,
+}
+
+pub async fn populate_dex_path_for_pairs(db: &DbClient) -> Result<()> {
+    let mut dex_paths: Vec<DexPathTransactionData> =
+        serde_json::from_reader(File::open("db/dex_paths.json")?)?;
+    for dex_path in dex_paths {
+        db.execute(FunWatcherUpsertDexPathForPairReq {
+            token_in_address: dex_path.token_in_address.into(),
+            token_out_address: dex_path.token_out_address.into(),
+            blockchain: EnumBlockChain::BscMainnet,
+            dex: EnumDex::PancakeSwap,
+            format: EnumDexPathFormat::TransactionData,
+            path_data: dex_path.transaction_data,
+        })
+        .await?;
+    }
+    Ok(())
+}
 #[derive(Debug, Clone, Deserialize)]
 pub struct Config {
     pub app_db: DatabaseConfig,
@@ -415,7 +442,9 @@ async fn main() -> Result<()> {
     let pool = EthereumRpcConnectionPool::from_conns(config.ethereum_urls);
     // drop_and_recreate_database()?;
     let db = connect_to_database(config.app_db).await?;
-    populate_escrow_token_contract_address(&db, pool).await?;
+    populate_dex_path_for_pairs(&db).await?;
+
+    // populate_escrow_token_contract_address(&db, pool).await?;
     // populate_escrow_contract_address().await?;
     // populate_users().await?;
     // populate_user_register_wallets().await?;
