@@ -1,5 +1,5 @@
 -- Created by Vertabelo (http://vertabelo.com)
--- Last modification date: 2023-07-14 16:14:34.746
+-- Last modification date: 2023-07-19 13:12:12.576
 
 CREATE SCHEMA IF NOT EXISTS tbl;;
 
@@ -53,6 +53,19 @@ CREATE TABLE tbl.bad_request (
     raw varchar(16384)  NULL,
     moment bigint  NOT NULL,
     CONSTRAINT "tbl.bad_request_pk" PRIMARY KEY (pkey_id)
+);
+
+-- Table: dex_path_for_pair
+CREATE TABLE tbl.dex_path_for_pair (
+    pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_dex_path_for_pair_id'),
+    fkey_token_in bigint  NOT NULL,
+    fkey_token_out bigint  NOT NULL,
+    blockchain enum_block_chain  NOT NULL,
+    dex enum_dex  NOT NULL,
+    format enum_dex_path_format  NOT NULL,
+    path_data varchar(1024)  NOT NULL,
+    updated_at bigint  NOT NULL,
+    CONSTRAINT dex_path_for_pair_pk PRIMARY KEY (pkey_id)
 );
 
 -- Table: escrow_contract_address
@@ -129,20 +142,6 @@ CREATE TABLE tbl.last_dex_trade_for_pair (
     amount_out varchar(64)  NOT NULL,
     happened_at bigint  NOT NULL,
     CONSTRAINT last_dex_trade_for_pair_pk PRIMARY KEY (pkey_id)
-);
-
--- Table: dex_path_for_pair
-CREATE TABLE tbl.dex_path_for_pair (
-		pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_dex_path_for_pair_id'),
-		fkey_token_in bigint  NOT NULL,
-		fkey_token_out bigint  NOT NULL,
-		blockchain enum_block_chain NOT NULL,
-		dex enum_dex NOT NULL,
-		format enum_dex_path_format  NOT NULL,
-		path_data varchar(1024)  NOT NULL,
-		updated_at bigint NOT NULL,
-		CONSTRAINT dex_path_for_pair_ak_1 UNIQUE (fkey_token_in, fkey_token_out, blockchain, dex, format) NOT DEFERRABLE  INITIALLY IMMEDIATE,
-		CONSTRAINT dex_path_for_pair_pk PRIMARY KEY (pkey_id)
 );
 
 -- Table: login_attempt
@@ -526,6 +525,22 @@ ALTER TABLE tbl.bad_request ADD CONSTRAINT bad_request_user
     INITIALLY IMMEDIATE
 ;
 
+-- Reference: dex_path_for_pair_escrow_token_contract_address_in (table: dex_path_for_pair)
+ALTER TABLE tbl.dex_path_for_pair ADD CONSTRAINT dex_path_for_pair_escrow_token_contract_address_in
+    FOREIGN KEY (fkey_token_in)
+    REFERENCES tbl.escrow_token_contract_address (pkey_id)  
+    NOT DEFERRABLE 
+    INITIALLY IMMEDIATE
+;
+
+-- Reference: dex_path_for_pair_escrow_token_contract_address_out (table: dex_path_for_pair)
+ALTER TABLE tbl.dex_path_for_pair ADD CONSTRAINT dex_path_for_pair_escrow_token_contract_address_out
+    FOREIGN KEY (fkey_token_out)
+    REFERENCES tbl.escrow_token_contract_address (pkey_id)  
+    NOT DEFERRABLE 
+    INITIALLY IMMEDIATE
+;
+
 -- Reference: expert_listened_wallet_asset_balance_fkey (table: expert_listened_wallet_asset_balance)
 ALTER TABLE tbl.expert_listened_wallet_asset_balance ADD CONSTRAINT expert_listened_wallet_asset_balance_fkey
     FOREIGN KEY (fkey_token_id)
@@ -580,22 +595,6 @@ ALTER TABLE tbl.last_dex_trade_for_pair ADD CONSTRAINT last_dex_trade_for_pair_e
     REFERENCES tbl.escrow_token_contract_address (pkey_id)  
     NOT DEFERRABLE 
     INITIALLY IMMEDIATE
-;
-
--- Reference: dex_path_for_pair_escrow_token_contract_address_in (table: dex_path_for_pair)
-ALTER TABLE tbl.dex_path_for_pair ADD CONSTRAINT dex_path_for_pair_escrow_token_contract_address_in
-		FOREIGN KEY (fkey_token_in)
-		REFERENCES tbl.escrow_token_contract_address (pkey_id)
-		NOT DEFERRABLE
-		INITIALLY IMMEDIATE
-;
-
--- Reference: dex_path_for_pair_escrow_token_contract_address_out (table: dex_path_for_pair)
-ALTER TABLE tbl.dex_path_for_pair ADD CONSTRAINT dex_path_for_pair_escrow_token_contract_address_out
-		FOREIGN KEY (fkey_token_out)
-		REFERENCES tbl.escrow_token_contract_address (pkey_id)
-		NOT DEFERRABLE
-		INITIALLY IMMEDIATE
 ;
 
 -- Reference: login_attempt_user (table: login_attempt)
@@ -989,6 +988,13 @@ CREATE SEQUENCE tbl.seq_blockchain_address_lookup_cache_id
       NO CYCLE
 ;
 
+-- Sequence: seq_dex_path_for_pair_id
+CREATE SEQUENCE tbl.seq_dex_path_for_pair_id
+      NO MINVALUE
+      NO MAXVALUE
+      NO CYCLE
+;
+
 -- Sequence: seq_escrow_contract_address_id
 CREATE SEQUENCE tbl.seq_escrow_contract_address_id
       NO MINVALUE
@@ -1015,13 +1021,6 @@ CREATE SEQUENCE tbl.seq_last_dex_trade_for_pair_id
       NO MINVALUE
       NO MAXVALUE
       NO CYCLE
-;
-
--- Sequence: seq_dex_path_for_pair_id
-CREATE SEQUENCE tbl.seq_dex_path_for_pair_id
-			NO MINVALUE
-			NO MAXVALUE
-			NO CYCLE
 ;
 
 -- Sequence: seq_login_attempt_id
