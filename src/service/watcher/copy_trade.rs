@@ -2,7 +2,7 @@ use api::cmc::CoinMarketCap;
 use crypto::Signer;
 use eth_sdk::evm::DexTrade;
 use eth_sdk::logger::BlockchainLogger;
-use eth_sdk::smart_router::{copy_trade_and_ensure_success, PancakeSmartRouterV3Contract};
+use eth_sdk::smart_router::{copy_trade_and_ensure_success, PancakeSmartRouterContract};
 use eth_sdk::{
     ContractCall, EitherTransport, EscrowTransfer, EthereumRpcConnectionPool, PancakePairPathSet,
     PancakeSwap, ScaledMath, CONFIRMATIONS, MAX_RETRIES, POLL_INTERVAL,
@@ -232,7 +232,7 @@ pub async fn execute_copy_trade_plan(
     pool: &EthereumRpcConnectionPool,
     db: &DbClient,
     copy_trade_plan: CopyTradePlan,
-    pancakeswap_contract: &PancakeSmartRouterV3Contract<EitherTransport>,
+    pancakeswap_contract: &PancakeSmartRouterContract<EitherTransport>,
     signer: impl Key + Clone,
 ) -> Result<TransactionReceipt> {
     let trade = copy_trade_plan.trades.first().context("no trade")?;
@@ -281,7 +281,7 @@ pub async fn get_token_prices(
 pub async fn execute_copy_trade(
     pool: &EthereumRpcConnectionPool,
     db: &DbClient,
-    pancakeswap_contract: &PancakeSmartRouterV3Contract<EitherTransport>,
+    pancakeswap_contract: &PancakeSmartRouterContract<EitherTransport>,
     signer: impl Key + Clone,
     blochchain: EnumBlockChain,
     cmc: &CoinMarketCap,

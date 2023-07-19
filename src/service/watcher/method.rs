@@ -15,7 +15,7 @@ use eth_sdk::escrow::{
 };
 use eth_sdk::escrow_tracker::escrow::parse_escrow;
 use eth_sdk::evm::parse_quickalert_payload;
-use eth_sdk::smart_router::{copy_trade_and_ensure_success, PancakeSmartRouterV3Contract};
+use eth_sdk::smart_router::{copy_trade_and_ensure_success, PancakeSmartRouterContract};
 use eth_sdk::strategy_pool::{
     acquire_asset_before_trade_and_ensure_success, give_back_assets_after_trade_and_ensure_success,
     withdraw_and_ensure_success, StrategyPoolContract,
@@ -227,7 +227,7 @@ pub async fn handle_pancake_swap_transaction(
         }
 
         /* instantiate pancake swap contract */
-        let pancake_contract = PancakeSmartRouterV3Contract::new(
+        let pancake_contract = PancakeSmartRouterContract::new(
             conn.clone(),
             state
                 .dex_addresses

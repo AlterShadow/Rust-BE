@@ -1,7 +1,7 @@
 use eth_sdk::erc20::{approve_and_ensure_success, Erc20Token};
 use eth_sdk::escrow::{transfer_asset_from_and_ensure_success, EscrowContract};
 use eth_sdk::pair_paths::WorkingPancakePairPaths;
-use eth_sdk::smart_router::{copy_trade_and_ensure_success, PancakeSmartRouterV3Contract};
+use eth_sdk::smart_router::{copy_trade_and_ensure_success, PancakeSmartRouterContract};
 use eth_sdk::strategy_pool::{sp_deposit_to_and_ensure_success, StrategyPoolContract};
 use eth_sdk::strategy_wallet::StrategyWalletContract;
 use eth_sdk::StrategyPoolHeraldAddresses;
@@ -607,7 +607,7 @@ pub async fn user_back_strategy(
     let escrow_token_contract = Erc20Token::new(conn.clone(), token_address)?;
 
     /* instantiate pancake contract */
-    let pancake_contract = PancakeSmartRouterV3Contract::new(
+    let pancake_contract = PancakeSmartRouterContract::new(
         conn.clone(),
         dex_addresses
             .get(blockchain, EnumDex::PancakeSwap)
