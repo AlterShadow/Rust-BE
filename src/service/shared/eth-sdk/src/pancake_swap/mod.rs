@@ -7,7 +7,7 @@ use super::v3::{
     multi_hop::{exact_input, exact_output},
     single_hop::{exact_input_single, exact_output_single},
 };
-use crate::evm::DexPath;
+use crate::evm::PancakePoolIndex;
 use crate::evm::{DexTrade, PancakeV3SingleHopPath};
 use crate::v3::multi_hop::MultiHopPath;
 use crate::v3::smart_router::SMART_ROUTER_ABI_JSON;
@@ -29,7 +29,7 @@ pub struct Swap {
     pub amount_out: Option<U256>,
     pub amount_out_minimum: Option<U256>,
     pub amount_in_maximum: Option<U256>,
-    pub path: DexPath,
+    pub path: PancakePoolIndex,
 }
 
 #[derive(Clone, Debug)]
@@ -88,7 +88,9 @@ impl PancakeSwap {
                                 swap_exact_tokens_for_tokens_params.amount_out_min,
                             ),
                             amount_in_maximum: None,
-                            path: DexPath::PancakeV2(swap_exact_tokens_for_tokens_params.path),
+                            path: PancakePoolIndex::PancakeV2(
+                                swap_exact_tokens_for_tokens_params.path,
+                            ),
                         };
                         (swap, EnumDexVersion::V2, call)
                     }
@@ -106,7 +108,9 @@ impl PancakeSwap {
                             amount_in_maximum: Some(
                                 swap_tokens_for_exact_tokens_params.amount_in_max,
                             ),
-                            path: DexPath::PancakeV2(swap_tokens_for_exact_tokens_params.path),
+                            path: PancakePoolIndex::PancakeV2(
+                                swap_tokens_for_exact_tokens_params.path,
+                            ),
                         };
 
                         (swap, EnumDexVersion::V2, call)
@@ -122,7 +126,7 @@ impl PancakeSwap {
                             amount_out: None,
                             amount_out_minimum: Some(exact_input_single_params.amount_out_minimum),
                             amount_in_maximum: None,
-                            path: DexPath::PancakeV3SingleHop(PancakeV3SingleHopPath {
+                            path: PancakePoolIndex::PancakeV3SingleHop(PancakeV3SingleHopPath {
                                 token_in: exact_input_single_params.token_in,
                                 token_out: exact_input_single_params.token_out,
                                 fee: exact_input_single_params.fee,
@@ -140,7 +144,7 @@ impl PancakeSwap {
                             amount_out: Some(exact_output_single_params.amount_out),
                             amount_out_minimum: None,
                             amount_in_maximum: Some(exact_output_single_params.amount_in_maximum),
-                            path: DexPath::PancakeV3SingleHop(PancakeV3SingleHopPath {
+                            path: PancakePoolIndex::PancakeV3SingleHop(PancakeV3SingleHopPath {
                                 token_in: exact_output_single_params.token_in,
                                 token_out: exact_output_single_params.token_out,
                                 fee: exact_output_single_params.fee,
@@ -159,7 +163,9 @@ impl PancakeSwap {
                             amount_out: None,
                             amount_out_minimum: Some(exact_input_params.amount_out_minimum),
                             amount_in_maximum: None,
-                            path: DexPath::PancakeV3MultiHop(exact_input_params.path.to_vec()),
+                            path: PancakePoolIndex::PancakeV3MultiHop(
+                                exact_input_params.path.to_vec(),
+                            ),
                         };
                         (swap, EnumDexVersion::V3, call)
                     }
@@ -174,7 +180,9 @@ impl PancakeSwap {
                             amount_out: Some(exact_output_params.amount_out),
                             amount_out_minimum: None,
                             amount_in_maximum: Some(exact_output_params.amount_in_maximum),
-                            path: DexPath::PancakeV3MultiHop(exact_output_params.path.to_vec()),
+                            path: PancakePoolIndex::PancakeV3MultiHop(
+                                exact_output_params.path.to_vec(),
+                            ),
                         };
                         (swap, EnumDexVersion::V3, call)
                     }
@@ -183,7 +191,7 @@ impl PancakeSwap {
         }
         ensure!(swap_infos.len() > 0, "no suitable method found");
 
-        let mut func_names_and_paths: Vec<(String, DexPath)> = Vec::new();
+        let mut func_names_and_paths: Vec<(String, PancakePoolIndex)> = Vec::new();
         for (swap, _version, call) in &swap_infos {
             func_names_and_paths.push((call.get_name(), swap.path.clone()));
         }
@@ -236,7 +244,9 @@ impl PancakeSwap {
                                 swap_exact_tokens_for_tokens_params.amount_out_min,
                             ),
                             amount_in_maximum: None,
-                            path: DexPath::PancakeV2(swap_exact_tokens_for_tokens_params.path),
+                            path: PancakePoolIndex::PancakeV2(
+                                swap_exact_tokens_for_tokens_params.path,
+                            ),
                         };
                         (swap, EnumDexVersion::V2, call)
                     }
@@ -254,7 +264,9 @@ impl PancakeSwap {
                             amount_in_maximum: Some(
                                 swap_tokens_for_exact_tokens_params.amount_in_max,
                             ),
-                            path: DexPath::PancakeV2(swap_tokens_for_exact_tokens_params.path),
+                            path: PancakePoolIndex::PancakeV2(
+                                swap_tokens_for_exact_tokens_params.path,
+                            ),
                         };
 
                         (swap, EnumDexVersion::V2, call)
@@ -270,7 +282,7 @@ impl PancakeSwap {
                             amount_out: None,
                             amount_out_minimum: Some(exact_input_single_params.amount_out_minimum),
                             amount_in_maximum: None,
-                            path: DexPath::PancakeV3SingleHop(PancakeV3SingleHopPath {
+                            path: PancakePoolIndex::PancakeV3SingleHop(PancakeV3SingleHopPath {
                                 token_in: exact_input_single_params.token_in,
                                 token_out: exact_input_single_params.token_out,
                                 fee: exact_input_single_params.fee,
@@ -288,7 +300,7 @@ impl PancakeSwap {
                             amount_out: Some(exact_output_single_params.amount_out),
                             amount_out_minimum: None,
                             amount_in_maximum: Some(exact_output_single_params.amount_in_maximum),
-                            path: DexPath::PancakeV3SingleHop(PancakeV3SingleHopPath {
+                            path: PancakePoolIndex::PancakeV3SingleHop(PancakeV3SingleHopPath {
                                 token_in: exact_output_single_params.token_in,
                                 token_out: exact_output_single_params.token_out,
                                 fee: exact_output_single_params.fee,
@@ -307,7 +319,9 @@ impl PancakeSwap {
                             amount_out: None,
                             amount_out_minimum: Some(exact_input_params.amount_out_minimum),
                             amount_in_maximum: None,
-                            path: DexPath::PancakeV3MultiHop(exact_input_params.path.to_vec()),
+                            path: PancakePoolIndex::PancakeV3MultiHop(
+                                exact_input_params.path.to_vec(),
+                            ),
                         };
                         (swap, EnumDexVersion::V3, call)
                     }
@@ -322,7 +336,9 @@ impl PancakeSwap {
                             amount_out: Some(exact_output_params.amount_out),
                             amount_out_minimum: None,
                             amount_in_maximum: Some(exact_output_params.amount_in_maximum),
-                            path: DexPath::PancakeV3MultiHop(exact_output_params.path.to_vec()),
+                            path: PancakePoolIndex::PancakeV3MultiHop(
+                                exact_output_params.path.to_vec(),
+                            ),
                         };
                         (swap, EnumDexVersion::V3, call)
                     }
@@ -331,7 +347,7 @@ impl PancakeSwap {
         }
         ensure!(swap_infos.len() > 0, "no suitable method found");
 
-        let mut paths: Vec<DexPath> = Vec::new();
+        let mut paths: Vec<PancakePoolIndex> = Vec::new();
         let mut versions: Vec<EnumDexVersion> = Vec::new();
         let mut calls: Vec<ContractCall> = Vec::new();
         for (swap, version, call) in &mut swap_infos {
@@ -490,14 +506,14 @@ pub fn build_pancake_swap() -> Result<PancakeSwap> {
 pub struct PancakePairPathSet {
     token_in: Address,
     token_out: Address,
-    func_names_and_paths: Vec<(String, DexPath)>,
+    func_names_and_paths: Vec<(String, PancakePoolIndex)>,
 }
 
 impl PancakePairPathSet {
     pub fn new(
         token_in: Address,
         token_out: Address,
-        func_names_and_paths: Vec<(String, DexPath)>,
+        func_names_and_paths: Vec<(String, PancakePoolIndex)>,
     ) -> Result<Self> {
         if func_names_and_paths.len() == 0 {
             bail!("empty names and paths");
@@ -528,7 +544,7 @@ impl PancakePairPathSet {
         Ok(self.func_names_and_paths[idx].0.clone())
     }
 
-    pub fn get_path(&self, idx: usize) -> Result<DexPath> {
+    pub fn get_path(&self, idx: usize) -> Result<PancakePoolIndex> {
         if idx >= self.len() {
             bail!("index out of bounds");
         }

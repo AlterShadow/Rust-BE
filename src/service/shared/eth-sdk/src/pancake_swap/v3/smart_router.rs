@@ -1,4 +1,4 @@
-use crate::evm::DexPath;
+use crate::evm::PancakePoolIndex;
 use crate::utils::wait_for_confirmations;
 use crate::v3::multi_hop::MultiHopPath;
 use crate::PancakePairPathSet;
@@ -92,7 +92,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
         conn: &EthereumRpcConnection,
         signer: impl Key + Clone,
         func_name: String,
-        path: DexPath,
+        path: PancakePoolIndex,
         recipient: Address,
         amount_in: U256,
         amount_out_minimum: U256,
@@ -109,7 +109,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
                         amount_in,
                         amount_out_minimum,
                         match path {
-                            DexPath::PancakeV2(path) => path,
+                            PancakePoolIndex::PancakeV2(path) => path,
                             _ => bail!("invalid path for v2"),
                         },
                     )
@@ -126,7 +126,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
                         amount_in,
                         amount_out_minimum,
                         match path {
-                            DexPath::PancakeV2(path) => path,
+                            PancakePoolIndex::PancakeV2(path) => path,
                             _ => bail!("invalid path for v2"),
                         },
                     )
@@ -136,7 +136,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
                 /* path is the same on V3 single hop calls */
                 /* tokenIn, tokenOut, and fee are passed on every call */
                 let v3_single_hop_path = match path {
-                    DexPath::PancakeV3SingleHop(path) => path,
+                    PancakePoolIndex::PancakeV3SingleHop(path) => path,
                     _ => bail!("invalid path for v3 single hop"),
                 };
                 Ok(self
@@ -156,7 +156,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
                 /* path is the same on V3 single hop calls */
                 /* tokenIn, tokenOut, and fee are passed on every call */
                 let v3_single_hop_path = match path {
-                    DexPath::PancakeV3SingleHop(path) => path,
+                    PancakePoolIndex::PancakeV3SingleHop(path) => path,
                     _ => bail!("invalid path for v3 single hop"),
                 };
                 Ok(self
@@ -181,7 +181,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
                         &conn,
                         signer.clone(),
                         MultiHopPath::from_bytes(&match path {
-                            DexPath::PancakeV3MultiHop(path) => path,
+                            PancakePoolIndex::PancakeV3MultiHop(path) => path,
                             _ => bail!("invalid path for v3 multi hop"),
                         })?,
                         recipient,
@@ -197,7 +197,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
                         &conn,
                         signer.clone(),
                         MultiHopPath::invert(&MultiHopPath::from_bytes(&match path {
-                            DexPath::PancakeV3MultiHop(path) => path,
+                            PancakePoolIndex::PancakeV3MultiHop(path) => path,
                             _ => bail!("invalid path for v3 multi hop"),
                         })?),
                         recipient,
@@ -517,7 +517,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
                         temp_amount_in,
                         temp_amount_out_minimum,
                         match paths.get_path(i)? {
-                            DexPath::PancakeV2(path) => path,
+                            PancakePoolIndex::PancakeV2(path) => path,
                             _ => bail!("invalid path for v2"),
                         },
                     )?)
@@ -528,14 +528,14 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
                         temp_amount_in,
                         temp_amount_out_minimum,
                         match paths.get_path(i)? {
-                            DexPath::PancakeV2(path) => path,
+                            PancakePoolIndex::PancakeV2(path) => path,
                             _ => bail!("invalid path for v2"),
                         },
                     )?)
                 }
                 PancakeSmartRouterV3Functions::ExactInputSingle => {
                     let v3_single_hop_path = match paths.get_path(i)? {
-                        DexPath::PancakeV3SingleHop(path) => path,
+                        PancakePoolIndex::PancakeV3SingleHop(path) => path,
                         _ => bail!("invalid path for v3 single hop"),
                     };
                     call_data.push(self.setup_exact_input_single(
@@ -549,7 +549,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
                 }
                 PancakeSmartRouterV3Functions::ExactOutputSingle => {
                     let v3_single_hop_path = match paths.get_path(i)? {
-                        DexPath::PancakeV3SingleHop(path) => path,
+                        PancakePoolIndex::PancakeV3SingleHop(path) => path,
                         _ => bail!("invalid path for v3 single hop"),
                     };
                     call_data.push(self.setup_exact_input_single(
@@ -564,7 +564,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
                 PancakeSmartRouterV3Functions::ExactInput => {
                     call_data.push(self.setup_exact_input(
                         MultiHopPath::from_bytes(&match paths.get_path(i)? {
-                            DexPath::PancakeV3MultiHop(path) => path,
+                            PancakePoolIndex::PancakeV3MultiHop(path) => path,
                             _ => bail!("invalid path for v3 multi hop"),
                         })?,
                         temp_recipient,
@@ -576,7 +576,7 @@ impl<T: Transport> PancakeSmartRouterV3Contract<T> {
                     call_data.push(self.setup_exact_input(
                         MultiHopPath::invert(&MultiHopPath::from_bytes(
                             &match paths.get_path(i)? {
-                                DexPath::PancakeV3MultiHop(path) => path,
+                                PancakePoolIndex::PancakeV3MultiHop(path) => path,
                                 _ => bail!("invalid path for v3 multi hop"),
                             },
                         )?),

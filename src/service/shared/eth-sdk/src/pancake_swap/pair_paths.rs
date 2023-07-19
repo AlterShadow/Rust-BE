@@ -1,4 +1,4 @@
-use crate::evm::DexPath;
+use crate::evm::PancakePoolIndex;
 use crate::pancake_swap::PancakeV3SingleHopPath;
 use crate::BlockchainCoinAddresses;
 use crate::PancakePairPathSet;
@@ -48,7 +48,7 @@ impl WorkingPancakePairPaths {
                 Address::from_str("0xdac17f958d2ee523a2206206994597c13d831ec7")?,
                 vec![(
                     "exactInputSingle".to_string(),
-                    DexPath::PancakeV3SingleHop(PancakeV3SingleHopPath {
+                    PancakePoolIndex::PancakeV3SingleHop(PancakeV3SingleHopPath {
                         token_in: Address::from_str("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48")?,
                         token_out: Address::from_str("0xdac17f958d2ee523a2206206994597c13d831ec7")?,
                         fee: U256::from(100),
@@ -65,7 +65,7 @@ impl WorkingPancakePairPaths {
                 Address::from_str("0x4fabb145d64652a948d72533023f6e7a623c7c53")?,
                 vec![(
                     "swapExactTokensForTokens".to_string(),
-                    DexPath::PancakeV2(vec![
+                    PancakePoolIndex::PancakeV2(vec![
                         Address::from_str("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48")?,
                         Address::from_str("0x4fabb145d64652a948d72533023f6e7a623c7c53")?,
                     ]),
@@ -82,7 +82,7 @@ impl WorkingPancakePairPaths {
                 Address::from_str("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2")?,
                 vec![(
                     "swapExactTokensForTokens".to_string(),
-                    DexPath::PancakeV2(vec![
+                    PancakePoolIndex::PancakeV2(vec![
                         Address::from_str("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48")?,
                         Address::from_str("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2")?,
                     ]),
@@ -99,7 +99,7 @@ impl WorkingPancakePairPaths {
                 Address::from_str("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48")?,
                 vec![(
                     "exactInputSingle".to_string(),
-                    DexPath::PancakeV3SingleHop(PancakeV3SingleHopPath {
+                    PancakePoolIndex::PancakeV3SingleHop(PancakeV3SingleHopPath {
                         token_in: Address::from_str("0xdac17f958d2ee523a2206206994597c13d831ec7")?,
                         token_out: Address::from_str("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48")?,
                         fee: U256::from(100),
@@ -116,7 +116,7 @@ impl WorkingPancakePairPaths {
                 Address::from_str("0x4fabb145d64652a948d72533023f6e7a623c7c53")?,
                 vec![(
                     "swapExactTokensForTokens".to_string(),
-                    DexPath::PancakeV2(vec![
+                    PancakePoolIndex::PancakeV2(vec![
                         Address::from_str("0xdac17f958d2ee523a2206206994597c13d831ec7")?,
                         Address::from_str("0x4fabb145d64652a948d72533023f6e7a623c7c53")?,
                     ]),
@@ -132,7 +132,7 @@ impl WorkingPancakePairPaths {
                 Address::from_str("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2")?,
                 vec![(
                     "exactInputSingle".to_string(),
-                    DexPath::PancakeV3SingleHop(PancakeV3SingleHopPath {
+                    PancakePoolIndex::PancakeV3SingleHop(PancakeV3SingleHopPath {
                         token_in: Address::from_str("0xdac17f958d2ee523a2206206994597c13d831ec7")?,
                         token_out: Address::from_str("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2")?,
                         fee: U256::from(500),
@@ -150,7 +150,7 @@ impl WorkingPancakePairPaths {
                 Address::from_str("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48")?,
                 vec![(
                     "swapExactTokensForTokens".to_string(),
-                    DexPath::PancakeV2(vec![
+                    PancakePoolIndex::PancakeV2(vec![
                         Address::from_str("0x4fabb145d64652a948d72533023f6e7a623c7c53")?,
                         Address::from_str("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48")?,
                     ]),
@@ -166,7 +166,7 @@ impl WorkingPancakePairPaths {
                 Address::from_str("0xdac17f958d2ee523a2206206994597c13d831ec7")?,
                 vec![(
                     "swapExactTokensForTokens".to_string(),
-                    DexPath::PancakeV2(vec![
+                    PancakePoolIndex::PancakeV2(vec![
                         Address::from_str("0x4fabb145d64652a948d72533023f6e7a623c7c53")?,
                         Address::from_str("0xdac17f958d2ee523a2206206994597c13d831ec7")?,
                     ]),
@@ -182,7 +182,7 @@ impl WorkingPancakePairPaths {
                 Address::from_str("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2")?,
                 vec![(
                     "swapExactTokensForTokens".to_string(),
-                    DexPath::PancakeV2(vec![
+                    PancakePoolIndex::PancakeV2(vec![
                         Address::from_str("0x4fabb145d64652a948d72533023f6e7a623c7c53")?,
                         Address::from_str("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2")?,
                     ]),
@@ -199,7 +199,7 @@ impl WorkingPancakePairPaths {
                 Address::from_str("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48")?,
                 vec![(
                     "swapExactTokensForTokens".to_string(),
-                    DexPath::PancakeV2(vec![
+                    PancakePoolIndex::PancakeV2(vec![
                         Address::from_str("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2")?,
                         Address::from_str("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48")?,
                     ]),
@@ -215,7 +215,7 @@ impl WorkingPancakePairPaths {
                 Address::from_str("0xdac17f958d2ee523a2206206994597c13d831ec7")?,
                 vec![(
                     "swapExactTokensForTokens".to_string(),
-                    DexPath::PancakeV2(vec![
+                    PancakePoolIndex::PancakeV2(vec![
                         Address::from_str("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2")?,
                         Address::from_str("0xdac17f958d2ee523a2206206994597c13d831ec7")?,
                     ]),
@@ -231,7 +231,7 @@ impl WorkingPancakePairPaths {
                 Address::from_str("0x4fabb145d64652a948d72533023f6e7a623c7c53")?,
                 vec![(
                     "swapExactTokensForTokens".to_string(),
-                    DexPath::PancakeV2(vec![
+                    PancakePoolIndex::PancakeV2(vec![
                         Address::from_str("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2")?,
                         Address::from_str("0x4fabb145d64652a948d72533023f6e7a623c7c53")?,
                     ]),
@@ -248,7 +248,7 @@ impl WorkingPancakePairPaths {
                 Address::from_str("0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6")?,
                 vec![(
                     "exactInputSingle".to_string(),
-                    DexPath::PancakeV3SingleHop(PancakeV3SingleHopPath {
+                    PancakePoolIndex::PancakeV3SingleHop(PancakeV3SingleHopPath {
                         token_in: Address::from_str("0x07865c6e87b9f70255377e024ace6630c1eaa37f")?,
                         token_out: Address::from_str("0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6")?,
                         fee: U256::from(10000),
@@ -266,7 +266,7 @@ impl WorkingPancakePairPaths {
                 Address::from_str("0x07865c6e87b9f70255377e024ace6630c1eaa37f")?,
                 vec![(
                     "swapExactTokensForTokens".to_string(),
-                    DexPath::PancakeV2(vec![
+                    PancakePoolIndex::PancakeV2(vec![
                         Address::from_str("0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6")?,
                         Address::from_str("0x07865c6e87b9f70255377e024ace6630c1eaa37f")?,
                     ]),
@@ -283,7 +283,7 @@ impl WorkingPancakePairPaths {
                 Address::from_str("0x55d398326f99059ff775485246999027b3197955")?,
                 vec![(
                     "swapExactTokensForTokens".to_string(),
-                    DexPath::PancakeV2(vec![
+                    PancakePoolIndex::PancakeV2(vec![
                         Address::from_str("0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d")?,
                         Address::from_str("0x55d398326f99059ff775485246999027b3197955")?,
                     ]),
@@ -299,7 +299,7 @@ impl WorkingPancakePairPaths {
                 Address::from_str("0xe9e7cea3dedca5984780bafc599bd69add087d56")?,
                 vec![(
                     "exactInputSingle".to_string(),
-                    DexPath::PancakeV3SingleHop(PancakeV3SingleHopPath {
+                    PancakePoolIndex::PancakeV3SingleHop(PancakeV3SingleHopPath {
                         token_in: Address::from_str("0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d")?,
                         token_out: Address::from_str("0xe9e7cea3dedca5984780bafc599bd69add087d56")?,
                         fee: U256::from(100),
@@ -316,7 +316,7 @@ impl WorkingPancakePairPaths {
                 Address::from_str("0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c")?,
                 vec![(
                     "exactInputSingle".to_string(),
-                    DexPath::PancakeV3SingleHop(PancakeV3SingleHopPath {
+                    PancakePoolIndex::PancakeV3SingleHop(PancakeV3SingleHopPath {
                         token_in: Address::from_str("0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d")?,
                         token_out: Address::from_str("0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c")?,
                         fee: U256::from(100),
@@ -334,7 +334,7 @@ impl WorkingPancakePairPaths {
                 Address::from_str("0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d")?,
                 vec![(
                     "exactInputSingle".to_string(),
-                    DexPath::PancakeV3SingleHop(PancakeV3SingleHopPath {
+                    PancakePoolIndex::PancakeV3SingleHop(PancakeV3SingleHopPath {
                         token_in: Address::from_str("0x55d398326f99059ff775485246999027b3197955")?,
                         token_out: Address::from_str("0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d")?,
                         fee: U256::from(100),
@@ -351,7 +351,7 @@ impl WorkingPancakePairPaths {
                 Address::from_str("0xe9e7cea3dedca5984780bafc599bd69add087d56")?,
                 vec![(
                     "exactInputSingle".to_string(),
-                    DexPath::PancakeV3SingleHop(PancakeV3SingleHopPath {
+                    PancakePoolIndex::PancakeV3SingleHop(PancakeV3SingleHopPath {
                         token_in: Address::from_str("0x55d398326f99059ff775485246999027b3197955")?,
                         token_out: Address::from_str("0xe9e7cea3dedca5984780bafc599bd69add087d56")?,
                         fee: U256::from(100),
@@ -368,7 +368,7 @@ impl WorkingPancakePairPaths {
                 Address::from_str("0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c")?,
                 vec![(
                     "exactInputSingle".to_string(),
-                    DexPath::PancakeV3SingleHop(PancakeV3SingleHopPath {
+                    PancakePoolIndex::PancakeV3SingleHop(PancakeV3SingleHopPath {
                         token_in: Address::from_str("0x55d398326f99059ff775485246999027b3197955")?,
                         token_out: Address::from_str("0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c")?,
                         fee: U256::from(100),
@@ -386,7 +386,7 @@ impl WorkingPancakePairPaths {
                 Address::from_str("0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d")?,
                 vec![(
                     "exactInputSingle".to_string(),
-                    DexPath::PancakeV3SingleHop(PancakeV3SingleHopPath {
+                    PancakePoolIndex::PancakeV3SingleHop(PancakeV3SingleHopPath {
                         token_in: Address::from_str("0xe9e7cea3dedca5984780bafc599bd69add087d56")?,
                         token_out: Address::from_str("0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d")?,
                         fee: U256::from(100),
@@ -403,7 +403,7 @@ impl WorkingPancakePairPaths {
                 Address::from_str("0x55d398326f99059ff775485246999027b3197955")?,
                 vec![(
                     "exactInputSingle".to_string(),
-                    DexPath::PancakeV3SingleHop(PancakeV3SingleHopPath {
+                    PancakePoolIndex::PancakeV3SingleHop(PancakeV3SingleHopPath {
                         token_in: Address::from_str("0xe9e7cea3dedca5984780bafc599bd69add087d56")?,
                         token_out: Address::from_str("0x55d398326f99059ff775485246999027b3197955")?,
                         fee: U256::from(100),
@@ -420,7 +420,7 @@ impl WorkingPancakePairPaths {
                 Address::from_str("0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c")?,
                 vec![(
                     "exactInputSingle".to_string(),
-                    DexPath::PancakeV3SingleHop(PancakeV3SingleHopPath {
+                    PancakePoolIndex::PancakeV3SingleHop(PancakeV3SingleHopPath {
                         token_in: Address::from_str("0xe9e7cea3dedca5984780bafc599bd69add087d56")?,
                         token_out: Address::from_str("0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c")?,
                         fee: U256::from(100),
@@ -438,7 +438,7 @@ impl WorkingPancakePairPaths {
                 Address::from_str("0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d")?,
                 vec![(
                     "swapExactTokensForTokens".to_string(),
-                    DexPath::PancakeV2(vec![
+                    PancakePoolIndex::PancakeV2(vec![
                         Address::from_str("0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c")?,
                         Address::from_str("0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d")?,
                     ]),
@@ -454,7 +454,7 @@ impl WorkingPancakePairPaths {
                 Address::from_str("0x55d398326f99059ff775485246999027b3197955")?,
                 vec![(
                     "swapExactTokensForTokens".to_string(),
-                    DexPath::PancakeV2(vec![
+                    PancakePoolIndex::PancakeV2(vec![
                         Address::from_str("0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c")?,
                         Address::from_str("0x55d398326f99059ff775485246999027b3197955")?,
                     ]),
@@ -470,7 +470,7 @@ impl WorkingPancakePairPaths {
                 Address::from_str("0xe9e7cea3dedca5984780bafc599bd69add087d56")?,
                 vec![(
                     "swapExactTokensForTokens".to_string(),
-                    DexPath::PancakeV2(vec![
+                    PancakePoolIndex::PancakeV2(vec![
                         Address::from_str("0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c")?,
                         Address::from_str("0xe9e7cea3dedca5984780bafc599bd69add087d56")?,
                     ]),
@@ -487,7 +487,7 @@ impl WorkingPancakePairPaths {
                 Address::from_str("0xae13d989dac2f0debff460ac112a837c89baa7cd")?,
                 vec![(
                     "exactInputSingle".to_string(),
-                    DexPath::PancakeV3SingleHop(PancakeV3SingleHopPath {
+                    PancakePoolIndex::PancakeV3SingleHop(PancakeV3SingleHopPath {
                         token_in: Address::from_str("0xab1a4d4f1d656d2450692d237fdd6c7f9146e814")?,
                         token_out: Address::from_str("0xae13d989dac2f0debff460ac112a837c89baa7cd")?,
                         fee: U256::from(10000),
@@ -505,7 +505,7 @@ impl WorkingPancakePairPaths {
                 Address::from_str("0xab1a4d4f1d656d2450692d237fdd6c7f9146e814")?,
                 vec![(
                     "exactInputSingle".to_string(),
-                    DexPath::PancakeV3SingleHop(PancakeV3SingleHopPath {
+                    PancakePoolIndex::PancakeV3SingleHop(PancakeV3SingleHopPath {
                         token_in: Address::from_str("0xae13d989dac2f0debff460ac112a837c89baa7cd")?,
                         token_out: Address::from_str("0xab1a4d4f1d656d2450692d237fdd6c7f9146e814")?,
                         fee: U256::from(10000),
