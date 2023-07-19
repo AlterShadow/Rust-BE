@@ -705,8 +705,9 @@ pub async fn user_back_strategy(
                 .await?;
                 Ok(amount)
             } else {
-                let pancake_path_set =
-                    pancake_paths.get_pair_by_address(blockchain, token_address, out_token)?;
+                let pancake_path_set = pancake_paths
+                    .get_pair_by_address(blockchain, token_address, out_token)
+                    .await?;
                 let trade_hash = copy_trade_and_ensure_success(
                     &pancake_contract,
                     &conn,
@@ -714,7 +715,7 @@ pub async fn user_back_strategy(
                     MAX_RETRIES,
                     POLL_INTERVAL,
                     master_key.clone(),
-                    pancake_path_set,
+                    &pancake_path_set,
                     amount,
                     U256::one(), // TODO: find a way to estimate amount out
                     logger.clone(),

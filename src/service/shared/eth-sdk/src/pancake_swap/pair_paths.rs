@@ -1,9 +1,12 @@
 use crate::evm::PancakePoolIndex;
 use crate::pancake_swap::PancakeV3SingleHopPath;
-use crate::BlockchainCoinAddresses;
-use crate::PancakePairPathSet;
+use crate::{build_pancake_swap, PancakePairPathSet};
+use crate::{BlockchainCoinAddresses, PancakeSwap};
 use eyre::*;
-use gen::model::{EnumBlockChain, EnumBlockchainCoin};
+use gen::database::FunWatcherListDexPathForPairReq;
+use gen::model::{EnumBlockChain, EnumBlockchainCoin, EnumDex, EnumDexPathFormat};
+use lib::database::DbClient;
+use lib::utils::hex_decode;
 use std::str::FromStr;
 use std::sync::Arc;
 use web3::types::{Address, U256};
@@ -11,6 +14,8 @@ use web3::types::{Address, U256};
 pub struct WorkingPancakePairPaths {
     inner: Vec<(i64, EnumBlockChain, String, String, PancakePairPathSet)>,
     addresses: Arc<BlockchainCoinAddresses>,
+    db: Option<DbClient>,
+    pancake_swap: PancakeSwap,
 }
 
 impl WorkingPancakePairPaths {
@@ -18,6 +23,8 @@ impl WorkingPancakePairPaths {
         Self {
             inner: Default::default(),
             addresses,
+            db: None,
+            pancake_swap: build_pancake_swap().unwrap(),
         }
     }
     fn insert(
@@ -36,6 +43,7 @@ impl WorkingPancakePairPaths {
             pair_paths,
         ));
     }
+    // TODO: get rid of these hard-coded values
     pub fn new(addresses: Arc<BlockchainCoinAddresses>) -> Result<Self> {
         let mut this = Self::empty(addresses);
 
@@ -516,8 +524,12 @@ impl WorkingPancakePairPaths {
 
         Ok(this)
     }
+    pub fn load_from_db(&mut self, db: &DbClient) -> Result<()> {
+        self.db = Some(db.clone());
+        Ok(())
+    }
 
-    pub fn get_pair(
+    fn get_pair(
         &self,
         chain: EnumBlockChain,
         token_in: &str,
@@ -535,12 +547,40 @@ impl WorkingPancakePairPaths {
             })
     }
 
-    pub fn get_pair_by_address(
+    pub async fn get_pair_by_address(
         &self,
         chain: EnumBlockChain,
         token_in: Address,
         token_out: Address,
-    ) -> Result<&PancakePairPathSet> {
+    ) -> Result<PancakePairPathSet> {
+        if let Some(db) = &self.db {
+            if let Some(token) = db
+                .execute(FunWatcherListDexPathForPairReq {
+                    token_in_address: token_in.into(),
+                    token_out_address: token_out.into(),
+                    blockchain: chain,
+                    dex: Some(EnumDex::PancakeSwap),
+                    format: None,
+                })
+                .await?
+                .into_result()
+            {
+                return match token.format {
+                    EnumDexPathFormat::Json => {
+                        serde_json::from_str(&token.path_data).with_context(|| {
+                            format!("failed to parse dex path from json: {:?}", token.path_data)
+                        })
+                    }
+                    EnumDexPathFormat::TransactionData => self
+                        .pancake_swap
+                        .parse_paths_from_inputs(&hex_decode(token.path_data.as_bytes())?),
+                    EnumDexPathFormat::TransactionHash => {
+                        todo!()
+                        // PancakeSwap::parse_trade()
+                    }
+                };
+            }
+        }
         let token_in_enum = self
             .addresses
             .get_by_address(chain, token_in)
@@ -549,6 +589,6 @@ impl WorkingPancakePairPaths {
             .addresses
             .get_by_address(chain, token_out)
             .ok_or_else(|| eyre!("token_out {:?} not found", token_out))?;
-        self.get_pair(chain, token_in_enum, token_out_enum)
+        self.get_pair(chain, token_in_enum, token_out_enum).cloned()
     }
 }
