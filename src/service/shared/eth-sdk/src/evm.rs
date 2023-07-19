@@ -7,7 +7,7 @@ use lib::database::DbClient;
 use serde::{Deserialize, Serialize};
 use tracing::error;
 
-use web3::types::{Address, H160, H256, U256};
+use web3::types::{Address, H256, U256};
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum DexPairPathSet {
