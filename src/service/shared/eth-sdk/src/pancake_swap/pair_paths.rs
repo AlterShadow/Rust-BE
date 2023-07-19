@@ -1,7 +1,5 @@
-use super::parse::{
-    build_pancake_swap_parser, PancakePairPathSet, PancakePoolIndex, PancakeSwapParser,
-    PancakeV3SingleHopPath,
-};
+use super::parse::{build_pancake_swap_parser, PancakeSwapParser};
+use super::{PancakePairPathSet, PancakePoolIndex, PancakeV3SingleHopPath};
 use crate::BlockchainCoinAddresses;
 use eyre::*;
 use gen::database::FunWatcherListDexPathForPairReq;

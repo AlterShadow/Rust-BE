@@ -1,6 +1,5 @@
-use super::super::parse::v3::multi_hop::MultiHopPath;
-use super::super::parse::{PancakePairPathSet, PancakePoolIndex};
 use super::super::SMART_ROUTER_ABI_JSON;
+use super::super::{MultiHopPath, PancakePairPathSet, PancakePoolIndex};
 use crate::utils::wait_for_confirmations;
 use crate::{EitherTransport, EthereumRpcConnection};
 use eyre::*;

@@ -3,7 +3,8 @@ use crypto::Signer;
 use eth_sdk::evm::DexTrade;
 use eth_sdk::logger::BlockchainLogger;
 use eth_sdk::pancake_swap::execute::{copy_trade_and_ensure_success, PancakeSmartRouterContract};
-use eth_sdk::pancake_swap::parse::{PancakePairPathSet, PancakeSwapParser};
+use eth_sdk::pancake_swap::parse::PancakeSwapParser;
+use eth_sdk::pancake_swap::PancakePairPathSet;
 use eth_sdk::{
     ContractCall, EitherTransport, EscrowTransfer, EthereumRpcConnectionPool, ScaledMath,
     CONFIRMATIONS, MAX_RETRIES, POLL_INTERVAL,

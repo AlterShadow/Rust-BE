@@ -1,6 +1,8 @@
-use super::super::SMART_ROUTER_ABI_JSON;
+use super::super::{
+    MultiHopPath, PancakePairPathSet, PancakePoolIndex, PancakeV3SingleHopPath,
+    SMART_ROUTER_ABI_JSON,
+};
 use super::v2::{swap_exact_tokens_for_tokens, swap_tokens_for_exact_tokens};
-use super::v3::multi_hop::MultiHopPath;
 use super::v3::{
     multi_hop::{exact_input, exact_output},
     single_hop::{exact_input_single, exact_output_single},
@@ -15,24 +17,6 @@ use std::io::Cursor;
 use std::str::FromStr;
 use web3::ethabi::Contract;
 use web3::types::{Address, H160, H256, U256};
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub enum PancakePoolIndex {
-    /* every path for every token_in token_out pair in every dex in every chain must be recorded in the database */
-    /* so that we can trigger our own trades in the futures */
-    /* note that reciprocals are different pairs with different paths */
-    /* i.e. the path for token_in x and token_out y is different from token_in y and token_out x */
-    PancakeV2(Vec<H160>),
-    PancakeV3SingleHop(PancakeV3SingleHopPath),
-    PancakeV3MultiHop(Vec<u8>),
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct PancakeV3SingleHopPath {
-    pub token_in: Address,
-    pub token_out: Address,
-    pub fee: U256,
-}
 
 pub struct Swap {
     pub recipient: Address,
@@ -520,58 +504,6 @@ pub fn build_pancake_swap_parser() -> Result<PancakeSwapParser> {
     let pancake_smart_router = Contract::load(cursor).context("failed to read contract ABI")?;
     let pancake = PancakeSwapParser::new(pancake_smart_router);
     Ok(pancake)
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct PancakePairPathSet {
-    /* some trades go through multiple swap calls because of pool availability */
-    /* this means that for some pairs, we must keep track of all swap calls made in order and their paths */
-    token_in: Address,
-    token_out: Address,
-    func_names_and_paths: Vec<(String, PancakePoolIndex)>,
-}
-
-impl PancakePairPathSet {
-    pub fn new(
-        token_in: Address,
-        token_out: Address,
-        func_names_and_paths: Vec<(String, PancakePoolIndex)>,
-    ) -> Result<Self> {
-        if func_names_and_paths.len() == 0 {
-            bail!("empty names and paths");
-        }
-        Ok(Self {
-            token_in,
-            token_out,
-            func_names_and_paths,
-        })
-    }
-
-    pub fn get_token_in(&self) -> Address {
-        self.token_in
-    }
-
-    pub fn get_token_out(&self) -> Address {
-        self.token_out
-    }
-
-    pub fn len(&self) -> usize {
-        self.func_names_and_paths.len()
-    }
-
-    pub fn get_func_name(&self, idx: usize) -> Result<String> {
-        if idx >= self.len() {
-            bail!("index out of bounds");
-        }
-        Ok(self.func_names_and_paths[idx].0.clone())
-    }
-
-    pub fn get_path(&self, idx: usize) -> Result<PancakePoolIndex> {
-        if idx >= self.len() {
-            bail!("index out of bounds");
-        }
-        Ok(self.func_names_and_paths[idx].1.clone())
-    }
 }
 
 #[cfg(test)]
