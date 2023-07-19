@@ -15,13 +15,13 @@ use eth_sdk::escrow::{
 };
 use eth_sdk::escrow_tracker::escrow::parse_escrow;
 use eth_sdk::evm::parse_quickalert_payload;
+use eth_sdk::smart_router::{copy_trade_and_ensure_success, PancakeSmartRouterV3Contract};
 use eth_sdk::strategy_pool::{
     acquire_asset_before_trade_and_ensure_success, give_back_assets_after_trade_and_ensure_success,
     withdraw_and_ensure_success, StrategyPoolContract,
 };
 use eth_sdk::strategy_pool_herald::parse_herald_redeem_event;
 use eth_sdk::utils::{wait_for_confirmations, wait_for_confirmations_simple};
-use eth_sdk::v3::smart_router::{copy_trade_and_ensure_success, PancakeSmartRouterV3Contract};
 use eth_sdk::{
     evm, EthereumRpcConnection, ScaledMath, TransactionFetcher, TransactionReady, CONFIRMATIONS,
     MAX_RETRIES, POLL_INTERVAL,

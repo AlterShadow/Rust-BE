@@ -2,7 +2,7 @@ use api::cmc::CoinMarketCap;
 use crypto::Signer;
 use eth_sdk::evm::DexTrade;
 use eth_sdk::logger::BlockchainLogger;
-use eth_sdk::v3::smart_router::{copy_trade_and_ensure_success, PancakeSmartRouterV3Contract};
+use eth_sdk::smart_router::{copy_trade_and_ensure_success, PancakeSmartRouterV3Contract};
 use eth_sdk::{
     ContractCall, EitherTransport, EscrowTransfer, EthereumRpcConnectionPool, PancakePairPathSet,
     PancakeSwap, ScaledMath, CONFIRMATIONS, MAX_RETRIES, POLL_INTERVAL,

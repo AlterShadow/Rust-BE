@@ -1,19 +1,22 @@
+pub mod execute;
 pub mod pair_paths;
-pub mod v2;
-pub mod v3;
+pub mod parse;
 
-use super::v2::{swap_exact_tokens_for_tokens, swap_tokens_for_exact_tokens};
-use super::v3::{
-    multi_hop::{exact_input, exact_output},
-    single_hop::{exact_input_single, exact_output_single},
-};
+pub use execute::*;
+pub use parse::*;
+
 use crate::evm::{DexPairPathSet, DexTrade};
-use crate::v3::multi_hop::MultiHopPath;
-use crate::v3::smart_router::SMART_ROUTER_ABI_JSON;
 use crate::{ContractCall, SerializableToken, TransactionReady};
+use execute::smart_router::SMART_ROUTER_ABI_JSON;
 use eyre::bail;
 use eyre::*;
 use gen::model::{EnumBlockChain, EnumDex, EnumDexVersion};
+use parse::v2::{swap_exact_tokens_for_tokens, swap_tokens_for_exact_tokens};
+use parse::v3::multi_hop::MultiHopPath;
+use parse::v3::{
+    multi_hop::{exact_input, exact_output},
+    single_hop::{exact_input_single, exact_output_single},
+};
 use serde::{Deserialize, Serialize};
 use std::io::Cursor;
 use std::str::FromStr;

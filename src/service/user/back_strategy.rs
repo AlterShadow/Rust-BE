@@ -1,9 +1,9 @@
 use eth_sdk::erc20::{approve_and_ensure_success, Erc20Token};
 use eth_sdk::escrow::{transfer_asset_from_and_ensure_success, EscrowContract};
 use eth_sdk::pair_paths::WorkingPancakePairPaths;
+use eth_sdk::smart_router::{copy_trade_and_ensure_success, PancakeSmartRouterV3Contract};
 use eth_sdk::strategy_pool::{sp_deposit_to_and_ensure_success, StrategyPoolContract};
 use eth_sdk::strategy_wallet::StrategyWalletContract;
-use eth_sdk::v3::smart_router::{copy_trade_and_ensure_success, PancakeSmartRouterV3Contract};
 use eth_sdk::StrategyPoolHeraldAddresses;
 use eth_sdk::{
     build_pancake_swap, DexAddresses, EitherTransport, EthereumRpcConnection, ScaledMath,
