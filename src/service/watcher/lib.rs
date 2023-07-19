@@ -5,8 +5,8 @@ use api::cmc::CoinMarketCap;
 use eth_sdk::erc20::build_erc_20;
 use eth_sdk::signer::Secp256k1SecretKey;
 use eth_sdk::{
-    build_pancake_swap, BlockchainCoinAddresses, DexAddresses, EscrowAddresses,
-    EthereumRpcConnectionPool, PancakeSwap, StrategyPoolHeraldAddresses,
+    build_pancake_swap_parser, BlockchainCoinAddresses, DexAddresses, EscrowAddresses,
+    EthereumRpcConnectionPool, PancakeSwapParser, StrategyPoolHeraldAddresses,
 };
 use eyre::*;
 use lib::database::DbClient;
@@ -19,7 +19,7 @@ use web3::ethabi::Contract;
 pub struct AppState {
     pub dex_addresses: DexAddresses,
     pub eth_pool: EthereumRpcConnectionPool,
-    pub pancake_swap: PancakeSwap,
+    pub pancake_swap_parser: PancakeSwapParser,
     pub db: DbClient,
     pub token_addresses: Arc<BlockchainCoinAddresses>,
     pub escrow_addresses: Arc<EscrowAddresses>,
@@ -41,7 +41,7 @@ impl AppState {
         Ok(Self {
             dex_addresses: DexAddresses::new(),
             eth_pool,
-            pancake_swap: build_pancake_swap()?,
+            pancake_swap_parser: build_pancake_swap_parser()?,
             escrow_addresses: load_escrow_address(&db).await?,
             db,
             token_addresses,

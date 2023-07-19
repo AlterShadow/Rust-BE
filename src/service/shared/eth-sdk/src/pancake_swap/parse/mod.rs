@@ -49,13 +49,13 @@ pub struct Swap {
 }
 
 #[derive(Clone, Debug)]
-pub struct PancakeSwap {
+pub struct PancakeSwapParser {
     smart_router: Contract,
     erc20_transfer_event_signature: H256,
     refer_to_self_flag: H160,
 }
 
-impl PancakeSwap {
+impl PancakeSwapParser {
     /* Parses Calls to the PancakeSwap V3 Smart Router into a Trade */
     /* https://etherscan.io/address/0x13f4EA83D0bd40E75C8222255bc855a974568Dd4#code */
 
@@ -518,10 +518,10 @@ enum PancakeSwapMethod {
     ExactOutput,
 }
 
-pub fn build_pancake_swap() -> Result<PancakeSwap> {
+pub fn build_pancake_swap_parser() -> Result<PancakeSwapParser> {
     let cursor = Cursor::new(SMART_ROUTER_ABI_JSON);
     let pancake_smart_router = Contract::load(cursor).context("failed to read contract ABI")?;
-    let pancake = PancakeSwap::new(pancake_smart_router);
+    let pancake = PancakeSwapParser::new(pancake_smart_router);
     Ok(pancake)
 }
 
@@ -590,7 +590,7 @@ mod tests {
     async fn test_pancakeswap() -> Result<()> {
         let _ = setup_logs(LogLevel::Info);
 
-        let pancake = build_pancake_swap()?;
+        let pancake = build_pancake_swap_parser()?;
         let conn_pool = EthereumRpcConnectionPool::new();
         let conn = conn_pool.get(EnumBlockChain::EthereumMainnet).await?;
         let tx = TransactionFetcher::new_and_assume_ready(

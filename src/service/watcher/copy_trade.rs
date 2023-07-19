@@ -5,7 +5,7 @@ use eth_sdk::logger::BlockchainLogger;
 use eth_sdk::smart_router::{copy_trade_and_ensure_success, PancakeSmartRouterContract};
 use eth_sdk::{
     ContractCall, EitherTransport, EscrowTransfer, EthereumRpcConnectionPool, PancakePairPathSet,
-    PancakeSwap, ScaledMath, CONFIRMATIONS, MAX_RETRIES, POLL_INTERVAL,
+    PancakeSwapParser, ScaledMath, CONFIRMATIONS, MAX_RETRIES, POLL_INTERVAL,
 };
 use eyre::*;
 use gen::database::*;

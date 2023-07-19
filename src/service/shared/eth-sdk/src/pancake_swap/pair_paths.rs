@@ -1,7 +1,7 @@
 use crate::pancake_swap::PancakeV3SingleHopPath;
 use crate::PancakePoolIndex;
-use crate::{build_pancake_swap, PancakePairPathSet};
-use crate::{BlockchainCoinAddresses, PancakeSwap};
+use crate::{build_pancake_swap_parser, PancakePairPathSet};
+use crate::{BlockchainCoinAddresses, PancakeSwapParser};
 use eyre::*;
 use gen::database::FunWatcherListDexPathForPairReq;
 use gen::model::{EnumBlockChain, EnumBlockchainCoin, EnumDex, EnumDexPathFormat};
@@ -15,7 +15,7 @@ pub struct WorkingPancakePairPaths {
     inner: Vec<(i64, EnumBlockChain, String, String, PancakePairPathSet)>,
     addresses: Arc<BlockchainCoinAddresses>,
     db: Option<DbClient>,
-    pancake_swap: PancakeSwap,
+    pancake_swap_parser: PancakeSwapParser,
 }
 
 impl WorkingPancakePairPaths {
@@ -24,7 +24,7 @@ impl WorkingPancakePairPaths {
             inner: Default::default(),
             addresses,
             db: None,
-            pancake_swap: build_pancake_swap().unwrap(),
+            pancake_swap_parser: build_pancake_swap_parser().unwrap(),
         }
     }
     fn insert(
@@ -572,7 +572,7 @@ impl WorkingPancakePairPaths {
                         })
                     }
                     EnumDexPathFormat::TransactionData => self
-                        .pancake_swap
+                        .pancake_swap_parser
                         .parse_paths_from_inputs(&hex_decode(token.path_data.as_bytes())?),
                     EnumDexPathFormat::TransactionHash => {
                         todo!()

@@ -93,8 +93,13 @@ pub async fn handle_pancake_swap_transaction(
     tx: TransactionReady,
 ) -> Result<()> {
     /* parse trade */
-    let expert_trade =
-        parse_dex_trade(blockchain, &tx, &state.dex_addresses, &state.pancake_swap).await?;
+    let expert_trade = parse_dex_trade(
+        blockchain,
+        &tx,
+        &state.dex_addresses,
+        &state.pancake_swap_parser,
+    )
+    .await?;
 
     /* update last dex trade cache table */
     state
@@ -285,7 +290,7 @@ pub async fn handle_pancake_swap_transaction(
             )
             .await?,
             &state.dex_addresses,
-            &state.pancake_swap,
+            &state.pancake_swap_parser,
         )
         .await?;
 

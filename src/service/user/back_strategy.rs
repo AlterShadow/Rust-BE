@@ -6,7 +6,7 @@ use eth_sdk::strategy_pool::{sp_deposit_to_and_ensure_success, StrategyPoolContr
 use eth_sdk::strategy_wallet::StrategyWalletContract;
 use eth_sdk::StrategyPoolHeraldAddresses;
 use eth_sdk::{
-    build_pancake_swap, DexAddresses, EitherTransport, EthereumRpcConnection, ScaledMath,
+    build_pancake_swap_parser, DexAddresses, EitherTransport, EthereumRpcConnection, ScaledMath,
     TransactionFetcher, CONFIRMATIONS, MAX_RETRIES, POLL_INTERVAL,
 };
 use eyre::*;
@@ -675,7 +675,7 @@ pub async fn user_back_strategy(
 
     /* trade escrow token for strategy's tokens */
     info!("trade escrow token for strategy's tokens");
-    let pancake_trade_parser = build_pancake_swap()?;
+    let pancake_trade_parser = build_pancake_swap_parser()?;
     let get_out_amount = |out_token, amount| {
         let db = db.clone();
         let conn = conn.clone();
