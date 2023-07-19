@@ -139,7 +139,7 @@ CREATE TABLE tbl.dex_path_for_pair (
 		blockchain enum_block_chain NOT NULL,
 		dex enum_dex NOT NULL,
 		format enum_dex_path_format  NOT NULL,
-		path_data varchar(256)  NOT NULL,
+		path_data varchar(1024)  NOT NULL,
 		updated_at bigint NOT NULL,
 		CONSTRAINT dex_path_for_pair_ak_1 UNIQUE (fkey_token_in, fkey_token_out, blockchain, dex, format) NOT DEFERRABLE  INITIALLY IMMEDIATE,
 		CONSTRAINT dex_path_for_pair_pk PRIMARY KEY (pkey_id)
