@@ -1,8 +1,8 @@
 pub mod v2;
 pub mod v3;
 
-use super::execute::smart_router::SMART_ROUTER_ABI_JSON;
 use crate::evm::{DexPairPathSet, DexTrade};
+use crate::SMART_ROUTER_ABI_JSON;
 use crate::{ContractCall, SerializableToken, TransactionReady};
 use eyre::bail;
 use eyre::*;

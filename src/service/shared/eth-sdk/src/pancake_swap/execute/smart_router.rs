@@ -2,6 +2,7 @@ use crate::utils::wait_for_confirmations;
 use crate::v3::multi_hop::MultiHopPath;
 use crate::PancakePairPathSet;
 use crate::PancakePoolIndex;
+use crate::SMART_ROUTER_ABI_JSON;
 use crate::{EitherTransport, EthereumRpcConnection};
 use eyre::*;
 use lib::log::DynLogger;
@@ -13,8 +14,6 @@ use web3::ethabi::Token;
 use web3::signing::Key;
 use web3::types::{Address, TransactionReceipt, H256, U256};
 use web3::{Transport, Web3};
-
-pub const SMART_ROUTER_ABI_JSON: &str = include_str!("smart_router_v3.json");
 
 /**	Contract Wrapper for PancakeSwap Smart Router V3
  *
