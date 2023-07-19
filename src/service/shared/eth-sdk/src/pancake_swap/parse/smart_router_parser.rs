@@ -9,10 +9,8 @@ use super::v3::{
 };
 use crate::evm::{DexPairPathSet, DexTrade};
 use crate::{ContractCall, SerializableToken, TransactionReady};
-use eyre::bail;
 use eyre::*;
 use gen::model::{EnumBlockChain, EnumDex, EnumDexVersion};
-use serde::{Deserialize, Serialize};
 use std::io::Cursor;
 use std::str::FromStr;
 use web3::ethabi::Contract;
