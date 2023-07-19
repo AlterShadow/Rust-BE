@@ -1,8 +1,8 @@
-use crate::{ContractCall, PancakePairPathSet, TransactionReady};
+use crate::{PancakePairPathSet, TransactionReady};
 use bytes::Bytes;
 use eyre::*;
 use gen::database::FunWatcherSaveRawTransactionReq;
-use gen::model::{EnumBlockChain, EnumDex, EnumDexVersion};
+use gen::model::{EnumBlockChain, EnumDex};
 use lib::database::DbClient;
 use serde::{Deserialize, Serialize};
 use tracing::error;
@@ -27,6 +27,11 @@ pub struct PancakeV3SingleHopPath {
     pub fee: U256,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub enum DexPairPathSet {
+    PancakeSwap(PancakePairPathSet),
+}
+
 #[derive(Clone, Debug)]
 pub struct DexTrade {
     pub chain: EnumBlockChain,
@@ -37,11 +42,7 @@ pub struct DexTrade {
     pub caller: Address,
     pub amount_in: U256,
     pub amount_out: U256,
-    /* some trades go through multiple swap calls because of pool availability */
-    /* this means that for some pairs, we must keep track of all swap calls made in order and their paths */
-    pub swap_calls: Vec<ContractCall>,
-    pub paths: Vec<PancakePoolIndex>,
-    pub dex_versions: Vec<EnumDexVersion>,
+    pub paths: DexPairPathSet,
 }
 
 impl DexTrade {
@@ -49,15 +50,9 @@ impl DexTrade {
         if self.dex != EnumDex::PancakeSwap {
             bail!("dex is not pancakeswap")
         }
-        let mut func_names_and_paths = Vec::new();
-        for (i, swap_call) in self.swap_calls.iter().enumerate() {
-            func_names_and_paths.push((swap_call.get_name(), self.paths[i].clone()));
-        }
-        Ok(PancakePairPathSet::new(
-            self.token_in,
-            self.token_out,
-            func_names_and_paths,
-        )?)
+        Ok(match self.paths {
+            DexPairPathSet::PancakeSwap(ref paths) => paths.clone(),
+        })
     }
 }
 

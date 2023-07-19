@@ -7,7 +7,7 @@ use super::v3::{
     multi_hop::{exact_input, exact_output},
     single_hop::{exact_input_single, exact_output_single},
 };
-use crate::evm::PancakePoolIndex;
+use crate::evm::{DexPairPathSet, PancakePoolIndex};
 use crate::evm::{DexTrade, PancakeV3SingleHopPath};
 use crate::v3::multi_hop::MultiHopPath;
 use crate::v3::smart_router::SMART_ROUTER_ABI_JSON;
@@ -422,6 +422,11 @@ impl PancakeSwap {
             }
         }
 
+        let mut func_names_and_paths: Vec<(String, PancakePoolIndex)> = Vec::new();
+        for (swap, _version, call) in &swap_infos {
+            func_names_and_paths.push((call.get_name(), swap.path.clone()));
+        }
+
         Ok(DexTrade {
             chain,
             contract,
@@ -431,9 +436,11 @@ impl PancakeSwap {
             caller,
             amount_in: swap_infos[0].0.amount_in.unwrap(),
             amount_out: swap_infos[swap_infos.len() - 1].0.amount_out.unwrap(),
-            swap_calls: calls,
-            paths,
-            dex_versions: versions,
+            paths: DexPairPathSet::PancakeSwap(PancakePairPathSet {
+                token_in: swap_infos[0].0.token_in,
+                token_out: swap_infos[swap_infos.len() - 1].0.token_out,
+                func_names_and_paths: func_names_and_paths,
+            }),
         })
     }
 
@@ -504,6 +511,8 @@ pub fn build_pancake_swap() -> Result<PancakeSwap> {
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct PancakePairPathSet {
+    /* some trades go through multiple swap calls because of pool availability */
+    /* this means that for some pairs, we must keep track of all swap calls made in order and their paths */
     token_in: Address,
     token_out: Address,
     func_names_and_paths: Vec<(String, PancakePoolIndex)>,
