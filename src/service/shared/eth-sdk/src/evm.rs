@@ -10,24 +10,6 @@ use tracing::error;
 use web3::types::{Address, H160, H256, U256};
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub enum PancakePoolIndex {
-    /* every path for every token_in token_out pair in every dex in every chain must be recorded in the database */
-    /* so that we can trigger our own trades in the futures */
-    /* note that reciprocals are different pairs with different paths */
-    /* i.e. the path for token_in x and token_out y is different from token_in y and token_out x */
-    PancakeV2(Vec<H160>),
-    PancakeV3SingleHop(PancakeV3SingleHopPath),
-    PancakeV3MultiHop(Vec<u8>),
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct PancakeV3SingleHopPath {
-    pub token_in: Address,
-    pub token_out: Address,
-    pub fee: U256,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum DexPairPathSet {
     PancakeSwap(PancakePairPathSet),
 }

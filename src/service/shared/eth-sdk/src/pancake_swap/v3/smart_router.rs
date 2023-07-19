@@ -1,7 +1,7 @@
-use crate::evm::PancakePoolIndex;
 use crate::utils::wait_for_confirmations;
 use crate::v3::multi_hop::MultiHopPath;
 use crate::PancakePairPathSet;
+use crate::PancakePoolIndex;
 use crate::{EitherTransport, EthereumRpcConnection};
 use eyre::*;
 use lib::log::DynLogger;
