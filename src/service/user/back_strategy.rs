@@ -195,7 +195,6 @@ pub struct CalculateUserBackStrategyCalculateAmountToMintResult {
     pub sp_assets_and_amounts: HashMap<Address, U256>,
     pub escrow_allocations_for_tokens: HashMap<Address, U256>,
     pub strategy_pool_assets_bought_for_this_backer: HashMap<Address, U256>,
-    pub user_deposit_amounts: HashMap<Address, U256>,
 }
 pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
     Fut: Future<Output = Result<U256>>,
@@ -431,16 +430,7 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
             )?
         }
     };
-    let user_deposit_amounts = get_user_deposit_balances_by_wallet_to_fill_value(
-        &db,
-        blockchain,
-        user_id,
-        token_id,
-        back_total_amount,
-        escrow_contract_address,
-    )
-    .await
-    .context("not enough balance found in ledger for back amount")?;
+
     Ok(CalculateUserBackStrategyCalculateAmountToMintResult {
         fees,
         back_usdc_amount_minus_fees: back_token_amount_minus_fees,
@@ -449,7 +439,6 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
         sp_assets_and_amounts,
         escrow_allocations_for_tokens,
         strategy_pool_assets_bought_for_this_backer,
-        user_deposit_amounts,
     })
 }
 
@@ -496,11 +485,15 @@ pub async fn user_back_strategy(
     let user_balance_ret = user_balance.into_result().context("insufficient balance")?;
     let user_balance: U256 = user_balance_ret.balance.into();
     if user_balance < back_token_amount {
-        bail!("insufficient balance");
+        bail!(
+            "insufficient balance {} < {}",
+            amount_to_display(user_balance),
+            amount_to_display(back_token_amount)
+        );
     }
 
     /* get amount deposited by whitelisted wallets necessary for back amount */
-    let wallet_deposit_amounts = get_user_deposit_balances_by_wallet_to_fill_value(
+    let wallet_deposit_amounts = get_and_check_user_deposit_balances_by_wallet_to_fill_value(
         &db,
         blockchain,
         user_id,
@@ -508,8 +501,7 @@ pub async fn user_back_strategy(
         back_token_amount,
         escrow_contract.address(),
     )
-    .await
-    .context("not enough balance found in ledger for back amount")?;
+    .await?;
 
     let new_user_balance = user_balance - back_token_amount;
     let mut success = false;
@@ -586,8 +578,6 @@ pub async fn user_back_strategy(
         .await?
         .into_result()
         .context("strategy is not registered in the database")?;
-
-    logger.log("calculating fees");
 
     /* instantiate strategy contract wrapper */
     let (strategy_pool_contract_id, sp_contract) = user_get_or_deploy_strategy_pool(
@@ -769,9 +759,6 @@ pub async fn user_back_strategy(
         fees,
         // we discard this value because it's not really exactly the value
         strategy_token_to_mint,
-        strategy_pool_active,
-        sp_assets_and_amounts,
-        escrow_allocations_for_tokens,
         strategy_pool_assets_bought_for_this_backer,
         ..
     } = calculate_user_back_strategy_calculate_amount_to_mint(
@@ -947,7 +934,7 @@ pub async fn user_back_strategy(
     Ok(())
 }
 
-pub async fn get_user_deposit_balances_by_wallet_to_fill_value(
+pub async fn get_and_check_user_deposit_balances_by_wallet_to_fill_value(
     db: &DbClient,
     chain: EnumBlockChain,
     user_id: i64,

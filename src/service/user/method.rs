@@ -39,7 +39,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::Mutex;
 use tokio::time::sleep;
-use tracing::{error, info};
+use tracing::*;
 use web3::signing::Key;
 use web3::types::{Address, H256, U256};
 include!("../shared/method.rs");
@@ -660,9 +660,10 @@ impl RequestHandler for MethodUserGetDepositWithdrawBalance {
                 .await?
                 .into_result()
                 .with_context(|| CustomError::new(EnumErrorCode::NotFound, "no such token"))?;
+
             let balance = db
                 .execute(FunUserListUserDepositWithdrawBalanceReq {
-                    limit: 1000,
+                    limit: 1,
                     offset: 0,
                     user_id: ctx.user_id,
                     blockchain: None,
