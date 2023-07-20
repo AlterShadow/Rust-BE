@@ -1513,6 +1513,7 @@ END
             r#"
 BEGIN
     RETURN QUERY SELECT 
+                DISTINCT ON(a.fkey_user_id)
                 COUNT(*) OVER() AS total,
                 b.pkey_id, 
                 b.username, 
@@ -1524,7 +1525,7 @@ BEGIN
             FROM tbl.user_follow_expert AS a
             INNER JOIN tbl.user AS b ON a.fkey_user_id = b.pkey_id
             WHERE a.fkey_user_id = a_user_id
-            ORDER BY a.pkey_id
+            ORDER BY a.fkey_user_id
             LIMIT a_limit
             OFFSET a_offset;
 
@@ -1551,6 +1552,7 @@ END
             r#"
 BEGIN
     RETURN QUERY SELECT
+                DISTINCT ON(a.fkey_user_id)
                 COUNT(*) OVER() AS total,
                 b.pkey_id, 
                 b.username, 
@@ -1562,7 +1564,7 @@ BEGIN
             FROM tbl.user_back_exit_strategy_ledger AS a
             INNER JOIN tbl.user AS b ON a.fkey_user_id = b.pkey_id
             WHERE a.fkey_user_id = a_user_id
-            ORDER BY a.pkey_id
+            ORDER BY a.fkey_user_id
             LIMIT a_limit
             OFFSET a_offset;
 END
