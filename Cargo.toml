@@ -52,6 +52,7 @@ members = [
 	"src/service/shared/eth-sdk",
 	"src/service/shared/crypto",
 	"src/service/shared/api",
+	"src/service/shared/execution-engine",
 	"src/service/auth",
 	"src/service/user",
 	"src/service/admin",
