@@ -16,6 +16,7 @@ use num::ToPrimitive;
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
+use std::ops::{AddAssign, SubAssign};
 use web3::signing::Key;
 use web3::types::{Address, TransactionReceipt, U256};
 
@@ -113,6 +114,7 @@ pub struct CopyTradeEntry {
     // approximation
     pub amount_in: U256,
     pub amount_out: U256,
+    pub trade_ratio: f64,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CopyTradePlan {
@@ -168,6 +170,8 @@ pub fn calculate_copy_trade_plan(
         asset_decimals.clone(),
         asset_prices.clone(),
     )?;
+    println!("{:#?}", strategy_asset_ratios);
+
     // select two assets so that the ratios of strategy are closer to the ratios of expert
     let mut ratio_deltas: HashMap<Address, f64> = HashMap::new();
     for key in expert_asset_amounts
@@ -178,45 +182,49 @@ pub fn calculate_copy_trade_plan(
     {
         let expert_ratio = expert_asset_ratios.get(&key).copied().unwrap_or_default();
         let strategy_ratio = strategy_asset_ratios.get(&key).copied().unwrap_or_default();
-        ratio_deltas.insert(key.clone(), expert_ratio - strategy_ratio);
+        ratio_deltas.insert(key.clone(), strategy_ratio - expert_ratio);
     }
-    let ratio_deltas_ranked_by_delta: Vec<(Address, f64)> = ratio_deltas
-        .clone()
-        .into_iter()
-        .sorted_by(|(_, a), (_, b)| b.partial_cmp(a).unwrap())
-        .collect();
-    let (token_in, token_in_ratio) = ratio_deltas_ranked_by_delta
-        .last()
-        .with_context(|| "no token in")?
-        .to_owned();
-    ensure!(
-        token_in_ratio > 0.0,
-        "token in ratio should be greater than 0"
-    );
-    let (token_out, token_out_ratio) = ratio_deltas_ranked_by_delta
-        .first()
-        .with_context(|| "no token out")?
-        .to_owned();
-    ensure!(
-        token_out_ratio < 0.0,
-        "token out ratio should be less than 0"
-    );
+    let mut plan = CopyTradePlan { trades: vec![] };
 
-    let token_delta = token_in_ratio.abs().min(token_out_ratio.abs());
-    let token_in_trade_amount = U256::exp10(*asset_decimals.get(&token_in).unwrap())
-        .mul_f64(strategy_total_value * token_delta / asset_prices.get(&token_in).unwrap())?;
-    let token_out_trade_amount = U256::exp10(*asset_decimals.get(&token_out).unwrap())
-        .mul_f64(strategy_total_value * token_delta / asset_prices.get(&token_out).unwrap())?;
-    let mut trades: Vec<CopyTradeEntry> = vec![];
-    trades.push(CopyTradeEntry {
-        blockchain,
-        dex: EnumDex::PancakeSwap,
-        token_in: token_in.clone(),
-        token_out: token_out.clone(),
-        amount_in: token_in_trade_amount,
-        amount_out: token_out_trade_amount,
-    });
-    Ok(CopyTradePlan { trades })
+    while let (Some((&token_in, &token_in_ratio)), Some((&token_out, &token_out_ratio))) = {
+        let token_in_pair = ratio_deltas
+            .iter()
+            .filter(|x| *x.1 > 0.0)
+            .filter(|x| strategy_asset_amounts.get(x.0).unwrap_or(&U256::zero()) > &U256::zero())
+            .max_by(|x, y| x.1.partial_cmp(y.1).unwrap());
+
+        let token_out_pair = ratio_deltas
+            .iter()
+            .filter(|x| *x.1 < 0.0)
+            .filter(|x| expert_asset_amounts.get(x.0).unwrap_or(&U256::zero()) > &U256::zero())
+            .min_by(|x, y| x.1.partial_cmp(y.1).unwrap());
+        (token_in_pair, token_out_pair)
+    } {
+        let trade_ratio = token_in_ratio.abs().min(token_out_ratio.abs());
+        let amount_in = U256::exp10(*asset_decimals.get(&token_in).unwrap())
+            .mul_f64(strategy_total_value * trade_ratio / asset_prices.get(&token_in).unwrap())?;
+        let amount_out = U256::exp10(*asset_decimals.get(&token_out).unwrap())
+            .mul_f64(strategy_total_value * trade_ratio / asset_prices.get(&token_out).unwrap())?;
+        ratio_deltas
+            .get_mut(&token_in)
+            .unwrap()
+            .sub_assign(trade_ratio);
+        ratio_deltas
+            .get_mut(&token_out)
+            .unwrap()
+            .add_assign(trade_ratio);
+        plan.trades.push(CopyTradeEntry {
+            blockchain,
+            dex: EnumDex::PancakeSwap,
+            token_in,
+            token_out,
+            amount_in,
+            amount_out,
+            trade_ratio,
+        });
+    }
+
+    Ok(plan)
 }
 
 pub async fn load_dex_path(
@@ -325,4 +333,97 @@ pub async fn execute_copy_trade(
     )?;
     execute_copy_trade_plan(pool, db, plan, pancakeswap_contract, signer).await?;
     Ok(())
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_copy_trading_empty() -> Result<()> {
+        let expert_amounts = HashMap::new();
+        let strategy_amounts = HashMap::new();
+        let prices = HashMap::new();
+        let decimals = HashMap::new();
+        let plan = calculate_copy_trade_plan(
+            EnumBlockChain::LocalNet,
+            expert_amounts,
+            strategy_amounts,
+            prices,
+            decimals,
+        )?;
+        assert_eq!(plan.trades.len(), 0);
+        Ok(())
+    }
+    #[test]
+    fn test_copy_trading_synced() -> Result<()> {
+        let token_a = Address::from_low_u64_be(1);
+        let token_b = Address::from_low_u64_be(2);
+
+        let mut expert_amounts = HashMap::new();
+        expert_amounts.insert(token_a, U256::from(0));
+        expert_amounts.insert(token_b, U256::from(100));
+        let mut strategy_amounts = HashMap::new();
+        strategy_amounts.insert(token_a, U256::from(10));
+        strategy_amounts.insert(token_b, U256::from(0));
+        let mut prices = HashMap::new();
+        prices.insert(token_a, 1.0);
+        prices.insert(token_b, 1.0);
+        let mut decimals = HashMap::new();
+        decimals.insert(token_a, 0);
+        decimals.insert(token_b, 0);
+        let plan = calculate_copy_trade_plan(
+            EnumBlockChain::LocalNet,
+            expert_amounts,
+            strategy_amounts,
+            prices,
+            decimals,
+        )?;
+        assert_eq!(plan.trades.len(), 1);
+        assert_eq!(plan.trades[0].token_in, token_a);
+        assert_eq!(plan.trades[0].token_out, token_b);
+        assert_eq!(plan.trades[0].amount_in, U256::from(10));
+        assert_eq!(plan.trades[0].amount_out, U256::from(10));
+        Ok(())
+    }
+    #[test]
+    fn test_copy_trading_unsynced() -> Result<()> {
+        let token_a = Address::from_low_u64_be(1);
+        let token_b = Address::from_low_u64_be(2);
+        let token_c = Address::from_low_u64_be(3);
+        let mut expert_amounts = HashMap::new();
+        expert_amounts.insert(token_a, U256::from(0));
+        expert_amounts.insert(token_b, U256::from(100));
+        expert_amounts.insert(token_c, U256::from(1000));
+        let mut strategy_amounts = HashMap::new();
+        strategy_amounts.insert(token_a, U256::from(10));
+        strategy_amounts.insert(token_b, U256::from(0));
+        strategy_amounts.insert(token_c, U256::from(0));
+        let mut prices = HashMap::new();
+        prices.insert(token_a, 1.0);
+        prices.insert(token_b, 1.0);
+        prices.insert(token_c, 0.4);
+        let mut decimals = HashMap::new();
+        decimals.insert(token_a, 0);
+        decimals.insert(token_b, 0);
+        decimals.insert(token_c, 0);
+        let plan = calculate_copy_trade_plan(
+            EnumBlockChain::LocalNet,
+            expert_amounts,
+            strategy_amounts,
+            prices,
+            decimals,
+        )?;
+        println!("{:#?}", plan);
+        assert_eq!(plan.trades.len(), 2);
+        assert_eq!(plan.trades[0].token_in, token_a);
+        assert_eq!(plan.trades[0].token_out, token_c);
+        assert_eq!(plan.trades[0].amount_in, U256::from(8));
+        assert_eq!(plan.trades[0].amount_out, U256::from(20));
+        assert_eq!(plan.trades[1].token_in, token_a);
+        assert_eq!(plan.trades[1].token_out, token_b);
+        assert_eq!(plan.trades[1].amount_in, U256::from(2));
+        assert_eq!(plan.trades[1].amount_out, U256::from(2));
+
+        Ok(())
+    }
 }

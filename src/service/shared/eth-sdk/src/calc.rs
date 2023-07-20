@@ -21,28 +21,14 @@ pub trait ScaledMath {
 
 impl ScaledMath for U256 {
     fn mul_f64(&self, factor: f64) -> Result<U256> {
-        /* determine the number of relevant decimal places in the f64 */
-        let decimals = factor
-            .to_string()
-            .split('.')
-            .nth(1)
-            .map(|s| s.len())
-            .unwrap_or(0);
+        ensure!(factor >= 0.0, "factor must be positive: got {}", factor);
 
-        /* calculate a scaling factor based on the number of decimals */
-        let multiplier = U256::exp10(decimals);
+        let decimal_digits = 6;
+        let value = U256::from((factor * 10.0f64.powf(decimal_digits as _)).round() as u128);
 
-        /* convert f64 to U256 with proper scaling */
-        let f_as_u256: U256 =
-            U256::from_dec_str(&format!("{:.0}", factor * 10f64.powi(decimals as i32)))
-                .map_err(|_| eyre!("failed to convert f64 to U256"))?;
-
-        /* perform the multiplication with U256 values */
-        let result_u256: U256 = self
-            .checked_mul(f_as_u256)
-            .ok_or_else(|| eyre!("scaled multiplication would overflow"))?;
-
-        Ok(result_u256 / multiplier)
+        Ok(self
+            .try_checked_mul(value)?
+            .try_checked_div(U256::exp10(decimal_digits))?)
     }
 
     fn div_as_f64(&self, divisor: U256) -> Result<f64> {
