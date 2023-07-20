@@ -40,6 +40,7 @@ deadpool = { version = "0.9.5", features = ["managed", "rt_tokio_1"] }
 async-trait = "*"
 crypto = { path = "src/service/shared/crypto" }
 eth-sdk = { path = "src/service/shared/eth-sdk" }
+execution-engine = { path = "src/service/shared/execution-engine" }
 api = { path = "src/service/shared/api" }
 mc2fi_auth = { path = "src/service/auth" }
 mc2fi_user = { path = "src/service/user" }
