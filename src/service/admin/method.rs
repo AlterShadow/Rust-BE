@@ -517,6 +517,8 @@ pub async fn fetch_and_update_strategy_watched_wallet_asset_balances(
                 limit: None,
                 offset: None,
                 blockchain: Some(wallet_chain),
+                token_address: None,
+                token_id: None,
             })
             .await?
             .into_rows();

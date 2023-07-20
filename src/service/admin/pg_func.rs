@@ -415,6 +415,8 @@ END
                 Field::new("limit", Type::optional(Type::BigInt)),
                 Field::new("offset", Type::optional(Type::BigInt)),
                 Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
+                Field::new("token_address", Type::optional(Type::BlockchainAddress)),
+                Field::new("token_id", Type::optional(Type::BigInt)),
             ],
             vec![
                 Field::new("pkey_id", Type::BigInt),
@@ -439,6 +441,8 @@ BEGIN
 				etca.is_stablecoin
 			FROM tbl.escrow_token_contract_address AS etca
 			WHERE (a_blockchain ISNULL OR etca.blockchain = a_blockchain)
+			AND (a_token_address ISNULL OR etca.address = a_token_address)
+			AND (a_token_id ISNULL OR etca.pkey_id = a_token_id)
 			ORDER BY etca.pkey_id
 			OFFSET a_offset
 			LIMIT a_limit;

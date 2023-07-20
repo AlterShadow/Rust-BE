@@ -2258,6 +2258,8 @@ pub async fn fetch_and_update_wallet_balances(
             limit: None,
             offset: None,
             blockchain: Some(chain),
+            token_address: None,
+            token_id: None,
         })
         .await?
         .into_rows();

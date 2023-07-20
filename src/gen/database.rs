@@ -3100,19 +3100,25 @@ pub struct FunAdminListEscrowTokenContractAddressReq {
     pub offset: Option<i64>,
     #[serde(default)]
     pub blockchain: Option<EnumBlockChain>,
+    #[serde(default)]
+    pub token_address: Option<BlockchainAddress>,
+    #[serde(default)]
+    pub token_id: Option<i64>,
 }
 
 #[allow(unused_variables)]
 impl DatabaseRequest for FunAdminListEscrowTokenContractAddressReq {
     type ResponseRow = FunAdminListEscrowTokenContractAddressRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_admin_list_escrow_token_contract_address(a_limit => $1::bigint, a_offset => $2::bigint, a_blockchain => $3::enum_block_chain);"
+        "SELECT * FROM api.fun_admin_list_escrow_token_contract_address(a_limit => $1::bigint, a_offset => $2::bigint, a_blockchain => $3::enum_block_chain, a_token_address => $4::varchar, a_token_id => $5::bigint);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
             &self.limit as &(dyn ToSql + Sync),
             &self.offset as &(dyn ToSql + Sync),
             &self.blockchain as &(dyn ToSql + Sync),
+            &self.token_address as &(dyn ToSql + Sync),
+            &self.token_id as &(dyn ToSql + Sync),
         ]
     }
 }
