@@ -237,6 +237,7 @@ async fn main() -> Result<()> {
         subscribe_manager: Arc::clone(&sub_manager),
         lru: lru.clone(),
         pancake_paths: pancake_paths.clone(),
+        cmc: cmc_client.clone(),
     });
     server.add_handler(MethodUserExitStrategy {
         pool: eth_pool.clone(),

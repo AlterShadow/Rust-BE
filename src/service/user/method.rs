@@ -696,6 +696,7 @@ pub struct MethodUserBackStrategy {
     pub subscribe_manager: Arc<SubscribeManager<AdminSubscribeTopic>>,
     pub pancake_paths: Arc<WorkingPancakePairPaths>,
     pub lru: Arc<Mutex<LruCache<i64, ()>>>,
+    pub cmc: Arc<CoinMarketCap>,
 }
 impl RequestHandler for MethodUserBackStrategy {
     type Request = UserBackStrategyRequest;
@@ -715,6 +716,7 @@ impl RequestHandler for MethodUserBackStrategy {
         let subscribe_manager = self.subscribe_manager.clone();
         let lru = self.lru.clone();
         let pancake_swap = self.pancake_paths.clone();
+        let cmc = self.cmc.clone();
         async move {
             {
                 let mut lru = lru.lock().await;
