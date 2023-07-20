@@ -1,17 +1,14 @@
 use api::cmc::CoinMarketCap;
-use crypto::Signer;
-use eth_sdk::evm::DexTrade;
-use eth_sdk::logger::BlockchainLogger;
 use eth_sdk::pancake_swap::execute::{copy_trade_and_ensure_success, PancakeSmartRouterContract};
-use eth_sdk::pancake_swap::parse::PancakeSwapParser;
+use eth_sdk::pancake_swap::pair_paths::parse_pancake_swap_dex_path;
 use eth_sdk::pancake_swap::PancakePairPathSet;
 use eth_sdk::{
-    ContractCall, EitherTransport, EscrowTransfer, EthereumRpcConnectionPool, ScaledMath,
-    CONFIRMATIONS, MAX_RETRIES, POLL_INTERVAL,
+    EitherTransport, EthereumRpcConnection, EthereumRpcConnectionPool, ScaledMath, CONFIRMATIONS,
+    MAX_RETRIES, POLL_INTERVAL,
 };
 use eyre::*;
 use gen::database::*;
-use gen::model::{EnumBlockChain, EnumDex, EnumDexVersion};
+use gen::model::{EnumBlockChain, EnumDex};
 use itertools::Itertools;
 use lib::database::DbClient;
 use lib::log::DynLogger;
@@ -224,10 +221,23 @@ pub fn calculate_copy_trade_plan(
 
 pub async fn load_dex_path(
     db: &DbClient,
+    conn: &EthereumRpcConnection,
     token_in: Address,
     token_out: Address,
 ) -> Result<PancakePairPathSet> {
-    todo!()
+    let dex_path = db
+        .execute(FunWatcherListDexPathForPairReq {
+            token_in_address: token_in.into(),
+            token_out_address: token_out.into(),
+            blockchain: EnumBlockChain::BscMainnet,
+            dex: Some(EnumDex::PancakeSwap),
+            format: None,
+        })
+        .await?
+        .into_result()
+        .context("no dex path")?;
+    let dex_path = parse_pancake_swap_dex_path(dex_path, conn).await?;
+    Ok(dex_path)
 }
 
 pub async fn execute_copy_trade_plan(
@@ -239,7 +249,7 @@ pub async fn execute_copy_trade_plan(
 ) -> Result<TransactionReceipt> {
     let trade = copy_trade_plan.trades.first().context("no trade")?;
     let conn = pool.get(trade.blockchain).await?;
-    let paths = load_dex_path(db, trade.token_in, trade.token_out).await?;
+    let paths = load_dex_path(db, &conn, trade.token_in, trade.token_out).await?;
     copy_trade_and_ensure_success(
         pancakeswap_contract,
         &conn,

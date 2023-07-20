@@ -13,6 +13,7 @@ use eyre::*;
 use gen::model::{EnumBlockChain, EnumDex, EnumDexVersion};
 use std::io::Cursor;
 use std::str::FromStr;
+use std::sync::OnceLock;
 use web3::ethabi::Contract;
 use web3::types::{Address, H160, H256, U256};
 
@@ -493,11 +494,16 @@ enum PancakeSwapMethod {
     ExactOutput,
 }
 
-pub fn build_pancake_swap_parser() -> Result<PancakeSwapParser> {
-    let cursor = Cursor::new(SMART_ROUTER_ABI_JSON);
-    let pancake_smart_router = Contract::load(cursor).context("failed to read contract ABI")?;
-    let pancake = PancakeSwapParser::new(pancake_smart_router);
-    Ok(pancake)
+pub fn get_pancake_swap_parser() -> &'static PancakeSwapParser {
+    static PARSER: OnceLock<PancakeSwapParser> = OnceLock::new();
+    PARSER.get_or_init(|| {
+        let cursor = Cursor::new(SMART_ROUTER_ABI_JSON);
+        let pancake_smart_router = Contract::load(cursor)
+            .context("failed to read contract ABI")
+            .unwrap();
+        let pancake = PancakeSwapParser::new(pancake_smart_router);
+        pancake
+    })
 }
 
 #[cfg(test)]
@@ -513,7 +519,7 @@ mod tests {
     async fn test_pancakeswap() -> Result<()> {
         let _ = setup_logs(LogLevel::Info);
 
-        let pancake = build_pancake_swap_parser()?;
+        let pancake = get_pancake_swap_parser()?;
         let conn_pool = EthereumRpcConnectionPool::new();
         let conn = conn_pool.get(EnumBlockChain::EthereumMainnet).await?;
         let tx = TransactionFetcher::new_and_assume_ready(

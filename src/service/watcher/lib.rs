@@ -2,7 +2,7 @@ pub mod method;
 
 use api::cmc::CoinMarketCap;
 use eth_sdk::erc20::build_erc_20;
-use eth_sdk::pancake_swap::parse::{build_pancake_swap_parser, PancakeSwapParser};
+use eth_sdk::pancake_swap::parse::{get_pancake_swap_parser, PancakeSwapParser};
 use eth_sdk::signer::Secp256k1SecretKey;
 use eth_sdk::{
     BlockchainCoinAddresses, DexAddresses, EscrowAddresses, EthereumRpcConnectionPool,
@@ -19,7 +19,7 @@ use web3::ethabi::Contract;
 pub struct AppState {
     pub dex_addresses: DexAddresses,
     pub eth_pool: EthereumRpcConnectionPool,
-    pub pancake_swap_parser: PancakeSwapParser,
+    pub pancake_swap_parser: &'static PancakeSwapParser,
     pub db: DbClient,
     pub token_addresses: Arc<BlockchainCoinAddresses>,
     pub escrow_addresses: Arc<EscrowAddresses>,
@@ -41,7 +41,7 @@ impl AppState {
         Ok(Self {
             dex_addresses: DexAddresses::new(),
             eth_pool,
-            pancake_swap_parser: build_pancake_swap_parser()?,
+            pancake_swap_parser: get_pancake_swap_parser(),
             escrow_addresses: load_escrow_address(&db).await?,
             db,
             token_addresses,

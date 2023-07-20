@@ -1,4 +1,4 @@
-use super::parse::{build_pancake_swap_parser, PancakeSwapParser};
+use super::parse::get_pancake_swap_parser;
 use super::{PancakePairPathSet, PancakePoolIndex, PancakeV3SingleHopPath};
 use crate::{
     BlockchainCoinAddresses, EthereumRpcConnection, EthereumRpcConnectionPool, TransactionFetcher,
@@ -17,7 +17,6 @@ pub struct WorkingPancakePairPaths {
     inner: Vec<(i64, EnumBlockChain, String, String, PancakePairPathSet)>,
     addresses: Arc<BlockchainCoinAddresses>,
     db: Option<DbClient>,
-    pancake_swap_parser: PancakeSwapParser,
     pool: EthereumRpcConnectionPool,
 }
 
@@ -27,7 +26,6 @@ impl WorkingPancakePairPaths {
             inner: Default::default(),
             addresses,
             db: None,
-            pancake_swap_parser: build_pancake_swap_parser().unwrap(),
             pool,
         }
     }
@@ -461,7 +459,7 @@ impl WorkingPancakePairPaths {
                 .into_result()
             {
                 let pool = self.pool.get(chain).await?;
-                let path = get_pair_path_from_db(token, &pool).await?;
+                let path = parse_pancake_swap_dex_path(token, &pool).await?;
                 return Ok(path);
             }
         }
@@ -477,7 +475,7 @@ impl WorkingPancakePairPaths {
     }
 }
 
-async fn get_pair_path_from_db(
+pub async fn parse_pancake_swap_dex_path(
     pair_path_row: FunWatcherListDexPathForPairRespRow,
     conn: &EthereumRpcConnection,
 ) -> Result<PancakePairPathSet> {
@@ -486,14 +484,14 @@ async fn get_pair_path_from_db(
     let pair_path = match pair_path_row.format {
         EnumDexPathFormat::Json => serde_json::from_str(&pair_path_row.path_data)?,
         EnumDexPathFormat::TransactionData => {
-            let pancake_parser = build_pancake_swap_parser()?;
+            let pancake_parser = get_pancake_swap_parser();
             pancake_parser
                 .parse_paths_from_inputs(&hex_decode(&pair_path_row.path_data.as_bytes())?)?
         }
         EnumDexPathFormat::TransactionHash => {
             let tx_hash: H256 = pair_path_row.path_data.parse()?;
             let tx_ready = TransactionFetcher::new_and_assume_ready(tx_hash, &conn).await?;
-            let pancake_parser = build_pancake_swap_parser()?;
+            let pancake_parser = get_pancake_swap_parser();
             pancake_parser.parse_paths_from_inputs(&tx_ready.get_input_data())?
         }
     };
