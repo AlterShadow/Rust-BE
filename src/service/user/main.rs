@@ -207,7 +207,7 @@ async fn main() -> Result<()> {
     ));
     let master_key = Secp256k1SecretKey::from_str(config.god_key.expose_secret())?;
 
-    let pancake_paths = WorkingPancakePairPaths::new(coin_addresses.clone())?;
+    let pancake_paths = WorkingPancakePairPaths::new(coin_addresses.clone(), eth_pool.clone())?;
     let pancake_paths = Arc::new(pancake_paths);
     server.add_handler(MethodExpertAddStrategyWatchingWallet {
         logger: audit_logger.clone(),

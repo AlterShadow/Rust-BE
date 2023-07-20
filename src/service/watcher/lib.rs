@@ -1,4 +1,3 @@
-pub mod copy_trade;
 pub mod method;
 
 use api::cmc::CoinMarketCap;

@@ -28,3 +28,6 @@ lib = { path = "../../../lib" }
 http = "*"
 chrono = "0.4.24"
 eth-sdk = { path = "../eth-sdk" }
+api = { path = "../api" }
+itertools = "0.10.5"
+num = "0.4.0"

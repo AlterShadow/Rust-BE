@@ -1,10 +1,13 @@
 use super::parse::{build_pancake_swap_parser, PancakeSwapParser};
 use super::{PancakePairPathSet, PancakePoolIndex, PancakeV3SingleHopPath};
-use crate::BlockchainCoinAddresses;
+use crate::{
+    BlockchainCoinAddresses, EthereumRpcConnection, EthereumRpcConnectionPool, TransactionFetcher,
+};
 use eyre::*;
-use gen::database::FunWatcherListDexPathForPairReq;
+use gen::database::{FunWatcherListDexPathForPairReq, FunWatcherListDexPathForPairRespRow};
 use gen::model::{EnumBlockChain, EnumBlockchainCoin, EnumDex, EnumDexPathFormat};
 use lib::database::DbClient;
+use lib::types::H256;
 use lib::utils::hex_decode;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -15,15 +18,17 @@ pub struct WorkingPancakePairPaths {
     addresses: Arc<BlockchainCoinAddresses>,
     db: Option<DbClient>,
     pancake_swap_parser: PancakeSwapParser,
+    pool: EthereumRpcConnectionPool,
 }
 
 impl WorkingPancakePairPaths {
-    pub fn empty(addresses: Arc<BlockchainCoinAddresses>) -> Self {
+    pub fn empty(addresses: Arc<BlockchainCoinAddresses>, pool: EthereumRpcConnectionPool) -> Self {
         Self {
             inner: Default::default(),
             addresses,
             db: None,
             pancake_swap_parser: build_pancake_swap_parser().unwrap(),
+            pool,
         }
     }
     fn insert(
@@ -43,8 +48,11 @@ impl WorkingPancakePairPaths {
         ));
     }
     // TODO: get rid of these hard-coded values
-    pub fn new(addresses: Arc<BlockchainCoinAddresses>) -> Result<Self> {
-        let mut this = Self::empty(addresses);
+    pub fn new(
+        addresses: Arc<BlockchainCoinAddresses>,
+        pool: EthereumRpcConnectionPool,
+    ) -> Result<Self> {
+        let mut this = Self::empty(addresses, pool);
 
         this.insert(
             EnumBlockChain::EthereumMainnet,
@@ -452,20 +460,9 @@ impl WorkingPancakePairPaths {
                 .await?
                 .into_result()
             {
-                return match token.format {
-                    EnumDexPathFormat::Json => {
-                        serde_json::from_str(&token.path_data).with_context(|| {
-                            format!("failed to parse dex path from json: {:?}", token.path_data)
-                        })
-                    }
-                    EnumDexPathFormat::TransactionData => self
-                        .pancake_swap_parser
-                        .parse_paths_from_inputs(&hex_decode(token.path_data.as_bytes())?),
-                    EnumDexPathFormat::TransactionHash => {
-                        todo!()
-                        // PancakeSwap::parse_trade()
-                    }
-                };
+                let pool = self.pool.get(chain).await?;
+                let path = get_pair_path_from_db(token, &pool).await?;
+                return Ok(path);
             }
         }
         let token_in_enum = self
@@ -478,4 +475,28 @@ impl WorkingPancakePairPaths {
             .ok_or_else(|| eyre!("token_out {:?} not found", token_out))?;
         self.get_pair(chain, token_in_enum, token_out_enum).cloned()
     }
+}
+
+async fn get_pair_path_from_db(
+    pair_path_row: FunWatcherListDexPathForPairRespRow,
+    conn: &EthereumRpcConnection,
+) -> Result<PancakePairPathSet> {
+    // TODO: return DexPairPathSet once we support multiple dexes
+
+    let pair_path = match pair_path_row.format {
+        EnumDexPathFormat::Json => serde_json::from_str(&pair_path_row.path_data)?,
+        EnumDexPathFormat::TransactionData => {
+            let pancake_parser = build_pancake_swap_parser()?;
+            pancake_parser
+                .parse_paths_from_inputs(&hex_decode(&pair_path_row.path_data.as_bytes())?)?
+        }
+        EnumDexPathFormat::TransactionHash => {
+            let tx_hash: H256 = pair_path_row.path_data.parse()?;
+            let tx_ready = TransactionFetcher::new_and_assume_ready(tx_hash, &conn).await?;
+            let pancake_parser = build_pancake_swap_parser()?;
+            pancake_parser.parse_paths_from_inputs(&tx_ready.get_input_data())?
+        }
+    };
+
+    Ok(pair_path)
 }
