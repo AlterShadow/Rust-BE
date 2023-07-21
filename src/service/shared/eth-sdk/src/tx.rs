@@ -7,7 +7,7 @@ use web3::types::{
 };
 use web3::Transport;
 
-use crate::utils::{wait_for_confirmations, wait_for_confirmations_simple};
+use crate::utils::{wait_for_confirmations, wait_for_confirmations_simple, ConfirmationError};
 use crate::EthereumRpcConnection;
 use lib::log::DynLogger;
 
@@ -23,16 +23,47 @@ where
     Tx: Fn() -> Fut,
     Fut: std::future::Future<Output = Result<H256>>,
 {
-    let hash = transaction().await?;
+    for _transaction_attempt in 0..max_retries {
+        let hash = transaction().await?;
 
-    logger.log(format!(
-        "transaction sent, waiting for confirmations: {:?}",
-        hash
-    ));
+        logger.log(format!(
+            "transaction {:?} sent, waiting for confirmations",
+            hash
+        ));
 
-    wait_for_confirmations(&conn.eth(), hash, poll_interval, max_retries, confirmations).await?;
+        for _confirmation_attempt in 0..max_retries {
+            let confirmation_result = wait_for_confirmations(
+                &conn.eth(),
+                hash,
+                poll_interval,
+                max_retries,
+                confirmations,
+            )
+            .await;
 
-    Ok(hash)
+            match confirmation_result {
+                Ok(_) => return Ok(hash),
+                Err(ConfirmationError::RpcError(err)) => {
+                    logger.log(format!(
+                        "RPC error {:?} confirming transaction {:?}, retrying confirmation",
+                        err, hash
+                    ));
+                    continue;
+                }
+                Err(ConfirmationError::TransactionRevertedAfterConfirmations(_))
+                | Err(ConfirmationError::TransactionNotFoundAfterConfirmations(_)) => {
+                    logger.log(format!(
+                        "transaction {:?} failed after confirmations, replaying transaction",
+                        hash
+                    ));
+                    break;
+                }
+                Err(err) => return Err(err.into()),
+            }
+        }
+    }
+
+    bail!("transaction failed after {} attempts", max_retries)
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
