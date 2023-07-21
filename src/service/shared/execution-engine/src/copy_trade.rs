@@ -1,5 +1,6 @@
 use api::cmc::CoinMarketCap;
-use eth_sdk::pancake_swap::execute::{copy_trade_and_ensure_success, PancakeSmartRouterContract};
+use eth_sdk::execute_transaction_and_ensure_success;
+use eth_sdk::pancake_swap::execute::PancakeSmartRouterContract;
 use eth_sdk::pancake_swap::pair_paths::parse_pancake_swap_dex_path;
 use eth_sdk::pancake_swap::PancakePairPathSet;
 use eth_sdk::{
@@ -12,11 +13,13 @@ use gen::model::{EnumBlockChain, EnumDex};
 use itertools::Itertools;
 use lib::database::DbClient;
 use lib::log::DynLogger;
+use lib::types::amount_to_display;
 use num::ToPrimitive;
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::ops::{AddAssign, SubAssign};
+use tracing::info;
 use web3::signing::Key;
 use web3::types::{Address, TransactionReceipt, U256};
 
@@ -258,19 +261,40 @@ pub async fn execute_copy_trade_plan(
     let trade = copy_trade_plan.trades.first().context("no trade")?;
     let conn = pool.get(trade.blockchain).await?;
     let paths = load_dex_path(db, &conn, trade.token_in, trade.token_out).await?;
-    copy_trade_and_ensure_success(
-        pancakeswap_contract,
+    let amount_out_minimum = trade.amount_out.mul_f64(0.98)?;
+    let copy_trade_transaction = || {
+        pancakeswap_contract.copy_trade(
+            &conn,
+            signer.clone(),
+            paths.clone(),
+            trade.amount_in,
+            amount_out_minimum,
+        )
+    };
+
+    info!(
+        "copy_trade_and_ensure_success: amount_in: {}, amount_out_minimum: {}",
+        amount_to_display(trade.amount_in),
+        amount_to_display(amount_out_minimum)
+    );
+
+    let trade_hash = execute_transaction_and_ensure_success(
+        copy_trade_transaction,
         &conn,
         CONFIRMATIONS,
         MAX_RETRIES,
         POLL_INTERVAL,
-        signer,
-        &paths,
-        trade.amount_in,
-        trade.amount_out.mul_f64(0.98)?,
-        DynLogger::empty(),
+        &DynLogger::empty(),
     )
-    .await
+    .await?;
+
+    info!("copy_trade_and_ensure_success: tx_hash: {:?}", trade_hash);
+
+    Ok(conn
+        .eth()
+        .transaction_receipt(trade_hash)
+        .await?
+        .context("could not find transaction receipt for copy trade")?)
 }
 pub async fn get_token_prices(
     db: &DbClient,

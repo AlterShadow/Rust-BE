@@ -716,52 +716,6 @@ impl PancakeSmartRouterFunctions {
     }
 }
 
-pub async fn copy_trade_and_ensure_success(
-    contract: &PancakeSmartRouterContract<EitherTransport>,
-    conn: &EthereumRpcConnection,
-    confirmations: u64,
-    max_retry: u64,
-    poll_interval: Duration,
-    signer: impl Key + Clone,
-    paths: &PancakePairPathSet,
-    amount_in: U256,
-    amount_out_minimum: U256,
-    logger: DynLogger,
-) -> Result<TransactionReceipt> {
-    logger.log(&format!(
-        "copy_trade_and_ensure_success: amount_in: {}, amount_out_minimum: {}",
-        amount_to_display(amount_in),
-        amount_to_display(amount_out_minimum)
-    ));
-    /* publish transaction */
-    let tx_hash = contract
-        .copy_trade(
-            &conn,
-            signer.clone(),
-            paths.clone(),
-            amount_in,
-            amount_out_minimum,
-        )
-        .await?;
-    logger.log(&format!(
-        "copy_trade_and_ensure_success: tx_hash: {:?}",
-        tx_hash
-    ));
-    let tx_receipt = wait_for_confirmations(
-        &conn.eth(),
-        tx_hash,
-        poll_interval,
-        max_retry,
-        confirmations,
-    )
-    .await?;
-    logger.log(&format!(
-        "copy_trade_and_ensure_success: tx_receipt: {:?}",
-        tx_receipt.transaction_hash
-    ));
-    Ok(tx_receipt)
-}
-
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;

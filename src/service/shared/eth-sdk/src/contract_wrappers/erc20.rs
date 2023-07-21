@@ -339,29 +339,3 @@ pub fn build_erc_20() -> Result<web3::ethabi::Contract> {
     Ok(web3::ethabi::Contract::load(ERC20_ABI.as_bytes())
         .context("failed to parse contract ABI")?)
 }
-
-pub async fn approve_and_ensure_success(
-    contract: Erc20Token,
-    conn: &EthereumRpcConnection,
-    confirmations: u64,
-    max_retry: u64,
-    poll_interval: Duration,
-    signer: impl Key + Clone,
-    spender: Address,
-    amount: U256,
-    logger: DynLogger,
-) -> Result<H256> {
-    /* publish transaction */
-    let tx_hash = contract
-        .approve(&conn, signer.clone(), spender, amount, logger)
-        .await?;
-    wait_for_confirmations(
-        &conn.eth(),
-        tx_hash,
-        poll_interval,
-        max_retry,
-        confirmations,
-    )
-    .await?;
-    Ok(tx_hash)
-}

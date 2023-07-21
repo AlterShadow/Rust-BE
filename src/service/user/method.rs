@@ -10,16 +10,12 @@ use crate::back_strategy::{
 use api::cmc::CoinMarketCap;
 use chrono::Utc;
 use eth_sdk::erc20::Erc20Token;
-use eth_sdk::escrow::refund_asset_and_ensure_success;
 use eth_sdk::escrow::{AbstractEscrowContract, EscrowContract};
 use eth_sdk::pancake_swap::pair_paths::WorkingPancakePairPaths;
 use eth_sdk::signer::Secp256k1SecretKey;
-use eth_sdk::strategy_pool::{withdraw_and_ensure_success, StrategyPoolContract};
+use eth_sdk::strategy_pool::StrategyPoolContract;
 use eth_sdk::strategy_pool_herald::parse_herald_redeem_event;
-use eth_sdk::strategy_wallet::{
-    full_redeem_from_strategy_and_ensure_success, redeem_from_strategy_and_ensure_success,
-    StrategyWalletContract,
-};
+use eth_sdk::strategy_wallet::StrategyWalletContract;
 
 use eth_sdk::*;
 use eyre::*;
@@ -893,18 +889,24 @@ pub async fn user_exit_strategy(
             }
 
             /* if strategy is currently trading, redeem is not possible */
-            redeem_tx_hash = redeem_from_strategy_and_ensure_success(
-                strategy_wallet_contract.clone(),
+            let redeem_from_strategy_transaction = || {
+                strategy_wallet_contract.redeem_from_strategy(
+                    &conn,
+                    master_key.clone(),
+                    strategy_pool_contract.address(),
+                    strategy_tokens_to_redeem,
+                )
+            };
+
+            redeem_tx_hash = execute_transaction_and_ensure_success(
+                redeem_from_strategy_transaction,
                 &conn,
                 CONFIRMATIONS,
                 MAX_RETRIES,
                 POLL_INTERVAL,
-                master_key.clone(),
-                strategy_pool_contract.address(),
-                strategy_tokens_to_redeem,
+                &DynLogger::empty(),
             )
-            .await
-            .context("redeem is not possible currently")?;
+            .await?;
         }
         None => {
             /* get assets and amounts to withdraw */
@@ -919,17 +921,23 @@ pub async fn user_exit_strategy(
             }
 
             /* if strategy is currently trading, redeem is not possible */
-            redeem_tx_hash = full_redeem_from_strategy_and_ensure_success(
-                strategy_wallet_contract.clone(),
+            let full_redeem_from_strategy_transaction = || {
+                strategy_wallet_contract.full_redeem_from_strategy(
+                    &conn,
+                    master_key.clone(),
+                    strategy_pool_contract.address(),
+                )
+            };
+
+            redeem_tx_hash = execute_transaction_and_ensure_success(
+                full_redeem_from_strategy_transaction,
                 &conn,
                 CONFIRMATIONS,
                 MAX_RETRIES,
                 POLL_INTERVAL,
-                master_key.clone(),
-                strategy_pool_contract.address(),
+                &DynLogger::empty(),
             )
-            .await
-            .context("redeem is not possible currently")?;
+            .await?;
         }
     };
 
@@ -953,17 +961,24 @@ pub async fn user_exit_strategy(
     }));
 
     // TODO: cache this and withdraw later if strategy pool started trading between redeem and withdraw
-    let transaction_hash = withdraw_and_ensure_success(
-        strategy_pool_contract,
+    let withdraw_transaction = || {
+        strategy_pool_contract.withdraw(
+            &conn,
+            master_key.clone(),
+            redeem_info.backer,
+            assets_to_transfer.clone(),
+            amounts_to_transfer.clone(),
+            logger.clone(),
+        )
+    };
+
+    let transaction_hash = execute_transaction_and_ensure_success(
+        withdraw_transaction,
         &conn,
         CONFIRMATIONS,
         MAX_RETRIES,
         POLL_INTERVAL,
-        master_key.clone(),
-        assets_to_transfer.clone(),
-        amounts_to_transfer.clone(),
-        redeem_info.backer,
-        logger,
+        &logger,
     )
     .await?;
 
@@ -1278,17 +1293,24 @@ pub async fn on_user_request_refund(
         bail!("not enough balance for back amount deposited by this wallet")
     }
 
-    let hash = refund_asset_and_ensure_success(
-        escrow_contract.clone(),
+    let refund_transaction = || {
+        escrow_contract.refund_asset(
+            &_conn,
+            escrow_signer.clone(),
+            wallet_address,
+            token_address,
+            quantity,
+            logger.clone(),
+        )
+    };
+
+    let hash = execute_transaction_and_ensure_success(
+        refund_transaction,
         &_conn,
-        14,
-        10,
-        Duration::from_secs(10),
-        escrow_signer,
-        wallet_address,
-        token_address,
-        quantity,
-        logger.clone(),
+        CONFIRMATIONS,
+        MAX_RETRIES,
+        POLL_INTERVAL,
+        &logger,
     )
     .await?;
 

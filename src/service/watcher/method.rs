@@ -8,18 +8,13 @@ use eth_sdk::dex_tracker::{
     update_expert_listened_wallet_asset_balance_cache,
     update_user_strategy_pool_asset_balances_on_copy_trade,
 };
-use eth_sdk::erc20::{approve_and_ensure_success, Erc20Token};
-use eth_sdk::escrow::{
-    accept_deposit_and_ensure_success, parse_escrow_withdraw_event,
-    reject_deposit_and_ensure_success, EscrowContract,
-};
+use eth_sdk::erc20::Erc20Token;
+use eth_sdk::escrow::{parse_escrow_withdraw_event, EscrowContract};
 use eth_sdk::escrow_tracker::escrow::parse_escrow;
 use eth_sdk::evm::parse_quickalert_payload;
-use eth_sdk::pancake_swap::execute::{copy_trade_and_ensure_success, PancakeSmartRouterContract};
-use eth_sdk::strategy_pool::{
-    acquire_asset_before_trade_and_ensure_success, give_back_assets_after_trade_and_ensure_success,
-    withdraw_and_ensure_success, StrategyPoolContract,
-};
+use eth_sdk::execute_transaction_and_ensure_success;
+use eth_sdk::pancake_swap::execute::PancakeSmartRouterContract;
+use eth_sdk::strategy_pool::StrategyPoolContract;
 use eth_sdk::strategy_pool_herald::parse_herald_redeem_event;
 use eth_sdk::utils::{wait_for_confirmations, wait_for_confirmations_simple};
 use eth_sdk::{
@@ -30,6 +25,7 @@ use eyre::*;
 use gen::database::*;
 use gen::model::*;
 use lib::log::DynLogger;
+use lib::types::amount_to_display;
 use std::sync::Arc;
 use std::time::Duration;
 use tracing::*;
@@ -240,46 +236,85 @@ pub async fn handle_pancake_swap_transaction(
                 .ok_or_else(|| eyre!("pancake swap not available on this chain"))?,
         )?;
 
-        acquire_asset_before_trade_and_ensure_success(
-            strategy_pool_contract.clone(),
+        /* acquire asset before trade */
+        let acquire_asset_before_trade_transaction = || {
+            strategy_pool_contract.acquire_asset_before_trade(
+                &conn,
+                state.master_key.clone(),
+                expert_trade.token_in,
+                amount_to_spend,
+            )
+        };
+
+        execute_transaction_and_ensure_success(
+            acquire_asset_before_trade_transaction,
             &conn,
             CONFIRMATIONS,
             MAX_RETRIES,
             POLL_INTERVAL,
-            state.master_key.clone(),
-            expert_trade.token_in,
-            amount_to_spend,
+            &DynLogger::empty(),
         )
         .await?;
 
         /* approve pancakeswap to trade token_in */
-        approve_and_ensure_success(
-            token_in_contract,
+        let approve_transaction = || {
+            token_in_contract.approve(
+                &conn,
+                state.master_key.clone(),
+                pancake_contract.address(),
+                amount_to_spend,
+                DynLogger::empty(),
+            )
+        };
+
+        execute_transaction_and_ensure_success(
+            approve_transaction,
             &conn,
             CONFIRMATIONS,
             MAX_RETRIES,
             POLL_INTERVAL,
-            state.master_key.clone(),
-            pancake_contract.address(),
-            amount_to_spend,
-            DynLogger::empty(),
+            &DynLogger::empty(),
         )
         .await?;
 
         /* trade token_in for token_out */
-        let pending_wallet_trade_receipt = copy_trade_and_ensure_success(
-            &pancake_contract,
+        info!(
+            "copy_trade_and_ensure_success: amount_in: {}, amount_out_minimum: {}",
+            amount_to_display(amount_to_spend),
+            amount_to_display(U256::one())
+        );
+
+        let copy_trade_pair_paths = expert_trade.get_pancake_pair_paths()?;
+        let copy_trade_transaction = || {
+            pancake_contract.copy_trade(
+                &conn,
+                state.master_key.clone(),
+                copy_trade_pair_paths.clone(),
+                amount_to_spend,
+                U256::one(),
+            )
+        };
+
+        let copy_trade_hash = execute_transaction_and_ensure_success(
+            copy_trade_transaction,
             &conn,
             CONFIRMATIONS,
             MAX_RETRIES,
             POLL_INTERVAL,
-            state.master_key.clone(),
-            &expert_trade.get_pancake_pair_paths()?,
-            amount_to_spend,
-            U256::from(1),
-            DynLogger::empty(),
+            &DynLogger::empty(),
         )
         .await?;
+
+        info!(
+            "copy_trade_and_ensure_success: tx_hash: {:?}",
+            copy_trade_hash
+        );
+
+        let pending_wallet_trade_receipt =
+            conn.eth()
+                .transaction_receipt(copy_trade_hash)
+                .await?
+                .context("could not find transaction receipt for copy trade")?;
 
         /* parse trade to find amount_out */
         let strategy_pool_pending_wallet_trade = parse_dex_trade(
@@ -295,29 +330,43 @@ pub async fn handle_pancake_swap_transaction(
         .await?;
 
         /* approve strategy pool for amount_out */
-        approve_and_ensure_success(
-            token_out_contract,
+        let approve_transaction = || {
+            token_out_contract.approve(
+                &conn,
+                state.master_key.clone(),
+                strategy_pool_contract.address(),
+                strategy_pool_pending_wallet_trade.amount_out,
+                DynLogger::empty(),
+            )
+        };
+
+        execute_transaction_and_ensure_success(
+            approve_transaction,
             &conn,
             CONFIRMATIONS,
             MAX_RETRIES,
             POLL_INTERVAL,
-            state.master_key.clone(),
-            strategy_pool_contract.address(),
-            strategy_pool_pending_wallet_trade.amount_out,
-            DynLogger::empty(),
+            &DynLogger::empty(),
         )
         .await?;
 
         /* give back traded assets */
-        give_back_assets_after_trade_and_ensure_success(
-            strategy_pool_contract,
+        let give_back_assets_after_trade_transaction = || {
+            strategy_pool_contract.give_back_assets_after_trade(
+                &conn,
+                state.master_key.clone(),
+                vec![expert_trade.token_out],
+                vec![strategy_pool_pending_wallet_trade.amount_out],
+            )
+        };
+
+        execute_transaction_and_ensure_success(
+            give_back_assets_after_trade_transaction,
             &conn,
             CONFIRMATIONS,
             MAX_RETRIES,
             POLL_INTERVAL,
-            state.master_key.clone(),
-            vec![expert_trade.token_out],
-            vec![strategy_pool_pending_wallet_trade.amount_out],
+            &DynLogger::empty(),
         )
         .await?;
 
@@ -565,19 +614,26 @@ pub async fn handle_escrow_transaction(
 
         // TODO: insert into a table tokens received by pending wallet
         /* run actual reject transaction and transfer estimated fee to pending wallet */
-        reject_deposit_and_ensure_success(
-            escrow_contract,
+        let reject_deposit_transaction = || {
+            escrow_contract.reject_deposit(
+                &conn,
+                state.master_key.clone(),
+                caller,
+                called_address,
+                refund_amount,
+                state.master_key.address(),
+                estimated_refund_fee_in_escrow_token,
+                DynLogger::empty(),
+            )
+        };
+
+        execute_transaction_and_ensure_success(
+            reject_deposit_transaction,
             &conn,
             CONFIRMATIONS,
             MAX_RETRIES,
             POLL_INTERVAL,
-            state.master_key.clone(),
-            caller,
-            called_address,
-            refund_amount,
-            state.master_key.address(),
-            estimated_refund_fee_in_escrow_token,
-            DynLogger::empty(),
+            &DynLogger::empty(),
         )
         .await?;
 
@@ -607,17 +663,24 @@ pub async fn handle_escrow_transaction(
     };
 
     /* write deposit to escrow contract */
-    accept_deposit_and_ensure_success(
-        escrow_contract,
+    let accept_deposit_transaction = || {
+        escrow_contract.accept_deposit(
+            &conn,
+            state.master_key.clone(),
+            caller,
+            called_address,
+            escrow.amount,
+            DynLogger::empty(),
+        )
+    };
+
+    execute_transaction_and_ensure_success(
+        accept_deposit_transaction,
         &conn,
         CONFIRMATIONS,
         MAX_RETRIES,
         POLL_INTERVAL,
-        state.master_key.clone(),
-        caller,
-        called_address,
-        escrow.amount,
-        DynLogger::empty(),
+        &DynLogger::empty(),
     )
     .await?;
 
@@ -1018,17 +1081,25 @@ pub async fn handle_redeem_transaction(
     let logger = DynLogger::new(Arc::new(move |msg| {
         println!("{}", msg);
     }));
-    let withdraw_transaction_hash = withdraw_and_ensure_success(
-        strategy_pool_contract,
+
+    let withdraw_transaction = || {
+        strategy_pool_contract.withdraw(
+            &conn,
+            state.master_key.clone(),
+            redeem.backer,
+            assets_to_transfer.clone(),
+            amounts_to_transfer.clone(),
+            logger.clone(),
+        )
+    };
+
+    let withdraw_transaction_hash = execute_transaction_and_ensure_success(
+        withdraw_transaction,
         &conn,
         CONFIRMATIONS,
         MAX_RETRIES,
         POLL_INTERVAL,
-        state.master_key.clone(),
-        assets_to_transfer.clone(),
-        amounts_to_transfer.clone(),
-        redeem.backer,
-        logger,
+        &logger,
     )
     .await?;
 

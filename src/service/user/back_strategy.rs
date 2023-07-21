@@ -1,10 +1,11 @@
 use api::cmc::CoinMarketCap;
-use eth_sdk::erc20::{approve_and_ensure_success, Erc20Token};
-use eth_sdk::escrow::{transfer_asset_from_and_ensure_success, EscrowContract};
-use eth_sdk::pancake_swap::execute::{copy_trade_and_ensure_success, PancakeSmartRouterContract};
+use eth_sdk::erc20::Erc20Token;
+use eth_sdk::escrow::EscrowContract;
+use eth_sdk::execute_transaction_and_ensure_success;
+use eth_sdk::pancake_swap::execute::PancakeSmartRouterContract;
 use eth_sdk::pancake_swap::pair_paths::WorkingPancakePairPaths;
 use eth_sdk::pancake_swap::parse::get_pancake_swap_parser;
-use eth_sdk::strategy_pool::{sp_deposit_to_and_ensure_success, StrategyPoolContract};
+use eth_sdk::strategy_pool::StrategyPoolContract;
 use eth_sdk::strategy_wallet::StrategyWalletContract;
 use eth_sdk::StrategyPoolHeraldAddresses;
 use eth_sdk::{
@@ -627,18 +628,25 @@ pub async fn user_back_strategy(
     /* for each wallet that deposited to add to back_token_amount */
     for (wallet, amount) in wallet_deposit_amounts {
         /* transfer from escrow contract to pending wallet */
-        transfer_asset_from_and_ensure_success(
-            escrow_contract.clone(),
+        let transfer_asset_from_transaction = || {
+            escrow_contract.transfer_asset_from(
+                &conn,
+                master_key.clone(),
+                wallet.clone(),
+                token_address,
+                amount,
+                master_key.address(),
+                logger.clone(),
+            )
+        };
+
+        execute_transaction_and_ensure_success(
+            transfer_asset_from_transaction,
             &conn,
             CONFIRMATIONS,
             MAX_RETRIES,
             POLL_INTERVAL,
-            master_key.clone(),
-            wallet.clone(),
-            token_address,
-            amount.into(),
-            master_key.address(),
-            logger.clone(),
+            &logger,
         )
         .await?;
 
@@ -661,16 +669,23 @@ pub async fn user_back_strategy(
 
     /* approve pancakeswap to trade escrow token */
     info!("approve pancakeswap to trade escrow token");
-    approve_and_ensure_success(
-        escrow_token_contract,
+    let approve_transaction = || {
+        escrow_token_contract.approve(
+            &conn,
+            master_key.clone(),
+            pancake_contract.address(),
+            back_token_amount,
+            logger.clone(),
+        )
+    };
+
+    execute_transaction_and_ensure_success(
+        approve_transaction,
         &conn,
         CONFIRMATIONS,
         MAX_RETRIES,
         POLL_INTERVAL,
-        master_key.clone(),
-        pancake_contract.address(),
-        back_token_amount,
-        logger.clone(),
+        &logger,
     )
     .await?;
 
@@ -692,16 +707,26 @@ pub async fn user_back_strategy(
                     amount_to_display(amount),
                     out_token
                 ));
-                approve_and_ensure_success(
-                    Erc20Token::new(conn.clone(), out_token)?,
+
+                let out_token_contract = Erc20Token::new(conn.clone(), out_token)?;
+
+                let approve_trasanction = || {
+                    out_token_contract.approve(
+                        &conn,
+                        master_key.clone(),
+                        sp_contract.address(),
+                        amount,
+                        logger.clone(),
+                    )
+                };
+
+                execute_transaction_and_ensure_success(
+                    approve_trasanction,
                     &conn,
                     CONFIRMATIONS,
                     MAX_RETRIES,
                     POLL_INTERVAL,
-                    master_key.clone(),
-                    sp_contract.address(),
-                    amount,
-                    logger.clone(),
+                    &logger,
                 )
                 .await?;
                 Ok(amount)
@@ -709,29 +734,46 @@ pub async fn user_back_strategy(
                 let pancake_path_set = pancake_paths
                     .get_pair_by_address(blockchain, token_address, out_token)
                     .await?;
-                let trade_hash = copy_trade_and_ensure_success(
-                    &pancake_contract,
+
+                logger.log(&format!(
+                    "copy_trade_and_ensure_success: amount_in: {}, amount_out_minimum: {}",
+                    amount_to_display(amount),
+                    amount_to_display(U256::one())
+                ));
+
+                let copy_trade_transaction = || {
+                    pancake_contract.copy_trade(
+                        &conn,
+                        master_key.clone(),
+                        pancake_path_set.clone(),
+                        amount,
+                        U256::one(), // TODO: find a way to estimate amount out
+                    )
+                };
+
+                let trade_hash = execute_transaction_and_ensure_success(
+                    copy_trade_transaction,
                     &conn,
                     CONFIRMATIONS,
                     MAX_RETRIES,
                     POLL_INTERVAL,
-                    master_key.clone(),
-                    &pancake_path_set,
-                    amount,
-                    U256::one(), // TODO: find a way to estimate amount out
-                    logger.clone(),
+                    &logger,
                 )
                 .await?;
 
+                logger.log(&format!(
+                    "copy_trade_and_ensure_success: tx_hash: {:?}",
+                    trade_hash
+                ));
+
                 let trade = pancake_trade_parser.parse_trade(
-                    &TransactionFetcher::new_and_assume_ready(trade_hash.transaction_hash, &conn)
-                        .await?,
+                    &TransactionFetcher::new_and_assume_ready(trade_hash, &conn).await?,
                     blockchain,
                 )?;
 
                 /* update last dex trade cache table */
                 db.execute(FunWatcherUpsertLastDexTradeForPairReq {
-                    transaction_hash: trade_hash.transaction_hash.into(),
+                    transaction_hash: trade_hash.into(),
                     blockchain: blockchain.into(),
                     dex: EnumDex::PancakeSwap,
                     token_in_address: token_address.into(),
@@ -745,16 +787,26 @@ pub async fn user_back_strategy(
                     amount_to_display(trade.amount_out),
                     out_token
                 ));
-                approve_and_ensure_success(
-                    Erc20Token::new(conn.clone(), out_token)?,
+
+                let out_token_contract = Erc20Token::new(conn.clone(), out_token)?;
+
+                let approve_transaction = || {
+                    out_token_contract.approve(
+                        &conn,
+                        master_key.clone(),
+                        sp_contract.address(),
+                        trade.amount_out,
+                        logger.clone(),
+                    )
+                };
+
+                execute_transaction_and_ensure_success(
+                    approve_transaction,
                     &conn,
                     CONFIRMATIONS,
                     MAX_RETRIES,
                     POLL_INTERVAL,
-                    master_key.clone(),
-                    sp_contract.address(),
-                    trade.amount_out,
-                    logger.clone(),
+                    &logger,
                 )
                 .await?;
                 Ok(trade.amount_out)
@@ -802,17 +854,30 @@ pub async fn user_back_strategy(
         .unwrap_or_default();
 
     /* mint strategy pool token to strategy wallet contract */
-    let deposit_transaction_hash = sp_deposit_to_and_ensure_success(
-        sp_contract,
+    let assets_to_deposit: HashMap<Address, U256> = strategy_pool_assets_bought_for_this_backer
+        .into_iter()
+        .filter(|x| !x.1.is_zero())
+        .collect();
+
+    let deposit_transaction = || {
+        sp_contract.deposit(
+            &conn,
+            master_key.clone(),
+            assets_to_deposit.keys().cloned().collect(),
+            assets_to_deposit.values().cloned().collect(),
+            strategy_token_to_mint,
+            strategy_wallet_contract.address(),
+            logger.clone(),
+        )
+    };
+
+    let deposit_transaction_hash = execute_transaction_and_ensure_success(
+        deposit_transaction,
         &conn,
         CONFIRMATIONS,
         MAX_RETRIES,
         POLL_INTERVAL,
-        master_key.clone(),
-        strategy_pool_assets_bought_for_this_backer.clone(),
-        strategy_token_to_mint,
-        strategy_wallet_contract.address(),
-        logger.clone(),
+        &logger,
     )
     .await?;
 
@@ -824,7 +889,7 @@ pub async fn user_back_strategy(
         new_balance: (*user_strategy_balance + strategy_token_to_mint).into(),
     })
     .await?;
-    for (token, amount) in strategy_pool_assets_bought_for_this_backer.clone() {
+    for (token, amount) in assets_to_deposit.clone() {
         /* update strategy pool contract asset balances & ledger */
         let sp_asset_token = db
             .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
