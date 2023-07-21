@@ -1,12 +1,39 @@
-use crate::utils::wait_for_confirmations_simple;
-use crate::EthereumRpcConnection;
-use eyre::*;
 use std::time::Duration;
+
+use eyre::*;
 use web3::api::Eth;
 use web3::types::{
     Address, Transaction as Web3Transaction, TransactionId, TransactionReceipt, H160, H256, U256,
 };
 use web3::Transport;
+
+use crate::utils::{wait_for_confirmations, wait_for_confirmations_simple};
+use crate::EthereumRpcConnection;
+use lib::log::DynLogger;
+
+pub async fn execute_transaction_and_ensure_success<Tx, Fut>(
+    transaction: Tx,
+    conn: &EthereumRpcConnection,
+    confirmations: u64,
+    max_retries: u64,
+    poll_interval: Duration,
+    logger: &DynLogger,
+) -> Result<H256>
+where
+    Tx: Fn() -> Fut,
+    Fut: std::future::Future<Output = Result<H256>>,
+{
+    let hash = transaction().await?;
+
+    logger.log(format!(
+        "transaction sent, waiting for confirmations: {:?}",
+        hash
+    ));
+
+    wait_for_confirmations(&conn.eth(), hash, poll_interval, max_retries, confirmations).await?;
+
+    Ok(hash)
+}
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum TxStatus {
