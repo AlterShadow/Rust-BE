@@ -201,9 +201,9 @@ impl CoinMarketCap {
             let payload: Value = self.send_and_parse_response(&url).await?;
             for (symbol, i) in new_symbols.into_iter().zip(new_symbols_index.into_iter()) {
                 let token = &payload[&symbol][0];
-                if token["is_active"].as_u64().context("status not found")? != 1 {
-                    bail!("token status not found")
-                }
+                // if token["is_active"].as_u64().context("status not found")? != 1 {
+                //     bail!("token status not found")
+                // }
                 token_prices[i] = token["quote"]["USD"]["price"]
                     .as_f64()
                     .context("price not found")?;
