@@ -1,3 +1,4 @@
+use api::cmc::CoinMarketCap;
 use eth_sdk::erc20::{approve_and_ensure_success, Erc20Token};
 use eth_sdk::escrow::{transfer_asset_from_and_ensure_success, EscrowContract};
 use eth_sdk::pancake_swap::execute::{copy_trade_and_ensure_success, PancakeSmartRouterContract};
@@ -10,9 +11,14 @@ use eth_sdk::{
     DexAddresses, EitherTransport, EthereumRpcConnection, ScaledMath, TransactionFetcher,
     CONFIRMATIONS, MAX_RETRIES, POLL_INTERVAL,
 };
+use execution_engine::copy_trade::{
+    calculate_copy_trade_plan, fetch_listened_wallet_asset_balances_and_decimals,
+    fetch_strategy_pool_contract_asset_balances_and_decimals, get_token_prices,
+};
 use eyre::*;
 use gen::database::*;
 use gen::model::{EnumBlockChain, EnumDex};
+use itertools::Itertools;
 use lib::database::DbClient;
 use lib::log::DynLogger;
 use lib::toolbox::RequestContext;
@@ -189,7 +195,7 @@ async fn user_get_or_deploy_strategy_pool(
 }
 pub struct CalculateUserBackStrategyCalculateAmountToMintResult {
     pub fees: U256,
-    pub back_usdc_amount_minus_fees: U256,
+    pub back_amount_minus_fees: U256,
     pub strategy_token_to_mint: U256,
     pub strategy_pool_active: bool,
     pub sp_assets_and_amounts: HashMap<Address, U256>,
@@ -212,6 +218,7 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
     user_id: i64,
     escrow_contract_address: Address,
     get_token_out: impl Fn(Address, U256) -> Fut,
+    cmc: &CoinMarketCap,
 ) -> Result<CalculateUserBackStrategyCalculateAmountToMintResult> {
     /* fetch strategy */
     let strategy = db
@@ -285,50 +292,52 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
         amount_to_display(back_token_amount_minus_fees)
     ));
 
-    let mut strategy_pool_active: bool = false;
-    let mut sp_assets_and_amounts: HashMap<Address, U256> = HashMap::new();
-    if let Some((strategy_pool_contract_id, _sp_contract)) = sp_contract.as_ref() {
-        let strategy_pool_assets = db
-            .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
-                strategy_pool_contract_id: Some(*strategy_pool_contract_id),
-                token_address: None,
-                blockchain: Some(blockchain),
-                strategy_id: None,
-            })
-            .await?
-            .into_rows();
-        for sp_asset_row in &strategy_pool_assets {
-            if sp_asset_row.balance > U256::zero().into() {
-                strategy_pool_active = true;
-            }
-            sp_assets_and_amounts.insert(
-                sp_asset_row.token_address.into(),
-                sp_asset_row.balance.into(),
-            );
-        }
-    }
-    let token_tokens_ret = db
-        .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
-            strategy_pool_contract_id: None,
-            strategy_id: Some(strategy_id),
-            blockchain: Some(blockchain),
-            token_address: Some(token_address.clone().into()),
-        })
-        .await?;
-    let mut token_tokens = HashMap::new();
-    for token_token in token_tokens_ret.into_rows() {
-        token_tokens.insert(token_token.token_address.into(), token_token.balance.into());
-    }
-    /* calculate how much of back amount to spend on each strategy pool asset */
-    let escrow_allocations_for_tokens = calculate_escrow_allocation_for_strategy_tokens(
-        back_token_amount_minus_fees,
-        token_address,
-        token_tokens,
-    )?;
+    let (sp_assets_and_amounts, sp_assets_and_decimals) =
+        fetch_strategy_pool_contract_asset_balances_and_decimals(&db, blockchain, strategy_id)
+            .await?;
+    let strategy_pool_active = sp_assets_and_amounts
+        .values()
+        .find(|x| **x > U256::zero())
+        .is_some();
+    let (expert_asset_amounts, expert_asset_amounts_decimals) =
+        fetch_listened_wallet_asset_balances_and_decimals(db, blockchain, strategy_id).await?;
+    let tokens = sp_assets_and_amounts
+        .keys()
+        .chain(expert_asset_amounts.keys())
+        .unique()
+        .cloned()
+        .collect::<Vec<_>>();
+    let token_prices = get_token_prices(db, cmc, tokens.clone()).await?;
+    let token_prices = tokens
+        .into_iter()
+        .zip(token_prices)
+        .collect::<HashMap<_, _>>();
+    let token_decimals = sp_assets_and_decimals
+        .into_iter()
+        .chain(expert_asset_amounts_decimals.into_iter())
+        .unique()
+        .collect::<HashMap<_, _>>();
 
+    /* calculate how much of back amount to spend on each strategy pool asset */
+    let escrow_allocations_for_tokens = calculate_copy_trade_plan(
+        blockchain,
+        expert_asset_amounts,
+        {
+            let mut map = HashMap::new();
+            map.insert(token_address, back_token_amount_minus_fees);
+            map
+        },
+        token_prices,
+        token_decimals,
+    )?;
+    let tokens_and_escrow_token_to_spend: HashMap<_, _> = escrow_allocations_for_tokens
+        .trades
+        .iter()
+        .map(|x| (x.token_out, x.amount_in))
+        .collect();
     let strategy_pool_assets_bought_for_this_backer = trade_escrow_for_strategy_tokens(
         token_address,
-        escrow_allocations_for_tokens.clone(),
+        tokens_and_escrow_token_to_spend.clone(),
         logger.clone(),
         get_token_out,
     )
@@ -378,7 +387,6 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
                     /* if strategy pool asset is in initial_token_ratios, it was bought */
                     /* so use these trade values for valuation */
 
-                    let amount_spent_on_asset = escrow_allocations_for_tokens.get(strategy_pool_asset).context("could not get amount spent for backer in strategy pool asset, even though amount bought exists")?.clone();
                     if amount_bought.is_zero() {
                         warn!(
                             "amount bought is zero, setting last price to zero {:?}",
@@ -387,6 +395,7 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
                         strategy_pool_asset_last_prices_in_base_token
                             .insert(strategy_pool_asset.clone(), U256::zero());
                     } else {
+                        let amount_spent_on_asset = tokens_and_escrow_token_to_spend.get(strategy_pool_asset).context("could not get amount spent for backer in strategy pool asset, even though amount bought exists")?.clone();
                         strategy_pool_asset_last_prices_in_base_token.insert(
                             strategy_pool_asset.clone(),
                             amount_spent_on_asset
@@ -433,11 +442,11 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
 
     Ok(CalculateUserBackStrategyCalculateAmountToMintResult {
         fees,
-        back_usdc_amount_minus_fees: back_token_amount_minus_fees,
+        back_amount_minus_fees: back_token_amount_minus_fees,
         strategy_token_to_mint,
         strategy_pool_active,
         sp_assets_and_amounts,
-        escrow_allocations_for_tokens,
+        escrow_allocations_for_tokens: tokens_and_escrow_token_to_spend,
         strategy_pool_assets_bought_for_this_backer,
     })
 }
@@ -458,6 +467,7 @@ pub async fn user_back_strategy(
     strategy_wallet: Option<Address>,
     logger: DynLogger,
     pancake_paths: &WorkingPancakePairPaths,
+    cmc: &CoinMarketCap,
 ) -> Result<()> {
     logger.log(format!(
         "checking back amount {}",
@@ -753,7 +763,7 @@ pub async fn user_back_strategy(
     };
 
     let CalculateUserBackStrategyCalculateAmountToMintResult {
-        back_usdc_amount_minus_fees,
+        back_amount_minus_fees,
         /* TODO: fees are now in the pending wallet, we should add it to the database */
         /* TODO: add table to register treasury fees and strategy fees */
         fees,
@@ -775,6 +785,7 @@ pub async fn user_back_strategy(
         user_id,
         escrow_contract.address(),
         get_out_amount,
+        cmc,
     )
     .await?;
 
@@ -994,29 +1005,6 @@ pub async fn get_and_check_user_deposit_balances_by_wallet_to_fill_value(
     }
 
     Ok(wallet_deposit_amounts)
-}
-
-fn calculate_escrow_allocation_for_strategy_tokens(
-    escrow_amount: U256,
-    escrow_token_address: Address,
-    strategy_token_ratios: HashMap<Address, U256>,
-) -> Result<HashMap<Address, U256>> {
-    // TODO: should we scale it by value of tokens?
-    let total_token_numbers: U256 = strategy_token_ratios
-        .values()
-        .fold(U256::zero(), |acc, x| acc + x);
-    /* calculates how much of escrow to spend on each strategy token */
-    /* allocation = (initial_strategy_token_amount * escrow_amount) / total_initial_strategy_token_amounts */
-    let mut escrow_allocations: HashMap<Address, U256> = HashMap::new();
-    if total_token_numbers.is_zero() {
-        escrow_allocations.insert(escrow_token_address, escrow_amount);
-    } else {
-        for (token_address, token_amount) in strategy_token_ratios {
-            let escrow_allocation = token_amount.mul_div(escrow_amount, total_token_numbers)?;
-            escrow_allocations.insert(token_address, escrow_allocation);
-        }
-    }
-    Ok(escrow_allocations)
 }
 
 pub async fn calculate_sp_tokens_to_mint_easy_approach(

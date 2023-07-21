@@ -811,6 +811,7 @@ impl RequestHandler for MethodUserBackStrategy {
                     req.strategy_wallet,
                     logger.clone(),
                     &pancake_swap,
+                    &cmc,
                 )
                 .await
                 {
@@ -3408,7 +3409,7 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
             };
             let CalculateUserBackStrategyCalculateAmountToMintResult {
                 fees,
-                back_usdc_amount_minus_fees,
+                back_amount_minus_fees,
                 strategy_token_to_mint,
                 sp_assets_and_amounts,
                 strategy_pool_assets_bought_for_this_backer,
@@ -3427,6 +3428,7 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
                 ctx.user_id,
                 escrow_contract_address.address(),
                 get_token_out,
+                &cmc,
             )
             .await?;
             let mut ratios: Vec<EstimatedBackedTokenRatios> = vec![];
@@ -3481,7 +3483,7 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
             Ok(UserGetBackStrategyReviewDetailResponse {
                 strategy_fee: fees,
                 total_amount_to_back: req.quantity,
-                total_amount_to_back_after_fee: back_usdc_amount_minus_fees,
+                total_amount_to_back_after_fee: back_amount_minus_fees,
                 user_strategy_wallets: wallets.map(|x| UserStrategyWallet {
                     address: x.address.into(),
                     wallet_id: x.wallet_id,
