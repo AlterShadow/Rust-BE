@@ -1,6 +1,5 @@
 use crate::contract::AbstractContract;
 use crate::logger::get_blockchain_logger;
-use crate::utils::wait_for_confirmations;
 use crate::{
     EitherTransport, EthereumRpcConnection, EthereumRpcConnectionPool, MultiChainAddressTable,
 };
@@ -9,7 +8,6 @@ use gen::model::EnumBlockChain;
 use lib::log::DynLogger;
 use lib::types::amount_to_display;
 use std::fmt::{Debug, Formatter};
-use std::time::Duration;
 use web3::api::Web3;
 use web3::contract::{Contract, Options};
 use web3::signing::Key;

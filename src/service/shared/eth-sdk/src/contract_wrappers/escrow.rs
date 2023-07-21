@@ -1,9 +1,7 @@
 use std::sync::Arc;
-use std::time::Duration;
 
 use crate::contract::AbstractContract;
 use crate::logger::get_blockchain_logger;
-use crate::utils::wait_for_confirmations;
 use crate::{
     deploy_contract, EitherTransport, EscrowAddresses, EthereumRpcConnection,
     EthereumRpcConnectionPool, MultiChainAddressTable,

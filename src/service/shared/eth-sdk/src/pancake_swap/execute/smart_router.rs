@@ -1,16 +1,12 @@
 use super::super::SMART_ROUTER_ABI_JSON;
 use super::super::{MultiHopPath, PancakePairPathSet, PancakePoolIndex};
-use crate::utils::wait_for_confirmations;
-use crate::{EitherTransport, EthereumRpcConnection};
+use crate::EthereumRpcConnection;
 use eyre::*;
-use lib::log::DynLogger;
-use lib::types::amount_to_display;
 use std::str::FromStr;
-use std::time::Duration;
 use web3::contract::{Contract, Options};
 use web3::ethabi::Token;
 use web3::signing::Key;
-use web3::types::{Address, TransactionReceipt, H256, U256};
+use web3::types::{Address, H256, U256};
 use web3::{Transport, Web3};
 
 /**	Contract Wrapper for PancakeSwap Smart Router V3

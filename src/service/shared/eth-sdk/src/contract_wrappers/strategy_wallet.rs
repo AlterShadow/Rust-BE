@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use eyre::*;
 use tracing::info;
 use web3::contract::{Contract, Options};
@@ -9,7 +7,6 @@ use web3::{ethabi, Transport, Web3};
 
 use crate::contract::AbstractContract;
 use crate::logger::get_blockchain_logger;
-use crate::utils::wait_for_confirmations;
 use crate::{
     deploy_contract, EitherTransport, EthereumRpcConnection, EthereumRpcConnectionPool,
     MultiChainAddressTable,
