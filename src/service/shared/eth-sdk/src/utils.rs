@@ -2,6 +2,7 @@ use eyre::*;
 use secp256k1::PublicKey;
 use std::path::PathBuf;
 use std::time::Duration;
+use tracing::error;
 use web3::api::Eth;
 use web3::signing::{hash_message, keccak256, recover, Key, RecoveryError, Signature};
 use web3::types::{Address, TransactionReceipt, H256, U256};
@@ -55,15 +56,15 @@ pub async fn wait_for_confirmations<T>(
     eth: &Eth<T>,
     hash: H256,
     poll_interval: Duration,
-    max_retry: u64,
+    max_retries: u64,
     confirmations: u64,
-) -> Result<TransactionReceipt>
+) -> Result<TransactionReceipt, ConfirmationError>
 where
     T: Transport,
 {
     /* wait for transaction to be mined and produce a receipt */
     let mut receipt_at_beginning: Option<TransactionReceipt> = None;
-    for _ in 0..max_retry {
+    for _ in 0..max_retries {
         if let Some(receipt) = eth.transaction_receipt(hash).await? {
             receipt_at_beginning = Some(receipt);
             break;
@@ -74,7 +75,8 @@ where
     /* if receipt was produced, check it's status & wait for confirmations */
     if let Some(receipt) = receipt_at_beginning {
         if receipt.status == Some(web3::types::U64([0])) {
-            bail!("transaction reverted {:?}", hash);
+            error!("transaction reverted {:?}", hash);
+            return Err(ConfirmationError::TransactionReverted(hash));
         }
         let receipt_block_number = receipt.block_number.unwrap().as_u64();
         let mut current_block_number = eth.block_number().await?.as_u64();
@@ -83,22 +85,75 @@ where
             tokio::time::sleep(poll_interval).await;
         }
     } else {
-        bail!(
+        error!(
             "transaction {:?} not found within {} retries",
-            hash,
-            max_retry
+            hash, max_retries
         );
+        return Err(ConfirmationError::TransactionNotFound {
+            hash,
+            retries: max_retries,
+        });
     }
 
     /* after confirmations, fetch the receipt again, and check it's status */
-    let receipt_after_confirmations = eth
-        .transaction_receipt(hash)
-        .await?
-        .context("transaction was ommerized after confirmations")?;
+    let receipt_after_confirmations = match eth.transaction_receipt(hash).await? {
+        Some(receipt) => receipt,
+        None => {
+            error!("transaction {:?} not found after confirmations", hash);
+            return Err(ConfirmationError::TransactionNotFoundAfterConfirmations(
+                hash,
+            ));
+        }
+    };
+
     if receipt_after_confirmations.status == Some(web3::types::U64([1])) {
         return Ok(receipt_after_confirmations);
     } else {
-        bail!("transaction reverted after confirmations");
+        error!("transaction {:?} reverted after confirmations", hash);
+        return Err(ConfirmationError::TransactionRevertedAfterConfirmations(
+            hash,
+        ));
+    }
+}
+
+#[derive(Debug)]
+pub enum ConfirmationError {
+    TransactionNotFound { hash: H256, retries: u64 },
+    TransactionReverted(H256),
+    TransactionNotFoundAfterConfirmations(H256),
+    TransactionRevertedAfterConfirmations(H256),
+    RpcError(web3::Error),
+}
+
+impl std::fmt::Display for ConfirmationError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            ConfirmationError::TransactionNotFound { hash, retries } => {
+                write!(
+                    f,
+                    "transaction {:?} not found within {} retries",
+                    hash, retries
+                )
+            }
+            ConfirmationError::TransactionReverted(hash) => {
+                write!(f, "transaction reverted {:?}", hash)
+            }
+            ConfirmationError::TransactionNotFoundAfterConfirmations(hash) => {
+                write!(f, "transaction {:?} not found after confirmations", hash)
+            }
+            ConfirmationError::TransactionRevertedAfterConfirmations(hash) => {
+                write!(f, "transaction {:?} reverted after confirmations", hash)
+            }
+            ConfirmationError::RpcError(err) => write!(f, "rpc provider error: {}", err),
+        }
+    }
+}
+
+impl std::error::Error for ConfirmationError {}
+
+impl From<web3::Error> for ConfirmationError {
+    fn from(err: web3::Error) -> Self {
+        ConfirmationError::RpcError(err)
     }
 }
 

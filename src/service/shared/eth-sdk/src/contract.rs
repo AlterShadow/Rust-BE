@@ -146,8 +146,24 @@ impl<T: Transport> ContractDeployer<T> {
                             "Transaction sent, waiting for confirmations: {:?}",
                             tx_hash
                         ));
-                        wait_for_confirmations(&eth, tx_hash, poll_interval, 10, confirmations as _)
-                            .await
+                        match wait_for_confirmations(
+                            &eth,
+                            tx_hash,
+                            poll_interval,
+                            10,
+                            confirmations as _,
+                        )
+                        .await
+                        {
+                            Ok(receipt) => Ok(receipt),
+                            Err(err) => {
+                                // TODO: implement deployment retry if error is RpcError, TransactionNotFoundAfterConfirmations, or TransactionRevertedAfterConfirmations
+                                bail!(
+                                    "failed to wait for confirmations on contract deployment: {:?}",
+                                    err
+                                )
+                            }
+                        }
                     }
                 },
                 logger,
