@@ -9,9 +9,11 @@ use lib::toolbox::*;
 use lib::utils::hex_decode;
 use lib::ws::*;
 use serde_json::Value;
+use siwe::{Message, VerificationOpts};
 use std::str::FromStr;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
+use time::OffsetDateTime;
 use tracing::info;
 use uuid::Uuid;
 use web3::types::Address;
@@ -43,13 +45,29 @@ impl SubAuthController for MethodAuthSignup {
 
             let signature_text = hex_decode(req.signature_text.as_bytes())?;
             let signature = hex_decode(req.signature.as_bytes())?;
+            let signature_text_string = String::from_utf8(signature_text.clone())?;
+            if let Ok(message) = signature_text_string.parse::<Message>() {
+                let verification_opts = VerificationOpts {
+                    domain: Some("mc2.pathscale.com".parse().unwrap()),
+                    timestamp: Some(OffsetDateTime::now_utc()),
+                    ..Default::default()
+                };
 
-            let verified = verify_message_address(&signature_text, &signature, address)?;
+                if let Err(e) = message.verify(&signature, &verification_opts).await {
+                    bail!(CustomError::new(
+                        EnumErrorCode::InvalidPassword,
+                        format!("Signature is not valid: {}", e)
+                    ));
+                }
+            } else {
+                let verified = verify_message_address(&signature_text, &signature, address)?;
 
-            ensure!(
-                verified,
-                CustomError::new(EnumErrorCode::InvalidPassword, "Signature is not valid")
-            );
+                ensure!(
+                    verified,
+                    CustomError::new(EnumErrorCode::InvalidPassword, "Signature is not valid")
+                );
+            }
+
             let agreed_tos = req.agreed_tos;
             let agreed_privacy = req.agreed_privacy;
 
