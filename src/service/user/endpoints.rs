@@ -1146,6 +1146,22 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                         ],
                     ),
                 ),
+                Field::new(
+                    "strategy_pool_asset_balances",
+                    Type::datatable(
+                        "StrategyPoolAssetBalancesRow",
+                        vec![
+                            Field::new("name", Type::String),
+                            Field::new("symbol", Type::String),
+                            Field::new("address", Type::BlockchainAddress),
+                            Field::new("blockchain", Type::enum_ref("block_chain")),
+                            Field::new("balance", Type::BlockchainDecimal),
+                            Field::new("price_usd", Type::Numeric),
+                            Field::new("price_usd_7d", Type::Numeric),
+                            Field::new("price_usd_30d", Type::Numeric),
+                        ],
+                    ),
+                ),
             ],
         ),
         EndpointSchema::new(

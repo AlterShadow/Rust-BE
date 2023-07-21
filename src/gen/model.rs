@@ -1930,6 +1930,7 @@ pub struct UserGetBackStrategyReviewDetailResponse {
     #[serde(with = "WithBlockchainDecimal")]
     pub estimated_amount_of_strategy_tokens: U256,
     pub estimated_backed_token_ratios: Vec<EstimatedBackedTokenRatios>,
+    pub strategy_pool_asset_balances: Vec<StrategyPoolAssetBalancesRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -8267,6 +8268,50 @@ impl WsRequest for UserGetBackStrategyReviewDetailRequest {
             },
             {
               "name": "back_value_ratio",
+              "ty": "Numeric"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "strategy_pool_asset_balances",
+      "ty": {
+        "DataTable": {
+          "name": "StrategyPoolAssetBalancesRow",
+          "fields": [
+            {
+              "name": "name",
+              "ty": "String"
+            },
+            {
+              "name": "symbol",
+              "ty": "String"
+            },
+            {
+              "name": "address",
+              "ty": "BlockchainAddress"
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
+            },
+            {
+              "name": "balance",
+              "ty": "BlockchainDecimal"
+            },
+            {
+              "name": "price_usd",
+              "ty": "Numeric"
+            },
+            {
+              "name": "price_usd_7d",
+              "ty": "Numeric"
+            },
+            {
+              "name": "price_usd_30d",
               "ty": "Numeric"
             }
           ]

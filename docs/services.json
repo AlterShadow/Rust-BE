@@ -5056,6 +5056,50 @@
                   ]
                 }
               }
+            },
+            {
+              "name": "strategy_pool_asset_balances",
+              "ty": {
+                "DataTable": {
+                  "name": "StrategyPoolAssetBalancesRow",
+                  "fields": [
+                    {
+                      "name": "name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "symbol",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "address",
+                      "ty": "BlockchainAddress"
+                    },
+                    {
+                      "name": "blockchain",
+                      "ty": {
+                        "EnumRef": "block_chain"
+                      }
+                    },
+                    {
+                      "name": "balance",
+                      "ty": "BlockchainDecimal"
+                    },
+                    {
+                      "name": "price_usd",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "price_usd_7d",
+                      "ty": "Numeric"
+                    },
+                    {
+                      "name": "price_usd_30d",
+                      "ty": "Numeric"
+                    }
+                  ]
+                }
+              }
             }
           ],
           "stream_response": null,

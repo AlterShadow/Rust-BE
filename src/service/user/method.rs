@@ -3480,6 +3480,19 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
                     strategy_wallet_address: None,
                 })
                 .await?;
+            let balances = db
+                .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
+                    strategy_pool_contract_id: None,
+                    strategy_id: Some(req.strategy_id),
+                    blockchain: None,
+                    token_address: None,
+                })
+                .await?;
+            let token_symbols: Vec<_> = balances.iter().map(|x| x.token_symbol.clone()).collect();
+            let prices = cmc
+                .get_usd_prices_by_symbol(&token_symbols)
+                .await
+                .context("failed to get price")?;
             Ok(UserGetBackStrategyReviewDetailResponse {
                 strategy_fee: fees,
                 total_amount_to_back: req.quantity,
@@ -3492,6 +3505,37 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
                 }),
                 estimated_amount_of_strategy_tokens: strategy_token_to_mint,
                 estimated_backed_token_ratios: ratios,
+                strategy_pool_asset_balances: balances
+                    .map_async(|x| {
+                        let cmc = &cmc;
+                        let token_symbols = &token_symbols;
+                        let prices = &prices;
+                        async move {
+                            let price_usd = token_symbols
+                                .iter()
+                                .zip(prices.iter())
+                                .find(|(k, _v)| k.as_str() == x.token_symbol.as_str())
+                                .map(|y| *y.1)
+                                .unwrap_or_default();
+                            let price_usd_7d = cmc
+                                .get_usd_price_days_ago(x.token_symbol.clone(), 7)
+                                .await?;
+                            let price_usd_30d = cmc
+                                .get_usd_price_days_ago(x.token_symbol.clone(), 30)
+                                .await?;
+                            Ok(StrategyPoolAssetBalancesRow {
+                                name: x.token_name,
+                                symbol: x.token_symbol,
+                                address: x.token_address.into(),
+                                blockchain: x.blockchain,
+                                balance: x.balance.into(),
+                                price_usd,
+                                price_usd_7d,
+                                price_usd_30d,
+                            })
+                        }
+                    })
+                    .await?,
             })
         }
         .boxed()
