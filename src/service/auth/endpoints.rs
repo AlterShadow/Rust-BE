@@ -6,7 +6,7 @@ pub fn endpoint_auth_signup() -> EndpointSchema {
         "Signup",
         10010,
         vec![
-            Field::new("address", Type::String),
+            Field::new("address", Type::BlockchainAddress),
             Field::new("signature_text", Type::String),
             Field::new("signature", Type::String),
             Field::new("email", Type::String),
@@ -16,7 +16,7 @@ pub fn endpoint_auth_signup() -> EndpointSchema {
             Field::new("username", Type::String),
         ],
         vec![
-            Field::new("address", Type::String),
+            Field::new("address", Type::BlockchainAddress),
             Field::new("user_id", Type::BigInt),
         ],
     )
@@ -26,7 +26,7 @@ pub fn endpoint_auth_login() -> EndpointSchema {
         "Login",
         10020,
         vec![
-            Field::new("address", Type::String),
+            Field::new("address", Type::BlockchainAddress),
             Field::new("signature_text", Type::String),
             Field::new("signature", Type::String),
             Field::new("service", Type::enum_ref("service")),

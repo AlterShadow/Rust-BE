@@ -6,7 +6,7 @@ pub fn get_auth_pg_func() -> Vec<ProceduralFunction> {
         ProceduralFunction::new(
             "fun_auth_signup",
             vec![
-                Field::new("address", Type::String),
+                Field::new("address", Type::BlockchainAddress),
                 Field::new("email", Type::String),
                 Field::new("phone", Type::String),
                 Field::new("preferred_language", Type::String),
@@ -78,7 +78,7 @@ END
         ProceduralFunction::new(
             "fun_auth_authenticate",
             vec![
-                Field::new("address", Type::String),
+                Field::new("address", Type::BlockchainAddress),
                 Field::new("service_code", Type::Int),
                 Field::new("device_id", Type::String),
                 Field::new("device_os", Type::String),
@@ -198,7 +198,7 @@ END
         ProceduralFunction::new(
             "fun_auth_authorize",
             vec![
-                Field::new("address", Type::String),
+                Field::new("address", Type::BlockchainAddress),
                 Field::new("token", Type::UUID),
                 Field::new("service", Type::enum_ref("service")),
                 Field::new("device_id", Type::String),
@@ -283,8 +283,8 @@ END
         ProceduralFunction::new(
             "fun_auth_change_login_wallet_address",
             vec![
-                Field::new("old_wallet_address", Type::String),
-                Field::new("new_wallet_address", Type::String),
+                Field::new("old_wallet_address", Type::BlockchainAddress),
+                Field::new("new_wallet_address", Type::BlockchainAddress),
             ],
             vec![],
             r#"

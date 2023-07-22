@@ -862,7 +862,7 @@ pub struct FunWatcherUpsertUserStrategyBalanceRespRow {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAuthSignupReq {
-    pub address: String,
+    pub address: BlockchainAddress,
     pub email: String,
     pub phone: String,
     pub preferred_language: String,
@@ -900,7 +900,7 @@ impl DatabaseRequest for FunAuthSignupReq {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAuthAuthenticateReq {
-    pub address: String,
+    pub address: BlockchainAddress,
     pub service_code: i32,
     pub device_id: String,
     pub device_os: String,
@@ -966,7 +966,7 @@ impl DatabaseRequest for FunAuthRemoveTokenReq {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAuthAuthorizeReq {
-    pub address: String,
+    pub address: BlockchainAddress,
     pub token: uuid::Uuid,
     pub service: EnumService,
     pub device_id: String,
@@ -1014,8 +1014,8 @@ impl DatabaseRequest for FunAuthSetRoleReq {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAuthChangeLoginWalletAddressReq {
-    pub old_wallet_address: String,
-    pub new_wallet_address: String,
+    pub old_wallet_address: BlockchainAddress,
+    pub new_wallet_address: BlockchainAddress,
 }
 
 #[allow(unused_variables)]

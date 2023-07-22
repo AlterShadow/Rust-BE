@@ -18,6 +18,35 @@ use tracing::info;
 use uuid::Uuid;
 use web3::types::Address;
 
+pub async fn ensure_signature_valid(
+    signature_text: &str,
+    signature: &[u8],
+    address: Address,
+) -> Result<()> {
+    if let Ok(message) = signature_text.parse::<Message>() {
+        let verification_opts = VerificationOpts {
+            domain: Some("mc2.pathscale.com".parse().unwrap()),
+            timestamp: Some(OffsetDateTime::now_utc()),
+            ..Default::default()
+        };
+
+        if let Err(e) = message.verify(&signature, &verification_opts).await {
+            bail!(CustomError::new(
+                EnumErrorCode::InvalidPassword,
+                format!("Signature is not valid: {}", e)
+            ));
+        }
+    } else {
+        // TODO: remove this branch
+        let verified = verify_message_address(signature_text.as_bytes(), &signature, address)?;
+
+        ensure!(
+            verified,
+            CustomError::new(EnumErrorCode::InvalidPassword, "Signature is not valid")
+        );
+    }
+    Ok(())
+}
 pub struct MethodAuthSignup;
 
 impl SubAuthController for MethodAuthSignup {
@@ -35,38 +64,12 @@ impl SubAuthController for MethodAuthSignup {
             let req: SignupRequest = serde_json::from_value(param).map_err(|x| {
                 CustomError::new(EnumErrorCode::BadRequest, format!("Invalid request: {}", x))
             })?;
-            let address = Address::from_str(&req.address).map_err(|x| {
-                CustomError::new(
-                    EnumErrorCode::UnknownUser,
-                    format!("Invalid address: {}", x),
-                )
-            })?;
-            let address_string = format!("{:?}", address);
+            let address = req.address;
 
             let signature_text = hex_decode(req.signature_text.as_bytes())?;
             let signature = hex_decode(req.signature.as_bytes())?;
             let signature_text_string = String::from_utf8(signature_text.clone())?;
-            if let Ok(message) = signature_text_string.parse::<Message>() {
-                let verification_opts = VerificationOpts {
-                    domain: Some("mc2.pathscale.com".parse().unwrap()),
-                    timestamp: Some(OffsetDateTime::now_utc()),
-                    ..Default::default()
-                };
-
-                if let Err(e) = message.verify(&signature, &verification_opts).await {
-                    bail!(CustomError::new(
-                        EnumErrorCode::InvalidPassword,
-                        format!("Signature is not valid: {}", e)
-                    ));
-                }
-            } else {
-                let verified = verify_message_address(&signature_text, &signature, address)?;
-
-                ensure!(
-                    verified,
-                    CustomError::new(EnumErrorCode::InvalidPassword, "Signature is not valid")
-                );
-            }
+            ensure_signature_valid(&signature_text_string, &signature, address).await?;
 
             let agreed_tos = req.agreed_tos;
             let agreed_privacy = req.agreed_privacy;
@@ -86,7 +89,7 @@ impl SubAuthController for MethodAuthSignup {
             let public_id = chrono::Utc::now().timestamp_millis();
             let _signup = db_auth
                 .execute(FunAuthSignupReq {
-                    address: address_string.clone(),
+                    address: address.into(),
                     email: req.email.clone(),
                     phone: req.phone.clone(),
                     preferred_language: "en".to_string(),
@@ -110,7 +113,7 @@ impl SubAuthController for MethodAuthSignup {
             }
             if db_auth.conn_hash() != db.conn_hash() {
                 db.execute(FunAuthSignupReq {
-                    address: address_string.clone(),
+                    address: address.into(),
                     email: req.email,
                     phone: req.phone,
                     preferred_language: "en".to_string(),
@@ -124,7 +127,7 @@ impl SubAuthController for MethodAuthSignup {
                 .await?;
             }
             Ok(serde_json::to_value(&SignupResponse {
-                address: address_string,
+                address: address.into(),
                 user_id: public_id,
             })?)
         }
@@ -147,28 +150,18 @@ impl SubAuthController for MethodAuthLogin {
             let req: LoginRequest = serde_json::from_value(param).map_err(|x| {
                 CustomError::new(EnumErrorCode::BadRequest, format!("Invalid request: {}", x))
             })?;
-            let address = Address::from_str(&req.address).map_err(|x| {
-                CustomError::new(
-                    EnumErrorCode::UnknownUser,
-                    format!("Invalid address: {}", x),
-                )
-            })?;
+            let address = req.address;
 
             let signature_text = hex_decode(req.signature_text.as_bytes())?;
-
+            let signature_text_string = String::from_utf8(signature_text.clone())?;
             let signature = hex_decode(req.signature.as_bytes())?;
+            ensure_signature_valid(&signature_text_string, &signature, address).await?;
 
-            let verified = verify_message_address(&signature_text, &signature, address)?;
-
-            ensure!(
-                verified,
-                CustomError::new(EnumErrorCode::InvalidPassword, "Signature is not valid")
-            );
             let service_code = req.service;
 
             let data = db_auth
                 .execute(FunAuthAuthenticateReq {
-                    address: format!("{:?}", address),
+                    address: address.into(),
                     service_code: service_code as _,
                     device_id: req.device_id,
                     device_os: req.device_os,
@@ -237,7 +230,7 @@ impl SubAuthController for MethodAuthAuthorize {
             }
             let auth_data = db_auth
                 .execute(FunAuthAuthorizeReq {
-                    address: format!("{:?}", address),
+                    address: address.into(),
                     token: req.token,
                     service,
                     device_id: req.device_id,
@@ -340,8 +333,8 @@ impl SubAuthController for MethodAuthChangeLoginWallet {
 
             let _data = db_auth
                 .execute(FunAuthChangeLoginWalletAddressReq {
-                    old_wallet_address: format!("{:?}", old_address),
-                    new_wallet_address: format!("{:?}", new_address),
+                    old_wallet_address: old_address.into(),
+                    new_wallet_address: new_address.into(),
                 })
                 .await?;
 

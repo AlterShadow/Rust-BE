@@ -25,7 +25,7 @@ pub async fn signup(
         url,
         &encode_header(
             SignupRequest {
-                address: format!("{:?}", signer.address()),
+                address: signer.address().into(),
                 signature_text: txt,
                 signature: sig,
                 email: "qjk2001@gmail.com".to_string(),
@@ -54,7 +54,7 @@ pub async fn login(
         url,
         &encode_header(
             LoginRequest {
-                address: format!("{:?}", signer.address()),
+                address: signer.address().into(),
                 signature_text: txt,
                 signature: sig,
                 service: EnumService::User as _,

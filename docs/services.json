@@ -10,7 +10,7 @@
           "parameters": [
             {
               "name": "address",
-              "ty": "String"
+              "ty": "BlockchainAddress"
             },
             {
               "name": "signature_text",
@@ -69,7 +69,7 @@
           "parameters": [
             {
               "name": "address",
-              "ty": "String"
+              "ty": "BlockchainAddress"
             },
             {
               "name": "signature_text",
@@ -103,7 +103,7 @@
           "returns": [
             {
               "name": "address",
-              "ty": "String"
+              "ty": "BlockchainAddress"
             },
             {
               "name": "user_id",

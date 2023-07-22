@@ -1705,7 +1705,8 @@ pub struct ListWalletsRow {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct LoginRequest {
-    pub address: String,
+    #[serde(with = "WithBlockchainAddress")]
+    pub address: Address,
     pub signature_text: String,
     pub signature: String,
     pub service: EnumService,
@@ -1736,7 +1737,8 @@ pub struct NetValuePoint {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SignupRequest {
-    pub address: String,
+    #[serde(with = "WithBlockchainAddress")]
+    pub address: Address,
     pub signature_text: String,
     pub signature: String,
     pub email: String,
@@ -1748,7 +1750,8 @@ pub struct SignupRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SignupResponse {
-    pub address: String,
+    #[serde(with = "WithBlockchainAddress")]
+    pub address: Address,
     pub user_id: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -2713,7 +2716,7 @@ impl WsRequest for LoginRequest {
   "parameters": [
     {
       "name": "address",
-      "ty": "String"
+      "ty": "BlockchainAddress"
     },
     {
       "name": "signature_text",
@@ -2780,7 +2783,7 @@ impl WsRequest for SignupRequest {
   "parameters": [
     {
       "name": "address",
-      "ty": "String"
+      "ty": "BlockchainAddress"
     },
     {
       "name": "signature_text",
@@ -2814,7 +2817,7 @@ impl WsRequest for SignupRequest {
   "returns": [
     {
       "name": "address",
-      "ty": "String"
+      "ty": "BlockchainAddress"
     },
     {
       "name": "user_id",
