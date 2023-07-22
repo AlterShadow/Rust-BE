@@ -1,5 +1,5 @@
 -- Created by Vertabelo (http://vertabelo.com)
--- Last modification date: 2023-07-19 13:12:12.576
+-- Last modification date: 2023-07-22 13:22:53.352
 
 CREATE SCHEMA IF NOT EXISTS tbl;;
 
@@ -217,6 +217,7 @@ CREATE TABLE tbl.strategy_escrow_pending_wallet_balance (
     blockchain enum_block_chain  NOT NULL,
     fkey_token_id bigint  NOT NULL,
     balance varchar(64)  NOT NULL,
+    ratio_per_token double precision  NULL,
     CONSTRAINT strategy_escrow_pending_wallet_ledger_ak_1 UNIQUE (fkey_strategy_pending_wallet_address_id, blockchain, fkey_token_id) NOT DEFERRABLE  INITIALLY IMMEDIATE,
     CONSTRAINT strategy_escrow_pending_wallet_balance_pk PRIMARY KEY (pkey_id)
 );
@@ -249,6 +250,7 @@ CREATE TABLE tbl.strategy_pool_contract_asset_balance (
     fkey_strategy_pool_contract_id bigint  NOT NULL,
     fkey_token_id bigint  NOT NULL,
     balance varchar(64)  NOT NULL,
+    ratio_per_token double precision  NULL,
     CONSTRAINT strategy_pool_contract_asset_balance_ak_1 UNIQUE (fkey_strategy_pool_contract_id, fkey_token_id) NOT DEFERRABLE  INITIALLY IMMEDIATE,
     CONSTRAINT strategy_pool_contract_asset_balance_pk PRIMARY KEY (pkey_id)
 );
@@ -350,6 +352,8 @@ CREATE TABLE tbl."user" (
     user_token uuid  NULL,
     admin_token uuid  NULL,
     is_blocked boolean  NOT NULL DEFAULT FALSE,
+    ens_name varchar(256)  NULL,
+    ens_avatar varchar(256)  NULL,
     CONSTRAINT uidx_public_id UNIQUE (public_id) NOT DEFERRABLE  INITIALLY IMMEDIATE,
     CONSTRAINT uidx_address UNIQUE (address) NOT DEFERRABLE  INITIALLY IMMEDIATE,
     CONSTRAINT user_pk PRIMARY KEY (pkey_id)
@@ -1082,6 +1086,13 @@ CREATE SEQUENCE tbl.seq_strategy_pool_contract_id
 
 -- Sequence: seq_strategy_wallet_id
 CREATE SEQUENCE tbl.seq_strategy_wallet_id
+      NO MINVALUE
+      NO MAXVALUE
+      NO CYCLE
+;
+
+-- Sequence: seq_strategy_watching_wallet_activity_ledger_id
+CREATE SEQUENCE tbl.seq_strategy_watching_wallet_activity_ledger_id
       NO MINVALUE
       NO MAXVALUE
       NO CYCLE
