@@ -724,8 +724,8 @@ mod tests {
     use crate::erc20::Erc20Token;
     use crate::signer::Secp256k1SecretKey;
     use crate::tx::{TransactionFetcher, TransactionReady};
-    use crate::wait_for_confirmations_simple;
     use crate::BlockchainCoinAddresses;
+    use crate::{build_pancake_swap, wait_for_confirmations_simple, PancakePairPathSet};
     use crate::{EthereumRpcConnectionPool, TxStatus};
     use crate::{DEV_ACCOUNT_ADDRESS, DEV_ACCOUNT_PRIV_KEY};
     use gen::model::{EnumBlockChain, EnumBlockchainCoin, EnumDex};

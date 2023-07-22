@@ -10,7 +10,6 @@ use web3::signing::Key;
 use web3::types::Bytes;
 use web3::{Transport, Web3};
 
-pub mod ens;
 pub mod erc20;
 pub mod escrow;
 pub mod mock_erc20;
