@@ -1,12 +1,14 @@
-use api::cmc::CoinMarketCap;
+use api::cmc::{prefetch_prices, CoinMarketCap};
 use eth_sdk::escrow::AbstractEscrowContract;
 use eth_sdk::pancake_swap::pair_paths::WorkingPancakePairPaths;
 use eth_sdk::signer::Secp256k1SecretKey;
 use eth_sdk::{DexAddresses, EthereumConns, EthereumRpcConnectionPool};
 use eyre::*;
 use gen::model::EnumService;
+use itertools::Itertools;
 use lib::config::{load_config, WsServerConfig};
 use lib::database::{connect_to_database, DatabaseConfig};
+use lib::log;
 use lib::log::{setup_logs, LogLevel};
 use lib::ws::{EndpointAuthController, SubscribeManager, WebsocketServer};
 use lru::LruCache;
@@ -21,6 +23,7 @@ use std::fmt::Debug;
 use std::num::NonZeroUsize;
 use std::sync::Arc;
 use tokio::sync::Mutex;
+use tracing::error;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Config {
@@ -57,6 +60,13 @@ async fn main() -> Result<()> {
     server.add_auth_controller(auth_controller);
 
     let coin_addresses = load_coin_addresses(&db).await?;
+    let token_names = coin_addresses
+        .iter()
+        .map(|x| x.2.clone())
+        .unique()
+        .collect_vec();
+    tokio::spawn(prefetch_prices(cmc_client.clone(), token_names.clone()));
+
     let escrow_contract_address = load_escrow_address(&db).await?;
     server.add_handler(MethodUserFollowStrategy);
     server.add_handler(MethodUserListFollowedStrategies {
