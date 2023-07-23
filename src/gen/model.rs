@@ -1237,7 +1237,8 @@ pub struct AdminUpdateSystemConfigResponse {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AuthorizeRequest {
-    pub address: String,
+    #[serde(with = "WithBlockchainAddress")]
+    pub address: Address,
     pub token: uuid::Uuid,
     pub service: EnumService,
     pub device_id: String,
@@ -1270,10 +1271,12 @@ pub struct BackStrategyLedgerRow {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ChangeLoginWalletRequest {
-    pub old_address: String,
+    #[serde(with = "WithBlockchainAddress")]
+    pub old_address: Address,
     pub old_signature_text: String,
     pub old_signature: String,
-    pub new_address: String,
+    #[serde(with = "WithBlockchainAddress")]
+    pub new_address: Address,
     pub new_signature_text: String,
     pub new_signature: String,
 }
@@ -1716,7 +1719,11 @@ pub struct LoginRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct LoginResponse {
-    pub address: String,
+    #[serde(with = "WithBlockchainAddress")]
+    pub address: Address,
+    pub display_name: String,
+    #[serde(default)]
+    pub avatar: Option<String>,
     pub role: EnumRole,
     pub user_id: i64,
     pub user_token: uuid::Uuid,
@@ -2744,7 +2751,17 @@ impl WsRequest for LoginRequest {
   "returns": [
     {
       "name": "address",
+      "ty": "BlockchainAddress"
+    },
+    {
+      "name": "display_name",
       "ty": "String"
+    },
+    {
+      "name": "avatar",
+      "ty": {
+        "Optional": "String"
+      }
     },
     {
       "name": "role",
@@ -2842,7 +2859,7 @@ impl WsRequest for AuthorizeRequest {
   "parameters": [
     {
       "name": "address",
-      "ty": "String"
+      "ty": "BlockchainAddress"
     },
     {
       "name": "token",
@@ -2904,7 +2921,7 @@ impl WsRequest for ChangeLoginWalletRequest {
   "parameters": [
     {
       "name": "old_address",
-      "ty": "String"
+      "ty": "BlockchainAddress"
     },
     {
       "name": "old_signature_text",
@@ -2916,7 +2933,7 @@ impl WsRequest for ChangeLoginWalletRequest {
     },
     {
       "name": "new_address",
-      "ty": "String"
+      "ty": "BlockchainAddress"
     },
     {
       "name": "new_signature_text",

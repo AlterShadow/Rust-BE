@@ -4,7 +4,7 @@ ID: 1
 ## Endpoints
 |Method Code|Method Name|Parameters|Response|Description|
 |-----------|-----------|----------|--------|-----------|
-|10020|Login|address, signature_text, signature, service, device_id, device_os|address, role, user_id, user_token, admin_token||
+|10020|Login|address, signature_text, signature, service, device_id, device_os|address, display_name, avatar, role, user_id, user_token, admin_token||
 |10010|Signup|address, signature_text, signature, email, phone, agreed_tos, agreed_privacy, username|address, user_id||
 |10030|Authorize|address, token, service, device_id, device_os|success||
 |10040|Logout||||

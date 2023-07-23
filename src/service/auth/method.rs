@@ -1,4 +1,5 @@
 use eth_sdk::utils::verify_message_address;
+use eth_sdk::EthereumRpcConnectionPool;
 use eyre::*;
 use futures::future::BoxFuture;
 use futures::FutureExt;
@@ -10,12 +11,13 @@ use lib::utils::hex_decode;
 use lib::ws::*;
 use serde_json::Value;
 use siwe::{Message, VerificationOpts};
-use std::str::FromStr;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use time::OffsetDateTime;
-use tracing::info;
+use tracing::{info, warn};
 use uuid::Uuid;
+use web3::api::Namespace;
+use web3::contract::ens::Ens;
 use web3::types::Address;
 
 pub async fn ensure_signature_valid(
@@ -47,7 +49,9 @@ pub async fn ensure_signature_valid(
     }
     Ok(())
 }
-pub struct MethodAuthSignup;
+pub struct MethodAuthSignup {
+    pub pool: EthereumRpcConnectionPool,
+}
 
 impl SubAuthController for MethodAuthSignup {
     fn auth(
@@ -60,6 +64,7 @@ impl SubAuthController for MethodAuthSignup {
         info!("Signup request: {:?}", param);
         let db: DbClient = toolbox.get_db();
         let db_auth: DbClient = toolbox.get_nth_db(1);
+        let pool = self.pool.clone();
         async move {
             let req: SignupRequest = serde_json::from_value(param).map_err(|x| {
                 CustomError::new(EnumErrorCode::BadRequest, format!("Invalid request: {}", x))
@@ -70,6 +75,29 @@ impl SubAuthController for MethodAuthSignup {
             let signature = hex_decode(req.signature.as_bytes())?;
             let signature_text_string = String::from_utf8(signature_text.clone())?;
             ensure_signature_valid(&signature_text_string, &signature, address).await?;
+            let conn = pool.get(EnumBlockChain::EthereumMainnet).await?;
+            let ens = Ens::new(conn.transport().clone());
+            let ens_name = match ens.canonical_name(address).await {
+                Ok(ok) => Some(ok),
+                Err(err) => {
+                    warn!("ENS get name {:?} {:?} error: {:?}", address, address, err);
+                    None
+                }
+            };
+            let ens_avatar = if let Some(ens_name) = &ens_name {
+                match ens.text(ens_name.as_str(), "avatar".to_string()).await {
+                    Ok(ok) => Some(ok),
+                    Err(err) => {
+                        warn!(
+                            "ENS get avatar {:?} {:?} error: {:?}",
+                            ens_name, address, err
+                        );
+                        None
+                    }
+                }
+            } else {
+                None
+            };
 
             let agreed_tos = req.agreed_tos;
             let agreed_privacy = req.agreed_privacy;
@@ -98,7 +126,9 @@ impl SubAuthController for MethodAuthSignup {
                     ip_address: ctx.ip_addr,
                     username: Some(req.username.clone()),
                     age: None,
+                    ens_name: ens_name.clone(),
                     public_id,
+                    ens_avatar: ens_avatar.clone(),
                 })
                 .await?
                 .into_result()
@@ -122,7 +152,9 @@ impl SubAuthController for MethodAuthSignup {
                     ip_address: ctx.ip_addr,
                     username: Some(req.username),
                     age: None,
+                    ens_name,
                     public_id,
+                    ens_avatar,
                 })
                 .await?;
             }
@@ -182,7 +214,11 @@ impl SubAuthController for MethodAuthLogin {
                 })
                 .await?;
             Ok(serde_json::to_value(&LoginResponse {
-                address: format!("{:?}", address),
+                address: address.into(),
+                display_name: row
+                    .ens_name
+                    .unwrap_or_else(|| row.public_user_id.to_string()),
+                avatar: row.ens_avatar,
                 role: row.role,
                 user_id: row.public_user_id,
                 user_token,
@@ -211,12 +247,7 @@ impl SubAuthController for MethodAuthAuthorize {
             let req: AuthorizeRequest = serde_json::from_value(param).map_err(|x| {
                 CustomError::new(EnumErrorCode::BadRequest, format!("Invalid request: {}", x))
             })?;
-            let address = Address::from_str(&req.address).map_err(|x| {
-                CustomError::new(
-                    EnumErrorCode::UnknownUser,
-                    format!("Invalid address: {}", x),
-                )
-            })?;
+            let address = req.address;
             let service = req.service;
 
             if service != accepted_service {
@@ -293,43 +324,23 @@ impl SubAuthController for MethodAuthChangeLoginWallet {
             let req: ChangeLoginWalletRequest = serde_json::from_value(param).map_err(|x| {
                 CustomError::new(EnumErrorCode::BadRequest, format!("Invalid request: {}", x))
             })?;
-            let old_address = Address::from_str(&req.old_address).map_err(|x| {
-                CustomError::new(
-                    EnumErrorCode::UnknownUser,
-                    format!("Invalid address: {}", x),
-                )
-            })?;
+            let old_address = req.old_address;
 
             let old_signature_text = hex_decode(req.old_signature_text.as_bytes())?;
 
             let old_signature = hex_decode(req.old_signature.as_bytes())?;
+            let old_signature_text_string = String::from_utf8(old_signature_text.clone())?;
 
-            let old_verified =
-                verify_message_address(&old_signature_text, &old_signature, old_address)?;
+            ensure_signature_valid(&old_signature_text_string, &old_signature, old_address).await?;
 
-            ensure!(
-                old_verified,
-                CustomError::new(EnumErrorCode::InvalidPassword, "Old signature is not valid")
-            );
-
-            let new_address = Address::from_str(&req.new_address).map_err(|x| {
-                CustomError::new(
-                    EnumErrorCode::UnknownUser,
-                    format!("Invalid address: {}", x),
-                )
-            })?;
+            let new_address = req.new_address;
 
             let new_signature_text = hex_decode(req.new_signature_text.as_bytes())?;
 
             let new_signature = hex_decode(req.new_signature.as_bytes())?;
+            let new_signature_text_string = String::from_utf8(new_signature_text.clone())?;
 
-            let new_verified =
-                verify_message_address(&new_signature_text, &new_signature, new_address)?;
-
-            ensure!(
-                new_verified,
-                CustomError::new(EnumErrorCode::InvalidPassword, "New signature is not valid")
-            );
+            ensure_signature_valid(&new_signature_text_string, &new_signature, new_address).await?;
 
             let _data = db_auth
                 .execute(FunAuthChangeLoginWalletAddressReq {

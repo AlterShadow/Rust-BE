@@ -126,6 +126,10 @@ pub struct FunAuthAuthenticateRespRow {
     pub user_id: i64,
     pub public_user_id: i64,
     pub role: EnumRole,
+    #[serde(default)]
+    pub ens_name: Option<String>,
+    #[serde(default)]
+    pub ens_avatar: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -874,13 +878,17 @@ pub struct FunAuthSignupReq {
     pub username: Option<String>,
     #[serde(default)]
     pub age: Option<i32>,
+    #[serde(default)]
+    pub ens_name: Option<String>,
+    #[serde(default)]
+    pub ens_avatar: Option<String>,
 }
 
 #[allow(unused_variables)]
 impl DatabaseRequest for FunAuthSignupReq {
     type ResponseRow = FunAuthSignupRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_auth_signup(a_address => $1::varchar, a_email => $2::varchar, a_phone => $3::varchar, a_preferred_language => $4::varchar, a_agreed_tos => $5::boolean, a_agreed_privacy => $6::boolean, a_ip_address => $7::inet, a_public_id => $8::bigint, a_username => $9::varchar, a_age => $10::int);"
+        "SELECT * FROM api.fun_auth_signup(a_address => $1::varchar, a_email => $2::varchar, a_phone => $3::varchar, a_preferred_language => $4::varchar, a_agreed_tos => $5::boolean, a_agreed_privacy => $6::boolean, a_ip_address => $7::inet, a_public_id => $8::bigint, a_username => $9::varchar, a_age => $10::int, a_ens_name => $11::varchar, a_ens_avatar => $12::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -894,6 +902,8 @@ impl DatabaseRequest for FunAuthSignupReq {
             &self.public_id as &(dyn ToSql + Sync),
             &self.username as &(dyn ToSql + Sync),
             &self.age as &(dyn ToSql + Sync),
+            &self.ens_name as &(dyn ToSql + Sync),
+            &self.ens_avatar as &(dyn ToSql + Sync),
         ]
     }
 }

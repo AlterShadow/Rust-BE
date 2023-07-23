@@ -38,7 +38,17 @@
           "returns": [
             {
               "name": "address",
+              "ty": "BlockchainAddress"
+            },
+            {
+              "name": "display_name",
               "ty": "String"
+            },
+            {
+              "name": "avatar",
+              "ty": {
+                "Optional": "String"
+              }
             },
             {
               "name": "role",
@@ -120,7 +130,7 @@
           "parameters": [
             {
               "name": "address",
-              "ty": "String"
+              "ty": "BlockchainAddress"
             },
             {
               "name": "token",
@@ -166,7 +176,7 @@
           "parameters": [
             {
               "name": "old_address",
-              "ty": "String"
+              "ty": "BlockchainAddress"
             },
             {
               "name": "old_signature_text",
@@ -178,7 +188,7 @@
             },
             {
               "name": "new_address",
-              "ty": "String"
+              "ty": "BlockchainAddress"
             },
             {
               "name": "new_signature_text",

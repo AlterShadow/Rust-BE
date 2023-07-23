@@ -16,6 +16,8 @@ pub fn get_auth_pg_func() -> Vec<ProceduralFunction> {
                 Field::new("public_id", Type::BigInt),
                 Field::new("username", Type::optional(Type::String)),
                 Field::new("age", Type::optional(Type::Int)),
+                Field::new("ens_name", Type::optional(Type::String)),
+                Field::new("ens_avatar", Type::optional(Type::String)),
             ],
             vec![Field::new("user_id", Type::BigInt)],
             r#"
@@ -42,7 +44,10 @@ BEGIN
                           last_ip,
                           public_id,
                           updated_at,
-                          created_at)
+                          created_at,
+                          ens_name,
+                          ens_avatar
+      )
     VALUES (a_address,
             a_username,
             a_email,
@@ -55,7 +60,10 @@ BEGIN
             a_ip_address,
             a_public_id,
             extract(Epoch FROM (NOW()))::bigint,
-            extract(Epoch FROM (NOW()))::bigint)
+            extract(Epoch FROM (NOW()))::bigint
+            a_ens_name,
+            a_ens_avatar
+        )
     RETURNING pkey_id INTO STRICT id_;
     INSERT INTO tbl.user_whitelisted_wallet(fkey_user_id,
                                            blockchain,
@@ -88,6 +96,8 @@ END
                 Field::new("user_id", Type::BigInt),
                 Field::new("public_user_id", Type::BigInt),
                 Field::new("role", Type::enum_ref("role")),
+                Field::new("ens_name", Type::optional(Type::String)),
+                Field::new("ens_avatar", Type::optional(Type::String)),
             ],
             r#"
 DECLARE
@@ -134,7 +144,9 @@ BEGIN
     IF a_service_code = api.ADMIN_SERVICE() THEN
         UPDATE tbl.user SET admin_device_id = a_device_id WHERE pkey_id = _user_id;
     END IF;
-    RETURN QUERY SELECT _user_id, _public_user_id, _role;
+    RETURN QUERY SELECT pkey_id, u.public_id, u.role, ens_name, ens_avatar
+    FROM tbl.user u
+    WHERE address = a_address;;
 END
         "#,
         ),

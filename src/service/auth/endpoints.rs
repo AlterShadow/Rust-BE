@@ -34,7 +34,9 @@ pub fn endpoint_auth_login() -> EndpointSchema {
             Field::new("device_os", Type::String),
         ],
         vec![
-            Field::new("address", Type::String),
+            Field::new("address", Type::BlockchainAddress),
+            Field::new("display_name", Type::String),
+            Field::new("avatar", Type::optional(Type::String)),
             Field::new("role", Type::enum_ref("role")),
             Field::new("user_id", Type::BigInt),
             Field::new("user_token", Type::UUID),
@@ -47,7 +49,7 @@ pub fn endpoint_auth_authorize() -> EndpointSchema {
         "Authorize",
         10030,
         vec![
-            Field::new("address", Type::String),
+            Field::new("address", Type::BlockchainAddress),
             Field::new("token", Type::UUID),
             Field::new("service", Type::enum_ref("service")),
             Field::new("device_id", Type::String),
@@ -64,10 +66,10 @@ pub fn endpoint_auth_change_login_wallet() -> EndpointSchema {
         "ChangeLoginWallet",
         10050,
         vec![
-            Field::new("old_address", Type::String),
+            Field::new("old_address", Type::BlockchainAddress),
             Field::new("old_signature_text", Type::String),
             Field::new("old_signature", Type::String),
-            Field::new("new_address", Type::String),
+            Field::new("new_address", Type::BlockchainAddress),
             Field::new("new_signature_text", Type::String),
             Field::new("new_signature", Type::String),
         ],

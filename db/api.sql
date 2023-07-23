@@ -1,6 +1,6 @@
 CREATE SCHEMA IF NOT EXISTS api;
 
-CREATE OR REPLACE FUNCTION api.fun_auth_signup(a_address varchar, a_email varchar, a_phone varchar, a_preferred_language varchar, a_agreed_tos boolean, a_agreed_privacy boolean, a_ip_address inet, a_public_id bigint, a_username varchar DEFAULT NULL, a_age int DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_auth_signup(a_address varchar, a_email varchar, a_phone varchar, a_preferred_language varchar, a_agreed_tos boolean, a_agreed_privacy boolean, a_ip_address inet, a_public_id bigint, a_username varchar DEFAULT NULL, a_age int DEFAULT NULL, a_ens_name varchar DEFAULT NULL, a_ens_avatar varchar DEFAULT NULL)
 RETURNS table (
     "user_id" bigint
 )
@@ -30,7 +30,10 @@ BEGIN
                           last_ip,
                           public_id,
                           updated_at,
-                          created_at)
+                          created_at,
+                          ens_name,
+                          ens_avatar
+      )
     VALUES (a_address,
             a_username,
             a_email,
@@ -43,7 +46,10 @@ BEGIN
             a_ip_address,
             a_public_id,
             extract(Epoch FROM (NOW()))::bigint,
-            extract(Epoch FROM (NOW()))::bigint)
+            extract(Epoch FROM (NOW()))::bigint
+            a_ens_name,
+            a_ens_avatar
+        )
     RETURNING pkey_id INTO STRICT id_;
     INSERT INTO tbl.user_whitelisted_wallet(fkey_user_id,
                                            blockchain,
@@ -69,7 +75,9 @@ CREATE OR REPLACE FUNCTION api.fun_auth_authenticate(a_address varchar, a_servic
 RETURNS table (
     "user_id" bigint,
     "public_user_id" bigint,
-    "role" enum_role
+    "role" enum_role,
+    "ens_name" varchar,
+    "ens_avatar" varchar
 )
 LANGUAGE plpgsql
 AS $$
@@ -118,7 +126,9 @@ BEGIN
     IF a_service_code = api.ADMIN_SERVICE() THEN
         UPDATE tbl.user SET admin_device_id = a_device_id WHERE pkey_id = _user_id;
     END IF;
-    RETURN QUERY SELECT _user_id, _public_user_id, _role;
+    RETURN QUERY SELECT pkey_id, u.public_id, u.role, ens_name, ens_avatar
+    FROM tbl.user u
+    WHERE address = a_address;;
 END
         
 $$;
