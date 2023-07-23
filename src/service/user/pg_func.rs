@@ -1973,7 +1973,7 @@ END
                 Field::new("short_name", Type::String),
                 Field::new("description", Type::String),
                 Field::new("is_stablecoin", Type::Boolean),
-                Field::new("decimals", Type::Numeric),
+                Field::new("decimals", Type::Int),
             ],
             r#"
 BEGIN

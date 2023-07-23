@@ -2489,7 +2489,7 @@ RETURNS table (
     "short_name" varchar,
     "description" varchar,
     "is_stablecoin" boolean,
-    "decimals" double precision
+    "decimals" int
 )
 LANGUAGE plpgsql
 AS $$
