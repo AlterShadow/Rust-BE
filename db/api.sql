@@ -46,7 +46,7 @@ BEGIN
             a_ip_address,
             a_public_id,
             extract(Epoch FROM (NOW()))::bigint,
-            extract(Epoch FROM (NOW()))::bigint
+            extract(Epoch FROM (NOW()))::bigint,
             a_ens_name,
             a_ens_avatar
         )
@@ -126,9 +126,9 @@ BEGIN
     IF a_service_code = api.ADMIN_SERVICE() THEN
         UPDATE tbl.user SET admin_device_id = a_device_id WHERE pkey_id = _user_id;
     END IF;
-    RETURN QUERY SELECT pkey_id, u.public_id, u.role, ens_name, ens_avatar
+    RETURN QUERY SELECT u.pkey_id, u.public_id, u.role, u.ens_name, u.ens_avatar
     FROM tbl.user u
-    WHERE address = a_address;;
+    WHERE address = a_address;
 END
         
 $$;
@@ -1162,7 +1162,7 @@ AS $$
     
 BEGIN
     IF a_expert_id ISNULL THEN
-        SELECT pkey_id STRICT INTO a_expert_id FROM tbl.expert_profile AS e
+        SELECT pkey_id INTO STRICT a_expert_id FROM tbl.expert_profile AS e
          JOIN tbl.user AS u ON e.pkey_id = e.fkey_user_id
          WHERE u.public_id = a_expert_public_id;
     END IF;
@@ -1335,7 +1335,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_get_expert_profile(a_expert_id bigint DEFAULT NULL, a_expert_public_id bigint DEFAULT NULL, a_user_id bigint)
+CREATE OR REPLACE FUNCTION api.fun_user_get_expert_profile(a_user_id bigint, a_expert_id bigint DEFAULT NULL, a_expert_public_id bigint DEFAULT NULL)
 RETURNS table (
     "total" bigint,
     "expert_id" bigint,

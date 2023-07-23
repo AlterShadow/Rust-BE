@@ -303,14 +303,7 @@ impl RequestHandler for MethodUserGetStrategy {
                 .await?
                 .into_result()
                 .context("failed to get strategy")?;
-            let balances = db
-                .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
-                    strategy_pool_contract_id: None,
-                    strategy_id: Some(req.strategy_id),
-                    blockchain: None,
-                    token_address: None,
-                })
-                .await?;
+
             let ledger = db
                 .execute(FunUserListStrategyPoolContractAssetLedgerReq {
                     limit: 1000,

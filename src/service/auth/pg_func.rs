@@ -60,7 +60,7 @@ BEGIN
             a_ip_address,
             a_public_id,
             extract(Epoch FROM (NOW()))::bigint,
-            extract(Epoch FROM (NOW()))::bigint
+            extract(Epoch FROM (NOW()))::bigint,
             a_ens_name,
             a_ens_avatar
         )
@@ -144,9 +144,9 @@ BEGIN
     IF a_service_code = api.ADMIN_SERVICE() THEN
         UPDATE tbl.user SET admin_device_id = a_device_id WHERE pkey_id = _user_id;
     END IF;
-    RETURN QUERY SELECT pkey_id, u.public_id, u.role, ens_name, ens_avatar
+    RETURN QUERY SELECT u.pkey_id, u.public_id, u.role, u.ens_name, u.ens_avatar
     FROM tbl.user u
-    WHERE address = a_address;;
+    WHERE address = a_address;
 END
         "#,
         ),
