@@ -24,7 +24,7 @@ pub fn strategy_row() -> Type {
             Field::new("blockchain", Type::enum_ref("block_chain")),
             Field::new("requested_at", Type::optional(Type::BigInt)),
             Field::new("created_at", Type::BigInt),
-            Field::new("expert_public_id", Type::BigInt),
+            Field::new("expert_id", Type::BigInt),
             Field::new("expert_username", Type::String),
             Field::new("expert_family_name", Type::String),
             Field::new("expert_given_name", Type::String),
@@ -51,7 +51,6 @@ pub fn expert_row() -> Type {
         "ListExpertsRow",
         vec![
             Field::new("expert_id", Type::BigInt),
-            Field::new("user_public_id", Type::BigInt),
             Field::new("linked_wallet", Type::BlockchainAddress),
             Field::new("name", Type::String),
             Field::new("family_name", Type::optional(Type::String)),

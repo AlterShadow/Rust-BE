@@ -1102,7 +1102,7 @@ pub struct AdminListStrategiesRequest {
     #[serde(default)]
     pub strategy_name: Option<String>,
     #[serde(default)]
-    pub expert_public_id: Option<i64>,
+    pub expert_id: Option<i64>,
     #[serde(default)]
     pub expert_name: Option<String>,
     #[serde(default)]
@@ -1534,7 +1534,6 @@ pub struct FollowLedgerPoint {
 #[serde(rename_all = "camelCase")]
 pub struct ListExpertsRow {
     pub expert_id: i64,
-    pub user_public_id: i64,
     #[serde(with = "WithBlockchainAddress")]
     pub linked_wallet: Address,
     pub name: String,
@@ -1596,7 +1595,7 @@ pub struct ListStrategiesRow {
     #[serde(default)]
     pub requested_at: Option<i64>,
     pub created_at: i64,
-    pub expert_public_id: i64,
+    pub expert_id: i64,
     pub expert_username: String,
     pub expert_family_name: String,
     pub expert_given_name: String,
@@ -2335,7 +2334,7 @@ pub struct UserListStrategiesRequest {
     #[serde(default)]
     pub strategy_name: Option<String>,
     #[serde(default)]
-    pub expert_public_id: Option<i64>,
+    pub expert_id: Option<i64>,
     #[serde(default)]
     pub expert_name: Option<String>,
     #[serde(default)]
@@ -3082,7 +3081,7 @@ impl WsRequest for UserListFollowedStrategiesRequest {
                 "ty": "BigInt"
               },
               {
-                "name": "expert_public_id",
+                "name": "expert_id",
                 "ty": "BigInt"
               },
               {
@@ -3211,7 +3210,7 @@ impl WsRequest for UserListStrategiesRequest {
       }
     },
     {
-      "name": "expert_public_id",
+      "name": "expert_id",
       "ty": {
         "Optional": "BigInt"
       }
@@ -3324,7 +3323,7 @@ impl WsRequest for UserListStrategiesRequest {
                 "ty": "BigInt"
               },
               {
-                "name": "expert_public_id",
+                "name": "expert_id",
                 "ty": "BigInt"
               },
               {
@@ -3495,7 +3494,7 @@ impl WsRequest for UserListTopPerformingStrategiesRequest {
                 "ty": "BigInt"
               },
               {
-                "name": "expert_public_id",
+                "name": "expert_id",
                 "ty": "BigInt"
               },
               {
@@ -3783,7 +3782,7 @@ impl WsRequest for UserGetStrategyRequest {
               "ty": "BigInt"
             },
             {
-              "name": "expert_public_id",
+              "name": "expert_id",
               "ty": "BigInt"
             },
             {
@@ -4524,7 +4523,7 @@ impl WsRequest for UserListBackedStrategiesRequest {
                 "ty": "BigInt"
               },
               {
-                "name": "expert_public_id",
+                "name": "expert_id",
                 "ty": "BigInt"
               },
               {
@@ -4966,10 +4965,6 @@ impl WsRequest for UserListFollowedExpertsRequest {
                 "ty": "BigInt"
               },
               {
-                "name": "user_public_id",
-                "ty": "BigInt"
-              },
-              {
                 "name": "linked_wallet",
                 "ty": "BlockchainAddress"
               },
@@ -5184,10 +5179,6 @@ impl WsRequest for UserListExpertsRequest {
                 "ty": "BigInt"
               },
               {
-                "name": "user_public_id",
-                "ty": "BigInt"
-              },
-              {
                 "name": "linked_wallet",
                 "ty": "BlockchainAddress"
               },
@@ -5321,10 +5312,6 @@ impl WsRequest for UserListTopPerformingExpertsRequest {
                 "ty": "BigInt"
               },
               {
-                "name": "user_public_id",
-                "ty": "BigInt"
-              },
-              {
                 "name": "linked_wallet",
                 "ty": "BlockchainAddress"
               },
@@ -5455,10 +5442,6 @@ impl WsRequest for UserListFeaturedExpertsRequest {
             "fields": [
               {
                 "name": "expert_id",
-                "ty": "BigInt"
-              },
-              {
-                "name": "user_public_id",
                 "ty": "BigInt"
               },
               {
@@ -5699,7 +5682,7 @@ impl WsRequest for UserGetExpertProfileRequest {
                 "ty": "BigInt"
               },
               {
-                "name": "expert_public_id",
+                "name": "expert_id",
                 "ty": "BigInt"
               },
               {
@@ -5810,10 +5793,6 @@ impl WsRequest for UserGetUserProfileRequest {
             "fields": [
               {
                 "name": "expert_id",
-                "ty": "BigInt"
-              },
-              {
-                "name": "user_public_id",
                 "ty": "BigInt"
               },
               {
@@ -5979,7 +5958,7 @@ impl WsRequest for UserGetUserProfileRequest {
                 "ty": "BigInt"
               },
               {
-                "name": "expert_public_id",
+                "name": "expert_id",
                 "ty": "BigInt"
               },
               {
@@ -6115,7 +6094,7 @@ impl WsRequest for UserGetUserProfileRequest {
                 "ty": "BigInt"
               },
               {
-                "name": "expert_public_id",
+                "name": "expert_id",
                 "ty": "BigInt"
               },
               {
@@ -7153,7 +7132,7 @@ impl WsRequest for ExpertListPublishedStrategiesRequest {
                 "ty": "BigInt"
               },
               {
-                "name": "expert_public_id",
+                "name": "expert_id",
                 "ty": "BigInt"
               },
               {
@@ -7324,7 +7303,7 @@ impl WsRequest for ExpertListUnpublishedStrategiesRequest {
                 "ty": "BigInt"
               },
               {
-                "name": "expert_public_id",
+                "name": "expert_id",
                 "ty": "BigInt"
               },
               {
@@ -9089,10 +9068,6 @@ impl WsRequest for AdminListExpertsRequest {
                 "ty": "BigInt"
               },
               {
-                "name": "user_public_id",
-                "ty": "BigInt"
-              },
-              {
                 "name": "linked_wallet",
                 "ty": "BlockchainAddress"
               },
@@ -9324,7 +9299,7 @@ impl WsRequest for AdminListStrategiesRequest {
       }
     },
     {
-      "name": "expert_public_id",
+      "name": "expert_id",
       "ty": {
         "Optional": "BigInt"
       }
@@ -9435,7 +9410,7 @@ impl WsRequest for AdminListStrategiesRequest {
                 "ty": "BigInt"
               },
               {
-                "name": "expert_public_id",
+                "name": "expert_id",
                 "ty": "BigInt"
               },
               {

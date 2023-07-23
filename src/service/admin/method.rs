@@ -439,7 +439,7 @@ impl RequestHandler for MethodAdminListStrategies {
                     offset: req.offset.unwrap_or(DEFAULT_OFFSET),
                     strategy_id: req.strategy_id,
                     strategy_name: req.strategy_name,
-                    expert_public_id: req.expert_public_id,
+                    expert_public_id: req.expert_id,
                     expert_name: req.expert_name,
                     description: req.description,
                     approved: req.approved,

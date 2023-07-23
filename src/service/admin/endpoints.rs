@@ -207,7 +207,7 @@ pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
                 Field::new("limit", Type::optional(Type::BigInt)),
                 Field::new("strategy_id", Type::optional(Type::BigInt)),
                 Field::new("strategy_name", Type::optional(Type::String)),
-                Field::new("expert_public_id", Type::optional(Type::BigInt)),
+                Field::new("expert_id", Type::optional(Type::BigInt)),
                 Field::new("expert_name", Type::optional(Type::String)),
                 Field::new("description", Type::optional(Type::String)),
                 Field::new("pending_approval", Type::optional(Type::Boolean)),

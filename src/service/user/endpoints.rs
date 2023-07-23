@@ -43,7 +43,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 Field::new("offset", Type::optional(Type::BigInt)),
                 Field::new("strategy_id", Type::optional(Type::BigInt)),
                 Field::new("strategy_name", Type::optional(Type::String)),
-                Field::new("expert_public_id", Type::optional(Type::BigInt)),
+                Field::new("expert_id", Type::optional(Type::BigInt)),
                 Field::new("expert_name", Type::optional(Type::String)),
                 Field::new("description", Type::optional(Type::String)),
                 Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),

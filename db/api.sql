@@ -1153,7 +1153,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_follow_expert(a_user_id bigint, a_expert_id bigint)
+CREATE OR REPLACE FUNCTION api.fun_user_follow_expert(a_user_id bigint, a_expert_id bigint DEFAULT NULL, a_expert_public_id bigint DEFAULT NULL)
 RETURNS table (
     "success" boolean
 )
@@ -1161,6 +1161,11 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
+    IF a_expert_id ISNULL THEN
+        SELECT pkey_id STRICT INTO a_expert_id FROM tbl.expert_profile AS e
+         JOIN tbl.user AS u ON e.pkey_id = e.fkey_user_id
+         WHERE u.public_id = a_expert_public_id;
+    END IF;
     INSERT INTO tbl.user_follow_expert (fkey_user_id, fkey_expert_id, updated_at, created_at)
     VALUES (a_user_id, a_expert_id, extract(epoch from now())::bigint, extract(epoch from now())::bigint);
     RETURN QUERY SELECT TRUE;
@@ -1330,7 +1335,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_get_expert_profile(a_expert_id bigint, a_user_id bigint)
+CREATE OR REPLACE FUNCTION api.fun_user_get_expert_profile(a_expert_id bigint DEFAULT NULL, a_expert_public_id bigint DEFAULT NULL, a_user_id bigint)
 RETURNS table (
     "total" bigint,
     "expert_id" bigint,
@@ -1387,7 +1392,8 @@ BEGIN
         
                  FROM tbl.expert_profile AS e
                  JOIN tbl.user AS u ON u.pkey_id = e.fkey_user_id
-                 WHERE e.pkey_id = a_expert_id
+                 WHERE (a_expert_id ISNULL OR e.pkey_id = a_expert_id)
+                    OR (a_expert_public_id ISNULL OR u.public_id = a_expert_public_id)
                  ;
 
 END

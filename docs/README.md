@@ -18,7 +18,7 @@ ID: 2
 |20040|UserFollowStrategy|strategy_id|success|User follows a strategy|
 |20050|UserListFollowedStrategies|limit, offset|strategies_total, strategies|User lists followed strategies|
 |20060|UserUnfollowStrategy|strategy_id|success||
-|20061|UserListStrategies|limit, offset, strategy_id, strategy_name, expert_public_id, expert_name, description, blockchain, strategy_pool_address|strategies_total, strategies|User lists strategies|
+|20061|UserListStrategies|limit, offset, strategy_id, strategy_name, expert_id, expert_name, description, blockchain, strategy_pool_address|strategies_total, strategies|User lists strategies|
 |20063|UserListTopPerformingStrategies|limit, offset|strategies_total, strategies|User lists top performing strategies|
 |20064|UserListStrategyBackers|strategy_id, limit, offset|backers_total, backers||
 |20065|UserListStrategyFollowers|strategy_id, limit, offset|followers_total, followers||
@@ -96,7 +96,7 @@ ID: 3
 |30080|AdminUpdateSystemConfig|platform_fee, escrow_contract_address_ethereum, escrow_contract_address_goerli, escrow_contract_address_bsc, escrow_contract_address_bsc_testnet|success|Admin updates system config|
 |30090|AdminListExperts|limit, offset, expert_id, user_id, user_public_id, username, family_name, given_name, description, social_media|experts_total, experts|Admin lists experts|
 |30100|AdminListBackers|offset, limit, user_id, user_public_id, username, family_name, given_name|backers_total, backers||
-|30110|AdminListStrategies|offset, limit, strategy_id, strategy_name, expert_public_id, expert_name, description, pending_approval, approved|strategies_total, strategies||
+|30110|AdminListStrategies|offset, limit, strategy_id, strategy_name, expert_id, expert_name, description, pending_approval, approved|strategies_total, strategies||
 |30120|AdminApproveStrategy|strategy_id|success|Admin approves strategy|
 |30130|AdminRejectStrategy|strategy_id|success||
 |31002|AdminAddAuditRule|rule_id, name, description|||

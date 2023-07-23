@@ -134,7 +134,7 @@ impl RequestHandler for MethodUserListStrategies {
                     strategy_id: req.strategy_id,
                     strategy_name: req.strategy_name,
                     expert_id: None,
-                    expert_public_id: req.expert_public_id,
+                    expert_public_id: req.expert_id,
                     expert_name: req.expert_name,
                     description: req.description,
                     blockchain: req.blockchain,
@@ -1416,7 +1416,8 @@ impl RequestHandler for MethodUserFollowExpert {
             let ret = db
                 .execute(FunUserFollowExpertReq {
                     user_id: ctx.user_id,
-                    expert_id: req.expert_id,
+                    expert_id: None,
+                    expert_public_id: Some(req.expert_id),
                 })
                 .await?;
             Ok(UserFollowExpertResponse {
@@ -1617,7 +1618,8 @@ impl RequestHandler for MethodUserGetExpertProfile {
             ensure_user_role(ctx, EnumRole::User)?;
             let ret = db
                 .execute(FunUserGetExpertProfileReq {
-                    expert_id: req.expert_id,
+                    expert_id: None,
+                    expert_public_id: Some(req.expert_id),
                     user_id: ctx.user_id,
                 })
                 .await?
@@ -1640,7 +1642,7 @@ impl RequestHandler for MethodUserGetExpertProfile {
                 })
                 .await?;
             Ok(UserGetExpertProfileResponse {
-                expert_id: ret.expert_id,
+                expert_id: ret.user_public_id,
                 name: ret.username,
                 family_name: ret.family_name.unwrap_or_default(),
                 given_name: ret.given_name.unwrap_or_default(),

@@ -1537,19 +1537,23 @@ impl DatabaseRequest for FunUserListStrategyPoolContractAssetLedgerReq {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserFollowExpertReq {
     pub user_id: i64,
-    pub expert_id: i64,
+    #[serde(default)]
+    pub expert_id: Option<i64>,
+    #[serde(default)]
+    pub expert_public_id: Option<i64>,
 }
 
 #[allow(unused_variables)]
 impl DatabaseRequest for FunUserFollowExpertReq {
     type ResponseRow = FunUserFollowExpertRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_follow_expert(a_user_id => $1::bigint, a_expert_id => $2::bigint);"
+        "SELECT * FROM api.fun_user_follow_expert(a_user_id => $1::bigint, a_expert_id => $2::bigint, a_expert_public_id => $3::bigint);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
             &self.user_id as &(dyn ToSql + Sync),
             &self.expert_id as &(dyn ToSql + Sync),
+            &self.expert_public_id as &(dyn ToSql + Sync),
         ]
     }
 }
@@ -1646,7 +1650,10 @@ impl DatabaseRequest for FunUserListExpertsReq {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserGetExpertProfileReq {
-    pub expert_id: i64,
+    #[serde(default)]
+    pub expert_id: Option<i64>,
+    #[serde(default)]
+    pub expert_public_id: Option<i64>,
     pub user_id: i64,
 }
 
@@ -1654,11 +1661,12 @@ pub struct FunUserGetExpertProfileReq {
 impl DatabaseRequest for FunUserGetExpertProfileReq {
     type ResponseRow = FunUserExpertRowType;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_get_expert_profile(a_expert_id => $1::bigint, a_user_id => $2::bigint);"
+        "SELECT * FROM api.fun_user_get_expert_profile(a_expert_id => $1::bigint, a_expert_public_id => $2::bigint, a_user_id => $3::bigint);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
             &self.expert_id as &(dyn ToSql + Sync),
+            &self.expert_public_id as &(dyn ToSql + Sync),
             &self.user_id as &(dyn ToSql + Sync),
         ]
     }

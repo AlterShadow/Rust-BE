@@ -27,7 +27,7 @@ fn convert_strategy_db_to_api(x: FunUserStrategyRowType) -> ListStrategiesRow {
         approved_at: x.approved_at,
         requested_at: x.requested_at,
         created_at: x.created_at,
-        expert_public_id: x.creator_public_id,
+        expert_id: x.creator_public_id,
         expert_username: x.creator_username,
         expert_family_name: x.creator_family_name.unwrap_or_default(),
         expert_given_name: x.creator_given_name.unwrap_or_default(),
@@ -79,8 +79,7 @@ pub async fn convert_strategy_db_to_api_net_value(
 }
 pub fn convert_expert_db_to_api(x: FunUserExpertRowType) -> ListExpertsRow {
     ListExpertsRow {
-        expert_id: x.expert_id,
-        user_public_id: x.user_public_id,
+        expert_id: x.user_public_id,
         name: x.username,
         family_name: x.family_name,
         given_name: x.given_name,
