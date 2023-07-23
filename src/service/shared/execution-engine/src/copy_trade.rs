@@ -319,7 +319,11 @@ pub async fn get_token_prices(
         symbols.push(tk.symbol);
     }
     let prices = cmc.get_usd_prices_by_symbol(&symbols).await?;
-    Ok(prices)
+    Ok(symbols
+        .iter()
+        .flat_map(|t| prices.get(t))
+        .copied()
+        .collect())
 }
 
 pub async fn execute_copy_trade(

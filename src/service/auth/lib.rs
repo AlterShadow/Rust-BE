@@ -1,5 +1,4 @@
 use crate::endpoints::{endpoint_auth_authorize, endpoint_auth_login, endpoint_auth_signup};
-use chrono::Utc;
 use eth_sdk::utils::get_signed_text;
 use eyre::*;
 use gen::model::{

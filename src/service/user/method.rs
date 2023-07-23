@@ -486,16 +486,19 @@ impl RequestHandler for MethodUserGetStrategiesStatistics {
                 })
                 .await?;
             let token_prices = list_strategy_pool_contract_asset_balances
-                .clone()
-                .map(|x| x.token_symbol);
+                .iter()
+                .map(|x| x.token_symbol.clone())
+                .collect::<Vec<_>>();
             let prices = cmc
                 .get_usd_prices_by_symbol(&token_prices)
                 .await
                 .context("failed to get price")?;
             let backing_amount_usd: f64 = list_strategy_pool_contract_asset_balances
                 .into_iter()
-                .zip(prices.into_iter())
-                .map(|(x, price)| x.balance.0.div_as_f64(U256::exp10(18)).unwrap() * price)
+                .map(|x| {
+                    let price = prices.get(&x.token_symbol).copied().unwrap_or_default();
+                    x.balance.0.div_as_f64(U256::exp10(18)).unwrap() * price
+                })
                 .sum();
             Ok(UserGetStrategiesStatisticsResponse {
                 tracking_amount_usd: 0.0,
@@ -3316,7 +3319,7 @@ impl RequestHandler for MethodUserListStrategyTokenBalance {
 async fn calculate_strategy_pool_asset_balances(
     db: &DbClient,
     cmc: &CoinMarketCap,
-    user_id: i64,
+    _user_id: i64,
     strategy_id: i64,
 ) -> Result<Vec<StrategyPoolAssetBalancesRow>> {
     let balances = db
@@ -3328,28 +3331,41 @@ async fn calculate_strategy_pool_asset_balances(
         })
         .await?;
     let token_symbols: Vec<_> = balances.iter().map(|x| x.token_symbol.clone()).collect();
-    let prices = cmc
+    // preload cache
+    let _prices = cmc
         .get_usd_prices_by_symbol(&token_symbols)
+        .await
+        .context("failed to get price")?;
+    let _prices_7d = cmc
+        .get_usd_price_days_ago(&token_symbols, 7, true)
+        .await
+        .context("failed to get price")?;
+    let _prices_30d = cmc
+        .get_usd_price_days_ago(&token_symbols, 30, true)
         .await
         .context("failed to get price")?;
     balances
         .map_async(|x| {
             let cmc = &cmc;
-            let token_symbols = &token_symbols;
-            let prices = &prices;
             async move {
-                let price_usd = token_symbols
-                    .iter()
-                    .zip(prices.iter())
-                    .find(|(k, _v)| k.as_str() == x.token_symbol.as_str())
-                    .map(|y| *y.1)
+                let price_usd = cmc
+                    .get_usd_prices_by_symbol(&[x.token_symbol.clone()])
+                    .await?
+                    .get(&x.token_symbol)
+                    .cloned()
                     .unwrap_or_default();
                 let price_usd_7d = cmc
-                    .get_usd_price_days_ago(x.token_symbol.clone(), 7)
-                    .await?;
+                    .get_usd_price_days_ago(&[x.token_symbol.clone()], 7, true)
+                    .await?
+                    .get(&x.token_symbol)
+                    .cloned()
+                    .unwrap_or_default();
                 let price_usd_30d = cmc
-                    .get_usd_price_days_ago(x.token_symbol.clone(), 30)
-                    .await?;
+                    .get_usd_price_days_ago(&[x.token_symbol.clone()], 30, true)
+                    .await?
+                    .get(&x.token_symbol)
+                    .cloned()
+                    .unwrap_or_default();
                 Ok(StrategyPoolAssetBalancesRow {
                     name: x.token_name,
                     symbol: x.token_symbol,
@@ -3427,9 +3443,9 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
                             format!("No escrow token found for {:?} {:?}", out_token, blockchain)
                         })?;
                     let price = *cmc
-                        .get_usd_prices_by_symbol(&vec![tk.symbol])
+                        .get_usd_prices_by_symbol(&[tk.symbol.clone()])
                         .await?
-                        .first()
+                        .get(&tk.symbol)
                         .with_context(|| {
                             format!("No price found for {:?} {:?}", token_address, blockchain)
                         })?;
@@ -3491,9 +3507,13 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
                     .with_context(|| {
                         CustomError::new(EnumErrorCode::NotFound, "Token not found")
                     })?;
-                let price = cmc
+                let price = *cmc
                     .get_usd_prices_by_symbol(&[token.symbol.clone()])
-                    .await?[0];
+                    .await?
+                    .get(&token.symbol)
+                    .with_context(|| {
+                        format!("No price found for {:?} {:?}", token_address, blockchain)
+                    })?;
                 ratios.push(EstimatedBackedTokenRatios {
                     token_id: token.token_id,
                     token_name: token.short_name,

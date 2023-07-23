@@ -217,7 +217,7 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
     logger: DynLogger,
     dry_run: bool,
     user_id: i64,
-    escrow_contract_address: Address,
+    _escrow_contract_address: Address,
     get_token_out: impl Fn(Address, U256) -> Fut,
     cmc: &CoinMarketCap,
 ) -> Result<CalculateUserBackStrategyCalculateAmountToMintResult> {
@@ -443,7 +443,12 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
                                     token_id
                                 )
                             })?;
-                        let cmc_price = cmc.get_usd_prices_by_symbol(&[token.symbol]).await?[0];
+                        let cmc_price = cmc
+                            .get_usd_prices_by_symbol(&[token.symbol.clone()])
+                            .await?
+                            .get(&token.symbol)
+                            .context("could not get cmc price for token")?
+                            .clone();
                         strategy_pool_asset_last_prices_in_base_token.insert(
                             strategy_pool_asset.clone(),
                             U256::exp10(token.decimals as _).mul_f64(cmc_price)?,
@@ -841,10 +846,10 @@ pub async fn user_back_strategy(
     };
 
     let CalculateUserBackStrategyCalculateAmountToMintResult {
-        back_amount_minus_fees,
+        // back_amount_minus_fees,
         /* TODO: fees are now in the pending wallet, we should add it to the database */
         /* TODO: add table to register treasury fees and strategy fees */
-        fees,
+        // fees,
         // we discard this value because it's not really exactly the value
         strategy_token_to_mint,
         strategy_pool_assets_bought_for_this_backer,

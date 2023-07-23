@@ -11,6 +11,7 @@ use std::collections::HashMap;
 use std::num::NonZeroUsize;
 use std::str::FromStr;
 use std::sync::Arc;
+use std::time::Instant;
 use tokio::sync::Mutex;
 use tracing::*;
 use web3::types::Address;
@@ -179,16 +180,16 @@ impl CoinMarketCap {
         Ok(tokens)
     }
 
-    pub async fn get_usd_prices_by_symbol(&self, symbols: &[String]) -> Result<Vec<f64>> {
+    pub async fn get_usd_prices_by_symbol_with_options(
+        &self,
+        symbols: &[String],
+        tolerate_errors: bool,
+    ) -> Result<HashMap<String, f64>> {
+        let begin = Instant::now();
+
         let date = Utc::now().date_naive();
-        let mut result_index = HashMap::new();
-        for (index, symbol) in symbols.iter().enumerate() {
-            result_index.insert(symbol, index);
-        }
-        let mut token_prices: Vec<f64> = Vec::new();
-        token_prices.resize(symbols.len(), 0.0);
-        let mut new_symbols = Vec::new();
-        let mut new_symbols_index = Vec::new();
+        let mut token_prices: HashMap<String, f64> = HashMap::with_capacity(symbols.len());
+
         for symbol in symbols {
             if let Some(price) = self
                 .price_cache
@@ -196,31 +197,46 @@ impl CoinMarketCap {
                 .await
                 .get(&(date, symbol.to_string()))
             {
-                token_prices[result_index[symbol]] = *price;
-            } else {
-                new_symbols.push(symbol.clone());
-                new_symbols_index.push(result_index[symbol]);
+                token_prices.insert(symbol.clone(), *price);
             }
         }
+        let new_symbols = symbols
+            .iter()
+            .filter(|symbol| !token_prices.contains_key(*symbol))
+            .cloned()
+            .collect::<Vec<_>>();
+
         if !new_symbols.is_empty() {
             let mut url = self.price_url();
             self.append_url_params(&mut url, "symbol", &new_symbols);
             let payload: Value = self.send_and_parse_response(&url).await?;
-            for (symbol, i) in new_symbols.into_iter().zip(new_symbols_index.into_iter()) {
+            for symbol in new_symbols.into_iter() {
                 let token = &payload[&symbol][0];
-                // if token["is_active"].as_u64().context("status not found")? != 1 {
-                //     bail!("token status not found")
-                // }
-                token_prices[i] = token["quote"]["USD"]["price"]
-                    .as_f64()
-                    .context("price not found")?;
-                self.price_cache
-                    .lock()
-                    .await
-                    .put((date, symbol), token_prices[i]);
+                if !tolerate_errors && token["is_active"].as_u64().context("status not found")? != 1
+                {
+                    bail!("token status not found for {}", symbol)
+                }
+                if let Some(price) = token["quote"]["USD"]["price"].as_f64() {
+                    token_prices.insert(symbol.clone(), price);
+                    self.price_cache.lock().await.put((date, symbol), price);
+                } else if tolerate_errors {
+                    token_prices.insert(symbol.clone(), 0.0);
+                    self.price_cache.lock().await.put((date, symbol), 0.0);
+                } else {
+                    bail!("price not found for {}", symbol)
+                }
             }
         }
+        let duration = Instant::now() - begin;
+        trace!("get_usd_prices_by_symbol duration: {:?}", duration);
         Ok(token_prices)
+    }
+    pub async fn get_usd_prices_by_symbol(
+        &self,
+        symbols: &[String],
+    ) -> Result<HashMap<String, f64>> {
+        self.get_usd_prices_by_symbol_with_options(symbols, false)
+            .await
     }
     /**
         Quotes Historical v2
@@ -316,31 +332,68 @@ impl CoinMarketCap {
 
 
         */
-    pub async fn get_usd_price_days_ago(&self, symbol: String, days: u32) -> Result<f64> {
+    pub async fn get_usd_price_days_ago(
+        &self,
+        symbols: &[String],
+        days: u32,
+        tolerate_errors: bool,
+    ) -> Result<HashMap<String, f64>> {
+        let begin = Instant::now();
         let date = Utc::now().date_naive() - Duration::days(days as i64);
-        if let Some(price) = self.price_cache.lock().await.get(&(date, symbol.clone())) {
-            return Ok(*price);
-        }
-        let mut url = self.quotes_historical_url();
-        let today = Utc::now();
-        let ago = today - Duration::days(days as i64);
+        let mut token_prices: HashMap<String, f64> = HashMap::with_capacity(symbols.len());
 
-        self.append_url_params(&mut url, "symbol", &[symbol.clone()]);
-        self.append_url_params(&mut url, "time_start", &[ago.to_rfc3339()]);
-        self.append_url_params(&mut url, "interval", &["daily".to_string()]);
-        self.append_url_params(&mut url, "count", &["1".to_string()]);
-        let payload: Value = self.send_and_parse_response(&url).await?;
-        let base = &payload[&symbol][0];
-        let quote = &base["quotes"][0]["quote"]["USD"];
-        let price = quote["price"].as_f64().context("price not found")?;
-        self.price_cache.lock().await.put((date, symbol), price);
-        Ok(price)
+        for symbol in symbols {
+            if let Some(price) = self
+                .price_cache
+                .lock()
+                .await
+                .get(&(date, symbol.to_string()))
+            {
+                token_prices.insert(symbol.clone(), *price);
+            }
+        }
+        let new_symbols = symbols
+            .iter()
+            .filter(|symbol| !token_prices.contains_key(*symbol))
+            .cloned()
+            .collect::<Vec<_>>();
+
+        if !new_symbols.is_empty() {
+            let mut url = self.quotes_historical_url();
+            let today = Utc::now();
+            let ago = today - Duration::days(days as i64);
+
+            self.append_url_params(&mut url, "symbol", symbols);
+            self.append_url_params(&mut url, "time_start", &[ago.to_rfc3339()]);
+            self.append_url_params(&mut url, "interval", &["daily".to_string()]);
+            self.append_url_params(&mut url, "count", &["1".to_string()]);
+
+            let payload: Value = self.send_and_parse_response(&url).await?;
+            for symbol in new_symbols.into_iter() {
+                let base = &payload[&symbol][0];
+                let quote = &base["quotes"][0]["quote"]["USD"];
+                let price = quote["price"].as_f64();
+                if let Some(price) = price {
+                    token_prices.insert(symbol.clone(), price);
+                    self.price_cache.lock().await.put((date, symbol), price);
+                } else if tolerate_errors {
+                    token_prices.insert(symbol.clone(), 0.0);
+                    self.price_cache.lock().await.put((date, symbol), 0.0);
+                } else {
+                    bail!("price not found for {}", symbol)
+                }
+            }
+        }
+        let duration = Instant::now() - begin;
+        trace!("get_usd_price_days_ago duration: {:?}", duration);
+        Ok(token_prices)
     }
     pub async fn get_quote_price_by_symbol(
         &self,
         base_symbol: String,
         quote_symbol: String,
     ) -> Result<f64> {
+        let begin = Instant::now();
         let mut url = self.price_url();
         self.append_url_params(&mut url, "symbol", &[base_symbol.clone()]);
         self.append_url_params(&mut url, "convert", &[quote_symbol.clone()]);
@@ -348,6 +401,8 @@ impl CoinMarketCap {
         let base = &payload[base_symbol][0];
         let quote = &base["quote"][quote_symbol];
         let price = quote["price"].as_f64().context("price not found")?;
+        let duration = Instant::now() - begin;
+        trace!("get_quote_price_by_symbol duration: {:?}", duration);
         Ok(price)
     }
 
@@ -411,14 +466,17 @@ impl CoinMarketCap {
     }
 }
 pub async fn prefetch_prices(cmc_client: Arc<CoinMarketCap>, token_names: Vec<String>) {
-    if let Err(e) = async {
-        cmc_client.get_usd_prices_by_symbol(&token_names).await?;
-        for token_name in &token_names {
-            for i in 1..=30 {
-                cmc_client
-                    .get_usd_price_days_ago(token_name.clone(), i)
-                    .await?;
+    if let Err::<(), Error>(e) = async {
+        for chunk in token_names.chunks_exact(30) {
+            cmc_client
+                .get_usd_prices_by_symbol_with_options(chunk, true)
+                .await?;
+        }
+        for i in [7, 30] {
+            for chunk in token_names.chunks_exact(30) {
+                cmc_client.get_usd_price_days_ago(chunk, i, true).await?;
             }
+            tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
         }
         // wait until 00:00 UTC
         let now = Utc::now().timestamp();
@@ -426,10 +484,13 @@ pub async fn prefetch_prices(cmc_client: Arc<CoinMarketCap>, token_names: Vec<St
         tokio::time::sleep(tokio::time::Duration::from_secs(next_day as _)).await;
         // load prices every day
         loop {
-            cmc_client.get_usd_prices_by_symbol(&token_names).await?;
+            for chunk in token_names.chunks_exact(30) {
+                cmc_client
+                    .get_usd_prices_by_symbol_with_options(chunk, true)
+                    .await?;
+            }
             tokio::time::sleep(tokio::time::Duration::from_secs(60 * 60 * 24)).await;
         }
-        Ok::<_, Error>(())
     }
     .await
     {
@@ -441,6 +502,7 @@ pub async fn prefetch_prices(cmc_client: Arc<CoinMarketCap>, token_names: Vec<St
 mod tests {
     use super::*;
     use lib::log::{setup_logs, LogLevel};
+    use std::{assert_eq, println, vec};
     use tracing::info;
 
     #[tokio::test]

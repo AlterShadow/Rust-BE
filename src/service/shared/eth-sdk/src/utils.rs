@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use std::time::Duration;
 use tracing::error;
 use web3::api::Eth;
-use web3::signing::{hash_message, keccak256, recover, Key, RecoveryError, Signature};
+use web3::signing::{hash_message, keccak256, Key, Signature};
 use web3::types::{Address, TransactionReceipt, H256, U256};
 use web3::Transport;
 
@@ -171,28 +171,6 @@ pub fn get_signed_text(txt: String, signer: impl Key) -> Result<(String, String)
     Ok((hex::encode(&txt), encode_signature(&signature)))
 }
 
-pub fn verify_message_address(
-    message: &[u8],
-    signature: &[u8],
-    expected_address: Address,
-) -> Result<bool, RecoveryError> {
-    if signature.len() != 65 {
-        return Err(RecoveryError::InvalidSignature);
-    }
-    if signature[64] as i32 != 27 && signature[64] as i32 != 28 {
-        // only supports 27/28 recovery id for ethereum
-        return Err(RecoveryError::InvalidSignature);
-    }
-    let message_hash = hash_message(message);
-    let recovery_id = signature[64] as i32 - 27;
-    // info!("Recovery id: {}", recovery_id);
-    let addr = recover(&message_hash.0, &signature[..64], recovery_id)?;
-    // info!(
-    //     "Expected address: {:?}, Recovered address: {:?}",
-    //     expected_address, addr
-    // );
-    Ok(addr == expected_address)
-}
 #[cfg(test)]
 mod tests {
     use crate::signer::Secp256k1SecretKey;

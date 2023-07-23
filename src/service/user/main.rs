@@ -8,7 +8,6 @@ use gen::model::EnumService;
 use itertools::Itertools;
 use lib::config::{load_config, WsServerConfig};
 use lib::database::{connect_to_database, DatabaseConfig};
-use lib::log;
 use lib::log::{setup_logs, LogLevel};
 use lib::ws::{EndpointAuthController, SubscribeManager, WebsocketServer};
 use lru::LruCache;
@@ -23,7 +22,6 @@ use std::fmt::Debug;
 use std::num::NonZeroUsize;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tracing::error;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Config {

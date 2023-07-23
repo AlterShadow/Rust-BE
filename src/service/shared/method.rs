@@ -70,7 +70,10 @@ pub async fn convert_strategy_db_to_api_net_value(
     info!("Tokens {:?}", tokens);
     let symbols = tokens.clone().map(|x| x.token_symbol);
     let prices = cmc.get_usd_prices_by_symbol(&symbols).await?;
-    for (token, price) in tokens.into_iter().zip(prices) {
+    for token in tokens.into_iter() {
+        let price = prices
+            .get(&token.token_symbol)
+            .ok_or_else(|| anyhow!("No price for {}", token.token_symbol))?;
         usd += price * token.balance.div_as_f64(U256::exp10(18))?;
     }
 

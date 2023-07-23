@@ -1,4 +1,3 @@
-use eth_sdk::utils::verify_message_address;
 use eth_sdk::EthereumRpcConnectionPool;
 use eyre::*;
 use futures::future::BoxFuture;
