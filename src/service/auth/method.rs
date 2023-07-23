@@ -23,31 +23,38 @@ use web3::types::Address;
 pub async fn ensure_signature_valid(
     signature_text: &str,
     signature: &[u8],
-    address: Address,
+    _address: Address,
 ) -> Result<()> {
-    if let Ok(message) = signature_text.parse::<Message>() {
-        let verification_opts = VerificationOpts {
-            domain: Some("mc2.pathscale.com".parse().unwrap()),
-            timestamp: Some(OffsetDateTime::now_utc()),
-            ..Default::default()
-        };
+    info!("verifying signature_text: {:?}", signature_text);
+    let message = signature_text.parse::<Message>().map_err(|err| {
+        CustomError::new(
+            EnumErrorCode::InvalidPassword,
+            format!("Invalid signature text: {}", err),
+        )
+    })?;
 
-        if let Err(e) = message.verify(&signature, &verification_opts).await {
-            bail!(CustomError::new(
-                EnumErrorCode::InvalidPassword,
-                format!("Signature is not valid: {}", e)
-            ));
-        }
-    } else {
-        // TODO: remove this branch
-        let verified = verify_message_address(signature_text.as_bytes(), &signature, address)?;
+    let verification_opts = VerificationOpts {
+        domain: Some("mc2.pathscale.com".parse().unwrap()),
+        timestamp: Some(OffsetDateTime::now_utc()),
+        ..Default::default()
+    };
 
-        ensure!(
-            verified,
-            CustomError::new(EnumErrorCode::InvalidPassword, "Signature is not valid")
-        );
+    if let Err(e) = message.verify(&signature, &verification_opts).await {
+        bail!(CustomError::new(
+            EnumErrorCode::InvalidPassword,
+            format!("Signature is not valid: {}", e)
+        ));
     }
+
     Ok(())
+}
+
+#[test]
+fn test_siwe_message() {
+    let msg = hex_decode(b"6d63322e706174687363616c652e636f6d2077616e747320796f7520746f207369676e20696e207769746820796f757220457468657265756d206163636f756e743a0a3078313131303133623738363245626331423937323634323061613045383732384465333130456536330a0a5468697320726571756573742077696c6c206e6f74207472696767657220616e79207472616e73616374696f6e206f7220696e63757220616e7920636f7374206f7220666565732e4974206973206f6e6c7920696e74656e64656420746f2061757468656e74696361746520796f752061726520746865206f776e6572206f6620746869732077616c6c65743a0a0a0a5552493a2068747470733a2f2f6d63322e706174687363616c652e636f6d2f0a56657273696f6e3a20310a436861696e2049443a20310a4e6f6e63653a203834303132313139310a4973737565642041743a20323032332d30372d32335430383a35323a32352e3632395a").unwrap();
+    let msg = String::from_utf8(msg).unwrap();
+    println!("{:?}", msg);
+    let _msg = msg.parse::<Message>().unwrap();
 }
 pub struct MethodAuthSignup {
     pub pool: EthereumRpcConnectionPool,

@@ -1,4 +1,5 @@
 use crate::endpoints::{endpoint_auth_authorize, endpoint_auth_login, endpoint_auth_signup};
+use chrono::Utc;
 use eth_sdk::utils::get_signed_text;
 use eyre::*;
 use gen::model::{
@@ -7,19 +8,40 @@ use gen::model::{
 };
 use lib::utils::encode_header;
 use lib::ws::WsClient;
+use siwe::Version;
+use time::OffsetDateTime;
 use tracing::info;
 use web3::signing::Key;
+use web3::types::Address;
 
 pub mod endpoints;
 pub mod method;
 
+fn get_signature_message(address: Address) -> String {
+    let sign_text = siwe::Message {
+        domain: "mc2.pathscale.com".parse().unwrap(),
+        address: address.into(),
+        statement: None,
+        uri: "https://mc2.pathscale.com".parse().unwrap(),
+        version: Version::V1,
+        chain_id: 1,
+        nonce: rand::random::<u64>().to_string(),
+        issued_at: OffsetDateTime::now_utc().into(),
+        expiration_time: None,
+        not_before: None,
+        request_id: None,
+        resources: vec![],
+    };
+    sign_text.to_string()
+}
 pub async fn signup(
     url: &str,
     username: impl Into<String>,
     signer: impl Key + Clone,
 ) -> Result<()> {
     let username = username.into();
-    let (txt, sig) = get_signed_text(format!("Signup {}", username), signer.clone())?;
+    let sign_text = get_signature_message(signer.address());
+    let (txt, sig) = get_signed_text(sign_text.to_string(), signer.clone())?;
 
     let mut client = get_ws_auth_client(
         url,
@@ -47,9 +69,9 @@ pub async fn login(
     username: impl Into<String>,
     signer: impl Key + Clone,
 ) -> Result<LoginResponse> {
-    let username = username.into();
-
-    let (txt, sig) = get_signed_text(format!("Login {}", username), signer.clone())?;
+    let _username = username.into();
+    let sign_text = get_signature_message(signer.address());
+    let (txt, sig) = get_signed_text(sign_text.to_string(), signer.clone())?;
     let mut client = get_ws_auth_client(
         url,
         &encode_header(
