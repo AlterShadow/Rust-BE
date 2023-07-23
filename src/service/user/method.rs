@@ -17,7 +17,9 @@ use eth_sdk::strategy_pool::StrategyPoolContract;
 use eth_sdk::strategy_pool_herald::parse_herald_redeem_event;
 use eth_sdk::strategy_wallet::StrategyWalletContract;
 
+use eth_sdk::utils::u256_to_decimal;
 use eth_sdk::*;
+use execution_engine::copy_trade::decimal_to_u256;
 use eyre::*;
 use futures::FutureExt;
 use gen::database::*;
@@ -27,7 +29,6 @@ use lib::database::DbClient;
 use lib::handler::{FutureResponse, RequestHandler};
 use lib::log::DynLogger;
 use lib::toolbox::*;
-use lib::types::amount_to_display;
 use lib::ws::SubscribeManager;
 use lib::{DEFAULT_LIMIT, DEFAULT_OFFSET};
 use lru::LruCache;
@@ -37,7 +38,7 @@ use tokio::sync::Mutex;
 use tokio::time::sleep;
 use tracing::*;
 use web3::signing::Key;
-use web3::types::{Address, H256, U256};
+use web3::types::{Address, H256};
 include!("../shared/method.rs");
 
 pub struct MethodUserFollowStrategy;
@@ -493,20 +494,20 @@ impl RequestHandler for MethodUserGetStrategiesStatistics {
                 .get_usd_prices_by_symbol(&token_prices)
                 .await
                 .context("failed to get price")?;
-            let backing_amount_usd: f64 = list_strategy_pool_contract_asset_balances
+            let backing_amount_usd: Decimal = list_strategy_pool_contract_asset_balances
                 .into_iter()
                 .map(|x| {
                     let price = prices.get(&x.token_symbol).copied().unwrap_or_default();
-                    x.balance.0.div_as_f64(U256::exp10(18)).unwrap() * price
+                    x.balance * Decimal::from_f64(price).unwrap()
                 })
                 .sum();
             Ok(UserGetStrategiesStatisticsResponse {
                 tracking_amount_usd: 0.0,
-                backing_amount_usd,
+                backing_amount_usd: backing_amount_usd.to_f64().unwrap(),
                 difference_amount_usd: 0.0,
                 aum_value_usd: strategies.iter().map(|x| x.aum).sum(),
-                current_value_usd: backing_amount_usd,
-                withdrawable_value_usd: backing_amount_usd,
+                current_value_usd: backing_amount_usd.to_f64().unwrap(),
+                withdrawable_value_usd: backing_amount_usd.to_f64().unwrap(),
                 strategy_pool_tokens: vec![],
                 aum_list_history: vec![], // TODO: get history
             })
@@ -784,7 +785,7 @@ pub async fn user_exit_strategy(
     db: &DbClient,
     blockchain: EnumBlockChain,
     strategy_id: i64,
-    maybe_strategy_tokens_to_redeem: Option<U256>,
+    maybe_strategy_tokens_to_redeem: Option<Decimal>,
     master_key: impl Key + Clone,
 ) -> Result<H256> {
     /* instantiate strategy wallet */
@@ -856,7 +857,8 @@ pub async fn user_exit_strategy(
 
     /* redeem */
     let mut assets_to_transfer: Vec<Address> = Vec::new();
-    let mut amounts_to_transfer: Vec<U256> = Vec::new();
+    let mut decimals_to_transfer: Vec<u32> = Vec::new();
+    let mut amounts_to_transfer: Vec<Decimal> = Vec::new();
     let redeem_tx_hash: H256;
     match maybe_strategy_tokens_to_redeem {
         Some(strategy_tokens_to_redeem) => {
@@ -864,28 +866,29 @@ pub async fn user_exit_strategy(
             if user_strategy_balance < strategy_tokens_to_redeem.into() {
                 bail!(
                     "not enough strategy tokens {} < {}",
-                    amount_to_display(*user_strategy_balance),
-                    amount_to_display(strategy_tokens_to_redeem)
+                    user_strategy_balance,
+                    strategy_tokens_to_redeem
                 );
             }
 
             /* get assets and amounts to withdraw */
             for asset_balance_owned_by_strategy_wallet in asset_balances_owned_by_strategy_wallet {
-                if asset_balance_owned_by_strategy_wallet.balance == U256::zero().into() {
+                if asset_balance_owned_by_strategy_wallet.balance == Decimal::zero().into() {
                     continue;
                 }
 
                 assets_to_transfer
                     .push(asset_balance_owned_by_strategy_wallet.token_address.into());
-                let amount_owned: U256 = asset_balance_owned_by_strategy_wallet.balance.into();
-                amounts_to_transfer.push(
-                    amount_owned
-                        .mul_div(strategy_tokens_to_redeem, user_strategy_balance.into())?,
-                );
+                decimals_to_transfer
+                    .push(asset_balance_owned_by_strategy_wallet.token_decimals as _);
+                let amount_owned = asset_balance_owned_by_strategy_wallet.balance;
+                amounts_to_transfer
+                    .push(amount_owned * strategy_tokens_to_redeem / user_strategy_balance);
             }
 
             /* if strategy is currently trading, redeem is not possible */
             let redeem_from_strategy_transaction = || {
+                let strategy_tokens_to_redeem = decimal_to_u256(strategy_tokens_to_redeem, 18);
                 strategy_wallet_contract.redeem_from_strategy(
                     &conn,
                     master_key.clone(),
@@ -907,7 +910,7 @@ pub async fn user_exit_strategy(
         None => {
             /* get assets and amounts to withdraw */
             for asset_balance_owned_by_strategy_wallet in asset_balances_owned_by_strategy_wallet {
-                if asset_balance_owned_by_strategy_wallet.balance == U256::zero().into() {
+                if asset_balance_owned_by_strategy_wallet.balance == Decimal::zero().into() {
                     continue;
                 }
 
@@ -958,6 +961,10 @@ pub async fn user_exit_strategy(
 
     // TODO: cache this and withdraw later if strategy pool started trading between redeem and withdraw
     let withdraw_transaction = || {
+        let amounts_to_transfer = amounts_to_transfer
+            .iter()
+            .map(|x| decimal_to_u256(*x, 18))
+            .collect::<Vec<_>>();
         strategy_pool_contract.withdraw(
             &conn,
             master_key.clone(),
@@ -983,7 +990,7 @@ pub async fn user_exit_strategy(
         /* update per-user strategy pool asset balance & ledger */
         let asset = assets_to_transfer[idx];
         let amount = amounts_to_transfer[idx];
-        let asset_old_balance: U256 = db
+        let asset_old_balance = db
             .execute(FunUserListUserStrategyPoolContractAssetBalancesReq {
                 strategy_pool_contract_id: Some(strategy_pool_contract_row.pkey_id),
                 user_id: Some(ctx.user_id),
@@ -994,8 +1001,7 @@ pub async fn user_exit_strategy(
             .await?
             .into_result()
             .context("user strategy pool asset balance not found")?
-            .balance
-            .into();
+            .balance;
 
         db.execute(FunUserUpsertUserStrategyPoolContractAssetBalanceReq {
             strategy_pool_contract_id: strategy_pool_contract_row.pkey_id,
@@ -1003,10 +1009,7 @@ pub async fn user_exit_strategy(
             token_address: asset.into(),
             blockchain,
             old_balance: asset_old_balance.into(),
-            new_balance: match asset_old_balance.try_checked_sub(amount) {
-                Ok(new_balance) => new_balance.into(),
-                Err(_) => U256::zero().into(),
-            },
+            new_balance: asset_old_balance - amount,
         })
         .await?;
 
@@ -1036,11 +1039,7 @@ pub async fn user_exit_strategy(
             strategy_pool_contract_id: strategy_pool_contract_row.pkey_id,
             token_address: asset.into(),
             blockchain,
-            new_balance: old_asset_balance_row
-                .balance
-                .try_checked_sub(amount)
-                .context("redeemed amount is greater than known balance of strategy pool asset")?
-                .into(),
+            new_balance: old_asset_balance_row.balance - amount,
         })
         .await?;
 
@@ -1060,15 +1059,15 @@ pub async fn user_exit_strategy(
         user_id: ctx.user_id,
         strategy_id,
         // TODO: calculate value of sp tokens exit in usdc
-        quantity: U256::zero().into(),
+        quantity: Decimal::zero(),
         blockchain,
         transaction_hash: redeem_tx_hash.into(),
-        redeem_sp_tokens: redeem_info.amount.into(),
+        redeem_sp_tokens: u256_to_decimal(redeem_info.amount, 18),
     })
     .await?;
 
     /* update user strategy token balance */
-    let user_strategy_balance: U256 = db
+    let user_strategy_balance = db
         .execute(FunWatcherListUserStrategyBalanceReq {
             limit: 1,
             offset: 0,
@@ -1078,14 +1077,13 @@ pub async fn user_exit_strategy(
         })
         .await?
         .first(|x| x.balance)
-        .context("could not get user strategy token balance from database on exit strategy")?
-        .into();
+        .context("could not get user strategy token balance from database on exit strategy")?;
     db.execute(FunWatcherUpsertUserStrategyBalanceReq {
         user_id: ctx.user_id,
         strategy_id,
         blockchain,
         old_balance: user_strategy_balance.into(),
-        new_balance: (user_strategy_balance.try_checked_sub(redeem_info.amount)?).into(),
+        new_balance: user_strategy_balance - u256_to_decimal(redeem_info.amount, 18),
     })
     .await?;
 
@@ -1217,14 +1215,14 @@ pub async fn on_user_request_refund(
     chain: EnumBlockChain,
     stablecoin_addresses: &BlockchainCoinAddresses,
     escrow_contract: EscrowContract<EitherTransport>,
-    quantity: U256,
+    quantity: Decimal,
     wallet_address: Address,
     escrow_signer: impl Key + Clone,
     token: EnumBlockchainCoin,
     logger: DynLogger,
 ) -> Result<H256> {
     info!(
-        "on_user_request_refund {:?} from {:?} transfer {:?} {:?} to {:?}",
+        "on_user_request_refund {:?} from {:?} transfer {} {:?} to {:?}",
         chain,
         escrow_contract.address(),
         quantity,
@@ -1264,7 +1262,7 @@ pub async fn on_user_request_refund(
         .into_result()
         .context("could not get deposit withdraw balance from database")?;
 
-    let old_balance: U256 = deposit_withdraw_balance_row.balance.into();
+    let old_balance = deposit_withdraw_balance_row.balance;
     if old_balance < quantity {
         bail!("unsufficient balance for refund");
     }
@@ -1283,13 +1281,13 @@ pub async fn on_user_request_refund(
         .context("couldn't find deposits in ledger made by this wallet")?;
 
     /* check this wallet has enough registered deposits for the refund */
-    let positive_deposit_balance_of_wallet: U256 =
-        positive_deposit_balance_of_wallet_row.balance.into();
+    let positive_deposit_balance_of_wallet = positive_deposit_balance_of_wallet_row.balance;
     if positive_deposit_balance_of_wallet < quantity {
         bail!("not enough balance for back amount deposited by this wallet")
     }
 
     let refund_transaction = || {
+        let quantity = decimal_to_u256(quantity, 18);
         escrow_contract.refund_asset(
             &_conn,
             escrow_signer.clone(),
@@ -1351,14 +1349,11 @@ pub async fn on_user_request_refund(
         .into_result()
         .context("could not get deposit withdraw balance from database")?;
 
-    let old_balance: U256 = deposit_withdraw_balance_row.balance.into();
+    let old_balance = deposit_withdraw_balance_row.balance;
     db.execute(FunUserUpdateUserDepositWithdrawBalanceReq {
         deposit_withdraw_balance_id: deposit_withdraw_balance_row.deposit_withdraw_balance_id,
         old_balance: deposit_withdraw_balance_row.balance,
-        new_balance: old_balance
-            .try_checked_sub(quantity)
-            .unwrap_or(U256::zero())
-            .into(),
+        new_balance: old_balance - quantity,
     })
     .await?;
 
@@ -2062,7 +2057,7 @@ impl RequestHandler for MethodExpertCreateStrategy {
                     token_id: busd.token_id,
                     quantity: req
                         .strategy_token_relative_to_usdc_ratio
-                        .unwrap_or(U256::exp10(18))
+                        .unwrap_or(Decimal::from(1))
                         .into(),
                 });
             }
@@ -2076,8 +2071,7 @@ impl RequestHandler for MethodExpertCreateStrategy {
                     token_id: usdc.token_id,
                     quantity: req
                         .strategy_token_relative_to_usdc_ratio
-                        .unwrap_or(U256::exp10(18))
-                        .into(),
+                        .unwrap_or(Decimal::from(1)),
                 });
             }
 
@@ -2279,7 +2273,7 @@ pub async fn fetch_and_update_wallet_balances(
             blockchain: chain,
             token_id,
             old_balance: wallet_old_balance,
-            new_balance: wallet_balance.into(),
+            new_balance: u256_to_decimal(wallet_balance, known_token_contract.decimals as _),
         })
         .await?;
     }
@@ -2704,34 +2698,7 @@ impl RequestHandler for MethodUserSubscribeDepositLedger {
                     }
                 });
             }
-            if req.mock_data.unwrap_or_default() {
-                tokio::spawn(async move {
-                    for i in 0..10 {
-                        sleep(Duration::from_secs(3)).await;
-                        let amount = U256::from(i);
-                        let key = Secp256k1SecretKey::new_random();
-                        info!("Sending mock data to FE, {}..", i);
-                        manager.publish_with_filter(
-                            &toolbox,
-                            AdminSubscribeTopic::AdminNotifyEscrowLedgerChange,
-                            &UserListDepositLedgerRow {
-                                transaction_id: 0,
-                                quantity: amount.into(),
-                                blockchain: req
-                                    .blockchain
-                                    .unwrap_or(EnumBlockChain::EthereumMainnet),
-                                user_address: key.address.clone().into(),
-                                contract_address: key.address.clone().into(),
-                                transaction_hash: H256::random().into(),
-                                receiver_address: key.address.clone().into(),
-                                happened_at: Utc::now().timestamp(),
-                                is_deposit: false,
-                            },
-                            |x| x.connection_id == ctx.connection_id,
-                        )
-                    }
-                });
-            }
+
             Ok(UserSubscribeDepositLedgerResponse {})
         }
         .boxed()
@@ -3423,7 +3390,7 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
             let escrow_contract_address = escrow_contract.get(&pool, token.blockchain).await?;
             let blockchain = token.blockchain;
             let token_address = token.address.0;
-            let get_token_out = |out_token: Address, amount: U256| {
+            let get_token_out = |out_token: Address, amount: Decimal, _| {
                 let db = db.clone();
                 let cmc = cmc.clone();
                 async move {
@@ -3449,7 +3416,7 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
                         .with_context(|| {
                             format!("No price found for {:?} {:?}", token_address, blockchain)
                         })?;
-                    amount.mul_f64(price)
+                    Ok(amount * Decimal::from_f64(price).unwrap())
                 }
             };
             let CalculateUserBackStrategyCalculateAmountToMintResult {
@@ -3481,16 +3448,16 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
                 let before_amount = sp_assets_and_amounts
                     .get(address)
                     .cloned()
-                    .unwrap_or(U256::zero());
+                    .unwrap_or(Decimal::zero());
                 let add_amount = strategy_pool_assets_bought_for_this_backer
                     .get(address)
                     .cloned()
-                    .unwrap_or(U256::zero());
+                    .unwrap_or(Decimal::zero());
                 let after_amount = before_amount + add_amount;
                 let ratio = if after_amount.is_zero() {
-                    0.0
+                    Decimal::from_f64(0.0).unwrap()
                 } else {
-                    add_amount.div_as_f64(after_amount)?
+                    add_amount / after_amount
                 };
                 let token = db
                     .execute(FunUserListEscrowTokenContractAddressReq {
@@ -3518,8 +3485,8 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
                     token_id: token.token_id,
                     token_name: token.short_name,
                     back_amount: add_amount.into(),
-                    back_value_in_usd: add_amount.mul_f64(price)?,
-                    back_value_ratio: ratio,
+                    back_value_in_usd: add_amount * Decimal::from_f64(price).unwrap(),
+                    back_value_ratio: ratio.to_f64().unwrap(),
                 });
             }
             let wallets = db

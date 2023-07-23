@@ -2,10 +2,9 @@ use crate::method::{
     convert_expert_db_to_api, convert_strategy_db_to_api_net_value, ensure_user_role,
 };
 use api::cmc::CoinMarketCap;
-use chrono::Utc;
 use eth_sdk::erc20::Erc20Token;
 use eth_sdk::logger::get_blockchain_logger;
-use eth_sdk::signer::Secp256k1SecretKey;
+use eth_sdk::utils::u256_to_decimal;
 use eth_sdk::EthereumRpcConnectionPool;
 use eyre::ContextCompat;
 use eyre::*;
@@ -20,8 +19,6 @@ use lib::{DEFAULT_LIMIT, DEFAULT_OFFSET};
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::time::sleep;
-use tracing::info;
-use web3::types::{H256, U256};
 
 pub struct MethodAdminListUsers;
 impl RequestHandler for MethodAdminListUsers {
@@ -554,7 +551,7 @@ pub async fn fetch_and_update_strategy_watched_wallet_asset_balances(
                 blockchain: wallet_chain,
                 token_id,
                 old_balance: wallet_old_balance,
-                new_balance: wallet_balance.into(),
+                new_balance: u256_to_decimal(wallet_balance, known_token_contract.decimals as _),
             })
             .await?;
         }
@@ -714,31 +711,7 @@ impl RequestHandler for MethodAdminSubscribeDepositLedger {
                     }
                 });
             }
-            if req.mock_data.unwrap_or_default() {
-                tokio::spawn(async move {
-                    for i in 0..10 {
-                        sleep(Duration::from_secs(3)).await;
-                        let amount = U256::from(i);
-                        let key = Secp256k1SecretKey::new_random();
-                        info!("Sending mock data to FE, {}..", i);
-                        manager.publish_to_all(
-                            &toolbox,
-                            AdminSubscribeTopic::AdminNotifyEscrowLedgerChangeAll,
-                            &UserListDepositLedgerRow {
-                                transaction_id: 0,
-                                quantity: amount.into(),
-                                blockchain: EnumBlockChain::EthereumMainnet,
-                                user_address: key.address.clone().into(),
-                                contract_address: key.address.clone().into(),
-                                transaction_hash: H256::random().into(),
-                                is_deposit: false,
-                                receiver_address: key.address.clone().into(),
-                                happened_at: Utc::now().timestamp(),
-                            },
-                        )
-                    }
-                });
-            }
+
             Ok(AdminSubscribeDepositLedgerResponse {})
         }
         .boxed()

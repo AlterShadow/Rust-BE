@@ -47,6 +47,9 @@ api = { path = "../shared/api" }
 mc2fi_auth = { path = "../auth" }
 tracing-appender = "0.2"
 lru = "*"
+rust_decimal = "1.29.1"
+rust_decimal_macros = "1.29.1"
+
 [dependencies.uuid]
 version = "1.1.2"
 features = [

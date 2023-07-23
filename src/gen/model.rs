@@ -2,6 +2,7 @@ use lib::error_code::ErrorCode;
 use lib::types::*;
 use lib::ws::*;
 use num_derive::FromPrimitive;
+use rust_decimal::Decimal;
 use serde::*;
 use strum_macros::{Display, EnumString};
 use tokio_postgres::types::*;
@@ -942,8 +943,8 @@ pub struct AdminBackStrategyLedgerRow {
     pub back_ledger_id: i64,
     pub user_id: i64,
     pub strategy_id: i64,
-    #[serde(with = "WithBlockchainDecimal")]
-    pub quantity: U256,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub quantity: Decimal,
     pub blockchain: EnumBlockChain,
     #[serde(with = "WithBlockchainTransactionHash")]
     pub transaction_hash: H256,
@@ -955,8 +956,8 @@ pub struct AdminExitStrategyLedgerRow {
     pub back_ledger_id: i64,
     pub user_id: i64,
     pub strategy_id: i64,
-    #[serde(with = "WithBlockchainDecimal")]
-    pub quantity: U256,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub quantity: Decimal,
     pub blockchain: EnumBlockChain,
     #[serde(with = "WithBlockchainTransactionHash")]
     pub transaction_hash: H256,
@@ -1261,8 +1262,8 @@ pub struct BackLedgerPoint {
 pub struct BackStrategyLedgerRow {
     pub back_ledger_id: i64,
     pub strategy_id: i64,
-    #[serde(with = "WithBlockchainDecimal")]
-    pub quantity: U256,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub quantity: Decimal,
     pub blockchain: EnumBlockChain,
     #[serde(with = "WithBlockchainTransactionHash")]
     pub transaction_hash: H256,
@@ -1288,10 +1289,10 @@ pub struct ChangeLoginWalletResponse {}
 pub struct EstimatedBackedTokenRatios {
     pub token_id: i64,
     pub token_name: String,
-    #[serde(with = "WithBlockchainDecimal")]
-    pub back_amount: U256,
-    #[serde(with = "WithBlockchainDecimal")]
-    pub back_value_in_usd: U256,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub back_amount: Decimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub back_value_in_usd: Decimal,
     pub back_value_ratio: f64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1299,8 +1300,8 @@ pub struct EstimatedBackedTokenRatios {
 pub struct ExitStrategyLedgerRow {
     pub exit_ledger_id: i64,
     pub strategy_id: i64,
-    #[serde(with = "WithBlockchainDecimal")]
-    pub quantity: U256,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub quantity: Decimal,
     pub blockchain: EnumBlockChain,
     #[serde(with = "WithBlockchainTransactionHash")]
     pub transaction_hash: H256,
@@ -1311,8 +1312,8 @@ pub struct ExitStrategyLedgerRow {
 pub struct ExpertAddStrategyInitialTokenRatioRequest {
     pub strategy_id: i64,
     pub token_id: i64,
-    #[serde(with = "WithBlockchainDecimal")]
-    pub quantity: U256,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub quantity: Decimal,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1349,7 +1350,7 @@ pub struct ExpertCreateStrategyRequest {
     pub wallet_address: Address,
     pub wallet_blockchain: EnumBlockChain,
     #[serde(default)]
-    pub strategy_token_relative_to_usdc_ratio: Option<U256>,
+    pub strategy_token_relative_to_usdc_ratio: Option<Decimal>,
     pub initial_tokens: Vec<UserCreateStrategyInitialTokenRow>,
     #[serde(default)]
     pub audit_rules: Option<Vec<i64>>,
@@ -1635,8 +1636,8 @@ pub struct ListStrategyInitialTokenRatioRow {
     pub token_name: String,
     #[serde(with = "WithBlockchainAddress")]
     pub token_address: Address,
-    #[serde(with = "WithBlockchainDecimal")]
-    pub quantity: U256,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub quantity: Decimal,
     pub updated_at: i64,
     pub created_at: i64,
 }
@@ -1685,10 +1686,10 @@ pub struct ListWalletActivityLedgerRow {
     pub token_out_address: Address,
     #[serde(with = "WithBlockchainAddress")]
     pub caller_address: Address,
-    #[serde(with = "WithBlockchainDecimal")]
-    pub amount_in: U256,
-    #[serde(with = "WithBlockchainDecimal")]
-    pub amount_out: U256,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub amount_in: Decimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub amount_out: Decimal,
     pub swap_calls: serde_json::Value,
     pub paths: serde_json::Value,
     pub dex_versions: serde_json::Value,
@@ -1768,8 +1769,8 @@ pub struct StrategyPoolAssetBalancesRow {
     #[serde(with = "WithBlockchainAddress")]
     pub address: Address,
     pub blockchain: EnumBlockChain,
-    #[serde(with = "WithBlockchainDecimal")]
-    pub balance: U256,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub balance: Decimal,
     pub price_usd: f64,
     pub price_usd_7d: f64,
     pub price_usd_30d: f64,
@@ -1784,8 +1785,8 @@ pub struct StrategyPoolAssetLedgerRow {
     pub dex: String,
     #[serde(with = "WithBlockchainTransactionHash")]
     pub transaction_hash: H256,
-    #[serde(with = "WithBlockchainDecimal")]
-    pub quantity: U256,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub quantity: Decimal,
     pub is_add: bool,
     pub happened_at: i64,
 }
@@ -1828,8 +1829,8 @@ pub struct UserBackStrategyAttempt {
     pub token_id: i64,
     pub token_symbol: String,
     pub token_name: String,
-    #[serde(with = "WithBlockchainDecimal")]
-    pub quantity: U256,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub quantity: Decimal,
     pub happened_at: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1843,8 +1844,8 @@ pub struct UserBackStrategyLog {
 #[serde(rename_all = "camelCase")]
 pub struct UserBackStrategyRequest {
     pub strategy_id: i64,
-    #[serde(with = "WithBlockchainDecimal")]
-    pub quantity: U256,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub quantity: Decimal,
     pub token_id: i64,
     #[serde(default)]
     pub strategy_wallet: Option<Address>,
@@ -1865,8 +1866,8 @@ pub struct UserBackStrategyStreamResponse {
 #[serde(rename_all = "camelCase")]
 pub struct UserCreateStrategyInitialTokenRow {
     pub token_id: i64,
-    #[serde(with = "WithBlockchainDecimal")]
-    pub quantity: U256,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub quantity: Decimal,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1886,8 +1887,8 @@ pub struct UserCreateStrategyWalletResponse {
 #[serde(rename_all = "camelCase")]
 pub struct UserExitStrategyRequest {
     pub strategy_id: i64,
-    #[serde(with = "WithBlockchainDecimal")]
-    pub quantity: U256,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub quantity: Decimal,
     pub blockchain: EnumBlockChain,
     pub nonce: i64,
 }
@@ -1923,21 +1924,21 @@ pub struct UserFollowStrategyResponse {
 pub struct UserGetBackStrategyReviewDetailRequest {
     pub strategy_id: i64,
     pub token_id: i64,
-    #[serde(with = "WithBlockchainDecimal")]
-    pub quantity: U256,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub quantity: Decimal,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserGetBackStrategyReviewDetailResponse {
-    #[serde(with = "WithBlockchainDecimal")]
-    pub strategy_fee: U256,
-    #[serde(with = "WithBlockchainDecimal")]
-    pub total_amount_to_back: U256,
-    #[serde(with = "WithBlockchainDecimal")]
-    pub total_amount_to_back_after_fee: U256,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub strategy_fee: Decimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub total_amount_to_back: Decimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub total_amount_to_back_after_fee: Decimal,
     pub user_strategy_wallets: Vec<UserStrategyWallet>,
-    #[serde(with = "WithBlockchainDecimal")]
-    pub estimated_amount_of_strategy_tokens: U256,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub estimated_amount_of_strategy_tokens: Decimal,
     pub estimated_backed_token_ratios: Vec<EstimatedBackedTokenRatios>,
     pub strategy_pool_asset_balances: Vec<StrategyPoolAssetBalancesRow>,
 }
@@ -1984,8 +1985,8 @@ pub struct UserGetDepositWithdrawBalanceRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserGetDepositWithdrawBalanceResponse {
-    #[serde(with = "WithBlockchainDecimal")]
-    pub balance: U256,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub balance: Decimal,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -2029,8 +2030,8 @@ pub struct UserGetStrategiesStatisticsAumListHistory {
     pub token_name: String,
     pub token_symbol: String,
     pub side: String,
-    #[serde(with = "WithBlockchainDecimal")]
-    pub quantity: U256,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub quantity: Decimal,
     pub quantity_usd: f64,
     pub happened_at: i64,
     pub current_price_usd: f64,
@@ -2058,8 +2059,8 @@ pub struct UserGetStrategiesStatisticsStrategyPoolToken {
     pub token_id: i64,
     pub token_name: String,
     pub token_symbol: String,
-    #[serde(with = "WithBlockchainDecimal")]
-    pub total_quantity: U256,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub total_quantity: Decimal,
     pub total_quantity_usd: f64,
     pub current_price_usd: f64,
     pub price_change_7d: f64,
@@ -2159,8 +2160,8 @@ pub struct UserListDepositLedgerRow {
     pub contract_address: Address,
     #[serde(with = "WithBlockchainAddress")]
     pub receiver_address: Address,
-    #[serde(with = "WithBlockchainDecimal")]
-    pub quantity: U256,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub quantity: Decimal,
     #[serde(with = "WithBlockchainTransactionHash")]
     pub transaction_hash: H256,
     pub is_deposit: bool,
@@ -2173,8 +2174,8 @@ pub struct UserListDepositWithdrawBalance {
     pub token_id: i64,
     pub token_symbol: String,
     pub token_name: String,
-    #[serde(with = "WithBlockchainDecimal")]
-    pub balance: U256,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub balance: Decimal,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -2432,8 +2433,8 @@ pub struct UserListStrategyTokenBalanceResponse {
 pub struct UserListStrategyTokenBalanceRow {
     pub strategy_id: i64,
     pub strategy_name: String,
-    #[serde(with = "WithBlockchainDecimal")]
-    pub balance: U256,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub balance: Decimal,
     #[serde(with = "WithBlockchainAddress")]
     pub address: Address,
     pub blockchain: EnumBlockChain,
@@ -2593,8 +2594,8 @@ pub struct UserRemoveStrategyAuditRuleResponse {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserRequestRefundRequest {
-    #[serde(with = "WithBlockchainDecimal")]
-    pub quantity: U256,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub quantity: Decimal,
     #[serde(with = "WithBlockchainAddress")]
     pub wallet_address: Address,
     pub blockchain: EnumBlockChain,
@@ -2610,8 +2611,8 @@ pub struct UserRequestRefundResponse {
 pub struct UserStrategyBalance {
     pub strategy_id: i64,
     pub strategy_name: String,
-    #[serde(with = "WithBlockchainDecimal")]
-    pub balance: U256,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub balance: Decimal,
     #[serde(with = "WithBlockchainAddress")]
     pub address: Address,
     pub blockchain: EnumBlockChain,

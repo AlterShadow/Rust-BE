@@ -1,13 +1,14 @@
-use crate::calc::ScaledMath;
 use crate::evm::DexTrade;
 use eyre::*;
 use gen::database::*;
 use gen::model::EnumBlockChain;
 use lib::database::DbClient;
-use web3::types::{Address, U256};
+use rust_decimal::Decimal;
+use web3::types::Address;
 
 mod parse;
 
+use crate::utils::u256_to_decimal;
 pub use parse::*;
 
 pub async fn get_strategy_id_from_watching_wallet(
@@ -58,7 +59,36 @@ pub async fn update_expert_listened_wallet_asset_balance_cache(
 ) -> Result<()> {
     // correctly adding wallet balance to tbl.strategy_initial_token ratio is not possible because expert can have multiple watching wallets in one chain
     let expert_watched_wallet_address = trade.caller;
-    let old_amount: U256 = db
+    let token_in_decimal = db
+        .execute(FunUserListEscrowTokenContractAddressReq {
+            limit: 1,
+            offset: 0,
+            token_id: Some(token_in_id),
+            blockchain: None,
+            address: None,
+            symbol: None,
+            is_stablecoin: None,
+        })
+        .await?
+        .into_result()
+        .context("error fetching token decimal")?
+        .decimals;
+    let token_out_decimal = db
+        .execute(FunUserListEscrowTokenContractAddressReq {
+            limit: 1,
+            offset: 0,
+            token_id: Some(token_out_id),
+            blockchain: None,
+            address: None,
+            symbol: None,
+            is_stablecoin: None,
+        })
+        .await?
+        .into_result()
+        .context("error fetching token decimal")?
+        .decimals;
+
+    let old_amount = db
         .execute(FunWatcherListExpertListenedWalletAssetBalanceReq {
             limit: Some(1),
             blockchain: Some(blockchain),
@@ -69,10 +99,10 @@ pub async fn update_expert_listened_wallet_asset_balance_cache(
         })
         .await?
         .into_result()
-        .map(|tk| tk.balance.into())
+        .map(|tk| tk.balance)
         .unwrap_or_else(|| 0.into());
     if old_amount > 0.into() {
-        let new_amount = old_amount.try_checked_sub(trade.amount_in)?;
+        let new_amount = old_amount - u256_to_decimal(trade.amount_in, token_in_decimal as _);
         /* if token_in is already in the database, update it's amount */
         db.execute(FunWatcherUpsertExpertListenedWalletAssetBalanceReq {
             address: expert_watched_wallet_address.into(),
@@ -83,7 +113,7 @@ pub async fn update_expert_listened_wallet_asset_balance_cache(
         })
         .await?;
     };
-    let old_amount: U256 = db
+    let old_amount = db
         .execute(FunWatcherListExpertListenedWalletAssetBalanceReq {
             limit: Some(1),
             blockchain: Some(blockchain),
@@ -94,9 +124,9 @@ pub async fn update_expert_listened_wallet_asset_balance_cache(
         })
         .await?
         .into_result()
-        .map(|tk| tk.balance.into())
+        .map(|tk| tk.balance)
         .unwrap_or_else(|| 0.into());
-    let new_amount = old_amount.try_checked_add(trade.amount_out)?;
+    let new_amount = old_amount + u256_to_decimal(trade.amount_out, token_out_decimal as _);
     db.execute(FunWatcherUpsertExpertListenedWalletAssetBalanceReq {
         address: expert_watched_wallet_address.into(),
         blockchain,
@@ -114,10 +144,10 @@ pub async fn update_user_strategy_pool_asset_balances_on_copy_trade(
     blockchain: EnumBlockChain,
     strategy_pool_contract_id: i64,
     sp_sold_asset_address: Address,
-    sp_sold_asset_amount: U256,
-    sp_sold_asset_previous_amount: U256,
+    sp_sold_asset_amount: Decimal,
+    sp_sold_asset_previous_amount: Decimal,
     sp_bought_asset_address: Address,
-    sp_bought_asset_amount: U256,
+    sp_bought_asset_amount: Decimal,
 ) -> Result<()> {
     /* get strategy wallets that hold sold asset */
     let strategy_wallet_sold_asset_rows = db
@@ -133,14 +163,12 @@ pub async fn update_user_strategy_pool_asset_balances_on_copy_trade(
 
     /* update user balances and add ledger entries */
     for strategy_wallet_sold_asset_row in strategy_wallet_sold_asset_rows {
-        let currently_owned_sold_asset: U256 = strategy_wallet_sold_asset_row.balance.into();
-        let subtracted_sold_amount = currently_owned_sold_asset
-            .mul_div_rounding_up(sp_sold_asset_amount, sp_sold_asset_previous_amount)?;
-        let new_sold_asset_balance = currently_owned_sold_asset
-            .try_checked_sub(subtracted_sold_amount)
-            .unwrap_or(U256::zero());
-        let added_bought_amount = sp_bought_asset_amount
-            .mul_div(currently_owned_sold_asset, sp_sold_asset_previous_amount)?;
+        let currently_owned_sold_asset = strategy_wallet_sold_asset_row.balance;
+        let subtracted_sold_amount =
+            currently_owned_sold_asset * sp_sold_asset_amount / sp_sold_asset_previous_amount;
+        let new_sold_asset_balance = currently_owned_sold_asset - subtracted_sold_amount;
+        let added_bought_amount =
+            sp_bought_asset_amount * currently_owned_sold_asset / sp_sold_asset_previous_amount;
         /* update user strategy pool contract asset balances */
         db.execute(FunUserUpsertUserStrategyPoolContractAssetBalanceReq {
             strategy_wallet_id: strategy_wallet_sold_asset_row.strategy_wallet_id,
@@ -163,17 +191,15 @@ pub async fn update_user_strategy_pool_asset_balances_on_copy_trade(
             .into_result()
         {
             Some(bought_asset_old_balance_row) => {
-                let bought_asset_old_balance: U256 = bought_asset_old_balance_row.balance.into();
+                let bought_asset_old_balance = bought_asset_old_balance_row.balance;
                 /* if user already held bought asset, add to old balance */
                 db.execute(FunUserUpsertUserStrategyPoolContractAssetBalanceReq {
                     strategy_wallet_id: strategy_wallet_sold_asset_row.strategy_wallet_id,
                     strategy_pool_contract_id,
                     token_address: sp_bought_asset_address.into(),
                     blockchain,
-                    old_balance: bought_asset_old_balance.into(),
-                    new_balance: bought_asset_old_balance
-                        .try_checked_add(added_bought_amount)?
-                        .into(),
+                    old_balance: bought_asset_old_balance,
+                    new_balance: bought_asset_old_balance + added_bought_amount,
                 })
                 .await?;
             }
@@ -184,7 +210,7 @@ pub async fn update_user_strategy_pool_asset_balances_on_copy_trade(
                     strategy_pool_contract_id,
                     token_address: sp_bought_asset_address.into(),
                     blockchain,
-                    old_balance: U256::zero().into(),
+                    old_balance: 0.into(),
                     new_balance: added_bought_amount.into(),
                 })
                 .await?;

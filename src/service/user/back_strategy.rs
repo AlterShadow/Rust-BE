@@ -7,13 +7,14 @@ use eth_sdk::pancake_swap::pair_paths::WorkingPancakePairPaths;
 use eth_sdk::pancake_swap::parse::get_pancake_swap_parser;
 use eth_sdk::strategy_pool::StrategyPoolContract;
 use eth_sdk::strategy_wallet::StrategyWalletContract;
+use eth_sdk::utils::u256_to_decimal;
 use eth_sdk::StrategyPoolHeraldAddresses;
 use eth_sdk::{
-    DexAddresses, EitherTransport, EthereumRpcConnection, ScaledMath, TransactionFetcher,
-    CONFIRMATIONS, MAX_RETRIES, POLL_INTERVAL,
+    DexAddresses, EitherTransport, EthereumRpcConnection, TransactionFetcher, CONFIRMATIONS,
+    MAX_RETRIES, POLL_INTERVAL,
 };
 use execution_engine::copy_trade::{
-    calculate_copy_trade_plan, fetch_listened_wallet_asset_balances_and_decimals,
+    calculate_copy_trade_plan, decimal_to_u256, fetch_listened_wallet_asset_balances_and_decimals,
     fetch_strategy_pool_contract_asset_balances_and_decimals, get_token_prices,
 };
 use eyre::*;
@@ -23,7 +24,9 @@ use itertools::Itertools;
 use lib::database::DbClient;
 use lib::log::DynLogger;
 use lib::toolbox::RequestContext;
-use lib::types::{amount_to_display, U256};
+use lib::types::U256;
+use num_traits::{FromPrimitive, One, Zero};
+use rust_decimal::Decimal;
 use std::collections::HashMap;
 use std::future::Future;
 use tracing::{debug, info, warn};
@@ -195,21 +198,22 @@ async fn user_get_or_deploy_strategy_pool(
     Ok(Some(sp_contract))
 }
 pub struct CalculateUserBackStrategyCalculateAmountToMintResult {
-    pub fees: U256,
-    pub back_amount_minus_fees: U256,
-    pub strategy_token_to_mint: U256,
+    pub fees: Decimal,
+    pub back_amount_minus_fees: Decimal,
+    pub strategy_token_to_mint: Decimal,
     pub strategy_pool_active: bool,
-    pub sp_assets_and_amounts: HashMap<Address, U256>,
-    pub escrow_allocations_for_tokens: HashMap<Address, U256>,
-    pub strategy_pool_assets_bought_for_this_backer: HashMap<Address, U256>,
+    pub sp_assets_and_amounts: HashMap<Address, Decimal>,
+    pub escrow_allocations_for_tokens: HashMap<Address, Decimal>,
+    pub strategy_pool_assets_bought_for_this_backer: HashMap<Address, Decimal>,
+    pub token_decimals: HashMap<Address, u32>,
 }
 pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
-    Fut: Future<Output = Result<U256>>,
+    Fut: Future<Output = Result<Decimal>>,
 >(
     conn: &EthereumRpcConnection,
     db: &DbClient,
     blockchain: EnumBlockChain,
-    back_total_amount: U256,
+    back_total_amount: Decimal,
     strategy_id: i64,
     token_id: i64,
     token_address: Address,
@@ -218,7 +222,7 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
     dry_run: bool,
     user_id: i64,
     _escrow_contract_address: Address,
-    get_token_out: impl Fn(Address, U256) -> Fut,
+    get_token_out: impl Fn(Address, Decimal, u32) -> Fut,
     cmc: &CoinMarketCap,
 ) -> Result<CalculateUserBackStrategyCalculateAmountToMintResult> {
     /* fetch strategy */
@@ -267,21 +271,21 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
         !strategy_initial_ratios.is_empty(),
         "strategy has no initial ratios"
     );
-    let mut strategy_initial_token_ratios: HashMap<Address, U256> = HashMap::new();
+    let mut strategy_initial_token_ratios: HashMap<Address, Decimal> = HashMap::new();
     for x in strategy_initial_ratios.iter() {
-        strategy_initial_token_ratios.insert(x.token_address.into(), x.quantity.into());
+        strategy_initial_token_ratios.insert(x.token_address.into(), x.quantity);
     }
 
     /* deduce fees from back amount */
     // TODO: use (back amount - fees) to calculate trade spenditure and SP shares
     // TODO: distribute fees for the treasury and the strategy creator
-    let divide_scale = 10000;
     let fees = back_total_amount
-        * (((strategy.swap_fee.unwrap_or_default()
-            + strategy.platform_fee.unwrap_or_default()
-            + strategy.expert_fee.unwrap_or_default())
-            * divide_scale as f64) as u64)
-        / divide_scale;
+        * Decimal::from_f64(
+            strategy.swap_fee.unwrap_or_default()
+                + strategy.platform_fee.unwrap_or_default()
+                + strategy.expert_fee.unwrap_or_default(),
+        )
+        .unwrap();
     ensure!(
         fees < back_total_amount,
         "fees are too high, back amount is too low"
@@ -289,8 +293,7 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
     let back_token_amount_minus_fees = back_total_amount - fees;
     logger.log(format!(
         "fees: {}, back token minus fees: {}",
-        amount_to_display(fees),
-        amount_to_display(back_token_amount_minus_fees)
+        fees, back_token_amount_minus_fees
     ));
 
     let (sp_assets_and_amounts, sp_assets_and_decimals) =
@@ -298,7 +301,7 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
             .await?;
     let strategy_pool_active = sp_assets_and_amounts
         .values()
-        .find(|x| **x > U256::zero())
+        .find(|x| **x > Decimal::zero())
         .is_some();
     let (expert_asset_amounts, expert_asset_amounts_decimals) =
         fetch_listened_wallet_asset_balances_and_decimals(db, blockchain, strategy_id).await?;
@@ -329,7 +332,7 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
             map
         },
         token_prices,
-        token_decimals,
+        token_decimals.clone(),
     )?;
     let tokens_and_escrow_token_to_spend: HashMap<_, _> = escrow_allocations_for_tokens
         .trades
@@ -339,6 +342,7 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
     let strategy_pool_assets_bought_for_this_backer = trade_escrow_for_strategy_tokens(
         token_address,
         tokens_and_escrow_token_to_spend.clone(),
+        token_decimals.clone(),
         logger.clone(),
         get_token_out,
     )
@@ -348,7 +352,6 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
     let strategy_token_to_mint = match strategy_pool_active {
         false => {
             logger.log("calculating strategy tokens");
-            let escrow_token_contract = Erc20Token::new(conn.clone(), token_address)?;
             let token = db
                 .execute(FunUserListStrategyInitialTokenRatiosReq {
                     strategy_id,
@@ -361,12 +364,9 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
                 .context("initial token not found in strategy")?;
             info!("Calculating strategy token with easy approach");
             logger.log("calculating strategy tokens with easy approach");
-            let strategy_pool_token_to_mint = calculate_sp_tokens_to_mint_easy_approach(
-                token,
-                back_token_amount_minus_fees,
-                escrow_token_contract.decimals().await?,
-            )
-            .await?;
+            let strategy_pool_token_to_mint =
+                calculate_sp_tokens_to_mint_easy_approach(token, back_token_amount_minus_fees)
+                    .await?;
             strategy_pool_token_to_mint
         }
         true => {
@@ -379,7 +379,7 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
             /* get amount spent and amount bought for every strategy pool asset to calculate sp valuation for mintage */
             /* necessary because there could be a strategy pool asset that is not in initial_token_ratios */
 
-            let mut strategy_pool_asset_last_prices_in_base_token: HashMap<Address, U256> =
+            let mut strategy_pool_asset_last_prices_in_base_token: HashMap<Address, Decimal> =
                 HashMap::new();
             for strategy_pool_asset in sp_assets_and_amounts.keys() {
                 if let Some(amount_bought) =
@@ -394,13 +394,12 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
                             strategy_pool_asset
                         );
                         strategy_pool_asset_last_prices_in_base_token
-                            .insert(strategy_pool_asset.clone(), U256::zero());
+                            .insert(strategy_pool_asset.clone(), Decimal::zero());
                     } else {
                         let amount_spent_on_asset = tokens_and_escrow_token_to_spend.get(strategy_pool_asset).context("could not get amount spent for backer in strategy pool asset, even though amount bought exists")?.clone();
                         strategy_pool_asset_last_prices_in_base_token.insert(
                             strategy_pool_asset.clone(),
-                            amount_spent_on_asset
-                                .mul_div(U256::exp10(18), amount_bought.clone())?,
+                            amount_spent_on_asset / amount_bought.clone(),
                         );
                     }
                 } else {
@@ -418,11 +417,7 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
                     {
                         strategy_pool_asset_last_prices_in_base_token.insert(
                             strategy_pool_asset.clone(),
-                            // TODO: calculate decimals
-                            last_dex_trade_row.amount_in.mul_div(
-                                U256::exp10(18),
-                                last_dex_trade_row.amount_out.0.clone(),
-                            )?,
+                            last_dex_trade_row.amount_in / last_dex_trade_row.amount_out,
                         );
                     } else {
                         let token = db
@@ -451,7 +446,7 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
                             .clone();
                         strategy_pool_asset_last_prices_in_base_token.insert(
                             strategy_pool_asset.clone(),
-                            U256::exp10(token.decimals as _).mul_f64(cmc_price)?,
+                            Decimal::from_f64(cmc_price).unwrap(),
                         );
                     }
                 }
@@ -461,9 +456,10 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
             // currently calculating with back amount minus fees
             // TODO: get these values from database
             let total_strategy_tokens = sp_contract.as_ref().unwrap().1.total_supply().await?;
+            let decimals = sp_contract.as_ref().unwrap().1.decimals().await?;
 
             calculate_sp_tokens_to_mint_nth_backer(
-                total_strategy_tokens,
+                u256_to_decimal(total_strategy_tokens, decimals.as_u32()),
                 sp_assets_and_amounts.clone(),
                 strategy_pool_asset_last_prices_in_base_token,
                 back_token_amount_minus_fees,
@@ -478,6 +474,7 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
         strategy_token_to_mint,
         strategy_pool_active,
         sp_assets_and_amounts,
+        token_decimals,
         escrow_allocations_for_tokens: tokens_and_escrow_token_to_spend,
         strategy_pool_assets_bought_for_this_backer,
     })
@@ -489,7 +486,7 @@ pub async fn user_back_strategy(
     db: &DbClient,
     blockchain: EnumBlockChain,
     user_id: i64,
-    back_token_amount: U256,
+    back_token_amount: Decimal,
     strategy_id: i64,
     token_id: i64,
     token_address: Address,
@@ -501,11 +498,8 @@ pub async fn user_back_strategy(
     pancake_paths: &WorkingPancakePairPaths,
     cmc: &CoinMarketCap,
 ) -> Result<()> {
-    logger.log(format!(
-        "checking back amount {}",
-        amount_to_display(back_token_amount)
-    ));
-    if back_token_amount == U256::zero() {
+    logger.log(format!("checking back amount {}", back_token_amount));
+    if back_token_amount == Decimal::zero() {
         bail!("back zero amount");
     }
 
@@ -525,12 +519,12 @@ pub async fn user_back_strategy(
         .await?;
     debug!("Fetched {} rows of user balance", user_balance.len());
     let user_balance_ret = user_balance.into_result().context("insufficient balance")?;
-    let user_balance: U256 = user_balance_ret.balance.into();
+    let user_balance = user_balance_ret.balance;
     if user_balance < back_token_amount {
         bail!(
             "insufficient balance {} < {}",
-            amount_to_display(user_balance),
-            amount_to_display(back_token_amount)
+            user_balance,
+            back_token_amount
         );
     }
 
@@ -638,7 +632,7 @@ pub async fn user_back_strategy(
     logger.log("calculating strategy tokens");
 
     let escrow_token_contract = Erc20Token::new(conn.clone(), token_address)?;
-
+    let token_decimals = escrow_token_contract.decimals().await?.as_u32();
     /* instantiate pancake contract */
     let pancake_contract = PancakeSmartRouterContract::new(
         conn.clone(),
@@ -660,6 +654,7 @@ pub async fn user_back_strategy(
     for (wallet, amount) in wallet_deposit_amounts {
         /* transfer from escrow contract to pending wallet */
         let transfer_asset_from_transaction = || {
+            let amount = decimal_to_u256(amount, token_decimals);
             escrow_contract.transfer_asset_from(
                 &conn,
                 master_key.clone(),
@@ -687,7 +682,7 @@ pub async fn user_back_strategy(
             blockchain,
             user_address: wallet.clone().into(),
             receiver_address: Default::default(),
-            quantity: amount.clone().into(),
+            quantity: amount.clone(),
             transaction_hash: Default::default(),
             is_deposit: false,
             is_back: true,
@@ -701,6 +696,7 @@ pub async fn user_back_strategy(
     /* approve pancakeswap to trade escrow token */
     info!("approve pancakeswap to trade escrow token");
     let approve_transaction = || {
+        let back_token_amount = decimal_to_u256(back_token_amount, token_decimals);
         escrow_token_contract.approve(
             &conn,
             master_key.clone(),
@@ -723,7 +719,7 @@ pub async fn user_back_strategy(
     /* trade escrow token for strategy's tokens */
     info!("trade escrow token for strategy's tokens");
     let pancake_trade_parser = get_pancake_swap_parser();
-    let get_out_amount = |out_token, amount| {
+    let get_out_amount = |out_token, amount: Decimal, decimals| {
         let db = db.clone();
         let conn = conn.clone();
         let master_key = master_key.clone();
@@ -735,8 +731,7 @@ pub async fn user_back_strategy(
             if token_address == out_token {
                 logger.log(format!(
                     "approving {} token {:?} to strategy pool contract",
-                    amount_to_display(amount),
-                    out_token
+                    amount, out_token
                 ));
 
                 let out_token_contract = Erc20Token::new(conn.clone(), out_token)?;
@@ -746,7 +741,7 @@ pub async fn user_back_strategy(
                         &conn,
                         master_key.clone(),
                         sp_contract.address(),
-                        amount,
+                        decimal_to_u256(amount, decimals),
                         logger.clone(),
                     )
                 };
@@ -768,8 +763,8 @@ pub async fn user_back_strategy(
 
                 logger.log(&format!(
                     "copy_trade_and_ensure_success: amount_in: {}, amount_out_minimum: {}",
-                    amount_to_display(amount),
-                    amount_to_display(U256::one())
+                    amount,
+                    Decimal::one()
                 ));
 
                 let copy_trade_transaction = || {
@@ -777,7 +772,7 @@ pub async fn user_back_strategy(
                         &conn,
                         master_key.clone(),
                         pancake_path_set.clone(),
-                        amount,
+                        decimal_to_u256(amount, decimals),
                         U256::one(), // TODO: find a way to estimate amount out
                     )
                 };
@@ -809,14 +804,13 @@ pub async fn user_back_strategy(
                     dex: EnumDex::PancakeSwap,
                     token_in_address: token_address.into(),
                     token_out_address: out_token.into(),
-                    amount_in: trade.amount_in.into(),
-                    amount_out: trade.amount_out.into(),
+                    amount_in: u256_to_decimal(trade.amount_in, token_decimals),
+                    amount_out: u256_to_decimal(trade.amount_out, decimals),
                 })
                 .await?;
                 logger.log(format!(
                     "approving {} token {:?} to strategy pool contract",
-                    amount_to_display(trade.amount_out),
-                    out_token
+                    trade.amount_out, out_token
                 ));
 
                 let out_token_contract = Erc20Token::new(conn.clone(), out_token)?;
@@ -840,7 +834,7 @@ pub async fn user_back_strategy(
                     &logger,
                 )
                 .await?;
-                Ok(trade.amount_out)
+                Ok(u256_to_decimal(trade.amount_out, decimals))
             }
         }
     };
@@ -853,6 +847,7 @@ pub async fn user_back_strategy(
         // we discard this value because it's not really exactly the value
         strategy_token_to_mint,
         strategy_pool_assets_bought_for_this_backer,
+        token_decimals,
         ..
     } = calculate_user_back_strategy_calculate_amount_to_mint(
         conn,
@@ -885,12 +880,25 @@ pub async fn user_back_strategy(
         .unwrap_or_default();
 
     /* mint strategy pool token to strategy wallet contract */
-    let assets_to_deposit: HashMap<Address, U256> = strategy_pool_assets_bought_for_this_backer
+    let assets_to_deposit: HashMap<Address, Decimal> = strategy_pool_assets_bought_for_this_backer
         .into_iter()
         .filter(|x| !x.1.is_zero())
         .collect();
-
     let deposit_transaction = || {
+        let strategy_token_to_mint = {
+            let decimal = token_decimals.get(&token_address).unwrap();
+            decimal_to_u256(strategy_token_to_mint, *decimal)
+        };
+        let assets_to_deposit = assets_to_deposit
+            .clone()
+            .into_iter()
+            .map(|(token, amount)| {
+                (token, {
+                    let decimal = token_decimals.get(&token).unwrap();
+                    decimal_to_u256(amount, *decimal)
+                })
+            })
+            .collect::<HashMap<_, _>>();
         sp_contract.deposit(
             &conn,
             master_key.clone(),
@@ -917,7 +925,7 @@ pub async fn user_back_strategy(
         strategy_id,
         blockchain,
         old_balance: user_strategy_balance,
-        new_balance: (*user_strategy_balance + strategy_token_to_mint).into(),
+        new_balance: user_strategy_balance + strategy_token_to_mint,
     })
     .await?;
     for (token, amount) in assets_to_deposit.clone() {
@@ -932,7 +940,7 @@ pub async fn user_back_strategy(
             .await?
             .into_result();
         let sp_asset_token_out_new_balance = match sp_asset_token {
-            Some(token_out) => (*token_out.balance).try_checked_add(amount)?,
+            Some(token_out) => token_out.balance + amount,
             None => amount,
         };
         db.execute(FunWatcherUpsertStrategyPoolContractAssetBalanceReq {
@@ -976,8 +984,8 @@ pub async fn user_back_strategy(
             .into_result()
         {
             Some(existing_amount) => {
-                let old_amount: U256 = existing_amount.balance.into();
-                let new_amount = old_amount.try_checked_add(amount)?;
+                let old_amount = existing_amount.balance;
+                let new_amount = old_amount + amount;
                 db.execute(FunUserUpsertUserStrategyPoolContractAssetBalanceReq {
                     strategy_pool_contract_id,
                     strategy_wallet_id: strategy_wallet_row.wallet_id,
@@ -994,7 +1002,7 @@ pub async fn user_back_strategy(
                     strategy_wallet_id: strategy_wallet_row.wallet_id,
                     token_address: token.into(),
                     blockchain,
-                    old_balance: U256::zero().into(),
+                    old_balance: Decimal::zero().into(),
                     new_balance: amount.into(),
                 })
                 .await?;
@@ -1016,9 +1024,9 @@ pub async fn user_back_strategy(
             user_id: ctx.user_id,
             strategy_id: strategy.strategy_id,
             quantity: back_token_amount.into(),
-            new_total_backed_quantity: (*strategy.total_backed_usdc + back_token_amount).into(),
+            new_total_backed_quantity: strategy.total_backed_usdc + back_token_amount,
             old_total_backed_quantity: strategy.total_backed_usdc,
-            new_current_quantity: (*strategy.current_usdc + back_token_amount).into(),
+            new_current_quantity: strategy.current_usdc + back_token_amount,
             old_current_quantity: strategy.current_usdc,
             blockchain,
             transaction_hash: deposit_transaction_hash.into(),
@@ -1034,9 +1042,7 @@ pub async fn user_back_strategy(
     }
     logger.log(format!(
         "Everything deployed successfully for Strategy {:?}. Spent {} tokens. got {} SP tokens",
-        strategy_id,
-        amount_to_display(back_token_amount),
-        amount_to_display(strategy_token_to_mint)
+        strategy_id, back_token_amount, strategy_token_to_mint
     ));
     Ok(())
 }
@@ -1046,25 +1052,25 @@ pub async fn get_and_check_user_deposit_balances_by_wallet_to_fill_value(
     chain: EnumBlockChain,
     user_id: i64,
     token_id: i64,
-    value_to_fill: U256,
+    value_to_fill: Decimal,
     escrow_contract_address: Address,
-) -> Result<HashMap<Address, U256>> {
+) -> Result<HashMap<Address, Decimal>> {
     let wallet_positive_asset_balances = db
         .execute(FunUserCalculateUserEscrowBalanceFromLedgerReq {
-            user_id: user_id,
+            user_id,
             blockchain: chain,
-            token_id: token_id,
+            token_id,
             wallet_address: None,
             escrow_contract_address: escrow_contract_address.into(),
         })
         .await?
         .into_rows();
 
-    let mut wallet_deposit_amounts: HashMap<Address, U256> = HashMap::new();
-    let mut total_amount_found: U256 = U256::zero();
+    let mut wallet_deposit_amounts: HashMap<Address, Decimal> = HashMap::new();
+    let mut total_amount_found: Decimal = Decimal::zero();
     for wallet_balance_row in wallet_positive_asset_balances {
-        let wallet_balance: U256 = wallet_balance_row.balance.into();
-        if wallet_balance == U256::zero() {
+        let wallet_balance: Decimal = wallet_balance_row.balance.into();
+        if wallet_balance == Decimal::zero() {
             continue;
         }
         if total_amount_found == value_to_fill {
@@ -1073,7 +1079,7 @@ pub async fn get_and_check_user_deposit_balances_by_wallet_to_fill_value(
         }
         /* if entire amount was not filled, keep looking for other positive balances from wallets */
 
-        let necessary_amount_to_fill = value_to_fill.try_checked_sub(total_amount_found)?;
+        let necessary_amount_to_fill = value_to_fill - total_amount_found;
         if wallet_balance >= necessary_amount_to_fill {
             /* if the deposited amount of this wallet can fill the rest for the refund amount */
             /* use only the necessary */
@@ -1082,21 +1088,21 @@ pub async fn get_and_check_user_deposit_balances_by_wallet_to_fill_value(
                 wallet_balance_row.wallet_address.into(),
                 necessary_amount_to_fill,
             );
-            total_amount_found = total_amount_found.try_checked_add(necessary_amount_to_fill)?;
+            total_amount_found = total_amount_found + necessary_amount_to_fill;
         } else {
             /* if the deposited amount of this wallet cannot fill the rest for the refund amount */
             /* use entire amount */
 
             wallet_deposit_amounts.insert(wallet_balance_row.wallet_address.into(), wallet_balance);
-            total_amount_found = total_amount_found.try_checked_add(wallet_balance)?;
+            total_amount_found = total_amount_found + wallet_balance;
         }
     }
 
     if total_amount_found < value_to_fill {
         bail!(
             "not enough user balance to fill the amount: {} < {}",
-            amount_to_display(total_amount_found),
-            amount_to_display(value_to_fill)
+            total_amount_found,
+            value_to_fill
         );
     }
 
@@ -1105,52 +1111,47 @@ pub async fn get_and_check_user_deposit_balances_by_wallet_to_fill_value(
 
 pub async fn calculate_sp_tokens_to_mint_easy_approach(
     token_ratio: FunUserListStrategyInitialTokenRatiosRespRow,
-    escrow_amount: U256,
-    escrow_decimals: U256,
-) -> Result<U256> {
+    escrow_amount: Decimal,
+) -> Result<Decimal> {
     let relative_quantity = token_ratio.quantity;
+    let result = escrow_amount * relative_quantity;
     info!(
-        "calculate_sp_tokens_to_mint_easy_approach {:?} {:?} {:?}",
-        escrow_amount, relative_quantity, escrow_decimals
+        "calculate_sp_tokens_to_mint_easy_approach {}={}*{}",
+        result, escrow_amount, relative_quantity
     );
-    let result = escrow_amount
-        .mul_div(
-            relative_quantity.into(),
-            U256::exp10(escrow_decimals.as_u32() as _),
-        )
-        .context("calculate_sp_tokens_to_mint_easy_approach")?;
-    info!("Calculating strategy token with easy approach done");
 
     Ok(result)
 }
 
-async fn trade_escrow_for_strategy_tokens<Fut: Future<Output = Result<U256>>>(
+async fn trade_escrow_for_strategy_tokens<Fut: Future<Output = Result<Decimal>>>(
     escrow_token_address: Address,
-    tokens_and_amounts_to_buy: HashMap<Address, U256>,
+    tokens_and_amounts_to_buy: HashMap<Address, Decimal>,
+    token_decimals: HashMap<Address, u32>,
     logger: DynLogger,
-    get_token_out: impl Fn(Address, U256) -> Fut,
-) -> Result<HashMap<Address, U256>> {
+    get_token_out: impl Fn(Address, Decimal, u32) -> Fut,
+) -> Result<HashMap<Address, Decimal>> {
     /* buys tokens and amounts and returns a vector or bought tokens and amounts out */
-    let mut deposit_amounts: HashMap<Address, U256> = HashMap::new();
+    let mut deposit_amounts: HashMap<Address, Decimal> = HashMap::new();
 
     for (token_address, amount_to_spend_on_it) in tokens_and_amounts_to_buy {
         logger.log(format!(
             "Trading {} for {}",
             token_address, escrow_token_address
         ));
-        let output_amount = get_token_out(token_address, amount_to_spend_on_it).await?;
+        let decimals = token_decimals.get(&token_address).unwrap();
+        let output_amount = get_token_out(token_address, amount_to_spend_on_it, *decimals).await?;
         deposit_amounts.insert(token_address, output_amount);
     }
     Ok(deposit_amounts)
 }
 
 fn calculate_sp_tokens_to_mint_nth_backer(
-    strategy_token_total_supply: U256,
-    strategy_pool_asset_balances: HashMap<Address, U256>,
-    token_prices: HashMap<Address, U256>,
-    base_token_actual_amount: U256,
+    strategy_token_total_supply: Decimal,
+    strategy_pool_asset_balances: HashMap<Address, Decimal>,
+    token_prices: HashMap<Address, Decimal>,
+    base_token_actual_amount: Decimal,
     deposit_asset: Address,
-) -> Result<U256> {
+) -> Result<Decimal> {
     ensure!(
         strategy_pool_asset_balances.len() > 0,
         "strategy pool asset balances must not be empty"
@@ -1158,7 +1159,7 @@ fn calculate_sp_tokens_to_mint_nth_backer(
     // sp tokens to mint = actual value of backing / (total value / total supply)
     //                   = actual value of backing * total supply / total value
     /* calculate strategy pool assets total value in base tokens based on the price paid on assets */
-    let mut strategy_pool_assets_total_value = U256::zero();
+    let mut strategy_pool_assets_total_value = Decimal::zero();
     for (strategy_pool_asset, strategy_pool_asset_amount) in strategy_pool_asset_balances.iter() {
         /* get base token value of one asset */
         /* i.e. asset price in base tokens */
@@ -1167,27 +1168,23 @@ fn calculate_sp_tokens_to_mint_nth_backer(
             .context("could not get token price")?;
 
         /* get value of strategy pool asset amount in base tokens */
-        let strategy_pool_asset_value =
-            strategy_pool_asset_amount.mul_div(*asset_price_in_base_tokens, U256::exp10(18))?;
+        let strategy_pool_asset_value = strategy_pool_asset_amount * *asset_price_in_base_tokens;
 
         /* add value of strategy pool asset to total value */
         strategy_pool_assets_total_value =
-            strategy_pool_assets_total_value.try_checked_add(strategy_pool_asset_value)?;
+            strategy_pool_assets_total_value + strategy_pool_asset_value;
     }
 
     /* calculate ratio as total strategy pool value / total supply */
     /* i.e. the share value of one base token */
     /* i.e. the base token price in shares */
-    let ratio = strategy_token_total_supply
-        .div_as_f64(strategy_pool_assets_total_value)
-        .context("calculate_sp_tokens_to_mint_nth_backer calculating ratio")?;
+    let ratio = strategy_token_total_supply / strategy_pool_assets_total_value;
     let deposit_asset_price_in_base_token = token_prices
         .get(&deposit_asset)
         .context("could not find amount spend on asset to calculate mintage")?;
-    let base_token_actual_value =
-        base_token_actual_amount.mul_div(*deposit_asset_price_in_base_token, U256::exp10(18))?;
+    let base_token_actual_value = base_token_actual_amount * deposit_asset_price_in_base_token;
     /* calculate strategy pool tokens to mint as actual_amount * ratio */
-    Ok(base_token_actual_value.mul_f64(ratio)?)
+    Ok(base_token_actual_value / ratio)
 }
 
 #[cfg(test)]
@@ -1201,8 +1198,8 @@ mod tests {
     use eth_sdk::signer::Secp256k1SecretKey;
     use eth_sdk::utils::wait_for_confirmations_simple;
     use eth_sdk::{
-        BlockchainCoinAddresses, EthereumRpcConnectionPool, EthereumToken, TransactionReady,
-        ANVIL_PRIV_KEY_1, ANVIL_PRIV_KEY_2,
+        BlockchainCoinAddresses, EthereumRpcConnectionPool, EthereumToken, ScaledMath,
+        TransactionReady, ANVIL_PRIV_KEY_1, ANVIL_PRIV_KEY_2,
     };
     use gen::database::{
         FunAdminAddEscrowContractAddressReq, FunAdminAddEscrowTokenContractAddressReq,
@@ -1231,6 +1228,7 @@ mod tests {
             description: "WBNB".to_string(),
             address: wbnb_address_on_bsc_testnet.into(),
             blockchain: EnumBlockChain::BscTestnet,
+            decimals: 18,
             is_stablecoin: false,
         })
         .await?;

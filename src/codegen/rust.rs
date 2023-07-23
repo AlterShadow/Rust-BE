@@ -40,10 +40,9 @@ impl ToRust for Type {
             Type::Inet => "std::net::IpAddr".to_owned(),
             Type::Enum { name, .. } => format!("Enum{}", name.to_case(Case::Pascal),),
             Type::EnumRef(name) => format!("Enum{}", name.to_case(Case::Pascal),),
-            Type::BlockchainDecimal if serde_with => "U256".to_owned(),
+            Type::BlockchainDecimal => "Decimal".to_owned(),
             Type::BlockchainAddress if serde_with => "Address".to_owned(),
             Type::BlockchainTransactionHash if serde_with => "H256".to_owned(),
-            Type::BlockchainDecimal => "BlockchainDecimal".to_owned(),
             Type::BlockchainAddress => "BlockchainAddress".to_owned(),
             Type::BlockchainTransactionHash => "BlockchainTransactionHash".to_owned(),
         }
@@ -55,7 +54,7 @@ impl ToRust for Type {
                 let mut fields = fields.iter().map(|x| {
                     let opt = matches!(&x.ty, Type::Optional(_));
                     let serde_with_opt = match &x.ty {
-                        Type::BlockchainDecimal if serde_with => "WithBlockchainDecimal",
+                        Type::BlockchainDecimal => "rust_decimal::serde::str",
                         Type::BlockchainAddress if serde_with => "WithBlockchainAddress",
                         Type::BlockchainTransactionHash if serde_with => {
                             "WithBlockchainTransactionHash"
@@ -180,6 +179,7 @@ use lib::database::*;
 use lib::types::*;
 use crate::model::*;
 use serde::*;
+use rust_decimal::Decimal;
 use postgres_from_row::FromRow;
 
     "#
@@ -263,6 +263,7 @@ use strum_macros::{EnumString, Display};
 use lib::error_code::ErrorCode;
 use lib::ws::*;
 use lib::types::*;
+use rust_decimal::Decimal;
 
     "#
     )?;

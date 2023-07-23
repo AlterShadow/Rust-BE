@@ -170,6 +170,9 @@ pub fn get_signed_text(txt: String, signer: impl Key) -> Result<(String, String)
 
     Ok((hex::encode(&txt), encode_signature(&signature)))
 }
+pub fn u256_to_decimal(u: U256, decimals: u32) -> rust_decimal::Decimal {
+    rust_decimal::Decimal::new(u.as_u128() as i64, decimals)
+}
 
 #[cfg(test)]
 mod tests {

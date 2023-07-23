@@ -1,5 +1,5 @@
 -- Created by Vertabelo (http://vertabelo.com)
--- Last modification date: 2023-07-22 13:22:53.352
+-- Last modification date: 2023-07-23 12:56:23.314
 
 CREATE SCHEMA IF NOT EXISTS tbl;;
 
@@ -24,7 +24,7 @@ CREATE TABLE tbl.aum_history (
     transaction_hash varchar(80)  NOT NULL,
     action varchar(8)  NOT NULL,
     price double precision  NOT NULL,
-    quantity varchar(64)  NOT NULL,
+    quantity decimal(56, 18)  NOT NULL,
     current_price double precision  NULL,
     yield_7d double precision  NULL,
     yield_30d double precision  NULL,
@@ -95,7 +95,7 @@ CREATE TABLE tbl.expert_listened_wallet_asset_balance (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_expert_listened_wallet_asset_balance_id'),
     fkey_expert_watched_wallet_id bigint  NOT NULL,
     fkey_token_id bigint  NOT NULL,
-    balance varchar(64)  NOT NULL,
+    balance decimal(56, 18)  NOT NULL,
     CONSTRAINT expert_listened_wallet_asset_balance_pk PRIMARY KEY (pkey_id)
 );
 
@@ -138,8 +138,8 @@ CREATE TABLE tbl.last_dex_trade_for_pair (
     dex enum_dex  NOT NULL,
     fkey_token_in bigint  NOT NULL,
     fkey_token_out bigint  NOT NULL,
-    amount_in varchar(64)  NOT NULL,
-    amount_out varchar(64)  NOT NULL,
+    amount_in decimal(56, 18)  NOT NULL,
+    amount_out decimal(56, 18)  NOT NULL,
     happened_at bigint  NOT NULL,
     CONSTRAINT last_dex_trade_for_pair_pk PRIMARY KEY (pkey_id)
 );
@@ -216,7 +216,7 @@ CREATE TABLE tbl.strategy_escrow_pending_wallet_balance (
     fkey_strategy_pending_wallet_address_id bigint  NOT NULL,
     blockchain enum_block_chain  NOT NULL,
     fkey_token_id bigint  NOT NULL,
-    balance varchar(64)  NOT NULL,
+    balance decimal(56, 18)  NOT NULL,
     ratio_per_token double precision  NULL,
     CONSTRAINT strategy_escrow_pending_wallet_ledger_ak_1 UNIQUE (fkey_strategy_pending_wallet_address_id, blockchain, fkey_token_id) NOT DEFERRABLE  INITIALLY IMMEDIATE,
     CONSTRAINT strategy_escrow_pending_wallet_balance_pk PRIMARY KEY (pkey_id)
@@ -249,7 +249,7 @@ CREATE TABLE tbl.strategy_pool_contract_asset_balance (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_strategy_pool_contract_asset_balance_id'),
     fkey_strategy_pool_contract_id bigint  NOT NULL,
     fkey_token_id bigint  NOT NULL,
-    balance varchar(64)  NOT NULL,
+    balance decimal(56, 18)  NOT NULL,
     ratio_per_token double precision  NULL,
     CONSTRAINT strategy_pool_contract_asset_balance_ak_1 UNIQUE (fkey_strategy_pool_contract_id, fkey_token_id) NOT DEFERRABLE  INITIALLY IMMEDIATE,
     CONSTRAINT strategy_pool_contract_asset_balance_pk PRIMARY KEY (pkey_id)
@@ -263,7 +263,7 @@ CREATE TABLE tbl.strategy_pool_contract_asset_ledger (
     blockchain enum_block_chain  NOT NULL,
     transaction_hash varchar(80)  NOT NULL,
     dex varchar(20)  NULL,
-    amount varchar(64)  NOT NULL,
+    amount decimal(56, 18)  NOT NULL,
     is_add boolean  NOT NULL,
     happened_at bigint  NOT NULL,
     CONSTRAINT strategy_pool_contract_asset_ledger_pk PRIMARY KEY (pkey_id)
@@ -290,8 +290,8 @@ CREATE TABLE tbl.strategy_watching_wallet_trade_ledger (
     contract_address varchar(64)  NOT NULL,
     fkey_token_in bigint  NULL,
     fkey_token_out bigint  NULL,
-    amount_in varchar(64)  NULL,
-    amount_out varchar(64)  NULL,
+    amount_in decimal(56, 18)  NULL,
+    amount_out decimal(56, 18)  NULL,
     heppened_at bigint  NOT NULL,
     CONSTRAINT wallet_activity_history_ak_1 UNIQUE (transaction_hash) NOT DEFERRABLE  INITIALLY IMMEDIATE,
     CONSTRAINT strategy_watching_wallet_trade_ledger_pk PRIMARY KEY (pkey_id)
@@ -366,8 +366,8 @@ CREATE TABLE tbl.user_back_exit_strategy_ledger (
     fkey_strategy_id bigint  NOT NULL,
     blockchain enum_block_chain  NOT NULL,
     transaction_hash varchar(80)  NOT NULL,
-    quantity_of_usdc varchar(64)  NOT NULL,
-    quantity_sp_tokens varchar(64)  NOT NULL,
+    quantity_of_usdc decimal(56, 18)  NOT NULL,
+    quantity_sp_tokens decimal(56, 18)  NOT NULL,
     is_back boolean  NOT NULL,
     happened_at bigint  NOT NULL,
     CONSTRAINT user_back_exit_strategy_ledger_ak_1 UNIQUE (transaction_hash) NOT DEFERRABLE  INITIALLY IMMEDIATE,
@@ -402,7 +402,7 @@ CREATE TABLE tbl.user_deposit_withdraw_balance (
     fkey_user_id bigint  NOT NULL,
     fkey_escrow_contract_address_id bigint  NOT NULL,
     fkey_token_id bigint  NOT NULL,
-    balance varchar(64)  NOT NULL,
+    balance decimal(56, 18)  NOT NULL,
     CONSTRAINT user_deposit_withdraw_balance_pk PRIMARY KEY (pkey_id)
 );
 
@@ -416,7 +416,7 @@ CREATE TABLE tbl.user_deposit_withdraw_ledger (
     escrow_contract_address varchar(64)  NOT NULL,
     fkey_escrow_contract_address_id bigint  NOT NULL,
     receiver_address varchar(64)  NOT NULL,
-    quantity varchar(64)  NOT NULL,
+    quantity decimal(56, 18)  NOT NULL,
     transaction_hash varchar(80)  NOT NULL,
     is_deposit boolean  NOT NULL,
     is_back boolean  NOT NULL,
@@ -453,7 +453,7 @@ CREATE TABLE tbl.user_strategy_balance (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_user_strategy_balance_id'),
     fkey_strategy_pool_contract_id bigint  NOT NULL,
     fkey_user_strategy_wallet_id bigint  NOT NULL,
-    balance varchar(64)  NOT NULL,
+    balance decimal(56, 18)  NOT NULL,
     CONSTRAINT user_strategy_balance_pk PRIMARY KEY (pkey_id)
 );
 
@@ -463,7 +463,7 @@ CREATE TABLE tbl.user_strategy_pool_contract_asset_balance (
     fkey_strategy_wallet_id bigint  NOT NULL,
     fkey_strategy_pool_contract_id bigint  NOT NULL,
     fkey_token_id bigint  NOT NULL,
-    balance varchar(64)  NOT NULL,
+    balance decimal(56, 18)  NOT NULL,
     CONSTRAINT user_strategy_pool_contract_asset_balance_ak_1 UNIQUE (fkey_strategy_wallet_id, fkey_strategy_pool_contract_id, fkey_token_id) NOT DEFERRABLE  INITIALLY IMMEDIATE,
     CONSTRAINT user_strategy_pool_contract_asset_balance_pk PRIMARY KEY (pkey_id)
 );
@@ -474,7 +474,7 @@ CREATE TABLE tbl.user_strategy_pool_contract_asset_ledger (
     fkey_strategy_wallet_id bigint  NOT NULL,
     fkey_strategy_pool_contract_id bigint  NOT NULL,
     fkey_token_id bigint  NOT NULL,
-    amount varchar(64)  NOT NULL,
+    amount decimal(56, 18)  NOT NULL,
     is_add boolean  NOT NULL,
     happened_at bigint  NOT NULL,
     CONSTRAINT user_strategy_pool_contract_asset_ledger_pk PRIMARY KEY (pkey_id)

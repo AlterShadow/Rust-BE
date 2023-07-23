@@ -2,6 +2,7 @@ use crate::model::*;
 use lib::database::*;
 use lib::types::*;
 use postgres_from_row::FromRow;
+use rust_decimal::Decimal;
 use serde::*;
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -245,7 +246,8 @@ pub struct FunUserBackStrategyRespRow {
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserCalculateUserEscrowBalanceFromLedgerRespRow {
     pub wallet_address: BlockchainAddress,
-    pub balance: BlockchainDecimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub balance: Decimal,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -389,7 +391,8 @@ pub struct FunUserListBackStrategyLedgerRespRow {
     pub back_ledger_id: i64,
     pub user_id: i64,
     pub strategy_id: i64,
-    pub quantity: BlockchainDecimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub quantity: Decimal,
     pub blockchain: EnumBlockChain,
     pub transaction_hash: BlockchainTransactionHash,
     pub happened_at: i64,
@@ -403,7 +406,8 @@ pub struct FunUserListDepositWithdrawLedgerRespRow {
     pub user_address: BlockchainAddress,
     pub contract_address: BlockchainAddress,
     pub receiver_address: BlockchainAddress,
-    pub quantity: BlockchainDecimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub quantity: Decimal,
     pub transaction_hash: BlockchainTransactionHash,
     pub is_deposit: bool,
     pub happened_at: i64,
@@ -435,7 +439,8 @@ pub struct FunUserListExitStrategyLedgerRespRow {
     pub back_ledger_id: i64,
     pub user_id: i64,
     pub strategy_id: i64,
-    pub quantity: BlockchainDecimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub quantity: Decimal,
     pub blockchain: EnumBlockChain,
     pub transaction_hash: BlockchainTransactionHash,
     pub happened_at: i64,
@@ -446,7 +451,8 @@ pub struct FunUserListRequestRefundLedgerRespRow {
     pub request_refund_id: i64,
     pub user_id: i64,
     pub blockchain: EnumBlockChain,
-    pub quantity: BlockchainDecimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub quantity: Decimal,
     pub wallet_address: BlockchainAddress,
 }
 
@@ -483,7 +489,8 @@ pub struct FunUserListStrategyInitialTokenRatiosRespRow {
     pub token_id: i64,
     pub token_name: String,
     pub token_address: BlockchainAddress,
-    pub quantity: BlockchainDecimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub quantity: Decimal,
     pub strategy_id: i64,
     pub created_at: i64,
     pub updated_at: i64,
@@ -499,7 +506,8 @@ pub struct FunUserListStrategyPoolContractAssetLedgerRespRow {
     pub transaction_hash: BlockchainTransactionHash,
     #[serde(default)]
     pub dex: Option<String>,
-    pub amount: BlockchainDecimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub amount: Decimal,
     pub is_add: bool,
     pub happened_at: i64,
 }
@@ -537,7 +545,8 @@ pub struct FunUserListUserBackStrategyAttemptRespRow {
     pub strategy_name: String,
     pub token_id: i64,
     pub token_symbol: String,
-    pub back_quantity: BlockchainDecimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub back_quantity: Decimal,
     pub strategy_wallet_address: BlockchainAddress,
     pub log_id: i64,
     pub happened_at: i64,
@@ -559,7 +568,8 @@ pub struct FunUserListUserDepositWithdrawBalanceRespRow {
     pub token_id: i64,
     pub token_symbol: String,
     pub token_name: String,
-    pub balance: BlockchainDecimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub balance: Decimal,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -567,7 +577,8 @@ pub struct FunUserListUserStrategyBalanceRespRow {
     pub total: i64,
     pub strategy_id: i64,
     pub strategy_name: String,
-    pub balance: BlockchainDecimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub balance: Decimal,
     pub user_strategy_wallet_address: BlockchainAddress,
     pub blockchain: EnumBlockChain,
 }
@@ -582,8 +593,10 @@ pub struct FunUserListUserStrategyPoolContractAssetBalancesRespRow {
     pub token_name: String,
     pub token_symbol: String,
     pub token_address: BlockchainAddress,
+    pub token_decimals: i32,
     pub blockchain: EnumBlockChain,
-    pub balance: BlockchainDecimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub balance: Decimal,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -599,7 +612,8 @@ pub struct FunUserListUserStrategyPoolContractAssetLedgerEntriesRespRow {
     pub token_name: String,
     pub token_address: BlockchainAddress,
     pub blockchain: EnumBlockChain,
-    pub amount: BlockchainDecimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub amount: Decimal,
     pub happened_at: i64,
     pub is_add: bool,
 }
@@ -641,9 +655,12 @@ pub struct FunUserStrategyRowType {
     pub strategy_id: i64,
     pub strategy_name: String,
     pub strategy_description: String,
-    pub current_usdc: BlockchainDecimal,
-    pub total_backed_usdc: BlockchainDecimal,
-    pub total_exited_usdc: BlockchainDecimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub current_usdc: Decimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub total_backed_usdc: Decimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub total_exited_usdc: Decimal,
     #[serde(default)]
     pub risk_score: Option<f64>,
     #[serde(default)]
@@ -723,7 +740,8 @@ pub struct FunWatcherGetExpertWalletAssetsFromLedgerRespRow {
     pub token_address: BlockchainAddress,
     pub token_decimals: i32,
     pub blockchain: EnumBlockChain,
-    pub amount: BlockchainDecimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub amount: Decimal,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -758,7 +776,8 @@ pub struct FunWatcherListExpertListenedWalletAssetBalanceRespRow {
     pub token_address: BlockchainAddress,
     pub token_symbol: String,
     pub token_decimals: i32,
-    pub balance: BlockchainDecimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub balance: Decimal,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -768,8 +787,10 @@ pub struct FunWatcherListLastDexTradesForPairRespRow {
     pub dex: EnumDex,
     pub token_in_id: i64,
     pub token_out_id: i64,
-    pub amount_in: BlockchainDecimal,
-    pub amount_out: BlockchainDecimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub amount_in: Decimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub amount_out: Decimal,
     pub happened_at: i64,
 }
 
@@ -782,7 +803,8 @@ pub struct FunWatcherListStrategyEscrowPendingWalletBalanceRespRow {
     pub token_address: BlockchainAddress,
     pub token_name: String,
     pub token_symbol: String,
-    pub balance: BlockchainDecimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub balance: Decimal,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -793,7 +815,8 @@ pub struct FunWatcherListStrategyPoolContractAssetBalancesRespRow {
     pub token_address: BlockchainAddress,
     pub token_decimals: i32,
     pub blockchain: EnumBlockChain,
-    pub balance: BlockchainDecimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub balance: Decimal,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -812,7 +835,8 @@ pub struct FunWatcherListUserStrategyBalanceRespRow {
     pub blockchain: EnumBlockChain,
     pub strategy_pool_contract_address: BlockchainAddress,
     pub user_strategy_wallet_address: BlockchainAddress,
-    pub balance: BlockchainDecimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub balance: Decimal,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -1233,21 +1257,27 @@ impl DatabaseRequest for FunUserGetStrategyStatisticsBackLedgerReq {
 pub struct FunUserBackStrategyReq {
     pub user_id: i64,
     pub strategy_id: i64,
-    pub quantity: BlockchainDecimal,
-    pub new_total_backed_quantity: BlockchainDecimal,
-    pub old_total_backed_quantity: BlockchainDecimal,
-    pub new_current_quantity: BlockchainDecimal,
-    pub old_current_quantity: BlockchainDecimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub quantity: Decimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub new_total_backed_quantity: Decimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub old_total_backed_quantity: Decimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub new_current_quantity: Decimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub old_current_quantity: Decimal,
     pub blockchain: EnumBlockChain,
     pub transaction_hash: BlockchainTransactionHash,
-    pub earn_sp_tokens: BlockchainDecimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub earn_sp_tokens: Decimal,
 }
 
 #[allow(unused_variables)]
 impl DatabaseRequest for FunUserBackStrategyReq {
     type ResponseRow = FunUserBackStrategyRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_back_strategy(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_quantity => $3::varchar, a_new_total_backed_quantity => $4::varchar, a_old_total_backed_quantity => $5::varchar, a_new_current_quantity => $6::varchar, a_old_current_quantity => $7::varchar, a_blockchain => $8::enum_block_chain, a_transaction_hash => $9::varchar, a_earn_sp_tokens => $10::varchar);"
+        "SELECT * FROM api.fun_user_back_strategy(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_quantity => $3::decimal(56, 18), a_new_total_backed_quantity => $4::decimal(56, 18), a_old_total_backed_quantity => $5::decimal(56, 18), a_new_current_quantity => $6::decimal(56, 18), a_old_current_quantity => $7::decimal(56, 18), a_blockchain => $8::enum_block_chain, a_transaction_hash => $9::varchar, a_earn_sp_tokens => $10::decimal(56, 18));"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -1343,8 +1373,10 @@ impl DatabaseRequest for FunUserListExitStrategyLedgerReq {
 pub struct FunUserExitStrategyReq {
     pub user_id: i64,
     pub strategy_id: i64,
-    pub quantity: BlockchainDecimal,
-    pub redeem_sp_tokens: BlockchainDecimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub quantity: Decimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub redeem_sp_tokens: Decimal,
     pub blockchain: EnumBlockChain,
     pub transaction_hash: BlockchainTransactionHash,
 }
@@ -1353,7 +1385,7 @@ pub struct FunUserExitStrategyReq {
 impl DatabaseRequest for FunUserExitStrategyReq {
     type ResponseRow = FunUserExitStrategyRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_exit_strategy(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_quantity => $3::varchar, a_redeem_sp_tokens => $4::varchar, a_blockchain => $5::enum_block_chain, a_transaction_hash => $6::varchar);"
+        "SELECT * FROM api.fun_user_exit_strategy(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_quantity => $3::decimal(56, 18), a_redeem_sp_tokens => $4::decimal(56, 18), a_blockchain => $5::enum_block_chain, a_transaction_hash => $6::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -1397,7 +1429,8 @@ pub struct FunUserAddUserStrategyPoolContractAssetLedgerEntryReq {
     pub strategy_pool_contract_id: i64,
     pub token_address: BlockchainAddress,
     pub blockchain: EnumBlockChain,
-    pub amount: BlockchainDecimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub amount: Decimal,
     pub is_add: bool,
 }
 
@@ -1405,7 +1438,7 @@ pub struct FunUserAddUserStrategyPoolContractAssetLedgerEntryReq {
 impl DatabaseRequest for FunUserAddUserStrategyPoolContractAssetLedgerEntryReq {
     type ResponseRow = FunUserAddUserStrategyPoolContractAssetLedgerEntryRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_add_user_strategy_pool_contract_asset_ledger_entry(a_strategy_wallet_id => $1::bigint, a_strategy_pool_contract_id => $2::bigint, a_token_address => $3::varchar, a_blockchain => $4::enum_block_chain, a_amount => $5::varchar, a_is_add => $6::boolean);"
+        "SELECT * FROM api.fun_user_add_user_strategy_pool_contract_asset_ledger_entry(a_strategy_wallet_id => $1::bigint, a_strategy_pool_contract_id => $2::bigint, a_token_address => $3::varchar, a_blockchain => $4::enum_block_chain, a_amount => $5::decimal(56, 18), a_is_add => $6::boolean);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -1456,15 +1489,17 @@ pub struct FunUserUpsertUserStrategyPoolContractAssetBalanceReq {
     pub strategy_pool_contract_id: i64,
     pub token_address: BlockchainAddress,
     pub blockchain: EnumBlockChain,
-    pub old_balance: BlockchainDecimal,
-    pub new_balance: BlockchainDecimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub old_balance: Decimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub new_balance: Decimal,
 }
 
 #[allow(unused_variables)]
 impl DatabaseRequest for FunUserUpsertUserStrategyPoolContractAssetBalanceReq {
     type ResponseRow = FunUserUpsertUserStrategyPoolContractAssetBalanceRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_upsert_user_strategy_pool_contract_asset_balance(a_strategy_wallet_id => $1::bigint, a_strategy_pool_contract_id => $2::bigint, a_token_address => $3::varchar, a_blockchain => $4::enum_block_chain, a_old_balance => $5::varchar, a_new_balance => $6::varchar);"
+        "SELECT * FROM api.fun_user_upsert_user_strategy_pool_contract_asset_balance(a_strategy_wallet_id => $1::bigint, a_strategy_pool_contract_id => $2::bigint, a_token_address => $3::varchar, a_blockchain => $4::enum_block_chain, a_old_balance => $5::decimal(56, 18), a_new_balance => $6::decimal(56, 18));"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -1484,7 +1519,8 @@ pub struct FunUserAddStrategyPoolContractAssetLedgerEntryReq {
     pub token_address: BlockchainAddress,
     pub blockchain: EnumBlockChain,
     pub transaction_hash: BlockchainTransactionHash,
-    pub amount: BlockchainDecimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub amount: Decimal,
     pub is_add: bool,
 }
 
@@ -1492,7 +1528,7 @@ pub struct FunUserAddStrategyPoolContractAssetLedgerEntryReq {
 impl DatabaseRequest for FunUserAddStrategyPoolContractAssetLedgerEntryReq {
     type ResponseRow = FunUserAddStrategyPoolContractAssetLedgerEntryRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_add_strategy_pool_contract_asset_ledger_entry(a_strategy_pool_contract_id => $1::bigint, a_token_address => $2::varchar, a_blockchain => $3::enum_block_chain, a_transaction_hash => $4::varchar, a_amount => $5::varchar, a_is_add => $6::boolean);"
+        "SELECT * FROM api.fun_user_add_strategy_pool_contract_asset_ledger_entry(a_strategy_pool_contract_id => $1::bigint, a_token_address => $2::varchar, a_blockchain => $3::enum_block_chain, a_transaction_hash => $4::varchar, a_amount => $5::decimal(56, 18), a_is_add => $6::boolean);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -1995,7 +2031,8 @@ pub struct FunUserAddUserDepositWithdrawLedgerEntryReq {
     pub user_address: BlockchainAddress,
     pub escrow_contract_address: BlockchainAddress,
     pub receiver_address: BlockchainAddress,
-    pub quantity: BlockchainDecimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub quantity: Decimal,
     pub transaction_hash: BlockchainTransactionHash,
     pub is_deposit: bool,
     pub is_back: bool,
@@ -2006,7 +2043,7 @@ pub struct FunUserAddUserDepositWithdrawLedgerEntryReq {
 impl DatabaseRequest for FunUserAddUserDepositWithdrawLedgerEntryReq {
     type ResponseRow = FunUserAddUserDepositWithdrawLedgerEntryRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_add_user_deposit_withdraw_ledger_entry(a_user_id => $1::bigint, a_token_address => $2::varchar, a_blockchain => $3::enum_block_chain, a_user_address => $4::varchar, a_escrow_contract_address => $5::varchar, a_receiver_address => $6::varchar, a_quantity => $7::varchar, a_transaction_hash => $8::varchar, a_is_deposit => $9::boolean, a_is_back => $10::boolean, a_is_withdraw => $11::boolean);"
+        "SELECT * FROM api.fun_user_add_user_deposit_withdraw_ledger_entry(a_user_id => $1::bigint, a_token_address => $2::varchar, a_blockchain => $3::enum_block_chain, a_user_address => $4::varchar, a_escrow_contract_address => $5::varchar, a_receiver_address => $6::varchar, a_quantity => $7::decimal(56, 18), a_transaction_hash => $8::varchar, a_is_deposit => $9::boolean, a_is_back => $10::boolean, a_is_withdraw => $11::boolean);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -2034,7 +2071,8 @@ pub struct FunUserRequestRefundReq {
     pub contract_address: BlockchainAddress,
     pub contract_address_id: i64,
     pub receiver_address: BlockchainAddress,
-    pub quantity: BlockchainDecimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub quantity: Decimal,
     pub transaction_hash: BlockchainTransactionHash,
 }
 
@@ -2042,7 +2080,7 @@ pub struct FunUserRequestRefundReq {
 impl DatabaseRequest for FunUserRequestRefundReq {
     type ResponseRow = FunUserRequestRefundRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_request_refund(a_user_id => $1::bigint, a_token_id => $2::bigint, a_blockchain => $3::enum_block_chain, a_user_address => $4::varchar, a_contract_address => $5::varchar, a_contract_address_id => $6::bigint, a_receiver_address => $7::varchar, a_quantity => $8::varchar, a_transaction_hash => $9::varchar);"
+        "SELECT * FROM api.fun_user_request_refund(a_user_id => $1::bigint, a_token_id => $2::bigint, a_blockchain => $3::enum_block_chain, a_user_address => $4::varchar, a_contract_address => $5::varchar, a_contract_address_id => $6::bigint, a_receiver_address => $7::varchar, a_quantity => $8::decimal(56, 18), a_transaction_hash => $9::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -2085,14 +2123,15 @@ impl DatabaseRequest for FunUserListRequestRefundLedgerReq {
 pub struct FunUserAddStrategyInitialTokenRatioReq {
     pub strategy_id: i64,
     pub token_id: i64,
-    pub quantity: BlockchainDecimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub quantity: Decimal,
 }
 
 #[allow(unused_variables)]
 impl DatabaseRequest for FunUserAddStrategyInitialTokenRatioReq {
     type ResponseRow = FunUserAddStrategyInitialTokenRatioRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_add_strategy_initial_token_ratio(a_strategy_id => $1::bigint, a_token_id => $2::bigint, a_quantity => $3::varchar);"
+        "SELECT * FROM api.fun_user_add_strategy_initial_token_ratio(a_strategy_id => $1::bigint, a_token_id => $2::bigint, a_quantity => $3::decimal(56, 18));"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -2107,14 +2146,15 @@ impl DatabaseRequest for FunUserAddStrategyInitialTokenRatioReq {
 pub struct FunUserUpdateStrategyInitialTokenRatioReq {
     pub strategy_id: i64,
     pub token_id: i64,
-    pub new_quantity: BlockchainDecimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub new_quantity: Decimal,
 }
 
 #[allow(unused_variables)]
 impl DatabaseRequest for FunUserUpdateStrategyInitialTokenRatioReq {
     type ResponseRow = FunUserUpdateStrategyInitialTokenRatioRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_update_strategy_initial_token_ratio(a_strategy_id => $1::bigint, a_token_id => $2::bigint, a_new_quantity => $3::varchar);"
+        "SELECT * FROM api.fun_user_update_strategy_initial_token_ratio(a_strategy_id => $1::bigint, a_token_id => $2::bigint, a_new_quantity => $3::decimal(56, 18));"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -2511,15 +2551,17 @@ impl DatabaseRequest for FunUserListUserDepositWithdrawBalanceReq {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserUpdateUserDepositWithdrawBalanceReq {
     pub deposit_withdraw_balance_id: i64,
-    pub old_balance: BlockchainDecimal,
-    pub new_balance: BlockchainDecimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub old_balance: Decimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub new_balance: Decimal,
 }
 
 #[allow(unused_variables)]
 impl DatabaseRequest for FunUserUpdateUserDepositWithdrawBalanceReq {
     type ResponseRow = FunUserUpdateUserDepositWithdrawBalanceRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_update_user_deposit_withdraw_balance(a_deposit_withdraw_balance_id => $1::bigint, a_old_balance => $2::varchar, a_new_balance => $3::varchar);"
+        "SELECT * FROM api.fun_user_update_user_deposit_withdraw_balance(a_deposit_withdraw_balance_id => $1::bigint, a_old_balance => $2::decimal(56, 18), a_new_balance => $3::decimal(56, 18));"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -2617,7 +2659,8 @@ pub struct FunUserSaveUserBackStrategyAttemptReq {
     pub strategy_id: i64,
     pub user_id: i64,
     pub token_id: i64,
-    pub back_quantity: BlockchainDecimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub back_quantity: Decimal,
     pub strategy_wallet_address: BlockchainAddress,
     pub log_id: i64,
 }
@@ -2626,7 +2669,7 @@ pub struct FunUserSaveUserBackStrategyAttemptReq {
 impl DatabaseRequest for FunUserSaveUserBackStrategyAttemptReq {
     type ResponseRow = FunUserSaveUserBackStrategyAttemptRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_save_user_back_strategy_attempt(a_strategy_id => $1::bigint, a_user_id => $2::bigint, a_token_id => $3::bigint, a_back_quantity => $4::varchar, a_strategy_wallet_address => $5::varchar, a_log_id => $6::bigint);"
+        "SELECT * FROM api.fun_user_save_user_back_strategy_attempt(a_strategy_id => $1::bigint, a_user_id => $2::bigint, a_token_id => $3::bigint, a_back_quantity => $4::decimal(56, 18), a_strategy_wallet_address => $5::varchar, a_log_id => $6::bigint);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -3268,9 +3311,9 @@ pub struct FunWatcherSaveStrategyWatchingWalletTradeLedgerReq {
     #[serde(default)]
     pub token_out_address: Option<BlockchainAddress>,
     #[serde(default)]
-    pub amount_in: Option<BlockchainDecimal>,
+    pub amount_in: Option<Decimal>,
     #[serde(default)]
-    pub amount_out: Option<BlockchainDecimal>,
+    pub amount_out: Option<Decimal>,
     #[serde(default)]
     pub happened_at: Option<i64>,
 }
@@ -3279,7 +3322,7 @@ pub struct FunWatcherSaveStrategyWatchingWalletTradeLedgerReq {
 impl DatabaseRequest for FunWatcherSaveStrategyWatchingWalletTradeLedgerReq {
     type ResponseRow = FunWatcherSaveStrategyWatchingWalletTradeLedgerRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_watcher_save_strategy_watching_wallet_trade_ledger(a_address => $1::varchar, a_transaction_hash => $2::varchar, a_blockchain => $3::enum_block_chain, a_contract_address => $4::varchar, a_dex => $5::varchar, a_token_in_address => $6::varchar, a_token_out_address => $7::varchar, a_amount_in => $8::varchar, a_amount_out => $9::varchar, a_happened_at => $10::bigint);"
+        "SELECT * FROM api.fun_watcher_save_strategy_watching_wallet_trade_ledger(a_address => $1::varchar, a_transaction_hash => $2::varchar, a_blockchain => $3::enum_block_chain, a_contract_address => $4::varchar, a_dex => $5::varchar, a_token_in_address => $6::varchar, a_token_out_address => $7::varchar, a_amount_in => $8::decimal(56, 18), a_amount_out => $9::decimal(56, 18), a_happened_at => $10::bigint);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -3409,15 +3452,17 @@ pub struct FunWatcherUpsertLastDexTradeForPairReq {
     pub dex: EnumDex,
     pub token_in_address: BlockchainAddress,
     pub token_out_address: BlockchainAddress,
-    pub amount_in: BlockchainDecimal,
-    pub amount_out: BlockchainDecimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub amount_in: Decimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub amount_out: Decimal,
 }
 
 #[allow(unused_variables)]
 impl DatabaseRequest for FunWatcherUpsertLastDexTradeForPairReq {
     type ResponseRow = FunWatcherUpsertLastDexTradeForPairRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_watcher_upsert_last_dex_trade_for_pair(a_transaction_hash => $1::varchar, a_blockchain => $2::enum_block_chain, a_dex => $3::enum_dex, a_token_in_address => $4::varchar, a_token_out_address => $5::varchar, a_amount_in => $6::varchar, a_amount_out => $7::varchar);"
+        "SELECT * FROM api.fun_watcher_upsert_last_dex_trade_for_pair(a_transaction_hash => $1::varchar, a_blockchain => $2::enum_block_chain, a_dex => $3::enum_dex, a_token_in_address => $4::varchar, a_token_out_address => $5::varchar, a_amount_in => $6::decimal(56, 18), a_amount_out => $7::decimal(56, 18));"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -3437,14 +3482,15 @@ pub struct FunWatcherUpsertStrategyPoolContractAssetBalanceReq {
     pub strategy_pool_contract_id: i64,
     pub token_address: BlockchainAddress,
     pub blockchain: EnumBlockChain,
-    pub new_balance: BlockchainDecimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub new_balance: Decimal,
 }
 
 #[allow(unused_variables)]
 impl DatabaseRequest for FunWatcherUpsertStrategyPoolContractAssetBalanceReq {
     type ResponseRow = FunWatcherUpsertStrategyPoolContractAssetBalanceRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_watcher_upsert_strategy_pool_contract_asset_balance(a_strategy_pool_contract_id => $1::bigint, a_token_address => $2::varchar, a_blockchain => $3::enum_block_chain, a_new_balance => $4::varchar);"
+        "SELECT * FROM api.fun_watcher_upsert_strategy_pool_contract_asset_balance(a_strategy_pool_contract_id => $1::bigint, a_token_address => $2::varchar, a_blockchain => $3::enum_block_chain, a_new_balance => $4::decimal(56, 18));"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -3540,15 +3586,17 @@ pub struct FunWatcherUpsertExpertListenedWalletAssetBalanceReq {
     pub address: BlockchainAddress,
     pub blockchain: EnumBlockChain,
     pub token_id: i64,
-    pub old_balance: BlockchainDecimal,
-    pub new_balance: BlockchainDecimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub old_balance: Decimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub new_balance: Decimal,
 }
 
 #[allow(unused_variables)]
 impl DatabaseRequest for FunWatcherUpsertExpertListenedWalletAssetBalanceReq {
     type ResponseRow = FunWatcherUpsertExpertListenedWalletAssetBalanceRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_watcher_upsert_expert_listened_wallet_asset_balance(a_address => $1::varchar, a_blockchain => $2::enum_block_chain, a_token_id => $3::bigint, a_old_balance => $4::varchar, a_new_balance => $5::varchar);"
+        "SELECT * FROM api.fun_watcher_upsert_expert_listened_wallet_asset_balance(a_address => $1::varchar, a_blockchain => $2::enum_block_chain, a_token_id => $3::bigint, a_old_balance => $4::decimal(56, 18), a_new_balance => $5::decimal(56, 18));"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -3622,15 +3670,17 @@ pub struct FunWatcherUpsertUserStrategyBalanceReq {
     pub user_id: i64,
     pub strategy_id: i64,
     pub blockchain: EnumBlockChain,
-    pub old_balance: BlockchainDecimal,
-    pub new_balance: BlockchainDecimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub old_balance: Decimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub new_balance: Decimal,
 }
 
 #[allow(unused_variables)]
 impl DatabaseRequest for FunWatcherUpsertUserStrategyBalanceReq {
     type ResponseRow = FunWatcherUpsertUserStrategyBalanceRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_watcher_upsert_user_strategy_balance(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_blockchain => $3::enum_block_chain, a_old_balance => $4::varchar, a_new_balance => $5::varchar);"
+        "SELECT * FROM api.fun_watcher_upsert_user_strategy_balance(a_user_id => $1::bigint, a_strategy_id => $2::bigint, a_blockchain => $3::enum_block_chain, a_old_balance => $4::decimal(56, 18), a_new_balance => $5::decimal(56, 18));"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -3649,15 +3699,17 @@ pub struct FunWatcherUpsertUserDepositWithdrawBalanceReq {
     pub token_address: BlockchainAddress,
     pub escrow_contract_address: BlockchainAddress,
     pub blockchain: EnumBlockChain,
-    pub old_balance: BlockchainDecimal,
-    pub new_balance: BlockchainDecimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub old_balance: Decimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub new_balance: Decimal,
 }
 
 #[allow(unused_variables)]
 impl DatabaseRequest for FunWatcherUpsertUserDepositWithdrawBalanceReq {
     type ResponseRow = FunWatcherUpsertUserDepositWithdrawBalanceRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_watcher_upsert_user_deposit_withdraw_balance(a_user_id => $1::bigint, a_token_address => $2::varchar, a_escrow_contract_address => $3::varchar, a_blockchain => $4::enum_block_chain, a_old_balance => $5::varchar, a_new_balance => $6::varchar);"
+        "SELECT * FROM api.fun_watcher_upsert_user_deposit_withdraw_balance(a_user_id => $1::bigint, a_token_address => $2::varchar, a_escrow_contract_address => $3::varchar, a_blockchain => $4::enum_block_chain, a_old_balance => $5::decimal(56, 18), a_new_balance => $6::decimal(56, 18));"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![

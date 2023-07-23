@@ -31,3 +31,4 @@ eth-sdk = { path = "../eth-sdk" }
 api = { path = "../api" }
 itertools = "0.10.5"
 num = "0.4.0"
+rust_decimal = "1.29.1"

@@ -486,6 +486,7 @@ END
                 Field::new("token_name", Type::String),
                 Field::new("token_symbol", Type::String),
                 Field::new("token_address", Type::BlockchainAddress),
+                Field::new("token_decimals", Type::Int),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("balance", Type::BlockchainDecimal),
             ],

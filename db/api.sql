@@ -359,9 +359,9 @@ RETURNS table (
     "strategy_id" bigint,
     "strategy_name" varchar,
     "strategy_description" varchar,
-    "current_usdc" varchar,
-    "total_backed_usdc" varchar,
-    "total_exited_usdc" varchar,
+    "current_usdc" decimal(56, 18),
+    "total_backed_usdc" decimal(56, 18),
+    "total_exited_usdc" decimal(56, 18),
     "risk_score" double precision,
     "aum" double precision,
     "followers" bigint,
@@ -456,9 +456,9 @@ RETURNS table (
     "strategy_id" bigint,
     "strategy_name" varchar,
     "strategy_description" varchar,
-    "current_usdc" varchar,
-    "total_backed_usdc" varchar,
-    "total_exited_usdc" varchar,
+    "current_usdc" decimal(56, 18),
+    "total_backed_usdc" decimal(56, 18),
+    "total_exited_usdc" decimal(56, 18),
     "risk_score" double precision,
     "aum" double precision,
     "followers" bigint,
@@ -600,7 +600,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_back_strategy(a_user_id bigint, a_strategy_id bigint, a_quantity varchar, a_new_total_backed_quantity varchar, a_old_total_backed_quantity varchar, a_new_current_quantity varchar, a_old_current_quantity varchar, a_blockchain enum_block_chain, a_transaction_hash varchar, a_earn_sp_tokens varchar)
+CREATE OR REPLACE FUNCTION api.fun_user_back_strategy(a_user_id bigint, a_strategy_id bigint, a_quantity decimal(56, 18), a_new_total_backed_quantity decimal(56, 18), a_old_total_backed_quantity decimal(56, 18), a_new_current_quantity decimal(56, 18), a_old_current_quantity decimal(56, 18), a_blockchain enum_block_chain, a_transaction_hash varchar, a_earn_sp_tokens decimal(56, 18))
 RETURNS table (
     "success" boolean
 )
@@ -653,9 +653,9 @@ RETURNS table (
     "strategy_id" bigint,
     "strategy_name" varchar,
     "strategy_description" varchar,
-    "current_usdc" varchar,
-    "total_backed_usdc" varchar,
-    "total_exited_usdc" varchar,
+    "current_usdc" decimal(56, 18),
+    "total_backed_usdc" decimal(56, 18),
+    "total_exited_usdc" decimal(56, 18),
     "risk_score" double precision,
     "aum" double precision,
     "followers" bigint,
@@ -748,7 +748,7 @@ RETURNS table (
     "back_ledger_id" bigint,
     "user_id" bigint,
     "strategy_id" bigint,
-    "quantity" varchar,
+    "quantity" decimal(56, 18),
     "blockchain" enum_block_chain,
     "transaction_hash" varchar,
     "happened_at" bigint
@@ -783,7 +783,7 @@ RETURNS table (
     "back_ledger_id" bigint,
     "user_id" bigint,
     "strategy_id" bigint,
-    "quantity" varchar,
+    "quantity" decimal(56, 18),
     "blockchain" enum_block_chain,
     "transaction_hash" varchar,
     "happened_at" bigint
@@ -812,7 +812,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_exit_strategy(a_user_id bigint, a_strategy_id bigint, a_quantity varchar, a_redeem_sp_tokens varchar, a_blockchain enum_block_chain, a_transaction_hash varchar)
+CREATE OR REPLACE FUNCTION api.fun_user_exit_strategy(a_user_id bigint, a_strategy_id bigint, a_quantity decimal(56, 18), a_redeem_sp_tokens decimal(56, 18), a_blockchain enum_block_chain, a_transaction_hash varchar)
 RETURNS table (
     "success" boolean
 )
@@ -867,7 +867,7 @@ RETURNS table (
     "token_name" varchar,
     "token_address" varchar,
     "blockchain" enum_block_chain,
-    "amount" varchar,
+    "amount" decimal(56, 18),
     "happened_at" bigint,
     "is_add" boolean
 )
@@ -922,7 +922,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_add_user_strategy_pool_contract_asset_ledger_entry(a_strategy_wallet_id bigint, a_strategy_pool_contract_id bigint, a_token_address varchar, a_blockchain enum_block_chain, a_amount varchar, a_is_add boolean)
+CREATE OR REPLACE FUNCTION api.fun_user_add_user_strategy_pool_contract_asset_ledger_entry(a_strategy_wallet_id bigint, a_strategy_pool_contract_id bigint, a_token_address varchar, a_blockchain enum_block_chain, a_amount decimal(56, 18), a_is_add boolean)
 RETURNS table (
     "success" boolean
 )
@@ -962,8 +962,9 @@ RETURNS table (
     "token_name" varchar,
     "token_symbol" varchar,
     "token_address" varchar,
+    "token_decimals" int,
     "blockchain" enum_block_chain,
-    "balance" varchar
+    "balance" decimal(56, 18)
 )
 LANGUAGE plpgsql
 AS $$
@@ -1008,7 +1009,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_upsert_user_strategy_pool_contract_asset_balance(a_strategy_wallet_id bigint, a_strategy_pool_contract_id bigint, a_token_address varchar, a_blockchain enum_block_chain, a_old_balance varchar, a_new_balance varchar)
+CREATE OR REPLACE FUNCTION api.fun_user_upsert_user_strategy_pool_contract_asset_balance(a_strategy_wallet_id bigint, a_strategy_pool_contract_id bigint, a_token_address varchar, a_blockchain enum_block_chain, a_old_balance decimal(56, 18), a_new_balance decimal(56, 18))
 RETURNS table (
     "user_strategy_pool_contract_asset_balance_id" bigint
 )
@@ -1065,7 +1066,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_add_strategy_pool_contract_asset_ledger_entry(a_strategy_pool_contract_id bigint, a_token_address varchar, a_blockchain enum_block_chain, a_transaction_hash varchar, a_amount varchar, a_is_add boolean)
+CREATE OR REPLACE FUNCTION api.fun_user_add_strategy_pool_contract_asset_ledger_entry(a_strategy_pool_contract_id bigint, a_token_address varchar, a_blockchain enum_block_chain, a_transaction_hash varchar, a_amount decimal(56, 18), a_is_add boolean)
 RETURNS table (
     "success" boolean
 )
@@ -1121,7 +1122,7 @@ RETURNS table (
     "blockchain" enum_block_chain,
     "transaction_hash" varchar,
     "dex" varchar,
-    "amount" varchar,
+    "amount" decimal(56, 18),
     "is_add" boolean,
     "happened_at" bigint
 )
@@ -1830,7 +1831,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_add_user_deposit_withdraw_ledger_entry(a_user_id bigint, a_token_address varchar, a_blockchain enum_block_chain, a_user_address varchar, a_escrow_contract_address varchar, a_receiver_address varchar, a_quantity varchar, a_transaction_hash varchar, a_is_deposit boolean, a_is_back boolean, a_is_withdraw boolean)
+CREATE OR REPLACE FUNCTION api.fun_user_add_user_deposit_withdraw_ledger_entry(a_user_id bigint, a_token_address varchar, a_blockchain enum_block_chain, a_user_address varchar, a_escrow_contract_address varchar, a_receiver_address varchar, a_quantity decimal(56, 18), a_transaction_hash varchar, a_is_deposit boolean, a_is_back boolean, a_is_withdraw boolean)
 RETURNS table (
     "ledger_entry_id" bigint
 )
@@ -1893,7 +1894,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_request_refund(a_user_id bigint, a_token_id bigint, a_blockchain enum_block_chain, a_user_address varchar, a_contract_address varchar, a_contract_address_id bigint, a_receiver_address varchar, a_quantity varchar, a_transaction_hash varchar)
+CREATE OR REPLACE FUNCTION api.fun_user_request_refund(a_user_id bigint, a_token_id bigint, a_blockchain enum_block_chain, a_user_address varchar, a_contract_address varchar, a_contract_address_id bigint, a_receiver_address varchar, a_quantity decimal(56, 18), a_transaction_hash varchar)
 RETURNS table (
     "request_refund_id" bigint
 )
@@ -1953,7 +1954,7 @@ RETURNS table (
     "request_refund_id" bigint,
     "user_id" bigint,
     "blockchain" enum_block_chain,
-    "quantity" varchar,
+    "quantity" decimal(56, 18),
     "wallet_address" varchar
 )
 LANGUAGE plpgsql
@@ -1971,7 +1972,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_add_strategy_initial_token_ratio(a_strategy_id bigint, a_token_id bigint, a_quantity varchar)
+CREATE OR REPLACE FUNCTION api.fun_user_add_strategy_initial_token_ratio(a_strategy_id bigint, a_token_id bigint, a_quantity decimal(56, 18))
 RETURNS table (
     "strategy_initial_token_ratio_id" bigint
 )
@@ -1986,7 +1987,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_update_strategy_initial_token_ratio(a_strategy_id bigint, a_token_id bigint, a_new_quantity varchar)
+CREATE OR REPLACE FUNCTION api.fun_user_update_strategy_initial_token_ratio(a_strategy_id bigint, a_token_id bigint, a_new_quantity decimal(56, 18))
 RETURNS void
 LANGUAGE plpgsql
 AS $$
@@ -2020,7 +2021,7 @@ RETURNS table (
     "token_id" bigint,
     "token_name" varchar,
     "token_address" varchar,
-    "quantity" varchar,
+    "quantity" decimal(56, 18),
     "strategy_id" bigint,
     "created_at" bigint,
     "updated_at" bigint
@@ -2132,7 +2133,7 @@ RETURNS table (
     "user_address" varchar,
     "contract_address" varchar,
     "receiver_address" varchar,
-    "quantity" varchar,
+    "quantity" decimal(56, 18),
     "transaction_hash" varchar,
     "is_deposit" boolean,
     "happened_at" bigint
@@ -2401,7 +2402,7 @@ RETURNS table (
     "token_id" bigint,
     "token_symbol" varchar,
     "token_name" varchar,
-    "balance" varchar
+    "balance" decimal(56, 18)
 )
 LANGUAGE plpgsql
 AS $$
@@ -2438,7 +2439,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_update_user_deposit_withdraw_balance(a_deposit_withdraw_balance_id bigint, a_old_balance varchar, a_new_balance varchar)
+CREATE OR REPLACE FUNCTION api.fun_user_update_user_deposit_withdraw_balance(a_deposit_withdraw_balance_id bigint, a_old_balance decimal(56, 18), a_new_balance decimal(56, 18))
 RETURNS table (
     "updated" boolean
 )
@@ -2524,7 +2525,7 @@ RETURNS table (
     "total" bigint,
     "strategy_id" bigint,
     "strategy_name" varchar,
-    "balance" varchar,
+    "balance" decimal(56, 18),
     "user_strategy_wallet_address" varchar,
     "blockchain" enum_block_chain
 )
@@ -2554,7 +2555,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_save_user_back_strategy_attempt(a_strategy_id bigint, a_user_id bigint, a_token_id bigint, a_back_quantity varchar, a_strategy_wallet_address varchar, a_log_id bigint)
+CREATE OR REPLACE FUNCTION api.fun_user_save_user_back_strategy_attempt(a_strategy_id bigint, a_user_id bigint, a_token_id bigint, a_back_quantity decimal(56, 18), a_strategy_wallet_address varchar, a_log_id bigint)
 RETURNS table (
     "user_back_strategy_attempt_id" bigint
 )
@@ -2578,7 +2579,7 @@ RETURNS table (
     "strategy_name" varchar,
     "token_id" bigint,
     "token_symbol" varchar,
-    "back_quantity" varchar,
+    "back_quantity" decimal(56, 18),
     "strategy_wallet_address" varchar,
     "log_id" bigint,
     "happened_at" bigint
@@ -2654,7 +2655,7 @@ $$;
 CREATE OR REPLACE FUNCTION api.fun_user_calculate_user_escrow_balance_from_ledger(a_user_id bigint, a_token_id bigint, a_blockchain enum_block_chain, a_escrow_contract_address varchar, a_wallet_address varchar DEFAULT NULL)
 RETURNS table (
     "wallet_address" varchar,
-    "balance" varchar
+    "balance" decimal(56, 18)
 )
 LANGUAGE plpgsql
 AS $$
@@ -3006,9 +3007,9 @@ RETURNS table (
     "strategy_id" bigint,
     "strategy_name" varchar,
     "strategy_description" varchar,
-    "current_usdc" varchar,
-    "total_backed_usdc" varchar,
-    "total_exited_usdc" varchar,
+    "current_usdc" decimal(56, 18),
+    "total_backed_usdc" decimal(56, 18),
+    "total_exited_usdc" decimal(56, 18),
     "risk_score" double precision,
     "aum" double precision,
     "followers" bigint,
@@ -3309,7 +3310,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_watcher_save_strategy_watching_wallet_trade_ledger(a_address varchar, a_transaction_hash varchar, a_blockchain enum_block_chain, a_contract_address varchar, a_dex varchar DEFAULT NULL, a_token_in_address varchar DEFAULT NULL, a_token_out_address varchar DEFAULT NULL, a_amount_in varchar DEFAULT NULL, a_amount_out varchar DEFAULT NULL, a_happened_at bigint DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_watcher_save_strategy_watching_wallet_trade_ledger(a_address varchar, a_transaction_hash varchar, a_blockchain enum_block_chain, a_contract_address varchar, a_dex varchar DEFAULT NULL, a_token_in_address varchar DEFAULT NULL, a_token_out_address varchar DEFAULT NULL, a_amount_in decimal(56, 18) DEFAULT NULL, a_amount_out decimal(56, 18) DEFAULT NULL, a_happened_at bigint DEFAULT NULL)
 RETURNS table (
     "strategy_watching_wallet_trade_ledger_id" bigint,
     "expert_watched_wallet_id" bigint,
@@ -3373,7 +3374,7 @@ RETURNS table (
     "token_address" varchar,
     "token_decimals" int,
     "blockchain" enum_block_chain,
-    "amount" varchar
+    "amount" decimal(56, 18)
 )
 LANGUAGE plpgsql
 AS $$
@@ -3565,8 +3566,8 @@ RETURNS table (
     "dex" enum_dex,
     "token_in_id" bigint,
     "token_out_id" bigint,
-    "amount_in" varchar,
-    "amount_out" varchar,
+    "amount_in" decimal(56, 18),
+    "amount_out" decimal(56, 18),
     "happened_at" bigint
 )
 LANGUAGE plpgsql
@@ -3593,7 +3594,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_watcher_upsert_last_dex_trade_for_pair(a_transaction_hash varchar, a_blockchain enum_block_chain, a_dex enum_dex, a_token_in_address varchar, a_token_out_address varchar, a_amount_in varchar, a_amount_out varchar)
+CREATE OR REPLACE FUNCTION api.fun_watcher_upsert_last_dex_trade_for_pair(a_transaction_hash varchar, a_blockchain enum_block_chain, a_dex enum_dex, a_token_in_address varchar, a_token_out_address varchar, a_amount_in decimal(56, 18), a_amount_out decimal(56, 18))
 RETURNS table (
     "last_dex_trade_for_pair_id" bigint
 )
@@ -3657,7 +3658,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_watcher_upsert_strategy_pool_contract_asset_balance(a_strategy_pool_contract_id bigint, a_token_address varchar, a_blockchain enum_block_chain, a_new_balance varchar)
+CREATE OR REPLACE FUNCTION api.fun_watcher_upsert_strategy_pool_contract_asset_balance(a_strategy_pool_contract_id bigint, a_token_address varchar, a_blockchain enum_block_chain, a_new_balance decimal(56, 18))
 RETURNS table (
     "strategy_contract_asset_balance_id" bigint
 )
@@ -3701,7 +3702,7 @@ RETURNS table (
     "token_address" varchar,
     "token_decimals" int,
     "blockchain" enum_block_chain,
-    "balance" varchar
+    "balance" decimal(56, 18)
 )
 LANGUAGE plpgsql
 AS $$
@@ -3736,7 +3737,7 @@ RETURNS table (
     "token_address" varchar,
     "token_name" varchar,
     "token_symbol" varchar,
-    "balance" varchar
+    "balance" decimal(56, 18)
 )
 LANGUAGE plpgsql
 AS $$
@@ -3768,7 +3769,7 @@ RETURNS table (
     "blockchain" enum_block_chain,
     "strategy_pool_contract_address" varchar,
     "user_strategy_wallet_address" varchar,
-    "balance" varchar
+    "balance" decimal(56, 18)
 )
 LANGUAGE plpgsql
 AS $$
@@ -3794,7 +3795,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_watcher_upsert_expert_listened_wallet_asset_balance(a_address varchar, a_blockchain enum_block_chain, a_token_id bigint, a_old_balance varchar, a_new_balance varchar)
+CREATE OR REPLACE FUNCTION api.fun_watcher_upsert_expert_listened_wallet_asset_balance(a_address varchar, a_blockchain enum_block_chain, a_token_id bigint, a_old_balance decimal(56, 18), a_new_balance decimal(56, 18))
 RETURNS table (
     "expert_listened_wallet_asset_balance_id" bigint
 )
@@ -3853,7 +3854,7 @@ RETURNS table (
     "token_address" varchar,
     "token_symbol" varchar,
     "token_decimals" int,
-    "balance" varchar
+    "balance" decimal(56, 18)
 )
 LANGUAGE plpgsql
 AS $$
@@ -3901,7 +3902,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_watcher_upsert_user_strategy_balance(a_user_id bigint, a_strategy_id bigint, a_blockchain enum_block_chain, a_old_balance varchar, a_new_balance varchar)
+CREATE OR REPLACE FUNCTION api.fun_watcher_upsert_user_strategy_balance(a_user_id bigint, a_strategy_id bigint, a_blockchain enum_block_chain, a_old_balance decimal(56, 18), a_new_balance decimal(56, 18))
 RETURNS table (
     "ret_pkey_id" bigint
 )
@@ -3959,7 +3960,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_watcher_upsert_user_deposit_withdraw_balance(a_user_id bigint, a_token_address varchar, a_escrow_contract_address varchar, a_blockchain enum_block_chain, a_old_balance varchar, a_new_balance varchar)
+CREATE OR REPLACE FUNCTION api.fun_watcher_upsert_user_deposit_withdraw_balance(a_user_id bigint, a_token_address varchar, a_escrow_contract_address varchar, a_blockchain enum_block_chain, a_old_balance decimal(56, 18), a_new_balance decimal(56, 18))
 RETURNS table (
     "ret_pkey_id" bigint
 )

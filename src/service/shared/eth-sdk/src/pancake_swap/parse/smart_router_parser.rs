@@ -17,7 +17,7 @@ use std::sync::OnceLock;
 use web3::ethabi::Contract;
 use web3::types::{Address, H160, H256, U256};
 
-pub struct Swap {
+pub struct PancakeSwapInfo {
     pub recipient: Address,
     pub token_in: Address,
     pub token_out: Address,
@@ -64,7 +64,7 @@ impl PancakeSwapParser {
             function_calls = vec![function_called];
         }
 
-        let mut swap_infos: Vec<(Swap, EnumDexVersion, ContractCall)> = Vec::new();
+        let mut swap_infos: Vec<(PancakeSwapInfo, EnumDexVersion, ContractCall)> = Vec::new();
         for call in function_calls {
             let method_name = call.get_name();
             if let Some(method) = self.get_method_by_name(&method_name) {
@@ -73,7 +73,7 @@ impl PancakeSwapParser {
                     PancakeSwapMethod::SwapExactTokensForTokens => {
                         let swap_exact_tokens_for_tokens_params =
                             swap_exact_tokens_for_tokens(&call)?;
-                        let swap = Swap {
+                        let swap = PancakeSwapInfo {
                             recipient: swap_exact_tokens_for_tokens_params.to,
                             token_in: swap_exact_tokens_for_tokens_params.path[0],
                             token_out: swap_exact_tokens_for_tokens_params.path
@@ -93,7 +93,7 @@ impl PancakeSwapParser {
                     PancakeSwapMethod::SwapTokensForExactTokens => {
                         let swap_tokens_for_exact_tokens_params =
                             swap_tokens_for_exact_tokens(&call)?;
-                        let swap = Swap {
+                        let swap = PancakeSwapInfo {
                             recipient: swap_tokens_for_exact_tokens_params.to,
                             token_in: swap_tokens_for_exact_tokens_params.path[0],
                             token_out: swap_tokens_for_exact_tokens_params.path
@@ -114,7 +114,7 @@ impl PancakeSwapParser {
                     /* V3 */
                     PancakeSwapMethod::ExactInputSingle => {
                         let exact_input_single_params = exact_input_single(&call)?;
-                        let swap = Swap {
+                        let swap = PancakeSwapInfo {
                             recipient: exact_input_single_params.recipient,
                             token_in: exact_input_single_params.token_in,
                             token_out: exact_input_single_params.token_out,
@@ -132,7 +132,7 @@ impl PancakeSwapParser {
                     }
                     PancakeSwapMethod::ExactOutputSingle => {
                         let exact_output_single_params = exact_output_single(&call)?;
-                        let swap = Swap {
+                        let swap = PancakeSwapInfo {
                             recipient: exact_output_single_params.recipient,
                             token_in: exact_output_single_params.token_in,
                             token_out: exact_output_single_params.token_out,
@@ -151,7 +151,7 @@ impl PancakeSwapParser {
                     PancakeSwapMethod::ExactInput => {
                         let exact_input_params = exact_input(&call)?;
                         let full_path = MultiHopPath::from_bytes(&exact_input_params.path)?;
-                        let swap = Swap {
+                        let swap = PancakeSwapInfo {
                             recipient: exact_input_params.recipient,
                             token_in: full_path[0].first_token,
                             token_out: full_path[full_path.len() - 1].second_token,
@@ -168,7 +168,7 @@ impl PancakeSwapParser {
                     PancakeSwapMethod::ExactOutput => {
                         let exact_output_params = exact_output(&call)?;
                         let full_path = MultiHopPath::from_bytes(&exact_output_params.path)?;
-                        let swap = Swap {
+                        let swap = PancakeSwapInfo {
                             recipient: exact_output_params.recipient,
                             token_in: full_path[full_path.len() - 1].second_token,
                             token_out: full_path[0].first_token,
@@ -218,7 +218,7 @@ impl PancakeSwapParser {
             function_calls = vec![function_called];
         }
 
-        let mut swap_infos: Vec<(Swap, EnumDexVersion, ContractCall)> = Vec::new();
+        let mut swap_infos: Vec<(PancakeSwapInfo, EnumDexVersion, ContractCall)> = Vec::new();
         for call in function_calls {
             let method_name = call.get_name();
             if let Some(method) = self.get_method_by_name(&method_name) {
@@ -227,7 +227,7 @@ impl PancakeSwapParser {
                     PancakeSwapMethod::SwapExactTokensForTokens => {
                         let swap_exact_tokens_for_tokens_params =
                             swap_exact_tokens_for_tokens(&call)?;
-                        let swap = Swap {
+                        let swap = PancakeSwapInfo {
                             recipient: swap_exact_tokens_for_tokens_params.to,
                             token_in: swap_exact_tokens_for_tokens_params.path[0],
                             token_out: swap_exact_tokens_for_tokens_params.path
@@ -247,7 +247,7 @@ impl PancakeSwapParser {
                     PancakeSwapMethod::SwapTokensForExactTokens => {
                         let swap_tokens_for_exact_tokens_params =
                             swap_tokens_for_exact_tokens(&call)?;
-                        let swap = Swap {
+                        let swap = PancakeSwapInfo {
                             recipient: swap_tokens_for_exact_tokens_params.to,
                             token_in: swap_tokens_for_exact_tokens_params.path[0],
                             token_out: swap_tokens_for_exact_tokens_params.path
@@ -268,7 +268,7 @@ impl PancakeSwapParser {
                     /* V3 */
                     PancakeSwapMethod::ExactInputSingle => {
                         let exact_input_single_params = exact_input_single(&call)?;
-                        let swap = Swap {
+                        let swap = PancakeSwapInfo {
                             recipient: exact_input_single_params.recipient,
                             token_in: exact_input_single_params.token_in,
                             token_out: exact_input_single_params.token_out,
@@ -286,7 +286,7 @@ impl PancakeSwapParser {
                     }
                     PancakeSwapMethod::ExactOutputSingle => {
                         let exact_output_single_params = exact_output_single(&call)?;
-                        let swap = Swap {
+                        let swap = PancakeSwapInfo {
                             recipient: exact_output_single_params.recipient,
                             token_in: exact_output_single_params.token_in,
                             token_out: exact_output_single_params.token_out,
@@ -305,7 +305,7 @@ impl PancakeSwapParser {
                     PancakeSwapMethod::ExactInput => {
                         let exact_input_params = exact_input(&call)?;
                         let full_path = MultiHopPath::from_bytes(&exact_input_params.path)?;
-                        let swap = Swap {
+                        let swap = PancakeSwapInfo {
                             recipient: exact_input_params.recipient,
                             token_in: full_path[0].first_token,
                             token_out: full_path[full_path.len() - 1].second_token,
@@ -322,7 +322,7 @@ impl PancakeSwapParser {
                     PancakeSwapMethod::ExactOutput => {
                         let exact_output_params = exact_output(&call)?;
                         let full_path = MultiHopPath::from_bytes(&exact_output_params.path)?;
-                        let swap = Swap {
+                        let swap = PancakeSwapInfo {
                             recipient: exact_output_params.recipient,
                             token_in: full_path[full_path.len() - 1].second_token,
                             token_out: full_path[0].first_token,

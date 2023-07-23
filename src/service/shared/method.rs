@@ -1,4 +1,5 @@
-use num_traits::FromPrimitive;
+use num_traits::{FromPrimitive, ToPrimitive, Zero};
+use rust_decimal::Decimal;
 
 pub fn ensure_user_role(ctx: RequestContext, role: EnumRole) -> Result<()> {
     let ctx_role = EnumRole::from_u32(ctx.role).context("Invalid role")?;
@@ -53,7 +54,7 @@ pub async fn convert_strategy_db_to_api_net_value(
     db: &DbClient,
 ) -> Result<ListStrategiesRow> {
     let mut value = convert_strategy_db_to_api(x);
-    let mut usd = 0.0;
+    let mut usd = Decimal::zero();
     info!(
         "Querying strategy pool tokens {} {:?}",
         value.strategy_id, value.blockchain
@@ -74,10 +75,10 @@ pub async fn convert_strategy_db_to_api_net_value(
         let price = prices
             .get(&token.token_symbol)
             .ok_or_else(|| anyhow!("No price for {}", token.token_symbol))?;
-        usd += price * token.balance.div_as_f64(U256::exp10(18))?;
+        usd += Decimal::from_f64(*price).unwrap() * token.balance;
     }
 
-    value.aum = usd;
+    value.aum = usd.to_f64().unwrap();
     Ok(value)
 }
 pub fn convert_expert_db_to_api(x: FunUserExpertRowType) -> ListExpertsRow {
