@@ -2488,7 +2488,8 @@ RETURNS table (
     "symbol" varchar,
     "short_name" varchar,
     "description" varchar,
-    "is_stablecoin" boolean
+    "is_stablecoin" boolean,
+    "decimals" double precision
 )
 LANGUAGE plpgsql
 AS $$
@@ -2502,7 +2503,8 @@ BEGIN
         a.symbol,
         a.short_name,
         a.description,
-        a.is_stablecoin
+        a.is_stablecoin,
+        a.decimals
     FROM tbl.escrow_token_contract_address AS a
     WHERE (a_token_id ISNULL OR a.pkey_id = a_token_id)
         AND (a_blockchain ISNULL OR a.blockchain = a_blockchain)

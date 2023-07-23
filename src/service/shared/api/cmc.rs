@@ -421,14 +421,9 @@ pub async fn prefetch_prices(cmc_client: Arc<CoinMarketCap>, token_names: Vec<St
             }
         }
         // wait until 00:00 UTC
-        let now = chrono::Utc::now();
-        let next_day = now
-            .checked_add_signed(chrono::Duration::days(1))
-            .unwrap()
-            .date()
-            .and_hms(0, 0, 0);
-        let sleep_duration = next_day.signed_duration_since(now).to_std()?;
-        tokio::time::sleep(sleep_duration).await;
+        let now = Utc::now().timestamp();
+        let next_day = (now / 86400 + 1) * 86400;
+        tokio::time::sleep(tokio::time::Duration::from_secs(next_day as _)).await;
         // load prices every day
         loop {
             cmc_client.get_usd_prices_by_symbol(&token_names).await?;
