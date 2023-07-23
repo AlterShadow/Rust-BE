@@ -406,7 +406,7 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
                 } else {
                     /* if strategy pool asset is not in initial_token_ratios, it was not bought */
                     /* fetch the most recent trade values from the database to use for valuation */
-                    let last_dex_trade_row = db
+                    if let Some(last_dex_trade_row) = db
                         .execute(FunWatcherListLastDexTradesForPairReq {
                             token_in_address: token_address.into(),
                             token_out_address: strategy_pool_asset.clone().into(),
@@ -415,14 +415,40 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
                         })
                         .await?
                         .into_result()
-                        .context("could not fetch last dex trade for strategy pool asset")?;
-
-                    strategy_pool_asset_last_prices_in_base_token.insert(
-                        strategy_pool_asset.clone(),
-                        last_dex_trade_row
-                            .amount_in
-                            .mul_div(U256::exp10(18), last_dex_trade_row.amount_out.0.clone())?,
-                    );
+                    {
+                        strategy_pool_asset_last_prices_in_base_token.insert(
+                            strategy_pool_asset.clone(),
+                            // TODO: calculate decimals
+                            last_dex_trade_row.amount_in.mul_div(
+                                U256::exp10(18),
+                                last_dex_trade_row.amount_out.0.clone(),
+                            )?,
+                        );
+                    } else {
+                        let token = db
+                            .execute(FunUserListEscrowTokenContractAddressReq {
+                                limit: 1,
+                                offset: 0,
+                                blockchain: None,
+                                token_id: None,
+                                address: Some((*strategy_pool_asset).into()),
+                                symbol: None,
+                                is_stablecoin: None,
+                            })
+                            .await?
+                            .into_result()
+                            .with_context(|| {
+                                format!(
+                                    "could not find token contract address for token id {}",
+                                    token_id
+                                )
+                            })?;
+                        let cmc_price = cmc.get_usd_prices_by_symbol(&[token.symbol]).await?[0];
+                        strategy_pool_asset_last_prices_in_base_token.insert(
+                            strategy_pool_asset.clone(),
+                            U256::exp10(token.decimals as _).mul_f64(cmc_price)?,
+                        );
+                    }
                 }
             }
 

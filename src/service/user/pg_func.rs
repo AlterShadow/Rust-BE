@@ -1973,6 +1973,7 @@ END
                 Field::new("short_name", Type::String),
                 Field::new("description", Type::String),
                 Field::new("is_stablecoin", Type::Boolean),
+                Field::new("decimals", Type::Numeric),
             ],
             r#"
 BEGIN
@@ -1984,7 +1985,8 @@ BEGIN
         a.symbol,
         a.short_name,
         a.description,
-        a.is_stablecoin
+        a.is_stablecoin,
+        a.decimals
     FROM tbl.escrow_token_contract_address AS a
     WHERE (a_token_id ISNULL OR a.pkey_id = a_token_id)
         AND (a_blockchain ISNULL OR a.blockchain = a_blockchain)

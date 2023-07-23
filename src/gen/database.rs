@@ -426,6 +426,7 @@ pub struct FunUserListEscrowTokenContractAddressRespRow {
     pub short_name: String,
     pub description: String,
     pub is_stablecoin: bool,
+    pub decimals: f64,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
