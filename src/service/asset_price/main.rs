@@ -6,6 +6,7 @@ use eyre::*;
 use secrecy::{ExposeSecret, SecretString};
 use serde::Deserialize;
 use tokio::time::sleep;
+use tracing::error;
 
 use api::cmc::CoinMarketCap;
 use gen::database::*;
@@ -28,8 +29,18 @@ async fn main() -> Result<()> {
     let cmc_client = CoinMarketCap::new(config.cmc_api_key.expose_secret())?;
 
     loop {
-        fill_asset_price_cache(&db, &cmc_client).await?;
-        delete_old_price_entries(&db).await?;
+        match fill_asset_price_cache(&db, &cmc_client).await {
+            Ok(_) => {}
+            Err(e) => {
+                error!("error inserting to price cache: {}", e);
+            }
+        }
+        match delete_old_price_entries(&db).await {
+            Ok(_) => {}
+            Err(e) => {
+                error!("error deleting old price entries: {}", e);
+            }
+        }
         sleep(Duration::from_secs(60)).await;
     }
 }
