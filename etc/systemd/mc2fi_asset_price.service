@@ -1,0 +1,21 @@
+[Unit]
+Description=mc2fi asset_price
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+User=mc2fi
+Type=simple
+Restart=always
+RestartSec=1
+WorkingDirectory=/home/mc2fi/mc2fi
+ExecStart=/home/mc2fi/mc2fi/target/release/mc2fi_asset_price --config=etc/config.json
+
+StandardError=append:/home/mc2fi/mc2fi/log/mc2fi_asset_price.log
+StandardOutput=append:/home/mc2fi/mc2fi/log/mc2fi_asset_price.log
+StandardInput=null
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+
+[Install]
+WantedBy=default.target
+

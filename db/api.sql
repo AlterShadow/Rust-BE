@@ -4099,3 +4099,13 @@ AS $$
     BEGIN RETURN QUERY SELECT 4; END
 $$;
         
+
+CREATE OR REPLACE FUNCTION api.ASSET_PRICE_SERVICE()
+RETURNS table (
+    "code" int
+)
+LANGUAGE plpgsql
+AS $$
+    BEGIN RETURN QUERY SELECT 5; END
+$$;
+        

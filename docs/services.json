@@ -6574,6 +6574,11 @@
       "name": "watcher",
       "id": 4,
       "endpoints": []
+    },
+    {
+      "name": "asset_price",
+      "id": 5,
+      "endpoints": []
     }
   ],
   "enums": [
@@ -6766,6 +6771,11 @@
           {
             "name": "watcher",
             "value": 4,
+            "comment": ""
+          },
+          {
+            "name": "asset_price",
+            "value": 5,
             "comment": ""
           }
         ]

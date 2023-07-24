@@ -233,6 +233,9 @@ pub enum EnumService {
     ///
     #[postgres(name = "watcher")]
     Watcher = 4,
+    ///
+    #[postgres(name = "asset_price")]
+    AssetPrice = 5,
 }
 #[derive(
     Debug,

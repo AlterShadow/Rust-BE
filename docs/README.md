@@ -114,3 +114,9 @@ ID: 4
 ## Endpoints
 |Method Code|Method Name|Parameters|Response|Description|
 |-----------|-----------|----------|--------|-----------|
+
+# asset_price Server
+ID: 5
+## Endpoints
+|Method Code|Method Name|Parameters|Response|Description|
+|-----------|-----------|----------|--------|-----------|
