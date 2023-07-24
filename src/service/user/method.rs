@@ -873,7 +873,7 @@ pub async fn user_exit_strategy(
 
             /* get assets and amounts to withdraw */
             for asset_balance_owned_by_strategy_wallet in asset_balances_owned_by_strategy_wallet {
-                if asset_balance_owned_by_strategy_wallet.balance == Decimal::zero().into() {
+                if asset_balance_owned_by_strategy_wallet.balance.is_zero() {
                     continue;
                 }
 
@@ -910,7 +910,7 @@ pub async fn user_exit_strategy(
         None => {
             /* get assets and amounts to withdraw */
             for asset_balance_owned_by_strategy_wallet in asset_balances_owned_by_strategy_wallet {
-                if asset_balance_owned_by_strategy_wallet.balance == Decimal::zero().into() {
+                if asset_balance_owned_by_strategy_wallet.balance.is_zero() {
                     continue;
                 }
 

@@ -16,7 +16,7 @@ pub enum Erc20Method {
     TransferFrom,
 }
 
-pub fn parse_escrow(
+pub fn parse_escrow_transfer(
     chain: EnumBlockChain,
     tx: &TransactionReady,
     stablecoin_addresses: &BlockchainCoinAddresses,
@@ -126,7 +126,7 @@ mod tests {
         )
         .await?;
         let erc20 = build_erc_20()?;
-        let trade = parse_escrow(
+        let trade = parse_escrow_transfer(
             EnumBlockChain::EthereumMainnet,
             &tx,
             &BlockchainCoinAddresses::new(),
@@ -147,7 +147,7 @@ mod tests {
         .await?;
 
         let erc20 = build_erc_20()?;
-        let trade = parse_escrow(
+        let trade = parse_escrow_transfer(
             EnumBlockChain::EthereumMainnet,
             &tx,
             &BlockchainCoinAddresses::new(),
@@ -168,7 +168,7 @@ mod tests {
         .await?;
 
         let erc20 = build_erc_20()?;
-        let trade = parse_escrow(
+        let trade = parse_escrow_transfer(
             EnumBlockChain::EthereumMainnet,
             &tx,
             &BlockchainCoinAddresses::new(),

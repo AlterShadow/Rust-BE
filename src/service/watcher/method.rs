@@ -10,13 +10,13 @@ use eth_sdk::dex_tracker::{
 };
 use eth_sdk::erc20::Erc20Token;
 use eth_sdk::escrow::{parse_escrow_withdraw_event, EscrowContract};
-use eth_sdk::escrow_tracker::escrow::parse_escrow;
+use eth_sdk::escrow_tracker::escrow::parse_escrow_transfer;
 use eth_sdk::evm::parse_quickalert_payload;
 use eth_sdk::execute_transaction_and_ensure_success;
 use eth_sdk::pancake_swap::execute::PancakeSmartRouterContract;
 use eth_sdk::strategy_pool::StrategyPoolContract;
 use eth_sdk::strategy_pool_herald::parse_herald_redeem_event;
-use eth_sdk::utils::{wait_for_confirmations, wait_for_confirmations_simple};
+use eth_sdk::utils::{u256_to_decimal, wait_for_confirmations, wait_for_confirmations_simple};
 use eth_sdk::{
     evm, EthereumRpcConnection, ScaledMath, TransactionFetcher, TransactionReady, CONFIRMATIONS,
     MAX_RETRIES, POLL_INTERVAL,
@@ -25,7 +25,8 @@ use eyre::*;
 use gen::database::*;
 use gen::model::*;
 use lib::log::DynLogger;
-use lib::types::amount_to_display;
+use num::Zero;
+use rust_decimal::Decimal;
 use std::sync::Arc;
 use std::time::Duration;
 use tracing::*;
@@ -96,18 +97,57 @@ pub async fn handle_pancake_swap_transaction(
         &state.pancake_swap_parser,
     )
     .await?;
-
+    let token_in_decimals = state
+        .db
+        .execute(FunUserListEscrowTokenContractAddressReq {
+            limit: 1,
+            offset: 0,
+            token_id: None,
+            blockchain: Some(blockchain),
+            address: Some(expert_trade.token_in.into()),
+            symbol: None,
+            is_stablecoin: None,
+        })
+        .await?
+        .into_result()
+        .with_context(|| {
+            format!(
+                "could not find token_in {} in escrow token contracts",
+                expert_trade.token_in
+            )
+        })?
+        .decimals;
+    let token_out_decimals = state
+        .db
+        .execute(FunUserListEscrowTokenContractAddressReq {
+            limit: 1,
+            offset: 0,
+            token_id: None,
+            blockchain: Some(blockchain),
+            address: Some(expert_trade.token_out.into()),
+            symbol: None,
+            is_stablecoin: None,
+        })
+        .await?
+        .into_result()
+        .with_context(|| {
+            format!(
+                "could not find token_out {} in escrow token contracts",
+                expert_trade.token_out
+            )
+        })?
+        .decimals;
     /* update last dex trade cache table */
     state
         .db
         .execute(FunWatcherUpsertLastDexTradeForPairReq {
             transaction_hash: tx.get_hash().into(),
-            blockchain: blockchain,
+            blockchain,
             dex: EnumDex::PancakeSwap,
             token_in_address: expert_trade.token_in.into(),
             token_out_address: expert_trade.token_out.into(),
-            amount_in: expert_trade.amount_in.into(),
-            amount_out: expert_trade.amount_out.into(),
+            amount_in: u256_to_decimal(expert_trade.amount_in, token_in_decimals as _),
+            amount_out: u256_to_decimal(expert_trade.amount_out, token_out_decimals as _),
         })
         .await?;
 
@@ -151,8 +191,14 @@ pub async fn handle_pancake_swap_transaction(
             dex: Some(EnumDex::PancakeSwap.to_string()),
             token_in_address: Some(expert_trade.token_in.into()),
             token_out_address: Some(expert_trade.token_out.into()),
-            amount_in: Some(expert_trade.amount_in.into()),
-            amount_out: Some(expert_trade.amount_out.into()),
+            amount_in: Some(u256_to_decimal(
+                expert_trade.amount_in,
+                token_in_decimals as _,
+            )),
+            amount_out: Some(u256_to_decimal(
+                expert_trade.amount_out,
+                token_out_decimals as _,
+            )),
             happened_at: None,
         })
         .await
@@ -201,29 +247,28 @@ pub async fn handle_pancake_swap_transaction(
             .into_result()
             .context("strategy pool contract does not hold asset to sell")?;
 
-        let sp_asset_token_in_previous_amount = strategy_pool_asset_token_in_row.balance.into();
-        if sp_asset_token_in_previous_amount == U256::zero() {
+        let sp_asset_token_in_previous_amount = strategy_pool_asset_token_in_row.balance;
+        if sp_asset_token_in_previous_amount.is_zero() {
             bail!("strategy pool has no asset to sell");
         }
         /* calculate how much to spend */
-        let corrected_amount_in =
-            if expert_trade.amount_in > *expert_wallet_asset_token_in_previous_amount {
-                /* if the traded amount_in is larger than the total amount of token_in we know of the strategy,
-                     it means that the trader has acquired tokens from sources we have not read
-                     if we used an amount_in that is larger in the calculation, it would make amount_to_spend
-                     larger than the amount of token_in in the strategy pool contract, which would revert the transaction
-                     so we use the total amount of token_in we know of the strategy,
-                     which will result in a trade of all the strategy pool balance of this asset
-                */
-                *expert_wallet_asset_token_in_previous_amount
-            } else {
-                expert_trade.amount_in
-            };
-        let amount_to_spend = corrected_amount_in.mul_div(
-            sp_asset_token_in_previous_amount,
-            *expert_wallet_asset_token_in_previous_amount,
-        )?;
-        if amount_to_spend == U256::zero() {
+        let corrected_amount_in = if u256_to_decimal(expert_trade.amount_in, token_in_decimals as _)
+            > expert_wallet_asset_token_in_previous_amount
+        {
+            /* if the traded amount_in is larger than the total amount of token_in we know of the strategy,
+                 it means that the trader has acquired tokens from sources we have not read
+                 if we used an amount_in that is larger in the calculation, it would make amount_to_spend
+                 larger than the amount of token_in in the strategy pool contract, which would revert the transaction
+                 so we use the total amount of token_in we know of the strategy,
+                 which will result in a trade of all the strategy pool balance of this asset
+            */
+            expert_wallet_asset_token_in_previous_amount
+        } else {
+            u256_to_decimal(expert_trade.amount_in, token_in_decimals as _)
+        };
+        let amount_to_spend = corrected_amount_in * sp_asset_token_in_previous_amount
+            / expert_wallet_asset_token_in_previous_amount;
+        if amount_to_spend.is_zero() {
             bail!("spent ratio is too small to be represented in amount of token_in owned by strategy pool contract");
         }
 
@@ -238,6 +283,7 @@ pub async fn handle_pancake_swap_transaction(
 
         /* acquire asset before trade */
         let acquire_asset_before_trade_transaction = || {
+            let amount_to_spend = decimal_to_u256(amount_to_spend, 18);
             strategy_pool_contract.acquire_asset_before_trade(
                 &conn,
                 state.master_key.clone(),
@@ -258,6 +304,7 @@ pub async fn handle_pancake_swap_transaction(
 
         /* approve pancakeswap to trade token_in */
         let approve_transaction = || {
+            let amount_to_spend = decimal_to_u256(amount_to_spend, token_in_decimals as _);
             token_in_contract.approve(
                 &conn,
                 state.master_key.clone(),
@@ -280,12 +327,12 @@ pub async fn handle_pancake_swap_transaction(
         /* trade token_in for token_out */
         info!(
             "copy_trade_and_ensure_success: amount_in: {}, amount_out_minimum: {}",
-            amount_to_display(amount_to_spend),
-            amount_to_display(U256::one())
+            amount_to_spend, 1
         );
 
         let copy_trade_pair_paths = expert_trade.get_pancake_pair_paths()?;
         let copy_trade_transaction = || {
+            let amount_to_spend = decimal_to_u256(amount_to_spend, token_in_decimals as _);
             pancake_contract.copy_trade(
                 &conn,
                 state.master_key.clone(),
@@ -377,13 +424,7 @@ pub async fn handle_pancake_swap_transaction(
                 strategy_pool_contract_id: strategy_pool_contract_row.pkey_id,
                 token_address: expert_trade.token_in.into(),
                 blockchain,
-                new_balance: match sp_asset_token_in_previous_amount
-                    .try_checked_sub(amount_to_spend)
-                {
-                    Ok(new_balance) => new_balance,
-                    Err(_) => U256::zero(),
-                }
-                .into(),
+                new_balance: sp_asset_token_in_previous_amount - amount_to_spend,
             })
             .await?;
 
@@ -397,11 +438,18 @@ pub async fn handle_pancake_swap_transaction(
             })
             .await?
             .into_result();
+        let token_in_amount = u256_to_decimal(
+            strategy_pool_pending_wallet_trade.amount_in,
+            token_in_decimals as _,
+        );
+        let token_out_amount = u256_to_decimal(
+            strategy_pool_pending_wallet_trade.amount_out,
+            token_out_decimals as _,
+        );
         let strategy_pool_asset_token_out_new_balance =
             match maybe_strategy_pool_asset_token_out_row {
-                Some(token_out) => (*token_out.balance)
-                    .try_checked_add(strategy_pool_pending_wallet_trade.amount_out)?,
-                None => strategy_pool_pending_wallet_trade.amount_out,
+                Some(token_out) => token_out.balance + token_out_amount,
+                None => token_out_amount,
             };
 
         state
@@ -410,7 +458,7 @@ pub async fn handle_pancake_swap_transaction(
                 strategy_pool_contract_id: strategy_pool_contract_row.pkey_id,
                 token_address: expert_trade.token_out.into(),
                 blockchain,
-                new_balance: strategy_pool_asset_token_out_new_balance.into(),
+                new_balance: strategy_pool_asset_token_out_new_balance,
             })
             .await?;
 
@@ -419,8 +467,8 @@ pub async fn handle_pancake_swap_transaction(
             .execute(FunUserAddStrategyPoolContractAssetLedgerEntryReq {
                 strategy_pool_contract_id: strategy_pool_contract_row.pkey_id,
                 token_address: strategy_pool_pending_wallet_trade.token_in.into(),
-                blockchain: blockchain,
-                amount: strategy_pool_pending_wallet_trade.amount_in.into(),
+                blockchain,
+                amount: token_in_amount,
                 transaction_hash: pending_wallet_trade_receipt.transaction_hash.into(),
                 is_add: false,
             })
@@ -431,8 +479,8 @@ pub async fn handle_pancake_swap_transaction(
             .execute(FunUserAddStrategyPoolContractAssetLedgerEntryReq {
                 strategy_pool_contract_id: strategy_pool_contract_row.pkey_id,
                 token_address: strategy_pool_pending_wallet_trade.token_out.into(),
-                blockchain: blockchain,
-                amount: strategy_pool_pending_wallet_trade.amount_out.into(),
+                blockchain,
+                amount: token_out_amount,
                 transaction_hash: pending_wallet_trade_receipt.transaction_hash.into(),
                 is_add: true,
             })
@@ -444,10 +492,10 @@ pub async fn handle_pancake_swap_transaction(
             blockchain,
             strategy_pool_contract_row.pkey_id,
             strategy_pool_pending_wallet_trade.token_in,
-            strategy_pool_pending_wallet_trade.amount_in,
+            token_in_amount,
             sp_asset_token_in_previous_amount,
             strategy_pool_pending_wallet_trade.token_out,
-            strategy_pool_pending_wallet_trade.amount_out,
+            token_out_amount,
         )
         .await?;
 
@@ -520,7 +568,7 @@ pub async fn handle_escrow_transaction(
     tx: TransactionReady,
 ) -> Result<()> {
     /* check if it is an escrow to one of our escrow contracts */
-    let escrow = parse_escrow(blockchain, &tx, &state.token_addresses, &state.erc_20)
+    let escrow = parse_escrow_transfer(blockchain, &tx, &state.token_addresses, &state.erc_20)
         .with_context(|| format!("tx {:?} is not an escrow", tx.get_hash()))?;
     if state
         .escrow_addresses
@@ -540,6 +588,25 @@ pub async fn handle_escrow_transaction(
         warn!("escrow amount is zero");
         return Ok(());
     }
+    let escrow_transfer_token = state
+        .db
+        .execute(FunUserListEscrowTokenContractAddressReq {
+            limit: 1,
+            offset: 0,
+            token_id: None,
+            blockchain: Some(blockchain),
+            address: Some(escrow.token_address.into()),
+            symbol: None,
+            is_stablecoin: None,
+        })
+        .await?
+        .into_result()
+        .with_context(|| {
+            format!(
+                "could not find token {} in escrow token contracts",
+                escrow.token
+            )
+        })?;
 
     /* get caller */
     // TODO: handle an escrow made by an unknown user
@@ -650,7 +717,7 @@ pub async fn handle_escrow_transaction(
         .db
         .execute(FunUserGetUserByAddressReq {
             address: caller.into(),
-            blockchain: blockchain,
+            blockchain,
         })
         .await?
         .into_result()
@@ -695,14 +762,14 @@ pub async fn handle_escrow_transaction(
             user_address: escrow.owner.into(),
             escrow_contract_address: escrow.recipient.into(),
             receiver_address: escrow.recipient.into(),
-            quantity: escrow.amount.into(),
+            quantity: u256_to_decimal(escrow.amount, escrow_transfer_token.decimals as _),
             transaction_hash: tx.get_hash().into(),
             is_deposit: true,
             is_back: false,
             is_withdraw: false,
         })
         .await?;
-    let old_balance: U256 = state
+    let old_balance = state
         .db
         .execute(FunUserListUserDepositWithdrawBalanceReq {
             limit: 1,
@@ -716,16 +783,16 @@ pub async fn handle_escrow_transaction(
         .await?
         .into_result()
         .map(|x| x.balance)
-        .unwrap_or_default()
-        .into();
-    let new_balance = old_balance.try_checked_add(escrow.amount)?;
+        .unwrap_or_default();
+    let new_balance =
+        old_balance + u256_to_decimal(escrow.amount, escrow_transfer_token.decimals as _);
     let resp = state
         .db
         .execute(FunWatcherUpsertUserDepositWithdrawBalanceReq {
             user_id: user.user_id,
             blockchain,
-            old_balance: old_balance.into(),
-            new_balance: new_balance.into(),
+            old_balance,
+            new_balance,
             token_address: called_address.into(),
             escrow_contract_address: escrow.recipient.into(),
         })
@@ -742,7 +809,7 @@ pub async fn handle_escrow_transaction(
                     transaction_id: resp
                         .first(|x| x.ret_pkey_id)
                         .unwrap_or_else(|| Utc::now().timestamp()),
-                    quantity: escrow.amount.into(),
+                    quantity: u256_to_decimal(escrow.amount, escrow_transfer_token.token_id as _),
                     blockchain,
                     user_address: escrow.owner.into(),
                     contract_address: called_address.into(),
@@ -862,7 +929,7 @@ pub async fn handle_withdraw_transaction(
         .db
         .execute(FunUserGetUserByAddressReq {
             address: withdraw.proprietor.into(),
-            blockchain: blockchain,
+            blockchain,
         })
         .await?
         .into_result()
@@ -873,13 +940,32 @@ pub async fn handle_withdraw_transaction(
             return Ok(());
         }
     };
-
+    let withdraw_token = state
+        .db
+        .execute(FunUserListEscrowTokenContractAddressReq {
+            limit: 1,
+            offset: 0,
+            token_id: None,
+            blockchain: Some(blockchain),
+            address: Some(withdraw.asset.into()),
+            symbol: None,
+            is_stablecoin: None,
+        })
+        .await?
+        .into_result()
+        .with_context(|| {
+            format!(
+                "could not find token {} in escrow token contracts",
+                withdraw.asset
+            )
+        })?;
+    let withdraw_amount = u256_to_decimal(withdraw.amount, withdraw_token.decimals as _);
     /* update user deposit withdraw balance & ledger */
     state
         .db
         .execute(FunUserAddUserDepositWithdrawLedgerEntryReq {
             user_id: user.user_id,
-            quantity: withdraw.amount.into(),
+            quantity: withdraw_amount,
             blockchain,
             user_address: withdraw.proprietor.into(),
             token_address: withdraw.asset.into(),
@@ -893,7 +979,7 @@ pub async fn handle_withdraw_transaction(
         .await
         .context("error inserting withdraw in ledger")?;
 
-    let old_balance: U256 = state
+    let old_balance = state
         .db
         .execute(FunUserListUserDepositWithdrawBalanceReq {
             limit: 1,
@@ -907,18 +993,15 @@ pub async fn handle_withdraw_transaction(
         .await?
         .into_result()
         .map(|x| x.balance)
-        .unwrap_or_default()
-        .into();
-    let new_balance = old_balance
-        .try_checked_sub(withdraw.amount)
-        .unwrap_or(U256::zero());
+        .unwrap_or_default();
+    let new_balance = old_balance - withdraw_amount;
     state
         .db
         .execute(FunWatcherUpsertUserDepositWithdrawBalanceReq {
             user_id: user.user_id,
             blockchain,
-            old_balance: old_balance.into(),
-            new_balance: new_balance.into(),
+            old_balance,
+            new_balance,
             token_address: withdraw.asset.into(),
             escrow_contract_address: escrow_contract_address.into(),
         })
@@ -1053,16 +1136,26 @@ pub async fn handle_redeem_transaction(
 
     /* calculate how much of owned assets to withdraw based on how much of strategy tokens were redeemed */
     let mut assets_to_transfer: Vec<Address> = Vec::new();
-    let mut amounts_to_transfer: Vec<U256> = Vec::new();
+    let mut amounts_to_transfer: Vec<Decimal> = Vec::new();
+    let mut amounts_to_transfer_raw: Vec<U256> = Vec::new();
     for asset_balance_owned_by_strategy_wallet in asset_balances_owned_by_strategy_wallet {
-        if asset_balance_owned_by_strategy_wallet.balance == U256::zero().into() {
+        if asset_balance_owned_by_strategy_wallet.balance.is_zero() {
             continue;
         }
 
         assets_to_transfer.push(asset_balance_owned_by_strategy_wallet.token_address.into());
-        let amount_owned: U256 = asset_balance_owned_by_strategy_wallet.balance.into();
-        amounts_to_transfer
-            .push(amount_owned.mul_div(redeem.amount, user_strategy_balance.into())?);
+        let amount_owned = asset_balance_owned_by_strategy_wallet.balance;
+        let amount = amount_owned
+            * u256_to_decimal(
+                redeem.amount,
+                asset_balance_owned_by_strategy_wallet.token_decimals as _,
+            )
+            / user_strategy_balance;
+        amounts_to_transfer.push(amount);
+        amounts_to_transfer_raw.push(decimal_to_u256(
+            amount,
+            asset_balance_owned_by_strategy_wallet.token_decimals as _,
+        ));
     }
 
     /* instantiate strategy pool contract wrapper */
@@ -1088,7 +1181,7 @@ pub async fn handle_redeem_transaction(
             state.master_key.clone(),
             redeem.backer,
             assets_to_transfer.clone(),
-            amounts_to_transfer.clone(),
+            amounts_to_transfer_raw.clone(),
             logger.clone(),
         )
     };
@@ -1104,13 +1197,14 @@ pub async fn handle_redeem_transaction(
     .await?;
 
     /* update user strategy token balance & ledger */
+    let redeem_amount = u256_to_decimal(redeem.amount, 18);
     update_strategy_token_balances_and_ledger_exit_strategy(
         &state.db,
         blockchain,
         strategy_pool_contract_row.strategy_id,
         strategy_wallet_contract_row.user_id,
         tx.get_hash(),
-        redeem.amount,
+        redeem_amount,
     )
     .await?;
 
@@ -1131,30 +1225,32 @@ pub async fn handle_redeem_transaction(
     Ok(())
 }
 
+use execution_engine::copy_trade::decimal_to_u256;
 use lib::database::DbClient;
 use web3::types::H256;
+
 pub async fn update_strategy_token_balances_and_ledger_exit_strategy(
     db: &DbClient,
     blockchain: EnumBlockChain,
     strategy_id: i64,
     user_id: i64,
     redeem_transaction_hash: H256,
-    redeemed_amount: U256,
+    redeemed_amount: Decimal,
 ) -> Result<()> {
     /* update user strategy token ledger */
     db.execute(FunUserExitStrategyReq {
         user_id,
         strategy_id,
         // TODO: calculate value of sp tokens exit in usdc
-        quantity: U256::zero().into(),
+        quantity: Decimal::zero(),
         blockchain,
         transaction_hash: redeem_transaction_hash.into(),
-        redeem_sp_tokens: redeemed_amount.into(),
+        redeem_sp_tokens: redeemed_amount,
     })
     .await?;
 
     /* update user strategy token balance */
-    let user_strategy_balance: U256 = db
+    let user_strategy_balance = db
         .execute(FunWatcherListUserStrategyBalanceReq {
             limit: 1,
             offset: 0,
@@ -1164,14 +1260,13 @@ pub async fn update_strategy_token_balances_and_ledger_exit_strategy(
         })
         .await?
         .first(|x| x.balance)
-        .context("could not get user strategy token balance from database on exit strategy")?
-        .into();
+        .context("could not get user strategy token balance from database on exit strategy")?;
     db.execute(FunWatcherUpsertUserStrategyBalanceReq {
-        user_id: user_id,
-        strategy_id: strategy_id,
+        user_id,
+        strategy_id,
         blockchain,
-        old_balance: user_strategy_balance.into(),
-        new_balance: (user_strategy_balance.try_checked_sub(redeemed_amount)?).into(),
+        old_balance: user_strategy_balance,
+        new_balance: user_strategy_balance - redeemed_amount,
     })
     .await?;
 
@@ -1187,13 +1282,13 @@ pub async fn update_asset_balances_and_ledger_exit_strategy(
     strategy_wallet_id: i64,
     withdraw_transaction_hash: H256,
     assets_withdrawn: Vec<Address>,
-    amounts_withdrawn: Vec<U256>,
+    amounts_withdrawn: Vec<Decimal>,
 ) -> Result<()> {
     for idx in 0..assets_withdrawn.len() {
         /* update per-user strategy pool asset balance & ledger */
         let asset = assets_withdrawn[idx];
         let amount = amounts_withdrawn[idx];
-        let asset_old_balance: U256 = db
+        let asset_old_balance = db
             .execute(FunUserListUserStrategyPoolContractAssetBalancesReq {
                 strategy_pool_contract_id: Some(strategy_pool_contract_id),
                 user_id: Some(user_id),
@@ -1204,19 +1299,15 @@ pub async fn update_asset_balances_and_ledger_exit_strategy(
             .await?
             .into_result()
             .context("user strategy pool asset balance not found")?
-            .balance
-            .into();
+            .balance;
 
         db.execute(FunUserUpsertUserStrategyPoolContractAssetBalanceReq {
             strategy_pool_contract_id,
             strategy_wallet_id,
             token_address: asset.into(),
             blockchain,
-            old_balance: asset_old_balance.into(),
-            new_balance: match asset_old_balance.try_checked_sub(amount) {
-                Ok(new_balance) => new_balance.into(),
-                Err(_) => U256::zero().into(),
-            },
+            old_balance: asset_old_balance,
+            new_balance: asset_old_balance - amount,
         })
         .await?;
 
@@ -1243,19 +1334,15 @@ pub async fn update_asset_balances_and_ledger_exit_strategy(
             .context("strategy pool balance of redeemed asset not found")?;
 
         db.execute(FunWatcherUpsertStrategyPoolContractAssetBalanceReq {
-            strategy_pool_contract_id: strategy_pool_contract_id,
+            strategy_pool_contract_id,
             token_address: asset.into(),
             blockchain,
-            new_balance: old_asset_balance_row
-                .balance
-                .try_checked_sub(amount)
-                .context("redeemed amount is greater than known balance of strategy pool asset")?
-                .into(),
+            new_balance: old_asset_balance_row.balance - amount,
         })
         .await?;
 
         db.execute(FunUserAddStrategyPoolContractAssetLedgerEntryReq {
-            strategy_pool_contract_id: strategy_pool_contract_id,
+            strategy_pool_contract_id,
             token_address: asset.into(),
             blockchain,
             amount: amount.into(),

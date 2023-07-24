@@ -499,7 +499,7 @@ pub async fn user_back_strategy(
     cmc: &CoinMarketCap,
 ) -> Result<()> {
     logger.log(format!("checking back amount {}", back_token_amount));
-    if back_token_amount == Decimal::zero() {
+    if back_token_amount.is_zero() {
         bail!("back zero amount");
     }
 
@@ -1070,7 +1070,7 @@ pub async fn get_and_check_user_deposit_balances_by_wallet_to_fill_value(
     let mut total_amount_found: Decimal = Decimal::zero();
     for wallet_balance_row in wallet_positive_asset_balances {
         let wallet_balance: Decimal = wallet_balance_row.balance.into();
-        if wallet_balance == Decimal::zero() {
+        if wallet_balance.is_zero() {
             continue;
         }
         if total_amount_found == value_to_fill {
@@ -1193,7 +1193,7 @@ mod tests {
     use super::*;
     use crate::method::on_user_request_refund;
     use eth_sdk::erc20::Erc20Token;
-    use eth_sdk::escrow_tracker::escrow::parse_escrow;
+    use eth_sdk::escrow_tracker::escrow::parse_escrow_transfer;
     use eth_sdk::mock_erc20::deploy_mock_erc20;
     use eth_sdk::signer::Secp256k1SecretKey;
     use eth_sdk::utils::wait_for_confirmations_simple;
@@ -1255,7 +1255,7 @@ mod tests {
         erc_20: &web3::ethabi::Contract,
         escrow_contract: &EscrowContract<EitherTransport>,
     ) -> Result<()> {
-        let esc = parse_escrow(chain, tx, stablecoin_addresses, erc_20)?;
+        let esc = parse_escrow_transfer(chain, tx, stablecoin_addresses, erc_20)?;
 
         let our_valid_address = esc.recipient == escrow_contract.address();
         ensure!(
