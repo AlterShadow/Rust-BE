@@ -316,14 +316,14 @@ impl<T: Transport> EscrowContract<T> {
         logger: DynLogger,
     ) -> Result<H256> {
         info!(
-					"Transferring {:?} amount of {:?} asset from {:?} proprietor to {:?} recipient from escrow contract {:?} by {:?}",
-					amount_to_display(amount),
-					asset,
-					proprietor,
-					recipient,
-					self.address(),
-					signer.address(),
-			);
+            "Transferring {} amount of {:?} asset from {:?} proprietor to {:?} recipient from escrow contract {:?} by {:?}",
+            amount_to_display(amount),
+            asset,
+            proprietor,
+            recipient,
+            self.address(),
+            signer.address(),
+        );
 
         let estimated_gas = self
             .contract
@@ -338,13 +338,13 @@ impl<T: Transport> EscrowContract<T> {
         let estimated_gas_price = conn.eth().gas_price().await?;
 
         logger.log(format!(
-					"Transferring {:?} amount of {:?} asset from {:?} proprietor to {:?} recipient from escrow contract {:?} by {:?}",
-					amount_to_display(amount),
-					asset,
-					proprietor,
-					recipient,
-					self.address(),
-					signer.address(),
+            "Transferring {} amount of {:?} asset from {:?} proprietor to {:?} recipient from escrow contract {:?} by {:?}",
+            amount_to_display(amount),
+            asset,
+            proprietor,
+            recipient,
+            self.address(),
+            signer.address(),
         ));
 
         let tx_hash = self

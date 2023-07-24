@@ -305,6 +305,7 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
         .is_some();
     let (expert_asset_amounts, expert_asset_amounts_decimals) =
         fetch_listened_wallet_asset_balances_and_decimals(db, blockchain, strategy_id).await?;
+    info!("expert_asset_amounts={:?}", expert_asset_amounts);
     let tokens = sp_assets_and_amounts
         .keys()
         .chain(expert_asset_amounts.keys())
@@ -334,6 +335,10 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
         token_prices,
         token_decimals.clone(),
     )?;
+    info!(
+        "escrow_allocations_for_tokens={:?}",
+        escrow_allocations_for_tokens
+    );
     let tokens_and_escrow_token_to_spend: HashMap<_, _> = escrow_allocations_for_tokens
         .trades
         .iter()

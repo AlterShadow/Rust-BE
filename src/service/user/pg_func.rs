@@ -547,7 +547,7 @@ END
 DECLARE
 		_token_id BIGINT;
 		_user_strategy_pool_contract_asset_balance_id BIGINT;
-		_user_strategy_pool_contract_asset_balance_old_balance VARCHAR;
+		_user_strategy_pool_contract_asset_balance_old_balance decimal(56, 18);
 		_pkey_id BIGINT;
 BEGIN
 		SELECT etca.pkey_id INTO _token_id
@@ -1923,7 +1923,7 @@ END
             vec![Field::new("updated", Type::Boolean)],
             r#"
 DECLARE
-    _old_balance varchar;
+    _old_balance decimal(56, 18);
 BEGIN
     SELECT balance INTO _old_balance FROM tbl.user_deposit_withdraw_balance WHERE pkey_id = a_deposit_withdraw_balance_id;
     IF _old_balance <> a_old_balance THEN
@@ -2162,12 +2162,12 @@ END
 BEGIN
     RETURN QUERY SELECT
             a.user_address,
-            CAST(SUM(CAST(a.quantity AS NUMERIC) 
+            SUM(a.quantity
                 * CASE
                      WHEN a.is_deposit THEN 1
                      ELSE -1 
                  END
-            ) AS VARCHAR)
+            )
 		FROM tbl.user_deposit_withdraw_ledger AS a
 		WHERE a.blockchain = a_blockchain
 		    AND a.fkey_user_id = a_user_id

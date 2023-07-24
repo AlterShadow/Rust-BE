@@ -1019,7 +1019,7 @@ AS $$
 DECLARE
 		_token_id BIGINT;
 		_user_strategy_pool_contract_asset_balance_id BIGINT;
-		_user_strategy_pool_contract_asset_balance_old_balance VARCHAR;
+		_user_strategy_pool_contract_asset_balance_old_balance decimal(56, 18);
 		_pkey_id BIGINT;
 BEGIN
 		SELECT etca.pkey_id INTO _token_id
@@ -2447,7 +2447,7 @@ LANGUAGE plpgsql
 AS $$
     
 DECLARE
-    _old_balance varchar;
+    _old_balance decimal(56, 18);
 BEGIN
     SELECT balance INTO _old_balance FROM tbl.user_deposit_withdraw_balance WHERE pkey_id = a_deposit_withdraw_balance_id;
     IF _old_balance <> a_old_balance THEN
@@ -2663,12 +2663,12 @@ AS $$
 BEGIN
     RETURN QUERY SELECT
             a.user_address,
-            CAST(SUM(CAST(a.quantity AS NUMERIC) 
+            SUM(a.quantity
                 * CASE
                      WHEN a.is_deposit THEN 1
                      ELSE -1 
                  END
-            ) AS VARCHAR)
+            )
 		FROM tbl.user_deposit_withdraw_ledger AS a
 		WHERE a.blockchain = a_blockchain
 		    AND a.fkey_user_id = a_user_id
@@ -3805,7 +3805,7 @@ AS $$
 DECLARE
     _expert_watched_wallet_id                         bigint;
     _expert_listened_wallet_asset_balance_id          bigint;
-    _expert_listened_wallet_asset_balance_old_balance varchar;
+    _expert_listened_wallet_asset_balance_old_balance decimal(56, 18);
     _pkey_id                                          bigint;
 BEGIN
     SELECT pkey_id
@@ -3912,7 +3912,7 @@ AS $$
 DECLARE
     _strategy_pool_contract_id bigint;
     _user_strategy_wallet_id  bigint;
-    _user_strategy_wallet_balance_old_balance    varchar;
+    _user_strategy_wallet_balance_old_balance    decimal(56, 18);
     _user_strategy_wallet_balance_id             bigint;
     _pkey_id                                     bigint;
 BEGIN
@@ -3971,7 +3971,7 @@ DECLARE
     _token_id bigint;
     _escrow_contract_address_id bigint;
     _user_deposit_withdraw_balance_id          bigint;
-    _user_deposit_withdraw_balance_old_balance varchar;
+    _user_deposit_withdraw_balance_old_balance decimal(56, 18);
     _pkey_id                                   bigint;
 BEGIN
     SELECT pkey_id INTO _token_id FROM tbl.escrow_token_contract_address WHERE address = a_token_address AND blockchain = a_blockchain;
