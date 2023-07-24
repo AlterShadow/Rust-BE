@@ -10,28 +10,10 @@ eyre = "0.6.1"
 serde = { version = "1.0", features = ["derive"] }
 tracing = "0.1.35"
 tokio = { version = "1", features = ["full"] }
-reqwest = { version = "*", default-features = false, features = [
-	"rustls-tls",
-	"serde_json",
-	"json",
-] }
-serde_json = "*"
 secrecy = { version = "0.8.0", features = ["serde"] }
-deadpool-postgres = "*"
-tokio-cron-scheduler = "*"
-model = { path = "../../model" }
 gen = { path = "../../gen" }
 lib = { path = "../../lib" }
-bytes = "*"
 api = { path = "../shared/api" }
-[dependencies.uuid]
-version = "1.1.2"
-features = [
-	"v4",                # Lets you generate random UUIDs
-	"fast-rng",          # Use a faster (but still sufficiently random) RNG
-	"macro-diagnostics", # Enable better diagnostics for compile-time UUIDs
-	"serde",             # Enable serde support
-]
 [features]
 default = []
 no-github-ci-tests = []

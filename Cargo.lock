@@ -2177,20 +2177,13 @@ name = "mc2fi_asset_price"
 version = "0.1.0"
 dependencies = [
  "api",
- "bytes",
- "deadpool-postgres",
  "eyre",
  "gen",
  "lib",
- "model",
- "reqwest",
  "secrecy",
  "serde",
- "serde_json",
  "tokio",
- "tokio-cron-scheduler",
  "tracing",
- "uuid",
 ]
 
 [[package]]
