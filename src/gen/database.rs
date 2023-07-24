@@ -123,6 +123,11 @@ pub struct FunAdminUpdateEscrowContractAddressRespRow {}
 pub struct FunAdminUpdateSystemConfigRespRow {}
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunAssetPriceDeleteOldAssetPriceEntriesRespRow {
+    pub success: bool,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunAssetPriceInsertAssetPricesRespRow {
     pub success: bool,
 }
@@ -3826,5 +3831,19 @@ impl DatabaseRequest for FunAssetPriceListAssetPricesReq {
             &self.limit as &(dyn ToSql + Sync),
             &self.offset as &(dyn ToSql + Sync),
         ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAssetPriceDeleteOldAssetPriceEntriesReq {}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunAssetPriceDeleteOldAssetPriceEntriesReq {
+    type ResponseRow = FunAssetPriceDeleteOldAssetPriceEntriesRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_asset_price_delete_old_asset_price_entries();"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![]
     }
 }

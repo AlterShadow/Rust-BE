@@ -61,5 +61,20 @@ BEGIN
 END
 "#,
         ),
+        ProceduralFunction::new(
+            "fun_asset_price_delete_old_asset_price_entries",
+            vec![],
+            vec![Field::new("success", Type::Boolean)],
+            r#"
+DECLARE
+	days_ago BIGINT := (EXTRACT(EPOCH FROM (NOW() - INTERVAL '91 DAYS'))::BIGINT);
+BEGIN
+	DELETE FROM tbl.token_price AS tp
+	WHERE tp.created_at <= days_ago;
+
+	RETURN QUERY SELECT true AS "success";
+END
+"#,
+        ),
     ]
 }
