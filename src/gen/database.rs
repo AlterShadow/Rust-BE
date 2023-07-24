@@ -128,6 +128,16 @@ pub struct FunAssetPriceInsertAssetPricesRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunAssetPriceListAssetPricesRespRow {
+    pub symbol: String,
+    pub price_latest: f64,
+    #[serde(default)]
+    pub price_7d: Option<f64>,
+    #[serde(default)]
+    pub price_30d: Option<f64>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunAuthAuthenticateRespRow {
     pub user_id: i64,
     pub public_user_id: i64,
@@ -3790,6 +3800,31 @@ impl DatabaseRequest for FunAssetPriceInsertAssetPricesReq {
         vec![
             &self.symbols as &(dyn ToSql + Sync),
             &self.prices as &(dyn ToSql + Sync),
+        ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAssetPriceListAssetPricesReq {
+    #[serde(default)]
+    pub symbols: Option<Vec<String>>,
+    #[serde(default)]
+    pub limit: Option<i32>,
+    #[serde(default)]
+    pub offset: Option<i32>,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunAssetPriceListAssetPricesReq {
+    type ResponseRow = FunAssetPriceListAssetPricesRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_asset_price_list_asset_prices(a_symbols => $1::varchar[], a_limit => $2::int, a_offset => $3::int);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.symbols as &(dyn ToSql + Sync),
+            &self.limit as &(dyn ToSql + Sync),
+            &self.offset as &(dyn ToSql + Sync),
         ]
     }
 }
