@@ -2185,6 +2185,7 @@ dependencies = [
  "lib",
  "model",
  "reqwest",
+ "secrecy",
  "serde",
  "serde_json",
  "tokio",

@@ -16,6 +16,7 @@ reqwest = { version = "*", default-features = false, features = [
 	"json",
 ] }
 serde_json = "*"
+secrecy = { version = "0.8.0", features = ["serde"] }
 deadpool-postgres = "*"
 tokio-cron-scheduler = "*"
 model = { path = "../../model" }
