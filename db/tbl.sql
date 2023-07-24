@@ -1,5 +1,5 @@
 -- Created by Vertabelo (http://vertabelo.com)
--- Last modification date: 2023-07-23 12:56:23.314
+-- Last modification date: 2023-07-24 13:27:15.743
 
 CREATE SCHEMA IF NOT EXISTS tbl;;
 
@@ -314,6 +314,17 @@ CREATE TABLE tbl.system_config (
     config_placeholder_2 bigint  NULL,
     CONSTRAINT system_config_pk PRIMARY KEY (pkey_id)
 );
+
+-- Table: token_price
+CREATE TABLE tbl.token_price (
+    pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_token_price_id'),
+    symbol varchar(32)  NOT NULL,
+    price double precision  NOT NULL,
+    created_at bigint  NOT NULL,
+    CONSTRAINT token_price_pk PRIMARY KEY (pkey_id)
+);
+
+CREATE INDEX "tbl.token_price_idx_1" on tbl.token_price (symbol ASC,created_at ASC);
 
 -- Table: transaction_cache
 CREATE TABLE tbl.transaction_cache (
@@ -1114,6 +1125,13 @@ CREATE SEQUENCE tbl.seq_strategy_whitelisted_token_id
 
 -- Sequence: seq_strategy_whitelisted_tokens_id
 CREATE SEQUENCE tbl.seq_strategy_whitelisted_tokens_id
+      NO MINVALUE
+      NO MAXVALUE
+      NO CYCLE
+;
+
+-- Sequence: seq_token_price_id
+CREATE SEQUENCE tbl.seq_token_price_id
       NO MINVALUE
       NO MAXVALUE
       NO CYCLE
