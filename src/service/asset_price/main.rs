@@ -1,11 +1,17 @@
+use std::collections::hash_map::Entry;
+use std::collections::HashMap;
+use std::time::Duration;
+
 use eyre::*;
+use secrecy::{ExposeSecret, SecretString};
 use serde::Deserialize;
+use tokio::time::sleep;
 
 use api::cmc::CoinMarketCap;
+use gen::database::*;
 use lib::config::load_config;
-use lib::database::{connect_to_database, DatabaseConfig};
+use lib::database::{connect_to_database, DatabaseConfig, DbClient};
 use lib::log::{setup_logs, LogLevel};
-use secrecy::{ExposeSecret, SecretString};
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Config {
@@ -21,9 +27,55 @@ async fn main() -> Result<()> {
     let db = connect_to_database(config.app_db).await?;
     let cmc_client = CoinMarketCap::new(config.cmc_api_key.expose_secret())?;
 
+    loop {
+        fill_asset_price_cache(&db, &cmc_client).await?;
+        delete_old_price_entries(&db).await?;
+        sleep(Duration::from_secs(60)).await;
+    }
+}
+
+async fn fill_asset_price_cache(db: &DbClient, cmc: &CoinMarketCap) -> Result<()> {
+    let all_token_contract_rows = db
+        .execute(FunAdminListEscrowTokenContractAddressReq {
+            limit: None,
+            offset: None,
+            blockchain: None,
+            token_address: None,
+            token_id: None,
+        })
+        .await?
+        .into_rows();
+
+    let mut unique_token_symbols: HashMap<String, ()> = HashMap::new();
+    for token_contract_row in all_token_contract_rows {
+        match unique_token_symbols.entry(token_contract_row.symbol) {
+            Entry::Occupied(_) => continue,
+            Entry::Vacant(entry) => {
+                entry.insert(());
+            }
+        }
+    }
+
+    let quoted_prices = cmc
+        .get_usd_prices_by_symbol(
+            &unique_token_symbols
+                .keys()
+                .cloned()
+                .collect::<Vec<String>>(),
+        )
+        .await?;
+
+    db.execute(FunAssetPriceInsertAssetPricesReq {
+        symbols: quoted_prices.keys().cloned().collect(),
+        prices: quoted_prices.values().cloned().collect(),
+    })
+    .await?;
+
     Ok(())
 }
 
-async fn fill_asset_price_cache() -> Result<()> {
+async fn delete_old_price_entries(db: &DbClient) -> Result<()> {
+    db.execute(FunAssetPriceDeleteOldAssetPriceEntriesReq {})
+        .await?;
     Ok(())
 }
