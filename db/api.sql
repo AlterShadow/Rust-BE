@@ -4060,6 +4060,24 @@ END
 $$;
         
 
+CREATE OR REPLACE FUNCTION api.fun_asset_price_insert_asset_prices(a_symbols varchar[], a_prices double precision[])
+RETURNS table (
+    "success" boolean
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+	INSERT INTO tbl.token_price (symbol, price, created_at)
+	SELECT a_symbol, a_price, EXTRACT(EPOCH FROM NOW())::bigint
+	FROM UNNEST(a_symbols, a_prices) AS u(a_symbol, a_price);
+
+	RETURN QUERY SELECT true AS "success";
+END
+
+$$;
+        
+
 CREATE OR REPLACE FUNCTION api.AUTH_SERVICE()
 RETURNS table (
     "code" int
