@@ -45,6 +45,7 @@ api = { path = "src/service/shared/api" }
 mc2fi_auth = { path = "src/service/auth" }
 mc2fi_user = { path = "src/service/user" }
 mc2fi_watcher = { path = "src/service/watcher" }
+mc2fi_asset_price = { path = "src/service/asset_price" }
 tracing-appender = "0.2"
 
 [workspace]
@@ -58,6 +59,7 @@ members = [
 	"src/service/user",
 	"src/service/admin",
 	"src/service/watcher",
+	"src/service/asset_price",
 	"src/lib",
 	"src/gen",
 ]

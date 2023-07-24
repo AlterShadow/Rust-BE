@@ -2109,6 +2109,7 @@ dependencies = [
  "hex",
  "itertools",
  "lib",
+ "mc2fi_asset_price",
  "mc2fi_auth",
  "mc2fi_user",
  "mc2fi_watcher",
@@ -2170,6 +2171,26 @@ dependencies = [
  "tracing",
  "tracing-appender",
  "web3",
+]
+
+[[package]]
+name = "mc2fi_asset_price"
+version = "0.1.0"
+dependencies = [
+ "api",
+ "bytes",
+ "deadpool-postgres",
+ "eyre",
+ "gen",
+ "lib",
+ "model",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-cron-scheduler",
+ "tracing",
+ "uuid",
 ]
 
 [[package]]
