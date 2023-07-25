@@ -7,6 +7,7 @@ use web3::{ethabi, Transport, Web3};
 
 use crate::contract::AbstractContract;
 use crate::logger::get_blockchain_logger;
+use crate::RpcCallError;
 use crate::{
     deploy_contract, EitherTransport, EthereumRpcConnection, EthereumRpcConnectionPool,
     MultiChainAddressTable,
@@ -65,7 +66,7 @@ impl<T: Transport> StrategyWalletContract<T> {
         self.contract.address()
     }
 
-    pub async fn backer(&self) -> Result<Address> {
+    pub async fn backer(&self) -> Result<Address, RpcCallError> {
         Ok(self
             .contract
             .query(
@@ -78,7 +79,7 @@ impl<T: Transport> StrategyWalletContract<T> {
             .await?)
     }
 
-    pub async fn admin(&self) -> Result<Address> {
+    pub async fn admin(&self) -> Result<Address, RpcCallError> {
         Ok(self
             .contract
             .query(
@@ -97,7 +98,7 @@ impl<T: Transport> StrategyWalletContract<T> {
         signer: impl Key + Clone,
         strategy: Address,
         shares: U256,
-    ) -> Result<H256> {
+    ) -> Result<H256, RpcCallError> {
         info!(
 					"Redeeming {:?} shares from strategy pool contract {:?} using strategy wallet contract {:?} by {:?}",
 					amount_to_display(shares),
@@ -145,7 +146,7 @@ impl<T: Transport> StrategyWalletContract<T> {
         conn: &EthereumRpcConnection,
         signer: impl Key + Clone,
         strategy: Address,
-    ) -> Result<H256> {
+    ) -> Result<H256, RpcCallError> {
         info!(
 					"Redeeming all shares from strategy pool contract {:?} using strategy wallet contract {:?} by {:?}",
 					strategy,
@@ -194,7 +195,7 @@ impl<T: Transport> StrategyWalletContract<T> {
         conn: &EthereumRpcConnection,
         signer: impl Key,
         new_admin: Address,
-    ) -> Result<H256> {
+    ) -> Result<H256, RpcCallError> {
         info!(
             "Transferring adminship of strategy wallet contract {:?} to {:?} by {:?}",
             self.address(),
@@ -237,7 +238,7 @@ impl<T: Transport> StrategyWalletContract<T> {
         &self,
         conn: &EthereumRpcConnection,
         signer: impl Key,
-    ) -> Result<H256> {
+    ) -> Result<H256, RpcCallError> {
         info!(
             "Revoking adminship of strategy wallet contract {:?} by {:?}",
             self.address(),

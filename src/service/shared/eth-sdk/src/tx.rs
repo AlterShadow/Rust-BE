@@ -77,6 +77,7 @@ pub enum RpcCallError {
     InternalError(ApiOrContractError),
     ProviderError(ApiOrContractError),
     Web3Error(ApiOrContractError),
+    InternalErrorWithMessage(String),
 }
 
 impl std::fmt::Display for RpcCallError {
@@ -90,6 +91,9 @@ impl std::fmt::Display for RpcCallError {
             }
             RpcCallError::Web3Error(error) => {
                 write!(f, "web3 error: {:?}", error)
+            }
+            RpcCallError::InternalErrorWithMessage(message) => {
+                write!(f, "internal error: {}", message)
             }
         }
     }

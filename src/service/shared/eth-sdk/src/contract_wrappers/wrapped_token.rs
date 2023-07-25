@@ -8,6 +8,7 @@ use web3::{Transport, Web3};
 
 use crate::logger::get_blockchain_logger;
 use crate::EthereumRpcConnection;
+use crate::RpcCallError;
 
 const WRAPPED_ABI_JSON: &str = include_str!("weth.json");
 
@@ -31,7 +32,7 @@ impl<T: Transport> WrappedTokenContract<T> {
         conn: &EthereumRpcConnection,
         signer: impl Key,
         amount: U256,
-    ) -> Result<H256> {
+    ) -> Result<H256, RpcCallError> {
         let estimated_gas = self
             .contract
             .estimate_gas(
@@ -70,7 +71,7 @@ impl<T: Transport> WrappedTokenContract<T> {
         conn: &EthereumRpcConnection,
         signer: impl Key,
         amount: U256,
-    ) -> Result<H256> {
+    ) -> Result<H256, RpcCallError> {
         let estimated_gas = self
             .contract
             .estimate_gas(
@@ -107,7 +108,7 @@ impl<T: Transport> WrappedTokenContract<T> {
         signer: impl Key,
         spender: Address,
         amount: U256,
-    ) -> Result<H256> {
+    ) -> Result<H256, RpcCallError> {
         let estimated_gas = self
             .contract
             .estimate_gas(
@@ -142,7 +143,7 @@ impl<T: Transport> WrappedTokenContract<T> {
         Ok(tx_hash)
     }
 
-    pub async fn balance_of(&self, owner: Address) -> Result<U256> {
+    pub async fn balance_of(&self, owner: Address) -> Result<U256, RpcCallError> {
         Ok(self
             .contract
             .query(

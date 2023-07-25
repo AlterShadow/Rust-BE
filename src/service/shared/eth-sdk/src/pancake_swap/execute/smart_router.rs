@@ -1,6 +1,7 @@
 use super::super::SMART_ROUTER_ABI_JSON;
 use super::super::{MultiHopPath, PancakePairPathSet, PancakePoolIndex};
 use crate::EthereumRpcConnection;
+use crate::RpcCallError;
 use eyre::*;
 use std::str::FromStr;
 use web3::contract::{Contract, Options};
@@ -44,10 +45,14 @@ impl<T: Transport> PancakeSmartRouterContract<T> {
         paths: PancakePairPathSet,
         amount_in: U256,
         amount_out_minimum: U256,
-    ) -> Result<H256> {
+    ) -> Result<H256, RpcCallError> {
         let recipient = signer.address();
         match paths.len() {
-            0 => bail!("no swap paths"),
+            0 => {
+                return Err(RpcCallError::InternalErrorWithMessage(
+                    "no swap paths".to_string(),
+                ))
+            }
             /* if only one swap call, call swap directly */
             /* saves GAS compared to multicall that would call contract +1 times */
             1 => {
@@ -55,8 +60,12 @@ impl<T: Transport> PancakeSmartRouterContract<T> {
                     .single_call(
                         &conn,
                         signer,
-                        paths.get_func_name(0)?,
-                        paths.get_path(0)?,
+                        paths
+                            .get_func_name(0)
+                            .map_err(|e| RpcCallError::InternalErrorWithMessage(e.to_string()))?,
+                        paths
+                            .get_path(0)
+                            .map_err(|e| RpcCallError::InternalErrorWithMessage(e.to_string()))?,
                         recipient,
                         amount_in,
                         amount_out_minimum,
@@ -89,8 +98,10 @@ impl<T: Transport> PancakeSmartRouterContract<T> {
         recipient: Address,
         amount_in: U256,
         amount_out_minimum: U256,
-    ) -> Result<H256> {
-        match PancakeSmartRouterFunctions::from_str(&func_name)? {
+    ) -> Result<H256, RpcCallError> {
+        match PancakeSmartRouterFunctions::from_str(&func_name)
+            .map_err(|e| RpcCallError::InternalErrorWithMessage(e.to_string()))?
+        {
             PancakeSmartRouterFunctions::SwapExactTokensForTokens => {
                 /* path is the same on V2 pools, regardless of exact in or out */
                 /* path[0] is tokenIn, path[path.len()-1] is tokenOut */
@@ -103,7 +114,11 @@ impl<T: Transport> PancakeSmartRouterContract<T> {
                         amount_out_minimum,
                         match path {
                             PancakePoolIndex::PancakeV2(path) => path,
-                            _ => bail!("invalid path for v2"),
+                            _ => {
+                                return Err(RpcCallError::InternalErrorWithMessage(
+                                    "invalid path for v2".to_string(),
+                                ))
+                            }
                         },
                     )
                     .await?)
@@ -120,7 +135,11 @@ impl<T: Transport> PancakeSmartRouterContract<T> {
                         amount_out_minimum,
                         match path {
                             PancakePoolIndex::PancakeV2(path) => path,
-                            _ => bail!("invalid path for v2"),
+                            _ => {
+                                return Err(RpcCallError::InternalErrorWithMessage(
+                                    "invalid path for v2".to_string(),
+                                ))
+                            }
                         },
                     )
                     .await?)
@@ -130,7 +149,11 @@ impl<T: Transport> PancakeSmartRouterContract<T> {
                 /* tokenIn, tokenOut, and fee are passed on every call */
                 let v3_single_hop_path = match path {
                     PancakePoolIndex::PancakeV3SingleHop(path) => path,
-                    _ => bail!("invalid path for v3 single hop"),
+                    _ => {
+                        return Err(RpcCallError::InternalErrorWithMessage(
+                            "invalid path for v3 single hop".to_string(),
+                        ))
+                    }
                 };
                 Ok(self
                     .exact_input_single(
@@ -150,7 +173,11 @@ impl<T: Transport> PancakeSmartRouterContract<T> {
                 /* tokenIn, tokenOut, and fee are passed on every call */
                 let v3_single_hop_path = match path {
                     PancakePoolIndex::PancakeV3SingleHop(path) => path,
-                    _ => bail!("invalid path for v3 single hop"),
+                    _ => {
+                        return Err(RpcCallError::InternalErrorWithMessage(
+                            "invalid path for v3 single hop".to_string(),
+                        ))
+                    }
                 };
                 Ok(self
                     .exact_input_single(
@@ -175,8 +202,13 @@ impl<T: Transport> PancakeSmartRouterContract<T> {
                         signer.clone(),
                         MultiHopPath::from_bytes(&match path {
                             PancakePoolIndex::PancakeV3MultiHop(path) => path,
-                            _ => bail!("invalid path for v3 multi hop"),
-                        })?,
+                            _ => {
+                                return Err(RpcCallError::InternalErrorWithMessage(
+                                    "invalid path for v3 multi hop".to_string(),
+                                ))
+                            }
+                        })
+                        .map_err(|e| RpcCallError::InternalErrorWithMessage(e.to_string()))?,
                         recipient,
                         amount_in,
                         amount_out_minimum,
@@ -189,10 +221,17 @@ impl<T: Transport> PancakeSmartRouterContract<T> {
                     .exact_input(
                         &conn,
                         signer.clone(),
-                        MultiHopPath::invert(&MultiHopPath::from_bytes(&match path {
-                            PancakePoolIndex::PancakeV3MultiHop(path) => path,
-                            _ => bail!("invalid path for v3 multi hop"),
-                        })?),
+                        MultiHopPath::invert(
+                            &MultiHopPath::from_bytes(&match path {
+                                PancakePoolIndex::PancakeV3MultiHop(path) => path,
+                                _ => {
+                                    return Err(RpcCallError::InternalErrorWithMessage(
+                                        "invalid path for v3 multi hop".to_string(),
+                                    ))
+                                }
+                            })
+                            .map_err(|e| RpcCallError::InternalErrorWithMessage(e.to_string()))?,
+                        ),
                         recipient,
                         amount_in,
                         amount_out_minimum,
@@ -210,7 +249,7 @@ impl<T: Transport> PancakeSmartRouterContract<T> {
         amount_in: U256,
         amount_out_min: U256,
         path: Vec<Address>,
-    ) -> Result<H256> {
+    ) -> Result<H256, RpcCallError> {
         let params = (amount_in, amount_out_min, path, recipient);
         let estimated_gas = self
             .contract
@@ -246,7 +285,7 @@ impl<T: Transport> PancakeSmartRouterContract<T> {
         amount_out: U256,
         amount_in_max: U256,
         path: Vec<Address>,
-    ) -> Result<H256> {
+    ) -> Result<H256, RpcCallError> {
         let params = (amount_out, amount_in_max, path, recipient);
         let estimated_gas = self
             .contract
@@ -284,11 +323,13 @@ impl<T: Transport> PancakeSmartRouterContract<T> {
         recipient: Address,
         amount_in: U256,
         amount_out_minimum: U256,
-    ) -> Result<H256> {
+    ) -> Result<H256, RpcCallError> {
         /* fee is a Solidity uint24 */
         let max_uint24: U256 = U256::from(2).pow(24.into()) - U256::from(1);
         if fee > max_uint24 {
-            bail!("fee exceeds the maximum value for a uint24");
+            return Err(RpcCallError::InternalErrorWithMessage(
+                "fee exceeds the maximum value for a uint24".to_string(),
+            ));
         }
 
         /* params is a Soldity struct, encode it into a Token::Tuple */
@@ -337,11 +378,13 @@ impl<T: Transport> PancakeSmartRouterContract<T> {
         recipient: Address,
         amount_out: U256,
         amount_in_maximum: U256,
-    ) -> Result<H256> {
+    ) -> Result<H256, RpcCallError> {
         /* fee is a Solidity uint24 */
         let max_uint24: U256 = U256::from(2).pow(24.into()) - U256::from(1);
         if fee > max_uint24 {
-            bail!("fee exceeds the maximum value for a uint24");
+            return Err(RpcCallError::InternalErrorWithMessage(
+                "fee exceeds the maximum value for a uint24".to_string(),
+            ));
         }
 
         /* params is a Soldity struct, encode it into a Token::Tuple */
@@ -388,10 +431,13 @@ impl<T: Transport> PancakeSmartRouterContract<T> {
         recipient: Address,
         amount_in: U256,
         amount_out_minimum: U256,
-    ) -> Result<H256> {
+    ) -> Result<H256, RpcCallError> {
         /* params is a Soldity struct, encode it into a Token::Tuple */
         let params = Token::Tuple(vec![
-            Token::Bytes(MultiHopPath::to_bytes(&path)?),
+            Token::Bytes(
+                MultiHopPath::to_bytes(&path)
+                    .map_err(|e| RpcCallError::InternalErrorWithMessage(e.to_string()))?,
+            ),
             Token::Address(recipient),
             Token::Uint(amount_in),
             Token::Uint(amount_out_minimum),
@@ -431,10 +477,13 @@ impl<T: Transport> PancakeSmartRouterContract<T> {
         recipient: Address,
         amount_out: U256,
         amount_in_maximum: U256,
-    ) -> Result<H256> {
+    ) -> Result<H256, RpcCallError> {
         /* params is a Soldity struct, encode it into a Token::Tuple */
         let params = Token::Tuple(vec![
-            Token::Bytes(MultiHopPath::to_bytes(&path)?),
+            Token::Bytes(
+                MultiHopPath::to_bytes(&path)
+                    .map_err(|e| RpcCallError::InternalErrorWithMessage(e.to_string()))?,
+            ),
             Token::Address(recipient),
             Token::Uint(amount_out),
             Token::Uint(amount_in_maximum),
@@ -473,7 +522,7 @@ impl<T: Transport> PancakeSmartRouterContract<T> {
         recipient: Address,
         amount_in: U256,
         amount_out_minimum: U256,
-    ) -> Result<H256> {
+    ) -> Result<H256, RpcCallError> {
         let mut call_data: Vec<Vec<u8>> = Vec::new();
         let mut temp_recipient: Address;
         let mut temp_amount_in: U256;
@@ -503,79 +552,140 @@ impl<T: Transport> PancakeSmartRouterContract<T> {
                 /* no limit on amount out, this limit is for the last tokenOut only */
                 temp_amount_out_minimum = U256::from(0);
             }
-            match PancakeSmartRouterFunctions::from_str(&paths.get_func_name(i)?)? {
-                PancakeSmartRouterFunctions::SwapExactTokensForTokens => {
-                    call_data.push(self.setup_swap_exact_tokens_for_tokens(
+            match PancakeSmartRouterFunctions::from_str(
+                &paths
+                    .get_func_name(i)
+                    .map_err(|e| RpcCallError::InternalErrorWithMessage(e.to_string()))?,
+            )
+            .map_err(|e| RpcCallError::InternalErrorWithMessage(e.to_string()))?
+            {
+                PancakeSmartRouterFunctions::SwapExactTokensForTokens => call_data.push(
+                    self.setup_swap_exact_tokens_for_tokens(
                         temp_recipient,
                         temp_amount_in,
                         temp_amount_out_minimum,
-                        match paths.get_path(i)? {
+                        match paths
+                            .get_path(i)
+                            .map_err(|e| RpcCallError::InternalErrorWithMessage(e.to_string()))?
+                        {
                             PancakePoolIndex::PancakeV2(path) => path,
-                            _ => bail!("invalid path for v2"),
+                            _ => {
+                                return Err(RpcCallError::InternalErrorWithMessage(
+                                    "invalid path for v2".to_string(),
+                                ))
+                            }
                         },
-                    )?)
-                }
-                PancakeSmartRouterFunctions::SwapTokensForExactTokens => {
-                    call_data.push(self.setup_swap_exact_tokens_for_tokens(
+                    )
+                    .map_err(|e| RpcCallError::InternalErrorWithMessage(e.to_string()))?,
+                ),
+                PancakeSmartRouterFunctions::SwapTokensForExactTokens => call_data.push(
+                    self.setup_swap_exact_tokens_for_tokens(
                         temp_recipient,
                         temp_amount_in,
                         temp_amount_out_minimum,
-                        match paths.get_path(i)? {
+                        match paths
+                            .get_path(i)
+                            .map_err(|e| RpcCallError::InternalErrorWithMessage(e.to_string()))?
+                        {
                             PancakePoolIndex::PancakeV2(path) => path,
-                            _ => bail!("invalid path for v2"),
+                            _ => {
+                                return Err(RpcCallError::InternalErrorWithMessage(
+                                    "invalid path for v2".to_string(),
+                                ))
+                            }
                         },
-                    )?)
-                }
+                    )
+                    .map_err(|e| RpcCallError::InternalErrorWithMessage(e.to_string()))?,
+                ),
                 PancakeSmartRouterFunctions::ExactInputSingle => {
-                    let v3_single_hop_path = match paths.get_path(i)? {
+                    let v3_single_hop_path = match paths
+                        .get_path(i)
+                        .map_err(|e| RpcCallError::InternalErrorWithMessage(e.to_string()))?
+                    {
                         PancakePoolIndex::PancakeV3SingleHop(path) => path,
-                        _ => bail!("invalid path for v3 single hop"),
+                        _ => {
+                            return Err(RpcCallError::InternalErrorWithMessage(
+                                "invalid path for v3 single hop".to_string(),
+                            ))
+                        }
                     };
-                    call_data.push(self.setup_exact_input_single(
-                        v3_single_hop_path.token_in,
-                        v3_single_hop_path.token_out,
-                        v3_single_hop_path.fee,
-                        temp_recipient,
-                        temp_amount_in,
-                        temp_amount_out_minimum,
-                    )?)
+                    call_data.push(
+                        self.setup_exact_input_single(
+                            v3_single_hop_path.token_in,
+                            v3_single_hop_path.token_out,
+                            v3_single_hop_path.fee,
+                            temp_recipient,
+                            temp_amount_in,
+                            temp_amount_out_minimum,
+                        )
+                        .map_err(|e| RpcCallError::InternalErrorWithMessage(e.to_string()))?,
+                    )
                 }
                 PancakeSmartRouterFunctions::ExactOutputSingle => {
-                    let v3_single_hop_path = match paths.get_path(i)? {
+                    let v3_single_hop_path = match paths
+                        .get_path(i)
+                        .map_err(|e| RpcCallError::InternalErrorWithMessage(e.to_string()))?
+                    {
                         PancakePoolIndex::PancakeV3SingleHop(path) => path,
-                        _ => bail!("invalid path for v3 single hop"),
+                        _ => {
+                            return Err(RpcCallError::InternalErrorWithMessage(
+                                "invalid path for v3 single hop".to_string(),
+                            ))
+                        }
                     };
-                    call_data.push(self.setup_exact_input_single(
-                        v3_single_hop_path.token_in,
-                        v3_single_hop_path.token_out,
-                        v3_single_hop_path.fee,
+                    call_data.push(
+                        self.setup_exact_input_single(
+                            v3_single_hop_path.token_in,
+                            v3_single_hop_path.token_out,
+                            v3_single_hop_path.fee,
+                            temp_recipient,
+                            temp_amount_in,
+                            temp_amount_out_minimum,
+                        )
+                        .map_err(|e| RpcCallError::InternalErrorWithMessage(e.to_string()))?,
+                    )
+                }
+                PancakeSmartRouterFunctions::ExactInput => call_data.push(
+                    self.setup_exact_input(
+                        MultiHopPath::from_bytes(&match paths
+                            .get_path(i)
+                            .map_err(|e| RpcCallError::InternalErrorWithMessage(e.to_string()))?
+                        {
+                            PancakePoolIndex::PancakeV3MultiHop(path) => path,
+                            _ => {
+                                return Err(RpcCallError::InternalErrorWithMessage(
+                                    "invalid path for v3 multi hop".to_string(),
+                                ))
+                            }
+                        })
+                        .map_err(|e| RpcCallError::InternalErrorWithMessage(e.to_string()))?,
                         temp_recipient,
                         temp_amount_in,
                         temp_amount_out_minimum,
-                    )?)
-                }
-                PancakeSmartRouterFunctions::ExactInput => call_data.push(self.setup_exact_input(
-                    MultiHopPath::from_bytes(&match paths.get_path(i)? {
-                        PancakePoolIndex::PancakeV3MultiHop(path) => path,
-                        _ => bail!("invalid path for v3 multi hop"),
-                    })?,
-                    temp_recipient,
-                    temp_amount_in,
-                    temp_amount_out_minimum,
-                )?),
-                PancakeSmartRouterFunctions::ExactOutput => {
-                    call_data.push(self.setup_exact_input(
-                        MultiHopPath::invert(&MultiHopPath::from_bytes(
-                            &match paths.get_path(i)? {
+                    )
+                    .map_err(|e| RpcCallError::InternalErrorWithMessage(e.to_string()))?,
+                ),
+                PancakeSmartRouterFunctions::ExactOutput => call_data.push(
+                    self.setup_exact_input(
+                        MultiHopPath::invert(
+                            &MultiHopPath::from_bytes(&match paths.get_path(i).map_err(|e| {
+                                RpcCallError::InternalErrorWithMessage(e.to_string())
+                            })? {
                                 PancakePoolIndex::PancakeV3MultiHop(path) => path,
-                                _ => bail!("invalid path for v3 multi hop"),
-                            },
-                        )?),
+                                _ => {
+                                    return Err(RpcCallError::InternalErrorWithMessage(
+                                        "invalid path for v3 multi hop".to_string(),
+                                    ))
+                                }
+                            })
+                            .map_err(|e| RpcCallError::InternalErrorWithMessage(e.to_string()))?,
+                        ),
                         temp_recipient,
                         temp_amount_in,
                         temp_amount_out_minimum,
-                    )?)
-                }
+                    )
+                    .map_err(|e| RpcCallError::InternalErrorWithMessage(e.to_string()))?,
+                ),
             }
         }
 

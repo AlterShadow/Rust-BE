@@ -1,5 +1,6 @@
 use crate::contract::AbstractContract;
 use crate::logger::get_blockchain_logger;
+use crate::RpcCallError;
 use crate::{
     deploy_contract, EitherTransport, EthereumRpcConnection, EthereumRpcConnectionPool,
     MultiChainAddressTable,
@@ -64,7 +65,7 @@ impl<T: Transport> StrategyPoolContract<T> {
         self.contract.address()
     }
 
-    pub async fn decimals(&self) -> Result<U256> {
+    pub async fn decimals(&self) -> Result<U256, RpcCallError> {
         Ok(self
             .contract
             .query(
@@ -77,7 +78,7 @@ impl<T: Transport> StrategyPoolContract<T> {
             .await?)
     }
 
-    pub async fn total_supply(&self) -> Result<U256> {
+    pub async fn total_supply(&self) -> Result<U256, RpcCallError> {
         Ok(self
             .contract
             .query(
@@ -90,7 +91,7 @@ impl<T: Transport> StrategyPoolContract<T> {
             .await?)
     }
 
-    pub async fn balance_of(&self, owner: Address) -> Result<U256> {
+    pub async fn balance_of(&self, owner: Address) -> Result<U256, RpcCallError> {
         Ok(self
             .contract
             .query(
@@ -103,7 +104,7 @@ impl<T: Transport> StrategyPoolContract<T> {
             .await?)
     }
 
-    pub async fn assets(&self) -> Result<Vec<Address>> {
+    pub async fn assets(&self) -> Result<Vec<Address>, RpcCallError> {
         Ok(self
             .contract
             .query(
@@ -116,7 +117,7 @@ impl<T: Transport> StrategyPoolContract<T> {
             .await?)
     }
 
-    pub async fn asset_balance(&self, asset: Address) -> Result<U256> {
+    pub async fn asset_balance(&self, asset: Address) -> Result<U256, RpcCallError> {
         Ok(self
             .contract
             .query(
@@ -129,7 +130,7 @@ impl<T: Transport> StrategyPoolContract<T> {
             .await?)
     }
 
-    pub async fn assets_and_balances(&self) -> Result<(Vec<Address>, Vec<U256>)> {
+    pub async fn assets_and_balances(&self) -> Result<(Vec<Address>, Vec<U256>), RpcCallError> {
         Ok(self
             .contract
             .query(
@@ -142,7 +143,7 @@ impl<T: Transport> StrategyPoolContract<T> {
             .await?)
     }
 
-    pub async fn max_mint(&self) -> Result<U256> {
+    pub async fn max_mint(&self) -> Result<U256, RpcCallError> {
         Ok(self
             .contract
             .query(
@@ -164,7 +165,7 @@ impl<T: Transport> StrategyPoolContract<T> {
         pool_tokens: U256,
         receiver: Address,
         logger: DynLogger,
-    ) -> Result<H256> {
+    ) -> Result<H256, RpcCallError> {
         info!("Depositing amounts {:?} of assets {:?} to mint {:?} pool tokens to receiver {:?} to strategy pool contract {:?} by {:?}",
 						amounts.iter().cloned().map(amount_to_display).collect::<Vec<_>>(),
 						assets.clone(),
@@ -224,7 +225,7 @@ impl<T: Transport> StrategyPoolContract<T> {
         Ok(tx_hash)
     }
 
-    pub async fn max_redeem(&self, owner: Address) -> Result<U256> {
+    pub async fn max_redeem(&self, owner: Address) -> Result<U256, RpcCallError> {
         Ok(self
             .contract
             .query(
@@ -244,7 +245,7 @@ impl<T: Transport> StrategyPoolContract<T> {
         pool_tokens: U256,
         receiver: Address,
         owner: Address,
-    ) -> Result<H256> {
+    ) -> Result<H256, RpcCallError> {
         info!("Redeeming {:?} pool tokens to receiver {:?} from owner {:?} from strategy pool contract {:?} by {:?}",
 					amount_to_display(pool_tokens),
 					receiver,
@@ -299,7 +300,7 @@ impl<T: Transport> StrategyPoolContract<T> {
         assets: Vec<Address>,
         amounts: Vec<U256>,
         logger: DynLogger,
-    ) -> Result<H256> {
+    ) -> Result<H256, RpcCallError> {
         info!("Withdrawing {:?} amounts of {:?} assets to receiver {:?} from strategy pool contract {:?} by {:?}",
 						amounts.iter().cloned().map(amount_to_display).collect::<Vec<_>>(),
 						assets,
@@ -360,7 +361,7 @@ impl<T: Transport> StrategyPoolContract<T> {
         signer: impl Key + Clone,
         asset: Address,
         amount: U256,
-    ) -> Result<H256> {
+    ) -> Result<H256, RpcCallError> {
         info!(
 						"Acquiring {:?} amount of asset {:?} before trade from strategy pool contract {:?} by {:?}",
 						amount_to_display(amount),
@@ -412,7 +413,7 @@ impl<T: Transport> StrategyPoolContract<T> {
         signer: impl Key + Clone,
         assets: Vec<Address>,
         amounts: Vec<U256>,
-    ) -> Result<H256> {
+    ) -> Result<H256, RpcCallError> {
         info!(
 						"Giving back {:?} amounts of assets {:?} after trade to strategy pool contract {:?} by {:?}",
 						amounts.iter().cloned().map(amount_to_display).collect::<Vec<_>>(),
@@ -463,7 +464,7 @@ impl<T: Transport> StrategyPoolContract<T> {
         conn: &EthereumRpcConnection,
         signer: impl Key + Clone,
         new_owner: Address,
-    ) -> Result<H256> {
+    ) -> Result<H256, RpcCallError> {
         info!(
             "Transferring strategy pool contract {:?} ownership from {:?} to {:?} by {:?}",
             self.address(),
@@ -509,7 +510,7 @@ impl<T: Transport> StrategyPoolContract<T> {
         Ok(tx_hash)
     }
 
-    pub async fn owner(&self) -> Result<Address> {
+    pub async fn owner(&self) -> Result<Address, RpcCallError> {
         Ok(self
             .contract
             .query(
@@ -522,7 +523,7 @@ impl<T: Transport> StrategyPoolContract<T> {
             .await?)
     }
 
-    pub async fn is_paused(&self) -> Result<bool> {
+    pub async fn is_paused(&self) -> Result<bool, RpcCallError> {
         Ok(self
             .contract
             .query(

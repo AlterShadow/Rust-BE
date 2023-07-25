@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use crate::contract::AbstractContract;
 use crate::logger::get_blockchain_logger;
+use crate::RpcCallError;
 use crate::{
     deploy_contract, EitherTransport, EscrowAddresses, EthereumRpcConnection,
     EthereumRpcConnectionPool, MultiChainAddressTable,
@@ -71,7 +72,7 @@ impl<T: Transport> EscrowContract<T> {
         self.contract.address()
     }
 
-    pub async fn assets(&self, proprietor: Address) -> Result<Vec<Address>> {
+    pub async fn assets(&self, proprietor: Address) -> Result<Vec<Address>, RpcCallError> {
         Ok(self
             .contract
             .query(
@@ -84,7 +85,11 @@ impl<T: Transport> EscrowContract<T> {
             .await?)
     }
 
-    pub async fn asset_balance(&self, proprietor: Address, asset: Address) -> Result<U256> {
+    pub async fn asset_balance(
+        &self,
+        proprietor: Address,
+        asset: Address,
+    ) -> Result<U256, RpcCallError> {
         Ok(self
             .contract
             .query(
@@ -100,7 +105,7 @@ impl<T: Transport> EscrowContract<T> {
     pub async fn assets_and_balances(
         &self,
         proprietor: Address,
-    ) -> Result<(Vec<Address>, Vec<U256>)> {
+    ) -> Result<(Vec<Address>, Vec<U256>), RpcCallError> {
         Ok(self
             .contract
             .query(
@@ -121,7 +126,7 @@ impl<T: Transport> EscrowContract<T> {
         asset: Address,
         amount: U256,
         logger: DynLogger,
-    ) -> Result<H256> {
+    ) -> Result<H256, RpcCallError> {
         info!(
 					"Accepting {:?} amount of asset {:?} from proprietor {:?} from escrow contract {:?} by {:?}",
 					amount_to_display(amount),
@@ -187,7 +192,7 @@ impl<T: Transport> EscrowContract<T> {
         deposit_amount: U256,
         fee_recipient: Address,
         fee_amount: U256,
-    ) -> Result<U256> {
+    ) -> Result<U256, RpcCallError> {
         let estimated_gas = self
             .contract
             .estimate_gas(
@@ -211,7 +216,7 @@ impl<T: Transport> EscrowContract<T> {
         fee_recipient: Address,
         fee_amount: U256,
         logger: DynLogger,
-    ) -> Result<H256> {
+    ) -> Result<H256, RpcCallError> {
         info!(
 					"Rejecting {:?} amount of asset {:?} from proprietor {:?}, and transferring fee amount {:?} to fee recipient {:?} from escrow contract {:?} by {:?}",
 					amount_to_display(deposit_amount),
@@ -276,7 +281,7 @@ impl<T: Transport> EscrowContract<T> {
         signer: impl Key,
         asset: Address,
         amount: U256,
-    ) -> Result<H256> {
+    ) -> Result<H256, RpcCallError> {
         let estimated_gas = self
             .contract
             .estimate_gas(
@@ -314,7 +319,7 @@ impl<T: Transport> EscrowContract<T> {
         amount: U256,
         recipient: Address,
         logger: DynLogger,
-    ) -> Result<H256> {
+    ) -> Result<H256, RpcCallError> {
         info!(
             "Transferring {} amount of {:?} asset from {:?} proprietor to {:?} recipient from escrow contract {:?} by {:?}",
             amount_to_display(amount),
@@ -382,7 +387,7 @@ impl<T: Transport> EscrowContract<T> {
         asset: Address,
         amount: U256,
         logger: DynLogger,
-    ) -> Result<H256> {
+    ) -> Result<H256, RpcCallError> {
         info!(
 					"Refunding {:?} amount of {:?} asset to {:?} proprietor from escrow contract {:?} by {:?}",
 					amount_to_display(amount),
@@ -447,7 +452,7 @@ impl<T: Transport> EscrowContract<T> {
         assets: Vec<Address>,
         amounts: Vec<U256>,
         logger: DynLogger,
-    ) -> Result<H256> {
+    ) -> Result<H256, RpcCallError> {
         info!(
             "Rescuing {:?} amounts of {:?} assets to {:?} from escrow contract {:?} by {:?}",
             amounts
@@ -522,7 +527,7 @@ impl<T: Transport> EscrowContract<T> {
         signer: impl Key,
         blacklisted_account: Address,
         logger: DynLogger,
-    ) -> Result<H256> {
+    ) -> Result<H256, RpcCallError> {
         info!(
             "Adding {:?} blacklisted account to escrow contract {:?} by {:?}",
             blacklisted_account,
@@ -580,7 +585,7 @@ impl<T: Transport> EscrowContract<T> {
         signer: impl Key,
         blacklisted_account: Address,
         logger: DynLogger,
-    ) -> Result<H256> {
+    ) -> Result<H256, RpcCallError> {
         info!(
             "Removing {:?} blacklisted account to escrow contract {:?} by {:?}",
             blacklisted_account,
@@ -632,7 +637,7 @@ impl<T: Transport> EscrowContract<T> {
         Ok(tx_hash)
     }
 
-    pub async fn blacklisted_accounts(&self) -> Result<Address> {
+    pub async fn blacklisted_accounts(&self) -> Result<Address, RpcCallError> {
         Ok(self
             .contract
             .query(
@@ -645,7 +650,7 @@ impl<T: Transport> EscrowContract<T> {
             .await?)
     }
 
-    pub async fn account_is_blacklisted(&self, account: Address) -> Result<bool> {
+    pub async fn account_is_blacklisted(&self, account: Address) -> Result<bool, RpcCallError> {
         Ok(self
             .contract
             .query(
@@ -663,7 +668,7 @@ impl<T: Transport> EscrowContract<T> {
         conn: &EthereumRpcConnection,
         signer: impl Key,
         new_owner: Address,
-    ) -> Result<H256> {
+    ) -> Result<H256, RpcCallError> {
         let estimated_gas = self
             .contract
             .estimate_gas(
@@ -698,7 +703,7 @@ impl<T: Transport> EscrowContract<T> {
             .await?)
     }
 
-    pub async fn owner(&self) -> Result<Address> {
+    pub async fn owner(&self) -> Result<Address, RpcCallError> {
         Ok(self
             .contract
             .query(

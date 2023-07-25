@@ -1,5 +1,6 @@
 use crate::contract::AbstractContract;
 use crate::logger::get_blockchain_logger;
+use crate::RpcCallError;
 use crate::{
     EitherTransport, EthereumRpcConnection, EthereumRpcConnectionPool, MultiChainAddressTable,
 };
@@ -62,14 +63,14 @@ impl Erc20Token {
         })
     }
 
-    pub async fn symbol(&self) -> Result<String> {
+    pub async fn symbol(&self) -> Result<String, RpcCallError> {
         Ok(self
             .contract
             .query("symbol", (), None, Options::default(), None)
             .await?)
     }
 
-    pub async fn decimals(&self) -> Result<U256> {
+    pub async fn decimals(&self) -> Result<U256, RpcCallError> {
         Ok(self
             .contract
             .query("decimals", (), None, Options::default(), None)
@@ -82,7 +83,7 @@ impl Erc20Token {
         secret: impl Key,
         to: Address,
         amount: U256,
-    ) -> Result<H256> {
+    ) -> Result<H256, RpcCallError> {
         let estimated_gas = self
             .contract
             .estimate_gas("mint", (to, amount), secret.address(), Options::default())
@@ -114,7 +115,7 @@ impl Erc20Token {
         secret: impl Key,
         from: Address,
         amount: U256,
-    ) -> Result<H256> {
+    ) -> Result<H256, RpcCallError> {
         let estimated_gas = self
             .contract
             .estimate_gas("burn", (from, amount), secret.address(), Options::default())
@@ -152,7 +153,7 @@ impl Erc20Token {
         secret: impl Key,
         to: Address,
         amount: U256,
-    ) -> Result<H256> {
+    ) -> Result<H256, RpcCallError> {
         let estimated_gas = self
             .contract
             .estimate_gas(
@@ -196,7 +197,7 @@ impl Erc20Token {
         from: Address,
         to: Address,
         amount: U256,
-    ) -> Result<H256> {
+    ) -> Result<H256, RpcCallError> {
         let estimated_gas = self
             .contract
             .estimate_gas(
@@ -241,7 +242,7 @@ impl Erc20Token {
         spender: Address,
         amount: U256,
         logger: DynLogger,
-    ) -> Result<H256> {
+    ) -> Result<H256, RpcCallError> {
         logger.log(format!(
             "erc20 approve: {:?} {:?} {}",
             self.address,
@@ -297,14 +298,14 @@ impl Erc20Token {
         Ok(tx_hash)
     }
 
-    pub async fn balance_of(&self, owner: Address) -> Result<U256> {
+    pub async fn balance_of(&self, owner: Address) -> Result<U256, RpcCallError> {
         Ok(self
             .contract
             .query("balanceOf", owner, None, Options::default(), None)
             .await?)
     }
 
-    pub async fn allowance(&self, owner: Address, spender: Address) -> Result<U256> {
+    pub async fn allowance(&self, owner: Address, spender: Address) -> Result<U256, RpcCallError> {
         Ok(self
             .contract
             .query(
@@ -317,7 +318,7 @@ impl Erc20Token {
             .await?)
     }
 
-    pub async fn total_supply(&self) -> Result<U256> {
+    pub async fn total_supply(&self) -> Result<U256, RpcCallError> {
         Ok(self
             .contract
             .query("totalSupply", (), None, Options::default(), None)
