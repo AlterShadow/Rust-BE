@@ -306,7 +306,11 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
             expert_asset_amounts.insert(x.token_address.into(), x.quantity);
         }
     }
-    info!("expert_asset_amounts={:?}", expert_asset_amounts);
+    logger.log(format!(
+        "trading result should follow ratios as {:?}",
+        expert_asset_amounts
+    ));
+
     let tokens = sp_assets_and_amounts
         .keys()
         .chain(expert_asset_amounts.keys())
@@ -725,7 +729,7 @@ pub async fn user_back_strategy(
     /* trade escrow token for strategy's tokens */
     info!("trade escrow token for strategy's tokens");
     let pancake_trade_parser = get_pancake_swap_parser();
-    let get_out_amount = |out_token, amount: Decimal, decimals| {
+    let get_out_amount = |out_token, in_amount: Decimal, out_decimals| {
         let db = db.clone();
         let conn = conn.clone();
         let master_key = master_key.clone();
@@ -736,8 +740,8 @@ pub async fn user_back_strategy(
         async move {
             if token_address == out_token {
                 logger.log(format!(
-                    "approving {} token {:?} to strategy pool contract",
-                    amount, out_token
+                    "approving {} {:?} to strategy pool contract",
+                    in_amount, token_address
                 ));
 
                 let out_token_contract = Erc20Token::new(conn.clone(), out_token)?;
@@ -747,7 +751,7 @@ pub async fn user_back_strategy(
                         &conn,
                         master_key.clone(),
                         sp_contract.address(),
-                        decimal_to_u256(amount, decimals),
+                        decimal_to_u256(in_amount, token_decimals),
                         logger.clone(),
                     )
                 };
@@ -761,15 +765,17 @@ pub async fn user_back_strategy(
                     &logger,
                 )
                 .await?;
-                Ok(amount)
+                Ok(in_amount)
             } else {
                 let pancake_path_set = pancake_paths
                     .get_pair_by_address(blockchain, token_address, out_token)
                     .await?;
 
                 logger.log(&format!(
-                    "copy_trade_and_ensure_success: amount_in: {}, amount_out_minimum: {}",
-                    amount,
+                    "copy_trade_and_ensure_success: token_in: {:?} amount_in: {}, token_out: {:?} amount_out_minimum: {}",
+                    token_address,
+                    in_amount,
+                    out_token,
                     Decimal::one()
                 ));
 
@@ -778,7 +784,7 @@ pub async fn user_back_strategy(
                         &conn,
                         master_key.clone(),
                         pancake_path_set.clone(),
-                        decimal_to_u256(amount, decimals),
+                        decimal_to_u256(in_amount, token_decimals),
                         U256::one(), // TODO: find a way to estimate amount out
                     )
                 };
@@ -811,12 +817,13 @@ pub async fn user_back_strategy(
                     token_in_address: token_address.into(),
                     token_out_address: out_token.into(),
                     amount_in: u256_to_decimal(trade.amount_in, token_decimals),
-                    amount_out: u256_to_decimal(trade.amount_out, decimals),
+                    amount_out: u256_to_decimal(trade.amount_out, out_decimals),
                 })
                 .await?;
                 logger.log(format!(
                     "approving {} token {:?} to strategy pool contract",
-                    trade.amount_out, out_token
+                    u256_to_decimal(trade.amount_out, out_decimals),
+                    out_token
                 ));
 
                 let out_token_contract = Erc20Token::new(conn.clone(), out_token)?;
@@ -840,7 +847,7 @@ pub async fn user_back_strategy(
                     &logger,
                 )
                 .await?;
-                Ok(u256_to_decimal(trade.amount_out, decimals))
+                Ok(u256_to_decimal(trade.amount_out, out_decimals))
             }
         }
     };
@@ -1141,8 +1148,8 @@ async fn trade_escrow_for_strategy_tokens<Fut: Future<Output = Result<Decimal>>>
 
     for (token_address, amount_to_spend_on_it) in tokens_and_amounts_to_buy {
         logger.log(format!(
-            "Trading {} for {}",
-            token_address, escrow_token_address
+            "Trading {} {:?} for {:?}",
+            amount_to_spend_on_it, token_address, escrow_token_address
         ));
         let decimals = token_decimals.get(&token_address).unwrap();
         let output_amount = get_token_out(token_address, amount_to_spend_on_it, *decimals).await?;

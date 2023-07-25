@@ -3390,11 +3390,11 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
             let escrow_contract_address = escrow_contract.get(&pool, token.blockchain).await?;
             let blockchain = token.blockchain;
             let token_address = token.address.0;
-            let get_token_out = |out_token: Address, amount: Decimal, _| {
+            let get_token_out = |out_token: Address, in_amount: Decimal, _| {
                 let db = db.clone();
                 let cmc = cmc.clone();
                 async move {
-                    let tk = db
+                    let token_out = db
                         .execute(FunUserListEscrowTokenContractAddressReq {
                             limit: 1,
                             offset: 0,
@@ -3410,13 +3410,13 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
                             format!("No escrow token found for {:?} {:?}", out_token, blockchain)
                         })?;
                     let price = *cmc
-                        .get_usd_prices_by_symbol(&[tk.symbol.clone()])
+                        .get_usd_prices_by_symbol(&[token_out.symbol.clone()])
                         .await?
-                        .get(&tk.symbol)
+                        .get(&token_out.symbol)
                         .with_context(|| {
                             format!("No price found for {:?} {:?}", token_address, blockchain)
                         })?;
-                    Ok(amount * Decimal::from_f64(price).unwrap())
+                    Ok(in_amount * Decimal::from_f64(price).unwrap())
                 }
             };
             let CalculateUserBackStrategyCalculateAmountToMintResult {
