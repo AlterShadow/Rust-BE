@@ -509,6 +509,7 @@ pub struct FunUserListStrategyInitialTokenRatiosRespRow {
     pub token_id: i64,
     pub token_name: String,
     pub token_address: BlockchainAddress,
+    pub token_decimals: i32,
     #[serde(with = "rust_decimal::serde::str")]
     pub quantity: Decimal,
     pub strategy_id: i64,

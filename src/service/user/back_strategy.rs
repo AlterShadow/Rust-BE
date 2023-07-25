@@ -257,24 +257,6 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
         dry_run,
     )
     .await?;
-    /* fetch strategy's tokens */
-    let strategy_initial_ratios = db
-        .execute(FunUserListStrategyInitialTokenRatiosReq {
-            strategy_id,
-            token_id: None,
-            token_address: None,
-            blockchain: Some(blockchain),
-        })
-        .await?
-        .into_rows();
-    ensure!(
-        !strategy_initial_ratios.is_empty(),
-        "strategy has no initial ratios"
-    );
-    let mut strategy_initial_token_ratios: HashMap<Address, Decimal> = HashMap::new();
-    for x in strategy_initial_ratios.iter() {
-        strategy_initial_token_ratios.insert(x.token_address.into(), x.quantity);
-    }
 
     /* deduce fees from back amount */
     // TODO: use (back amount - fees) to calculate trade spenditure and SP shares
@@ -303,8 +285,27 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
         .values()
         .find(|x| **x > Decimal::zero())
         .is_some();
-    let (expert_asset_amounts, expert_asset_amounts_decimals) =
+    let (mut expert_asset_amounts, mut expert_asset_amounts_decimals) =
         fetch_listened_wallet_asset_balances_and_decimals(db, blockchain, strategy_id).await?;
+    if expert_asset_amounts.is_empty() {
+        let strategy_initial_ratios = db
+            .execute(FunUserListStrategyInitialTokenRatiosReq {
+                strategy_id,
+                token_id: None,
+                token_address: None,
+                blockchain: Some(blockchain),
+            })
+            .await?
+            .into_rows();
+        ensure!(
+            !strategy_initial_ratios.is_empty(),
+            "strategy has no initial ratios"
+        );
+        for x in strategy_initial_ratios.iter() {
+            expert_asset_amounts_decimals.insert(x.token_address.into(), x.token_decimals as u32);
+            expert_asset_amounts.insert(x.token_address.into(), x.quantity);
+        }
+    }
     info!("expert_asset_amounts={:?}", expert_asset_amounts);
     let tokens = sp_assets_and_amounts
         .keys()
