@@ -16,10 +16,8 @@ use eth_sdk::signer::Secp256k1SecretKey;
 use eth_sdk::strategy_pool::StrategyPoolContract;
 use eth_sdk::strategy_pool_herald::parse_herald_redeem_event;
 use eth_sdk::strategy_wallet::StrategyWalletContract;
-
-use eth_sdk::utils::u256_to_decimal;
+use eth_sdk::utils::{decimal_to_u256, u256_to_decimal};
 use eth_sdk::*;
-use execution_engine::copy_trade::decimal_to_u256;
 use eyre::*;
 use futures::FutureExt;
 use gen::database::*;

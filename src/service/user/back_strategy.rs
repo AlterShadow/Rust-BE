@@ -7,14 +7,14 @@ use eth_sdk::pancake_swap::pair_paths::WorkingPancakePairPaths;
 use eth_sdk::pancake_swap::parse::get_pancake_swap_parser;
 use eth_sdk::strategy_pool::StrategyPoolContract;
 use eth_sdk::strategy_wallet::StrategyWalletContract;
-use eth_sdk::utils::u256_to_decimal;
+use eth_sdk::utils::{decimal_to_u256, u256_to_decimal};
 use eth_sdk::StrategyPoolHeraldAddresses;
 use eth_sdk::{
     DexAddresses, EitherTransport, EthereumRpcConnection, TransactionFetcher, CONFIRMATIONS,
     MAX_RETRIES, POLL_INTERVAL,
 };
 use execution_engine::copy_trade::{
-    calculate_copy_trade_plan, decimal_to_u256, fetch_listened_wallet_asset_balances_and_decimals,
+    calculate_copy_trade_plan, fetch_listened_wallet_asset_balances_and_decimals,
     fetch_strategy_pool_contract_asset_balances_and_decimals, get_token_prices,
 };
 use eyre::*;

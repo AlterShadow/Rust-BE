@@ -3,6 +3,7 @@ use eth_sdk::execute_transaction_and_ensure_success;
 use eth_sdk::pancake_swap::execute::PancakeSmartRouterContract;
 use eth_sdk::pancake_swap::pair_paths::parse_pancake_swap_dex_path;
 use eth_sdk::pancake_swap::PancakePairPathSet;
+use eth_sdk::utils::decimal_to_u256;
 use eth_sdk::{
     EitherTransport, EthereumRpcConnection, EthereumRpcConnectionPool, ScaledMath, CONFIRMATIONS,
     MAX_RETRIES, POLL_INTERVAL,
@@ -13,7 +14,7 @@ use gen::model::{EnumBlockChain, EnumDex};
 use itertools::Itertools;
 use lib::database::DbClient;
 use lib::log::DynLogger;
-use num::{ToPrimitive, Zero};
+use num::Zero;
 use rust_decimal::prelude::FromPrimitive;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
@@ -121,22 +122,22 @@ pub struct CopyTradePlan {
     pub trades: Vec<CopyTradeEntry>,
 }
 
+/// calculate the value of each asset in USD
 pub fn calculate_asset_values(
     amounts: HashMap<Address, Decimal>,
-    _prices: HashMap<Address, f64>,
+    prices: HashMap<Address, f64>,
 ) -> Result<HashMap<Address, Decimal>> {
     let mut values: HashMap<Address, Decimal> = HashMap::new();
     for (asset, amount) in amounts {
-        // let price = *prices
-        //     .get(&asset)
-        //     .with_context(|| format!("price of asset {}", asset.to_string()))?;
-        // let value = amount * Decimal::from_f64(price).unwrap();
-        // values.insert(asset, value);
-        values.insert(asset, amount);
+        let price = *prices
+            .get(&asset)
+            .with_context(|| format!("price of asset {}", asset.to_string()))?;
+        let value = amount * Decimal::from_f64(price).unwrap();
+        values.insert(asset, value);
     }
     Ok(values)
 }
-
+/// convert amounts to ratios among all assets, terms of USD
 pub fn convert_amount_to_ratio(
     amounts: HashMap<Address, Decimal>,
     prices: HashMap<Address, f64>,
@@ -149,10 +150,9 @@ pub fn convert_amount_to_ratio(
     }
     Ok((total_value, ratios))
 }
-pub fn decimal_to_u256(amount: Decimal, decimals: u32) -> U256 {
-    let amount = amount * Decimal::from(10u64.pow(decimals as u32));
-    U256::from(amount.to_u128().unwrap())
-}
+
+/// core algorithm of copy trading
+/// also used in backing to calculate which assets to buy
 pub fn calculate_copy_trade_plan(
     blockchain: EnumBlockChain,
     expert_asset_amounts: HashMap<Address, Decimal>,
@@ -160,11 +160,12 @@ pub fn calculate_copy_trade_plan(
     asset_prices: HashMap<Address, f64>,
     asset_decimals: HashMap<Address, u32>,
 ) -> Result<CopyTradePlan> {
+    // first convert expert and strategy amounts to ratios in USD
     let (_, expert_asset_ratios) =
         convert_amount_to_ratio(expert_asset_amounts.clone(), asset_prices.clone())?;
     let (strategy_total_value, strategy_asset_ratios) =
         convert_amount_to_ratio(strategy_asset_amounts.clone(), asset_prices.clone())?;
-    println!("{:#?}", strategy_asset_ratios);
+    // println!("{:#?}", strategy_asset_ratios);
 
     // select two assets so that the ratios of strategy are closer to the ratios of expert
     let mut ratio_deltas: HashMap<Address, Decimal> = HashMap::new();
@@ -179,8 +180,11 @@ pub fn calculate_copy_trade_plan(
         ratio_deltas.insert(key.clone(), strategy_ratio - expert_ratio);
     }
     let mut plan = CopyTradePlan { trades: vec![] };
-
+    // here comes the core logic
     while let (Some((&token_in, &token_in_ratio)), Some((&token_out, &token_out_ratio))) = {
+        // find the token we sell
+        // it should be most excessively sufficient in strategy asset and insufficient in expert asset
+        // it can be used to buy other tokens several times, but not exceeding excessive ratio
         let token_in_pair = ratio_deltas
             .iter()
             .filter(|x| *x.1 > Decimal::zero())
@@ -188,7 +192,9 @@ pub fn calculate_copy_trade_plan(
                 strategy_asset_amounts.get(x.0).unwrap_or(&Decimal::zero()) > &Decimal::zero()
             })
             .max_by(|x, y| x.1.partial_cmp(y.1).unwrap());
-
+        // find the token we buy
+        // it should be most insufficient in strategy asset and sufficient in expert asset
+        // it can be sold several times, but not exceeding insufficient ratio
         let token_out_pair = ratio_deltas
             .iter()
             .filter(|x| *x.1 < Decimal::zero())
@@ -198,7 +204,9 @@ pub fn calculate_copy_trade_plan(
             .min_by(|x, y| x.1.partial_cmp(y.1).unwrap());
         (token_in_pair, token_out_pair)
     } {
-        let trade_ratio = token_in_ratio.abs().min(token_out_ratio.abs());
+        // we take the minimal ratio of the two tokens
+        let trade_ratio = std::cmp::min(token_in_ratio.abs(), token_out_ratio.abs());
+        // convert trade ratio to amount need to spend and amount to receive
         let amount_in = strategy_total_value * trade_ratio
             / Decimal::from_f64(*asset_prices.get(&token_in).unwrap()).unwrap();
         let amount_out = strategy_total_value * trade_ratio
@@ -211,6 +219,7 @@ pub fn calculate_copy_trade_plan(
             .get_mut(&token_out)
             .unwrap()
             .add_assign(trade_ratio);
+        // add trade to plan
         plan.trades.push(CopyTradeEntry {
             blockchain,
             dex: EnumDex::PancakeSwap,
