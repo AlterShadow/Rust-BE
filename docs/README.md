@@ -103,11 +103,13 @@ ID: 3
 |32010|AdminNotifyEscrowLedgerChange|pkey_id, user_id, balance|||
 |32011|AdminSubscribeDepositLedger|initial_data, blockchain, mock_data|||
 |32012|AdminUnsubscribeDepositLedger||||
-|32020|AdminAddEscrowTokenContractAddress|pkey_id, symbol, short_name, description, address, blockchain, is_stablecoin|||
+|32020|AdminAddEscrowTokenContractAddress|pkey_id, symbol, short_name, description, address, blockchain, is_stablecoin, is_wrapped|||
 |32030|AdminAddEscrowContractAddress|pkey_id, address, blockchain|||
 |32040|AdminListBackStrategyLedger|limit, offset, strategy_id|back_ledger_total, back_ledger||
 |32041|AdminListExitStrategyLedger|limit, offset, strategy_id|exit_ledger_total, exit_ledger||
 |32050|AdminSetBlockchainLogger|enabled|||
+|32060|AdminListEscrowTokenContractAddresses|limit, offset, symbol, address, blockchain|addresses_total, addresses||
+|32080|AdminUpdateEscrowTokenContractAddress|pkey_id, symbol, short_name, description, is_stablecoin, is_wrapped|||
 
 # watcher Server
 ID: 4

@@ -3154,7 +3154,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_admin_add_escrow_token_contract_address(a_pkey_id bigint, a_symbol varchar, a_short_name varchar, a_description varchar, a_address varchar, a_blockchain enum_block_chain, a_decimals int, a_is_stablecoin boolean)
+CREATE OR REPLACE FUNCTION api.fun_admin_add_escrow_token_contract_address(a_symbol varchar, a_short_name varchar, a_description varchar, a_address varchar, a_blockchain enum_block_chain, a_decimals int, a_is_stablecoin boolean, a_is_wrapped boolean, a_pkey_id bigint DEFAULT NULL)
 RETURNS void
 LANGUAGE plpgsql
 AS $$
@@ -3178,8 +3178,27 @@ END
 $$;
         
 
+CREATE OR REPLACE FUNCTION api.fun_admin_update_escrow_token_contract_address(a_pkey_id bigint, a_symbol varchar DEFAULT NULL, a_short_name varchar DEFAULT NULL, a_description varchar DEFAULT NULL, a_is_stablecoin boolean DEFAULT NULL, a_is_wrapped boolean DEFAULT NULL)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+    UPDATE tbl.escrow_token_contract_address
+            SET symbol = coalesce(a_symbol, symbol),
+                short_name = coalesce(a_short_name, short_name),
+                description = coalesce(a_description, description),
+                is_stablecoin = coalesce(a_is_stablecoin, is_stablecoin),
+                is_wrapped = coalesce(a_is_wrapped, is_wrapped)
+            WHERE pkey_id = a_pkey_id;
+END
+            
+$$;
+        
+
 CREATE OR REPLACE FUNCTION api.fun_admin_list_escrow_token_contract_address(a_limit bigint DEFAULT NULL, a_offset bigint DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL, a_token_address varchar DEFAULT NULL, a_token_id bigint DEFAULT NULL)
 RETURNS table (
+    "total" bigint,
     "pkey_id" bigint,
     "symbol" varchar,
     "short_name" varchar,
@@ -3187,13 +3206,15 @@ RETURNS table (
     "address" varchar,
     "blockchain" enum_block_chain,
     "decimals" int,
-    "is_stablecoin" boolean
+    "is_stablecoin" boolean,
+    "is_wrapped" boolean
 )
 LANGUAGE plpgsql
 AS $$
     
 BEGIN
     RETURN QUERY SELECT
+                count(*) OVER() AS total,
 				etca.pkey_id,
 				etca.symbol,
 				etca.short_name,
@@ -3201,7 +3222,8 @@ BEGIN
 				etca.address,
 				etca.blockchain,
 				etca.decimals,
-				etca.is_stablecoin
+				etca.is_stablecoin,
+				FALSE
 			FROM tbl.escrow_token_contract_address AS etca
 			WHERE (a_blockchain ISNULL OR etca.blockchain = a_blockchain)
 			AND (a_token_address ISNULL OR etca.address = a_token_address)

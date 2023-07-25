@@ -6350,7 +6350,9 @@
           "parameters": [
             {
               "name": "pkey_id",
-              "ty": "BigInt"
+              "ty": {
+                "Optional": "BigInt"
+              }
             },
             {
               "name": "symbol",
@@ -6376,6 +6378,10 @@
             },
             {
               "name": "is_stablecoin",
+              "ty": "Boolean"
+            },
+            {
+              "name": "is_wrapped",
               "ty": "Boolean"
             }
           ],
@@ -6561,6 +6567,149 @@
             {
               "name": "enabled",
               "ty": "Boolean"
+            }
+          ],
+          "returns": [],
+          "stream_response": null,
+          "description": "",
+          "json_schema": null
+        },
+        {
+          "name": "AdminListEscrowTokenContractAddresses",
+          "code": 32060,
+          "parameters": [
+            {
+              "name": "limit",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "offset",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "symbol",
+              "ty": {
+                "Optional": "String"
+              }
+            },
+            {
+              "name": "address",
+              "ty": {
+                "Optional": "BlockchainAddress"
+              }
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "Optional": {
+                  "EnumRef": "block_chain"
+                }
+              }
+            }
+          ],
+          "returns": [
+            {
+              "name": "addresses_total",
+              "ty": "BigInt"
+            },
+            {
+              "name": "addresses",
+              "ty": {
+                "DataTable": {
+                  "name": "AdminEscrowTokenContractAddressRow",
+                  "fields": [
+                    {
+                      "name": "pkey_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "symbol",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "short_name",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "description",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "address",
+                      "ty": "BlockchainAddress"
+                    },
+                    {
+                      "name": "blockchain",
+                      "ty": {
+                        "EnumRef": "block_chain"
+                      }
+                    },
+                    {
+                      "name": "decimals",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "is_stablecoin",
+                      "ty": "Boolean"
+                    },
+                    {
+                      "name": "is_wrapped",
+                      "ty": "Boolean"
+                    },
+                    {
+                      "name": "price",
+                      "ty": "Numeric"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "stream_response": null,
+          "description": "",
+          "json_schema": null
+        },
+        {
+          "name": "AdminUpdateEscrowTokenContractAddress",
+          "code": 32080,
+          "parameters": [
+            {
+              "name": "pkey_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "symbol",
+              "ty": {
+                "Optional": "String"
+              }
+            },
+            {
+              "name": "short_name",
+              "ty": {
+                "Optional": "String"
+              }
+            },
+            {
+              "name": "description",
+              "ty": {
+                "Optional": "String"
+              }
+            },
+            {
+              "name": "is_stablecoin",
+              "ty": {
+                "Optional": "Boolean"
+              }
+            },
+            {
+              "name": "is_wrapped",
+              "ty": {
+                "Optional": "Boolean"
+              }
             }
           ],
           "returns": [],

@@ -381,7 +381,7 @@ END
         ProceduralFunction::new(
             "fun_admin_add_escrow_token_contract_address",
             vec![
-                Field::new("pkey_id", Type::BigInt),
+                Field::new("pkey_id", Type::optional(Type::BigInt)),
                 Field::new("symbol", Type::String),
                 Field::new("short_name", Type::String),
                 Field::new("description", Type::String),
@@ -389,6 +389,7 @@ END
                 Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("decimals", Type::Int),
                 Field::new("is_stablecoin", Type::Boolean),
+                Field::new("is_wrapped", Type::Boolean),
             ],
             vec![],
             r#"
@@ -410,6 +411,29 @@ END
             "#,
         ),
         ProceduralFunction::new(
+            "fun_admin_update_escrow_token_contract_address",
+            vec![
+                Field::new("pkey_id", Type::BigInt),
+                Field::new("symbol", Type::optional(Type::String)),
+                Field::new("short_name", Type::optional(Type::String)),
+                Field::new("description", Type::optional(Type::String)),
+                Field::new("is_stablecoin", Type::optional(Type::Boolean)),
+                Field::new("is_wrapped", Type::optional(Type::Boolean)),
+            ],
+            vec![],
+            r#"
+BEGIN
+    UPDATE tbl.escrow_token_contract_address
+            SET symbol = coalesce(a_symbol, symbol),
+                short_name = coalesce(a_short_name, short_name),
+                description = coalesce(a_description, description),
+                is_stablecoin = coalesce(a_is_stablecoin, is_stablecoin),
+                is_wrapped = coalesce(a_is_wrapped, is_wrapped)
+            WHERE pkey_id = a_pkey_id;
+END
+            "#,
+        ),
+        ProceduralFunction::new(
             "fun_admin_list_escrow_token_contract_address",
             vec![
                 Field::new("limit", Type::optional(Type::BigInt)),
@@ -419,6 +443,7 @@ END
                 Field::new("token_id", Type::optional(Type::BigInt)),
             ],
             vec![
+                Field::new("total", Type::BigInt),
                 Field::new("pkey_id", Type::BigInt),
                 Field::new("symbol", Type::String),
                 Field::new("short_name", Type::String),
@@ -427,10 +452,12 @@ END
                 Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("decimals", Type::Int),
                 Field::new("is_stablecoin", Type::Boolean),
+                Field::new("is_wrapped", Type::Boolean),
             ],
             r#"
 BEGIN
     RETURN QUERY SELECT
+                count(*) OVER() AS total,
 				etca.pkey_id,
 				etca.symbol,
 				etca.short_name,
@@ -438,7 +465,8 @@ BEGIN
 				etca.address,
 				etca.blockchain,
 				etca.decimals,
-				etca.is_stablecoin
+				etca.is_stablecoin,
+				FALSE
 			FROM tbl.escrow_token_contract_address AS etca
 			WHERE (a_blockchain ISNULL OR etca.blockchain = a_blockchain)
 			AND (a_token_address ISNULL OR etca.address = a_token_address)

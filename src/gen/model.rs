@@ -532,6 +532,12 @@ pub enum EnumEndpoint {
     ///
     #[postgres(name = "AdminSetBlockchainLogger")]
     AdminSetBlockchainLogger = 32050,
+    ///
+    #[postgres(name = "AdminListEscrowTokenContractAddresses")]
+    AdminListEscrowTokenContractAddresses = 32060,
+    ///
+    #[postgres(name = "AdminUpdateEscrowTokenContractAddress")]
+    AdminUpdateEscrowTokenContractAddress = 32080,
 }
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -908,7 +914,8 @@ pub struct AdminAddEscrowContractAddressResponse {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminAddEscrowTokenContractAddressRequest {
-    pub pkey_id: i64,
+    #[serde(default)]
+    pub pkey_id: Option<i64>,
     pub symbol: String,
     pub short_name: String,
     pub description: String,
@@ -916,6 +923,7 @@ pub struct AdminAddEscrowTokenContractAddressRequest {
     pub address: Address,
     pub blockchain: EnumBlockChain,
     pub is_stablecoin: bool,
+    pub is_wrapped: bool,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -952,6 +960,21 @@ pub struct AdminBackStrategyLedgerRow {
     #[serde(with = "WithBlockchainTransactionHash")]
     pub transaction_hash: H256,
     pub happened_at: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminEscrowTokenContractAddressRow {
+    pub pkey_id: i64,
+    pub symbol: String,
+    pub short_name: String,
+    pub description: String,
+    #[serde(with = "WithBlockchainAddress")]
+    pub address: Address,
+    pub blockchain: EnumBlockChain,
+    pub decimals: i64,
+    pub is_stablecoin: bool,
+    pub is_wrapped: bool,
+    pub price: f64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1033,6 +1056,26 @@ pub struct AdminListBackersRow {
     pub total_platform_fee_paid: f64,
     pub total_strategy_fee_paid: f64,
     pub total_backing_amount: f64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminListEscrowTokenContractAddressesRequest {
+    #[serde(default)]
+    pub limit: Option<i64>,
+    #[serde(default)]
+    pub offset: Option<i64>,
+    #[serde(default)]
+    pub symbol: Option<String>,
+    #[serde(default)]
+    pub address: Option<Address>,
+    #[serde(default)]
+    pub blockchain: Option<EnumBlockChain>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminListEscrowTokenContractAddressesResponse {
+    pub addresses_total: i64,
+    pub addresses: Vec<AdminEscrowTokenContractAddressRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1219,6 +1262,24 @@ pub struct AdminUnsubscribeDepositLedgerRequest {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminUnsubscribeDepositLedgerResponse {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminUpdateEscrowTokenContractAddressRequest {
+    pub pkey_id: i64,
+    #[serde(default)]
+    pub symbol: Option<String>,
+    #[serde(default)]
+    pub short_name: Option<String>,
+    #[serde(default)]
+    pub description: Option<String>,
+    #[serde(default)]
+    pub is_stablecoin: Option<bool>,
+    #[serde(default)]
+    pub is_wrapped: Option<bool>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminUpdateEscrowTokenContractAddressResponse {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminUpdateSystemConfigRequest {
@@ -9750,7 +9811,9 @@ impl WsRequest for AdminAddEscrowTokenContractAddressRequest {
   "parameters": [
     {
       "name": "pkey_id",
-      "ty": "BigInt"
+      "ty": {
+        "Optional": "BigInt"
+      }
     },
     {
       "name": "symbol",
@@ -9776,6 +9839,10 @@ impl WsRequest for AdminAddEscrowTokenContractAddressRequest {
     },
     {
       "name": "is_stablecoin",
+      "ty": "Boolean"
+    },
+    {
+      "name": "is_wrapped",
       "ty": "Boolean"
     }
   ],
@@ -10003,4 +10070,163 @@ impl WsRequest for AdminSetBlockchainLoggerRequest {
 }
 impl WsResponse for AdminSetBlockchainLoggerResponse {
     type Request = AdminSetBlockchainLoggerRequest;
+}
+
+impl WsRequest for AdminListEscrowTokenContractAddressesRequest {
+    type Response = AdminListEscrowTokenContractAddressesResponse;
+    const METHOD_ID: u32 = 32060;
+    const SCHEMA: &'static str = r#"{
+  "name": "AdminListEscrowTokenContractAddresses",
+  "code": 32060,
+  "parameters": [
+    {
+      "name": "limit",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "offset",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "symbol",
+      "ty": {
+        "Optional": "String"
+      }
+    },
+    {
+      "name": "address",
+      "ty": {
+        "Optional": "BlockchainAddress"
+      }
+    },
+    {
+      "name": "blockchain",
+      "ty": {
+        "Optional": {
+          "EnumRef": "block_chain"
+        }
+      }
+    }
+  ],
+  "returns": [
+    {
+      "name": "addresses_total",
+      "ty": "BigInt"
+    },
+    {
+      "name": "addresses",
+      "ty": {
+        "DataTable": {
+          "name": "AdminEscrowTokenContractAddressRow",
+          "fields": [
+            {
+              "name": "pkey_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "symbol",
+              "ty": "String"
+            },
+            {
+              "name": "short_name",
+              "ty": "String"
+            },
+            {
+              "name": "description",
+              "ty": "String"
+            },
+            {
+              "name": "address",
+              "ty": "BlockchainAddress"
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
+            },
+            {
+              "name": "decimals",
+              "ty": "BigInt"
+            },
+            {
+              "name": "is_stablecoin",
+              "ty": "Boolean"
+            },
+            {
+              "name": "is_wrapped",
+              "ty": "Boolean"
+            },
+            {
+              "name": "price",
+              "ty": "Numeric"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": null,
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for AdminListEscrowTokenContractAddressesResponse {
+    type Request = AdminListEscrowTokenContractAddressesRequest;
+}
+
+impl WsRequest for AdminUpdateEscrowTokenContractAddressRequest {
+    type Response = AdminUpdateEscrowTokenContractAddressResponse;
+    const METHOD_ID: u32 = 32080;
+    const SCHEMA: &'static str = r#"{
+  "name": "AdminUpdateEscrowTokenContractAddress",
+  "code": 32080,
+  "parameters": [
+    {
+      "name": "pkey_id",
+      "ty": "BigInt"
+    },
+    {
+      "name": "symbol",
+      "ty": {
+        "Optional": "String"
+      }
+    },
+    {
+      "name": "short_name",
+      "ty": {
+        "Optional": "String"
+      }
+    },
+    {
+      "name": "description",
+      "ty": {
+        "Optional": "String"
+      }
+    },
+    {
+      "name": "is_stablecoin",
+      "ty": {
+        "Optional": "Boolean"
+      }
+    },
+    {
+      "name": "is_wrapped",
+      "ty": {
+        "Optional": "Boolean"
+      }
+    }
+  ],
+  "returns": [],
+  "stream_response": null,
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for AdminUpdateEscrowTokenContractAddressResponse {
+    type Request = AdminUpdateEscrowTokenContractAddressRequest;
 }

@@ -49,6 +49,7 @@ pub struct FunAdminListEscrowContractAddressRespRow {
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunAdminListEscrowTokenContractAddressRespRow {
+    pub total: i64,
     pub pkey_id: i64,
     pub symbol: String,
     pub short_name: String,
@@ -57,6 +58,7 @@ pub struct FunAdminListEscrowTokenContractAddressRespRow {
     pub blockchain: EnumBlockChain,
     pub decimals: i32,
     pub is_stablecoin: bool,
+    pub is_wrapped: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -118,6 +120,9 @@ pub struct FunAdminSetUserRoleRespRow {}
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunAdminUpdateEscrowContractAddressRespRow {}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunAdminUpdateEscrowTokenContractAddressRespRow {}
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunAdminUpdateSystemConfigRespRow {}
@@ -3145,7 +3150,6 @@ impl DatabaseRequest for FunAdminAddAuditRuleReq {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAdminAddEscrowTokenContractAddressReq {
-    pub pkey_id: i64,
     pub symbol: String,
     pub short_name: String,
     pub description: String,
@@ -3153,17 +3157,19 @@ pub struct FunAdminAddEscrowTokenContractAddressReq {
     pub blockchain: EnumBlockChain,
     pub decimals: i32,
     pub is_stablecoin: bool,
+    pub is_wrapped: bool,
+    #[serde(default)]
+    pub pkey_id: Option<i64>,
 }
 
 #[allow(unused_variables)]
 impl DatabaseRequest for FunAdminAddEscrowTokenContractAddressReq {
     type ResponseRow = FunAdminAddEscrowTokenContractAddressRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_admin_add_escrow_token_contract_address(a_pkey_id => $1::bigint, a_symbol => $2::varchar, a_short_name => $3::varchar, a_description => $4::varchar, a_address => $5::varchar, a_blockchain => $6::enum_block_chain, a_decimals => $7::int, a_is_stablecoin => $8::boolean);"
+        "SELECT * FROM api.fun_admin_add_escrow_token_contract_address(a_symbol => $1::varchar, a_short_name => $2::varchar, a_description => $3::varchar, a_address => $4::varchar, a_blockchain => $5::enum_block_chain, a_decimals => $6::int, a_is_stablecoin => $7::boolean, a_is_wrapped => $8::boolean, a_pkey_id => $9::bigint);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
-            &self.pkey_id as &(dyn ToSql + Sync),
             &self.symbol as &(dyn ToSql + Sync),
             &self.short_name as &(dyn ToSql + Sync),
             &self.description as &(dyn ToSql + Sync),
@@ -3171,6 +3177,41 @@ impl DatabaseRequest for FunAdminAddEscrowTokenContractAddressReq {
             &self.blockchain as &(dyn ToSql + Sync),
             &self.decimals as &(dyn ToSql + Sync),
             &self.is_stablecoin as &(dyn ToSql + Sync),
+            &self.is_wrapped as &(dyn ToSql + Sync),
+            &self.pkey_id as &(dyn ToSql + Sync),
+        ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAdminUpdateEscrowTokenContractAddressReq {
+    pub pkey_id: i64,
+    #[serde(default)]
+    pub symbol: Option<String>,
+    #[serde(default)]
+    pub short_name: Option<String>,
+    #[serde(default)]
+    pub description: Option<String>,
+    #[serde(default)]
+    pub is_stablecoin: Option<bool>,
+    #[serde(default)]
+    pub is_wrapped: Option<bool>,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunAdminUpdateEscrowTokenContractAddressReq {
+    type ResponseRow = FunAdminUpdateEscrowTokenContractAddressRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_admin_update_escrow_token_contract_address(a_pkey_id => $1::bigint, a_symbol => $2::varchar, a_short_name => $3::varchar, a_description => $4::varchar, a_is_stablecoin => $5::boolean, a_is_wrapped => $6::boolean);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.pkey_id as &(dyn ToSql + Sync),
+            &self.symbol as &(dyn ToSql + Sync),
+            &self.short_name as &(dyn ToSql + Sync),
+            &self.description as &(dyn ToSql + Sync),
+            &self.is_stablecoin as &(dyn ToSql + Sync),
+            &self.is_wrapped as &(dyn ToSql + Sync),
         ]
     }
 }

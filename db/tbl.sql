@@ -86,6 +86,7 @@ CREATE TABLE tbl.escrow_token_contract_address (
     address varchar(64)  NOT NULL,
     is_stablecoin boolean  NOT NULL,
     decimals int  NOT NULL DEFAULT 18,
+    is_wrapped boolean  NOT NULL,
     CONSTRAINT escrow_token_address_ak_1 UNIQUE (blockchain, symbol) NOT DEFERRABLE  INITIALLY IMMEDIATE,
     CONSTRAINT escrow_token_contract_address_pk PRIMARY KEY (pkey_id)
 );

@@ -742,7 +742,9 @@ impl RequestHandler for MethodAdminUnsubscribeDepositLedger {
         .boxed()
     }
 }
-pub struct MethodAdminAddEscrowTokenContractAddress;
+pub struct MethodAdminAddEscrowTokenContractAddress {
+    pub pool: EthereumRpcConnectionPool,
+}
 impl RequestHandler for MethodAdminAddEscrowTokenContractAddress {
     type Request = AdminAddEscrowTokenContractAddressRequest;
 
@@ -753,10 +755,12 @@ impl RequestHandler for MethodAdminAddEscrowTokenContractAddress {
         req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
-
+        let pool = self.pool.clone();
         async move {
             ensure_user_role(ctx, EnumRole::Admin)?;
-
+            let rpc = pool.get(req.blockchain).await?;
+            let contract = Erc20Token::new(rpc.clone(), req.address.into())?;
+            let decimals = contract.decimals().await?;
             let _ret = db
                 .execute(FunAdminAddEscrowTokenContractAddressReq {
                     pkey_id: req.pkey_id,
@@ -765,8 +769,9 @@ impl RequestHandler for MethodAdminAddEscrowTokenContractAddress {
                     description: req.description,
                     address: req.address.into(),
                     blockchain: req.blockchain,
-                    decimals: 18,
+                    decimals: decimals.as_u32() as _,
                     is_stablecoin: req.is_stablecoin,
+                    is_wrapped: false,
                 })
                 .await?;
 
@@ -893,6 +898,89 @@ impl RequestHandler for MethodAdminSetBlockchainLogger {
             ensure_user_role(ctx, EnumRole::Admin)?;
             get_blockchain_logger().set_enabled(req.enabled);
             Ok(AdminSetBlockchainLoggerResponse {})
+        }
+        .boxed()
+    }
+}
+
+pub struct MethodAdminListEscrowTokenContractAddresses {
+    pub cmc_client: Arc<CoinMarketCap>,
+}
+impl RequestHandler for MethodAdminListEscrowTokenContractAddresses {
+    type Request = AdminListEscrowTokenContractAddressesRequest;
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db = toolbox.get_db();
+        let cmc = self.cmc_client.clone();
+        async move {
+            ensure_user_role(ctx, EnumRole::Admin)?;
+            let ret = db
+                .execute(FunAdminListEscrowTokenContractAddressReq {
+                    limit: req.limit,
+                    offset: req.offset,
+                    blockchain: req.blockchain,
+                    token_address: req.address.map(|x| x.into()),
+                    token_id: None,
+                })
+                .await?;
+            Ok(AdminListEscrowTokenContractAddressesResponse {
+                addresses_total: ret.first(|x| x.total).unwrap_or_default(),
+                addresses: ret
+                    .map_async(|x| {
+                        let cmc = cmc.clone();
+                        async move {
+                            let row = AdminEscrowTokenContractAddressRow {
+                                pkey_id: x.pkey_id,
+                                price: *cmc
+                                    .get_usd_prices_by_symbol(&[x.symbol.clone()])
+                                    .await?
+                                    .get(&x.symbol)
+                                    .unwrap(),
+                                symbol: x.symbol,
+                                short_name: x.short_name,
+                                description: x.description,
+                                address: x.address.into(),
+                                blockchain: x.blockchain,
+                                decimals: x.decimals as _,
+                                is_stablecoin: x.is_stablecoin,
+                                is_wrapped: x.is_wrapped,
+                            };
+                            Ok(row)
+                        }
+                    })
+                    .await?,
+            })
+        }
+        .boxed()
+    }
+}
+pub struct MethodAdminUpdateEscrowTokenContractAddress;
+impl RequestHandler for MethodAdminUpdateEscrowTokenContractAddress {
+    type Request = AdminUpdateEscrowTokenContractAddressRequest;
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db = toolbox.get_db();
+        async move {
+            ensure_user_role(ctx, EnumRole::Admin)?;
+            let _ret = db
+                .execute(FunAdminUpdateEscrowTokenContractAddressReq {
+                    pkey_id: req.pkey_id,
+                    symbol: req.symbol,
+                    short_name: req.short_name,
+                    description: req.description,
+                    is_stablecoin: req.is_stablecoin,
+                    is_wrapped: req.is_wrapped,
+                })
+                .await?;
+            Ok(AdminUpdateEscrowTokenContractAddressResponse {})
         }
         .boxed()
     }

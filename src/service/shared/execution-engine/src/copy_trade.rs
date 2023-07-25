@@ -123,15 +123,16 @@ pub struct CopyTradePlan {
 
 pub fn calculate_asset_values(
     amounts: HashMap<Address, Decimal>,
-    prices: HashMap<Address, f64>,
+    _prices: HashMap<Address, f64>,
 ) -> Result<HashMap<Address, Decimal>> {
     let mut values: HashMap<Address, Decimal> = HashMap::new();
     for (asset, amount) in amounts {
-        let price = *prices
-            .get(&asset)
-            .with_context(|| format!("price of asset {}", asset.to_string()))?;
-        let value = amount * Decimal::from_f64(price).unwrap();
-        values.insert(asset, value);
+        // let price = *prices
+        //     .get(&asset)
+        //     .with_context(|| format!("price of asset {}", asset.to_string()))?;
+        // let value = amount * Decimal::from_f64(price).unwrap();
+        // values.insert(asset, value);
+        values.insert(asset, amount);
     }
     Ok(values)
 }
