@@ -124,7 +124,7 @@ pub enum ConfirmationError {
     TransactionReverted(H256),
     TransactionNotFoundAfterConfirmations(H256),
     TransactionRevertedAfterConfirmations(H256),
-    RpcError(web3::Error),
+    ProviderError(web3::Error),
 }
 
 impl std::fmt::Display for ConfirmationError {
@@ -146,7 +146,7 @@ impl std::fmt::Display for ConfirmationError {
             ConfirmationError::TransactionRevertedAfterConfirmations(hash) => {
                 write!(f, "transaction {:?} reverted after confirmations", hash)
             }
-            ConfirmationError::RpcError(err) => write!(f, "rpc provider error: {}", err),
+            ConfirmationError::ProviderError(err) => write!(f, "rpc provider error: {}", err),
         }
     }
 }
@@ -155,7 +155,7 @@ impl std::error::Error for ConfirmationError {}
 
 impl From<web3::Error> for ConfirmationError {
     fn from(err: web3::Error) -> Self {
-        ConfirmationError::RpcError(err)
+        ConfirmationError::ProviderError(err)
     }
 }
 

@@ -43,9 +43,9 @@ where
 
             match confirmation_result {
                 Ok(_) => return Ok(hash),
-                Err(ConfirmationError::RpcError(err)) => {
+                Err(ConfirmationError::ProviderError(err)) => {
                     logger.log(format!(
-                        "RPC error {:?} confirming transaction {:?}, retrying confirmation",
+                        "provider error {:?} confirming transaction {:?}, retrying confirmation",
                         err, hash
                     ));
                     continue;
