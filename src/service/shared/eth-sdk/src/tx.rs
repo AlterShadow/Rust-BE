@@ -66,6 +66,93 @@ where
     bail!("transaction failed after {} attempts", max_retries)
 }
 
+#[derive(Debug)]
+pub enum RpcCallError {
+    InternalError(web3::error::Error),
+    ProviderError(web3::error::Error),
+    Web3Error(web3::error::Error),
+}
+
+impl std::fmt::Display for RpcCallError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            RpcCallError::InternalError(error) => {
+                write!(f, "internal error: {:?}", error)
+            }
+            RpcCallError::ProviderError(error) => {
+                write!(f, "provider error: {:?}", error)
+            }
+            RpcCallError::Web3Error(error) => {
+                write!(f, "web3 error: {:?}", error)
+            }
+        }
+    }
+}
+
+impl std::error::Error for RpcCallError {}
+
+impl From<web3::Error> for RpcCallError {
+    fn from(error: web3::Error) -> Self {
+        use web3::Error;
+        match error {
+            /* server is unreachable */
+            /* if it is because the server is offline is certainly a provider error */
+            /* if it is because we can't establish a connection to the internet, it is our error */
+            /* either way the best approach is to retry, so we classify it as a provider error */
+            Error::Unreachable => RpcCallError::ProviderError(Error::Unreachable),
+            /* decoder error */
+            /* for now assume they are rarely our fault */
+            // TODO: deep dive into possible decoder errors and perhaps add more variants for error handling
+            Error::Decoder(message) => RpcCallError::Web3Error(Error::Decoder(message)),
+            /* invalid response means web3 could not parse the response from the RPC provider */
+            /* e.g. can happen when using a public node to call "eth_blockNumber" */
+            /* this can be classified as a provider error with a reasonable degree of certainty */
+            Error::InvalidResponse(message) => {
+                RpcCallError::ProviderError(Error::InvalidResponse(message))
+            }
+            /* transport error */
+            /* for now assume they rarely are our fault */
+            // TODO: deep dive into possible transport errors and perhaps add more variants for error handling
+            Error::Transport(transport_error) => {
+                RpcCallError::ProviderError(Error::Transport(transport_error))
+            }
+            /* RPC errors are returned from the RPC provider */
+            Error::Rpc(rpc_error) => {
+                match rpc_error.code.code() {
+                    /* Parse error */
+                    /* Invalid JSON was received by the server */
+                    /* An error occurred on the server while parsing the JSON text. */
+                    -32700 => RpcCallError::InternalError(Error::Rpc(rpc_error)),
+                    /* Invalid request */
+                    /* The JSON sent is not a valid Request object */
+                    -32600 => RpcCallError::InternalError(Error::Rpc(rpc_error)),
+                    /* Method not found */
+                    /* The method does not exist / is not available */
+                    -32601 => RpcCallError::InternalError(Error::Rpc(rpc_error)),
+                    /* Invalid params */
+                    /* Invalid method parameter(s) */
+                    -32602 => RpcCallError::InternalError(Error::Rpc(rpc_error)),
+                    /* Internal error */
+                    /* Internal JSON-RPC error */
+                    -32603 => RpcCallError::ProviderError(Error::Rpc(rpc_error)),
+                    /* Server error */
+                    /* Reserved for implementation-defined server-errors */
+                    _ => RpcCallError::ProviderError(Error::Rpc(rpc_error)),
+                }
+            }
+            /* std::io::error::Error */
+            Error::Io(io_error) => RpcCallError::Web3Error(Error::Io(io_error)),
+            /* web3::signing::RecoveryError */
+            /* indicates either an invalid message, or invalid signature, both should be internal errors */
+            Error::Recovery(recovery_error) => {
+                RpcCallError::InternalError(Error::Recovery(recovery_error))
+            }
+            /* web3 internal error */
+            Error::Internal => RpcCallError::Web3Error(Error::Internal),
+        }
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum TxStatus {
     Unknown,
