@@ -21,10 +21,42 @@ pub async fn execute_transaction_and_ensure_success<Tx, Fut>(
 ) -> Result<H256>
 where
     Tx: Fn() -> Fut,
-    Fut: std::future::Future<Output = Result<H256>>,
+    Fut: std::future::Future<Output = Result<H256, RpcCallError>>,
 {
-    for _transaction_attempt in 0..max_retries {
-        let hash = transaction().await?;
+    for _full_attempt in 0..max_retries {
+        let mut maybe_hash: Option<H256> = None;
+        for _transaction_attempt in 0..max_retries {
+            let transaction_result = transaction().await;
+
+            match transaction_result {
+                Ok(successful_hash) => {
+                    /* if the transaction was successfully published, attempt confirmation */
+                    maybe_hash = Some(successful_hash);
+                    break;
+                }
+                Err(RpcCallError::ProviderError(e)) | Err(RpcCallError::Web3Error(e)) => {
+                    /* if the transaction failed to be published because of an external error, replay transaction */
+                    logger.log(format!(
+                        "provider error {:?} publishing transaction, replaying transaction",
+                        e
+                    ));
+                    continue;
+                }
+                Err(internal_error) => {
+                    /* if the transaction failed to be published because of an internal error, return the error */
+                    return Err(internal_error.into());
+                }
+            }
+        }
+
+        if maybe_hash.is_none() {
+            bail!(
+                "transaction failed to be published after {} attempts",
+                max_retries
+            );
+        }
+
+        let hash = maybe_hash.unwrap();
 
         logger.log(format!(
             "transaction {:?} sent, waiting for confirmations",
@@ -42,8 +74,12 @@ where
             .await;
 
             match confirmation_result {
-                Ok(_) => return Ok(hash),
+                Ok(_) => {
+                    /* if the transaction was successfully confirmed, return it's hash */
+                    return Ok(hash);
+                }
                 Err(ConfirmationError::ProviderError(err)) => {
+                    /* if the transaction confirmation failed because of a provider error, retry confirmation */
                     logger.log(format!(
                         "provider error {:?} confirming transaction {:?}, retrying confirmation",
                         err, hash
@@ -52,18 +88,25 @@ where
                 }
                 Err(ConfirmationError::TransactionRevertedAfterConfirmations(_))
                 | Err(ConfirmationError::TransactionNotFoundAfterConfirmations(_)) => {
+                    /* if the transaction was reverted or not found after confirmations, replay transaction */
                     logger.log(format!(
                         "transaction {:?} failed after confirmations, replaying transaction",
                         hash
                     ));
                     break;
                 }
-                Err(err) => return Err(err.into()),
+                Err(error) => {
+                    /* if the transaction was reverted or not found before confirmations, return the error */
+                    return Err(error.into());
+                }
             }
         }
     }
 
-    bail!("transaction failed after {} attempts", max_retries)
+    bail!(
+        "transaction failed to be confirmed after {} attempts",
+        max_retries
+    )
 }
 
 #[derive(Debug)]
