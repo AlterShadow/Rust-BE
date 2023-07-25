@@ -136,7 +136,7 @@ impl<T: Transport> StrategyWalletContract<T> {
             strategy,
             self.address(),
             signer.address(),
-        ), tx_hash)?;
+        ), tx_hash);
         Ok(tx_hash)
     }
 
@@ -185,7 +185,7 @@ impl<T: Transport> StrategyWalletContract<T> {
             signer.address(),
         ),
             tx_hash,
-        )?;
+        );
         Ok(tx_hash)
     }
 
@@ -229,7 +229,7 @@ impl<T: Transport> StrategyWalletContract<T> {
         get_blockchain_logger().log(
             format!("TransferAdminship new_admin={:?}", new_admin),
             tx_hash,
-        )?;
+        );
         Ok(tx_hash)
     }
 

@@ -141,7 +141,7 @@ impl<T: Transport> ContractDeployer<T> {
                         get_blockchain_logger().log(
                             format!("Transaction sent, waiting for confirmations",),
                             tx_hash,
-                        )?;
+                        );
                         logger.log(format!(
                             "Transaction sent, waiting for confirmations: {:?}",
                             tx_hash

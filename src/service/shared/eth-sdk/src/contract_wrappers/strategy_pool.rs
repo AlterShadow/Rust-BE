@@ -220,7 +220,7 @@ impl<T: Transport> StrategyPoolContract<T> {
                 signer.address(),
             ),
         tx_hash
-        )?;
+        );
         Ok(tx_hash)
     }
 
@@ -287,7 +287,7 @@ impl<T: Transport> StrategyPoolContract<T> {
                 signer.address(),
             ),
             tx_hash,
-        )?;
+        );
         Ok(tx_hash)
     }
 
@@ -350,7 +350,7 @@ impl<T: Transport> StrategyPoolContract<T> {
                         signer.address(),
                     ),
                 tx_hash,
-            )?;
+            );
         Ok(tx_hash)
     }
 
@@ -402,7 +402,7 @@ impl<T: Transport> StrategyPoolContract<T> {
                 signer.address(),
             ),
             tx_hash,
-        )?;
+        );
         Ok(tx_hash)
     }
 
@@ -454,7 +454,7 @@ impl<T: Transport> StrategyPoolContract<T> {
                 signer.address(),
             ),
             tx_hash,
-        )?;
+        );
         Ok(tx_hash)
     }
 
@@ -505,7 +505,7 @@ impl<T: Transport> StrategyPoolContract<T> {
                 signer.address(),
             ),
             tx_hash,
-        )?;
+        );
         Ok(tx_hash)
     }
 

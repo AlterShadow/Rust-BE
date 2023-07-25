@@ -174,7 +174,7 @@ impl<T: Transport> EscrowContract<T> {
                 tx_hash
             ),
             tx_hash,
-        )?;
+        );
 
         Ok(tx_hash)
     }
@@ -265,7 +265,7 @@ impl<T: Transport> EscrowContract<T> {
                 amount_to_display(deposit_amount), asset, proprietor, fee_amount, fee_recipient, tx_hash
             ),
             tx_hash,
-        )?;
+        );
 
         Ok(tx_hash)
     }
@@ -370,7 +370,7 @@ impl<T: Transport> EscrowContract<T> {
                 tx_hash,
             ),
             tx_hash,
-        )?;
+        );
         Ok(tx_hash)
     }
 
@@ -435,7 +435,7 @@ impl<T: Transport> EscrowContract<T> {
                 tx_hash,
             ),
             tx_hash,
-        )?;
+        );
         Ok(tx_hash)
     }
 
@@ -512,7 +512,7 @@ impl<T: Transport> EscrowContract<T> {
                 tx_hash,
             ),
             tx_hash,
-        )?;
+        );
         Ok(tx_hash)
     }
 
@@ -570,7 +570,7 @@ impl<T: Transport> EscrowContract<T> {
                 tx_hash,
             ),
             tx_hash,
-        )?;
+        );
         Ok(tx_hash)
     }
 
@@ -628,7 +628,7 @@ impl<T: Transport> EscrowContract<T> {
                 tx_hash,
             ),
             tx_hash,
-        )?;
+        );
         Ok(tx_hash)
     }
 

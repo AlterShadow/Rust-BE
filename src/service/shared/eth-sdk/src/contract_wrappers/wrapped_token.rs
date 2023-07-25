@@ -61,7 +61,7 @@ impl<T: Transport> WrappedTokenContract<T> {
         get_blockchain_logger().log(
             format!("Wrapped {:?} on {:?}", amount, self.address()),
             tx_hash,
-        )?;
+        );
         Ok(tx_hash)
     }
 
@@ -97,7 +97,7 @@ impl<T: Transport> WrappedTokenContract<T> {
         get_blockchain_logger().log(
             format!("Unwrapped {:?} on {:?}", amount, self.address()),
             tx_hash,
-        )?;
+        );
         Ok(tx_hash)
     }
 
@@ -138,7 +138,7 @@ impl<T: Transport> WrappedTokenContract<T> {
                 self.address()
             ),
             tx_hash,
-        )?;
+        );
         Ok(tx_hash)
     }
 

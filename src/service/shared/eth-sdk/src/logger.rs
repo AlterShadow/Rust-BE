@@ -18,13 +18,17 @@ impl BlockchainLogger {
             appender: Mutex::new(appender),
         })
     }
-    pub fn log(&self, text: impl AsRef<str>, transaction_hash: H256) -> Result<()> {
+    pub fn log(&self, text: impl AsRef<str>, transaction_hash: H256) {
         let time = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S");
         let text = text.as_ref();
-        self.appender.lock().unwrap().write_fmt(format_args!(
+        match self.appender.lock().unwrap().write_fmt(format_args!(
             "[TX] [{time}] [{transaction_hash:?}] {text}\n"
-        ))?;
-        Ok(())
+        )) {
+            Ok(_) => (),
+            Err(e) => {
+                eprintln!("Failed to write to log file: {}", e);
+            }
+        }
     }
     pub fn set_enabled(&self, enabled: bool) {
         self.enabled.store(enabled, Ordering::Relaxed);

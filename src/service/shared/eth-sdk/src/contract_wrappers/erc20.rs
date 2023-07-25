@@ -104,7 +104,7 @@ impl Erc20Token {
         get_blockchain_logger().log(
             format!("Minted {} {} to {}", amount, self.symbol().await?, to),
             tx_hash,
-        )?;
+        );
         Ok(tx_hash)
     }
 
@@ -141,7 +141,7 @@ impl Erc20Token {
                 self.symbol().await?
             ),
             tx_hash,
-        )?;
+        );
 
         Ok(tx_hash)
     }
@@ -185,7 +185,7 @@ impl Erc20Token {
                 self.address
             ),
             tx_hash,
-        )?;
+        );
         Ok(tx_hash)
     }
 
@@ -230,7 +230,7 @@ impl Erc20Token {
                 self.address
             ),
             tx_hash,
-        )?;
+        );
         Ok(tx_hash)
     }
 
@@ -293,7 +293,7 @@ impl Erc20Token {
                 self.address
             ),
             tx_hash,
-        )?;
+        );
         Ok(tx_hash)
     }
 
