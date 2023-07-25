@@ -67,10 +67,16 @@ where
 }
 
 #[derive(Debug)]
+pub enum ApiOrContractError {
+    ApiError(web3::error::Error),
+    ContractError(web3::contract::Error),
+}
+
+#[derive(Debug)]
 pub enum RpcCallError {
-    InternalError(web3::error::Error),
-    ProviderError(web3::error::Error),
-    Web3Error(web3::error::Error),
+    InternalError(ApiOrContractError),
+    ProviderError(ApiOrContractError),
+    Web3Error(ApiOrContractError),
 }
 
 impl std::fmt::Display for RpcCallError {
@@ -99,56 +105,118 @@ impl From<web3::Error> for RpcCallError {
             /* if it is because the server is offline is certainly a provider error */
             /* if it is because we can't establish a connection to the internet, it is our error */
             /* either way the best approach is to retry, so we classify it as a provider error */
-            Error::Unreachable => RpcCallError::ProviderError(Error::Unreachable),
+            Error::Unreachable => {
+                RpcCallError::ProviderError(ApiOrContractError::ApiError(Error::Unreachable))
+            }
             /* decoder error */
             /* for now assume they are rarely our fault */
             // TODO: deep dive into possible decoder errors and perhaps add more variants for error handling
-            Error::Decoder(message) => RpcCallError::Web3Error(Error::Decoder(message)),
+            Error::Decoder(message) => {
+                RpcCallError::Web3Error(ApiOrContractError::ApiError(Error::Decoder(message)))
+            }
             /* invalid response means web3 could not parse the response from the RPC provider */
             /* e.g. can happen when using a public node to call "eth_blockNumber" */
             /* this can be classified as a provider error with a reasonable degree of certainty */
-            Error::InvalidResponse(message) => {
-                RpcCallError::ProviderError(Error::InvalidResponse(message))
-            }
+            Error::InvalidResponse(message) => RpcCallError::ProviderError(
+                ApiOrContractError::ApiError(Error::InvalidResponse(message)),
+            ),
             /* transport error */
             /* for now assume they rarely are our fault */
             // TODO: deep dive into possible transport errors and perhaps add more variants for error handling
-            Error::Transport(transport_error) => {
-                RpcCallError::ProviderError(Error::Transport(transport_error))
-            }
+            Error::Transport(transport_error) => RpcCallError::ProviderError(
+                ApiOrContractError::ApiError(Error::Transport(transport_error)),
+            ),
             /* RPC errors are returned from the RPC provider */
             Error::Rpc(rpc_error) => {
                 match rpc_error.code.code() {
                     /* Parse error */
                     /* Invalid JSON was received by the server */
                     /* An error occurred on the server while parsing the JSON text. */
-                    -32700 => RpcCallError::InternalError(Error::Rpc(rpc_error)),
+                    -32700 => RpcCallError::InternalError(ApiOrContractError::ApiError(
+                        Error::Rpc(rpc_error),
+                    )),
                     /* Invalid request */
                     /* The JSON sent is not a valid Request object */
-                    -32600 => RpcCallError::InternalError(Error::Rpc(rpc_error)),
+                    -32600 => RpcCallError::InternalError(ApiOrContractError::ApiError(
+                        Error::Rpc(rpc_error),
+                    )),
                     /* Method not found */
                     /* The method does not exist / is not available */
-                    -32601 => RpcCallError::InternalError(Error::Rpc(rpc_error)),
+                    -32601 => RpcCallError::InternalError(ApiOrContractError::ApiError(
+                        Error::Rpc(rpc_error),
+                    )),
                     /* Invalid params */
                     /* Invalid method parameter(s) */
-                    -32602 => RpcCallError::InternalError(Error::Rpc(rpc_error)),
+                    -32602 => RpcCallError::InternalError(ApiOrContractError::ApiError(
+                        Error::Rpc(rpc_error),
+                    )),
                     /* Internal error */
                     /* Internal JSON-RPC error */
-                    -32603 => RpcCallError::ProviderError(Error::Rpc(rpc_error)),
+                    -32603 => RpcCallError::ProviderError(ApiOrContractError::ApiError(
+                        Error::Rpc(rpc_error),
+                    )),
                     /* Server error */
                     /* Reserved for implementation-defined server-errors */
-                    _ => RpcCallError::ProviderError(Error::Rpc(rpc_error)),
+                    _ => RpcCallError::ProviderError(ApiOrContractError::ApiError(Error::Rpc(
+                        rpc_error,
+                    ))),
                 }
             }
             /* std::io::error::Error */
-            Error::Io(io_error) => RpcCallError::Web3Error(Error::Io(io_error)),
+            Error::Io(io_error) => {
+                RpcCallError::Web3Error(ApiOrContractError::ApiError(Error::Io(io_error)))
+            }
             /* web3::signing::RecoveryError */
             /* indicates either an invalid message, or invalid signature, both should be internal errors */
-            Error::Recovery(recovery_error) => {
-                RpcCallError::InternalError(Error::Recovery(recovery_error))
-            }
+            Error::Recovery(recovery_error) => RpcCallError::InternalError(
+                ApiOrContractError::ApiError(Error::Recovery(recovery_error)),
+            ),
             /* web3 internal error */
-            Error::Internal => RpcCallError::Web3Error(Error::Internal),
+            Error::Internal => {
+                RpcCallError::Web3Error(ApiOrContractError::ApiError(Error::Internal))
+            }
+        }
+    }
+}
+
+impl From<web3::contract::Error> for RpcCallError {
+    fn from(error: web3::contract::Error) -> Self {
+        use web3::contract::Error;
+
+        match error {
+            /* invalid output type requested by the caller */
+            Error::InvalidOutputType(message) => RpcCallError::InternalError(
+                ApiOrContractError::ContractError(Error::InvalidOutputType(message)),
+            ),
+            /* eth abi error */
+            Error::Abi(eth_error) => RpcCallError::InternalError(
+                ApiOrContractError::ContractError(Error::Abi(eth_error)),
+            ),
+            /* rpc error */
+            Error::Api(rpc_error) => RpcCallError::from(rpc_error),
+            /* error during deployment */
+            Error::Deployment(deployment_error) => {
+                use web3::contract::deploy;
+                match deployment_error {
+                    /* eth abi error during deployment */
+                    deploy::Error::Abi(ethabi_error) => {
+                        RpcCallError::InternalError(ApiOrContractError::ContractError(
+                            Error::Deployment(deploy::Error::Abi(ethabi_error)),
+                        ))
+                    }
+                    /* rpc error during deployment */
+                    deploy::Error::Api(rpc_error) => RpcCallError::from(rpc_error),
+                    /* general failure during deployment */
+                    deploy::Error::ContractDeploymentFailure(tx_hash) => {
+                        RpcCallError::ProviderError(ApiOrContractError::ContractError(
+                            Error::Deployment(deploy::Error::ContractDeploymentFailure(tx_hash)),
+                        ))
+                    }
+                }
+            }
+            Error::InterfaceUnsupported => RpcCallError::InternalError(
+                ApiOrContractError::ContractError(Error::InterfaceUnsupported),
+            ),
         }
     }
 }
