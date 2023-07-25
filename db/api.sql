@@ -392,7 +392,9 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-    RETURN QUERY SELECT count(*) OVER() AS total,
+    RETURN QUERY SELECT 
+                 DISTINCT ON (s.pkey_id)
+                 count(*) OVER() AS total,
       s.pkey_id AS strategy_id,
       s.name AS strategy_name,
       s.description AS strategy_description,
