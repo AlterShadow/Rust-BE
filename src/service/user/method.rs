@@ -1274,12 +1274,15 @@ pub async fn on_user_request_refund(
     }
 
     /* get amount deposited by whitelisted wallets necessary for refund */
-    let positive_deposit_balance_of_wallet_row = db
-        .execute(FunUserCalculateUserEscrowBalanceFromLedgerReq {
+    let deposit_withdraw_balance_row = db
+        .execute(FunUserListUserDepositWithdrawBalanceReq {
+            limit: None,
+            offset: None,
             user_id: ctx.user_id,
-            blockchain: chain,
-            token_id: refunded_token_row.token_id,
-            wallet_address: Some(wallet_address.into()),
+            user_address: Some(wallet_address.into()),
+            blockchain: Some(chain),
+            token_id: Some(refunded_token_row.token_id),
+            token_address: None,
             escrow_contract_address: escrow_contract.address().into(),
         })
         .await?
@@ -1287,7 +1290,7 @@ pub async fn on_user_request_refund(
         .context("couldn't find deposits in ledger made by this wallet")?;
 
     /* check this wallet has enough registered deposits for the refund */
-    let positive_deposit_balance_of_wallet = positive_deposit_balance_of_wallet_row.balance;
+    let positive_deposit_balance_of_wallet = deposit_withdraw_balance_row.balance;
     if positive_deposit_balance_of_wallet < quantity {
         bail!("not enough balance for back amount deposited by this wallet")
     }
@@ -1341,21 +1344,6 @@ pub async fn on_user_request_refund(
     .context("could not add entry to deposit withdraw ledger on request refund")?;
 
     /* update user balance cache */
-    let deposit_withdraw_balance_row = db
-        .execute(FunUserListUserDepositWithdrawBalanceReq {
-            limit: Some(1),
-            offset: None,
-            user_id: ctx.user_id,
-            user_address: Some(wallet_address.into()),
-            blockchain: Some(chain),
-            token_id: Some(refunded_token_row.token_id),
-            token_address: Some(token_address.into()),
-            escrow_contract_address: Some(escrow_contract.address().into()),
-        })
-        .await?
-        .into_result()
-        .context("could not get deposit withdraw balance from database")?;
-
     let old_balance = deposit_withdraw_balance_row.balance;
     db.execute(FunUserUpdateUserDepositWithdrawBalanceReq {
         deposit_withdraw_balance_id: deposit_withdraw_balance_row.deposit_withdraw_balance_id,
