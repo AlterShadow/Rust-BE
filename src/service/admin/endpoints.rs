@@ -228,6 +228,12 @@ pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
         )
         .with_description("Admin approves strategy"),
         EndpointSchema::new(
+            "AdminRefreshExpertWalletBalance",
+            30121,
+            vec![Field::new("strategy_id", Type::BigInt)],
+            vec![Field::new("success", Type::Boolean)],
+        ),
+        EndpointSchema::new(
             "AdminRejectStrategy",
             30130,
             vec![Field::new("strategy_id", Type::BigInt)],

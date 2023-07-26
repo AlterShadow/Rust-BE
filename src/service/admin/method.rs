@@ -497,6 +497,32 @@ impl RequestHandler for MethodAdminApproveStrategy {
     }
 }
 
+pub struct MethodAdminRefreshExpertWalletBalance {
+    pub pool: EthereumRpcConnectionPool,
+}
+impl RequestHandler for MethodAdminRefreshExpertWalletBalance {
+    type Request = AdminRefreshExpertWalletBalanceRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db: DbClient = toolbox.get_db();
+        let pool = self.pool.clone();
+        async move {
+            ensure_user_role(ctx, EnumRole::Admin)?;
+
+            fetch_and_update_strategy_watched_wallet_asset_balances(&db, &pool, req.strategy_id)
+                .await?;
+
+            Ok(AdminRefreshExpertWalletBalanceResponse { success: true })
+        }
+        .boxed()
+    }
+}
+
 pub async fn fetch_and_update_strategy_watched_wallet_asset_balances(
     db: &DbClient,
     pool: &EthereumRpcConnectionPool,

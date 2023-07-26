@@ -229,6 +229,9 @@ async fn main() -> Result<()> {
     server.add_handler(MethodAdminApproveStrategy {
         pool: eth_pool.clone(),
     });
+    server.add_handler(MethodAdminRefreshExpertWalletBalance {
+        pool: eth_pool.clone(),
+    });
     server.add_handler(MethodUserCreateStrategyWallet {
         pool: eth_pool.clone(),
         master_key: master_key.clone(),

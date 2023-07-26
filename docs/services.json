@@ -6165,6 +6165,25 @@
           "json_schema": null
         },
         {
+          "name": "AdminRefreshExpertWalletBalance",
+          "code": 30121,
+          "parameters": [
+            {
+              "name": "strategy_id",
+              "ty": "BigInt"
+            }
+          ],
+          "returns": [
+            {
+              "name": "success",
+              "ty": "Boolean"
+            }
+          ],
+          "stream_response": null,
+          "description": "",
+          "json_schema": null
+        },
+        {
           "name": "AdminRejectStrategy",
           "code": 30130,
           "parameters": [

@@ -503,6 +503,9 @@ pub enum EnumEndpoint {
     #[postgres(name = "AdminApproveStrategy")]
     AdminApproveStrategy = 30120,
     ///
+    #[postgres(name = "AdminRefreshExpertWalletBalance")]
+    AdminRefreshExpertWalletBalance = 30121,
+    ///
     #[postgres(name = "AdminRejectStrategy")]
     AdminRejectStrategy = 30130,
     ///
@@ -1198,6 +1201,16 @@ pub struct AdminNotifyEscrowLedgerChangeRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminNotifyEscrowLedgerChangeResponse {}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminRefreshExpertWalletBalanceRequest {
+    pub strategy_id: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminRefreshExpertWalletBalanceResponse {
+    pub success: bool,
+}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminRejectStrategyRequest {
@@ -9583,6 +9596,33 @@ impl WsRequest for AdminApproveStrategyRequest {
 }
 impl WsResponse for AdminApproveStrategyResponse {
     type Request = AdminApproveStrategyRequest;
+}
+
+impl WsRequest for AdminRefreshExpertWalletBalanceRequest {
+    type Response = AdminRefreshExpertWalletBalanceResponse;
+    const METHOD_ID: u32 = 30121;
+    const SCHEMA: &'static str = r#"{
+  "name": "AdminRefreshExpertWalletBalance",
+  "code": 30121,
+  "parameters": [
+    {
+      "name": "strategy_id",
+      "ty": "BigInt"
+    }
+  ],
+  "returns": [
+    {
+      "name": "success",
+      "ty": "Boolean"
+    }
+  ],
+  "stream_response": null,
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for AdminRefreshExpertWalletBalanceResponse {
+    type Request = AdminRefreshExpertWalletBalanceRequest;
 }
 
 impl WsRequest for AdminRejectStrategyRequest {

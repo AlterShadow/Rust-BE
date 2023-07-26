@@ -98,6 +98,7 @@ ID: 3
 |30100|AdminListBackers|offset, limit, user_id, user_public_id, username, family_name, given_name|backers_total, backers||
 |30110|AdminListStrategies|offset, limit, strategy_id, strategy_name, expert_id, expert_name, description, pending_approval, approved|strategies_total, strategies||
 |30120|AdminApproveStrategy|strategy_id|success|Admin approves strategy|
+|30121|AdminRefreshExpertWalletBalance|strategy_id|success||
 |30130|AdminRejectStrategy|strategy_id|success||
 |31002|AdminAddAuditRule|rule_id, name, description|||
 |32010|AdminNotifyEscrowLedgerChange|pkey_id, user_id, balance|||
