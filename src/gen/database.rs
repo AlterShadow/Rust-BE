@@ -3227,6 +3227,8 @@ pub struct FunAdminListEscrowTokenContractAddressReq {
     #[serde(default)]
     pub token_address: Option<BlockchainAddress>,
     #[serde(default)]
+    pub symbol: Option<String>,
+    #[serde(default)]
     pub token_id: Option<i64>,
 }
 
@@ -3234,7 +3236,7 @@ pub struct FunAdminListEscrowTokenContractAddressReq {
 impl DatabaseRequest for FunAdminListEscrowTokenContractAddressReq {
     type ResponseRow = FunAdminListEscrowTokenContractAddressRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_admin_list_escrow_token_contract_address(a_limit => $1::bigint, a_offset => $2::bigint, a_blockchain => $3::enum_block_chain, a_token_address => $4::varchar, a_token_id => $5::bigint);"
+        "SELECT * FROM api.fun_admin_list_escrow_token_contract_address(a_limit => $1::bigint, a_offset => $2::bigint, a_blockchain => $3::enum_block_chain, a_token_address => $4::varchar, a_symbol => $5::varchar, a_token_id => $6::bigint);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
@@ -3242,6 +3244,7 @@ impl DatabaseRequest for FunAdminListEscrowTokenContractAddressReq {
             &self.offset as &(dyn ToSql + Sync),
             &self.blockchain as &(dyn ToSql + Sync),
             &self.token_address as &(dyn ToSql + Sync),
+            &self.symbol as &(dyn ToSql + Sync),
             &self.token_id as &(dyn ToSql + Sync),
         ]
     }

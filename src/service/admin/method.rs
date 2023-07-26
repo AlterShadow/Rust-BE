@@ -515,6 +515,7 @@ pub async fn fetch_and_update_strategy_watched_wallet_asset_balances(
                 offset: None,
                 blockchain: Some(wallet_chain),
                 token_address: None,
+                symbol: None,
                 token_id: None,
             })
             .await?
@@ -924,6 +925,7 @@ impl RequestHandler for MethodAdminListEscrowTokenContractAddresses {
                     offset: req.offset,
                     blockchain: req.blockchain,
                     token_address: req.address.map(|x| x.into()),
+                    symbol: req.symbol,
                     token_id: None,
                 })
                 .await?;

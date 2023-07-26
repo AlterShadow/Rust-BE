@@ -2235,6 +2235,7 @@ pub async fn fetch_and_update_wallet_balances(
             offset: None,
             blockchain: Some(chain),
             token_address: None,
+            symbol: None,
             token_id: None,
         })
         .await?

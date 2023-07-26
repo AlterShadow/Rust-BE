@@ -3196,7 +3196,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_admin_list_escrow_token_contract_address(a_limit bigint DEFAULT NULL, a_offset bigint DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL, a_token_address varchar DEFAULT NULL, a_token_id bigint DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_admin_list_escrow_token_contract_address(a_limit bigint DEFAULT NULL, a_offset bigint DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL, a_token_address varchar DEFAULT NULL, a_symbol varchar DEFAULT NULL, a_token_id bigint DEFAULT NULL)
 RETURNS table (
     "total" bigint,
     "pkey_id" bigint,
@@ -3227,7 +3227,8 @@ BEGIN
 			FROM tbl.escrow_token_contract_address AS etca
 			WHERE (a_blockchain ISNULL OR etca.blockchain = a_blockchain)
 			AND (a_token_address ISNULL OR etca.address = a_token_address)
-			AND (a_token_id ISNULL OR etca.pkey_id = a_token_id)
+			AND (a_token_id ISNULL OR etca.pkey_id = a_token_id)]
+			AND (a_symbol ISNULL OR etca.symbol ILIKE a_symbol || '%')
 			ORDER BY etca.pkey_id
 			OFFSET a_offset
 			LIMIT a_limit;
