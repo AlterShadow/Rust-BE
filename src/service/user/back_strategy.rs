@@ -518,9 +518,10 @@ pub async fn user_back_strategy(
     // TODO: might call balanceOf of these ERC20 contracts if database is not working correctly
     let user_balance = db
         .execute(FunUserListUserDepositWithdrawBalanceReq {
-            limit: 1,
-            offset: 0,
+            limit: Some(1),
+            offset: None,
             user_id,
+            user_address: None,
             blockchain: Some(blockchain),
             token_address: None,
             token_id: Some(token_id),
@@ -528,8 +529,10 @@ pub async fn user_back_strategy(
         })
         .await?;
     debug!("Fetched {} rows of user balance", user_balance.len());
-    let user_balance_ret = user_balance.into_result().context("insufficient balance")?;
-    let user_balance = user_balance_ret.balance;
+    let user_balance = user_balance
+        .into_rows()
+        .into_iter()
+        .fold(Decimal::new(0, 0), |acc, row| acc + row.balance);
     if user_balance < back_token_amount {
         bail!(
             "insufficient balance {} < {}",
@@ -549,28 +552,6 @@ pub async fn user_back_strategy(
     )
     .await?;
 
-    let new_user_balance = user_balance - back_token_amount;
-    let mut success = false;
-    for _ in 0..3 {
-        let ret = db
-            .execute(FunUserUpdateUserDepositWithdrawBalanceReq {
-                deposit_withdraw_balance_id: user_balance_ret.deposit_withdraw_balance_id,
-                old_balance: user_balance.into(),
-                new_balance: new_user_balance.into(),
-            })
-            .await?
-            .into_result()
-            .context("could not update user balance")?;
-        if ret.updated {
-            success = true;
-            break;
-        } else {
-            continue;
-        }
-    }
-    if !success {
-        bail!("could not update user balance, error in database");
-    }
     /* fetch user address to receive shares */
     // TODO: fetch the correct address where user desires to receive shares on this chain
     // since users can have multiple addresses, this information is critical
@@ -701,6 +682,32 @@ pub async fn user_back_strategy(
             is_withdraw: false,
         })
         .await?;
+
+        /* reduce the value used from balance */
+        let old_balance_row = db
+            .execute(FunUserListUserDepositWithdrawBalanceReq {
+                limit: Some(1),
+                offset: None,
+                user_id: Some(user_id),
+                user_address: Some(wallet.clone().into()),
+                blockchain: Some(blockchain),
+                token_address: Some(token_address),
+                token_id: None,
+                escrow_contract_address: Some(escrow_contract.address().into()),
+            })
+            .await?
+            .into_result()
+            .context("could not fetch user balance from database")?;
+        let old_balance = old_balance_row.balance;
+        let new_balance = old_balance - amount;
+        db.execute(FunUserUpdateUserDepositWithdrawBalanceReq {
+            deposit_withdraw_balance_id: old_balance_row.deposit_withdraw_balance_id,
+            old_balance,
+            new_balance,
+        })
+        .await?
+        .into_result()
+        .context("could not update user balance")?;
     }
 
     /* approve pancakeswap to trade escrow token */
@@ -1068,22 +1075,25 @@ pub async fn get_and_check_user_deposit_balances_by_wallet_to_fill_value(
     value_to_fill: Decimal,
     escrow_contract_address: Address,
 ) -> Result<HashMap<Address, Decimal>> {
-    let wallet_positive_asset_balances = db
-        .execute(FunUserCalculateUserEscrowBalanceFromLedgerReq {
+    let wallet_asset_balances = db
+        .execute(FunUserListUserDepositWithdrawBalanceReq {
+            limit: None,
+            offset: None,
             user_id,
-            blockchain: chain,
-            token_id,
-            wallet_address: None,
-            escrow_contract_address: escrow_contract_address.into(),
+            user_address: None,
+            blockchain: Some(chain),
+            token_id: Some(token_id),
+            token_address: None,
+            escrow_contract_address: Some(escrow_contract_address.into()),
         })
         .await?
         .into_rows();
 
     let mut wallet_deposit_amounts: HashMap<Address, Decimal> = HashMap::new();
     let mut total_amount_found: Decimal = Decimal::zero();
-    for wallet_balance_row in wallet_positive_asset_balances {
-        let wallet_balance: Decimal = wallet_balance_row.balance.into();
-        if wallet_balance.is_zero() {
+    for wallet_balance_row in wallet_asset_balances {
+        let wallet_balance: Decimal = wallet_balance_row.balance;
+        if wallet_balance.is_zero() || wallet_balance.is_negative() {
             continue;
         }
         if total_amount_found == value_to_fill {
@@ -1098,7 +1108,7 @@ pub async fn get_and_check_user_deposit_balances_by_wallet_to_fill_value(
             /* use only the necessary */
 
             wallet_deposit_amounts.insert(
-                wallet_balance_row.wallet_address.into(),
+                wallet_balance_row.user_address.into(),
                 necessary_amount_to_fill,
             );
             total_amount_found = total_amount_found + necessary_amount_to_fill;
@@ -1106,7 +1116,7 @@ pub async fn get_and_check_user_deposit_balances_by_wallet_to_fill_value(
             /* if the deposited amount of this wallet cannot fill the rest for the refund amount */
             /* use entire amount */
 
-            wallet_deposit_amounts.insert(wallet_balance_row.wallet_address.into(), wallet_balance);
+            wallet_deposit_amounts.insert(wallet_balance_row.user_address.into(), wallet_balance);
             total_amount_found = total_amount_found + wallet_balance;
         }
     }
