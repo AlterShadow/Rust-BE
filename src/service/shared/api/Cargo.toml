@@ -24,5 +24,6 @@ lru = "0.10.0"
 chrono = "0.4.24"
 gen = { path = "../../../gen" }
 serde_path_to_error = "0.1.11"
+async-trait = "*"
 [lib]
 path = "lib.rs"
