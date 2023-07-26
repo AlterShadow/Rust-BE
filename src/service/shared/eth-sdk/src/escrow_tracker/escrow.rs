@@ -1,26 +1,13 @@
-use crate::{BlockchainCoinAddresses, ContractCall, EscrowTransfer, TransactionReady};
+use crate::erc20::parse_erc20_transfer_event;
+use crate::{BlockchainCoinAddresses, EscrowTransfer, TransactionReady};
 use eyre::*;
 use gen::model::EnumBlockChain;
 use tracing::info;
-
-fn get_method_by_name(name: &str) -> Option<Erc20Method> {
-    match name {
-        "transfer" => Some(Erc20Method::Transfer),
-        "transferFrom" => Some(Erc20Method::TransferFrom),
-        _ => None,
-    }
-}
-
-pub enum Erc20Method {
-    Transfer,
-    TransferFrom,
-}
 
 pub fn parse_escrow_transfer(
     chain: EnumBlockChain,
     tx: &TransactionReady,
     stablecoin_addresses: &BlockchainCoinAddresses,
-    erc_20: &web3::ethabi::Contract,
 ) -> Result<EscrowTransfer> {
     let called_contract = tx.get_to().context("missing called contract")?;
     let token = stablecoin_addresses
@@ -34,71 +21,15 @@ pub fn parse_escrow_transfer(
         _ => bail!("unsupported coin: {:?}", token),
     }
 
-    let sender = tx.get_from().context("No sender")?;
+    let transfer_event =
+        parse_erc20_transfer_event(called_contract, tx.get_receipt().clone(), None, None)?;
 
-    let input_data = tx.get_input_data();
-
-    let call = ContractCall::from_inputs(erc_20, &input_data)?;
-
-    let method = get_method_by_name(&call.get_name()).context("call is not an escrow")?;
-    let escrow: EscrowTransfer = match method {
-        Erc20Method::Transfer => {
-            let recipient = call
-                .get_param("_to")
-                .or_else(|_| call.get_param("to"))
-                .context("no recipient address")?
-                .get_value()
-                .into_address()?;
-
-            let amount = call
-                .get_param("_value")
-                .or_else(|_| call.get_param("value"))
-                .or_else(|_| call.get_param("_amount"))
-                .or_else(|_| call.get_param("amount"))
-                .context("no amount")?
-                .get_value()
-                .into_uint()?;
-
-            EscrowTransfer {
-                token: token.to_string(),
-                token_address: called_contract,
-                amount,
-                recipient,
-                owner: sender,
-            }
-        }
-        Erc20Method::TransferFrom => {
-            let owner = call
-                .get_param("_from")
-                .or_else(|_| call.get_param("from"))
-                .context("no owner address")?
-                .get_value()
-                .into_address()?;
-
-            let recipient = call
-                .get_param("_to")
-                .or_else(|_| call.get_param("to"))
-                .context("no recipient address")?
-                .get_value()
-                .into_address()?;
-
-            let amount = call
-                .get_param("_value")
-                .or_else(|_| call.get_param("value"))
-                .or_else(|_| call.get_param("_amount"))
-                .or_else(|_| call.get_param("amount"))
-                .or_else(|_| Err(eyre!("no amount")))?
-                .get_value()
-                .into_uint()?;
-
-            EscrowTransfer {
-                token: token.to_string(),
-                token_address: called_contract,
-                amount,
-                recipient,
-                owner,
-            }
-        }
+    let escrow = EscrowTransfer {
+        token: token.to_string(),
+        token_address: called_contract,
+        amount: transfer_event.value,
+        recipient: transfer_event.to,
+        owner: transfer_event.from,
     };
 
     info!("parsed escrow: {:?} {:?}", tx.get_hash(), escrow);
@@ -108,7 +39,6 @@ pub fn parse_escrow_transfer(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::erc20::build_erc_20;
     use crate::{BlockchainCoinAddresses, EthereumRpcConnectionPool, TransactionFetcher};
     use gen::model::EnumBlockChain;
     use lib::log::{setup_logs, LogLevel};
@@ -125,12 +55,10 @@ mod tests {
             &conn,
         )
         .await?;
-        let erc20 = build_erc_20()?;
         let trade = parse_escrow_transfer(
             EnumBlockChain::EthereumMainnet,
             &tx,
             &BlockchainCoinAddresses::new(),
-            &erc20,
         )?;
         info!("trade: {:?}", trade);
         Ok(())
@@ -146,12 +74,10 @@ mod tests {
         )
         .await?;
 
-        let erc20 = build_erc_20()?;
         let trade = parse_escrow_transfer(
             EnumBlockChain::EthereumMainnet,
             &tx,
             &BlockchainCoinAddresses::new(),
-            &erc20,
         )?;
         info!("trade: {:?}", trade);
         Ok(())
@@ -167,12 +93,10 @@ mod tests {
         )
         .await?;
 
-        let erc20 = build_erc_20()?;
         let trade = parse_escrow_transfer(
             EnumBlockChain::EthereumMainnet,
             &tx,
             &BlockchainCoinAddresses::new(),
-            &erc20,
         )?;
         info!("trade: {:?}", trade);
         Ok(())

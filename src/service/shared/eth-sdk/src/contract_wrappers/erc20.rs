@@ -342,9 +342,9 @@ pub fn build_erc_20() -> Result<web3::ethabi::Contract> {
 
 #[derive(Debug, Clone)]
 pub struct TransferEvent {
-    from: Address,
-    to: Address,
-    value: U256,
+    pub from: Address,
+    pub to: Address,
+    pub value: U256,
 }
 
 pub fn parse_erc20_transfer_event(

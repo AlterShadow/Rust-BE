@@ -570,7 +570,7 @@ pub async fn handle_escrow_transaction(
     tx: TransactionReady,
 ) -> Result<()> {
     /* check if it is an escrow to one of our escrow contracts */
-    let escrow = parse_escrow_transfer(blockchain, &tx, &state.token_addresses, &state.erc_20)
+    let escrow = parse_escrow_transfer(blockchain, &tx, &state.token_addresses)
         .with_context(|| format!("tx {:?} is not an escrow", tx.get_hash()))?;
     if state
         .escrow_addresses
