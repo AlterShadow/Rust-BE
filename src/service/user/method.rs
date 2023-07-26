@@ -565,8 +565,8 @@ impl RequestHandler for MethodUserListDepositWithdrawBalances {
         async move {
             let balances = db
                 .execute(FunUserListUserDepositWithdrawBalanceReq {
-                    limit: 10000,
-                    offset: 0,
+                    limit: Some(10000),
+                    offset: None,
                     user_id: ctx.user_id,
                     user_address: None,
                     blockchain: None,
@@ -620,8 +620,8 @@ impl RequestHandler for MethodUserGetDepositWithdrawBalance {
 
             let balance = db
                 .execute(FunUserListUserDepositWithdrawBalanceReq {
-                    limit: 1,
-                    offset: 0,
+                    limit: Some(1),
+                    offset: None,
                     user_id: ctx.user_id,
                     user_address: None,
                     blockchain: None,
@@ -1254,8 +1254,8 @@ pub async fn on_user_request_refund(
 
     let user_balance_all_wallets = db
         .execute(FunUserListUserDepositWithdrawBalanceReq {
-            limit: 1,
-            offset: 0,
+            limit: Some(1),
+            offset: None,
             user_id: ctx.user_id,
             user_address: None,
             blockchain: Some(chain),
@@ -1343,8 +1343,8 @@ pub async fn on_user_request_refund(
     /* update user balance cache */
     let deposit_withdraw_balance_row = db
         .execute(FunUserListUserDepositWithdrawBalanceReq {
-            limit: 1,
-            offset: 0,
+            limit: Some(1),
+            offset: None,
             user_id: ctx.user_id,
             user_address: Some(wallet_address.into()),
             blockchain: Some(chain),

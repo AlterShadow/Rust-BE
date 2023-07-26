@@ -781,8 +781,8 @@ pub async fn handle_escrow_transaction(
     let old_balance = state
         .db
         .execute(FunUserListUserDepositWithdrawBalanceReq {
-            limit: 1,
-            offset: 0,
+            limit: Some(1),
+            offset: None,
             user_id: user.user_id,
             user_address: Some(escrow.owner.into()),
             blockchain: Some(blockchain),
@@ -993,8 +993,8 @@ pub async fn handle_withdraw_transaction(
     let old_balance = state
         .db
         .execute(FunUserListUserDepositWithdrawBalanceReq {
-            limit: 1,
-            offset: 0,
+            limit: Some(1),
+            offset: None,
             user_id: user.user_id,
             user_address: Some(withdraw.proprietor.into()),
             blockchain: Some(blockchain),

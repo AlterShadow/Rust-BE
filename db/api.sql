@@ -2398,7 +2398,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_list_user_deposit_withdraw_balance(a_limit bigint, a_offset bigint, a_user_id bigint, a_user_address varchar DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL, a_token_address varchar DEFAULT NULL, a_token_id bigint DEFAULT NULL, a_escrow_contract_address varchar DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_user_list_user_deposit_withdraw_balance(a_user_id bigint, a_limit bigint DEFAULT NULL, a_offset bigint DEFAULT NULL, a_user_address varchar DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL, a_token_address varchar DEFAULT NULL, a_token_id bigint DEFAULT NULL, a_escrow_contract_address varchar DEFAULT NULL)
 RETURNS table (
     "deposit_withdraw_balance_id" bigint,
     "user_id" bigint,
