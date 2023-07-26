@@ -1396,7 +1396,7 @@ BEGIN
                  FROM tbl.expert_profile AS e
                  JOIN tbl.user AS u ON u.pkey_id = e.fkey_user_id
                  WHERE (a_expert_id ISNULL OR e.pkey_id = a_expert_id)
-                    OR (a_expert_public_id ISNULL OR u.public_id = a_expert_public_id)
+                    AND (a_expert_public_id ISNULL OR u.public_id = a_expert_public_id)
                  ;
 
 END
