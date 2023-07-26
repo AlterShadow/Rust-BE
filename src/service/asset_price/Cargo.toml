@@ -11,6 +11,7 @@ serde = { version = "1.0", features = ["derive"] }
 tracing = "0.1.35"
 tokio = { version = "1", features = ["full"] }
 secrecy = { version = "0.8.0", features = ["serde"] }
+async-trait = "*"
 gen = { path = "../../gen" }
 lib = { path = "../../lib" }
 api = { path = "../shared/api" }
@@ -21,3 +22,7 @@ no-github-ci-tests = []
 [[bin]]
 name = "mc2fi_asset_price"
 path = "main.rs"
+
+[lib]
+name = "mc2fi_asset_price"
+path = "lib.rs"
