@@ -55,12 +55,12 @@ mod tests {
             &conn,
         )
         .await?;
-        let trade = parse_escrow_transfer(
+        let escrow_transfer = parse_escrow_transfer(
             EnumBlockChain::EthereumMainnet,
             &tx,
             &BlockchainCoinAddresses::new(),
         )?;
-        info!("trade: {:?}", trade);
+        info!("escrow: {:?}", escrow_transfer);
         Ok(())
     }
     #[tokio::test]
@@ -74,12 +74,12 @@ mod tests {
         )
         .await?;
 
-        let trade = parse_escrow_transfer(
+        let escrow_transfer = parse_escrow_transfer(
             EnumBlockChain::EthereumMainnet,
             &tx,
             &BlockchainCoinAddresses::new(),
         )?;
-        info!("trade: {:?}", trade);
+        info!("escrow: {:?}", escrow_transfer);
         Ok(())
     }
     #[tokio::test]
@@ -93,12 +93,12 @@ mod tests {
         )
         .await?;
 
-        let trade = parse_escrow_transfer(
+        let escrow_transfer = parse_escrow_transfer(
             EnumBlockChain::EthereumMainnet,
             &tx,
             &BlockchainCoinAddresses::new(),
         )?;
-        info!("trade: {:?}", trade);
+        info!("escrow: {:?}", escrow_transfer);
         Ok(())
     }
 }
