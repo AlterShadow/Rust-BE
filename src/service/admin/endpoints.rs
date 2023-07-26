@@ -125,6 +125,7 @@ pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
             30080,
             vec![
                 Field::new("platform_fee", Type::optional(Type::Numeric)),
+                Field::new("allow_domain_urls", Type::optional(Type::String)),
                 Field::new(
                     "escrow_contract_address_ethereum",
                     Type::optional(Type::BlockchainAddress),

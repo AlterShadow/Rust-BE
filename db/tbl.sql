@@ -1,5 +1,5 @@
 -- Created by Vertabelo (http://vertabelo.com)
--- Last modification date: 2023-07-24 13:27:15.743
+-- Last modification date: 2023-07-26 14:22:59.828
 
 CREATE SCHEMA IF NOT EXISTS tbl;;
 
@@ -312,7 +312,7 @@ CREATE TABLE tbl.strategy_whitelisted_token (
 CREATE TABLE tbl.system_config (
     pkey_id bigint  NOT NULL,
     platform_fee double precision  NULL,
-    config_placeholder_2 bigint  NULL,
+    allow_domain_urls varchar(512)  NULL,
     CONSTRAINT system_config_pk PRIMARY KEY (pkey_id)
 );
 

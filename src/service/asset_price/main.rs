@@ -52,6 +52,7 @@ async fn fill_asset_price_cache(db: &DbClient, cmc: &CoinMarketCap) -> Result<()
             offset: None,
             blockchain: None,
             token_address: None,
+            symbol: None,
             token_id: None,
         })
         .await?

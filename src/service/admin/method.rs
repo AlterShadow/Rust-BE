@@ -296,7 +296,7 @@ impl RequestHandler for MethodAdminUpdateSystemConfig {
                 .execute(FunAdminUpdateSystemConfigReq {
                     config_id: 0,
                     platform_fee: req.platform_fee,
-                    config_placeholder_2: None,
+                    allow_domain_urls: req.allow_domain_urls,
                 })
                 .await?;
             if let Some(addr) = req.escrow_contract_address_ethereum {

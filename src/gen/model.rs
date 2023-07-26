@@ -1286,6 +1286,8 @@ pub struct AdminUpdateSystemConfigRequest {
     #[serde(default)]
     pub platform_fee: Option<f64>,
     #[serde(default)]
+    pub allow_domain_urls: Option<String>,
+    #[serde(default)]
     pub escrow_contract_address_ethereum: Option<Address>,
     #[serde(default)]
     pub escrow_contract_address_goerli: Option<Address>,
@@ -9006,6 +9008,12 @@ impl WsRequest for AdminUpdateSystemConfigRequest {
       "name": "platform_fee",
       "ty": {
         "Optional": "Numeric"
+      }
+    },
+    {
+      "name": "allow_domain_urls",
+      "ty": {
+        "Optional": "String"
       }
     },
     {

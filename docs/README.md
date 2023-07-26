@@ -93,7 +93,7 @@ ID: 3
 |30040|AdminApproveUserBecomeExpert|user_id|success|Admin approves a user to become an expert|
 |30050|AdminRejectUserBecomeExpert|user_id|success|Admin approves a user to become an expert|
 |30070|AdminGetSystemConfig||platform_fee, escrow_contract_address_ethereum, escrow_contract_address_goerli, escrow_contract_address_bsc, escrow_contract_address_bsc_testnet|Admin get system config|
-|30080|AdminUpdateSystemConfig|platform_fee, escrow_contract_address_ethereum, escrow_contract_address_goerli, escrow_contract_address_bsc, escrow_contract_address_bsc_testnet|success|Admin updates system config|
+|30080|AdminUpdateSystemConfig|platform_fee, allow_domain_urls, escrow_contract_address_ethereum, escrow_contract_address_goerli, escrow_contract_address_bsc, escrow_contract_address_bsc_testnet|success|Admin updates system config|
 |30090|AdminListExperts|limit, offset, expert_id, user_id, user_public_id, username, family_name, given_name, description, social_media|experts_total, experts|Admin lists experts|
 |30100|AdminListBackers|offset, limit, user_id, user_public_id, username, family_name, given_name|backers_total, backers||
 |30110|AdminListStrategies|offset, limit, strategy_id, strategy_name, expert_id, expert_name, description, pending_approval, approved|strategies_total, strategies||

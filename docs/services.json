@@ -5628,6 +5628,12 @@
               }
             },
             {
+              "name": "allow_domain_urls",
+              "ty": {
+                "Optional": "String"
+              }
+            },
+            {
               "name": "escrow_contract_address_ethereum",
               "ty": {
                 "Optional": "BlockchainAddress"

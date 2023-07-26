@@ -180,13 +180,13 @@ END
             vec![Field::new("config_id", Type::BigInt)],
             vec![
                 Field::new("platform_fee", Type::optional(Type::Numeric)),
-                Field::new("config_placeholder_2", Type::optional(Type::BigInt)),
+                Field::new("allow_domain_urls", Type::optional(Type::String)),
             ],
             r#"
 BEGIN
     RETURN QUERY SELECT
         a.platform_fee,
-        a.config_placeholder_2
+        a.allow_domain_urls
     FROM
         tbl.system_config a
     WHERE
@@ -199,18 +199,18 @@ END
             vec![
                 Field::new("config_id", Type::BigInt),
                 Field::new("platform_fee", Type::optional(Type::Numeric)),
-                Field::new("config_placeholder_2", Type::optional(Type::BigInt)),
+                Field::new("allow_domain_urls", Type::optional(Type::String)),
             ],
             vec![],
             r#"
 BEGIN
     IF NOT EXISTS (SELECT * FROM tbl.system_config WHERE pkey_id = a_config_id) THEN
-        INSERT INTO tbl.system_config (pkey_id, platform_fee, config_placeholder_2)
-        VALUES (a_config_id, a_platform_fee, a_config_placeholder_2);
+        INSERT INTO tbl.system_config (pkey_id, platform_fee, allow_domain_urls)
+        VALUES (a_config_id, a_platform_fee, a_allow_domain_urls);
     ELSE
         UPDATE tbl.system_config SET
             platform_fee = coalesce(a_platform_fee, platform_fee),
-            config_placeholder_2 = coalesce(a_config_placeholder_2, config_placeholder_2)
+            allow_domain_urls = coalesce(a_allow_domain_urls, allow_domain_urls)
         WHERE
             pkey_id = a_config_id;
     END IF;

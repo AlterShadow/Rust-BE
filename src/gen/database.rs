@@ -27,7 +27,7 @@ pub struct FunAdminGetSystemConfigRespRow {
     #[serde(default)]
     pub platform_fee: Option<f64>,
     #[serde(default)]
-    pub config_placeholder_2: Option<i64>,
+    pub allow_domain_urls: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
@@ -2956,20 +2956,20 @@ pub struct FunAdminUpdateSystemConfigReq {
     #[serde(default)]
     pub platform_fee: Option<f64>,
     #[serde(default)]
-    pub config_placeholder_2: Option<i64>,
+    pub allow_domain_urls: Option<String>,
 }
 
 #[allow(unused_variables)]
 impl DatabaseRequest for FunAdminUpdateSystemConfigReq {
     type ResponseRow = FunAdminUpdateSystemConfigRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_admin_update_system_config(a_config_id => $1::bigint, a_platform_fee => $2::double precision, a_config_placeholder_2 => $3::bigint);"
+        "SELECT * FROM api.fun_admin_update_system_config(a_config_id => $1::bigint, a_platform_fee => $2::double precision, a_allow_domain_urls => $3::varchar);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
             &self.config_id as &(dyn ToSql + Sync),
             &self.platform_fee as &(dyn ToSql + Sync),
-            &self.config_placeholder_2 as &(dyn ToSql + Sync),
+            &self.allow_domain_urls as &(dyn ToSql + Sync),
         ]
     }
 }

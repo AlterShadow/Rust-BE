@@ -2859,7 +2859,7 @@ $$;
 CREATE OR REPLACE FUNCTION api.fun_admin_get_system_config(a_config_id bigint)
 RETURNS table (
     "platform_fee" double precision,
-    "config_placeholder_2" bigint
+    "allow_domain_urls" varchar
 )
 LANGUAGE plpgsql
 AS $$
@@ -2867,7 +2867,7 @@ AS $$
 BEGIN
     RETURN QUERY SELECT
         a.platform_fee,
-        a.config_placeholder_2
+        a.allow_domain_urls
     FROM
         tbl.system_config a
     WHERE
@@ -2877,19 +2877,19 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_admin_update_system_config(a_config_id bigint, a_platform_fee double precision DEFAULT NULL, a_config_placeholder_2 bigint DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_admin_update_system_config(a_config_id bigint, a_platform_fee double precision DEFAULT NULL, a_allow_domain_urls varchar DEFAULT NULL)
 RETURNS void
 LANGUAGE plpgsql
 AS $$
     
 BEGIN
     IF NOT EXISTS (SELECT * FROM tbl.system_config WHERE pkey_id = a_config_id) THEN
-        INSERT INTO tbl.system_config (pkey_id, platform_fee, config_placeholder_2)
-        VALUES (a_config_id, a_platform_fee, a_config_placeholder_2);
+        INSERT INTO tbl.system_config (pkey_id, platform_fee, allow_domain_urls)
+        VALUES (a_config_id, a_platform_fee, a_allow_domain_urls);
     ELSE
         UPDATE tbl.system_config SET
             platform_fee = coalesce(a_platform_fee, platform_fee),
-            config_placeholder_2 = coalesce(a_config_placeholder_2, config_placeholder_2)
+            allow_domain_urls = coalesce(a_allow_domain_urls, allow_domain_urls)
         WHERE
             pkey_id = a_config_id;
     END IF;
