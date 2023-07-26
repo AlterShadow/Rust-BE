@@ -160,8 +160,10 @@ pub async fn load_allow_domain_urls(db: &DbClient, config: &mut WsServerConfig) 
         .await?
         .into_result()
         .context("No system config")?;
-    config.allow_cors_urls = system_config
-        .allow_domain_urls
-        .map(|x| x.split(";").map(|x| x.to_string()).collect());
+    config.allow_cors_urls = Arc::new(
+        system_config
+            .allow_domain_urls
+            .map(|x| x.split(";").map(|x| x.to_string()).collect()),
+    );
     Ok(())
 }

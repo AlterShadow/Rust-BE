@@ -419,5 +419,6 @@ pub struct WsServerConfig {
     pub debug: bool,
     #[serde(skip)]
     pub header_only: bool,
-    pub allow_cors_urls: Option<Vec<String>>,
+    #[serde(skip)]
+    pub allow_cors_urls: Arc<Option<Vec<String>>>,
 }

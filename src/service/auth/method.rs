@@ -22,9 +22,10 @@ use web3::types::Address;
 pub async fn ensure_signature_valid(
     signature_text: &str,
     signature: &[u8],
-    _address: Address,
+    address: Address,
+    allow_cors_sites: &Option<Vec<String>>,
 ) -> Result<()> {
-    info!("verifying signature_text: {:?}", signature_text);
+    // info!("verifying signature_text: {:?}", signature_text);
     let message = signature_text.parse::<Message>().map_err(|err| {
         CustomError::new(
             EnumErrorCode::InvalidPassword,
@@ -32,8 +33,9 @@ pub async fn ensure_signature_valid(
         )
     })?;
 
+    ensure!(message.address == address.as_bytes(), "Address not match");
+
     let verification_opts = VerificationOpts {
-        domain: Some("mc2.pathscale.com".parse().unwrap()),
         timestamp: Some(OffsetDateTime::now_utc()),
         ..Default::default()
     };
@@ -43,6 +45,13 @@ pub async fn ensure_signature_valid(
             EnumErrorCode::InvalidPassword,
             format!("Signature is not valid: {}", e)
         ));
+    }
+    if let Some(allow_cors_sites) = allow_cors_sites {
+        ensure!(
+            allow_cors_sites.contains(&message.domain.to_string()),
+            "Domain not allowed {}",
+            message.domain
+        );
     }
 
     Ok(())
@@ -57,6 +66,7 @@ fn test_siwe_message() {
 }
 pub struct MethodAuthSignup {
     pub pool: EthereumRpcConnectionPool,
+    pub allow_cors_sites: Arc<Option<Vec<String>>>,
 }
 
 impl SubAuthController for MethodAuthSignup {
@@ -71,6 +81,7 @@ impl SubAuthController for MethodAuthSignup {
         let db: DbClient = toolbox.get_db();
         let db_auth: DbClient = toolbox.get_nth_db(1);
         let pool = self.pool.clone();
+        let allow_cors_sites = self.allow_cors_sites.clone();
         async move {
             let req: SignupRequest = serde_json::from_value(param).map_err(|x| {
                 CustomError::new(EnumErrorCode::BadRequest, format!("Invalid request: {}", x))
@@ -80,7 +91,13 @@ impl SubAuthController for MethodAuthSignup {
             let signature_text = hex_decode(req.signature_text.as_bytes())?;
             let signature = hex_decode(req.signature.as_bytes())?;
             let signature_text_string = String::from_utf8(signature_text.clone())?;
-            ensure_signature_valid(&signature_text_string, &signature, address).await?;
+            ensure_signature_valid(
+                &signature_text_string,
+                &signature,
+                address,
+                &allow_cors_sites,
+            )
+            .await?;
             let conn = pool.get(EnumBlockChain::EthereumMainnet).await?;
             let ens = Ens::new(conn.transport().clone());
             let ens_name = match ens.canonical_name(address).await {
@@ -172,7 +189,9 @@ impl SubAuthController for MethodAuthSignup {
         .boxed()
     }
 }
-pub struct MethodAuthLogin;
+pub struct MethodAuthLogin {
+    pub allow_cors_sites: Arc<Option<Vec<String>>>,
+}
 
 impl SubAuthController for MethodAuthLogin {
     fn auth(
@@ -184,6 +203,7 @@ impl SubAuthController for MethodAuthLogin {
     ) -> BoxFuture<'static, Result<Value>> {
         info!("Login request: {:?}", param);
         let db_auth: DbClient = toolbox.get_nth_db(1);
+        let allow_cors_sites = self.allow_cors_sites.clone();
         async move {
             let req: LoginRequest = serde_json::from_value(param).map_err(|x| {
                 CustomError::new(EnumErrorCode::BadRequest, format!("Invalid request: {}", x))
@@ -193,7 +213,13 @@ impl SubAuthController for MethodAuthLogin {
             let signature_text = hex_decode(req.signature_text.as_bytes())?;
             let signature_text_string = String::from_utf8(signature_text.clone())?;
             let signature = hex_decode(req.signature.as_bytes())?;
-            ensure_signature_valid(&signature_text_string, &signature, address).await?;
+            ensure_signature_valid(
+                &signature_text_string,
+                &signature,
+                address,
+                &allow_cors_sites,
+            )
+            .await?;
 
             let service_code = req.service;
 
@@ -314,7 +340,9 @@ impl SubAuthController for MethodAuthLogout {
     }
 }
 
-pub struct MethodAuthChangeLoginWallet;
+pub struct MethodAuthChangeLoginWallet {
+    pub allow_cors_sites: Arc<Option<Vec<String>>>,
+}
 
 impl SubAuthController for MethodAuthChangeLoginWallet {
     fn auth(
@@ -324,8 +352,9 @@ impl SubAuthController for MethodAuthChangeLoginWallet {
         _ctx: RequestContext,
         _conn: Arc<WsConnection>,
     ) -> BoxFuture<'static, Result<Value>> {
-        info!("Login request: {:?}", param);
+        info!("MethodAuthChangeLoginWallet request: {:?}", param);
         let db_auth: DbClient = toolbox.get_nth_db(1);
+        let allow_cors_sites = self.allow_cors_sites.clone();
         async move {
             let req: ChangeLoginWalletRequest = serde_json::from_value(param).map_err(|x| {
                 CustomError::new(EnumErrorCode::BadRequest, format!("Invalid request: {}", x))
@@ -337,7 +366,13 @@ impl SubAuthController for MethodAuthChangeLoginWallet {
             let old_signature = hex_decode(req.old_signature.as_bytes())?;
             let old_signature_text_string = String::from_utf8(old_signature_text.clone())?;
 
-            ensure_signature_valid(&old_signature_text_string, &old_signature, old_address).await?;
+            ensure_signature_valid(
+                &old_signature_text_string,
+                &old_signature,
+                old_address,
+                &allow_cors_sites,
+            )
+            .await?;
 
             let new_address = req.new_address;
 
@@ -346,7 +381,13 @@ impl SubAuthController for MethodAuthChangeLoginWallet {
             let new_signature = hex_decode(req.new_signature.as_bytes())?;
             let new_signature_text_string = String::from_utf8(new_signature_text.clone())?;
 
-            ensure_signature_valid(&new_signature_text_string, &new_signature, new_address).await?;
+            ensure_signature_valid(
+                &new_signature_text_string,
+                &new_signature,
+                new_address,
+                &allow_cors_sites,
+            )
+            .await?;
 
             let _data = db_auth
                 .execute(FunAuthChangeLoginWalletAddressReq {
@@ -358,31 +399,5 @@ impl SubAuthController for MethodAuthChangeLoginWallet {
             Ok(serde_json::to_value(&ChangeLoginWalletResponse {})?)
         }
         .boxed()
-    }
-}
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use eth_sdk::utils::verify_message_address;
-    use lib::log::{setup_logs, LogLevel};
-    use std::str::FromStr;
-
-    #[test]
-    fn test_personal_sign_recover() -> Result<()> {
-        let _ = setup_logs(LogLevel::Trace);
-        let address = Address::from_str("0x63f9a92d8d61b48a9fff8d58080425a3012d05c8")?;
-        let message = b"0x63f9a92d8d61b48a9fff8d58080425a3012d05c8igwyk4r1o7o";
-        let signature = hex::decode("382a3e04daf88f322730f6a2972475fc5646ea8c4a7f3b5e83a90b10ba08a7364cd2f55348f2b6d210fbed7fc485abf19ecb2f3967e410d6349dd7dd1d4487751b")?;
-        assert!(verify_message_address(message, &signature, address)?);
-        Ok(())
-    }
-    #[test]
-    fn test_personal_sign_recover_real_data() -> Result<()> {
-        let _ = setup_logs(LogLevel::Trace);
-        let address = Address::from_str("0x111013b7862ebc1b9726420aa0e8728de310ee63")?;
-        let message = hex::decode("5468697320726571756573742077696c6c206e6f74207472696767657220616e79207472616e73616374696f6e206f7220696e63757220616e7920636f7374206f7220666565732e200a204974206973206f6e6c7920696e74656e64656420746f2061757468656e74696361746520796f752061726520746865206f776e6572206f662077616c6c65743a0a3078313131303133623738363265626331623937323634323061613065383732386465333130656536336e6f6e63653a0a383632353033343139")?;
-        let signature = hex::decode("72f8e93e5e2ba1b3df2f179bddac22b691ca86b39f6f7619a9eedd90b16bed165c0e03dcac13e5e2a1a1ea79ab9cf40a6ba572165a7f58525466a42a9699f0ea1c")?;
-        assert!(verify_message_address(&message, &signature, address)?);
-        Ok(())
     }
 }

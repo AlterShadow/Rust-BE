@@ -29,15 +29,26 @@ async fn main() -> Result<()> {
     config.app.header_only = true;
     let pool = EthereumRpcConnectionPool::from_conns(config.ethereum_urls.clone());
 
-    let mut server = WebsocketServer::new(config.app);
+    let mut server = WebsocketServer::new(config.app.clone());
     let db = connect_to_database(config.app_db).await?;
     load_allow_domain_urls(&db, &mut server.config).await?;
     server.add_database(db);
     server.add_database(connect_to_database(config.auth_db).await?);
     let mut auth_controller = EndpointAuthController::new();
-    auth_controller.add_auth_endpoint(endpoint_auth_login(), MethodAuthLogin);
+    auth_controller.add_auth_endpoint(
+        endpoint_auth_login(),
+        MethodAuthLogin {
+            allow_cors_sites: config.app.allow_cors_urls.clone(),
+        },
+    );
     auth_controller.add_auth_endpoint(endpoint_auth_logout(), MethodAuthLogout);
-    auth_controller.add_auth_endpoint(endpoint_auth_signup(), MethodAuthSignup { pool });
+    auth_controller.add_auth_endpoint(
+        endpoint_auth_signup(),
+        MethodAuthSignup {
+            pool,
+            allow_cors_sites: config.app.allow_cors_urls.clone(),
+        },
+    );
     server.add_auth_controller(auth_controller);
     server.listen().await?;
     Ok(())
