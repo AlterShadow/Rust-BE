@@ -16,7 +16,9 @@ use eth_sdk::execute_transaction_and_ensure_success;
 use eth_sdk::pancake_swap::execute::PancakeSmartRouterContract;
 use eth_sdk::strategy_pool::StrategyPoolContract;
 use eth_sdk::strategy_pool_herald::parse_herald_redeem_event;
-use eth_sdk::utils::{u256_to_decimal, wait_for_confirmations, wait_for_confirmations_simple};
+use eth_sdk::utils::{
+    decimal_to_u256, u256_to_decimal, wait_for_confirmations, wait_for_confirmations_simple,
+};
 use eth_sdk::{
     evm, EthereumRpcConnection, ScaledMath, TransactionFetcher, TransactionReady, CONFIRMATIONS,
     MAX_RETRIES, POLL_INTERVAL,
@@ -24,6 +26,7 @@ use eth_sdk::{
 use eyre::*;
 use gen::database::*;
 use gen::model::*;
+use lib::database::DbClient;
 use lib::log::DynLogger;
 use num::Zero;
 use rust_decimal::Decimal;
@@ -32,8 +35,7 @@ use std::time::Duration;
 use tracing::*;
 use web3::ethabi::Address;
 use web3::signing::Key;
-use web3::types::U256;
-
+use web3::types::{H256, U256};
 pub async fn handle_ethereum_dex_transactions(
     state: Arc<AppState>,
     body: Bytes,
@@ -1224,10 +1226,6 @@ pub async fn handle_redeem_transaction(
 
     Ok(())
 }
-
-use execution_engine::copy_trade::decimal_to_u256;
-use lib::database::DbClient;
-use web3::types::H256;
 
 pub async fn update_strategy_token_balances_and_ledger_exit_strategy(
     db: &DbClient,
