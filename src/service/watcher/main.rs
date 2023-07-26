@@ -12,7 +12,7 @@ use lib::config::load_config;
 use lib::database::{connect_to_database, DatabaseConfig};
 use lib::log::{setup_logs, LogLevel};
 use mc2fi_auth::{connect_user, signup};
-use mc2fi_user::method::load_coin_addresses;
+use mc2fi_user::shared_method::load_coin_addresses;
 use mc2fi_watcher::{method, AppState};
 use secrecy::{ExposeSecret, SecretString};
 use serde::Deserialize;

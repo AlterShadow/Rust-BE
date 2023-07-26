@@ -996,6 +996,7 @@ pub struct AdminGetSystemConfigRequest {}
 #[serde(rename_all = "camelCase")]
 pub struct AdminGetSystemConfigResponse {
     pub platform_fee: f64,
+    pub allow_domain_urls: String,
     #[serde(with = "WithBlockchainAddress")]
     pub escrow_contract_address_ethereum: Address,
     #[serde(with = "WithBlockchainAddress")]
@@ -8970,6 +8971,10 @@ impl WsRequest for AdminGetSystemConfigRequest {
     {
       "name": "platform_fee",
       "ty": "Numeric"
+    },
+    {
+      "name": "allow_domain_urls",
+      "ty": "String"
     },
     {
       "name": "escrow_contract_address_ethereum",

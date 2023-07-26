@@ -17,12 +17,13 @@ use tokio_tungstenite::tungstenite::handshake::server::{
 };
 use tracing::*;
 
-pub struct VerifyProtocol {
+pub struct VerifyProtocol<'a> {
     pub addr: SocketAddr,
     pub tx: tokio::sync::mpsc::Sender<String>,
+    pub allow_cors_domains: &'a Option<Vec<String>>,
 }
 
-impl Callback for VerifyProtocol {
+impl<'a> Callback for VerifyProtocol<'a> {
     fn on_request(
         self,
         request: &Request,
@@ -59,7 +60,30 @@ impl Callback for VerifyProtocol {
         response
             .headers_mut()
             .insert("Server", "RustWebsocketServer/1.0".parse().unwrap());
-
+        if let Some(allow_cors_domains) = self.allow_cors_domains {
+            if let Some(origin) = request.headers().get("Origin") {
+                let origin = origin.to_str().unwrap();
+                if allow_cors_domains.iter().any(|x| x == origin) {
+                    response
+                        .headers_mut()
+                        .insert("Access-Control-Allow-Origin", origin.parse().unwrap());
+                    response
+                        .headers_mut()
+                        .insert("Access-Control-Allow-Credentials", "true".parse().unwrap());
+                }
+            }
+        } else {
+            // Allow all domains
+            if let Some(origin) = request.headers().get("Origin") {
+                let origin = origin.to_str().unwrap();
+                response
+                    .headers_mut()
+                    .insert("Access-Control-Allow-Origin", origin.parse().unwrap());
+                response
+                    .headers_mut()
+                    .insert("Access-Control-Allow-Credentials", "true".parse().unwrap());
+            }
+        }
         debug!(?addr, "Responding handshake with: {:?}", response);
         Ok(response)
     }

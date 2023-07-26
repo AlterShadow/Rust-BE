@@ -11,7 +11,7 @@ use eth_sdk::{
 use eyre::*;
 use lib::database::DbClient;
 use lib::ws::WsClient;
-use mc2fi_user::method::load_escrow_address;
+use mc2fi_user::shared_method::load_escrow_address;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use web3::ethabi::Contract;

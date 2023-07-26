@@ -5597,6 +5597,10 @@
               "ty": "Numeric"
             },
             {
+              "name": "allow_domain_urls",
+              "ty": "String"
+            },
+            {
               "name": "escrow_contract_address_ethereum",
               "ty": "BlockchainAddress"
             },

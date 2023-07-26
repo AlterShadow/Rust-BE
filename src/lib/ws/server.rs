@@ -18,7 +18,6 @@ use tokio_tungstenite::tungstenite::Message;
 use tokio_tungstenite::WebSocketStream;
 use tracing::*;
 
-use crate::config::WsServerConfig;
 use crate::database::DbClient;
 use crate::error_code::ErrorCode;
 use crate::handler::*;
@@ -35,6 +34,7 @@ use crate::ws::{request_error_to_resp, WsStreamState};
 use crate::ws::{AuthController, ConnectionId};
 use crate::ws::{SimpleAuthContoller, WsRequest};
 use model::endpoint::EndpointSchema;
+use serde::{Deserialize, Serialize};
 
 pub struct WebsocketServer {
     pub auth_controller: Arc<dyn AuthController>,
@@ -86,58 +86,60 @@ impl WebsocketServer {
         addr: SocketAddr,
         states: Arc<WebsocketStates<S>>,
         stream: S,
-    ) {
-        let result: Result<()> = async move {
-            let (tx, mut rx) = mpsc::channel(1);
-            let hs = tokio_tungstenite::accept_hdr_async(stream, VerifyProtocol { addr, tx }).await;
-            let stream = wrap_ws_error(hs)?;
-            let conn = Arc::new(WsConnection {
-                connection_id: get_conn_id(),
-                user_id: Default::default(),
-                role: AtomicU32::new(0),
-                address: addr,
-                log_id: get_log_id(),
-            });
-            debug!(?addr, "New connection handshaken {:?}", conn);
-            let headers = rx
-                .recv()
-                .await
-                .ok_or_else(|| eyre!("Failed to receive ws headers"))?;
-            let (ws_sink, ws_stream) = stream.split();
-
-            let conn = Arc::clone(&conn);
-            states.insert(conn.connection_id, ws_sink, conn.clone());
-
-            let auth_result = Arc::clone(&self.auth_controller)
-                .auth(&self.toolbox, headers, Arc::clone(&conn))
-                .await;
-            let raw_ctx = RequestContext {
-                connection_id: conn.connection_id,
-                user_id: conn.get_user_id(),
-                seq: 0,
-                method: 0,
-                log_id: conn.log_id.clone(),
-                role: conn.role.load(Ordering::Relaxed),
-                ip_addr: conn.address.ip(),
-            };
-            if let Err(err) = auth_result {
-                self.toolbox.send_request_error(
-                    &raw_ctx,
-                    ErrorCode::new(100400), // BadRequest
-                    err.to_string(),
-                );
-                return Err(err);
-            }
-            if !self.config.header_only {
-                debug!(?addr, "Starting ws recv_msg loop");
-                self.recv_msg(conn, states, ws_stream).await;
-            }
-            Ok(())
-        }
+    ) -> Result<()> {
+        let (tx, mut rx) = mpsc::channel(1);
+        let hs = tokio_tungstenite::accept_hdr_async(
+            stream,
+            VerifyProtocol {
+                addr,
+                tx,
+                allow_cors_domains: &self.config.allow_cors_urls,
+            },
+        )
         .await;
-        if let Err(err) = result {
-            error!(?addr, "Error while processing auth {:?}", err)
+        let stream = wrap_ws_error(hs)?;
+        let conn = Arc::new(WsConnection {
+            connection_id: get_conn_id(),
+            user_id: Default::default(),
+            role: AtomicU32::new(0),
+            address: addr,
+            log_id: get_log_id(),
+        });
+        debug!(?addr, "New connection handshaken {:?}", conn);
+        let headers = rx
+            .recv()
+            .await
+            .ok_or_else(|| eyre!("Failed to receive ws headers"))?;
+        let (ws_sink, ws_stream) = stream.split();
+
+        let conn = Arc::clone(&conn);
+        states.insert(conn.connection_id, ws_sink, conn.clone());
+
+        let auth_result = Arc::clone(&self.auth_controller)
+            .auth(&self.toolbox, headers, Arc::clone(&conn))
+            .await;
+        let raw_ctx = RequestContext {
+            connection_id: conn.connection_id,
+            user_id: conn.get_user_id(),
+            seq: 0,
+            method: 0,
+            log_id: conn.log_id.clone(),
+            role: conn.role.load(Ordering::Relaxed),
+            ip_addr: conn.address.ip(),
+        };
+        if let Err(err) = auth_result {
+            self.toolbox.send_request_error(
+                &raw_ctx,
+                ErrorCode::new(100400), // BadRequest
+                err.to_string(),
+            );
+            return Err(err);
         }
+        if !self.config.header_only {
+            debug!(?addr, "Starting ws recv_msg loop");
+            self.recv_msg(conn, states, ws_stream).await;
+        }
+        Ok(())
     }
 
     pub async fn recv_msg<S: AsyncRead + AsyncWrite + Unpin + Send + 'static>(
@@ -331,30 +333,32 @@ impl WebsocketServer {
         let this = Arc::new(self);
         tokio::spawn(Arc::clone(&this).send_msg(Arc::clone(&states), message_receiver));
         loop {
-            let ret = async {
-                let (stream, addr) = listener.accept().await?;
-                let listener2 = Arc::clone(&listener);
-                let this = Arc::clone(&this);
-                let states = Arc::clone(&states);
-                tokio::spawn(async move {
-                    let ret: Result<()> = async {
-                        let stream = listener2.handshake(stream).await?;
+            let (stream, addr) = match listener.accept().await {
+                Ok(x) => x,
+                Err(err) => {
+                    error!("Error while accepting stream: {:?}", err);
+                    continue;
+                }
+            };
+            let listener = Arc::clone(&listener);
+            let this = Arc::clone(&this);
+            let states = Arc::clone(&states);
+            tokio::spawn(async move {
+                let stream = match listener.handshake(stream).await {
+                    Ok(channel) => {
                         info!("Accepted stream from {}", addr);
-
-                        this.handle_connection(addr, states, stream).await;
-                        Ok(())
+                        channel
                     }
-                    .await;
-                    if let Err(err) = ret {
+                    Err(err) => {
                         error!("Error while handshaking stream: {:?}", err);
+                        return;
                     }
-                });
-                Ok::<_, Error>(())
-            }
-            .await;
-            if let Err(err) = ret {
-                error!("Error while accepting stream: {:?}", err);
-            }
+                };
+
+                if let Err(err) = this.handle_connection(addr, states, stream).await {
+                    error!("Error while handling connection: {:?}", err);
+                }
+            });
         }
     }
     pub fn dump_schemas(&self) -> Result<()> {
@@ -397,4 +401,23 @@ pub fn check_handler<T: RequestHandler + 'static>(schema: &EndpointSchema) -> Re
     check_name("Request", request_name, &should_req_name)?;
 
     Ok(())
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WsServerConfig {
+    #[serde(default)]
+    pub name: String,
+    #[serde(default)]
+    pub host: String,
+    #[serde(default)]
+    pub port: u16,
+    #[serde(default)]
+    pub pub_certs: Option<Vec<String>>,
+    #[serde(default)]
+    pub priv_cert: Option<String>,
+    #[serde(default)]
+    pub debug: bool,
+    #[serde(skip)]
+    pub header_only: bool,
+    pub allow_cors_urls: Option<Vec<String>>,
 }

@@ -1,12 +1,16 @@
+use crate::shared_method::load_allow_domain_urls;
 use eth_sdk::{EthereumConns, EthereumRpcConnectionPool};
 use eyre::*;
-use lib::config::{load_config, WsServerConfig};
+use lib::config::load_config;
 use lib::database::{connect_to_database, DatabaseConfig};
 use lib::log::{setup_logs, LogLevel};
-use lib::ws::{EndpointAuthController, WebsocketServer};
+use lib::ws::{EndpointAuthController, WebsocketServer, WsServerConfig};
 use mc2fi_auth::endpoints::{endpoint_auth_login, endpoint_auth_logout, endpoint_auth_signup};
 use mc2fi_auth::method::{MethodAuthLogin, MethodAuthLogout, MethodAuthSignup};
 use serde::*;
+
+#[path = "../shared/shared_method.rs"]
+pub mod shared_method;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Config {
@@ -26,7 +30,9 @@ async fn main() -> Result<()> {
     let pool = EthereumRpcConnectionPool::from_conns(config.ethereum_urls.clone());
 
     let mut server = WebsocketServer::new(config.app);
-    server.add_database(connect_to_database(config.app_db).await?);
+    let db = connect_to_database(config.app_db).await?;
+    load_allow_domain_urls(&db, &mut server.config).await?;
+    server.add_database(db);
     server.add_database(connect_to_database(config.auth_db).await?);
     let mut auth_controller = EndpointAuthController::new();
     auth_controller.add_auth_endpoint(endpoint_auth_login(), MethodAuthLogin);

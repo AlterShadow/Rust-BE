@@ -7,6 +7,9 @@ use crate::back_strategy::{
     calculate_user_back_strategy_calculate_amount_to_mint,
     CalculateUserBackStrategyCalculateAmountToMintResult,
 };
+use crate::shared_method::{
+    convert_expert_db_to_api, convert_strategy_db_to_api_net_value, ensure_user_role,
+};
 use api::cmc::CoinMarketCap;
 use chrono::Utc;
 use eth_sdk::erc20::Erc20Token;
@@ -30,6 +33,8 @@ use lib::toolbox::*;
 use lib::ws::SubscribeManager;
 use lib::{DEFAULT_LIMIT, DEFAULT_OFFSET};
 use lru::LruCache;
+use num_traits::{FromPrimitive, ToPrimitive, Zero};
+use rust_decimal::Decimal;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::Mutex;
@@ -37,7 +42,6 @@ use tokio::time::sleep;
 use tracing::*;
 use web3::signing::Key;
 use web3::types::{Address, H256};
-include!("../shared/method.rs");
 
 pub struct MethodUserFollowStrategy;
 

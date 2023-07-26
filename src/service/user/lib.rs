@@ -7,3 +7,6 @@ pub mod audit;
 pub mod back_strategy;
 pub mod endpoints;
 pub mod method;
+
+#[path = "../shared/shared_method.rs"]
+pub mod shared_method;

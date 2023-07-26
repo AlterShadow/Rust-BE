@@ -1,5 +1,16 @@
+use api::cmc::CoinMarketCap;
+use eth_sdk::{BlockchainCoinAddresses, EscrowAddresses};
+use eyre::*;
+use eyre::{anyhow, ensure, ContextCompat};
+use gen::database::*;
+use gen::model::{EnumErrorCode, EnumRole, ListExpertsRow, ListStrategiesRow};
+use lib::database::DbClient;
+use lib::toolbox::{CustomError, RequestContext};
+use lib::ws::WsServerConfig;
 use num_traits::{FromPrimitive, ToPrimitive, Zero};
 use rust_decimal::Decimal;
+use std::sync::Arc;
+use tracing::info;
 
 pub fn ensure_user_role(ctx: RequestContext, role: EnumRole) -> Result<()> {
     let ctx_role = EnumRole::from_u32(ctx.role).context("Invalid role")?;
@@ -141,4 +152,16 @@ pub async fn load_escrow_address(db: &DbClient) -> Result<Arc<EscrowAddresses>> 
     }
 
     Ok(Arc::new(this))
+}
+
+pub async fn load_allow_domain_urls(db: &DbClient, config: &mut WsServerConfig) -> Result<()> {
+    let system_config = db
+        .execute(FunAdminGetSystemConfigReq { config_id: 0 })
+        .await?
+        .into_result()
+        .context("No system config")?;
+    config.allow_cors_urls = system_config
+        .allow_domain_urls
+        .map(|x| x.split(";").map(|x| x.to_string()).collect());
+    Ok(())
 }

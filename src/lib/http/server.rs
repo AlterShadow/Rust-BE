@@ -15,7 +15,6 @@ use std::task::Poll;
 use tokio::io::{AsyncRead, AsyncWrite};
 use tracing::*;
 
-use crate::config::WsServerConfig;
 use crate::database::DbClient;
 use crate::handler::*;
 use crate::listener::{ConnectionListener, TcpListener, TlsListener};
@@ -23,6 +22,7 @@ use crate::toolbox::{RequestContext, Toolbox};
 use crate::utils::{get_conn_id, get_log_id};
 use crate::ws::WsConnection;
 use crate::ws::WsResponseValue;
+use crate::ws::WsServerConfig;
 use crate::ws::{check_handler, WsEndpoint};
 use model::endpoint::EndpointSchema;
 

@@ -1,4 +1,4 @@
-use crate::method::{
+use crate::shared_method::{
     convert_expert_db_to_api, convert_strategy_db_to_api_net_value, ensure_user_role,
 };
 use api::cmc::CoinMarketCap;
@@ -19,6 +19,7 @@ use lib::{DEFAULT_LIMIT, DEFAULT_OFFSET};
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::time::sleep;
+use web3::types::Address;
 
 pub struct MethodAdminListUsers;
 impl RequestHandler for MethodAdminListUsers {
@@ -242,38 +243,40 @@ impl RequestHandler for MethodAdminGetSystemConfig {
             let escrow_contract_address = db
                 .execute(FunUserListEscrowContractAddressReqReq { blockchain: None })
                 .await?;
-            let x = Ok(AdminGetSystemConfigResponse {
+            let get_contract_address = |blockchain| {
+                escrow_contract_address
+                    .iter()
+                    .find(|x| x.blockchain == blockchain)
+                    .map(|x| x.address)
+                    .unwrap_or_default()
+            };
+            let x = AdminGetSystemConfigResponse {
                 platform_fee: ret
                     .as_ref()
                     .map(|x| x.platform_fee)
                     .flatten()
                     .unwrap_or_default(),
-                escrow_contract_address_ethereum: escrow_contract_address
-                    .iter()
-                    .find(|x| x.blockchain == EnumBlockChain::EthereumMainnet)
-                    .map(|x| x.address)
-                    .unwrap_or_default()
+                allow_domain_urls: ret
+                    .as_ref()
+                    .map(|x| x.allow_domain_urls.clone())
+                    .flatten()
+                    .unwrap_or_default(),
+                escrow_contract_address_ethereum: get_contract_address(
+                    EnumBlockChain::EthereumMainnet,
+                )
+                .into(),
+                escrow_contract_address_goerli: get_contract_address(
+                    EnumBlockChain::EthereumGoerli,
+                )
+                .into(),
+                escrow_contract_address_bsc: get_contract_address(EnumBlockChain::BscMainnet)
                     .into(),
-                escrow_contract_address_goerli: escrow_contract_address
-                    .iter()
-                    .find(|x| x.blockchain == EnumBlockChain::EthereumGoerli)
-                    .map(|x| x.address)
-                    .unwrap_or_default()
-                    .into(),
-                escrow_contract_address_bsc: escrow_contract_address
-                    .iter()
-                    .find(|x| x.blockchain == EnumBlockChain::BscMainnet)
-                    .map(|x| x.address)
-                    .unwrap_or_default()
-                    .into(),
-                escrow_contract_address_bsc_testnet: escrow_contract_address
-                    .iter()
-                    .find(|x| x.blockchain == EnumBlockChain::BscTestnet)
-                    .map(|x| x.address)
-                    .unwrap_or_default()
-                    .into(),
-            });
-            x
+                escrow_contract_address_bsc_testnet: get_contract_address(
+                    EnumBlockChain::BscTestnet,
+                )
+                .into(),
+            };
+            Ok(x)
         }
         .boxed()
     }
@@ -299,34 +302,42 @@ impl RequestHandler for MethodAdminUpdateSystemConfig {
                     allow_domain_urls: req.allow_domain_urls,
                 })
                 .await?;
-            if let Some(addr) = req.escrow_contract_address_ethereum {
-                db.execute(FunAdminUpdateEscrowContractAddressReq {
-                    blockchain: EnumBlockChain::EthereumMainnet,
-                    address: addr.into(),
-                })
-                .await?;
-            }
-            if let Some(addr) = req.escrow_contract_address_goerli {
-                db.execute(FunAdminUpdateEscrowContractAddressReq {
-                    blockchain: EnumBlockChain::EthereumGoerli,
-                    address: addr.into(),
-                })
-                .await?;
-            }
-            if let Some(addr) = req.escrow_contract_address_bsc {
-                db.execute(FunAdminUpdateEscrowContractAddressReq {
-                    blockchain: EnumBlockChain::BscMainnet,
-                    address: addr.into(),
-                })
-                .await?;
-            }
-            if let Some(addr) = req.escrow_contract_address_bsc_testnet {
-                db.execute(FunAdminUpdateEscrowContractAddressReq {
-                    blockchain: EnumBlockChain::BscTestnet,
-                    address: addr.into(),
-                })
-                .await?;
-            }
+            let update_escrow_contract_address =
+                |blockchain: EnumBlockChain, address: Option<Address>| {
+                    let db = &db;
+                    async move {
+                        if let Some(address) = address {
+                            db.execute(FunAdminUpdateEscrowContractAddressReq {
+                                blockchain,
+                                address: address.into(),
+                            })
+                            .await?;
+                        }
+
+                        Ok::<_, Error>(())
+                    }
+                    .boxed()
+                };
+            update_escrow_contract_address(
+                EnumBlockChain::EthereumMainnet,
+                req.escrow_contract_address_ethereum,
+            )
+            .await?;
+            update_escrow_contract_address(
+                EnumBlockChain::EthereumGoerli,
+                req.escrow_contract_address_goerli,
+            )
+            .await?;
+            update_escrow_contract_address(
+                EnumBlockChain::BscMainnet,
+                req.escrow_contract_address_bsc,
+            )
+            .await?;
+            update_escrow_contract_address(
+                EnumBlockChain::BscTestnet,
+                req.escrow_contract_address_bsc_testnet,
+            )
+            .await?;
 
             Ok(AdminUpdateSystemConfigResponse { success: true })
         }

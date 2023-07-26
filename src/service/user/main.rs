@@ -6,16 +6,17 @@ use eth_sdk::{DexAddresses, EthereumConns, EthereumRpcConnectionPool};
 use eyre::*;
 use gen::model::EnumService;
 use itertools::Itertools;
-use lib::config::{load_config, WsServerConfig};
+use lib::config::load_config;
 use lib::database::{connect_to_database, DatabaseConfig};
 use lib::log::{setup_logs, LogLevel};
-use lib::ws::{EndpointAuthController, SubscribeManager, WebsocketServer};
+use lib::ws::{EndpointAuthController, SubscribeManager, WebsocketServer, WsServerConfig};
 use lru::LruCache;
 use mc2fi_auth::endpoints::endpoint_auth_authorize;
 use mc2fi_auth::method::MethodAuthAuthorize;
 use mc2fi_user::admin_method::*;
 use mc2fi_user::audit::AuditLogger;
 use mc2fi_user::method::*;
+use mc2fi_user::shared_method::{load_allow_domain_urls, load_coin_addresses, load_escrow_address};
 use secrecy::{ExposeSecret, SecretString};
 use serde::Deserialize;
 use std::fmt::Debug;
@@ -39,12 +40,13 @@ pub struct Config {
 }
 #[tokio::main]
 async fn main() -> Result<()> {
-    let config: Config = load_config("user".to_owned())?;
+    let mut config: Config = load_config("user".to_owned())?;
     setup_logs(config.log_level)?;
     let cmc_client = Arc::new(CoinMarketCap::new(config.cmc_api_key.expose_secret())?);
     let audit_logger = AuditLogger::new()?;
     let mut server = WebsocketServer::new(config.app.clone());
     let db = connect_to_database(config.app_db).await?;
+    load_allow_domain_urls(&db, &mut config.app).await?;
     server.add_database(db.clone());
     server.add_database(connect_to_database(config.auth_db).await?);
 

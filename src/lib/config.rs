@@ -1,9 +1,7 @@
 use clap::Parser;
 use eyre::*;
 use serde::de::DeserializeOwned;
-use serde::*;
 use serde_json::Value;
-use std::env::current_dir;
 use std::fmt::Debug;
 use std::path::PathBuf;
 
@@ -25,29 +23,9 @@ struct CliArgument {
     config_entry: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct WsServerConfig {
-    #[serde(default)]
-    pub name: String,
-    #[serde(default)]
-    pub host: String,
-    #[serde(default)]
-    pub port: u16,
-    #[serde(default)]
-    pub pub_certs: Option<Vec<String>>,
-    #[serde(default)]
-    pub priv_cert: Option<String>,
-    #[serde(default)]
-    pub debug: bool,
-    #[serde(skip)]
-    pub header_only: bool,
-}
-
 pub fn load_config<Config: DeserializeOwned + Debug>(mut service_name: String) -> Result<Config> {
     let args: CliArgument = CliArgument::parse();
 
-    println!("Working directory {}", current_dir()?.display());
-    println!("Loading config from {}", args.config.display());
     let config = std::fs::read_to_string(&args.config)?;
     let mut config: Value = serde_json::from_str(&config)?;
     if let Some(entry) = args.config_entry {
@@ -64,6 +42,6 @@ pub fn load_config<Config: DeserializeOwned + Debug>(mut service_name: String) -
     root.remove(&service_name);
     root.insert("name".to_string(), Value::String(service_name.clone()));
     let config: Config = serde_json::from_value(config)?;
-    println!("App config {:#?}", config);
+    // println!("App config {:#?}", config);
     Ok(config)
 }

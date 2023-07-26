@@ -52,6 +52,8 @@ eth-sdk = { path = "../shared/eth-sdk" }
 api = { path = "../shared/api" }
 siwe = "0.5.0"
 time = "0.3"
+rust_decimal = "1.29.1"
+
 [dependencies.uuid]
 version = "1.1.2"
 features = [
