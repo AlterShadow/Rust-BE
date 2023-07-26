@@ -3227,7 +3227,7 @@ BEGIN
 			FROM tbl.escrow_token_contract_address AS etca
 			WHERE (a_blockchain ISNULL OR etca.blockchain = a_blockchain)
 			AND (a_token_address ISNULL OR etca.address = a_token_address)
-			AND (a_token_id ISNULL OR etca.pkey_id = a_token_id)]
+			AND (a_token_id ISNULL OR etca.pkey_id = a_token_id)
 			AND (a_symbol ISNULL OR etca.symbol ILIKE a_symbol || '%')
 			ORDER BY etca.pkey_id
 			OFFSET a_offset
