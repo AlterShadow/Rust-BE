@@ -271,13 +271,6 @@ pub struct FunUserBackStrategyRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
-pub struct FunUserCalculateUserEscrowBalanceFromLedgerRespRow {
-    pub wallet_address: BlockchainAddress,
-    #[serde(with = "rust_decimal::serde::str")]
-    pub balance: Decimal,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserCheckIfTokenWhitelistedRespRow {
     pub whitelisted: bool,
 }
@@ -2772,33 +2765,6 @@ impl DatabaseRequest for FunUserListUserBackStrategyLogReq {
             &self.limit as &(dyn ToSql + Sync),
             &self.offset as &(dyn ToSql + Sync),
             &self.user_back_strategy_attempt_id as &(dyn ToSql + Sync),
-        ]
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FunUserCalculateUserEscrowBalanceFromLedgerReq {
-    pub user_id: i64,
-    pub token_id: i64,
-    pub blockchain: EnumBlockChain,
-    pub escrow_contract_address: BlockchainAddress,
-    #[serde(default)]
-    pub wallet_address: Option<BlockchainAddress>,
-}
-
-#[allow(unused_variables)]
-impl DatabaseRequest for FunUserCalculateUserEscrowBalanceFromLedgerReq {
-    type ResponseRow = FunUserCalculateUserEscrowBalanceFromLedgerRespRow;
-    fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_calculate_user_escrow_balance_from_ledger(a_user_id => $1::bigint, a_token_id => $2::bigint, a_blockchain => $3::enum_block_chain, a_escrow_contract_address => $4::varchar, a_wallet_address => $5::varchar);"
-    }
-    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
-        vec![
-            &self.user_id as &(dyn ToSql + Sync),
-            &self.token_id as &(dyn ToSql + Sync),
-            &self.blockchain as &(dyn ToSql + Sync),
-            &self.escrow_contract_address as &(dyn ToSql + Sync),
-            &self.wallet_address as &(dyn ToSql + Sync),
         ]
     }
 }

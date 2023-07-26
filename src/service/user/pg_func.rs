@@ -2153,39 +2153,5 @@ BEGIN
 END
             "#,
         ),
-        ProceduralFunction::new(
-            "fun_user_calculate_user_escrow_balance_from_ledger",
-            vec![
-                Field::new("user_id", Type::BigInt),
-                Field::new("token_id", Type::BigInt),
-                Field::new("blockchain", Type::enum_ref("block_chain")),
-                Field::new("escrow_contract_address", Type::BlockchainAddress),
-                Field::new("wallet_address", Type::optional(Type::BlockchainAddress)),
-            ],
-            vec![
-                Field::new("wallet_address", Type::BlockchainAddress),
-                Field::new("balance", Type::BlockchainDecimal),
-            ],
-            r#"
-BEGIN
-    RETURN QUERY SELECT
-            a.user_address,
-            SUM(a.quantity
-                * CASE
-                     WHEN a.is_deposit THEN 1
-                     ELSE -1 
-                 END
-            )
-		FROM tbl.user_deposit_withdraw_ledger AS a
-		WHERE a.blockchain = a_blockchain
-		    AND a.fkey_user_id = a_user_id
-            AND a.fkey_token_id = a_token_id
-            AND a.escrow_contract_address = a_escrow_contract_address
-            AND  (a_wallet_address ISNULL OR a.user_address = a_wallet_address)
-            GROUP BY a.user_address
-        ;
-END
-            "#,
-        ),
     ]
 }
