@@ -99,7 +99,7 @@ pub async fn handle_pancake_swap_transaction(
         &state.pancake_swap_parser,
     )
     .await?;
-    let token_in_decimals = state
+    let token_in_row = state
         .db
         .execute(FunUserListEscrowTokenContractAddressReq {
             limit: 1,
@@ -117,8 +117,8 @@ pub async fn handle_pancake_swap_transaction(
                 "could not find token_in {} in escrow token contracts",
                 expert_trade.token_in
             )
-        })?
-        .decimals;
+        })?;
+    let token_in_decimals = token_in_row.decimals;
     let token_out_decimals = state
         .db
         .execute(FunUserListEscrowTokenContractAddressReq {
@@ -172,15 +172,22 @@ pub async fn handle_pancake_swap_transaction(
     /* get expert wallet token_in asset balance prior to the trade */
     let expert_wallet_asset_token_in_previous_amount = state
         .db
-        .execute(FunWatcherGetExpertWalletAssetsFromLedgerReq {
-            strategy_id,
+        .execute(FunWatcherListExpertListenedWalletAssetBalanceReq {
+            limit: None,
+            offset: None,
+            strategy_id: Some(strategy_id),
+            token_id: Some(token_in_row.token_id),
             blockchain: Some(blockchain),
-            symbol: Some(token_in_contract.symbol().await?)
+            address: None,
         })
         .await?
-        .into_result()
-        .context("sold asset was not previously an expert wallet asset, can't calculate trade token_in allocation for strategy pool")?
-        .amount;
+        .into_rows()
+        .into_iter()
+        .fold(Decimal::new(0, 0), |acc, row| acc + row.balance);
+
+    if expert_wallet_asset_token_in_previous_amount == Decimal::new(0, 0) {
+        bail!("sold asset was not previously an expert wallet asset, can't calculate trade token_in allocation for strategy pool");
+    }
 
     /* update wallet activity ledger & make sure this transaction is not a duplicate */
     let saved = state
