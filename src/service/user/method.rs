@@ -568,6 +568,7 @@ impl RequestHandler for MethodUserListDepositWithdrawBalances {
                     limit: 10000,
                     offset: 0,
                     user_id: ctx.user_id,
+                    user_address: None,
                     blockchain: None,
                     token_address: None,
                     token_id: None,
@@ -622,6 +623,7 @@ impl RequestHandler for MethodUserGetDepositWithdrawBalance {
                     limit: 1,
                     offset: 0,
                     user_id: ctx.user_id,
+                    user_address: None,
                     blockchain: None,
                     token_address: None,
                     token_id: Some(req.token_id),
@@ -633,9 +635,9 @@ impl RequestHandler for MethodUserGetDepositWithdrawBalance {
                     ),
                 })
                 .await?
-                .into_result()
-                .map(|x| x.balance)
-                .unwrap_or_default();
+                .into_rows()
+                .into_iter()
+                .fold(Decimal::new(0, 0), |acc, row| acc + row.balance);
             Ok(UserGetDepositWithdrawBalanceResponse {
                 balance: balance.into(),
             })
@@ -1250,21 +1252,23 @@ pub async fn on_user_request_refund(
         .into_result()
         .context("could not get refunded token contract from database")?;
 
-    let deposit_withdraw_balance_row = db
+    let user_balance_all_wallets = db
         .execute(FunUserListUserDepositWithdrawBalanceReq {
             limit: 1,
             offset: 0,
             user_id: ctx.user_id,
+            user_address: None,
             blockchain: Some(chain),
             token_id: Some(refunded_token_row.token_id),
             token_address: Some(token_address.into()),
             escrow_contract_address: Some(escrow_contract.address().into()),
         })
         .await?
-        .into_result()
-        .context("could not get deposit withdraw balance from database")?;
+        .into_rows()
+        .into_iter()
+        .fold(Decimal::new(0, 0), |acc, row| acc + row.balance);
 
-    let old_balance = deposit_withdraw_balance_row.balance;
+    let old_balance = user_balance_all_wallets;
     if old_balance < quantity {
         bail!("unsufficient balance for refund");
     }
@@ -1342,6 +1346,7 @@ pub async fn on_user_request_refund(
             limit: 1,
             offset: 0,
             user_id: ctx.user_id,
+            user_address: Some(wallet_address.into()),
             blockchain: Some(chain),
             token_id: Some(refunded_token_row.token_id),
             token_address: Some(token_address.into()),

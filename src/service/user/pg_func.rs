@@ -1869,6 +1869,7 @@ END
                 Field::new("limit", Type::BigInt),
                 Field::new("offset", Type::BigInt),
                 Field::new("user_id", Type::BigInt),
+                Field::new("user_address", Type::optional(Type::BlockchainAddress)),
                 Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),
                 Field::new("token_address", Type::optional(Type::BlockchainAddress)),
                 Field::new("token_id", Type::optional(Type::BigInt)),
@@ -1880,6 +1881,7 @@ END
             vec![
                 Field::new("deposit_withdraw_balance_id", Type::BigInt),
                 Field::new("user_id", Type::BigInt),
+                Field::new("user_address", Type::BlockchainAddress),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
                 Field::new("token_id", Type::BigInt),
                 Field::new("token_symbol", Type::String),
@@ -1899,6 +1901,7 @@ BEGIN
     RETURN QUERY SELECT
         a.pkey_id,
         a.fkey_user_id,
+				a.user_address,
         etc.blockchain,
         etc.pkey_id,
         etc.symbol,
@@ -1908,6 +1911,7 @@ BEGIN
     JOIN tbl.escrow_token_contract_address AS etc ON etc.pkey_id = a.fkey_token_id
     JOIN tbl.escrow_contract_address AS eca ON eca.pkey_id = a.fkey_escrow_contract_address_id
     WHERE a.fkey_user_id = a_user_id
+				AND (a_user_address ISNULL OR a.user_address = a_user_address)
         AND (a_blockchain ISNULL OR etc.blockchain = a_blockchain)
         AND (a_token_address iSNULL OR etc.address = a_token_address)
         AND (a_escrow_contract_address ISNULL OR eca.address = a_escrow_contract_address)

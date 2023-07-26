@@ -784,6 +784,7 @@ pub async fn handle_escrow_transaction(
             limit: 1,
             offset: 0,
             user_id: user.user_id,
+            user_address: Some(escrow.owner.into()),
             blockchain: Some(blockchain),
             token_address: Some(called_address.into()),
             token_id: None,
@@ -799,6 +800,7 @@ pub async fn handle_escrow_transaction(
         .db
         .execute(FunWatcherUpsertUserDepositWithdrawBalanceReq {
             user_id: user.user_id,
+            user_address: escrow.owner.into(),
             blockchain,
             old_balance,
             new_balance,
@@ -994,6 +996,7 @@ pub async fn handle_withdraw_transaction(
             limit: 1,
             offset: 0,
             user_id: user.user_id,
+            user_address: Some(withdraw.proprietor.into()),
             blockchain: Some(blockchain),
             token_address: Some(withdraw.asset.into()),
             token_id: None,
@@ -1008,6 +1011,7 @@ pub async fn handle_withdraw_transaction(
         .db
         .execute(FunWatcherUpsertUserDepositWithdrawBalanceReq {
             user_id: user.user_id,
+            user_address: withdraw.proprietor.into(),
             blockchain,
             old_balance,
             new_balance,

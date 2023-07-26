@@ -673,6 +673,7 @@ END
             "fun_watcher_upsert_user_deposit_withdraw_balance",
             vec![
                 Field::new("user_id", Type::BigInt),
+                Field::new("user_address", Type::BlockchainAddress),
                 Field::new("token_address", Type::BlockchainAddress),
                 Field::new("escrow_contract_address", Type::BlockchainAddress),
                 Field::new("blockchain", Type::enum_ref("block_chain")),
@@ -696,12 +697,13 @@ BEGIN
     FROM tbl.user_deposit_withdraw_balance AS elwal
     WHERE elwal.fkey_token_id = _token_id
       AND elwal.fkey_user_id = a_user_id
+			AND elwal.user_address = a_user_address
       AND elwal.fkey_escrow_contract_address_id = _escrow_contract_address_id;
 
     -- insert new entry if not exist
     IF _user_deposit_withdraw_balance_id ISNULL THEN
-        INSERT INTO tbl.user_deposit_withdraw_balance (fkey_user_id, fkey_escrow_contract_address_id, fkey_token_id, balance)
-        VALUES (a_user_id, _escrow_contract_address_id, _token_id, a_new_balance)
+        INSERT INTO tbl.user_deposit_withdraw_balance (fkey_user_id, user_address, fkey_escrow_contract_address_id, fkey_token_id, balance)
+        VALUES (a_user_id, a_user_address, _escrow_contract_address_id, _token_id, a_new_balance)
         RETURNING pkey_id
             INTO _pkey_id;
     ELSE

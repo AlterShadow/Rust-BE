@@ -2398,10 +2398,11 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_list_user_deposit_withdraw_balance(a_limit bigint, a_offset bigint, a_user_id bigint, a_blockchain enum_block_chain DEFAULT NULL, a_token_address varchar DEFAULT NULL, a_token_id bigint DEFAULT NULL, a_escrow_contract_address varchar DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_user_list_user_deposit_withdraw_balance(a_limit bigint, a_offset bigint, a_user_id bigint, a_user_address varchar DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL, a_token_address varchar DEFAULT NULL, a_token_id bigint DEFAULT NULL, a_escrow_contract_address varchar DEFAULT NULL)
 RETURNS table (
     "deposit_withdraw_balance_id" bigint,
     "user_id" bigint,
+    "user_address" varchar,
     "blockchain" enum_block_chain,
     "token_id" bigint,
     "token_symbol" varchar,
@@ -2423,6 +2424,7 @@ BEGIN
     RETURN QUERY SELECT
         a.pkey_id,
         a.fkey_user_id,
+				a.user_address,
         etc.blockchain,
         etc.pkey_id,
         etc.symbol,
@@ -2432,6 +2434,7 @@ BEGIN
     JOIN tbl.escrow_token_contract_address AS etc ON etc.pkey_id = a.fkey_token_id
     JOIN tbl.escrow_contract_address AS eca ON eca.pkey_id = a.fkey_escrow_contract_address_id
     WHERE a.fkey_user_id = a_user_id
+				AND (a_user_address ISNULL OR a.user_address = a_user_address)
         AND (a_blockchain ISNULL OR etc.blockchain = a_blockchain)
         AND (a_token_address iSNULL OR etc.address = a_token_address)
         AND (a_escrow_contract_address ISNULL OR eca.address = a_escrow_contract_address)
@@ -3900,7 +3903,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_watcher_upsert_user_deposit_withdraw_balance(a_user_id bigint, a_token_address varchar, a_escrow_contract_address varchar, a_blockchain enum_block_chain, a_old_balance decimal(56, 18), a_new_balance decimal(56, 18))
+CREATE OR REPLACE FUNCTION api.fun_watcher_upsert_user_deposit_withdraw_balance(a_user_id bigint, a_user_address varchar, a_token_address varchar, a_escrow_contract_address varchar, a_blockchain enum_block_chain, a_old_balance decimal(56, 18), a_new_balance decimal(56, 18))
 RETURNS table (
     "ret_pkey_id" bigint
 )
@@ -3922,12 +3925,13 @@ BEGIN
     FROM tbl.user_deposit_withdraw_balance AS elwal
     WHERE elwal.fkey_token_id = _token_id
       AND elwal.fkey_user_id = a_user_id
+			AND elwal.user_address = a_user_address
       AND elwal.fkey_escrow_contract_address_id = _escrow_contract_address_id;
 
     -- insert new entry if not exist
     IF _user_deposit_withdraw_balance_id ISNULL THEN
-        INSERT INTO tbl.user_deposit_withdraw_balance (fkey_user_id, fkey_escrow_contract_address_id, fkey_token_id, balance)
-        VALUES (a_user_id, _escrow_contract_address_id, _token_id, a_new_balance)
+        INSERT INTO tbl.user_deposit_withdraw_balance (fkey_user_id, user_address, fkey_escrow_contract_address_id, fkey_token_id, balance)
+        VALUES (a_user_id, a_user_address, _escrow_contract_address_id, _token_id, a_new_balance)
         RETURNING pkey_id
             INTO _pkey_id;
     ELSE

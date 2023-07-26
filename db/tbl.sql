@@ -414,6 +414,7 @@ CREATE TABLE tbl.user_deposit_withdraw_balance (
     fkey_user_id bigint  NOT NULL,
     fkey_escrow_contract_address_id bigint  NOT NULL,
     fkey_token_id bigint  NOT NULL,
+		user_address varchar(64)  NOT NULL,
     balance decimal(56, 18)  NOT NULL,
     CONSTRAINT user_deposit_withdraw_balance_pk PRIMARY KEY (pkey_id)
 );
