@@ -1,3 +1,5 @@
+use crate::{AssetInfoClient, AssetPriceByPeriod};
+use async_trait::async_trait;
 use chrono::{Duration, NaiveDate, Utc};
 use eyre::*;
 use gen::model::EnumBlockChain;
@@ -465,6 +467,42 @@ impl CoinMarketCap {
         Ok(resp)
     }
 }
+
+#[async_trait]
+impl AssetInfoClient for CoinMarketCap {
+    async fn get_usd_price_latest(&self, symbols: &[String]) -> Result<HashMap<String, f64>> {
+        self.get_usd_prices_by_symbol(symbols).await
+    }
+
+    async fn get_usd_price_period(
+        &self,
+        symbols: &[String],
+    ) -> Result<HashMap<String, AssetPriceByPeriod>> {
+        let mut result = HashMap::new();
+        let prices = self.get_usd_prices_by_symbol(symbols).await?;
+        let prices_1d = self.get_usd_price_days_ago(symbols, 1, false).await?;
+        let prices_7d = self.get_usd_price_days_ago(symbols, 7, false).await?;
+        let prices_30d = self.get_usd_price_days_ago(symbols, 30, false).await?;
+        for symbol in symbols {
+            let price_latest = prices.get(symbol).cloned().unwrap_or(0.0);
+            let price_1d = prices_1d.get(symbol).cloned();
+            let price_7d = prices_7d.get(symbol).cloned();
+            let price_30d = prices_30d.get(symbol).cloned();
+            result.insert(
+                symbol.clone(),
+                AssetPriceByPeriod {
+                    symbol: symbol.clone(),
+                    price_latest,
+                    price_1d,
+                    price_7d,
+                    price_30d,
+                },
+            );
+        }
+        Ok(result)
+    }
+}
+
 pub async fn prefetch_prices(cmc_client: Arc<CoinMarketCap>, token_names: Vec<String>) {
     if let Err::<(), Error>(e) = async {
         for chunk in token_names.chunks_exact(30) {
