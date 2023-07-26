@@ -4109,6 +4109,7 @@ CREATE OR REPLACE FUNCTION api.fun_asset_price_list_asset_prices(a_symbols varch
 RETURNS table (
     "symbol" varchar,
     "price_latest" double precision,
+    "price_1d" double precision,
     "price_7d" double precision,
     "price_30d" double precision
 )
@@ -4121,6 +4122,7 @@ BEGIN
 		SELECT
 				tp.symbol,
 				MAX(tp.created_at) AS latest,
+				MAX(tp.created_at) FILTER (WHERE tp.created_at <= (EXTRACT(EPOCH FROM (NOW() - INTERVAL '1 DAYS'))::BIGINT)) AS day_1,
 				MAX(tp.created_at) FILTER (WHERE tp.created_at <= (EXTRACT(EPOCH FROM (NOW() - INTERVAL '7 DAYS'))::BIGINT)) AS day_7,
 				MAX(tp.created_at) FILTER (WHERE tp.created_at <= (EXTRACT(EPOCH FROM (NOW() - INTERVAL '30 DAYS'))::BIGINT)) AS day_30
 		FROM tbl.token_price AS tp
@@ -4135,6 +4137,7 @@ BEGIN
 		tp_30d.price AS price_30d
 	FROM date_ranges dr
 	LEFT JOIN tbl.token_price AS tp_latest ON tp_latest.symbol = dr.symbol AND tp_latest.created_at = dr.latest
+	LEFT JOIN tbl.token_price AS tp_1d ON tp_1d.symbol = dr.symbol AND tp_1d.created_at = dr.day_1
 	LEFT JOIN tbl.token_price AS tp_7d ON tp_7d.symbol = dr.symbol AND tp_7d.created_at = dr.day_7
 	LEFT JOIN tbl.token_price AS tp_30d ON tp_30d.symbol = dr.symbol AND tp_30d.created_at = dr.day_30
 	ORDER BY dr.symbol

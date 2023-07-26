@@ -142,6 +142,8 @@ pub struct FunAssetPriceListAssetPricesRespRow {
     pub symbol: String,
     pub price_latest: f64,
     #[serde(default)]
+    pub price_1d: Option<f64>,
+    #[serde(default)]
     pub price_7d: Option<f64>,
     #[serde(default)]
     pub price_30d: Option<f64>,
