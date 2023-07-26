@@ -159,7 +159,10 @@ pub async fn load_allow_domain_urls(db: &DbClient, config: &mut WsServerConfig) 
         .execute(FunAdminGetSystemConfigReq { config_id: 0 })
         .await?
         .into_result()
-        .context("No system config")?;
+        .unwrap_or_else(|| FunAdminGetSystemConfigRespRow {
+            platform_fee: None,
+            allow_domain_urls: None,
+        });
     config.allow_cors_urls = Arc::new(
         system_config
             .allow_domain_urls
