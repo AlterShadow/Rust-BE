@@ -1,4 +1,4 @@
-use api::cmc::CoinMarketCap;
+use api::AssetInfoClient;
 use eth_sdk::{BlockchainCoinAddresses, EscrowAddresses};
 use eyre::*;
 use eyre::{anyhow, ensure, ContextCompat};
@@ -61,7 +61,7 @@ fn convert_strategy_db_to_api(x: FunUserStrategyRowType) -> ListStrategiesRow {
 }
 pub async fn convert_strategy_db_to_api_net_value(
     x: FunUserStrategyRowType,
-    cmc: &CoinMarketCap,
+    asset_client: &Arc<impl AssetInfoClient>,
     db: &DbClient,
 ) -> Result<ListStrategiesRow> {
     let mut value = convert_strategy_db_to_api(x);
@@ -81,7 +81,7 @@ pub async fn convert_strategy_db_to_api_net_value(
         .await?;
     info!("Tokens {:?}", tokens);
     let symbols = tokens.clone().map(|x| x.token_symbol);
-    let prices = cmc.get_usd_prices_by_symbol(&symbols).await?;
+    let prices = asset_client.get_usd_price_latest(&symbols).await?;
     for token in tokens.into_iter() {
         let price = prices
             .get(&token.token_symbol)

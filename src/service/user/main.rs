@@ -70,7 +70,7 @@ async fn main() -> Result<()> {
     let escrow_contract_address = load_escrow_address(&db).await?;
     server.add_handler(MethodUserFollowStrategy);
     server.add_handler(MethodUserListFollowedStrategies {
-        cmc: cmc_client.clone(),
+        asset_client: cmc_client.clone(),
     });
     server.add_handler(MethodUserUnfollowStrategy);
 
@@ -78,22 +78,22 @@ async fn main() -> Result<()> {
     server.add_handler(MethodUserListWhitelistedWallets);
     server.add_handler(MethodUserUnwhitelistWallet);
     server.add_handler(MethodUserListStrategies {
-        cmc: cmc_client.clone(),
+        asset_client: cmc_client.clone(),
     });
     server.add_handler(MethodUserListTopPerformingStrategies {
-        cmc: cmc_client.clone(),
+        asset_client: cmc_client.clone(),
     });
     server.add_handler(MethodUserListStrategyFollowers);
     server.add_handler(MethodUserListStrategyBackers);
     server.add_handler(MethodUserGetStrategy {
-        cmc: cmc_client.clone(),
+        asset_client: cmc_client.clone(),
     });
     server.add_handler(MethodUserGetStrategyStatistics);
     server.add_handler(MethodUserGetStrategiesStatistics {
-        cmc: cmc_client.clone(),
+        asset_client: cmc_client.clone(),
     });
     server.add_handler(MethodUserListBackedStrategies {
-        cmc: cmc_client.clone(),
+        asset_client: cmc_client.clone(),
     });
 
     server.add_handler(MethodUserListDepositWithdrawLedger);
@@ -104,10 +104,10 @@ async fn main() -> Result<()> {
     server.add_handler(MethodExpertListBackers);
     server.add_handler(MethodUserListFollowedExperts);
     server.add_handler(MethodExpertListPublishedStrategies {
-        cmc: cmc_client.clone(),
+        asset_client: cmc_client.clone(),
     });
     server.add_handler(MethodExpertListUnpublishedStrategies {
-        cmc: cmc_client.clone(),
+        asset_client: cmc_client.clone(),
     });
 
     server.add_handler(MethodUserUnfollowExpert);
@@ -115,11 +115,11 @@ async fn main() -> Result<()> {
     server.add_handler(MethodUserListTopPerformingExperts);
     server.add_handler(MethodUserListFeaturedExperts);
     server.add_handler(MethodUserGetExpertProfile {
-        cmc: cmc_client.clone(),
+        asset_client: cmc_client.clone(),
     });
 
     server.add_handler(MethodUserGetUserProfile {
-        cmc: cmc_client.clone(),
+        asset_client: cmc_client.clone(),
     });
     server.add_handler(MethodUserUpdateUserProfile);
     server.add_handler(MethodUserApplyBecomeExpert);
