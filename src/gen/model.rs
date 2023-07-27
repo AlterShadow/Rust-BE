@@ -2754,7 +2754,8 @@ pub struct UserStrategyBalance {
 pub struct UserStrategyPoolContractAssetLedgerRow {
     pub ledger_id: i64,
     pub strategy_wallet_id: i64,
-    pub strategy_wallet_address: i64,
+    #[serde(with = "WithBlockchainAddress")]
+    pub strategy_wallet_address: Address,
     pub is_strategy_wallet_managed: bool,
     pub symbol: String,
     pub token_id: i64,
@@ -2762,8 +2763,6 @@ pub struct UserStrategyPoolContractAssetLedgerRow {
     pub token_address: Address,
     pub blockchain: EnumBlockChain,
     pub dex: String,
-    #[serde(with = "WithBlockchainTransactionHash")]
-    pub transaction_hash: H256,
     #[serde(with = "rust_decimal::serde::str")]
     pub quantity: Decimal,
     pub is_add: bool,
@@ -4304,7 +4303,7 @@ impl WsRequest for UserListUserStrategyPoolContractAssetLedgerRequest {
             },
             {
               "name": "strategy_wallet_address",
-              "ty": "BigInt"
+              "ty": "BlockchainAddress"
             },
             {
               "name": "is_strategy_wallet_managed",
@@ -4331,10 +4330,6 @@ impl WsRequest for UserListUserStrategyPoolContractAssetLedgerRequest {
             {
               "name": "dex",
               "ty": "String"
-            },
-            {
-              "name": "transaction_hash",
-              "ty": "BlockchainTransactionHash"
             },
             {
               "name": "quantity",

@@ -1333,7 +1333,7 @@
                     },
                     {
                       "name": "strategy_wallet_address",
-                      "ty": "BigInt"
+                      "ty": "BlockchainAddress"
                     },
                     {
                       "name": "is_strategy_wallet_managed",
@@ -1360,10 +1360,6 @@
                     {
                       "name": "dex",
                       "ty": "String"
-                    },
-                    {
-                      "name": "transaction_hash",
-                      "ty": "BlockchainTransactionHash"
                     },
                     {
                       "name": "quantity",
