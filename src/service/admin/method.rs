@@ -2,6 +2,7 @@ use crate::shared_method::{
     convert_expert_db_to_api, convert_strategy_db_to_api_net_value, ensure_user_role,
 };
 use api::cmc::CoinMarketCap;
+use api::AssetInfoClient;
 use eth_sdk::erc20::Erc20Token;
 use eth_sdk::logger::get_blockchain_logger;
 use eth_sdk::utils::u256_to_decimal;
@@ -425,7 +426,7 @@ impl RequestHandler for MethodAdminListBackers {
     }
 }
 pub struct MethodAdminListStrategies {
-    pub cmc: Arc<CoinMarketCap>,
+    pub cmc: Arc<dyn AssetInfoClient>,
 }
 impl RequestHandler for MethodAdminListStrategies {
     type Request = AdminListStrategiesRequest;

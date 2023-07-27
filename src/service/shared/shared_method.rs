@@ -61,7 +61,7 @@ fn convert_strategy_db_to_api(x: FunUserStrategyRowType) -> ListStrategiesRow {
 }
 pub async fn convert_strategy_db_to_api_net_value(
     x: FunUserStrategyRowType,
-    asset_client: &Arc<impl AssetInfoClient>,
+    asset_client: &Arc<dyn AssetInfoClient>,
     db: &DbClient,
 ) -> Result<ListStrategiesRow> {
     let mut value = convert_strategy_db_to_api(x);

@@ -14,7 +14,7 @@ pub struct AssetPriceByPeriod {
 }
 
 #[async_trait]
-pub trait AssetInfoClient {
+pub trait AssetInfoClient: Sync + Send {
     async fn get_usd_price_latest(&self, symbols: &[String]) -> Result<HashMap<String, f64>>;
     async fn get_usd_price_period(
         &self,
