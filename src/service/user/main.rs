@@ -119,6 +119,7 @@ async fn main() -> Result<()> {
     server.add_handler(MethodUserListExperts);
     server.add_handler(MethodUserListTopPerformingExperts);
     server.add_handler(MethodUserListFeaturedExperts);
+    server.add_handler(MethodUserListExpertListenedWalletTradeLedger);
     server.add_handler(MethodUserGetExpertProfile {
         asset_client: cmc_client.clone(),
     });

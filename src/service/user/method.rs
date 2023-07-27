@@ -1682,6 +1682,52 @@ impl RequestHandler for MethodUserListFeaturedExperts {
         .boxed()
     }
 }
+pub struct MethodUserListExpertListenedWalletTradeLedger;
+impl RequestHandler for MethodUserListExpertListenedWalletTradeLedger {
+    type Request = UserListExpertListenedWalletTradeLedgerRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db: DbClient = toolbox.get_db();
+        async move {
+            ensure_user_role(ctx, EnumRole::User)?;
+            let ledger = db
+                .execute(FunUserListExpertListenedWalletTradeLedgerEntriesReq {
+                    expert_listened_wallet_id: req.expert_listened_wallet_id,
+                    offset: req.offset,
+                    limit: req.limit,
+                })
+                .await?;
+
+            Ok(UserListExpertListenedWalletTradeLedgerResponse {
+                expert_listened_wallet_trade_ledger: ledger
+                    .into_iter()
+                    .map(|x| ExpertListenedWalletTradeLedgerRow {
+                        ledger_id: x.expert_listened_wallet_trade_ledger_id,
+                        expert_listened_wallet_id: x.expert_listened_wallet_id,
+                        dex: x.dex,
+                        blockchain: x.blockchain,
+                        transaction_hash: x.transaction_hash.into(),
+                        token_in_id: x.token_in_id,
+                        token_in_symbol: x.token_in_symbol,
+                        token_in_address: x.token_in_address.into(),
+                        amount_in: x.amount_in,
+                        token_out_id: x.token_out_id,
+                        token_out_symbol: x.token_out_symbol,
+                        token_out_address: x.token_out_address.into(),
+                        amount_out: x.amount_out,
+                        happened_at: x.happened_at,
+                    })
+                    .collect(),
+            })
+        }
+        .boxed()
+    }
+}
 pub struct MethodUserGetExpertProfile {
     pub asset_client: Arc<dyn AssetInfoClient>,
 }
