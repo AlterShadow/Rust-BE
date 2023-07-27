@@ -23,6 +23,7 @@ ID: 2
 |20064|UserListStrategyBackers|strategy_id, limit, offset|backers_total, backers||
 |20065|UserListStrategyFollowers|strategy_id, limit, offset|followers_total, followers||
 |20062|UserGetStrategy|strategy_id|strategy, watching_wallets, strategy_pool_asset_updated_at, strategy_pool_asset_balances, strategy_pool_asset_ledger, audit_rules, whitelisted_tokens|User gets a strategy|
+|20066|UserGetStrategyPoolAssetLedger|strategy_id, blockchain, limit, offset|strategy_pool_asset_ledger||
 |20070|UserGetStrategyStatistics|strategy_id|strategy_id, net_value, follow_ledger, back_ledger|User gets a strategy statistics|
 |20071|UserGetStrategiesStatistics||tracking_amount_usd, backing_amount_usd, difference_amount_usd, aum_value_usd, current_value_usd, withdrawable_value_usd, strategy_pool_tokens, aum_list_history|User gets statistics of all strategies related to the user|
 |20172|UserUpdateUserProfile|username, family_name, given_name, description, social_media||User update its expert profile|

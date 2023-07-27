@@ -296,6 +296,9 @@ pub enum EnumEndpoint {
     #[postgres(name = "UserGetStrategy")]
     UserGetStrategy = 20062,
     ///
+    #[postgres(name = "UserGetStrategyPoolAssetLedger")]
+    UserGetStrategyPoolAssetLedger = 20066,
+    ///
     #[postgres(name = "UserGetStrategyStatistics")]
     UserGetStrategyStatistics = 20070,
     ///
@@ -1872,6 +1875,21 @@ pub struct StrategyPoolAssetLedgerRow {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct StrategyPoolAssetLedgerRow {
+    pub ledger_id: i64,
+    pub symbol: String,
+    pub token_id: i64,
+    pub blockchain: EnumBlockChain,
+    pub dex: String,
+    #[serde(with = "WithBlockchainTransactionHash")]
+    pub transaction_hash: H256,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub quantity: Decimal,
+    pub is_add: bool,
+    pub happened_at: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct UserAddStrategyAuditRuleRequest {
     pub strategy_id: i64,
     pub rule_id: i64,
@@ -2145,6 +2163,21 @@ pub struct UserGetStrategiesStatisticsStrategyPoolToken {
     pub current_price_usd: f64,
     pub price_change_7d: f64,
     pub price_change_30d: f64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserGetStrategyPoolAssetLedgerRequest {
+    pub strategy_id: i64,
+    pub blockchain: EnumBlockChain,
+    #[serde(default)]
+    pub limit: Option<i64>,
+    #[serde(default)]
+    pub offset: Option<i64>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserGetStrategyPoolAssetLedgerResponse {
+    pub strategy_pool_asset_ledger: Vec<StrategyPoolAssetLedgerRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -4090,6 +4123,95 @@ impl WsRequest for UserGetStrategyRequest {
 }
 impl WsResponse for UserGetStrategyResponse {
     type Request = UserGetStrategyRequest;
+}
+
+impl WsRequest for UserGetStrategyPoolAssetLedgerRequest {
+    type Response = UserGetStrategyPoolAssetLedgerResponse;
+    const METHOD_ID: u32 = 20066;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserGetStrategyPoolAssetLedger",
+  "code": 20066,
+  "parameters": [
+    {
+      "name": "strategy_id",
+      "ty": "BigInt"
+    },
+    {
+      "name": "blockchain",
+      "ty": {
+        "EnumRef": "block_chain"
+      }
+    },
+    {
+      "name": "limit",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "offset",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    }
+  ],
+  "returns": [
+    {
+      "name": "strategy_pool_asset_ledger",
+      "ty": {
+        "DataTable": {
+          "name": "StrategyPoolAssetLedgerRow",
+          "fields": [
+            {
+              "name": "ledger_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "symbol",
+              "ty": "String"
+            },
+            {
+              "name": "token_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
+            },
+            {
+              "name": "dex",
+              "ty": "String"
+            },
+            {
+              "name": "transaction_hash",
+              "ty": "BlockchainTransactionHash"
+            },
+            {
+              "name": "quantity",
+              "ty": "BlockchainDecimal"
+            },
+            {
+              "name": "is_add",
+              "ty": "Boolean"
+            },
+            {
+              "name": "happened_at",
+              "ty": "BigInt"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": null,
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for UserGetStrategyPoolAssetLedgerResponse {
+    type Request = UserGetStrategyPoolAssetLedgerRequest;
 }
 
 impl WsRequest for UserGetStrategyStatisticsRequest {
