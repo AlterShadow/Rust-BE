@@ -484,7 +484,7 @@ BEGIN
 		token_out.symbol AS token_out_symbol,
 		token_out.address AS token_out_address,
 		swwtl.amount_out,
-		swwtl.heppened_at AS happened_at,
+		swwtl.heppened_at AS happened_at
 	FROM tbl.strategy_watching_wallet_trade_ledger AS swwtl
 	JOIN tokens AS token_in ON token_in.pkey_id = swwtl.fkey_token_in
 	JOIN tokens AS token_out ON token_out.pkey_id = swwtl.fkey_token_out
