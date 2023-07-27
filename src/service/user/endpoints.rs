@@ -216,6 +216,38 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
             )],
         ),
         EndpointSchema::new(
+            "UserListUserStrategyPoolContractAssetLedger",
+            20067,
+            vec![
+                Field::new("user_id", Type::BigInt),
+                Field::new("strategy_id", Type::BigInt),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("limit", Type::optional(Type::BigInt)),
+                Field::new("offset", Type::optional(Type::BigInt)),
+            ],
+            vec![Field::new(
+                "user_strategy_pool_contract_asset_ledger",
+                Type::datatable(
+                    "UserStrategyPoolContractAssetLedgerRow",
+                    vec![
+                        Field::new("ledger_id", Type::BigInt),
+                        Field::new("strategy_wallet_id", Type::BigInt),
+                        Field::new("strategy_wallet_address", Type::BigInt),
+                        Field::new("is_strategy_wallet_managed", Type::Boolean),
+                        Field::new("symbol", Type::String),
+                        Field::new("token_id", Type::BigInt),
+                        Field::new("token_address", Type::BlockchainAddress),
+                        Field::new("blockchain", Type::enum_ref("block_chain")),
+                        Field::new("dex", Type::String),
+                        Field::new("transaction_hash", Type::BlockchainTransactionHash),
+                        Field::new("quantity", Type::BlockchainDecimal),
+                        Field::new("is_add", Type::Boolean),
+                        Field::new("happened_at", Type::BigInt),
+                    ],
+                ),
+            )],
+        ),
+        EndpointSchema::new(
             "UserGetStrategyStatistics",
             20070,
             vec![Field::new("strategy_id", Type::BigInt)],

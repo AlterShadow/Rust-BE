@@ -299,6 +299,9 @@ pub enum EnumEndpoint {
     #[postgres(name = "UserListStrategyPoolContractAssetLedger")]
     UserListStrategyPoolContractAssetLedger = 20066,
     ///
+    #[postgres(name = "UserListUserStrategyPoolContractAssetLedger")]
+    UserListUserStrategyPoolContractAssetLedger = 20067,
+    ///
     #[postgres(name = "UserGetStrategyStatistics")]
     UserGetStrategyStatistics = 20070,
     ///
@@ -2663,6 +2666,22 @@ pub struct UserListUserStrategyBalanceResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct UserListUserStrategyPoolContractAssetLedgerRequest {
+    pub user_id: i64,
+    pub strategy_id: i64,
+    pub blockchain: EnumBlockChain,
+    #[serde(default)]
+    pub limit: Option<i64>,
+    #[serde(default)]
+    pub offset: Option<i64>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListUserStrategyPoolContractAssetLedgerResponse {
+    pub user_strategy_pool_contract_asset_ledger: Vec<UserStrategyPoolContractAssetLedgerRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct UserListWalletActivityLedgerRequest {
     #[serde(with = "WithBlockchainAddress")]
     pub wallet_address: Address,
@@ -2729,6 +2748,26 @@ pub struct UserStrategyBalance {
     #[serde(with = "WithBlockchainAddress")]
     pub address: Address,
     pub blockchain: EnumBlockChain,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserStrategyPoolContractAssetLedgerRow {
+    pub ledger_id: i64,
+    pub strategy_wallet_id: i64,
+    pub strategy_wallet_address: i64,
+    pub is_strategy_wallet_managed: bool,
+    pub symbol: String,
+    pub token_id: i64,
+    #[serde(with = "WithBlockchainAddress")]
+    pub token_address: Address,
+    pub blockchain: EnumBlockChain,
+    pub dex: String,
+    #[serde(with = "WithBlockchainTransactionHash")]
+    pub transaction_hash: H256,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub quantity: Decimal,
+    pub is_add: bool,
+    pub happened_at: i64,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -4212,6 +4251,115 @@ impl WsRequest for UserListStrategyPoolContractAssetLedgerRequest {
 }
 impl WsResponse for UserListStrategyPoolContractAssetLedgerResponse {
     type Request = UserListStrategyPoolContractAssetLedgerRequest;
+}
+
+impl WsRequest for UserListUserStrategyPoolContractAssetLedgerRequest {
+    type Response = UserListUserStrategyPoolContractAssetLedgerResponse;
+    const METHOD_ID: u32 = 20067;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserListUserStrategyPoolContractAssetLedger",
+  "code": 20067,
+  "parameters": [
+    {
+      "name": "user_id",
+      "ty": "BigInt"
+    },
+    {
+      "name": "strategy_id",
+      "ty": "BigInt"
+    },
+    {
+      "name": "blockchain",
+      "ty": {
+        "EnumRef": "block_chain"
+      }
+    },
+    {
+      "name": "limit",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "offset",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    }
+  ],
+  "returns": [
+    {
+      "name": "user_strategy_pool_contract_asset_ledger",
+      "ty": {
+        "DataTable": {
+          "name": "UserStrategyPoolContractAssetLedgerRow",
+          "fields": [
+            {
+              "name": "ledger_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "strategy_wallet_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "strategy_wallet_address",
+              "ty": "BigInt"
+            },
+            {
+              "name": "is_strategy_wallet_managed",
+              "ty": "Boolean"
+            },
+            {
+              "name": "symbol",
+              "ty": "String"
+            },
+            {
+              "name": "token_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "token_address",
+              "ty": "BlockchainAddress"
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
+            },
+            {
+              "name": "dex",
+              "ty": "String"
+            },
+            {
+              "name": "transaction_hash",
+              "ty": "BlockchainTransactionHash"
+            },
+            {
+              "name": "quantity",
+              "ty": "BlockchainDecimal"
+            },
+            {
+              "name": "is_add",
+              "ty": "Boolean"
+            },
+            {
+              "name": "happened_at",
+              "ty": "BigInt"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": null,
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for UserListUserStrategyPoolContractAssetLedgerResponse {
+    type Request = UserListUserStrategyPoolContractAssetLedgerRequest;
 }
 
 impl WsRequest for UserGetStrategyStatisticsRequest {
