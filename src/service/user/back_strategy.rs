@@ -355,7 +355,7 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
             map.insert(token_address, back_token_amount_minus_fees);
             map
         },
-        token_prices,
+        token_prices.clone(),
         token_decimals.clone(),
     )?;
     info!(
@@ -407,8 +407,10 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
             /* get amount spent and amount bought for every strategy pool asset to calculate sp valuation for mintage */
             /* necessary because there could be a strategy pool asset that is not in initial_token_ratios */
 
-            let mut strategy_pool_asset_last_prices_in_base_token: HashMap<Address, Decimal> =
-                HashMap::new();
+            let mut updated_token_prices: HashMap<Address, Decimal> = token_prices
+                .iter()
+                .map(|x| (*x.0, Decimal::from_f64(*x.1).unwrap()))
+                .collect();
             for strategy_pool_asset in sp_assets_and_amounts.keys() {
                 if let Some(amount_bought) =
                     strategy_pool_assets_bought_for_this_backer.get(strategy_pool_asset)
@@ -421,11 +423,10 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
                             "amount bought is zero, setting last price to zero {:?}",
                             strategy_pool_asset
                         );
-                        strategy_pool_asset_last_prices_in_base_token
-                            .insert(strategy_pool_asset.clone(), Decimal::zero());
+                        updated_token_prices.insert(strategy_pool_asset.clone(), Decimal::zero());
                     } else {
                         let amount_spent_on_asset = tokens_and_escrow_token_to_spend.get(strategy_pool_asset).context("could not get amount spent for backer in strategy pool asset, even though amount bought exists")?.clone();
-                        strategy_pool_asset_last_prices_in_base_token.insert(
+                        updated_token_prices.insert(
                             strategy_pool_asset.clone(),
                             amount_spent_on_asset / amount_bought.clone(),
                         );
@@ -443,38 +444,9 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
                         .await?
                         .into_result()
                     {
-                        strategy_pool_asset_last_prices_in_base_token.insert(
+                        updated_token_prices.insert(
                             strategy_pool_asset.clone(),
                             last_dex_trade_row.amount_in / last_dex_trade_row.amount_out,
-                        );
-                    } else {
-                        let token = db
-                            .execute(FunUserListEscrowTokenContractAddressReq {
-                                limit: 1,
-                                offset: 0,
-                                blockchain: None,
-                                token_id: None,
-                                address: Some((*strategy_pool_asset).into()),
-                                symbol: None,
-                                is_stablecoin: None,
-                            })
-                            .await?
-                            .into_result()
-                            .with_context(|| {
-                                format!(
-                                    "could not find token contract address for token id {}",
-                                    token_id
-                                )
-                            })?;
-                        let cmc_price = cmc
-                            .get_usd_prices_by_symbol(&[token.symbol.clone()])
-                            .await?
-                            .get(&token.symbol)
-                            .context("could not get cmc price for token")?
-                            .clone();
-                        strategy_pool_asset_last_prices_in_base_token.insert(
-                            strategy_pool_asset.clone(),
-                            Decimal::from_f64(cmc_price).unwrap(),
                         );
                     }
                 }
@@ -489,7 +461,7 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
             calculate_sp_tokens_to_mint_nth_backer(
                 u256_to_decimal(total_strategy_tokens, decimals.as_u32()),
                 sp_assets_and_amounts.clone(),
-                strategy_pool_asset_last_prices_in_base_token,
+                updated_token_prices,
                 back_token_amount_minus_fees,
                 escrow_token_contract.address,
             )?
@@ -1206,7 +1178,7 @@ fn calculate_sp_tokens_to_mint_nth_backer(
         /* i.e. asset price in base tokens */
         let asset_price_in_base_tokens = token_prices
             .get(strategy_pool_asset)
-            .context("could not get token price")?;
+            .with_context(|| format!("could not find price {:?}", strategy_pool_asset))?;
 
         /* get value of strategy pool asset amount in base tokens */
         let strategy_pool_asset_value = strategy_pool_asset_amount * *asset_price_in_base_tokens;
@@ -1222,7 +1194,7 @@ fn calculate_sp_tokens_to_mint_nth_backer(
     let ratio = strategy_token_total_supply / strategy_pool_assets_total_value;
     let deposit_asset_price_in_base_token = token_prices
         .get(&deposit_asset)
-        .context("could not find amount spend on asset to calculate mintage")?;
+        .with_context(|| format!("could not find price of token {:?}", deposit_asset))?;
     let base_token_actual_value = base_token_actual_amount * deposit_asset_price_in_base_token;
     /* calculate strategy pool tokens to mint as actual_amount * ratio */
     Ok(base_token_actual_value / ratio)
