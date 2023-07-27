@@ -173,27 +173,11 @@ pub fn get_signed_text(txt: String, signer: impl Key) -> Result<(String, String)
     Ok((hex::encode(&txt), encode_signature(&signature)))
 }
 pub fn u256_to_decimal(u: U256, decimals: u32) -> Decimal {
-    Decimal::new(u.as_u128() as i64, decimals)
+    Decimal::try_from_i128_with_scale(u.as_u128() as i128, decimals).unwrap()
 }
 pub fn decimal_to_u256(amount: Decimal, decimals: u32) -> U256 {
     let amount = amount * Decimal::from(10u64.pow(decimals));
     U256::from(amount.to_u128().unwrap())
-}
-#[cfg(test)]
-mod tests {
-    use crate::signer::Secp256k1SecretKey;
-    use crypto::PublicKey;
-    use eyre::*;
-    use std::println;
-
-    #[test]
-    fn test_eth_public_exponent_to_address() -> Result<()> {
-        let key = Secp256k1SecretKey::new_random();
-        let public_exponent = key.public_exponent()?;
-        let address = super::eth_public_exponent_to_address(&public_exponent).unwrap();
-        println!("address: {}", address);
-        Ok(())
-    }
 }
 
 #[cfg(test)]

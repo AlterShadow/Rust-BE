@@ -416,7 +416,8 @@ BEGIN
 			WHERE (a_strategy_pool_contract_id ISNULL OR spcab.fkey_strategy_pool_contract_id = a_strategy_pool_contract_id)
 			AND (a_strategy_id ISNULL OR spc.fkey_strategy_id = a_strategy_id)
 			AND (a_blockchain ISNULL OR tc.blockchain = a_blockchain)
-			AND (a_token_address ISNULL OR tc.address = a_token_address);
+			AND (a_token_address ISNULL OR tc.address = a_token_address)
+			AND spcab.balance > 0.0;
 END
 "#,
         ),
@@ -574,18 +575,19 @@ BEGIN
         eww.address,
         eww.blockchain,
         elwab.fkey_token_id,
-				etca.address,
-				etca.symbol,
-				etca.decimals,
+        etca.address,
+        etca.symbol,
+        etca.decimals,
         elwab.balance
     FROM tbl.expert_listened_wallet_asset_balance AS elwab
-            JOIN tbl.expert_watched_wallet AS eww ON eww.pkey_id = elwab.fkey_expert_watched_wallet_id
-						JOIN tbl.escrow_token_contract_address AS etca ON etca.pkey_id = elwab.fkey_token_id
-						JOIN tbl.strategy_watched_wallet AS sww ON sww.fkey_expert_watched_wallet_id = eww.pkey_id
+    JOIN tbl.expert_watched_wallet AS eww ON eww.pkey_id = elwab.fkey_expert_watched_wallet_id
+    JOIN tbl.escrow_token_contract_address AS etca ON etca.pkey_id = elwab.fkey_token_id
+    JOIN tbl.strategy_watched_wallet AS sww ON sww.fkey_expert_watched_wallet_id = eww.pkey_id
     WHERE (a_token_id ISNULL OR elwab.fkey_token_id = a_token_id)
      AND (a_address ISNULL OR eww.address = a_address)
      AND (a_blockchain ISNULL OR eww.blockchain = a_blockchain)
-		 AND (a_strategy_id ISNULL OR sww.fkey_strategy_id = a_strategy_id)
+     AND (a_strategy_id ISNULL OR sww.fkey_strategy_id = a_strategy_id)
+	 AND elwab.balance > 0.0	 
      ORDER BY elwab.pkey_id DESC
     LIMIT a_limit
     OFFSET a_offset;

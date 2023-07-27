@@ -519,7 +519,7 @@ mod tests {
     async fn test_pancakeswap() -> Result<()> {
         let _ = setup_logs(LogLevel::Info);
 
-        let pancake = get_pancake_swap_parser()?;
+        let pancake = get_pancake_swap_parser();
         let conn_pool = EthereumRpcConnectionPool::new();
         let conn = conn_pool.get(EnumBlockChain::EthereumMainnet).await?;
         let tx = TransactionFetcher::new_and_assume_ready(
