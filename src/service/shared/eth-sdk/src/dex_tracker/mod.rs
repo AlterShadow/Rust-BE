@@ -52,7 +52,6 @@ pub async fn get_user_id_from_strategy(db: &DbClient, strategy_id: i64) -> Resul
 
 pub async fn update_expert_listened_wallet_asset_balance_cache(
     db: &DbClient,
-    _strategy_id: i64,
     trade: &DexTrade,
     token_out_id: i64,
     token_in_id: i64,

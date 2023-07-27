@@ -155,12 +155,56 @@ pub async fn handle_pancake_swap_transaction(
 
     /* check if caller is a strategy watching wallet & get strategy id */
     let caller = tx.get_from().context("no from address found")?;
-    for strategy_id in get_strategy_id_from_watching_wallet(&state.db, blockchain, caller).await? {
-        if let Err(err) =
-            copy_trade_for_strategy(state.clone(), strategy_id, blockchain, expert_trade.clone())
-                .await
+
+    /* update wallet activity ledger & make sure this transaction is not a duplicate */
+    let saved = state
+        .db
+        .execute(FunWatcherSaveStrategyWatchingWalletTradeLedgerReq {
+            address: expert_trade.caller.clone().into(),
+            transaction_hash: expert_trade.hash.into(),
+            blockchain,
+            contract_address: expert_trade.contract.into(),
+            dex: Some(EnumDex::PancakeSwap.to_string()),
+            token_in_address: Some(expert_trade.token_in.into()),
+            token_out_address: Some(expert_trade.token_out.into()),
+            amount_in: Some(u256_to_decimal(
+                expert_trade.amount_in,
+                token_in_decimals as _,
+            )),
+            amount_out: Some(u256_to_decimal(
+                expert_trade.amount_out,
+                token_out_decimals as _,
+            )),
+            happened_at: None,
+        })
+        .await
+        .context("swap transaction is a duplicate")?
+        .into_result();
+    if let Some(saved) = saved {
+        /* update expert wallet's asset balances in the database */
+
+        update_expert_listened_wallet_asset_balance_cache(
+            &state.db,
+            &expert_trade,
+            saved.fkey_token_out,
+            saved.fkey_token_in,
+            blockchain,
+        )
+        .await?;
+
+        for strategy_id in
+            get_strategy_id_from_watching_wallet(&state.db, blockchain, caller).await?
         {
-            error!("error copy trading for strategy {}: {:?}", strategy_id, err);
+            if let Err(err) = copy_trade_for_strategy(
+                state.clone(),
+                strategy_id,
+                blockchain,
+                expert_trade.clone(),
+            )
+            .await
+            {
+                error!("error copy trading for strategy {}: {:?}", strategy_id, err);
+            }
         }
     }
 
@@ -235,337 +279,313 @@ pub async fn copy_trade_for_strategy(
         bail!("sold asset was not previously an expert wallet asset, can't calculate trade token_in allocation for strategy pool");
     }
 
-    /* update wallet activity ledger & make sure this transaction is not a duplicate */
-    let saved = state
+    // TODO: for loop to copy-trade for strategy pools on all deployed chains when we support multi-chain
+    /* if token_in was already a expert wallet asset trade it from SPs in ratio traded_amount / old_amount */
+    let strategy_pool_contract_row = state
         .db
-        .execute(FunWatcherSaveStrategyWatchingWalletTradeLedgerReq {
-            address: expert_trade.caller.clone().into(),
-            transaction_hash: expert_trade.hash.into(),
-            blockchain,
-            contract_address: expert_trade.contract.into(),
-            dex: Some(EnumDex::PancakeSwap.to_string()),
-            token_in_address: Some(expert_trade.token_in.into()),
-            token_out_address: Some(expert_trade.token_out.into()),
-            amount_in: Some(u256_to_decimal(
-                expert_trade.amount_in,
-                token_in_decimals as _,
-            )),
-            amount_out: Some(u256_to_decimal(
-                expert_trade.amount_out,
-                token_out_decimals as _,
-            )),
-            happened_at: None,
+        .execute(FunWatcherListStrategyPoolContractReq {
+            limit: 1,
+            offset: 0,
+            strategy_id: Some(strategy_id),
+            blockchain: Some(blockchain),
+            address: None,
         })
-        .await
-        .context("swap transaction is a duplicate")?
-        .into_result();
-    if let Some(saved) = saved {
-        /* update expert wallet's asset balances in the database */
-        let conn = state.eth_pool.get(blockchain).await?;
-        update_expert_listened_wallet_asset_balance_cache(
-            &state.db,
-            strategy_id,
-            &expert_trade,
-            saved.fkey_token_out,
-            saved.fkey_token_in,
-            blockchain,
-        )
-        .await?;
+        .await?
+        .into_result()
+        .context("could not fetch strategy pool contract row on this chain")?;
 
-        // TODO: for loop to copy-trade for strategy pools on all deployed chains when we support multi-chain
-        /* if token_in was already a expert wallet asset trade it from SPs in ratio traded_amount / old_amount */
-        let strategy_pool_contract_row = state
-            .db
-            .execute(FunWatcherListStrategyPoolContractReq {
-                limit: 1,
-                offset: 0,
-                strategy_id: Some(strategy_id),
-                blockchain: Some(blockchain),
-                address: None,
-            })
-            .await?
-            .into_result()
-            .context("could not fetch strategy pool contract row on this chain")?;
+    let address: Address = strategy_pool_contract_row.address.into();
+    /* check if SP contract holds token_in */
+    let strategy_pool_contract = StrategyPoolContract::new(conn.clone(), address)?;
+    let strategy_pool_asset_token_in_row = state
+        .db
+        .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
+            strategy_pool_contract_id: Some(strategy_pool_contract_row.pkey_id),
+            token_address: Some(expert_trade.token_in.into()),
+            blockchain: Some(blockchain),
+            strategy_id: None,
+        })
+        .await?
+        .into_result()
+        .context("strategy pool contract does not hold asset to sell")?;
 
-        let address: Address = strategy_pool_contract_row.address.into();
-        /* check if SP contract holds token_in */
-        let strategy_pool_contract = StrategyPoolContract::new(conn.clone(), address)?;
-        let strategy_pool_asset_token_in_row = state
-            .db
-            .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
-                strategy_pool_contract_id: Some(strategy_pool_contract_row.pkey_id),
-                token_address: Some(expert_trade.token_in.into()),
-                blockchain: Some(blockchain),
-                strategy_id: None,
-            })
-            .await?
-            .into_result()
-            .context("strategy pool contract does not hold asset to sell")?;
-
-        let sp_asset_token_in_previous_amount = strategy_pool_asset_token_in_row.balance;
-        if sp_asset_token_in_previous_amount.is_zero() {
-            bail!("strategy pool has no asset to sell");
-        }
-        /* calculate how much to spend */
-        let corrected_amount_in = if u256_to_decimal(expert_trade.amount_in, token_in_decimals as _)
-            > expert_wallet_asset_token_in_previous_amount
-        {
-            /* if the traded amount_in is larger than the total amount of token_in we know of the strategy,
-                 it means that the trader has acquired tokens from sources we have not read
-                 if we used an amount_in that is larger in the calculation, it would make amount_to_spend
-                 larger than the amount of token_in in the strategy pool contract, which would revert the transaction
-                 so we use the total amount of token_in we know of the strategy,
-                 which will result in a trade of all the strategy pool balance of this asset
-            */
-            expert_wallet_asset_token_in_previous_amount
-        } else {
-            u256_to_decimal(expert_trade.amount_in, token_in_decimals as _)
-        };
-        let amount_to_spend = corrected_amount_in * sp_asset_token_in_previous_amount
-            / expert_wallet_asset_token_in_previous_amount;
-        if amount_to_spend.is_zero() {
-            bail!("spent ratio is too small to be represented in amount of token_in owned by strategy pool contract");
-        }
-        info!(
-            "amount_to_spend: {} {:?}",
-            amount_to_spend, expert_trade.token_in
-        );
-        /* instantiate pancake swap contract */
-        let pancake_contract = PancakeSmartRouterContract::new(
-            conn.clone(),
-            state
-                .dex_addresses
-                .get(blockchain, EnumDex::PancakeSwap)
-                .ok_or_else(|| eyre!("pancake swap not available on this chain"))?,
-        )?;
-
-        /* acquire asset before trade */
-        let acquire_asset_before_trade_transaction = || {
-            let amount_to_spend = decimal_to_u256(amount_to_spend, 18);
-            strategy_pool_contract.acquire_asset_before_trade(
-                &conn,
-                state.master_key.clone(),
-                expert_trade.token_in,
-                amount_to_spend,
-            )
-        };
-
-        execute_transaction_and_ensure_success(
-            acquire_asset_before_trade_transaction,
-            &conn,
-            CONFIRMATIONS,
-            MAX_RETRIES,
-            POLL_INTERVAL,
-            &DynLogger::empty(),
-        )
-        .await?;
-        /* instantiate token_in and token_out contracts from expert's trade */
-        let token_in_contract = Erc20Token::new(conn.clone(), expert_trade.token_in)?;
-        let token_out_contract = Erc20Token::new(conn.clone(), expert_trade.token_out)?;
-
-        /* approve pancakeswap to trade token_in */
-        let approve_transaction = || {
-            let amount_to_spend = decimal_to_u256(amount_to_spend, token_in_decimals as _);
-            token_in_contract.approve(
-                &conn,
-                state.master_key.clone(),
-                pancake_contract.address(),
-                amount_to_spend,
-                DynLogger::empty(),
-            )
-        };
-
-        execute_transaction_and_ensure_success(
-            approve_transaction,
-            &conn,
-            CONFIRMATIONS,
-            MAX_RETRIES,
-            POLL_INTERVAL,
-            &DynLogger::empty(),
-        )
-        .await?;
-
-        /* trade token_in for token_out */
-        info!(
-            "copy_trade_and_ensure_success: amount_in: {}, amount_out_minimum: {}",
-            amount_to_spend, 1
-        );
-
-        let copy_trade_pair_paths = expert_trade.get_pancake_pair_paths()?;
-        let copy_trade_transaction = || {
-            let amount_to_spend = decimal_to_u256(amount_to_spend, token_in_decimals as _);
-            pancake_contract.copy_trade(
-                &conn,
-                state.master_key.clone(),
-                copy_trade_pair_paths.clone(),
-                amount_to_spend,
-                U256::one(),
-            )
-        };
-
-        let copy_trade_hash = execute_transaction_and_ensure_success(
-            copy_trade_transaction,
-            &conn,
-            CONFIRMATIONS,
-            MAX_RETRIES,
-            POLL_INTERVAL,
-            &DynLogger::empty(),
-        )
-        .await?;
-
-        info!(
-            "copy_trade_and_ensure_success: tx_hash: {:?}",
-            copy_trade_hash
-        );
-
-        let pending_wallet_trade_receipt =
-            conn.eth()
-                .transaction_receipt(copy_trade_hash)
-                .await?
-                .context("could not find transaction receipt for copy trade")?;
-
-        /* parse trade to find amount_out */
-        let strategy_pool_pending_wallet_trade = parse_dex_trade(
-            blockchain,
-            &TransactionFetcher::new_and_assume_ready(
-                pending_wallet_trade_receipt.transaction_hash,
-                &conn,
-            )
-            .await?,
-            &state.dex_addresses,
-            &state.pancake_swap_parser,
-        )
-        .await?;
-
-        /* approve strategy pool for amount_out */
-        let approve_transaction = || {
-            token_out_contract.approve(
-                &conn,
-                state.master_key.clone(),
-                strategy_pool_contract.address(),
-                strategy_pool_pending_wallet_trade.amount_out,
-                DynLogger::empty(),
-            )
-        };
-
-        execute_transaction_and_ensure_success(
-            approve_transaction,
-            &conn,
-            CONFIRMATIONS,
-            MAX_RETRIES,
-            POLL_INTERVAL,
-            &DynLogger::empty(),
-        )
-        .await?;
-
-        /* give back traded assets */
-        let give_back_assets_after_trade_transaction = || {
-            strategy_pool_contract.give_back_assets_after_trade(
-                &conn,
-                state.master_key.clone(),
-                vec![expert_trade.token_out],
-                vec![strategy_pool_pending_wallet_trade.amount_out],
-            )
-        };
-
-        execute_transaction_and_ensure_success(
-            give_back_assets_after_trade_transaction,
-            &conn,
-            CONFIRMATIONS,
-            MAX_RETRIES,
-            POLL_INTERVAL,
-            &DynLogger::empty(),
-        )
-        .await?;
-
-        /* update strategy pool contract asset balances & ledger */
-        state
-            .db
-            .execute(FunWatcherUpsertStrategyPoolContractAssetBalanceReq {
-                strategy_pool_contract_id: strategy_pool_contract_row.pkey_id,
-                token_address: expert_trade.token_in.into(),
-                blockchain,
-                new_balance: sp_asset_token_in_previous_amount - amount_to_spend,
-            })
-            .await?;
-
-        let maybe_strategy_pool_asset_token_out_row = state
-            .db
-            .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
-                strategy_pool_contract_id: Some(strategy_pool_contract_row.pkey_id),
-                token_address: Some(expert_trade.token_out.into()),
-                blockchain: Some(blockchain),
-                strategy_id: None,
-            })
-            .await?
-            .into_result();
-        let token_in_amount = u256_to_decimal(
-            strategy_pool_pending_wallet_trade.amount_in,
-            token_in_decimals as _,
-        );
-        let token_out_amount = u256_to_decimal(
-            strategy_pool_pending_wallet_trade.amount_out,
-            token_out_decimals as _,
-        );
-        let strategy_pool_asset_token_out_new_balance =
-            match maybe_strategy_pool_asset_token_out_row {
-                Some(token_out) => token_out.balance + token_out_amount,
-                None => token_out_amount,
-            };
-
-        state
-            .db
-            .execute(FunWatcherUpsertStrategyPoolContractAssetBalanceReq {
-                strategy_pool_contract_id: strategy_pool_contract_row.pkey_id,
-                token_address: expert_trade.token_out.into(),
-                blockchain,
-                new_balance: strategy_pool_asset_token_out_new_balance,
-            })
-            .await?;
-
-        state
-            .db
-            .execute(FunUserAddStrategyPoolContractAssetLedgerEntryReq {
-                strategy_pool_contract_id: strategy_pool_contract_row.pkey_id,
-                token_address: strategy_pool_pending_wallet_trade.token_in.into(),
-                blockchain,
-                amount: token_in_amount,
-                transaction_hash: pending_wallet_trade_receipt.transaction_hash.into(),
-                is_add: false,
-            })
-            .await?;
-
-        state
-            .db
-            .execute(FunUserAddStrategyPoolContractAssetLedgerEntryReq {
-                strategy_pool_contract_id: strategy_pool_contract_row.pkey_id,
-                token_address: strategy_pool_pending_wallet_trade.token_out.into(),
-                blockchain,
-                amount: token_out_amount,
-                transaction_hash: pending_wallet_trade_receipt.transaction_hash.into(),
-                is_add: true,
-            })
-            .await?;
-
-        /* update per-user strategy pool contract asset balances & ledger */
-        info!(
-                "update_user_strategy_pool_asset_balances_on_copy_trade: strategy_pool_contract_id: {}, token_in: {}, token_out: {}",
-                strategy_pool_contract_row.pkey_id, strategy_pool_pending_wallet_trade.token_in, strategy_pool_pending_wallet_trade.token_out
-            );
-        update_user_strategy_pool_asset_balances_on_copy_trade(
-            &state.db,
-            blockchain,
-            strategy_pool_contract_row.pkey_id,
-            strategy_pool_pending_wallet_trade.token_in,
-            token_in_amount,
-            sp_asset_token_in_previous_amount,
-            strategy_pool_pending_wallet_trade.token_out,
-            token_out_amount,
-        )
-        .await?;
-
-        // TODO: multi-chain for loop ends here
+    let sp_asset_token_in_previous_amount = strategy_pool_asset_token_in_row.balance;
+    if sp_asset_token_in_previous_amount.is_zero() {
+        bail!("strategy pool has no asset to sell");
     }
+    /* calculate how much to spend */
+    let corrected_amount_in = if u256_to_decimal(expert_trade.amount_in, token_in_decimals as _)
+        > expert_wallet_asset_token_in_previous_amount
+    {
+        /* if the traded amount_in is larger than the total amount of token_in we know of the strategy,
+             it means that the trader has acquired tokens from sources we have not read
+             if we used an amount_in that is larger in the calculation, it would make amount_to_spend
+             larger than the amount of token_in in the strategy pool contract, which would revert the transaction
+             so we use the total amount of token_in we know of the strategy,
+             which will result in a trade of all the strategy pool balance of this asset
+        */
+        expert_wallet_asset_token_in_previous_amount
+    } else {
+        u256_to_decimal(expert_trade.amount_in, token_in_decimals as _)
+    };
+    let amount_to_spend = corrected_amount_in * sp_asset_token_in_previous_amount
+        / expert_wallet_asset_token_in_previous_amount;
+    if amount_to_spend.is_zero() {
+        bail!("spent ratio is too small to be represented in amount of token_in owned by strategy pool contract");
+    }
+    info!(
+        "amount_to_spend: {} {:?}",
+        amount_to_spend, expert_trade.token_in
+    );
+    /* instantiate pancake swap contract */
+    let pancake_contract = PancakeSmartRouterContract::new(
+        conn.clone(),
+        state
+            .dex_addresses
+            .get(blockchain, EnumDex::PancakeSwap)
+            .ok_or_else(|| eyre!("pancake swap not available on this chain"))?,
+    )?;
+
+    /* acquire asset before trade */
+    let acquire_asset_before_trade_transaction = || {
+        let amount_to_spend = decimal_to_u256(amount_to_spend, 18);
+        strategy_pool_contract.acquire_asset_before_trade(
+            &conn,
+            state.master_key.clone(),
+            expert_trade.token_in,
+            amount_to_spend,
+        )
+    };
+
+    execute_transaction_and_ensure_success(
+        acquire_asset_before_trade_transaction,
+        &conn,
+        CONFIRMATIONS,
+        MAX_RETRIES,
+        POLL_INTERVAL,
+        &DynLogger::empty(),
+    )
+    .await?;
+    /* instantiate token_in and token_out contracts from expert's trade */
+    let token_in_contract = Erc20Token::new(conn.clone(), expert_trade.token_in)?;
+    let token_out_contract = Erc20Token::new(conn.clone(), expert_trade.token_out)?;
+
+    /* approve pancakeswap to trade token_in */
+    let approve_transaction = || {
+        let amount_to_spend = decimal_to_u256(amount_to_spend, token_in_decimals as _);
+        token_in_contract.approve(
+            &conn,
+            state.master_key.clone(),
+            pancake_contract.address(),
+            amount_to_spend,
+            DynLogger::empty(),
+        )
+    };
+
+    execute_transaction_and_ensure_success(
+        approve_transaction,
+        &conn,
+        CONFIRMATIONS,
+        MAX_RETRIES,
+        POLL_INTERVAL,
+        &DynLogger::empty(),
+    )
+    .await?;
+
+    /* trade token_in for token_out */
+    info!(
+        "copy_trade_and_ensure_success: amount_in: {}, amount_out_minimum: {}",
+        amount_to_spend, 1
+    );
+
+    let copy_trade_pair_paths = expert_trade.get_pancake_pair_paths()?;
+    let copy_trade_transaction = || {
+        let amount_to_spend = decimal_to_u256(amount_to_spend, token_in_decimals as _);
+        pancake_contract.copy_trade(
+            &conn,
+            state.master_key.clone(),
+            copy_trade_pair_paths.clone(),
+            amount_to_spend,
+            U256::one(),
+        )
+    };
+
+    let copy_trade_hash = execute_transaction_and_ensure_success(
+        copy_trade_transaction,
+        &conn,
+        CONFIRMATIONS,
+        MAX_RETRIES,
+        POLL_INTERVAL,
+        &DynLogger::empty(),
+    )
+    .await?;
+
+    info!(
+        "copy_trade_and_ensure_success: tx_hash: {:?}",
+        copy_trade_hash
+    );
+
+    let pending_wallet_trade_receipt = conn
+        .eth()
+        .transaction_receipt(copy_trade_hash)
+        .await?
+        .context("could not find transaction receipt for copy trade")?;
+
+    /* parse trade to find amount_out */
+    let strategy_pool_pending_wallet_trade = parse_dex_trade(
+        blockchain,
+        &TransactionFetcher::new_and_assume_ready(
+            pending_wallet_trade_receipt.transaction_hash,
+            &conn,
+        )
+        .await?,
+        &state.dex_addresses,
+        &state.pancake_swap_parser,
+    )
+    .await?;
+
+    /* approve strategy pool for amount_out */
+    info!(
+        "approve strategy pool for amount_out: {:?} {:?} {:?}",
+        state.master_key.address(),
+        strategy_pool_contract.address(),
+        strategy_pool_pending_wallet_trade.amount_out,
+    );
+
+    let approve_transaction = || {
+        token_out_contract.approve(
+            &conn,
+            state.master_key.clone(),
+            strategy_pool_contract.address(),
+            strategy_pool_pending_wallet_trade.amount_out,
+            DynLogger::empty(),
+        )
+    };
+
+    execute_transaction_and_ensure_success(
+        approve_transaction,
+        &conn,
+        CONFIRMATIONS,
+        MAX_RETRIES,
+        POLL_INTERVAL,
+        &DynLogger::empty(),
+    )
+    .await?;
+
+    /* give back traded assets */
+    info!(
+        "give_back_assets_after_trade: {:?} {:?} {:?}",
+        state.master_key.address(),
+        strategy_pool_contract.address(),
+        strategy_pool_pending_wallet_trade.amount_out,
+    );
+    let give_back_assets_after_trade_transaction = || {
+        strategy_pool_contract.give_back_assets_after_trade(
+            &conn,
+            state.master_key.clone(),
+            vec![expert_trade.token_out],
+            vec![strategy_pool_pending_wallet_trade.amount_out],
+        )
+    };
+
+    execute_transaction_and_ensure_success(
+        give_back_assets_after_trade_transaction,
+        &conn,
+        CONFIRMATIONS,
+        MAX_RETRIES,
+        POLL_INTERVAL,
+        &DynLogger::empty(),
+    )
+    .await?;
+
+    /* update strategy pool contract asset balances & ledger */
+
+    state
+        .db
+        .execute(FunWatcherUpsertStrategyPoolContractAssetBalanceReq {
+            strategy_pool_contract_id: strategy_pool_contract_row.pkey_id,
+            token_address: expert_trade.token_in.into(),
+            blockchain,
+            new_balance: sp_asset_token_in_previous_amount - amount_to_spend,
+        })
+        .await?;
+
+    let maybe_strategy_pool_asset_token_out_row = state
+        .db
+        .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
+            strategy_pool_contract_id: Some(strategy_pool_contract_row.pkey_id),
+            token_address: Some(expert_trade.token_out.into()),
+            blockchain: Some(blockchain),
+            strategy_id: None,
+        })
+        .await?
+        .into_result();
+    let token_in_amount = u256_to_decimal(
+        strategy_pool_pending_wallet_trade.amount_in,
+        token_in_decimals as _,
+    );
+    let token_out_amount = u256_to_decimal(
+        strategy_pool_pending_wallet_trade.amount_out,
+        token_out_decimals as _,
+    );
+    let strategy_pool_asset_token_out_new_balance = match maybe_strategy_pool_asset_token_out_row {
+        Some(token_out) => token_out.balance + token_out_amount,
+        None => token_out_amount,
+    };
+
+    state
+        .db
+        .execute(FunWatcherUpsertStrategyPoolContractAssetBalanceReq {
+            strategy_pool_contract_id: strategy_pool_contract_row.pkey_id,
+            token_address: expert_trade.token_out.into(),
+            blockchain,
+            new_balance: strategy_pool_asset_token_out_new_balance,
+        })
+        .await?;
+
+    state
+        .db
+        .execute(FunUserAddStrategyPoolContractAssetLedgerEntryReq {
+            strategy_pool_contract_id: strategy_pool_contract_row.pkey_id,
+            token_address: strategy_pool_pending_wallet_trade.token_in.into(),
+            blockchain,
+            amount: token_in_amount,
+            transaction_hash: pending_wallet_trade_receipt.transaction_hash.into(),
+            is_add: false,
+        })
+        .await?;
+
+    state
+        .db
+        .execute(FunUserAddStrategyPoolContractAssetLedgerEntryReq {
+            strategy_pool_contract_id: strategy_pool_contract_row.pkey_id,
+            token_address: strategy_pool_pending_wallet_trade.token_out.into(),
+            blockchain,
+            amount: token_out_amount,
+            transaction_hash: pending_wallet_trade_receipt.transaction_hash.into(),
+            is_add: true,
+        })
+        .await?;
+
+    /* update per-user strategy pool contract asset balances & ledger */
+    info!(
+        "update_user_strategy_pool_asset_balances_on_copy_trade: strategy_pool_contract_id: {}, token_in: {}, token_out: {}",
+        strategy_pool_contract_row.pkey_id, strategy_pool_pending_wallet_trade.token_in, strategy_pool_pending_wallet_trade.token_out
+    );
+    update_user_strategy_pool_asset_balances_on_copy_trade(
+        &state.db,
+        blockchain,
+        strategy_pool_contract_row.pkey_id,
+        strategy_pool_pending_wallet_trade.token_in,
+        token_in_amount,
+        sp_asset_token_in_previous_amount,
+        strategy_pool_pending_wallet_trade.token_out,
+        token_out_amount,
+    )
+    .await?;
+
+    // TODO: multi-chain for loop ends here
+
     Ok(())
 }
 
