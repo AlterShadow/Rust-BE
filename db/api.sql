@@ -4023,6 +4023,7 @@ BEGIN
 	SELECT
 		dr.symbol,
 		tp_latest.price AS price_latest,
+		tp_1d.price AS price_1d,
 		tp_7d.price AS price_7d,
 		tp_30d.price AS price_30d
 	FROM date_ranges dr
