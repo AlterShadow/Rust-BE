@@ -924,6 +924,61 @@ END
 $$;
         
 
+CREATE OR REPLACE FUNCTION api.fun_user_list_expert_listened_wallet_trade_ledger_entries(a_expert_listened_wallet_id bigint, a_limit bigint DEFAULT NULL, a_offset bigint DEFAULT NULL)
+RETURNS table (
+    "expert_listened_wallet_trade_ledger_id" bigint,
+    "expert_listened_wallet_id" bigint,
+    "blockchain" enum_block_chain,
+    "transaction_hash" varchar,
+    "dex" enum_dex,
+    "token_in_id" bigint,
+    "token_in_symbol" varchar,
+    "token_in_address" varchar,
+    "amount_in" decimal(56, 18),
+    "token_out_id" bigint,
+    "token_out_symbol" varchar,
+    "token_out_address" varchar,
+    "amount_out" decimal(56, 18),
+    "happened_at" bigint
+)
+LANGUAGE plpgsql
+AS $$
+    
+BEGIN
+	RETURN QUERY
+
+	WITH tokens AS (
+		SELECT etca.pkey_id, etca.address, etca.symbol, etca.short_name, etca.blockchain
+		FROM tbl.escrow_token_contract_address AS etca
+	)
+	
+	SELECT
+		swwtl.pkey_id AS expert_listened_wallet_trade_ledger_id,
+		swwtl.expert_watched_wallet_id AS expert_listened_wallet_id,
+		swwtl.blockchain,
+		swwtl.transaction_hash,
+		swwtl.dex,
+		swwtl.fkey_token_in,
+		token_in.symbol AS token_in_symbol,
+		token_in.address AS token_in_address,
+		swwtl.amount_in,
+		swwtl.fkey_token_out,
+		token_out.symbol AS token_out_symbol,
+		token_out.address AS token_out_address,
+		swwtl.amount_out,
+		swwtl.heppened_at AS happened_at,
+	FROM tbl.strategy_watching_wallet_trade_ledger AS swwtl
+	JOIN tokens AS token_in ON token_in.pkey_id = swwtl.fkey_token_in
+	JOIN tokens AS token_out ON token_out.pkey_id = swwtl.fkey_token_out
+	WHERE swwtl.expert_watched_wallet_id = a_expert_listened_wallet_id
+	ORDER BY swwtl.heppened_at DESC
+	LIMIT a_limit
+	OFFSET a_offset;
+END
+
+$$;
+        
+
 CREATE OR REPLACE FUNCTION api.fun_user_add_user_strategy_pool_contract_asset_ledger_entry(a_strategy_wallet_id bigint, a_strategy_pool_contract_id bigint, a_token_address varchar, a_blockchain enum_block_chain, a_amount decimal(56, 18), a_is_add boolean)
 RETURNS table (
     "success" boolean

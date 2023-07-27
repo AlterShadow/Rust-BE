@@ -467,6 +467,26 @@ pub struct FunUserListExitStrategyLedgerRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunUserListExpertListenedWalletTradeLedgerEntriesRespRow {
+    pub expert_listened_wallet_trade_ledger_id: i64,
+    pub expert_listened_wallet_id: i64,
+    pub blockchain: EnumBlockChain,
+    pub transaction_hash: BlockchainTransactionHash,
+    pub dex: EnumDex,
+    pub token_in_id: i64,
+    pub token_in_symbol: String,
+    pub token_in_address: BlockchainAddress,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub amount_in: Decimal,
+    pub token_out_id: i64,
+    pub token_out_symbol: String,
+    pub token_out_address: BlockchainAddress,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub amount_out: Decimal,
+    pub happened_at: i64,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserListRequestRefundLedgerRespRow {
     pub request_refund_id: i64,
     pub user_id: i64,
@@ -1431,6 +1451,30 @@ impl DatabaseRequest for FunUserListUserStrategyPoolContractAssetLedgerEntriesRe
             &self.user_id as &(dyn ToSql + Sync),
             &self.strategy_id as &(dyn ToSql + Sync),
             &self.blockchain as &(dyn ToSql + Sync),
+            &self.limit as &(dyn ToSql + Sync),
+            &self.offset as &(dyn ToSql + Sync),
+        ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunUserListExpertListenedWalletTradeLedgerEntriesReq {
+    pub expert_listened_wallet_id: i64,
+    #[serde(default)]
+    pub limit: Option<i64>,
+    #[serde(default)]
+    pub offset: Option<i64>,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunUserListExpertListenedWalletTradeLedgerEntriesReq {
+    type ResponseRow = FunUserListExpertListenedWalletTradeLedgerEntriesRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_user_list_expert_listened_wallet_trade_ledger_entries(a_expert_listened_wallet_id => $1::bigint, a_limit => $2::bigint, a_offset => $3::bigint);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.expert_listened_wallet_id as &(dyn ToSql + Sync),
             &self.limit as &(dyn ToSql + Sync),
             &self.offset as &(dyn ToSql + Sync),
         ]

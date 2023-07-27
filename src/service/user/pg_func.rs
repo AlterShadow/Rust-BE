@@ -439,6 +439,63 @@ END
 "#,
         ),
         ProceduralFunction::new(
+            "fun_user_list_expert_listened_wallet_trade_ledger_entries",
+            vec![
+                Field::new("limit", Type::optional(Type::BigInt)),
+                Field::new("offset", Type::optional(Type::BigInt)),
+                Field::new("expert_listened_wallet_id", Type::BigInt),
+            ],
+            vec![
+                Field::new("expert_listened_wallet_trade_ledger_id", Type::BigInt),
+                Field::new("expert_listened_wallet_id", Type::BigInt),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
+                Field::new("transaction_hash", Type::BlockchainTransactionHash),
+                Field::new("dex", Type::enum_ref("dex")),
+                Field::new("token_in_id", Type::BigInt),
+                Field::new("token_in_symbol", Type::String),
+                Field::new("token_in_address", Type::BlockchainAddress),
+                Field::new("amount_in", Type::BlockchainDecimal),
+                Field::new("token_out_id", Type::BigInt),
+                Field::new("token_out_symbol", Type::String),
+                Field::new("token_out_address", Type::BlockchainAddress),
+                Field::new("amount_out", Type::BlockchainDecimal),
+                Field::new("happened_at", Type::BigInt),
+            ],
+            r#"
+BEGIN
+	RETURN QUERY
+
+	WITH tokens AS (
+		SELECT etca.pkey_id, etca.address, etca.symbol, etca.short_name, etca.blockchain
+		FROM tbl.escrow_token_contract_address AS etca
+	)
+	
+	SELECT
+		swwtl.pkey_id AS expert_listened_wallet_trade_ledger_id,
+		swwtl.expert_watched_wallet_id AS expert_listened_wallet_id,
+		swwtl.blockchain,
+		swwtl.transaction_hash,
+		swwtl.dex,
+		swwtl.fkey_token_in,
+		token_in.symbol AS token_in_symbol,
+		token_in.address AS token_in_address,
+		swwtl.amount_in,
+		swwtl.fkey_token_out,
+		token_out.symbol AS token_out_symbol,
+		token_out.address AS token_out_address,
+		swwtl.amount_out,
+		swwtl.heppened_at AS happened_at,
+	FROM tbl.strategy_watching_wallet_trade_ledger AS swwtl
+	JOIN tokens AS token_in ON token_in.pkey_id = swwtl.fkey_token_in
+	JOIN tokens AS token_out ON token_out.pkey_id = swwtl.fkey_token_out
+	WHERE swwtl.expert_watched_wallet_id = a_expert_listened_wallet_id
+	ORDER BY swwtl.heppened_at DESC
+	LIMIT a_limit
+	OFFSET a_offset;
+END
+"#,
+        ),
+        ProceduralFunction::new(
             "fun_user_add_user_strategy_pool_contract_asset_ledger_entry",
             vec![
                 Field::new("strategy_wallet_id", Type::BigInt),
