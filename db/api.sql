@@ -4023,10 +4023,21 @@ BEGIN
 	WITH date_ranges AS (
 		SELECT
 				tp.symbol,
-				MAX(tp.created_at) AS latest,
-				MAX(tp.created_at) FILTER (WHERE tp.created_at <= (EXTRACT(EPOCH FROM (NOW() - INTERVAL '1 DAYS'))::BIGINT)) AS day_1,
-				MAX(tp.created_at) FILTER (WHERE tp.created_at <= (EXTRACT(EPOCH FROM (NOW() - INTERVAL '7 DAYS'))::BIGINT)) AS day_7,
-				MAX(tp.created_at) FILTER (WHERE tp.created_at <= (EXTRACT(EPOCH FROM (NOW() - INTERVAL '30 DAYS'))::BIGINT)) AS day_30
+				MAX(tp.created_at) FILTER (
+					WHERE tp.created_at >= (EXTRACT(EPOCH FROM (NOW() - INTERVAL '1 DAYS'))::BIGINT)
+				) AS latest,
+				MAX(tp.created_at) FILTER (
+					WHERE tp.created_at <= (EXTRACT(EPOCH FROM (NOW() - INTERVAL '1 DAYS'))::BIGINT)
+					AND tp.created_at >= (EXTRACT(EPOCH FROM (NOW() - INTERVAL '2 DAYS'))::BIGINT)
+				) AS day_1,
+				MAX(tp.created_at) FILTER (
+					WHERE tp.created_at <= (EXTRACT(EPOCH FROM (NOW() - INTERVAL '7 DAYS'))::BIGINT)
+					AND tp.created_at >= (EXTRACT(EPOCH FROM (NOW() - INTERVAL '8 DAYS'))::BIGINT)
+				) AS day_7,
+				MAX(tp.created_at) FILTER (
+					WHERE tp.created_at <= (EXTRACT(EPOCH FROM (NOW() - INTERVAL '30 DAYS'))::BIGINT)
+					AND tp.created_at >= (EXTRACT(EPOCH FROM (NOW() - INTERVAL '31 DAYS'))::BIGINT)
+				) AS day_30
 		FROM tbl.token_price AS tp
 		WHERE (a_symbols IS NULL OR tp.symbol = ANY(a_symbols))
 		GROUP BY tp.symbol
