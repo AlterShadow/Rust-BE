@@ -436,6 +436,54 @@ impl RequestHandler for MethodUserListStrategyPoolContractAssetLedger {
     }
 }
 
+pub struct MethodUserListUserStrategyPoolContractAssetLedger;
+impl RequestHandler for MethodUserListUserStrategyPoolContractAssetLedger {
+    type Request = UserListUserStrategyPoolContractAssetLedgerRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db: DbClient = toolbox.get_db();
+        async move {
+            ensure_user_role(ctx, EnumRole::User)?;
+
+            let ledger = db
+                .execute(FunUserListUserStrategyPoolContractAssetLedgerEntriesReq {
+                    limit: req.limit,
+                    offset: req.offset,
+                    user_id: ctx.user_id,
+                    strategy_id: req.strategy_id,
+                    blockchain: req.blockchain,
+                })
+                .await?
+                .into_rows();
+
+            Ok(UserListUserStrategyPoolContractAssetLedgerResponse {
+                user_strategy_pool_contract_asset_ledger: ledger
+                    .into_iter()
+                    .map(|x| UserStrategyPoolContractAssetLedgerRow {
+                        ledger_id: x.user_strategy_pool_contract_asset_ledger_id,
+                        strategy_wallet_id: x.strategy_wallet_id,
+                        strategy_wallet_address: x.strategy_wallet_address.into(),
+                        is_strategy_wallet_managed: x.is_strategy_wallet_managed,
+                        symbol: x.token_symbol,
+                        token_id: x.token_id,
+                        token_address: x.token_address.into(),
+                        dex: EnumDex::PancakeSwap.to_string(),
+                        blockchain: x.blockchain,
+                        quantity: x.amount.into(),
+                        is_add: x.is_add,
+                        happened_at: x.happened_at,
+                    })
+                    .collect(),
+            })
+        }
+        .boxed()
+    }
+}
 pub struct MethodUserGetStrategyStatistics;
 impl RequestHandler for MethodUserGetStrategyStatistics {
     type Request = UserGetStrategyStatisticsRequest;

@@ -92,6 +92,7 @@ async fn main() -> Result<()> {
         cmc_client: cmc_client.clone(),
     });
     server.add_handler(MethodUserListStrategyPoolContractAssetLedger);
+    server.add_handler(MethodUserListUserStrategyPoolContractAssetLedger);
     server.add_handler(MethodUserGetStrategyStatistics);
     server.add_handler(MethodUserGetStrategiesStatistics {
         asset_client: cmc_client.clone(),
