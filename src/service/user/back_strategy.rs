@@ -365,15 +365,29 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
         .into_iter()
         .filter(|x| x.token_in == token_address)
         .collect();
+
     info!(
         "escrow_allocations_for_tokens={:?}",
         escrow_allocations_for_tokens
     );
-    let tokens_and_escrow_token_to_spend: HashMap<_, _> = escrow_allocations_for_tokens
+    let mut tokens_and_escrow_token_to_spend: HashMap<_, _> = escrow_allocations_for_tokens
         .trades
         .iter()
         .map(|x| (x.token_out, x.amount_in))
         .collect();
+    let trade_ratios: Decimal = escrow_allocations_for_tokens
+        .trades
+        .iter()
+        .map(|x| x.trade_ratio)
+        .sum();
+    ensure!(
+        trade_ratios <= Decimal::one(),
+        "trade ratios are too high, back amount is too low"
+    );
+    tokens_and_escrow_token_to_spend.insert(
+        token_address,
+        back_token_amount_minus_fees * (Decimal::one() - trade_ratios),
+    );
     let strategy_pool_assets_bought_for_this_backer = trade_escrow_for_strategy_tokens(
         token_address,
         tokens_and_escrow_token_to_spend.clone(),
