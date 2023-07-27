@@ -1116,7 +1116,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_list_strategy_pool_contract_asset_ledger(a_limit bigint, a_offset bigint, a_strategy_id bigint DEFAULT NULL, a_token_id bigint DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_user_list_strategy_pool_contract_asset_ledger(a_limit bigint DEFAULT NULL, a_offset bigint DEFAULT NULL, a_strategy_id bigint DEFAULT NULL, a_token_id bigint DEFAULT NULL, a_blockchain enum_block_chain DEFAULT NULL)
 RETURNS table (
     "entry_id" bigint,
     "strategy_id" bigint,

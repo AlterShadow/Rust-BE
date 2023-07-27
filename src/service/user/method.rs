@@ -311,8 +311,8 @@ impl RequestHandler for MethodUserGetStrategy {
 
             let ledger = db
                 .execute(FunUserListStrategyPoolContractAssetLedgerReq {
-                    limit: 1000,
-                    offset: 0,
+                    limit: Some(1000),
+                    offset: None,
                     strategy_id: Some(req.strategy_id),
                     token_id: None,
                     blockchain: None,

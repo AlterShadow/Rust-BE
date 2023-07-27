@@ -648,8 +648,8 @@ END
         ProceduralFunction::new(
             "fun_user_list_strategy_pool_contract_asset_ledger",
             vec![
-                Field::new("limit", Type::BigInt),
-                Field::new("offset", Type::BigInt),
+                Field::new("limit", Type::optional(Type::BigInt)),
+                Field::new("offset", Type::optional(Type::BigInt)),
                 Field::new("strategy_id", Type::optional(Type::BigInt)),
                 Field::new("token_id", Type::optional(Type::BigInt)),
                 Field::new("blockchain", Type::optional(Type::enum_ref("block_chain"))),

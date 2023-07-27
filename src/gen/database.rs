@@ -1554,8 +1554,10 @@ impl DatabaseRequest for FunUserAddStrategyPoolContractAssetLedgerEntryReq {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserListStrategyPoolContractAssetLedgerReq {
-    pub limit: i64,
-    pub offset: i64,
+    #[serde(default)]
+    pub limit: Option<i64>,
+    #[serde(default)]
+    pub offset: Option<i64>,
     #[serde(default)]
     pub strategy_id: Option<i64>,
     #[serde(default)]
