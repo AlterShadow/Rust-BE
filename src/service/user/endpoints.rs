@@ -189,7 +189,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
         )
         .with_description("User gets a strategy"),
         EndpointSchema::new(
-            "UserGetStrategyPoolAssetLedger",
+            "UserGetStrategyPoolContractAssetLedger",
             20066,
             vec![
                 Field::new("strategy_id", Type::BigInt),
@@ -198,9 +198,9 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                 Field::new("offset", Type::optional(Type::BigInt)),
             ],
             vec![Field::new(
-                "strategy_pool_asset_ledger",
+                "strategy_pool_contract_asset_ledger",
                 Type::datatable(
-                    "StrategyPoolAssetLedgerRow",
+                    "StrategyPoolContractAssetLedgerRow",
                     vec![
                         Field::new("ledger_id", Type::BigInt),
                         Field::new("symbol", Type::String),

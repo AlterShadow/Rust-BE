@@ -1205,7 +1205,7 @@
           "json_schema": null
         },
         {
-          "name": "UserGetStrategyPoolAssetLedger",
+          "name": "UserGetStrategyPoolContractAssetLedger",
           "code": 20066,
           "parameters": [
             {
@@ -1233,10 +1233,10 @@
           ],
           "returns": [
             {
-              "name": "strategy_pool_asset_ledger",
+              "name": "strategy_pool_contract_asset_ledger",
               "ty": {
                 "DataTable": {
-                  "name": "StrategyPoolAssetLedgerRow",
+                  "name": "StrategyPoolContractAssetLedgerRow",
                   "fields": [
                     {
                       "name": "ledger_id",

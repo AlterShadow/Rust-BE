@@ -296,8 +296,8 @@ pub enum EnumEndpoint {
     #[postgres(name = "UserGetStrategy")]
     UserGetStrategy = 20062,
     ///
-    #[postgres(name = "UserGetStrategyPoolAssetLedger")]
-    UserGetStrategyPoolAssetLedger = 20066,
+    #[postgres(name = "UserGetStrategyPoolContractAssetLedger")]
+    UserGetStrategyPoolContractAssetLedger = 20066,
     ///
     #[postgres(name = "UserGetStrategyStatistics")]
     UserGetStrategyStatistics = 20070,
@@ -1875,7 +1875,7 @@ pub struct StrategyPoolAssetLedgerRow {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct StrategyPoolAssetLedgerRow {
+pub struct StrategyPoolContractAssetLedgerRow {
     pub ledger_id: i64,
     pub symbol: String,
     pub token_id: i64,
@@ -2166,7 +2166,7 @@ pub struct UserGetStrategiesStatisticsStrategyPoolToken {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserGetStrategyPoolAssetLedgerRequest {
+pub struct UserGetStrategyPoolContractAssetLedgerRequest {
     pub strategy_id: i64,
     pub blockchain: EnumBlockChain,
     #[serde(default)]
@@ -2176,8 +2176,8 @@ pub struct UserGetStrategyPoolAssetLedgerRequest {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserGetStrategyPoolAssetLedgerResponse {
-    pub strategy_pool_asset_ledger: Vec<StrategyPoolAssetLedgerRow>,
+pub struct UserGetStrategyPoolContractAssetLedgerResponse {
+    pub strategy_pool_contract_asset_ledger: Vec<StrategyPoolContractAssetLedgerRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -4125,11 +4125,11 @@ impl WsResponse for UserGetStrategyResponse {
     type Request = UserGetStrategyRequest;
 }
 
-impl WsRequest for UserGetStrategyPoolAssetLedgerRequest {
-    type Response = UserGetStrategyPoolAssetLedgerResponse;
+impl WsRequest for UserGetStrategyPoolContractAssetLedgerRequest {
+    type Response = UserGetStrategyPoolContractAssetLedgerResponse;
     const METHOD_ID: u32 = 20066;
     const SCHEMA: &'static str = r#"{
-  "name": "UserGetStrategyPoolAssetLedger",
+  "name": "UserGetStrategyPoolContractAssetLedger",
   "code": 20066,
   "parameters": [
     {
@@ -4157,10 +4157,10 @@ impl WsRequest for UserGetStrategyPoolAssetLedgerRequest {
   ],
   "returns": [
     {
-      "name": "strategy_pool_asset_ledger",
+      "name": "strategy_pool_contract_asset_ledger",
       "ty": {
         "DataTable": {
-          "name": "StrategyPoolAssetLedgerRow",
+          "name": "StrategyPoolContractAssetLedgerRow",
           "fields": [
             {
               "name": "ledger_id",
@@ -4210,8 +4210,8 @@ impl WsRequest for UserGetStrategyPoolAssetLedgerRequest {
   "json_schema": null
 }"#;
 }
-impl WsResponse for UserGetStrategyPoolAssetLedgerResponse {
-    type Request = UserGetStrategyPoolAssetLedgerRequest;
+impl WsResponse for UserGetStrategyPoolContractAssetLedgerResponse {
+    type Request = UserGetStrategyPoolContractAssetLedgerRequest;
 }
 
 impl WsRequest for UserGetStrategyStatisticsRequest {
