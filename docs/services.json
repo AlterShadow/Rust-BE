@@ -1205,7 +1205,7 @@
           "json_schema": null
         },
         {
-          "name": "UserGetStrategyPoolContractAssetLedger",
+          "name": "UserListStrategyPoolContractAssetLedger",
           "code": 20066,
           "parameters": [
             {

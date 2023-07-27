@@ -189,7 +189,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
         )
         .with_description("User gets a strategy"),
         EndpointSchema::new(
-            "UserGetStrategyPoolContractAssetLedger",
+            "UserListStrategyPoolContractAssetLedger",
             20066,
             vec![
                 Field::new("strategy_id", Type::BigInt),

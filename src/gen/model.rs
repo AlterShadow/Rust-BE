@@ -296,8 +296,8 @@ pub enum EnumEndpoint {
     #[postgres(name = "UserGetStrategy")]
     UserGetStrategy = 20062,
     ///
-    #[postgres(name = "UserGetStrategyPoolContractAssetLedger")]
-    UserGetStrategyPoolContractAssetLedger = 20066,
+    #[postgres(name = "UserListStrategyPoolContractAssetLedger")]
+    UserListStrategyPoolContractAssetLedger = 20066,
     ///
     #[postgres(name = "UserGetStrategyStatistics")]
     UserGetStrategyStatistics = 20070,
@@ -2166,21 +2166,6 @@ pub struct UserGetStrategiesStatisticsStrategyPoolToken {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserGetStrategyPoolContractAssetLedgerRequest {
-    pub strategy_id: i64,
-    pub blockchain: EnumBlockChain,
-    #[serde(default)]
-    pub limit: Option<i64>,
-    #[serde(default)]
-    pub offset: Option<i64>,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserGetStrategyPoolContractAssetLedgerResponse {
-    pub strategy_pool_contract_asset_ledger: Vec<StrategyPoolContractAssetLedgerRow>,
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
 pub struct UserGetStrategyRequest {
     pub strategy_id: i64,
 }
@@ -2524,6 +2509,21 @@ pub struct UserListStrategyInitialTokenRatioRequest {
 pub struct UserListStrategyInitialTokenRatioResponse {
     pub token_ratios_total: i64,
     pub token_ratios: Vec<ListStrategyInitialTokenRatioRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListStrategyPoolContractAssetLedgerRequest {
+    pub strategy_id: i64,
+    pub blockchain: EnumBlockChain,
+    #[serde(default)]
+    pub limit: Option<i64>,
+    #[serde(default)]
+    pub offset: Option<i64>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListStrategyPoolContractAssetLedgerResponse {
+    pub strategy_pool_contract_asset_ledger: Vec<StrategyPoolContractAssetLedgerRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -4125,11 +4125,11 @@ impl WsResponse for UserGetStrategyResponse {
     type Request = UserGetStrategyRequest;
 }
 
-impl WsRequest for UserGetStrategyPoolContractAssetLedgerRequest {
-    type Response = UserGetStrategyPoolContractAssetLedgerResponse;
+impl WsRequest for UserListStrategyPoolContractAssetLedgerRequest {
+    type Response = UserListStrategyPoolContractAssetLedgerResponse;
     const METHOD_ID: u32 = 20066;
     const SCHEMA: &'static str = r#"{
-  "name": "UserGetStrategyPoolContractAssetLedger",
+  "name": "UserListStrategyPoolContractAssetLedger",
   "code": 20066,
   "parameters": [
     {
@@ -4210,8 +4210,8 @@ impl WsRequest for UserGetStrategyPoolContractAssetLedgerRequest {
   "json_schema": null
 }"#;
 }
-impl WsResponse for UserGetStrategyPoolContractAssetLedgerResponse {
-    type Request = UserGetStrategyPoolContractAssetLedgerRequest;
+impl WsResponse for UserListStrategyPoolContractAssetLedgerResponse {
+    type Request = UserListStrategyPoolContractAssetLedgerRequest;
 }
 
 impl WsRequest for UserGetStrategyStatisticsRequest {
