@@ -369,8 +369,8 @@ END
         ProceduralFunction::new(
             "fun_user_list_user_strategy_pool_contract_asset_ledger_entries",
             vec![
-                Field::new("limit", Type::BigInt),
-                Field::new("offset", Type::BigInt),
+                Field::new("limit", Type::optional(Type::BigInt)),
+                Field::new("offset", Type::optional(Type::BigInt)),
                 Field::new("user_id", Type::BigInt),
                 Field::new("strategy_pool_contract_id", Type::BigInt),
             ],

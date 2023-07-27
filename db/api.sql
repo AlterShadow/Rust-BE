@@ -856,7 +856,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_list_user_strategy_pool_contract_asset_ledger_entries(a_limit bigint, a_offset bigint, a_user_id bigint, a_strategy_pool_contract_id bigint)
+CREATE OR REPLACE FUNCTION api.fun_user_list_user_strategy_pool_contract_asset_ledger_entries(a_user_id bigint, a_strategy_pool_contract_id bigint, a_limit bigint DEFAULT NULL, a_offset bigint DEFAULT NULL)
 RETURNS table (
     "user_strategy_pool_contract_asset_ledger_id" bigint,
     "strategy_pool_contract_id" bigint,
