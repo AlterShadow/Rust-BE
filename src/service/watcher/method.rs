@@ -156,8 +156,12 @@ pub async fn handle_pancake_swap_transaction(
     /* check if caller is a strategy watching wallet & get strategy id */
     let caller = tx.get_from().context("no from address found")?;
     for strategy_id in get_strategy_id_from_watching_wallet(&state.db, blockchain, caller).await? {
-        copy_trade_for_strategy(state.clone(), strategy_id, blockchain, expert_trade.clone())
-            .await?;
+        if let Err(err) =
+            copy_trade_for_strategy(state.clone(), strategy_id, blockchain, expert_trade.clone())
+                .await
+        {
+            error!("error copy trading for strategy {}: {:?}", strategy_id, err);
+        }
     }
 
     Ok(())
