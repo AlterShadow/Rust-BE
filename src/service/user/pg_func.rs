@@ -496,7 +496,7 @@ END
 BEGIN
 	RETURN QUERY
 		WITH tokens AS (
-		SELECT etca.pkey_id, etca.address, etca.symbol, etca.short_name, etca.blockchain
+		SELECT etca.pkey_id, etca.address, etca.symbol, etca.short_name, etca.decimals, etca.blockchain
 		FROM tbl.escrow_token_contract_address AS etca
 	),
 
@@ -517,6 +517,7 @@ BEGIN
 		tokens.short_name AS token_name,
 		tokens.symbol AS token_symbol,
 		tokens.address AS token_address,
+		tokens.decimals AS token_decimals,
 		tokens.blockchain,
 		uspcab.balance
 	FROM tbl.user_strategy_pool_contract_asset_balance as uspcab
