@@ -34,6 +34,7 @@ use lib::toolbox::*;
 use lib::ws::SubscribeManager;
 use lib::{DEFAULT_LIMIT, DEFAULT_OFFSET};
 use lru::LruCache;
+use mc2fi_asset_price::AssetPriceClient;
 use num_traits::{FromPrimitive, ToPrimitive, Zero};
 use rust_decimal::Decimal;
 use std::sync::Arc;
@@ -77,7 +78,7 @@ impl RequestHandler for MethodUserFollowStrategy {
     }
 }
 pub struct MethodUserListFollowedStrategies {
-    pub asset_client: Arc<CoinMarketCap>,
+    pub asset_client: Arc<AssetPriceClient>,
 }
 
 impl RequestHandler for MethodUserListFollowedStrategies {
@@ -112,7 +113,7 @@ impl RequestHandler for MethodUserListFollowedStrategies {
     }
 }
 pub struct MethodUserListStrategies {
-    pub asset_client: Arc<CoinMarketCap>,
+    pub asset_client: Arc<AssetPriceClient>,
 }
 
 impl RequestHandler for MethodUserListStrategies {
@@ -158,7 +159,7 @@ impl RequestHandler for MethodUserListStrategies {
 }
 
 pub struct MethodUserListTopPerformingStrategies {
-    pub asset_client: Arc<CoinMarketCap>,
+    pub asset_client: Arc<AssetPriceClient>,
 }
 
 impl RequestHandler for MethodUserListTopPerformingStrategies {
@@ -273,7 +274,8 @@ impl RequestHandler for MethodUserListStrategyBackers {
     }
 }
 pub struct MethodUserGetStrategy {
-    pub asset_client: Arc<CoinMarketCap>,
+    pub asset_db_client: Arc<AssetPriceClient>,
+    pub cmc_client: Arc<CoinMarketCap>,
 }
 impl RequestHandler for MethodUserGetStrategy {
     type Request = UserGetStrategyRequest;
@@ -285,7 +287,8 @@ impl RequestHandler for MethodUserGetStrategy {
         req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
-        let asset_client = self.asset_client.clone();
+        let asset_client = self.asset_db_client.clone();
+        let cmc_client = self.cmc_client.clone();
         async move {
             ensure_user_role(ctx, EnumRole::User)?;
             let ret = db
@@ -337,7 +340,7 @@ impl RequestHandler for MethodUserGetStrategy {
                     .unwrap_or_else(|| Utc::now().timestamp_nanos()),
                 strategy_pool_asset_balances: calculate_strategy_pool_asset_balances(
                     &db,
-                    &asset_client,
+                    &cmc_client,
                     ctx.user_id,
                     req.strategy_id,
                 )
@@ -447,7 +450,7 @@ impl RequestHandler for MethodUserGetStrategyStatistics {
     }
 }
 pub struct MethodUserGetStrategiesStatistics {
-    pub asset_client: Arc<CoinMarketCap>,
+    pub asset_client: Arc<AssetPriceClient>,
 }
 impl RequestHandler for MethodUserGetStrategiesStatistics {
     type Request = UserGetStrategiesStatisticsRequest;
@@ -519,7 +522,7 @@ impl RequestHandler for MethodUserGetStrategiesStatistics {
 }
 
 pub struct MethodUserListBackedStrategies {
-    pub asset_client: Arc<CoinMarketCap>,
+    pub asset_client: Arc<AssetPriceClient>,
 }
 impl RequestHandler for MethodUserListBackedStrategies {
     type Request = UserListBackedStrategiesRequest;
@@ -1587,7 +1590,7 @@ impl RequestHandler for MethodUserListFeaturedExperts {
     }
 }
 pub struct MethodUserGetExpertProfile {
-    pub asset_client: Arc<CoinMarketCap>,
+    pub asset_client: Arc<AssetPriceClient>,
 }
 impl RequestHandler for MethodUserGetExpertProfile {
     type Request = UserGetExpertProfileRequest;
@@ -1707,7 +1710,7 @@ impl RequestHandler for MethodUserUpdateUserProfile {
     }
 }
 pub struct MethodUserGetUserProfile {
-    pub asset_client: Arc<CoinMarketCap>,
+    pub asset_client: Arc<AssetPriceClient>,
 }
 impl RequestHandler for MethodUserGetUserProfile {
     type Request = UserGetUserProfileRequest;
@@ -3615,7 +3618,7 @@ impl RequestHandler for MethodUserGetSystemConfig {
 }
 
 pub struct MethodExpertListPublishedStrategies {
-    pub asset_client: Arc<CoinMarketCap>,
+    pub asset_client: Arc<AssetPriceClient>,
 }
 impl RequestHandler for MethodExpertListPublishedStrategies {
     type Request = ExpertListPublishedStrategiesRequest;
@@ -3657,7 +3660,7 @@ impl RequestHandler for MethodExpertListPublishedStrategies {
     }
 }
 pub struct MethodExpertListUnpublishedStrategies {
-    pub asset_client: Arc<CoinMarketCap>,
+    pub asset_client: Arc<AssetPriceClient>,
 }
 
 impl RequestHandler for MethodExpertListUnpublishedStrategies {

@@ -11,6 +11,12 @@ pub struct AssetPriceClient {
     db: DbClient,
 }
 
+impl AssetPriceClient {
+    pub fn new(db: DbClient) -> Self {
+        Self { db }
+    }
+}
+
 #[async_trait]
 impl AssetInfoClient for AssetPriceClient {
     async fn get_usd_price_latest(&self, symbols: &[String]) -> Result<HashMap<String, f64>> {

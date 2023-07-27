@@ -11,6 +11,7 @@ use lib::database::{connect_to_database, DatabaseConfig};
 use lib::log::{setup_logs, LogLevel};
 use lib::ws::{EndpointAuthController, SubscribeManager, WebsocketServer, WsServerConfig};
 use lru::LruCache;
+use mc2fi_asset_price::AssetPriceClient;
 use mc2fi_auth::endpoints::endpoint_auth_authorize;
 use mc2fi_auth::method::MethodAuthAuthorize;
 use mc2fi_user::admin_method::*;
@@ -46,6 +47,7 @@ async fn main() -> Result<()> {
     let audit_logger = AuditLogger::new()?;
     let mut server = WebsocketServer::new(config.app.clone());
     let db = connect_to_database(config.app_db).await?;
+    let asset_client = Arc::new(AssetPriceClient::new(db.clone()));
     load_allow_domain_urls(&db, &mut config.app).await?;
     server.add_database(db.clone());
     server.add_database(connect_to_database(config.auth_db).await?);
@@ -70,7 +72,7 @@ async fn main() -> Result<()> {
     let escrow_contract_address = load_escrow_address(&db).await?;
     server.add_handler(MethodUserFollowStrategy);
     server.add_handler(MethodUserListFollowedStrategies {
-        asset_client: cmc_client.clone(),
+        asset_client: asset_client.clone(),
     });
     server.add_handler(MethodUserUnfollowStrategy);
 
@@ -78,22 +80,23 @@ async fn main() -> Result<()> {
     server.add_handler(MethodUserListWhitelistedWallets);
     server.add_handler(MethodUserUnwhitelistWallet);
     server.add_handler(MethodUserListStrategies {
-        asset_client: cmc_client.clone(),
+        asset_client: asset_client.clone(),
     });
     server.add_handler(MethodUserListTopPerformingStrategies {
-        asset_client: cmc_client.clone(),
+        asset_client: asset_client.clone(),
     });
     server.add_handler(MethodUserListStrategyFollowers);
     server.add_handler(MethodUserListStrategyBackers);
     server.add_handler(MethodUserGetStrategy {
-        asset_client: cmc_client.clone(),
+        asset_db_client: asset_client.clone(),
+        cmc_client: cmc_client.clone(),
     });
     server.add_handler(MethodUserGetStrategyStatistics);
     server.add_handler(MethodUserGetStrategiesStatistics {
-        asset_client: cmc_client.clone(),
+        asset_client: asset_client.clone(),
     });
     server.add_handler(MethodUserListBackedStrategies {
-        asset_client: cmc_client.clone(),
+        asset_client: asset_client.clone(),
     });
 
     server.add_handler(MethodUserListDepositWithdrawLedger);
@@ -104,10 +107,10 @@ async fn main() -> Result<()> {
     server.add_handler(MethodExpertListBackers);
     server.add_handler(MethodUserListFollowedExperts);
     server.add_handler(MethodExpertListPublishedStrategies {
-        asset_client: cmc_client.clone(),
+        asset_client: asset_client.clone(),
     });
     server.add_handler(MethodExpertListUnpublishedStrategies {
-        asset_client: cmc_client.clone(),
+        asset_client: asset_client.clone(),
     });
 
     server.add_handler(MethodUserUnfollowExpert);
@@ -115,11 +118,11 @@ async fn main() -> Result<()> {
     server.add_handler(MethodUserListTopPerformingExperts);
     server.add_handler(MethodUserListFeaturedExperts);
     server.add_handler(MethodUserGetExpertProfile {
-        asset_client: cmc_client.clone(),
+        asset_client: asset_client.clone(),
     });
 
     server.add_handler(MethodUserGetUserProfile {
-        asset_client: cmc_client.clone(),
+        asset_client: asset_client.clone(),
     });
     server.add_handler(MethodUserUpdateUserProfile);
     server.add_handler(MethodUserApplyBecomeExpert);

@@ -2256,6 +2256,7 @@ dependencies = [
  "itertools",
  "lib",
  "lru",
+ "mc2fi_asset_price",
  "mc2fi_auth",
  "model",
  "num",

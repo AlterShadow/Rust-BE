@@ -45,6 +45,7 @@ eth-sdk = { path = "../shared/eth-sdk" }
 execution-engine = { path = "../shared/execution-engine" }
 api = { path = "../shared/api" }
 mc2fi_auth = { path = "../auth" }
+mc2fi_asset_price = { path = "../asset_price" }
 tracing-appender = "0.2"
 lru = "*"
 rust_decimal = "1.29.1"
