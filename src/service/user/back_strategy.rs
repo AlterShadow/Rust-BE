@@ -688,10 +688,10 @@ pub async fn user_back_strategy(
             .execute(FunUserListUserDepositWithdrawBalanceReq {
                 limit: Some(1),
                 offset: None,
-                user_id: Some(user_id),
+                user_id,
                 user_address: Some(wallet.clone().into()),
                 blockchain: Some(blockchain),
-                token_address: Some(token_address),
+                token_address: Some(token_address.into()),
                 token_id: None,
                 escrow_contract_address: Some(escrow_contract.address().into()),
             })
@@ -1093,7 +1093,7 @@ pub async fn get_and_check_user_deposit_balances_by_wallet_to_fill_value(
     let mut total_amount_found: Decimal = Decimal::zero();
     for wallet_balance_row in wallet_asset_balances {
         let wallet_balance: Decimal = wallet_balance_row.balance;
-        if wallet_balance.is_zero() || wallet_balance.is_negative() {
+        if wallet_balance.is_zero() || wallet_balance.is_sign_negative() {
             continue;
         }
         if total_amount_found == value_to_fill {

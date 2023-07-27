@@ -1283,7 +1283,7 @@ pub async fn on_user_request_refund(
             blockchain: Some(chain),
             token_id: Some(refunded_token_row.token_id),
             token_address: None,
-            escrow_contract_address: escrow_contract.address().into(),
+            escrow_contract_address: Some(escrow_contract.address().into()),
         })
         .await?
         .into_result()
