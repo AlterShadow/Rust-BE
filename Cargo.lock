@@ -2182,6 +2182,7 @@ dependencies = [
  "async-trait",
  "eyre",
  "gen",
+ "itertools",
  "lib",
  "secrecy",
  "serde",

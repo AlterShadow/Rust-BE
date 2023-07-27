@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use std::time::Duration;
 
 use eyre::*;
+use itertools::Itertools;
 use secrecy::{ExposeSecret, SecretString};
 use serde::Deserialize;
 use tokio::time::sleep;
@@ -78,24 +79,9 @@ async fn get_unique_asset_symbols(db: &DbClient) -> Result<Vec<String>> {
         .await?
         .into_rows();
 
-    let mut unique_token_symbols: HashMap<String, ()> = HashMap::new();
-    for token_contract_row in all_token_contract_rows {
-        match unique_token_symbols.entry(token_contract_row.symbol) {
-            Entry::Occupied(_) => continue,
-            Entry::Vacant(entry) => {
-                entry.insert(());
-            }
-        }
-    }
-
-    Ok(unique_token_symbols
-        .keys()
-        .cloned()
+    Ok(all_token_contract_rows
+        .into_iter()
+        .map(|x| x.symbol)
+        .unique()
         .collect::<Vec<String>>())
-}
-
-async fn delete_old_price_entries(db: &DbClient) -> Result<()> {
-    db.execute(FunAssetPriceDeleteOldAssetPriceEntriesReq {})
-        .await?;
-    Ok(())
 }
