@@ -390,6 +390,52 @@ impl RequestHandler for MethodUserGetStrategy {
         .boxed()
     }
 }
+pub struct MethodUserListStrategyPoolContractAssetLedger;
+impl RequestHandler for MethodUserListStrategyPoolContractAssetLedger {
+    type Request = UserListStrategyPoolContractAssetLedgerRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db: DbClient = toolbox.get_db();
+        async move {
+            ensure_user_role(ctx, EnumRole::User)?;
+
+            let ledger = db
+                .execute(FunUserListStrategyPoolContractAssetLedgerReq {
+                    limit: req.limit,
+                    offset: req.offset,
+                    strategy_id: Some(req.strategy_id),
+                    token_id: None,
+                    blockchain: Some(req.blockchain),
+                })
+                .await?
+                .into_rows();
+
+            Ok(UserListStrategyPoolContractAssetLedgerResponse {
+                strategy_pool_contract_asset_ledger: ledger
+                    .into_iter()
+                    .map(|x| StrategyPoolContractAssetLedgerRow {
+                        ledger_id: x.entry_id,
+                        symbol: x.token_symbol,
+                        token_id: x.token_id,
+                        blockchain: x.blockchain,
+                        dex: x.dex.unwrap_or_default(),
+                        transaction_hash: x.transaction_hash.into(),
+                        quantity: x.amount.into(),
+                        is_add: x.is_add,
+                        happened_at: x.happened_at,
+                    })
+                    .collect(),
+            })
+        }
+        .boxed()
+    }
+}
+
 pub struct MethodUserGetStrategyStatistics;
 impl RequestHandler for MethodUserGetStrategyStatistics {
     type Request = UserGetStrategyStatisticsRequest;
