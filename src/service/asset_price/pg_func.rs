@@ -8,13 +8,29 @@ pub fn get_asset_price_pg_func() -> Vec<ProceduralFunction> {
             vec![
                 Field::new("symbols", Type::Vec(Box::new(Type::String))),
                 Field::new("prices", Type::Vec(Box::new(Type::Numeric))),
+                Field::new(
+                    "timestamps",
+                    Type::optional(Type::Vec(Box::new(Type::BigInt))),
+                ),
             ],
             vec![Field::new("success", Type::Boolean)],
             r#"
 BEGIN
-	INSERT INTO tbl.token_price (symbol, price, created_at)
-	SELECT a_symbol, a_price, EXTRACT(EPOCH FROM NOW())::bigint
-	FROM UNNEST(a_symbols, a_prices) AS u(a_symbol, a_price);
+	IF a_timestamps IS NULL THEN
+		INSERT INTO tbl.token_price (symbol, price, created_at)
+		SELECT
+				a_symbol,
+				a_price,
+				EXTRACT(EPOCH FROM NOW())::bigint
+		FROM UNNEST(a_symbols, a_prices) AS u(a_symbol, a_price);
+	ELSE
+		INSERT INTO tbl.token_price (symbol, price, created_at)
+		SELECT
+				a_symbol,
+				a_price,
+				a_timestamp
+		FROM UNNEST(a_symbols, a_prices, a_timestamps) AS u(a_symbol, a_price, a_timestamp);
+	END IF;
 
 	RETURN QUERY SELECT true AS "success";
 END

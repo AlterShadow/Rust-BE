@@ -3778,18 +3778,21 @@ impl DatabaseRequest for FunUserListEscrowContractAddressReqReq {
 pub struct FunAssetPriceInsertAssetPricesReq {
     pub symbols: Vec<String>,
     pub prices: Vec<f64>,
+    #[serde(default)]
+    pub timestamps: Option<Vec<i64>>,
 }
 
 #[allow(unused_variables)]
 impl DatabaseRequest for FunAssetPriceInsertAssetPricesReq {
     type ResponseRow = FunAssetPriceInsertAssetPricesRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_asset_price_insert_asset_prices(a_symbols => $1::varchar[], a_prices => $2::double precision[]);"
+        "SELECT * FROM api.fun_asset_price_insert_asset_prices(a_symbols => $1::varchar[], a_prices => $2::double precision[], a_timestamps => $3::bigint[]);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
             &self.symbols as &(dyn ToSql + Sync),
             &self.prices as &(dyn ToSql + Sync),
+            &self.timestamps as &(dyn ToSql + Sync),
         ]
     }
 }

@@ -54,6 +54,7 @@ async fn fill_asset_price_cache(db: &DbClient, cmc: &CoinMarketCap) -> Result<()
     db.execute(FunAssetPriceInsertAssetPricesReq {
         symbols: quoted_prices.keys().cloned().collect(),
         prices: quoted_prices.values().cloned().collect(),
+        timestamps: None,
     })
     .await?;
 

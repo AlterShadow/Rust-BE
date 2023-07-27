@@ -3977,7 +3977,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_asset_price_insert_asset_prices(a_symbols varchar[], a_prices double precision[])
+CREATE OR REPLACE FUNCTION api.fun_asset_price_insert_asset_prices(a_symbols varchar[], a_prices double precision[], a_timestamps bigint[] DEFAULT NULL)
 RETURNS table (
     "success" boolean
 )
@@ -3985,9 +3985,21 @@ LANGUAGE plpgsql
 AS $$
     
 BEGIN
-	INSERT INTO tbl.token_price (symbol, price, created_at)
-	SELECT a_symbol, a_price, EXTRACT(EPOCH FROM NOW())::bigint
-	FROM UNNEST(a_symbols, a_prices) AS u(a_symbol, a_price);
+	IF a_timestamps IS NULL THEN
+		INSERT INTO tbl.token_price (symbol, price, created_at)
+		SELECT
+				a_symbol,
+				a_price,
+				EXTRACT(EPOCH FROM NOW())::bigint
+		FROM UNNEST(a_symbols, a_prices) AS u(a_symbol, a_price);
+	ELSE
+		INSERT INTO tbl.token_price (symbol, price, created_at)
+		SELECT
+				a_symbol,
+				a_price,
+				a_timestamp
+		FROM UNNEST(a_symbols, a_prices, a_timestamps) AS u(a_symbol, a_price, a_timestamp);
+	END IF;
 
 	RETURN QUERY SELECT true AS "success";
 END
