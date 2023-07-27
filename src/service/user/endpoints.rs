@@ -584,6 +584,37 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
         )
         .with_description("User lists experts"),
         EndpointSchema::new(
+            "UserListExpertListenedWalletTradeLedger",
+            20163,
+            vec![
+                Field::new("expert_listened_wallet_id", Type::BigInt),
+                Field::new("limit", Type::optional(Type::BigInt)),
+                Field::new("offset", Type::optional(Type::BigInt)),
+            ],
+            vec![Field::new(
+                "expert_listened_wallet_trade_ledger",
+                Type::datatable(
+                    "ExpertListenedWalletTradeLedgerRow",
+                    vec![
+                        Field::new("ledger_id", Type::BigInt),
+                        Field::new("expert_listened_wallet_id", Type::BigInt),
+                        Field::new("blockchain", Type::enum_ref("block_chain")),
+                        Field::new("transaction_hash", Type::BlockchainTransactionHash),
+                        Field::new("dex", Type::enum_ref("dex")),
+                        Field::new("token_in_id", Type::BigInt),
+                        Field::new("token_in_symbol", Type::String),
+                        Field::new("token_in_address", Type::BlockchainAddress),
+                        Field::new("amount_in", Type::BlockchainDecimal),
+                        Field::new("token_out_id", Type::BigInt),
+                        Field::new("token_out_symbol", Type::String),
+                        Field::new("token_out_address", Type::BlockchainAddress),
+                        Field::new("amount_out", Type::BlockchainDecimal),
+                        Field::new("happened_at", Type::BigInt),
+                    ],
+                ),
+            )],
+        ),
+        EndpointSchema::new(
             "UserGetExpertProfile",
             20170,
             vec![Field::new("expert_id", Type::BigInt)],

@@ -353,6 +353,9 @@ pub enum EnumEndpoint {
     #[postgres(name = "UserListFeaturedExperts")]
     UserListFeaturedExperts = 20162,
     ///
+    #[postgres(name = "UserListExpertListenedWalletTradeLedger")]
+    UserListExpertListenedWalletTradeLedger = 20163,
+    ///
     #[postgres(name = "UserGetExpertProfile")]
     UserGetExpertProfile = 20170,
     ///
@@ -1575,6 +1578,29 @@ pub struct ExpertListUnpublishedStrategiesResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct ExpertListenedWalletTradeLedgerRow {
+    pub ledger_id: i64,
+    pub expert_listened_wallet_id: i64,
+    pub blockchain: EnumBlockChain,
+    #[serde(with = "WithBlockchainTransactionHash")]
+    pub transaction_hash: H256,
+    pub dex: EnumDex,
+    pub token_in_id: i64,
+    pub token_in_symbol: String,
+    #[serde(with = "WithBlockchainAddress")]
+    pub token_in_address: Address,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub amount_in: Decimal,
+    pub token_out_id: i64,
+    pub token_out_symbol: String,
+    #[serde(with = "WithBlockchainAddress")]
+    pub token_out_address: Address,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub amount_out: Decimal,
+    pub happened_at: i64,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct ExpertRemoveStrategyInitialTokenRatioRequest {
     pub strategy_id: i64,
     pub token_id: i64,
@@ -2349,6 +2375,20 @@ pub struct UserListExitStrategyLedgerRequest {
 pub struct UserListExitStrategyLedgerResponse {
     pub exit_ledger_total: i64,
     pub exit_ledger: Vec<ExitStrategyLedgerRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListExpertListenedWalletTradeLedgerRequest {
+    pub expert_listened_wallet_id: i64,
+    #[serde(default)]
+    pub limit: Option<i64>,
+    #[serde(default)]
+    pub offset: Option<i64>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListExpertListenedWalletTradeLedgerResponse {
+    pub expert_listened_wallet_trade_ledger: Vec<ExpertListenedWalletTradeLedgerRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -5885,6 +5925,111 @@ impl WsRequest for UserListFeaturedExpertsRequest {
 }
 impl WsResponse for UserListFeaturedExpertsResponse {
     type Request = UserListFeaturedExpertsRequest;
+}
+
+impl WsRequest for UserListExpertListenedWalletTradeLedgerRequest {
+    type Response = UserListExpertListenedWalletTradeLedgerResponse;
+    const METHOD_ID: u32 = 20163;
+    const SCHEMA: &'static str = r#"{
+  "name": "UserListExpertListenedWalletTradeLedger",
+  "code": 20163,
+  "parameters": [
+    {
+      "name": "expert_listened_wallet_id",
+      "ty": "BigInt"
+    },
+    {
+      "name": "limit",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    },
+    {
+      "name": "offset",
+      "ty": {
+        "Optional": "BigInt"
+      }
+    }
+  ],
+  "returns": [
+    {
+      "name": "expert_listened_wallet_trade_ledger",
+      "ty": {
+        "DataTable": {
+          "name": "ExpertListenedWalletTradeLedgerRow",
+          "fields": [
+            {
+              "name": "ledger_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "expert_listened_wallet_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "blockchain",
+              "ty": {
+                "EnumRef": "block_chain"
+              }
+            },
+            {
+              "name": "transaction_hash",
+              "ty": "BlockchainTransactionHash"
+            },
+            {
+              "name": "dex",
+              "ty": {
+                "EnumRef": "dex"
+              }
+            },
+            {
+              "name": "token_in_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "token_in_symbol",
+              "ty": "String"
+            },
+            {
+              "name": "token_in_address",
+              "ty": "BlockchainAddress"
+            },
+            {
+              "name": "amount_in",
+              "ty": "BlockchainDecimal"
+            },
+            {
+              "name": "token_out_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "token_out_symbol",
+              "ty": "String"
+            },
+            {
+              "name": "token_out_address",
+              "ty": "BlockchainAddress"
+            },
+            {
+              "name": "amount_out",
+              "ty": "BlockchainDecimal"
+            },
+            {
+              "name": "happened_at",
+              "ty": "BigInt"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stream_response": null,
+  "description": "",
+  "json_schema": null
+}"#;
+}
+impl WsResponse for UserListExpertListenedWalletTradeLedgerResponse {
+    type Request = UserListExpertListenedWalletTradeLedgerRequest;
 }
 
 impl WsRequest for UserGetExpertProfileRequest {

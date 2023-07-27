@@ -2777,6 +2777,103 @@
           "json_schema": null
         },
         {
+          "name": "UserListExpertListenedWalletTradeLedger",
+          "code": 20163,
+          "parameters": [
+            {
+              "name": "expert_listened_wallet_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "limit",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "offset",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "name": "expert_listened_wallet_trade_ledger",
+              "ty": {
+                "DataTable": {
+                  "name": "ExpertListenedWalletTradeLedgerRow",
+                  "fields": [
+                    {
+                      "name": "ledger_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "expert_listened_wallet_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "blockchain",
+                      "ty": {
+                        "EnumRef": "block_chain"
+                      }
+                    },
+                    {
+                      "name": "transaction_hash",
+                      "ty": "BlockchainTransactionHash"
+                    },
+                    {
+                      "name": "dex",
+                      "ty": {
+                        "EnumRef": "dex"
+                      }
+                    },
+                    {
+                      "name": "token_in_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "token_in_symbol",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "token_in_address",
+                      "ty": "BlockchainAddress"
+                    },
+                    {
+                      "name": "amount_in",
+                      "ty": "BlockchainDecimal"
+                    },
+                    {
+                      "name": "token_out_id",
+                      "ty": "BigInt"
+                    },
+                    {
+                      "name": "token_out_symbol",
+                      "ty": "String"
+                    },
+                    {
+                      "name": "token_out_address",
+                      "ty": "BlockchainAddress"
+                    },
+                    {
+                      "name": "amount_out",
+                      "ty": "BlockchainDecimal"
+                    },
+                    {
+                      "name": "happened_at",
+                      "ty": "BigInt"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "stream_response": null,
+          "description": "",
+          "json_schema": null
+        },
+        {
           "name": "UserGetExpertProfile",
           "code": 20170,
           "parameters": [

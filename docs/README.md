@@ -42,6 +42,7 @@ ID: 2
 |20160|UserListExperts|limit, offset, expert_id, user_id, user_public_id, username, family_name, given_name, description, social_media, sort_by_followers|experts_total, experts|User lists experts|
 |20161|UserListTopPerformingExperts|limit, offset|experts_total, experts|User lists experts|
 |20162|UserListFeaturedExperts|limit, offset|experts_total, experts|User lists experts|
+|20163|UserListExpertListenedWalletTradeLedger|expert_listened_wallet_id, limit, offset|expert_listened_wallet_trade_ledger||
 |20170|UserGetExpertProfile|expert_id|expert_id, name, family_name, given_name, follower_count, backers_count, description, social_media, risk_score, reputation_score, aum, followed, strategies_total, strategies|User gets an expert profile|
 |20180|UserGetUserProfile||name, login_wallet, joined_at, follower_count, description, social_media, followed_experts, followed_strategies, backed_strategies|User gets an user profile|
 |20190|UserWhitelistWallet|blockchain, wallet_address|success, wallet_id|User registers a wallet|
