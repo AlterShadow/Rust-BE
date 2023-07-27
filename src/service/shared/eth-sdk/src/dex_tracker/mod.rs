@@ -15,15 +15,16 @@ pub async fn get_strategy_id_from_watching_wallet(
     db: &DbClient,
     blockchain: EnumBlockChain,
     wallet_address: Address,
-) -> Result<Option<i64>> {
+) -> Result<Vec<i64>> {
     let strategy_id = db
         .execute(FunUserGetStrategyIdFromWatchingWalletReq {
             blockchain,
             address: wallet_address.into(),
         })
         .await?
-        .into_result()
-        .map(|x| x.strategy_id);
+        .into_iter()
+        .map(|x| x.strategy_id)
+        .collect();
 
     Ok(strategy_id)
 }

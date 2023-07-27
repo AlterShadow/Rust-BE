@@ -17,6 +17,7 @@ pub enum DexPairPathSet {
 
 #[derive(Clone, Debug)]
 pub struct DexTrade {
+    pub hash: H256,
     pub chain: EnumBlockChain,
     pub contract: Address,
     pub dex: EnumDex,

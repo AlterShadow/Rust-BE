@@ -3637,7 +3637,7 @@ BEGIN
 			AND (a_strategy_id ISNULL OR spc.fkey_strategy_id = a_strategy_id)
 			AND (a_blockchain ISNULL OR tc.blockchain = a_blockchain)
 			AND (a_token_address ISNULL OR tc.address = a_token_address)
-			AND spcab.balance > 0.0;
+			AND spcab.balance != 0.0;
 END
 
 $$;

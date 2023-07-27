@@ -11,7 +11,7 @@ use eth_sdk::dex_tracker::{
 use eth_sdk::erc20::Erc20Token;
 use eth_sdk::escrow::{parse_escrow_withdraw_event, EscrowContract};
 use eth_sdk::escrow_tracker::escrow::parse_escrow_transfer;
-use eth_sdk::evm::parse_quickalert_payload;
+use eth_sdk::evm::{parse_quickalert_payload, DexTrade};
 use eth_sdk::execute_transaction_and_ensure_success;
 use eth_sdk::pancake_swap::execute::PancakeSmartRouterContract;
 use eth_sdk::strategy_pool::StrategyPoolContract;
@@ -155,20 +155,62 @@ pub async fn handle_pancake_swap_transaction(
 
     /* check if caller is a strategy watching wallet & get strategy id */
     let caller = tx.get_from().context("no from address found")?;
-    let strategy_id =
-        match get_strategy_id_from_watching_wallet(&state.db, blockchain, caller).await? {
-            Some(strategy_id) => strategy_id,
-            None => {
-                /* caller is not a strategy watching wallet */
-                return Ok(());
-            }
-        };
+    for strategy_id in get_strategy_id_from_watching_wallet(&state.db, blockchain, caller).await? {
+        copy_trade_for_strategy(state.clone(), strategy_id, blockchain, expert_trade.clone())
+            .await?;
+    }
+
+    Ok(())
+}
+pub async fn copy_trade_for_strategy(
+    state: Arc<AppState>,
+    strategy_id: i64,
+    blockchain: EnumBlockChain,
+    expert_trade: DexTrade,
+) -> Result<()> {
+    info!("start copy trading for strategy {}", strategy_id);
+
     let conn = state.eth_pool.get(blockchain).await?;
-
-    /* instantiate token_in and token_out contracts from expert's trade */
-    let token_in_contract = Erc20Token::new(conn.clone(), expert_trade.token_in)?;
-    let token_out_contract = Erc20Token::new(conn.clone(), expert_trade.token_out)?;
-
+    let token_in_row = state
+        .db
+        .execute(FunUserListEscrowTokenContractAddressReq {
+            limit: 1,
+            offset: 0,
+            token_id: None,
+            blockchain: Some(blockchain),
+            address: Some(expert_trade.token_in.into()),
+            symbol: None,
+            is_stablecoin: None,
+        })
+        .await?
+        .into_result()
+        .with_context(|| {
+            format!(
+                "could not find token_in {} in escrow token contracts",
+                expert_trade.token_in
+            )
+        })?;
+    let token_in_decimals = token_in_row.decimals;
+    let token_out_decimals = state
+        .db
+        .execute(FunUserListEscrowTokenContractAddressReq {
+            limit: 1,
+            offset: 0,
+            token_id: None,
+            blockchain: Some(blockchain),
+            address: Some(expert_trade.token_out.into()),
+            symbol: None,
+            is_stablecoin: None,
+        })
+        .await?
+        .into_result()
+        .with_context(|| {
+            format!(
+                "could not find token_out {} in escrow token contracts",
+                expert_trade.token_out
+            )
+        })?
+        .decimals;
     /* get expert wallet token_in asset balance prior to the trade */
     let expert_wallet_asset_token_in_previous_amount = state
         .db
@@ -193,8 +235,8 @@ pub async fn handle_pancake_swap_transaction(
     let saved = state
         .db
         .execute(FunWatcherSaveStrategyWatchingWalletTradeLedgerReq {
-            address: caller.clone().into(),
-            transaction_hash: tx.get_hash().into(),
+            address: expert_trade.caller.clone().into(),
+            transaction_hash: expert_trade.hash.into(),
             blockchain,
             contract_address: expert_trade.contract.into(),
             dex: Some(EnumDex::PancakeSwap.to_string()),
@@ -280,7 +322,10 @@ pub async fn handle_pancake_swap_transaction(
         if amount_to_spend.is_zero() {
             bail!("spent ratio is too small to be represented in amount of token_in owned by strategy pool contract");
         }
-
+        info!(
+            "amount_to_spend: {} {:?}",
+            amount_to_spend, expert_trade.token_in
+        );
         /* instantiate pancake swap contract */
         let pancake_contract = PancakeSmartRouterContract::new(
             conn.clone(),
@@ -310,6 +355,9 @@ pub async fn handle_pancake_swap_transaction(
             &DynLogger::empty(),
         )
         .await?;
+        /* instantiate token_in and token_out contracts from expert's trade */
+        let token_in_contract = Erc20Token::new(conn.clone(), expert_trade.token_in)?;
+        let token_out_contract = Erc20Token::new(conn.clone(), expert_trade.token_out)?;
 
         /* approve pancakeswap to trade token_in */
         let approve_transaction = || {
@@ -496,6 +544,10 @@ pub async fn handle_pancake_swap_transaction(
             .await?;
 
         /* update per-user strategy pool contract asset balances & ledger */
+        info!(
+                "update_user_strategy_pool_asset_balances_on_copy_trade: strategy_pool_contract_id: {}, token_in: {}, token_out: {}",
+                strategy_pool_contract_row.pkey_id, strategy_pool_pending_wallet_trade.token_in, strategy_pool_pending_wallet_trade.token_out
+            );
         update_user_strategy_pool_asset_balances_on_copy_trade(
             &state.db,
             blockchain,
@@ -510,7 +562,6 @@ pub async fn handle_pancake_swap_transaction(
 
         // TODO: multi-chain for loop ends here
     }
-
     Ok(())
 }
 
@@ -1368,6 +1419,7 @@ pub async fn update_asset_balances_and_ledger_exit_strategy(
 mod tests {
     use super::*;
     use eth_sdk::EthereumRpcConnectionPool;
+    use std::println;
     use std::str::FromStr;
 
     #[tokio::test]

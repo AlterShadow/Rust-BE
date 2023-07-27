@@ -422,6 +422,7 @@ impl PancakeSwapParser {
         }
 
         Ok(DexTrade {
+            hash: tx.get_hash(),
             chain,
             contract,
             dex: EnumDex::PancakeSwap,
