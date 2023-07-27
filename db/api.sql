@@ -4018,25 +4018,33 @@ RETURNS table (
 LANGUAGE plpgsql
 AS $$
     
+DECLARE
+	_now TIMESTAMP := NOW();
+	_days_ago_1 BIGINT := EXTRACT(EPOCH FROM (_now - INTERVAL '1 DAYS'))::BIGINT;
+	_days_ago_2 BIGINT := EXTRACT(EPOCH FROM (_now - INTERVAL '2 DAYS'))::BIGINT;
+	_days_ago_7 BIGINT := EXTRACT(EPOCH FROM (_now - INTERVAL '7 DAYS'))::BIGINT;
+	_days_ago_8 BIGINT := EXTRACT(EPOCH FROM (_now - INTERVAL '8 DAYS'))::BIGINT;
+	_days_ago_30 BIGINT := EXTRACT(EPOCH FROM (_now - INTERVAL '30 DAYS'))::BIGINT;
+	_days_ago_31 BIGINT := EXTRACT(EPOCH FROM (_now - INTERVAL '31 DAYS'))::BIGINT;
 BEGIN
 	RETURN QUERY
 	WITH date_ranges AS (
 		SELECT
 				tp.symbol,
 				MAX(tp.created_at) FILTER (
-					WHERE tp.created_at >= (EXTRACT(EPOCH FROM (NOW() - INTERVAL '1 DAYS'))::BIGINT)
+					WHERE tp.created_at >= _days_ago_1
 				) AS latest,
 				MAX(tp.created_at) FILTER (
-					WHERE tp.created_at <= (EXTRACT(EPOCH FROM (NOW() - INTERVAL '1 DAYS'))::BIGINT)
-					AND tp.created_at >= (EXTRACT(EPOCH FROM (NOW() - INTERVAL '2 DAYS'))::BIGINT)
+					WHERE tp.created_at <= _days_ago_1
+					AND tp.created_at >= _days_ago_2
 				) AS day_1,
 				MAX(tp.created_at) FILTER (
-					WHERE tp.created_at <= (EXTRACT(EPOCH FROM (NOW() - INTERVAL '7 DAYS'))::BIGINT)
-					AND tp.created_at >= (EXTRACT(EPOCH FROM (NOW() - INTERVAL '8 DAYS'))::BIGINT)
+					WHERE tp.created_at <= _days_ago_7
+					AND tp.created_at >= _days_ago_8
 				) AS day_7,
 				MAX(tp.created_at) FILTER (
-					WHERE tp.created_at <= (EXTRACT(EPOCH FROM (NOW() - INTERVAL '30 DAYS'))::BIGINT)
-					AND tp.created_at >= (EXTRACT(EPOCH FROM (NOW() - INTERVAL '31 DAYS'))::BIGINT)
+					WHERE tp.created_at <= _days_ago_30
+					AND tp.created_at >= _days_ago_31
 				) AS day_30
 		FROM tbl.token_price AS tp
 		WHERE (a_symbols IS NULL OR tp.symbol = ANY(a_symbols))
