@@ -347,17 +347,24 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
         .collect::<HashMap<_, _>>();
 
     /* calculate how much of back amount to spend on each strategy pool asset */
-    let escrow_allocations_for_tokens = calculate_copy_trade_plan(
+    let mut escrow_allocations_for_tokens = calculate_copy_trade_plan(
         blockchain,
         expert_asset_amounts,
         {
-            let mut map = HashMap::new();
-            map.insert(token_address, back_token_amount_minus_fees);
-            map
+            // TODO: use sp_assets_and_amounts but it may not work
+            // let mut assets = sp_assets_and_amounts.clone();
+            let mut assets = HashMap::new();
+            *assets.entry(token_address).or_default() += back_token_amount_minus_fees;
+            assets
         },
         token_prices.clone(),
         token_decimals.clone(),
     )?;
+    escrow_allocations_for_tokens.trades = escrow_allocations_for_tokens
+        .trades
+        .into_iter()
+        .filter(|x| x.token_in == token_address)
+        .collect();
     info!(
         "escrow_allocations_for_tokens={:?}",
         escrow_allocations_for_tokens
