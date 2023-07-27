@@ -46,6 +46,26 @@ async fn main() -> Result<()> {
 }
 
 async fn fill_asset_price_cache(db: &DbClient, cmc: &CoinMarketCap) -> Result<()> {
+    let quoted_prices = cmc
+        .get_usd_prices_by_symbol(&get_unique_asset_symbols(&db).await?)
+        .await?;
+
+    db.execute(FunAssetPriceInsertAssetPricesReq {
+        symbols: quoted_prices.keys().cloned().collect(),
+        prices: quoted_prices.values().cloned().collect(),
+    })
+    .await?;
+
+    Ok(())
+}
+
+async fn delete_old_price_entries(db: &DbClient) -> Result<()> {
+    db.execute(FunAssetPriceDeleteOldAssetPriceEntriesReq {})
+        .await?;
+    Ok(())
+}
+
+async fn get_unique_asset_symbols(db: &DbClient) -> Result<Vec<String>> {
     let all_token_contract_rows = db
         .execute(FunAdminListEscrowTokenContractAddressReq {
             limit: None,
@@ -68,22 +88,10 @@ async fn fill_asset_price_cache(db: &DbClient, cmc: &CoinMarketCap) -> Result<()
         }
     }
 
-    let quoted_prices = cmc
-        .get_usd_prices_by_symbol(
-            &unique_token_symbols
-                .keys()
-                .cloned()
-                .collect::<Vec<String>>(),
-        )
-        .await?;
-
-    db.execute(FunAssetPriceInsertAssetPricesReq {
-        symbols: quoted_prices.keys().cloned().collect(),
-        prices: quoted_prices.values().cloned().collect(),
-    })
-    .await?;
-
-    Ok(())
+    Ok(unique_token_symbols
+        .keys()
+        .cloned()
+        .collect::<Vec<String>>())
 }
 
 async fn delete_old_price_entries(db: &DbClient) -> Result<()> {
