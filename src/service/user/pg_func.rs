@@ -372,7 +372,8 @@ END
                 Field::new("limit", Type::optional(Type::BigInt)),
                 Field::new("offset", Type::optional(Type::BigInt)),
                 Field::new("user_id", Type::BigInt),
-                Field::new("strategy_pool_contract_id", Type::BigInt),
+                Field::new("strategy_id", Type::BigInt),
+                Field::new("blockchain", Type::enum_ref("block_chain")),
             ],
             vec![
                 Field::new("user_strategy_pool_contract_asset_ledger_id", Type::BigInt),
@@ -392,13 +393,13 @@ END
             ],
             r#"
 DECLARE
-	_strategy_id BIGINT;
-BEGIN
-		SELECT fkey_strategy_id INTO _strategy_id
-		FROM tbl.strategy_pool_contract
-		WHERE pkey_id = a_strategy_pool_contract_id;
-		
-		ASSERT _strategy_id IS NOT NULL;
+	_strategy_pool_contract_id BIGINT;
+BEGIN		
+		SELECT spc.pkey_id INTO _strategy_pool_contract_id
+		FROM tbl.strategy_pool_contract AS spc
+		WHERE spc.fkey_strategy_id = a_strategy_id AND spc.blockchain = a_blockchain;
+
+		ASSERT _strategy_pool_contract_id IS NOT NULL;
 
 		RETURN QUERY
 		WITH tokens AS (
@@ -415,7 +416,7 @@ BEGIN
 		SELECT
 			uspcal.pkey_id AS user_strategy_pool_contract_asset_ledger_id,
 			uspcal.fkey_strategy_pool_contract_id,
-			_strategy_id AS strategy_id,
+			a_strategy_id AS strategy_id,
 			strategy_wallets.pkey_id AS strategy_wallet_id,
 			strategy_wallets.address AS strategy_wallet_address,
 			strategy_wallets.is_platform_managed AS is_strategy_wallet_managed,
@@ -430,7 +431,7 @@ BEGIN
 		FROM tbl.user_strategy_pool_contract_asset_ledger AS uspcal
 		INNER JOIN tokens ON tokens.pkey_id = uspcal.fkey_token_id
 		INNER JOIN strategy_wallets ON strategy_wallets.pkey_id = uspcal.fkey_strategy_wallet_id
-		WHERE uspcal.fkey_strategy_pool_contract_id = a_strategy_pool_contract_id
+		WHERE uspcal.fkey_strategy_pool_contract_id = _strategy_pool_contract_id
 		ORDER BY uspcal.happened_at DESC
 		LIMIT a_limit
 		OFFSET a_offset;
