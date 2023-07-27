@@ -3792,7 +3792,7 @@ BEGIN
      AND (a_address ISNULL OR eww.address = a_address)
      AND (a_blockchain ISNULL OR eww.blockchain = a_blockchain)
      AND (a_strategy_id ISNULL OR sww.fkey_strategy_id = a_strategy_id)
-	 AND elwab.balance > 0.0	 
+	 AND elwab.balance != 0.0	 
      ORDER BY elwab.pkey_id DESC
     LIMIT a_limit
     OFFSET a_offset;
