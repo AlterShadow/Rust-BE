@@ -131,7 +131,7 @@ pub fn calculate_asset_values(
     for (asset, amount) in amounts {
         let price = *prices
             .get(&asset)
-            .with_context(|| format!("price of asset {}", asset.to_string()))?;
+            .with_context(|| format!("could not get price of asset {:?}", asset))?;
         let value = amount * Decimal::from_f64(price).unwrap();
         values.insert(asset, value);
     }
@@ -309,8 +309,9 @@ pub async fn get_token_prices(
     db: &DbClient,
     cmc: &CoinMarketCap,
     tokens: Vec<Address>,
-) -> Result<Vec<f64>> {
+) -> Result<HashMap<Address, f64>> {
     let mut symbols = Vec::new();
+    let mut symbol_to_address = HashMap::new();
     for token in tokens {
         let tk = db
             .execute(FunUserListEscrowTokenContractAddressReq {
@@ -325,14 +326,21 @@ pub async fn get_token_prices(
             .await?
             .into_result()
             .context("no token")?;
-        symbols.push(tk.symbol);
+        symbols.push(tk.symbol.clone());
+        symbol_to_address.insert(tk.symbol, token);
     }
     let prices = cmc.get_usd_prices_by_symbol(&symbols).await?;
-    Ok(symbols
-        .iter()
-        .flat_map(|t| prices.get(t))
-        .copied()
-        .collect())
+    let mut result = HashMap::new();
+    for (symbol, price) in prices {
+        let address = symbol_to_address.get(&symbol).with_context(|| {
+            format!(
+                "could not find address for symbol {:?} in {:?}",
+                symbol, symbol_to_address
+            )
+        })?;
+        result.insert(*address, price);
+    }
+    Ok(result)
 }
 
 pub async fn execute_copy_trade(
@@ -356,7 +364,6 @@ pub async fn execute_copy_trade(
         .cloned()
         .collect();
     let prices = get_token_prices(db, cmc, symbols.clone()).await?;
-    let prices = symbols.into_iter().zip(prices.into_iter()).collect();
     let decimals: HashMap<Address, u32> = strategy_asset_decimals
         .into_iter()
         .merge(expert_asset_decimals.into_iter())

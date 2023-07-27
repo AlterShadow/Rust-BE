@@ -257,6 +257,25 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
         dry_run,
     )
     .await?;
+    let back_token = db
+        .execute(FunUserListEscrowTokenContractAddressReq {
+            limit: 1,
+            offset: 0,
+            token_id: Some(token_id),
+            blockchain: None,
+            address: None,
+            symbol: None,
+            is_stablecoin: None,
+        })
+        .await?
+        .into_result()
+        .with_context(|| {
+            format!(
+                "could not find token contract address for token id {}",
+                token_id
+            )
+        })?;
+    let back_token_decimals = back_token.decimals as u32;
 
     /* deduce fees from back amount */
     // TODO: use (back amount - fees) to calculate trade spenditure and SP shares
@@ -314,17 +333,16 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
     let tokens = sp_assets_and_amounts
         .keys()
         .chain(expert_asset_amounts.keys())
+        .chain(&[token_address])
         .unique()
         .cloned()
         .collect::<Vec<_>>();
     let token_prices = get_token_prices(db, cmc, tokens.clone()).await?;
-    let token_prices = tokens
-        .into_iter()
-        .zip(token_prices)
-        .collect::<HashMap<_, _>>();
+
     let token_decimals = sp_assets_and_decimals
         .into_iter()
         .chain(expert_asset_amounts_decimals.into_iter())
+        .chain([(token_address, back_token_decimals)])
         .unique()
         .collect::<HashMap<_, _>>();
 
