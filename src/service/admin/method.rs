@@ -426,7 +426,7 @@ impl RequestHandler for MethodAdminListBackers {
     }
 }
 pub struct MethodAdminListStrategies {
-    pub cmc: Arc<dyn AssetInfoClient>,
+    pub asset_client: Arc<dyn AssetInfoClient>,
 }
 impl RequestHandler for MethodAdminListStrategies {
     type Request = AdminListStrategiesRequest;
@@ -438,7 +438,7 @@ impl RequestHandler for MethodAdminListStrategies {
         req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
-        let cmc = self.cmc.clone();
+        let asset_client = self.asset_client.clone();
         async move {
             ensure_user_role(ctx, EnumRole::Admin)?;
 
@@ -459,7 +459,7 @@ impl RequestHandler for MethodAdminListStrategies {
             Ok(AdminListStrategiesResponse {
                 strategies_total: ret.first(|x| x.total).unwrap_or_default(),
                 strategies: ret
-                    .map_async(|x| convert_strategy_db_to_api_net_value(x, &cmc, &db))
+                    .map_async(|x| convert_strategy_db_to_api_net_value(x, &asset_client, &db))
                     .await?,
             })
         }

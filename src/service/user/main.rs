@@ -185,7 +185,7 @@ async fn main() -> Result<()> {
     server.add_handler(MethodAdminListBackers);
     server.add_handler(MethodAdminListExperts);
     server.add_handler(MethodAdminListStrategies {
-        cmc: cmc_client.clone(),
+        asset_client: cmc_client.clone(),
     });
     server.add_handler(MethodAdminListBackStrategyLedger);
     server.add_handler(MethodAdminListExitStrategyLedger);
