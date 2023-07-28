@@ -5,6 +5,7 @@ use std::collections::HashMap;
 use async_trait::async_trait;
 use eyre::*;
 
+#[derive(Debug, Clone)]
 pub struct AssetPriceByPeriod {
     pub symbol: String,
     pub price_latest: f64,
