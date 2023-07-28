@@ -2824,9 +2824,7 @@
                     },
                     {
                       "name": "dex",
-                      "ty": {
-                        "EnumRef": "dex"
-                      }
+                      "ty": "String"
                     },
                     {
                       "name": "token_in_id",

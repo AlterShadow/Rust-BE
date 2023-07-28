@@ -600,7 +600,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
                         Field::new("expert_listened_wallet_id", Type::BigInt),
                         Field::new("blockchain", Type::enum_ref("block_chain")),
                         Field::new("transaction_hash", Type::BlockchainTransactionHash),
-                        Field::new("dex", Type::enum_ref("dex")),
+                        Field::new("dex", Type::String),
                         Field::new("token_in_id", Type::BigInt),
                         Field::new("token_in_symbol", Type::String),
                         Field::new("token_in_address", Type::BlockchainAddress),

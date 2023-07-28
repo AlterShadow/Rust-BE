@@ -1584,7 +1584,7 @@ pub struct ExpertListenedWalletTradeLedgerRow {
     pub blockchain: EnumBlockChain,
     #[serde(with = "WithBlockchainTransactionHash")]
     pub transaction_hash: H256,
-    pub dex: EnumDex,
+    pub dex: String,
     pub token_in_id: i64,
     pub token_in_symbol: String,
     #[serde(with = "WithBlockchainAddress")]
@@ -5978,9 +5978,7 @@ impl WsRequest for UserListExpertListenedWalletTradeLedgerRequest {
             },
             {
               "name": "dex",
-              "ty": {
-                "EnumRef": "dex"
-              }
+              "ty": "String"
             },
             {
               "name": "token_in_id",
