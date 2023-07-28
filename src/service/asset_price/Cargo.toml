@@ -16,6 +16,7 @@ gen = { path = "../../gen" }
 lib = { path = "../../lib" }
 api = { path = "../shared/api" }
 itertools = "0.10.5"
+chrono = "*"
 
 [features]
 default = []

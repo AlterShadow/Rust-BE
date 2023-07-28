@@ -1,7 +1,6 @@
-use std::collections::hash_map::Entry;
-use std::collections::HashMap;
 use std::time::Duration;
 
+use chrono::Utc;
 use eyre::*;
 use itertools::Itertools;
 use secrecy::{ExposeSecret, SecretString};
@@ -29,6 +28,7 @@ async fn main() -> Result<()> {
     let db = connect_to_database(config.app_db).await?;
     let cmc_client = CoinMarketCap::new(config.cmc_api_key.expose_secret())?;
 
+    fill_past_prices_on_startup(&db, &cmc_client).await?;
     loop {
         match fill_asset_price_cache(&db, &cmc_client).await {
             Ok(_) => {}
@@ -85,4 +85,32 @@ async fn get_unique_asset_symbols(db: &DbClient) -> Result<Vec<String>> {
         .map(|x| x.symbol)
         .unique()
         .collect::<Vec<String>>())
+}
+
+async fn fill_past_prices_on_startup(db: &DbClient, cmc: &CoinMarketCap) -> Result<()> {
+    let unique_asset_symbols = get_unique_asset_symbols(&db).await?;
+
+    if unique_asset_symbols.len() == 0 {
+        bail!("no unique asset symbols found");
+    }
+
+    let now = Utc::now();
+    for chunk in unique_asset_symbols.chunks(30) {
+        for days_ago in [1, 30] {
+            let prices = cmc.get_usd_price_days_ago(chunk, days_ago, false).await?;
+            let timestamp_days_ago = now
+                .checked_sub_signed(chrono::Duration::days(days_ago as i64))
+                .context("could not subtract days from current timestamp")?
+                .timestamp();
+            let timestamps = vec![timestamp_days_ago; prices.len()];
+            db.execute(FunAssetPriceInsertAssetPricesReq {
+                symbols: prices.keys().cloned().collect(),
+                prices: prices.values().cloned().collect(),
+                timestamps: Some(timestamps),
+            })
+            .await?;
+        }
+    }
+
+    Ok(())
 }
