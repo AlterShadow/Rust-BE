@@ -930,7 +930,7 @@ RETURNS table (
     "expert_listened_wallet_id" bigint,
     "blockchain" enum_block_chain,
     "transaction_hash" varchar,
-    "dex" enum_dex,
+    "dex" varchar,
     "token_in_id" bigint,
     "token_in_symbol" varchar,
     "token_in_address" varchar,

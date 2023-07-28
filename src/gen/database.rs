@@ -472,7 +472,7 @@ pub struct FunUserListExpertListenedWalletTradeLedgerEntriesRespRow {
     pub expert_listened_wallet_id: i64,
     pub blockchain: EnumBlockChain,
     pub transaction_hash: BlockchainTransactionHash,
-    pub dex: EnumDex,
+    pub dex: String,
     pub token_in_id: i64,
     pub token_in_symbol: String,
     pub token_in_address: BlockchainAddress,
