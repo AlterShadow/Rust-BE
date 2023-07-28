@@ -1,4 +1,4 @@
-use api::cmc::CoinMarketCap;
+use api::AssetInfoClient;
 use eth_sdk::erc20::Erc20Token;
 use eth_sdk::escrow::EscrowContract;
 use eth_sdk::execute_transaction_and_ensure_success;
@@ -29,6 +29,7 @@ use num_traits::{FromPrimitive, One, Zero};
 use rust_decimal::Decimal;
 use std::collections::HashMap;
 use std::future::Future;
+use std::sync::Arc;
 use tracing::{debug, info, warn};
 use web3::signing::Key;
 use web3::types::Address;
@@ -223,7 +224,7 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
     user_id: i64,
     _escrow_contract_address: Address,
     get_token_out: impl Fn(Address, Decimal, u32) -> Fut,
-    cmc: &CoinMarketCap,
+    asset_client: &Arc<dyn AssetInfoClient>,
 ) -> Result<CalculateUserBackStrategyCalculateAmountToMintResult> {
     /* fetch strategy */
     let strategy = db
@@ -337,7 +338,7 @@ pub async fn calculate_user_back_strategy_calculate_amount_to_mint<
         .unique()
         .cloned()
         .collect::<Vec<_>>();
-    let token_prices = get_token_prices(db, cmc, tokens.clone()).await?;
+    let token_prices = get_token_prices(db, asset_client, tokens.clone()).await?;
 
     let token_decimals = sp_assets_and_decimals
         .into_iter()
@@ -517,7 +518,7 @@ pub async fn user_back_strategy(
     strategy_wallet: Option<Address>,
     logger: DynLogger,
     pancake_paths: &WorkingPancakePairPaths,
-    cmc: &CoinMarketCap,
+    asset_client: &Arc<dyn AssetInfoClient>,
 ) -> Result<()> {
     logger.log(format!("checking back amount {}", back_token_amount));
     if back_token_amount.is_zero() {
@@ -894,7 +895,7 @@ pub async fn user_back_strategy(
         user_id,
         escrow_contract.address(),
         get_out_amount,
-        cmc,
+        asset_client,
     )
     .await?;
 

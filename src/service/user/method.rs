@@ -273,8 +273,7 @@ impl RequestHandler for MethodUserListStrategyBackers {
     }
 }
 pub struct MethodUserGetStrategy {
-    pub asset_db_client: Arc<dyn AssetInfoClient>,
-    pub cmc_client: Arc<CoinMarketCap>,
+    pub asset_client: Arc<dyn AssetInfoClient>,
 }
 impl RequestHandler for MethodUserGetStrategy {
     type Request = UserGetStrategyRequest;
@@ -286,8 +285,7 @@ impl RequestHandler for MethodUserGetStrategy {
         req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         let db: DbClient = toolbox.get_db();
-        let asset_client = self.asset_db_client.clone();
-        let cmc_client = self.cmc_client.clone();
+        let asset_client = self.asset_client.clone();
         async move {
             ensure_user_role(ctx, EnumRole::User)?;
             let ret = db
@@ -339,7 +337,7 @@ impl RequestHandler for MethodUserGetStrategy {
                     .unwrap_or_else(|| Utc::now().timestamp_nanos()),
                 strategy_pool_asset_balances: calculate_strategy_pool_asset_balances(
                     &db,
-                    &cmc_client,
+                    &asset_client,
                     ctx.user_id,
                     req.strategy_id,
                 )
@@ -750,7 +748,7 @@ pub struct MethodUserBackStrategy {
     pub subscribe_manager: Arc<SubscribeManager<AdminSubscribeTopic>>,
     pub pancake_paths: Arc<WorkingPancakePairPaths>,
     pub lru: Arc<Mutex<LruCache<i64, ()>>>,
-    pub cmc: Arc<CoinMarketCap>,
+    pub asset_client: Arc<dyn AssetInfoClient>,
 }
 impl RequestHandler for MethodUserBackStrategy {
     type Request = UserBackStrategyRequest;
@@ -770,7 +768,7 @@ impl RequestHandler for MethodUserBackStrategy {
         let subscribe_manager = self.subscribe_manager.clone();
         let lru = self.lru.clone();
         let pancake_swap = self.pancake_paths.clone();
-        let cmc = self.cmc.clone();
+        let asset_client = self.asset_client.clone();
         async move {
             {
                 let mut lru = lru.lock().await;
@@ -865,7 +863,7 @@ impl RequestHandler for MethodUserBackStrategy {
                     req.strategy_wallet,
                     logger.clone(),
                     &pancake_swap,
-                    &cmc,
+                    &asset_client,
                 )
                 .await
                 {
@@ -3423,74 +3421,50 @@ impl RequestHandler for MethodUserListStrategyTokenBalance {
 }
 async fn calculate_strategy_pool_asset_balances(
     db: &DbClient,
-    cmc: &CoinMarketCap,
+    cmc: &Arc<dyn AssetInfoClient>,
     _user_id: i64,
     strategy_id: i64,
 ) -> Result<Vec<StrategyPoolAssetBalancesRow>> {
-    let balances = db
+    let balance_rows = db
         .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
             strategy_pool_contract_id: None,
             strategy_id: Some(strategy_id),
             blockchain: None,
             token_address: None,
         })
-        .await?;
-    let token_symbols: Vec<_> = balances.iter().map(|x| x.token_symbol.clone()).collect();
-    // preload cache
-    let _prices = cmc
-        .get_usd_prices_by_symbol(&token_symbols)
-        .await
-        .context("failed to get price")?;
-    let _prices_7d = cmc
-        .get_usd_price_days_ago(&token_symbols, 7, true)
-        .await
-        .context("failed to get price")?;
-    let _prices_30d = cmc
-        .get_usd_price_days_ago(&token_symbols, 30, true)
-        .await
-        .context("failed to get price")?;
-    balances
-        .map_async(|x| {
-            let cmc = &cmc;
-            async move {
-                let price_usd = cmc
-                    .get_usd_prices_by_symbol(&[x.token_symbol.clone()])
-                    .await?
-                    .get(&x.token_symbol)
-                    .cloned()
-                    .unwrap_or_default();
-                let price_usd_7d = cmc
-                    .get_usd_price_days_ago(&[x.token_symbol.clone()], 7, true)
-                    .await?
-                    .get(&x.token_symbol)
-                    .cloned()
-                    .unwrap_or_default();
-                let price_usd_30d = cmc
-                    .get_usd_price_days_ago(&[x.token_symbol.clone()], 30, true)
-                    .await?
-                    .get(&x.token_symbol)
-                    .cloned()
-                    .unwrap_or_default();
-                Ok(StrategyPoolAssetBalancesRow {
-                    name: x.token_name,
-                    symbol: x.token_symbol,
-                    address: x.token_address.into(),
-                    blockchain: x.blockchain,
-                    balance: x.balance.into(),
-                    price_usd,
-                    price_usd_7d,
-                    price_usd_30d,
-                })
-            }
-        })
-        .await
+        .await?
+        .into_rows();
+    let token_symbols: Vec<_> = balance_rows
+        .iter()
+        .map(|x| x.token_symbol.clone())
+        .collect();
+    let prices_by_period = cmc.get_usd_price_period(&token_symbols).await?;
+
+    let mut balances: Vec<StrategyPoolAssetBalancesRow> = Vec::new();
+    for balance_row in balance_rows {
+        let price_by_period = prices_by_period
+            .get(&balance_row.token_symbol)
+            .context("failed to get asset price")?;
+        balances.push(StrategyPoolAssetBalancesRow {
+            name: balance_row.token_name,
+            symbol: balance_row.token_symbol,
+            address: balance_row.token_address.into(),
+            blockchain: balance_row.blockchain,
+            balance: balance_row.balance.into(),
+            price_usd: price_by_period.price_latest,
+            price_usd_7d: price_by_period.price_7d,
+            price_usd_30d: price_by_period.price_30d,
+        });
+    }
+
+    Ok(balances)
 }
 pub struct MethodUserGetBackStrategyReviewDetail {
     pub pool: EthereumRpcConnectionPool,
     pub escrow_contract: Arc<AbstractEscrowContract>,
     pub master_key: Secp256k1SecretKey,
     pub dex_addresses: Arc<DexAddresses>,
-    pub cmc: Arc<CoinMarketCap>,
+    pub asset_client: Arc<dyn AssetInfoClient>,
     pub pancake_paths: Arc<WorkingPancakePairPaths>,
 }
 
@@ -3506,7 +3480,7 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
         let db = toolbox.get_db();
         let pool = self.pool.clone();
         let master_key = self.master_key.clone();
-        let cmc = self.cmc.clone();
+        let asset_client = self.asset_client.clone();
         let escrow_contract = self.escrow_contract.clone();
         async move {
             ensure_user_role(ctx, EnumRole::User)?;
@@ -3530,7 +3504,7 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
             let token_address = token.address.0;
             let get_token_out = |out_token: Address, in_amount: Decimal, _| {
                 let db = db.clone();
-                let cmc = cmc.clone();
+                let asset_client = asset_client.clone();
                 async move {
                     let token_out = db
                         .execute(FunUserListEscrowTokenContractAddressReq {
@@ -3547,8 +3521,8 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
                         .with_context(|| {
                             format!("No escrow token found for {:?} {:?}", out_token, blockchain)
                         })?;
-                    let price = *cmc
-                        .get_usd_prices_by_symbol(&[token_out.symbol.clone()])
+                    let price = *asset_client
+                        .get_usd_price_latest(&[token_out.symbol.clone()])
                         .await?
                         .get(&token_out.symbol)
                         .with_context(|| {
@@ -3578,7 +3552,7 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
                 ctx.user_id,
                 escrow_contract_address.address(),
                 get_token_out,
-                &cmc,
+                &asset_client,
             )
             .await?;
             let mut ratios: Vec<EstimatedBackedTokenRatios> = vec![];
@@ -3612,8 +3586,8 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
                     .with_context(|| {
                         CustomError::new(EnumErrorCode::NotFound, "Token not found")
                     })?;
-                let price = *cmc
-                    .get_usd_prices_by_symbol(&[token.symbol.clone()])
+                let price = *asset_client
+                    .get_usd_price_latest(&[token.symbol.clone()])
                     .await?
                     .get(&token.symbol)
                     .with_context(|| {
@@ -3649,7 +3623,7 @@ impl RequestHandler for MethodUserGetBackStrategyReviewDetail {
                 estimated_backed_token_ratios: ratios,
                 strategy_pool_asset_balances: calculate_strategy_pool_asset_balances(
                     &db,
-                    &cmc,
+                    &asset_client,
                     ctx.user_id,
                     req.strategy_id,
                 )

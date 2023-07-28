@@ -88,8 +88,7 @@ async fn main() -> Result<()> {
     server.add_handler(MethodUserListStrategyFollowers);
     server.add_handler(MethodUserListStrategyBackers);
     server.add_handler(MethodUserGetStrategy {
-        asset_db_client: cmc_client.clone(),
-        cmc_client: cmc_client.clone(),
+        asset_client: cmc_client.clone(),
     });
     server.add_handler(MethodUserListStrategyPoolContractAssetLedger);
     server.add_handler(MethodUserListUserStrategyPoolContractAssetLedger);
@@ -247,7 +246,7 @@ async fn main() -> Result<()> {
         escrow_contract: escrow_contract.clone(),
         master_key: master_key.clone(),
         dex_addresses: Arc::new(DexAddresses::new()),
-        cmc: cmc_client.clone(),
+        asset_client: cmc_client.clone(),
         pancake_paths: pancake_paths.clone(),
     });
     let lru = Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(1000).unwrap())));
@@ -259,7 +258,7 @@ async fn main() -> Result<()> {
         subscribe_manager: Arc::clone(&sub_manager),
         lru: lru.clone(),
         pancake_paths: pancake_paths.clone(),
-        cmc: cmc_client.clone(),
+        asset_client: cmc_client.clone(),
     });
     server.add_handler(MethodUserExitStrategy {
         pool: eth_pool.clone(),

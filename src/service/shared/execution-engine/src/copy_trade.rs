@@ -1,4 +1,4 @@
-use api::cmc::CoinMarketCap;
+use api::AssetInfoClient;
 use eth_sdk::execute_transaction_and_ensure_success;
 use eth_sdk::pancake_swap::execute::PancakeSmartRouterContract;
 use eth_sdk::pancake_swap::pair_paths::parse_pancake_swap_dex_path;
@@ -21,6 +21,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::ops::{AddAssign, SubAssign};
+use std::sync::Arc;
 use tracing::info;
 use web3::signing::Key;
 use web3::types::{Address, TransactionReceipt, U256};
@@ -307,7 +308,7 @@ pub async fn execute_copy_trade_plan(
 }
 pub async fn get_token_prices(
     db: &DbClient,
-    cmc: &CoinMarketCap,
+    asset_client: &Arc<dyn AssetInfoClient>,
     tokens: Vec<Address>,
 ) -> Result<HashMap<Address, f64>> {
     let mut symbols = Vec::new();
@@ -329,7 +330,7 @@ pub async fn get_token_prices(
         symbols.push(tk.symbol.clone());
         symbol_to_address.insert(tk.symbol, token);
     }
-    let prices = cmc.get_usd_prices_by_symbol(&symbols).await?;
+    let prices = asset_client.get_usd_price_latest(&symbols).await?;
     let mut result = HashMap::new();
     for (symbol, price) in prices {
         let address = symbol_to_address.get(&symbol).with_context(|| {
@@ -349,7 +350,7 @@ pub async fn execute_copy_trade(
     pancakeswap_contract: &PancakeSmartRouterContract<EitherTransport>,
     signer: impl Key + Clone,
     blochchain: EnumBlockChain,
-    cmc: &CoinMarketCap,
+    asset_client: &Arc<dyn AssetInfoClient>,
     strategy_id: i64,
 ) -> Result<()> {
     let (strategy_asset_balances, strategy_asset_decimals) =
@@ -363,7 +364,7 @@ pub async fn execute_copy_trade(
         .unique()
         .cloned()
         .collect();
-    let prices = get_token_prices(db, cmc, symbols.clone()).await?;
+    let prices = get_token_prices(db, asset_client, symbols.clone()).await?;
     let decimals: HashMap<Address, u32> = strategy_asset_decimals
         .into_iter()
         .merge(expert_asset_decimals.into_iter())
