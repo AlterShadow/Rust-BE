@@ -65,9 +65,9 @@ impl AssetInfoClient for AssetPriceClient {
             let asset_price_by_period = AssetPriceByPeriod {
                 symbol: row.symbol.clone(),
                 price_latest: row.price_latest,
-                price_1d: Some(row.price_1d),
-                price_7d: Some(row.price_7d),
-                price_30d: Some(row.price_30d),
+                price_1d: row.price_1d,
+                price_7d: row.price_7d,
+                price_30d: row.price_30d,
             };
             asset_prices.insert(row.symbol, asset_price_by_period);
         }

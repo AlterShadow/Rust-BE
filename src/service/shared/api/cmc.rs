@@ -484,10 +484,22 @@ impl AssetInfoClient for CoinMarketCap {
         let prices_7d = self.get_usd_price_days_ago(symbols, 7, false).await?;
         let prices_30d = self.get_usd_price_days_ago(symbols, 30, false).await?;
         for symbol in symbols {
-            let price_latest = prices.get(symbol).cloned().unwrap_or(0.0);
-            let price_1d = prices_1d.get(symbol).cloned();
-            let price_7d = prices_7d.get(symbol).cloned();
-            let price_30d = prices_30d.get(symbol).cloned();
+            let price_latest = prices
+                .get(symbol)
+                .cloned()
+                .context("could not get price of token that was just fetched")?;
+            let price_1d = prices_1d
+                .get(symbol)
+                .cloned()
+                .context("could not get price of token that was just fetched")?;
+            let price_7d = prices_7d
+                .get(symbol)
+                .cloned()
+                .context("could not get price of token that was just fetched")?;
+            let price_30d = prices_30d
+                .get(symbol)
+                .cloned()
+                .context("could not get price of token that was just fetched")?;
             result.insert(
                 symbol.clone(),
                 AssetPriceByPeriod {
