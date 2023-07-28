@@ -488,18 +488,9 @@ impl AssetInfoClient for CoinMarketCap {
                 .get(symbol)
                 .cloned()
                 .context("could not get price of token that was just fetched")?;
-            let price_1d = prices_1d
-                .get(symbol)
-                .cloned()
-                .context("could not get price of token that was just fetched")?;
-            let price_7d = prices_7d
-                .get(symbol)
-                .cloned()
-                .context("could not get price of token that was just fetched")?;
-            let price_30d = prices_30d
-                .get(symbol)
-                .cloned()
-                .context("could not get price of token that was just fetched")?;
+            let price_1d = prices_1d.get(symbol).cloned();
+            let price_7d = prices_7d.get(symbol).cloned();
+            let price_30d = prices_30d.get(symbol).cloned();
             result.insert(
                 symbol.clone(),
                 AssetPriceByPeriod {

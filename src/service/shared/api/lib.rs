@@ -9,9 +9,9 @@ use eyre::*;
 pub struct AssetPriceByPeriod {
     pub symbol: String,
     pub price_latest: f64,
-    pub price_1d: f64,
-    pub price_7d: f64,
-    pub price_30d: f64,
+    pub price_1d: Option<f64>,
+    pub price_7d: Option<f64>,
+    pub price_30d: Option<f64>,
 }
 
 #[async_trait]

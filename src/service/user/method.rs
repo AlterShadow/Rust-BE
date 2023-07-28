@@ -3452,8 +3452,8 @@ async fn calculate_strategy_pool_asset_balances(
             blockchain: balance_row.blockchain,
             balance: balance_row.balance.into(),
             price_usd: price_by_period.price_latest,
-            price_usd_7d: price_by_period.price_7d,
-            price_usd_30d: price_by_period.price_30d,
+            price_usd_7d: price_by_period.price_7d.unwrap_or_default(),
+            price_usd_30d: price_by_period.price_30d.unwrap_or_default(),
         });
     }
 

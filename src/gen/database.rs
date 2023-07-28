@@ -141,9 +141,12 @@ pub struct FunAssetPriceInsertAssetPricesRespRow {
 pub struct FunAssetPriceListAssetPricesRespRow {
     pub symbol: String,
     pub price_latest: f64,
-    pub price_1d: f64,
-    pub price_7d: f64,
-    pub price_30d: f64,
+    #[serde(default)]
+    pub price_1d: Option<f64>,
+    #[serde(default)]
+    pub price_7d: Option<f64>,
+    #[serde(default)]
+    pub price_30d: Option<f64>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
