@@ -943,7 +943,7 @@ impl RequestHandler for MethodAdminSetBlockchainLogger {
 }
 
 pub struct MethodAdminListEscrowTokenContractAddresses {
-    pub cmc_client: Arc<CoinMarketCap>,
+    pub asset_client: Arc<dyn AssetInfoClient>,
 }
 impl RequestHandler for MethodAdminListEscrowTokenContractAddresses {
     type Request = AdminListEscrowTokenContractAddressesRequest;
@@ -954,7 +954,7 @@ impl RequestHandler for MethodAdminListEscrowTokenContractAddresses {
         req: Self::Request,
     ) -> FutureResponse<Self::Request> {
         let db = toolbox.get_db();
-        let cmc = self.cmc_client.clone();
+        let asset_client = self.asset_client.clone();
         async move {
             ensure_user_role(ctx, EnumRole::Admin)?;
             let ret = db
@@ -971,12 +971,12 @@ impl RequestHandler for MethodAdminListEscrowTokenContractAddresses {
                 addresses_total: ret.first(|x| x.total).unwrap_or_default(),
                 addresses: ret
                     .map_async(|x| {
-                        let cmc = cmc.clone();
+                        let asset_client = asset_client.clone();
                         async move {
                             let row = AdminEscrowTokenContractAddressRow {
                                 pkey_id: x.pkey_id,
-                                price: *cmc
-                                    .get_usd_prices_by_symbol(&[x.symbol.clone()])
+                                price: *asset_client
+                                    .get_usd_price_latest(&[x.symbol.clone()])
                                     .await?
                                     .get(&x.symbol)
                                     .unwrap(),

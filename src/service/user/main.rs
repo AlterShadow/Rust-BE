@@ -217,7 +217,7 @@ async fn main() -> Result<()> {
 
     let eth_pool = EthereumRpcConnectionPool::from_conns(config.ethereum_urls);
     server.add_handler(MethodAdminListEscrowTokenContractAddresses {
-        cmc_client: Arc::new(CoinMarketCap::new(config.cmc_api_key.expose_secret())?),
+        asset_client: Arc::new(CoinMarketCap::new(config.cmc_api_key.expose_secret())?),
     });
     server.add_handler(MethodAdminUpdateEscrowTokenContractAddress);
     let escrow_contract = Arc::new(AbstractEscrowContract::new2(
