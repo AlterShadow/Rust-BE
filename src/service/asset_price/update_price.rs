@@ -62,7 +62,7 @@ pub async fn fill_past_prices_on_startup(db: &DbClient, cmc: &CoinMarketCap) -> 
 
     let now = Utc::now();
     for chunk in unique_asset_symbols.chunks(30) {
-        for days_ago in [1, 7, 30] {
+        for days_ago in 1..=30 {
             let prices = cmc.get_usd_price_days_ago(chunk, days_ago, false).await?;
             let timestamp_days_ago = now
                 .checked_sub_signed(chrono::Duration::days(days_ago as i64))
