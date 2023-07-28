@@ -47,16 +47,22 @@ async fn main() -> Result<()> {
 }
 
 async fn fill_asset_price_cache(db: &DbClient, cmc: &CoinMarketCap) -> Result<()> {
-    let quoted_prices = cmc
-        .get_usd_prices_by_symbol(&get_unique_asset_symbols(&db).await?)
-        .await?;
+    let unique_asset_symbols = get_unique_asset_symbols(&db).await?;
 
-    db.execute(FunAssetPriceInsertAssetPricesReq {
-        symbols: quoted_prices.keys().cloned().collect(),
-        prices: quoted_prices.values().cloned().collect(),
-        timestamps: None,
-    })
-    .await?;
+    if unique_asset_symbols.len() == 0 {
+        bail!("no unique asset symbols found");
+    }
+
+    for chunk in unique_asset_symbols.chunks(30) {
+        let prices = cmc.get_usd_prices_by_symbol(&chunk).await?;
+
+        db.execute(FunAssetPriceInsertAssetPricesReq {
+            symbols: prices.keys().cloned().collect(),
+            prices: prices.values().cloned().collect(),
+            timestamps: None,
+        })
+        .await?;
+    }
 
     Ok(())
 }
