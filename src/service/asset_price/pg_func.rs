@@ -46,9 +46,9 @@ END
             vec![
                 Field::new("symbol", Type::String),
                 Field::new("price_latest", Type::Numeric),
-                Field::new("price_1d", Type::optional(Type::Numeric)),
-                Field::new("price_7d", Type::optional(Type::Numeric)),
-                Field::new("price_30d", Type::optional(Type::Numeric)),
+                Field::new("price_1d", Type::Numeric),
+                Field::new("price_7d", Type::Numeric),
+                Field::new("price_30d", Type::Numeric),
             ],
             r#"
 DECLARE
