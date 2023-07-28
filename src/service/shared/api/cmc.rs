@@ -480,9 +480,9 @@ impl AssetInfoClient for CoinMarketCap {
     ) -> Result<HashMap<String, AssetPriceByPeriod>> {
         let mut result = HashMap::new();
         let prices = self.get_usd_prices_by_symbol(symbols).await?;
-        let prices_1d = self.get_usd_price_days_ago(symbols, 1, false).await?;
-        let prices_7d = self.get_usd_price_days_ago(symbols, 7, false).await?;
-        let prices_30d = self.get_usd_price_days_ago(symbols, 30, false).await?;
+        let prices_1d = self.get_usd_price_days_ago(symbols, 1, true).await?;
+        let prices_7d = self.get_usd_price_days_ago(symbols, 7, true).await?;
+        let prices_30d = self.get_usd_price_days_ago(symbols, 30, true).await?;
         for symbol in symbols {
             let price_latest = prices
                 .get(symbol)
