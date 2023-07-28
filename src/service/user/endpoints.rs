@@ -587,7 +587,7 @@ pub fn get_user_endpoints() -> Vec<EndpointSchema> {
             "UserListExpertListenedWalletTradeLedger",
             20163,
             vec![
-                Field::new("expert_listened_wallet_id", Type::BigInt),
+                Field::new("strategy_id", Type::BigInt),
                 Field::new("limit", Type::optional(Type::BigInt)),
                 Field::new("offset", Type::optional(Type::BigInt)),
             ],

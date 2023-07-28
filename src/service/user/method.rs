@@ -1697,7 +1697,7 @@ impl RequestHandler for MethodUserListExpertListenedWalletTradeLedger {
             ensure_user_role(ctx, EnumRole::User)?;
             let ledger = db
                 .execute(FunUserListExpertListenedWalletTradeLedgerEntriesReq {
-                    expert_listened_wallet_id: req.expert_listened_wallet_id,
+                    strategy_id: req.strategy_id,
                     offset: req.offset,
                     limit: req.limit,
                 })

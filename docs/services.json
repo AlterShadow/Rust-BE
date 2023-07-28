@@ -2781,7 +2781,7 @@
           "code": 20163,
           "parameters": [
             {
-              "name": "expert_listened_wallet_id",
+              "name": "strategy_id",
               "ty": "BigInt"
             },
             {

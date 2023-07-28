@@ -108,7 +108,7 @@ BEGIN
     IF _expert_watched_wallet_id IS NOT NULL AND _fkey_token_in IS NOT NULL AND _fkey_token_out IS NOT NULL THEN
         INSERT INTO tbl.strategy_watching_wallet_trade_ledger
             (
-             expert_watched_wallet_id, blockchain,
+             fkey_expert_watched_wallet_id, blockchain,
              transaction_hash, dex, contract_address,
              fkey_token_in, fkey_token_out, amount_in,
              amount_out, heppened_at

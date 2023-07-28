@@ -924,7 +924,7 @@ END
 $$;
         
 
-CREATE OR REPLACE FUNCTION api.fun_user_list_expert_listened_wallet_trade_ledger_entries(a_expert_listened_wallet_id bigint, a_limit bigint DEFAULT NULL, a_offset bigint DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_user_list_expert_listened_wallet_trade_ledger_entries(a_strategy_id bigint, a_limit bigint DEFAULT NULL, a_offset bigint DEFAULT NULL)
 RETURNS table (
     "expert_listened_wallet_trade_ledger_id" bigint,
     "expert_listened_wallet_id" bigint,
@@ -946,7 +946,7 @@ AS $$
     
 BEGIN
 	RETURN QUERY
-
+	
 	WITH tokens AS (
 		SELECT etca.pkey_id, etca.address, etca.symbol, etca.short_name, etca.blockchain
 		FROM tbl.escrow_token_contract_address AS etca
@@ -954,7 +954,7 @@ BEGIN
 	
 	SELECT
 		swwtl.pkey_id AS expert_listened_wallet_trade_ledger_id,
-		swwtl.expert_watched_wallet_id AS expert_listened_wallet_id,
+		swwtl.fkey_expert_watched_wallet_id AS expert_listened_wallet_id,
 		swwtl.blockchain,
 		swwtl.transaction_hash,
 		swwtl.dex,
@@ -970,7 +970,8 @@ BEGIN
 	FROM tbl.strategy_watching_wallet_trade_ledger AS swwtl
 	JOIN tokens AS token_in ON token_in.pkey_id = swwtl.fkey_token_in
 	JOIN tokens AS token_out ON token_out.pkey_id = swwtl.fkey_token_out
-	WHERE swwtl.expert_watched_wallet_id = a_expert_listened_wallet_id
+    JOIN tbl.strategy_watched_wallet AS sww ON sww.fkey_expert_watched_wallet_id = swwtl.fkey_expert_watched_wallet_id
+	WHERE sww.fkey_strategy_id = a_strategy_id
 	ORDER BY swwtl.heppened_at DESC
 	LIMIT a_limit
 	OFFSET a_offset;
@@ -1221,7 +1222,7 @@ AS $$
     
 BEGIN
     IF a_expert_id ISNULL THEN
-        SELECT pkey_id INTO STRICT a_expert_id FROM tbl.expert_profile AS e
+        SELECT e.pkey_id INTO STRICT a_expert_id FROM tbl.expert_profile AS e
          JOIN tbl.user AS u ON e.pkey_id = e.fkey_user_id
          WHERE u.public_id = a_expert_public_id;
     END IF;
@@ -3198,8 +3199,9 @@ BEGIN
             decimals = a_decimals
         WHERE blockchain = a_blockchain AND symbol = a_symbol;
     ELSE
-        INSERT INTO tbl.escrow_token_contract_address (pkey_id, symbol, short_name, description, address, blockchain, is_stablecoin, decimals)
-             VALUES (a_pkey_id, a_symbol, a_short_name, a_description, a_address, a_blockchain, a_is_stablecoin, a_decimals);
+        INSERT INTO tbl.escrow_token_contract_address (pkey_id, symbol, short_name, description, address, blockchain, is_stablecoin, decimals, is_wrapped)
+             VALUES (a_pkey_id, a_symbol, a_short_name, a_description, a_address, a_blockchain, a_is_stablecoin, a_decimals, a_is_wrapped);
+   
     END IF;
 
 END
@@ -3405,7 +3407,7 @@ BEGIN
     IF _expert_watched_wallet_id IS NOT NULL AND _fkey_token_in IS NOT NULL AND _fkey_token_out IS NOT NULL THEN
         INSERT INTO tbl.strategy_watching_wallet_trade_ledger
             (
-             expert_watched_wallet_id, blockchain,
+             fkey_expert_watched_wallet_id, blockchain,
              transaction_hash, dex, contract_address,
              fkey_token_in, fkey_token_out, amount_in,
              amount_out, heppened_at

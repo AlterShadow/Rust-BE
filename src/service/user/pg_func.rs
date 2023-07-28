@@ -443,7 +443,7 @@ END
             vec![
                 Field::new("limit", Type::optional(Type::BigInt)),
                 Field::new("offset", Type::optional(Type::BigInt)),
-                Field::new("expert_listened_wallet_id", Type::BigInt),
+                Field::new("strategy_id", Type::BigInt),
             ],
             vec![
                 Field::new("expert_listened_wallet_trade_ledger_id", Type::BigInt),
@@ -464,7 +464,7 @@ END
             r#"
 BEGIN
 	RETURN QUERY
-
+	
 	WITH tokens AS (
 		SELECT etca.pkey_id, etca.address, etca.symbol, etca.short_name, etca.blockchain
 		FROM tbl.escrow_token_contract_address AS etca
@@ -472,7 +472,7 @@ BEGIN
 	
 	SELECT
 		swwtl.pkey_id AS expert_listened_wallet_trade_ledger_id,
-		swwtl.expert_watched_wallet_id AS expert_listened_wallet_id,
+		swwtl.fkey_expert_watched_wallet_id AS expert_listened_wallet_id,
 		swwtl.blockchain,
 		swwtl.transaction_hash,
 		swwtl.dex,
@@ -488,7 +488,8 @@ BEGIN
 	FROM tbl.strategy_watching_wallet_trade_ledger AS swwtl
 	JOIN tokens AS token_in ON token_in.pkey_id = swwtl.fkey_token_in
 	JOIN tokens AS token_out ON token_out.pkey_id = swwtl.fkey_token_out
-	WHERE swwtl.expert_watched_wallet_id = a_expert_listened_wallet_id
+    JOIN tbl.strategy_watched_wallet AS sww ON sww.fkey_expert_watched_wallet_id = swwtl.fkey_expert_watched_wallet_id
+	WHERE sww.fkey_strategy_id = a_strategy_id
 	ORDER BY swwtl.heppened_at DESC
 	LIMIT a_limit
 	OFFSET a_offset;
@@ -759,7 +760,7 @@ END
             r#"
 BEGIN
     IF a_expert_id ISNULL THEN
-        SELECT pkey_id INTO STRICT a_expert_id FROM tbl.expert_profile AS e
+        SELECT e.pkey_id INTO STRICT a_expert_id FROM tbl.expert_profile AS e
          JOIN tbl.user AS u ON e.pkey_id = e.fkey_user_id
          WHERE u.public_id = a_expert_public_id;
     END IF;

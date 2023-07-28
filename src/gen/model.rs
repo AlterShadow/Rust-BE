@@ -2379,7 +2379,7 @@ pub struct UserListExitStrategyLedgerResponse {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserListExpertListenedWalletTradeLedgerRequest {
-    pub expert_listened_wallet_id: i64,
+    pub strategy_id: i64,
     #[serde(default)]
     pub limit: Option<i64>,
     #[serde(default)]
@@ -5935,7 +5935,7 @@ impl WsRequest for UserListExpertListenedWalletTradeLedgerRequest {
   "code": 20163,
   "parameters": [
     {
-      "name": "expert_listened_wallet_id",
+      "name": "strategy_id",
       "ty": "BigInt"
     },
     {

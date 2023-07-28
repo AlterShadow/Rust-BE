@@ -284,7 +284,7 @@ CREATE TABLE tbl.strategy_watched_wallet (
 -- Table: strategy_watching_wallet_trade_ledger
 CREATE TABLE tbl.strategy_watching_wallet_trade_ledger (
     pkey_id bigint  NOT NULL DEFAULT nextval('tbl.seq_strategy_watching_wallet_activity_ledger_id'),
-    expert_watched_wallet_id bigint  NOT NULL,
+    fkey_expert_watched_wallet_id bigint  NOT NULL,
     blockchain enum_block_chain  NOT NULL,
     transaction_hash varchar(80)  NOT NULL,
     dex varchar(20)  NULL,
@@ -297,8 +297,7 @@ CREATE TABLE tbl.strategy_watching_wallet_trade_ledger (
     CONSTRAINT wallet_activity_history_ak_1 UNIQUE (transaction_hash) NOT DEFERRABLE  INITIALLY IMMEDIATE,
     CONSTRAINT strategy_watching_wallet_trade_ledger_pk PRIMARY KEY (pkey_id)
 );
-
-CREATE INDEX strategy_watching_wallet_trade_history_idx_1 on tbl.strategy_watching_wallet_trade_ledger (expert_watched_wallet_id ASC,blockchain ASC);
+CREATE INDEX strategy_watching_wallet_trade_history_idx_1 on tbl.strategy_watching_wallet_trade_ledger (fkey_expert_watched_wallet_id ASC,blockchain ASC);
 
 -- Table: strategy_whitelisted_token
 CREATE TABLE tbl.strategy_whitelisted_token (
@@ -760,7 +759,7 @@ ALTER TABLE tbl.strategy_watching_wallet_trade_ledger ADD CONSTRAINT strategy_wa
 
 -- Reference: strategy_watching_wallet_trade_history_expert_watched_wallet (table: strategy_watching_wallet_trade_ledger)
 ALTER TABLE tbl.strategy_watching_wallet_trade_ledger ADD CONSTRAINT strategy_watching_wallet_trade_history_expert_watched_wallet
-    FOREIGN KEY (expert_watched_wallet_id)
+    FOREIGN KEY (fkey_expert_watched_wallet_id)
     REFERENCES tbl.expert_watched_wallet (pkey_id)  
     NOT DEFERRABLE 
     INITIALLY IMMEDIATE

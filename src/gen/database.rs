@@ -1459,7 +1459,7 @@ impl DatabaseRequest for FunUserListUserStrategyPoolContractAssetLedgerEntriesRe
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunUserListExpertListenedWalletTradeLedgerEntriesReq {
-    pub expert_listened_wallet_id: i64,
+    pub strategy_id: i64,
     #[serde(default)]
     pub limit: Option<i64>,
     #[serde(default)]
@@ -1470,11 +1470,11 @@ pub struct FunUserListExpertListenedWalletTradeLedgerEntriesReq {
 impl DatabaseRequest for FunUserListExpertListenedWalletTradeLedgerEntriesReq {
     type ResponseRow = FunUserListExpertListenedWalletTradeLedgerEntriesRespRow;
     fn statement(&self) -> &str {
-        "SELECT * FROM api.fun_user_list_expert_listened_wallet_trade_ledger_entries(a_expert_listened_wallet_id => $1::bigint, a_limit => $2::bigint, a_offset => $3::bigint);"
+        "SELECT * FROM api.fun_user_list_expert_listened_wallet_trade_ledger_entries(a_strategy_id => $1::bigint, a_limit => $2::bigint, a_offset => $3::bigint);"
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![
-            &self.expert_listened_wallet_id as &(dyn ToSql + Sync),
+            &self.strategy_id as &(dyn ToSql + Sync),
             &self.limit as &(dyn ToSql + Sync),
             &self.offset as &(dyn ToSql + Sync),
         ]
