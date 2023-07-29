@@ -175,7 +175,7 @@ pub async fn handle_pancake_swap_transaction(
                 expert_trade.amount_out,
                 token_out_decimals as _,
             )),
-            happened_at: Some(Utc::now().timestamp_nanos()),
+            happened_at: Some(Utc::now().timestamp()),
         })
         .await
         .context("swap transaction is a duplicate")?

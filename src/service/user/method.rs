@@ -334,7 +334,7 @@ impl RequestHandler for MethodUserGetStrategy {
                 strategy_pool_asset_updated_at: ledger
                     .last()
                     .map(|x| x.happened_at)
-                    .unwrap_or_else(|| Utc::now().timestamp_nanos()),
+                    .unwrap_or_else(|| Utc::now().timestamp()),
                 strategy_pool_asset_balances: calculate_strategy_pool_asset_balances(
                     &db,
                     &asset_client,
