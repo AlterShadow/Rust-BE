@@ -22,6 +22,7 @@ pub async fn fill_asset_price_cache(db: &DbClient, cmc: &CoinMarketCap) -> Resul
             timestamps: None,
         })
         .await?;
+        tokio::time::sleep(tokio::time::Duration::from_secs(20)).await;
     }
 
     Ok(())
@@ -76,6 +77,7 @@ pub async fn fill_past_prices_on_startup(db: &DbClient, cmc: &CoinMarketCap) -> 
                 timestamps: Some(timestamps),
             })
             .await?;
+            tokio::time::sleep(tokio::time::Duration::from_secs(20)).await;
         }
     }
 
