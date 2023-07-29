@@ -114,7 +114,7 @@ pub async fn handle_pancake_swap_transaction(
         .into_result()
         .with_context(|| {
             format!(
-                "could not find token_in {} in escrow token contracts",
+                "could not find token_in {:?} in escrow token contracts",
                 expert_trade.token_in
             )
         })?;
@@ -134,7 +134,7 @@ pub async fn handle_pancake_swap_transaction(
         .into_result()
         .with_context(|| {
             format!(
-                "could not find token_out {} in escrow token contracts",
+                "could not find token_out {:?} in escrow token contracts",
                 expert_trade.token_out
             )
         })?
