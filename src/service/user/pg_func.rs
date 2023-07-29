@@ -484,13 +484,13 @@ BEGIN
 		token_out.symbol AS token_out_symbol,
 		token_out.address AS token_out_address,
 		swwtl.amount_out,
-		swwtl.heppened_at AS happened_at
+		swwtl.happened_at AS happened_at
 	FROM tbl.strategy_watching_wallet_trade_ledger AS swwtl
 	JOIN tokens AS token_in ON token_in.pkey_id = swwtl.fkey_token_in
 	JOIN tokens AS token_out ON token_out.pkey_id = swwtl.fkey_token_out
     JOIN tbl.strategy_watched_wallet AS sww ON sww.fkey_expert_watched_wallet_id = swwtl.fkey_expert_watched_wallet_id
 	WHERE sww.fkey_strategy_id = a_strategy_id
-	ORDER BY swwtl.heppened_at DESC
+	ORDER BY swwtl.happened_at DESC
 	LIMIT a_limit
 	OFFSET a_offset;
 END

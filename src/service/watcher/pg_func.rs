@@ -111,7 +111,7 @@ BEGIN
              fkey_expert_watched_wallet_id, blockchain,
              transaction_hash, dex, contract_address,
              fkey_token_in, fkey_token_out, amount_in,
-             amount_out, heppened_at
+             amount_out, happened_at
                 )
         VALUES (_expert_watched_wallet_id, a_blockchain, a_transaction_hash, a_dex, a_contract_address,
                 _fkey_token_in, _fkey_token_out, a_amount_in, a_amount_out, COALESCE(a_happened_at, EXTRACT(EPOCH FROM NOW())::bigint))

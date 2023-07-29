@@ -293,7 +293,7 @@ CREATE TABLE tbl.strategy_watching_wallet_trade_ledger (
     fkey_token_out bigint  NULL,
     amount_in decimal(56, 18)  NULL,
     amount_out decimal(56, 18)  NULL,
-    heppened_at bigint  NOT NULL,
+    happened_at bigint  NOT NULL,
     CONSTRAINT wallet_activity_history_ak_1 UNIQUE (transaction_hash) NOT DEFERRABLE  INITIALLY IMMEDIATE,
     CONSTRAINT strategy_watching_wallet_trade_ledger_pk PRIMARY KEY (pkey_id)
 );
