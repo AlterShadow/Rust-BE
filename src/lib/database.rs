@@ -8,6 +8,7 @@ use secrecy::{ExposeSecret, SecretString};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::DefaultHasher;
+use std::fmt::Debug;
 use std::hash::Hash;
 use std::hash::Hasher;
 use std::path::Path;
@@ -105,9 +106,13 @@ impl DbClient {
             .await?)
     }
 
-    pub async fn execute<T: DatabaseRequest>(&self, req: T) -> Result<RDataTable<T::ResponseRow>> {
+    pub async fn execute<T: DatabaseRequest + Debug>(
+        &self,
+        req: T,
+    ) -> Result<RDataTable<T::ResponseRow>> {
         let mut error = None;
         for _ in 0..2 {
+            let begin = std::time::Instant::now();
             let client = self
                 .pool
                 .get()
@@ -131,6 +136,13 @@ impl DbClient {
                     return Err(err.into());
                 }
             };
+            let dur = begin.elapsed();
+            debug!(
+                "Database query took {}.{:03} seconds: {:?}",
+                dur.as_secs(),
+                dur.subsec_millis(),
+                req
+            );
             let mut response = RDataTable::with_capacity(rows.len());
             for row in rows {
                 response.push(T::ResponseRow::try_from_row(&row)?);

@@ -14,7 +14,9 @@ pub async fn fill_asset_price_cache(db: &DbClient, cmc: &CoinMarketCap) -> Resul
     }
 
     for chunk in unique_asset_symbols.chunks(30) {
-        let prices = cmc.get_usd_prices_by_symbol(&chunk).await?;
+        let prices = cmc
+            .get_usd_prices_by_symbol_with_options(&chunk, true)
+            .await?;
 
         db.execute(FunAssetPriceInsertAssetPricesReq {
             symbols: prices.keys().cloned().collect(),
