@@ -20,6 +20,9 @@ impl AssetPriceClient {
 #[async_trait]
 impl AssetInfoClient for AssetPriceClient {
     async fn get_usd_price_latest(&self, symbols: &[String]) -> Result<HashMap<String, f64>> {
+        if symbols.is_empty() {
+            return Ok(Default::default());
+        }
         let asset_price_rows = self
             .db
             .execute(FunAssetPriceListAssetPricesReq {
@@ -31,7 +34,7 @@ impl AssetInfoClient for AssetPriceClient {
             .into_rows();
 
         if asset_price_rows.len() == 0 {
-            bail!("no asset prices found");
+            bail!("no asset prices found for all of {:?}", symbols);
         }
 
         let mut asset_prices: HashMap<String, f64> = HashMap::new();
@@ -46,6 +49,9 @@ impl AssetInfoClient for AssetPriceClient {
         &self,
         symbols: &[String],
     ) -> Result<HashMap<String, AssetPriceByPeriod>> {
+        if symbols.is_empty() {
+            return Ok(Default::default());
+        }
         let asset_price_rows = self
             .db
             .execute(FunAssetPriceListAssetPricesReq {
@@ -57,7 +63,7 @@ impl AssetInfoClient for AssetPriceClient {
             .into_rows();
 
         if asset_price_rows.len() == 0 {
-            bail!("no asset prices found");
+            bail!("no asset prices found for all of {:?}", symbols);
         }
 
         let mut asset_prices: HashMap<String, AssetPriceByPeriod> = HashMap::new();
