@@ -8,11 +8,11 @@ use eth_sdk::pancake_swap::parse::get_pancake_swap_parser;
 use eth_sdk::strategy_pool::StrategyPoolContract;
 use eth_sdk::strategy_wallet::StrategyWalletContract;
 use eth_sdk::utils::{decimal_to_u256, u256_to_decimal};
-use eth_sdk::StrategyPoolHeraldAddresses;
 use eth_sdk::{
     DexAddresses, EitherTransport, EthereumRpcConnection, TransactionFetcher, CONFIRMATIONS,
     MAX_RETRIES, POLL_INTERVAL,
 };
+use eth_sdk::{StrategyPoolHeraldAddresses, StrategyWalletHeraldAddresses};
 use execution_engine::copy_trade::{
     calculate_copy_trade_plan, fetch_listened_wallet_asset_balances_and_decimals,
     fetch_strategy_pool_contract_asset_balances_and_decimals, get_token_prices,
@@ -39,13 +39,21 @@ pub async fn deploy_wallet_contract(
     key: impl Key + Clone,
     backer: Address,
     admin: Address,
+    herald_contract_address: Address,
     logger: DynLogger,
 ) -> Result<StrategyWalletContract<EitherTransport>> {
     info!("Deploying wallet contract");
     logger.log("Deploying wallet contract");
 
-    let wallet =
-        StrategyWalletContract::deploy(conn.clone(), key, backer, admin, logger.clone()).await?;
+    let wallet = StrategyWalletContract::deploy(
+        conn.clone(),
+        key,
+        backer,
+        admin,
+        herald_contract_address,
+        logger.clone(),
+    )
+    .await?;
 
     info!("Deploy wallet contract success");
     logger.log(&format!("Deploying wallet contract {:?}", wallet.address()));
@@ -115,6 +123,11 @@ async fn user_get_or_deploy_strategy_wallet(
                 master_key.clone(),
                 user_wallet_address_to_receive_shares_on_this_chain,
                 master_key.address(),
+                StrategyWalletHeraldAddresses::new()
+                    .get(blockchain, ())
+                    .context(
+                        "could not find strategy wallet herald contract address in this chain",
+                    )?,
                 logger.clone(),
             )
             .await?;
@@ -174,7 +187,9 @@ async fn user_get_or_deploy_strategy_pool(
                 strategy_token_symbol,
                 StrategyPoolHeraldAddresses::new()
                     .get(blockchain, ())
-                    .context("could not find herald contract address in this chain")?,
+                    .context(
+                        "could not find strategy pool herald contract address in this chain",
+                    )?,
                 logger.clone(),
             )
             .await?;

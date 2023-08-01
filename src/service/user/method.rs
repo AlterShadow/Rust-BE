@@ -2953,6 +2953,11 @@ impl RequestHandler for MethodUserCreateStrategyWallet {
                     master_key.clone(),
                     wallet.address.into(),
                     master_key.address(),
+                    StrategyWalletHeraldAddresses::new()
+                        .get(req.blockchain, ())
+                        .context(
+                            "could not find strategy wallet herald contract address in this chain",
+                        )?,
                     DynLogger::empty(),
                 )
                 .await?;

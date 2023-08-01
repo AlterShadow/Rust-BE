@@ -49,10 +49,17 @@ impl<T: Transport> StrategyWalletContract<T> {
         key: impl Key + Clone,
         backer: Address,
         admin: Address,
+        herald: Address,
         logger: DynLogger,
     ) -> Result<Self> {
-        let contract =
-            deploy_contract(w3.clone(), key, (backer, admin), "StrategyWallet", logger).await?;
+        let contract = deploy_contract(
+            w3.clone(),
+            key,
+            (backer, admin, herald),
+            "StrategyWallet",
+            logger,
+        )
+        .await?;
 
         Ok(Self { contract })
     }
