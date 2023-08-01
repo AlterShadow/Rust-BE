@@ -66,14 +66,14 @@ async fn main() -> Result<()> {
         .route("/eth-goerli-swaps", post(handle_eth_swap_goerli))
         .route("/eth-mainnet-escrows", post(handle_eth_escrows_mainnet))
         .route("/eth-goerli-escrows", post(handle_eth_escrows_goerli))
-        // .route("/eth-mainnet-withdraws", post(handle_eth_withdraws_mainnet))
-        // .route("/eth-goerli-withdraws", post(handle_eth_withdraws_goerli))
-        // .route("/eth-mainnet-redeems", post(handle_eth_redeems_mainnet))
-        // .route("/eth-goerli-redeems", post(handle_eth_redeems_goerli))
+        .route("/eth-mainnet-withdraws", post(handle_eth_withdraws_mainnet))
+        .route("/eth-goerli-withdraws", post(handle_eth_withdraws_goerli))
+        .route("/eth-mainnet-redeems", post(handle_eth_redeems_mainnet))
+        .route("/eth-goerli-redeems", post(handle_eth_redeems_goerli))
         .route("/bsc-mainnet-swaps", post(handle_bsc_swap_mainnet))
         .route("/bsc-mainnet-escrows", post(handle_bsc_escrows_mainnet))
-        // .route("/bsc-mainnet-withdraws", post(handle_bsc_withdraws_mainnet))
-        // .route("/bsc-mainnet-redeems", post(handle_bsc_redeems_mainnet))
+        .route("/bsc-mainnet-withdraws", post(handle_bsc_withdraws_mainnet))
+        .route("/bsc-mainnet-redeems", post(handle_bsc_redeems_mainnet))
         .with_state(Arc::new(
             AppState::new(db, eth_pool, master_key, client, cmc_client, coin_addresses).await?,
         ));
