@@ -9,6 +9,8 @@ use crate::back_strategy::{
 };
 use crate::shared_method::{
     convert_expert_db_to_api, convert_strategy_db_to_api_net_value, ensure_user_role,
+    update_asset_balances_and_ledger_exit_strategy,
+    update_strategy_token_balances_and_ledger_exit_strategy,
 };
 use api::cmc::CoinMarketCap;
 use api::AssetInfoClient;
@@ -1073,7 +1075,7 @@ pub async fn user_exit_strategy(
         )
     };
 
-    let transaction_hash = execute_transaction_and_ensure_success(
+    let withdraw_tx_hash = execute_transaction_and_ensure_success(
         withdraw_transaction,
         &conn,
         CONFIRMATIONS,
@@ -1083,106 +1085,30 @@ pub async fn user_exit_strategy(
     )
     .await?;
 
-    /* update strategy pool asset balances & ledgers */
-    for idx in 0..assets_to_transfer.len() {
-        /* update per-user strategy pool asset balance & ledger */
-        let asset = assets_to_transfer[idx];
-        let amount = amounts_to_transfer[idx];
-        let asset_old_balance = db
-            .execute(FunUserListUserStrategyPoolContractAssetBalancesReq {
-                strategy_pool_contract_id: Some(strategy_pool_contract_row.pkey_id),
-                user_id: Some(ctx.user_id),
-                strategy_wallet_id: Some(strategy_wallet_contract_row.wallet_id),
-                token_address: Some(asset.into()),
-                blockchain: Some(blockchain),
-            })
-            .await?
-            .into_result()
-            .context("user strategy pool asset balance not found")?
-            .balance;
-
-        db.execute(FunUserUpsertUserStrategyPoolContractAssetBalanceReq {
-            strategy_pool_contract_id: strategy_pool_contract_row.pkey_id,
-            strategy_wallet_id: strategy_wallet_contract_row.wallet_id,
-            token_address: asset.into(),
-            blockchain,
-            old_balance: asset_old_balance.into(),
-            new_balance: asset_old_balance - amount,
-        })
-        .await?;
-
-        db.execute(FunUserAddUserStrategyPoolContractAssetLedgerEntryReq {
-            strategy_pool_contract_id: strategy_pool_contract_row.pkey_id,
-            strategy_wallet_id: strategy_wallet_contract_row.wallet_id,
-            token_address: asset.into(),
-            blockchain,
-            amount: amount.into(),
-            is_add: false,
-        })
-        .await?;
-
-        /* update strategy pool asset balances & ledger */
-        let old_asset_balance_row = db
-            .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
-                strategy_pool_contract_id: Some(strategy_pool_contract_row.pkey_id),
-                strategy_id: None,
-                blockchain: Some(blockchain),
-                token_address: Some(asset.into()),
-            })
-            .await?
-            .into_result()
-            .context("strategy pool balance of redeemed asset not found")?;
-
-        db.execute(FunWatcherUpsertStrategyPoolContractAssetBalanceReq {
-            strategy_pool_contract_id: strategy_pool_contract_row.pkey_id,
-            token_address: asset.into(),
-            blockchain,
-            new_balance: old_asset_balance_row.balance - amount,
-        })
-        .await?;
-
-        db.execute(FunUserAddStrategyPoolContractAssetLedgerEntryReq {
-            strategy_pool_contract_id: strategy_pool_contract_row.pkey_id,
-            token_address: asset.into(),
-            blockchain,
-            amount: amount.into(),
-            is_add: false,
-            transaction_hash: transaction_hash.into(),
-        })
-        .await?;
-    }
-
-    /* update exit strategy ledger */
-    db.execute(FunUserExitStrategyReq {
-        user_id: ctx.user_id,
-        strategy_id,
-        // TODO: calculate value of sp tokens exit in usdc
-        quantity: Decimal::zero(),
+    /* update user strategy token balance & ledger */
+    let redeem_amount = u256_to_decimal(redeem_info.amount, 18);
+    update_strategy_token_balances_and_ledger_exit_strategy(
+        &db,
         blockchain,
-        transaction_hash: redeem_tx_hash.into(),
-        redeem_sp_tokens: u256_to_decimal(redeem_info.amount, 18),
-    })
+        strategy_pool_contract_row.strategy_id,
+        strategy_wallet_contract_row.user_id,
+        redeem_tx_hash,
+        redeem_amount,
+    )
     .await?;
 
-    /* update user strategy token balance */
-    let user_strategy_balance = db
-        .execute(FunWatcherListUserStrategyBalanceReq {
-            limit: 1,
-            offset: 0,
-            strategy_id: Some(strategy_id),
-            user_id: Some(ctx.user_id),
-            blockchain: Some(blockchain),
-        })
-        .await?
-        .first(|x| x.balance)
-        .context("could not get user strategy token balance from database on exit strategy")?;
-    db.execute(FunWatcherUpsertUserStrategyBalanceReq {
-        user_id: ctx.user_id,
-        strategy_id,
+    /* update strategy pool assets balance & ledger */
+    update_asset_balances_and_ledger_exit_strategy(
+        &db,
         blockchain,
-        old_balance: user_strategy_balance.into(),
-        new_balance: user_strategy_balance - u256_to_decimal(redeem_info.amount, 18),
-    })
+        strategy_pool_contract_row.strategy_id,
+        strategy_pool_contract_row.pkey_id,
+        strategy_wallet_contract_row.user_id,
+        strategy_wallet_contract_row.wallet_id,
+        withdraw_tx_hash,
+        assets_to_transfer,
+        amounts_to_transfer,
+    )
     .await?;
 
     Ok(redeem_tx_hash)

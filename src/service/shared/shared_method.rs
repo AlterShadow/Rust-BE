@@ -3,7 +3,7 @@ use eth_sdk::{BlockchainCoinAddresses, EscrowAddresses};
 use eyre::*;
 use eyre::{anyhow, ensure, ContextCompat};
 use gen::database::*;
-use gen::model::{EnumErrorCode, EnumRole, ListExpertsRow, ListStrategiesRow};
+use gen::model::{EnumBlockChain, EnumErrorCode, EnumRole, ListExpertsRow, ListStrategiesRow};
 use lib::database::DbClient;
 use lib::toolbox::{CustomError, RequestContext};
 use lib::ws::WsServerConfig;
@@ -11,6 +11,7 @@ use num_traits::{FromPrimitive, ToPrimitive, Zero};
 use rust_decimal::Decimal;
 use std::sync::Arc;
 use tracing::info;
+use web3::types::{Address, H256};
 
 pub fn ensure_user_role(ctx: RequestContext, role: EnumRole) -> Result<()> {
     let ctx_role = EnumRole::from_u32(ctx.role).context("Invalid role")?;
@@ -168,5 +169,131 @@ pub async fn load_allow_domain_urls(db: &DbClient, config: &mut WsServerConfig) 
             .allow_domain_urls
             .map(|x| x.split(";").map(|x| x.to_string()).collect()),
     );
+    Ok(())
+}
+
+pub async fn update_strategy_token_balances_and_ledger_exit_strategy(
+    db: &DbClient,
+    blockchain: EnumBlockChain,
+    strategy_id: i64,
+    user_id: i64,
+    redeem_transaction_hash: H256,
+    redeemed_amount: Decimal,
+) -> Result<()> {
+    /* update user strategy token ledger */
+    db.execute(FunUserExitStrategyReq {
+        user_id,
+        strategy_id,
+        // TODO: calculate value of sp tokens exit in usdc
+        quantity: Decimal::zero(),
+        blockchain,
+        transaction_hash: redeem_transaction_hash.into(),
+        redeem_sp_tokens: redeemed_amount,
+    })
+    .await?;
+
+    /* update user strategy token balance */
+    let user_strategy_balance = db
+        .execute(FunWatcherListUserStrategyBalanceReq {
+            limit: 1,
+            offset: 0,
+            strategy_id: Some(strategy_id),
+            user_id: Some(user_id),
+            blockchain: Some(blockchain),
+        })
+        .await?
+        .first(|x| x.balance)
+        .context("could not get user strategy token balance from database on exit strategy")?;
+    db.execute(FunWatcherUpsertUserStrategyBalanceReq {
+        user_id,
+        strategy_id,
+        blockchain,
+        old_balance: user_strategy_balance,
+        new_balance: user_strategy_balance - redeemed_amount,
+    })
+    .await?;
+
+    Ok(())
+}
+
+pub async fn update_asset_balances_and_ledger_exit_strategy(
+    db: &DbClient,
+    blockchain: EnumBlockChain,
+    strategy_id: i64,
+    strategy_pool_contract_id: i64,
+    user_id: i64,
+    strategy_wallet_id: i64,
+    withdraw_transaction_hash: H256,
+    assets_withdrawn: Vec<Address>,
+    amounts_withdrawn: Vec<Decimal>,
+) -> Result<()> {
+    for idx in 0..assets_withdrawn.len() {
+        /* update per-user strategy pool asset balance & ledger */
+        let asset = assets_withdrawn[idx];
+        let amount = amounts_withdrawn[idx];
+        let asset_old_balance = db
+            .execute(FunUserListUserStrategyPoolContractAssetBalancesReq {
+                strategy_pool_contract_id: Some(strategy_pool_contract_id),
+                user_id: Some(user_id),
+                strategy_wallet_id: Some(strategy_wallet_id),
+                token_address: Some(asset.into()),
+                blockchain: Some(blockchain),
+            })
+            .await?
+            .into_result()
+            .context("user strategy pool asset balance not found")?
+            .balance;
+
+        db.execute(FunUserUpsertUserStrategyPoolContractAssetBalanceReq {
+            strategy_pool_contract_id,
+            strategy_wallet_id,
+            token_address: asset.into(),
+            blockchain,
+            old_balance: asset_old_balance,
+            new_balance: asset_old_balance - amount,
+        })
+        .await?;
+
+        db.execute(FunUserAddUserStrategyPoolContractAssetLedgerEntryReq {
+            strategy_pool_contract_id,
+            strategy_wallet_id,
+            token_address: asset.into(),
+            blockchain,
+            amount: amount.into(),
+            is_add: false,
+        })
+        .await?;
+
+        /* update strategy pool asset balances & ledger */
+        let old_asset_balance_row = db
+            .execute(FunWatcherListStrategyPoolContractAssetBalancesReq {
+                strategy_pool_contract_id: Some(strategy_pool_contract_id),
+                strategy_id: Some(strategy_id),
+                blockchain: Some(blockchain),
+                token_address: Some(asset.into()),
+            })
+            .await?
+            .into_result()
+            .context("strategy pool balance of redeemed asset not found")?;
+
+        db.execute(FunWatcherUpsertStrategyPoolContractAssetBalanceReq {
+            strategy_pool_contract_id,
+            token_address: asset.into(),
+            blockchain,
+            new_balance: old_asset_balance_row.balance - amount,
+        })
+        .await?;
+
+        db.execute(FunUserAddStrategyPoolContractAssetLedgerEntryReq {
+            strategy_pool_contract_id,
+            token_address: asset.into(),
+            blockchain,
+            amount: amount.into(),
+            is_add: false,
+            transaction_hash: withdraw_transaction_hash.into(),
+        })
+        .await?;
+    }
+
     Ok(())
 }
