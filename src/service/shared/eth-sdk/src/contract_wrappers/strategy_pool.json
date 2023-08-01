@@ -617,34 +617,21 @@
 			},
 			{
 				"internalType": "address",
-				"name": "_receiver",
+				"name": "_backer",
 				"type": "address"
 			},
 			{
 				"internalType": "uint256",
 				"name": "_poolTokens",
 				"type": "uint256"
+			},
+			{
+				"internalType": "bool",
+				"name": "_shouldProclaim",
+				"type": "bool"
 			}
 		],
 		"name": "redeem",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "_owner",
-				"type": "address"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_poolTokens",
-				"type": "uint256"
-			}
-		],
-		"name": "redeemAsAdmin",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
