@@ -10,6 +10,11 @@
 				"internalType": "address",
 				"name": "_admin",
 				"type": "address"
+			},
+			{
+				"internalType": "contract IStrategyWalletHerald",
+				"name": "_herald",
+				"type": "address"
 			}
 		],
 		"stateMutability": "nonpayable",
