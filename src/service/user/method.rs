@@ -20,7 +20,7 @@ use eth_sdk::escrow::{AbstractEscrowContract, EscrowContract};
 use eth_sdk::pancake_swap::pair_paths::WorkingPancakePairPaths;
 use eth_sdk::signer::Secp256k1SecretKey;
 use eth_sdk::strategy_pool::StrategyPoolContract;
-use eth_sdk::strategy_pool_herald::parse_herald_redeem_event;
+use eth_sdk::strategy_pool_herald::parse_strategy_pool_herald_redeem_event;
 use eth_sdk::strategy_wallet::StrategyWalletContract;
 use eth_sdk::utils::{decimal_to_u256, u256_to_decimal};
 use eth_sdk::*;
@@ -1041,7 +1041,7 @@ pub async fn user_exit_strategy(
     };
 
     /* parse redeem event */
-    let redeem_info = parse_herald_redeem_event(
+    let redeem_info = parse_strategy_pool_herald_redeem_event(
         StrategyPoolHeraldAddresses::new()
             .get(blockchain, ())
             .context(

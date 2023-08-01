@@ -7,17 +7,17 @@ const POOL_HERALD_ABI_JSON: &str = include_str!("strategy_pool_herald.json");
 // TODO: deploy function for local testing
 
 #[derive(Debug, Clone)]
-pub struct HeraldRedeemEvent {
+pub struct StrategyPoolHeraldRedeemEvent {
     pub strategy_pool: Address,
     pub strategy_wallet: Address,
     pub backer: Address,
     pub amount: U256,
 }
 
-pub fn parse_herald_redeem_event(
+pub fn parse_strategy_pool_herald_redeem_event(
     herald_address: Address,
     receipt: TransactionReceipt,
-) -> Result<HeraldRedeemEvent> {
+) -> Result<StrategyPoolHeraldRedeemEvent> {
     let herald = web3::ethabi::Contract::load(POOL_HERALD_ABI_JSON.as_bytes())?;
     let redeem_event = herald
         .event("Redeem")
@@ -68,7 +68,7 @@ pub fn parse_herald_redeem_event(
                 .into_uint()
                 .context("could not parse redeemed sp tokens from event log")?;
 
-            return Ok(HeraldRedeemEvent {
+            return Ok(StrategyPoolHeraldRedeemEvent {
                 strategy_pool,
                 strategy_wallet,
                 backer,

@@ -15,7 +15,7 @@ use eth_sdk::evm::{parse_quickalert_payload, DexTrade};
 use eth_sdk::execute_transaction_and_ensure_success;
 use eth_sdk::pancake_swap::execute::PancakeSmartRouterContract;
 use eth_sdk::strategy_pool::StrategyPoolContract;
-use eth_sdk::strategy_pool_herald::parse_herald_redeem_event;
+use eth_sdk::strategy_pool_herald::parse_strategy_pool_herald_redeem_event;
 use eth_sdk::utils::{
     decimal_to_u256, u256_to_decimal, wait_for_confirmations, wait_for_confirmations_simple,
 };
@@ -1160,7 +1160,8 @@ pub async fn handle_redeem_transaction(
         .pool_herald_addresses
         .get(blockchain, ())
         .context("could not find herald contract address on redeem handler")?;
-    let redeem = parse_herald_redeem_event(herald_contract_address, tx.get_receipt().clone())?;
+    let redeem =
+        parse_strategy_pool_herald_redeem_event(herald_contract_address, tx.get_receipt().clone())?;
 
     /* check if event was triggered by a strategy pool contract */
     let strategy_pool_contract_row = state
