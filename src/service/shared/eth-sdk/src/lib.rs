@@ -24,6 +24,7 @@ pub mod logger;
 mod pool;
 pub mod signer;
 mod strategy_pool_herald_addresses;
+mod strategy_wallet_herald_addresses;
 mod tx;
 pub mod utils;
 
@@ -37,6 +38,7 @@ pub use dex::*;
 pub use escrow_addresses::*;
 pub use pool::*;
 pub use strategy_pool_herald_addresses::*;
+pub use strategy_wallet_herald_addresses::*;
 pub use tx::*;
 
 #[derive(Clone)]
