@@ -243,13 +243,14 @@ impl<T: Transport> StrategyPoolContract<T> {
         conn: &EthereumRpcConnection,
         signer: impl Key + Clone,
         pool_tokens: U256,
-        receiver: Address,
+        backer: Address,
         owner: Address,
+        should_proclaim: bool,
     ) -> Result<H256, RpcCallError> {
-        info!("Redeeming {:?} pool tokens to receiver {:?} from owner {:?} from strategy pool contract {:?} by {:?}",
+        info!("Redeeming {:?} pool tokens from owner {:?} with registered backer {:?} from strategy pool contract {:?} by {:?}",
 					amount_to_display(pool_tokens),
-					receiver,
 					owner,
+					backer,
 					self.address(),
 					signer.address(),
 			);
@@ -258,7 +259,7 @@ impl<T: Transport> StrategyPoolContract<T> {
             .contract
             .estimate_gas(
                 StrategyPoolFunctions::Redeem.as_str(),
-                (owner, receiver, pool_tokens),
+                (owner, backer, pool_tokens, should_proclaim),
                 signer.address(),
                 Options::default(),
             )
@@ -270,7 +271,7 @@ impl<T: Transport> StrategyPoolContract<T> {
             .contract
             .signed_call(
                 StrategyPoolFunctions::Redeem.as_str(),
-                (owner, receiver, pool_tokens),
+                (owner, backer, pool_tokens, should_proclaim),
                 Options::with(|options| {
                     options.gas = Some(estimated_gas);
                     options.gas_price = Some(estimated_gas_price);
@@ -280,64 +281,13 @@ impl<T: Transport> StrategyPoolContract<T> {
             .await?;
         get_blockchain_logger().log(
             format!(
-                "Redeeming {:?} pool tokens to receiver {:?} from owner {:?} from strategy pool contract {:?} by {:?}",
+							"Redeeming {:?} pool tokens from owner {:?} with registered backer {:?} from strategy pool contract {:?} by {:?}",
                 amount_to_display(pool_tokens),
-                receiver,
-                owner,
+								owner,
+                backer,
                 self.address(),
                 signer.address(),
             ),
-            tx_hash,
-        );
-        Ok(tx_hash)
-    }
-
-    pub async fn redeem_as_admin(
-        &self,
-        conn: &EthereumRpcConnection,
-        signer: impl Key + Clone,
-        pool_tokens: U256,
-        owner: Address,
-    ) -> Result<H256, RpcCallError> {
-        info!("Redeeming as admin {:?} pool tokens from owner {:?} from strategy pool contract {:?} by {:?}",
-				amount_to_display(pool_tokens),
-				owner,
-				self.address(),
-				signer.address(),
-		);
-
-        let estimated_gas = self
-            .contract
-            .estimate_gas(
-                StrategyPoolFunctions::RedeemAsAdmin.as_str(),
-                (owner, pool_tokens),
-                signer.address(),
-                Options::default(),
-            )
-            .await?;
-
-        let estimated_gas_price = conn.eth().gas_price().await?;
-
-        let tx_hash = self
-            .contract
-            .signed_call(
-                StrategyPoolFunctions::RedeemAsAdmin.as_str(),
-                (owner, pool_tokens),
-                Options::with(|options| {
-                    options.gas = Some(estimated_gas);
-                    options.gas_price = Some(estimated_gas_price);
-                }),
-                signer.clone(),
-            )
-            .await?;
-        get_blockchain_logger().log(
-            format!(
-							"Redeeming as admin {:?} pool tokens from owner {:?} from strategy pool contract {:?} by {:?}",
-							amount_to_display(pool_tokens),
-							owner,
-							self.address(),
-							signer.address(),
-					),
             tx_hash,
         );
         Ok(tx_hash)
@@ -599,7 +549,6 @@ enum StrategyPoolFunctions {
     Deposit,
     MaxRedeem,
     Redeem,
-    RedeemAsAdmin,
     Withdraw,
     AcquireAssetBeforeTrade,
     GiveBackAssetsAfterTrade,
@@ -621,7 +570,6 @@ impl StrategyPoolFunctions {
             Self::Deposit => "deposit",
             Self::MaxRedeem => "maxRedeem",
             Self::Redeem => "redeem",
-            Self::RedeemAsAdmin => "redeemAsAdmin",
             Self::Withdraw => "withdraw",
             Self::AcquireAssetBeforeTrade => "acquireAssetBeforeTrade",
             Self::GiveBackAssetsAfterTrade => "giveBackAssetsAfterTrade",
@@ -1618,7 +1566,8 @@ mod tests {
                     alice.clone(),
                     U256::zero(),
                     alice.address,
-                    alice.address
+                    alice.address,
+                    false
                 )
                 .await,
             Err(_)
@@ -1630,7 +1579,8 @@ mod tests {
                     alice.clone(),
                     U256::from(1),
                     alice.address,
-                    alice.address
+                    alice.address,
+                    false
                 )
                 .await,
             Err(_)
@@ -1722,6 +1672,7 @@ mod tests {
                     U256::from(1),
                     alice.address,
                     alice.address,
+                    false,
                 )
                 .await?,
             Duration::from_millis(1),
