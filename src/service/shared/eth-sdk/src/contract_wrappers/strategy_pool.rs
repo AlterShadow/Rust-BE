@@ -292,6 +292,57 @@ impl<T: Transport> StrategyPoolContract<T> {
         Ok(tx_hash)
     }
 
+    pub async fn redeem_as_admin(
+        &self,
+        conn: &EthereumRpcConnection,
+        signer: impl Key + Clone,
+        pool_tokens: U256,
+        owner: Address,
+    ) -> Result<H256, RpcCallError> {
+        info!("Redeeming as admin {:?} pool tokens from owner {:?} from strategy pool contract {:?} by {:?}",
+				amount_to_display(pool_tokens),
+				owner,
+				self.address(),
+				signer.address(),
+		);
+
+        let estimated_gas = self
+            .contract
+            .estimate_gas(
+                StrategyPoolFunctions::RedeemAsAdmin.as_str(),
+                (owner, pool_tokens),
+                signer.address(),
+                Options::default(),
+            )
+            .await?;
+
+        let estimated_gas_price = conn.eth().gas_price().await?;
+
+        let tx_hash = self
+            .contract
+            .signed_call(
+                StrategyPoolFunctions::RedeemAsAdmin.as_str(),
+                (owner, pool_tokens),
+                Options::with(|options| {
+                    options.gas = Some(estimated_gas);
+                    options.gas_price = Some(estimated_gas_price);
+                }),
+                signer.clone(),
+            )
+            .await?;
+        get_blockchain_logger().log(
+            format!(
+							"Redeeming as admin {:?} pool tokens from owner {:?} from strategy pool contract {:?} by {:?}",
+							amount_to_display(pool_tokens),
+							owner,
+							self.address(),
+							signer.address(),
+					),
+            tx_hash,
+        );
+        Ok(tx_hash)
+    }
+
     pub async fn withdraw(
         &self,
         conn: &EthereumRpcConnection,
@@ -548,6 +599,7 @@ enum StrategyPoolFunctions {
     Deposit,
     MaxRedeem,
     Redeem,
+    RedeemAsAdmin,
     Withdraw,
     AcquireAssetBeforeTrade,
     GiveBackAssetsAfterTrade,
@@ -569,6 +621,7 @@ impl StrategyPoolFunctions {
             Self::Deposit => "deposit",
             Self::MaxRedeem => "maxRedeem",
             Self::Redeem => "redeem",
+            Self::RedeemAsAdmin => "redeemAsAdmin",
             Self::Withdraw => "withdraw",
             Self::AcquireAssetBeforeTrade => "acquireAssetBeforeTrade",
             Self::GiveBackAssetsAfterTrade => "giveBackAssetsAfterTrade",
