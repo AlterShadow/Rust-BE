@@ -16,6 +16,7 @@ pub mod mock_erc20;
 pub mod strategy_pool;
 pub mod strategy_pool_herald;
 pub mod strategy_wallet;
+pub mod strategy_wallet_herald;
 pub mod wrapped_token;
 
 pub async fn deploy_contract<T: Transport>(
