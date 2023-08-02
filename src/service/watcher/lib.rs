@@ -6,7 +6,7 @@ use eth_sdk::pancake_swap::parse::{get_pancake_swap_parser, PancakeSwapParser};
 use eth_sdk::signer::Secp256k1SecretKey;
 use eth_sdk::{
     BlockchainCoinAddresses, DexAddresses, EscrowAddresses, EthereumRpcConnectionPool,
-    StrategyPoolHeraldAddresses,
+    StrategyPoolHeraldAddresses, StrategyWalletHeraldAddresses,
 };
 use eyre::*;
 use lib::database::DbClient;
@@ -24,6 +24,7 @@ pub struct AppState {
     pub token_addresses: Arc<BlockchainCoinAddresses>,
     pub escrow_addresses: Arc<EscrowAddresses>,
     pub pool_herald_addresses: Arc<StrategyPoolHeraldAddresses>,
+    pub wallet_herald_addresses: Arc<StrategyWalletHeraldAddresses>,
     pub erc_20: Contract,
     pub master_key: Secp256k1SecretKey,
     pub admin_client: Option<Mutex<WsClient>>,
@@ -50,6 +51,7 @@ impl AppState {
             admin_client: Some(Mutex::new(admin_client)),
             cmc_client,
             pool_herald_addresses: Arc::new(StrategyPoolHeraldAddresses::new()),
+            wallet_herald_addresses: Arc::new(StrategyWalletHeraldAddresses::new()),
         })
     }
 }
