@@ -781,5 +781,27 @@ BEGIN
 END
         "#,
         ),
+        ProceduralFunction::new(
+            "fun_watcher_update_strategy_wallet_platform_management",
+            vec![
+                Field::new("strategy_wallet_id", Type::BigInt),
+                Field::new("is_platform_managed", Type::Boolean),
+            ],
+            vec![Field::new("success", Type::Boolean)],
+            r#"
+DECLARE
+	row_updated BIGINT;				
+BEGIN
+		UPDATE tbl.user_strategy_wallet AS usw
+		SET is_platform_managed = a_is_platform_managed
+		WHERE usw.pkey_id = a_strategy_wallet_id
+		RETURNING usw.pkey_id INTO row_updated;
+
+		ASSERT row_updated IS NOT NULL;
+
+		RETURN QUERY SELECT TRUE;
+END
+"#,
+        ),
     ]
 }

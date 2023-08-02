@@ -890,6 +890,11 @@ pub struct FunWatcherSaveStrategyWatchingWalletTradeLedgerRespRow {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunWatcherUpdateStrategyWalletPlatformManagementRespRow {
+    pub success: bool,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunWatcherUpsertDexPathForPairRespRow {
     pub dex_path_for_pair_id: i64,
 }
@@ -3821,6 +3826,26 @@ impl DatabaseRequest for FunUserListEscrowContractAddressReqReq {
     }
     fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
         vec![&self.blockchain as &(dyn ToSql + Sync)]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunWatcherUpdateStrategyWalletPlatformManagementReq {
+    pub strategy_wallet_id: i64,
+    pub is_platform_managed: bool,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunWatcherUpdateStrategyWalletPlatformManagementReq {
+    type ResponseRow = FunWatcherUpdateStrategyWalletPlatformManagementRespRow;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_watcher_update_strategy_wallet_platform_management(a_strategy_wallet_id => $1::bigint, a_is_platform_managed => $2::boolean);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.strategy_wallet_id as &(dyn ToSql + Sync),
+            &self.is_platform_managed as &(dyn ToSql + Sync),
+        ]
     }
 }
 

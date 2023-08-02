@@ -4034,6 +4034,29 @@ END
 $$;
         
 
+CREATE OR REPLACE FUNCTION api.fun_watcher_update_strategy_wallet_platform_management(a_strategy_wallet_id bigint, a_is_platform_managed boolean)
+RETURNS table (
+    "success" boolean
+)
+LANGUAGE plpgsql
+AS $$
+    
+DECLARE
+	row_updated BIGINT;				
+BEGIN
+		UPDATE tbl.user_strategy_wallet AS usw
+		SET is_platform_managed = a_is_platform_managed
+		WHERE usw.pkey_id = a_strategy_wallet_id
+		RETURNING usw.pkey_id INTO row_updated;
+
+		ASSERT row_updated IS NOT NULL;
+
+		RETURN QUERY SELECT TRUE;
+END
+
+$$;
+        
+
 CREATE OR REPLACE FUNCTION api.fun_asset_price_insert_asset_prices(a_symbols varchar[], a_prices double precision[], a_timestamps bigint[] DEFAULT NULL)
 RETURNS table (
     "success" boolean
