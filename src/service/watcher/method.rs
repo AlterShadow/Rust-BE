@@ -1316,6 +1316,109 @@ pub async fn handle_redeem_transaction(
     Ok(())
 }
 
+pub async fn handle_eth_revoke_adminships(
+    state: Arc<AppState>,
+    body: Bytes,
+    blockchain: EnumBlockChain,
+) -> Result<(), StatusCode> {
+    let hashes = parse_quickalert_payload(body).map_err(|e| {
+        error!("failed to parse QuickAlerts payload: {:?}", e);
+        StatusCode::BAD_REQUEST
+    })?;
+
+    for hash in hashes {
+        let conn = state.eth_pool.get(blockchain).await.map_err(|err| {
+            error!("error fetching connection guard: {}", err);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+        let state = state.clone();
+        tokio::spawn(async move {
+            /* the transactions from the quickalerts payload might not be yet mined */
+            match wait_for_confirmations(
+                &conn.eth(),
+                hash,
+                POLL_INTERVAL,
+                MAX_RETRIES,
+                CONFIRMATIONS,
+            )
+            .await
+            {
+                Ok(_) => {}
+                Err(e) => {
+                    error!("revoke adminship tx was not mined: {:?}", e);
+                    return;
+                }
+            }
+            let tx = match TransactionFetcher::new_and_assume_ready(hash, &conn).await {
+                Ok(tx) => tx,
+                Err(e) => {
+                    error!("error processing tx: {}", e);
+                    return;
+                }
+            };
+            if let Err(e) = evm::cache_ethereum_transaction(&tx, &state.db, blockchain).await {
+                error!("error caching transaction: {:?}", e);
+                return;
+            };
+
+            match handle_revoke_adminship_transaction(state.clone(), blockchain, tx).await {
+                Ok(_) => {}
+                Err(e) => {
+                    error!("error handling revoke adminship: {:?}", e);
+                }
+            }
+        });
+    }
+
+    Ok(())
+}
+
+pub async fn handle_revoke_adminship_transaction(
+    state: Arc<AppState>,
+    blockchain: EnumBlockChain,
+    tx: TransactionReady,
+) -> Result<()> {
+    /* parse revoke adminship event */
+    let herald_contract_address = state
+        .wallet_herald_addresses
+        .get(blockchain, ())
+        .context("could not find herald contract address on revoke adminship handler")?;
+    let revoke_adminship_event =
+        parse_strategy_pool_herald_redeem_event(herald_contract_address, tx.get_receipt().clone())?;
+
+    /* check if event was triggered by a strategy wallet contract */
+    let maybe_strategy_wallet_row = state
+        .db
+        .execute(FunUserListStrategyWalletsReq {
+            user_id: None,
+            strategy_wallet_address: Some(revoke_adminship_event.strategy_wallet.into()),
+            blockchain: Some(blockchain),
+        })
+        .await?
+        .into_result();
+
+    if maybe_strategy_wallet_row.is_none() {
+        info!(
+            "revoke adminship event read, but no strategy wallet has address {:?} on chain {:?}",
+            revoke_adminship_event.strategy_wallet, blockchain
+        );
+        return Ok(());
+    }
+
+    let strategy_wallet_row = maybe_strategy_wallet_row.unwrap();
+
+    /* update strategy wallet platform management */
+    state
+        .db
+        .execute(FunWatcherUpdateStrategyWalletPlatformManagementReq {
+            strategy_wallet_id: strategy_wallet_row.wallet_id,
+            is_platform_managed: false,
+        })
+        .await?;
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
