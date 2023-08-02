@@ -1010,13 +1010,14 @@ pub async fn handle_withdraw_transaction(
         .escrow_addresses
         .get(blockchain, ())
         .context("could not find escrow contract address on withdraw handler")?;
-    let withdraw = parse_escrow_withdraw_event(escrow_contract_address, tx.get_receipt().clone())?;
+    let withdraw_event =
+        parse_escrow_withdraw_event(escrow_contract_address, tx.get_receipt().clone())?;
 
     /* get user */
     let user = match state
         .db
         .execute(FunUserGetUserByAddressReq {
-            address: withdraw.proprietor.into(),
+            address: withdraw_event.proprietor.into(),
             blockchain,
         })
         .await?
@@ -1024,7 +1025,7 @@ pub async fn handle_withdraw_transaction(
     {
         Some(user) => user,
         None => {
-            info!("no user has address: {:?}", withdraw.proprietor);
+            info!("no user has address: {:?}", withdraw_event.proprietor);
             return Ok(());
         }
     };
@@ -1035,7 +1036,7 @@ pub async fn handle_withdraw_transaction(
             offset: 0,
             token_id: None,
             blockchain: Some(blockchain),
-            address: Some(withdraw.asset.into()),
+            address: Some(withdraw_event.asset.into()),
             symbol: None,
             is_stablecoin: None,
         })
@@ -1044,10 +1045,10 @@ pub async fn handle_withdraw_transaction(
         .with_context(|| {
             format!(
                 "could not find token {} in escrow token contracts",
-                withdraw.asset
+                withdraw_event.asset
             )
         })?;
-    let withdraw_amount = u256_to_decimal(withdraw.amount, withdraw_token.decimals as _);
+    let withdraw_amount = u256_to_decimal(withdraw_event.amount, withdraw_token.decimals as _);
     /* update user deposit withdraw balance & ledger */
     state
         .db
@@ -1055,11 +1056,11 @@ pub async fn handle_withdraw_transaction(
             user_id: user.user_id,
             quantity: withdraw_amount,
             blockchain,
-            user_address: withdraw.proprietor.into(),
-            token_address: withdraw.asset.into(),
+            user_address: withdraw_event.proprietor.into(),
+            token_address: withdraw_event.asset.into(),
             escrow_contract_address: escrow_contract_address.into(),
             transaction_hash: tx.get_hash().into(),
-            receiver_address: withdraw.proprietor.into(),
+            receiver_address: withdraw_event.proprietor.into(),
             is_deposit: false,
             is_back: false,
             is_withdraw: true,
@@ -1073,9 +1074,9 @@ pub async fn handle_withdraw_transaction(
             limit: Some(1),
             offset: None,
             user_id: user.user_id,
-            user_address: Some(withdraw.proprietor.into()),
+            user_address: Some(withdraw_event.proprietor.into()),
             blockchain: Some(blockchain),
-            token_address: Some(withdraw.asset.into()),
+            token_address: Some(withdraw_event.asset.into()),
             token_id: None,
             escrow_contract_address: Some(escrow_contract_address.into()),
         })
@@ -1088,11 +1089,11 @@ pub async fn handle_withdraw_transaction(
         .db
         .execute(FunWatcherUpsertUserDepositWithdrawBalanceReq {
             user_id: user.user_id,
-            user_address: withdraw.proprietor.into(),
+            user_address: withdraw_event.proprietor.into(),
             blockchain,
             old_balance,
             new_balance,
-            token_address: withdraw.asset.into(),
+            token_address: withdraw_event.asset.into(),
             escrow_contract_address: escrow_contract_address.into(),
         })
         .await?;
@@ -1160,31 +1161,31 @@ pub async fn handle_redeem_transaction(
         .pool_herald_addresses
         .get(blockchain, ())
         .context("could not find herald contract address on redeem handler")?;
-    let redeem =
+    let redeem_event =
         parse_strategy_pool_herald_redeem_event(herald_contract_address, tx.get_receipt().clone())?;
 
     /* check if event was triggered by a strategy pool contract */
-    let strategy_pool_contract_row = state
+    let maybe_strategy_pool_contract_row = state
         .db
         .execute(FunWatcherListStrategyPoolContractReq {
             limit: 1,
             offset: 0,
             strategy_id: None,
             blockchain: Some(blockchain),
-            address: Some(redeem.strategy_pool.into()),
+            address: Some(redeem_event.strategy_pool.into()),
         })
         .await?
         .into_result();
 
-    if strategy_pool_contract_row.is_none() {
+    if maybe_strategy_pool_contract_row.is_none() {
         info!(
             "redeem event read, but no strategy pool contract has address {:?} on chain {:?}",
-            redeem.strategy_pool, blockchain
+            redeem_event.strategy_pool, blockchain
         );
         return Ok(());
     }
 
-    let strategy_pool_contract_row = strategy_pool_contract_row.unwrap();
+    let strategy_pool_contract_row = maybe_strategy_pool_contract_row.unwrap();
 
     /* instantiate strategy wallet */
     let strategy_wallet_contract_row = state
@@ -1192,7 +1193,7 @@ pub async fn handle_redeem_transaction(
         .execute(FunUserListStrategyWalletsReq {
             user_id: None,
             blockchain: Some(blockchain),
-            strategy_wallet_address: Some(redeem.strategy_wallet.into()),
+            strategy_wallet_address: Some(redeem_event.strategy_wallet.into()),
         })
         .await?
         .into_result()
@@ -1238,7 +1239,7 @@ pub async fn handle_redeem_transaction(
         let amount_owned = asset_balance_owned_by_strategy_wallet.balance;
         let amount = amount_owned
             * u256_to_decimal(
-                redeem.amount,
+                redeem_event.amount,
                 asset_balance_owned_by_strategy_wallet.token_decimals as _,
             )
             / user_strategy_balance;
@@ -1270,7 +1271,7 @@ pub async fn handle_redeem_transaction(
         strategy_pool_contract.withdraw(
             &conn,
             state.master_key.clone(),
-            redeem.backer,
+            redeem_event.backer,
             assets_to_transfer.clone(),
             amounts_to_transfer_raw.clone(),
             logger.clone(),
@@ -1288,7 +1289,7 @@ pub async fn handle_redeem_transaction(
     .await?;
 
     /* update user strategy token balance & ledger */
-    let redeem_amount = u256_to_decimal(redeem.amount, 18);
+    let redeem_amount = u256_to_decimal(redeem_event.amount, 18);
     update_strategy_token_balances_and_ledger_exit_strategy(
         &state.db,
         blockchain,
