@@ -62,7 +62,7 @@ async fn main() -> Result<()> {
     let eth_pool = EthereumRpcConnectionPool::from_conns(config.ethereum_urls);
     let coin_addresses = load_coin_addresses(&db).await?;
     let app: Router<(), Body> = Router::new()
-        .route("/eth-mainnet-swaps", post(handle_eth_swap_mainnet))
+        .route("/eth-mainnet-swaps", post(handle_eth_swaps_mainnet))
         .route("/eth-mainnet-escrows", post(handle_eth_escrows_mainnet))
         .route("/eth-mainnet-withdraws", post(handle_eth_withdraws_mainnet))
         .route("/eth-mainnet-redeems", post(handle_eth_redeems_mainnet))
@@ -70,7 +70,7 @@ async fn main() -> Result<()> {
             "/eth-mainnet-revoke-adminships",
             post(handle_eth_revoke_adminships_mainnet),
         )
-        .route("/eth-goerli-swaps", post(handle_eth_swap_goerli))
+        .route("/eth-goerli-swaps", post(handle_eth_swaps_goerli))
         .route("/eth-goerli-escrows", post(handle_eth_escrows_goerli))
         .route("/eth-goerli-withdraws", post(handle_eth_withdraws_goerli))
         .route("/eth-goerli-redeems", post(handle_eth_redeems_goerli))
@@ -78,7 +78,7 @@ async fn main() -> Result<()> {
             "/eth-goerli-revoke-adminships",
             post(handle_eth_revoke_adminships_goerli),
         )
-        .route("/bsc-mainnet-swaps", post(handle_bsc_swap_mainnet))
+        .route("/bsc-mainnet-swaps", post(handle_bsc_swaps_mainnet))
         .route("/bsc-mainnet-escrows", post(handle_bsc_escrows_mainnet))
         .route("/bsc-mainnet-withdraws", post(handle_bsc_withdraws_mainnet))
         .route("/bsc-mainnet-redeems", post(handle_bsc_redeems_mainnet))
@@ -86,7 +86,7 @@ async fn main() -> Result<()> {
             "/bsc-mainnet-revoke-adminships",
             post(handle_bsc_revoke_adminships_mainnet),
         )
-        .route("/bsc-testnet-swaps", post(handle_bsc_swap_testnet))
+        .route("/bsc-testnet-swaps", post(handle_bsc_swaps_testnet))
         .route("/bsc-testnet-escrows", post(handle_bsc_escrows_testnet))
         .route("/bsc-testnet-withdraws", post(handle_bsc_withdraws_testnet))
         .route("/bsc-testnet-redeems", post(handle_bsc_redeems_testnet))
@@ -118,7 +118,7 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-pub async fn handle_eth_swap_mainnet(
+pub async fn handle_eth_swaps_mainnet(
     state: State<Arc<AppState>>,
     body: Bytes,
 ) -> Result<(), StatusCode> {
@@ -153,7 +153,7 @@ pub async fn handle_eth_revoke_adminships_mainnet(
     method::handle_eth_revoke_adminships(state.0, body, EnumBlockChain::EthereumMainnet).await
 }
 
-pub async fn handle_eth_swap_goerli(
+pub async fn handle_eth_swaps_goerli(
     state: State<Arc<AppState>>,
     body: Bytes,
 ) -> Result<(), StatusCode> {
@@ -188,7 +188,7 @@ pub async fn handle_eth_revoke_adminships_goerli(
     method::handle_eth_revoke_adminships(state.0, body, EnumBlockChain::EthereumGoerli).await
 }
 
-pub async fn handle_bsc_swap_mainnet(
+pub async fn handle_bsc_swaps_mainnet(
     state: State<Arc<AppState>>,
     body: Bytes,
 ) -> Result<(), StatusCode> {
@@ -223,7 +223,7 @@ pub async fn handle_bsc_revoke_adminships_mainnet(
     method::handle_eth_revoke_adminships(state.0, body, EnumBlockChain::BscMainnet).await
 }
 
-pub async fn handle_bsc_swap_testnet(
+pub async fn handle_bsc_swaps_testnet(
     state: State<Arc<AppState>>,
     body: Bytes,
 ) -> Result<(), StatusCode> {
