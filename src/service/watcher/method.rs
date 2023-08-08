@@ -38,7 +38,7 @@ use tracing::*;
 use web3::ethabi::Address;
 use web3::signing::Key;
 use web3::types::U256;
-pub async fn handle_ethereum_dex_transactions(
+pub async fn handle_swaps(
     state: Arc<AppState>,
     body: Bytes,
     blockchain: EnumBlockChain,
@@ -76,7 +76,7 @@ pub async fn handle_ethereum_dex_transactions(
             if let Err(e) = evm::cache_ethereum_transaction(&tx, &state.db, blockchain).await {
                 error!("error caching transaction: {:?}", e);
             };
-            match handle_pancake_swap_transaction(state.clone(), blockchain, tx).await {
+            match handle_swap_transaction(state.clone(), blockchain, tx).await {
                 Ok(_) => {}
                 Err(e) => {
                     error!("error handling swap: {:?}", e);
@@ -88,7 +88,7 @@ pub async fn handle_ethereum_dex_transactions(
     Ok(())
 }
 
-pub async fn handle_pancake_swap_transaction(
+pub async fn handle_swap_transaction(
     state: Arc<AppState>,
     blockchain: EnumBlockChain,
     tx: TransactionReady,
@@ -591,7 +591,7 @@ pub async fn copy_trade_for_strategy(
     Ok(())
 }
 
-pub async fn handle_eth_escrows(
+pub async fn handle_escrows(
     state: Arc<AppState>,
     body: Bytes,
     blockchain: EnumBlockChain,
@@ -950,7 +950,7 @@ pub async fn calculate_gas_fee_in_tokens(
     Ok(gas_fee_in_tokens)
 }
 
-pub async fn handle_eth_withdraws(
+pub async fn handle_withdraws(
     state: Arc<AppState>,
     body: Bytes,
     blockchain: EnumBlockChain,
@@ -1101,7 +1101,7 @@ pub async fn handle_withdraw_transaction(
     Ok(())
 }
 
-pub async fn handle_eth_redeems(
+pub async fn handle_redeems(
     state: Arc<AppState>,
     body: Bytes,
     blockchain: EnumBlockChain,
@@ -1317,7 +1317,7 @@ pub async fn handle_redeem_transaction(
     Ok(())
 }
 
-pub async fn handle_eth_revoke_adminships(
+pub async fn handle_revoke_adminships(
     state: Arc<AppState>,
     body: Bytes,
     blockchain: EnumBlockChain,
