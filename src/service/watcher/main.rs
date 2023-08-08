@@ -125,53 +125,11 @@ pub async fn handle_eth_swap_mainnet(
     method::handle_ethereum_dex_transactions(state.0, body, EnumBlockChain::EthereumMainnet).await
 }
 
-pub async fn handle_eth_swap_goerli(
-    state: State<Arc<AppState>>,
-    body: Bytes,
-) -> Result<(), StatusCode> {
-    method::handle_ethereum_dex_transactions(state.0, body, EnumBlockChain::EthereumGoerli).await
-}
-
-pub async fn handle_bsc_swap_mainnet(
-    state: State<Arc<AppState>>,
-    body: Bytes,
-) -> Result<(), StatusCode> {
-    method::handle_ethereum_dex_transactions(state.0, body, EnumBlockChain::BscMainnet).await
-}
-
-pub async fn handle_bsc_swap_testnet(
-    state: State<Arc<AppState>>,
-    body: Bytes,
-) -> Result<(), StatusCode> {
-    method::handle_ethereum_dex_transactions(state.0, body, EnumBlockChain::BscTestnet).await
-}
-
 pub async fn handle_eth_escrows_mainnet(
     state: State<Arc<AppState>>,
     body: Bytes,
 ) -> Result<(), StatusCode> {
     method::handle_eth_escrows(state.0, body, EnumBlockChain::EthereumMainnet).await
-}
-
-pub async fn handle_eth_escrows_goerli(
-    state: State<Arc<AppState>>,
-    body: Bytes,
-) -> Result<(), StatusCode> {
-    method::handle_eth_escrows(state.0, body, EnumBlockChain::EthereumGoerli).await
-}
-
-pub async fn handle_bsc_escrows_mainnet(
-    state: State<Arc<AppState>>,
-    body: Bytes,
-) -> Result<(), StatusCode> {
-    method::handle_eth_escrows(state.0, body, EnumBlockChain::BscMainnet).await
-}
-
-pub async fn handle_bsc_escrows_testnet(
-    state: State<Arc<AppState>>,
-    body: Bytes,
-) -> Result<(), StatusCode> {
-    method::handle_eth_escrows(state.0, body, EnumBlockChain::BscTestnet).await
 }
 
 pub async fn handle_eth_withdraws_mainnet(
@@ -181,53 +139,11 @@ pub async fn handle_eth_withdraws_mainnet(
     method::handle_eth_withdraws(state.0, body, EnumBlockChain::EthereumMainnet).await
 }
 
-pub async fn handle_eth_withdraws_goerli(
-    state: State<Arc<AppState>>,
-    body: Bytes,
-) -> Result<(), StatusCode> {
-    method::handle_eth_withdraws(state.0, body, EnumBlockChain::EthereumGoerli).await
-}
-
-pub async fn handle_bsc_withdraws_mainnet(
-    state: State<Arc<AppState>>,
-    body: Bytes,
-) -> Result<(), StatusCode> {
-    method::handle_eth_withdraws(state.0, body, EnumBlockChain::BscMainnet).await
-}
-
-pub async fn handle_bsc_withdraws_testnet(
-    state: State<Arc<AppState>>,
-    body: Bytes,
-) -> Result<(), StatusCode> {
-    method::handle_eth_withdraws(state.0, body, EnumBlockChain::BscTestnet).await
-}
-
 pub async fn handle_eth_redeems_mainnet(
     state: State<Arc<AppState>>,
     body: Bytes,
 ) -> Result<(), StatusCode> {
     method::handle_eth_redeems(state.0, body, EnumBlockChain::EthereumMainnet).await
-}
-
-pub async fn handle_eth_redeems_goerli(
-    state: State<Arc<AppState>>,
-    body: Bytes,
-) -> Result<(), StatusCode> {
-    method::handle_eth_redeems(state.0, body, EnumBlockChain::EthereumGoerli).await
-}
-
-pub async fn handle_bsc_redeems_mainnet(
-    state: State<Arc<AppState>>,
-    body: Bytes,
-) -> Result<(), StatusCode> {
-    method::handle_eth_redeems(state.0, body, EnumBlockChain::BscMainnet).await
-}
-
-pub async fn handle_bsc_redeems_testnet(
-    state: State<Arc<AppState>>,
-    body: Bytes,
-) -> Result<(), StatusCode> {
-    method::handle_eth_redeems(state.0, body, EnumBlockChain::BscTestnet).await
 }
 
 pub async fn handle_eth_revoke_adminships_mainnet(
@@ -237,6 +153,34 @@ pub async fn handle_eth_revoke_adminships_mainnet(
     method::handle_eth_revoke_adminships(state.0, body, EnumBlockChain::EthereumMainnet).await
 }
 
+pub async fn handle_eth_swap_goerli(
+    state: State<Arc<AppState>>,
+    body: Bytes,
+) -> Result<(), StatusCode> {
+    method::handle_ethereum_dex_transactions(state.0, body, EnumBlockChain::EthereumGoerli).await
+}
+
+pub async fn handle_eth_escrows_goerli(
+    state: State<Arc<AppState>>,
+    body: Bytes,
+) -> Result<(), StatusCode> {
+    method::handle_eth_escrows(state.0, body, EnumBlockChain::EthereumGoerli).await
+}
+
+pub async fn handle_eth_withdraws_goerli(
+    state: State<Arc<AppState>>,
+    body: Bytes,
+) -> Result<(), StatusCode> {
+    method::handle_eth_withdraws(state.0, body, EnumBlockChain::EthereumGoerli).await
+}
+
+pub async fn handle_eth_redeems_goerli(
+    state: State<Arc<AppState>>,
+    body: Bytes,
+) -> Result<(), StatusCode> {
+    method::handle_eth_redeems(state.0, body, EnumBlockChain::EthereumGoerli).await
+}
+
 pub async fn handle_eth_revoke_adminships_goerli(
     state: State<Arc<AppState>>,
     body: Bytes,
@@ -244,11 +188,67 @@ pub async fn handle_eth_revoke_adminships_goerli(
     method::handle_eth_revoke_adminships(state.0, body, EnumBlockChain::EthereumGoerli).await
 }
 
+pub async fn handle_bsc_swap_mainnet(
+    state: State<Arc<AppState>>,
+    body: Bytes,
+) -> Result<(), StatusCode> {
+    method::handle_ethereum_dex_transactions(state.0, body, EnumBlockChain::BscMainnet).await
+}
+
+pub async fn handle_bsc_escrows_mainnet(
+    state: State<Arc<AppState>>,
+    body: Bytes,
+) -> Result<(), StatusCode> {
+    method::handle_eth_escrows(state.0, body, EnumBlockChain::BscMainnet).await
+}
+
+pub async fn handle_bsc_withdraws_mainnet(
+    state: State<Arc<AppState>>,
+    body: Bytes,
+) -> Result<(), StatusCode> {
+    method::handle_eth_withdraws(state.0, body, EnumBlockChain::BscMainnet).await
+}
+
+pub async fn handle_bsc_redeems_mainnet(
+    state: State<Arc<AppState>>,
+    body: Bytes,
+) -> Result<(), StatusCode> {
+    method::handle_eth_redeems(state.0, body, EnumBlockChain::BscMainnet).await
+}
+
 pub async fn handle_bsc_revoke_adminships_mainnet(
     state: State<Arc<AppState>>,
     body: Bytes,
 ) -> Result<(), StatusCode> {
     method::handle_eth_revoke_adminships(state.0, body, EnumBlockChain::BscMainnet).await
+}
+
+pub async fn handle_bsc_swap_testnet(
+    state: State<Arc<AppState>>,
+    body: Bytes,
+) -> Result<(), StatusCode> {
+    method::handle_ethereum_dex_transactions(state.0, body, EnumBlockChain::BscTestnet).await
+}
+
+pub async fn handle_bsc_escrows_testnet(
+    state: State<Arc<AppState>>,
+    body: Bytes,
+) -> Result<(), StatusCode> {
+    method::handle_eth_escrows(state.0, body, EnumBlockChain::BscTestnet).await
+}
+
+pub async fn handle_bsc_withdraws_testnet(
+    state: State<Arc<AppState>>,
+    body: Bytes,
+) -> Result<(), StatusCode> {
+    method::handle_eth_withdraws(state.0, body, EnumBlockChain::BscTestnet).await
+}
+
+pub async fn handle_bsc_redeems_testnet(
+    state: State<Arc<AppState>>,
+    body: Bytes,
+) -> Result<(), StatusCode> {
+    method::handle_eth_redeems(state.0, body, EnumBlockChain::BscTestnet).await
 }
 
 pub async fn handle_bsc_revoke_adminships_testnet(
