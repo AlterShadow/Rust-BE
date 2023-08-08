@@ -90,6 +90,10 @@ async fn main() -> Result<()> {
         .route("/bsc-testnet-escrows", post(handle_bsc_escrows_testnet))
         .route("/bsc-testnet-withdraws", post(handle_bsc_withdraws_testnet))
         .route("/bsc-testnet-redeems", post(handle_bsc_redeems_testnet))
+        .route(
+            "/bsc-testnet-revoke-adminships",
+            post(handle_bsc_revoke_adminships_testnet),
+        )
         .with_state(Arc::new(
             AppState::new(db, eth_pool, master_key, client, cmc_client, coin_addresses).await?,
         ));
@@ -245,4 +249,11 @@ pub async fn handle_bsc_revoke_adminships_mainnet(
     body: Bytes,
 ) -> Result<(), StatusCode> {
     method::handle_eth_revoke_adminships(state.0, body, EnumBlockChain::BscMainnet).await
+}
+
+pub async fn handle_bsc_revoke_adminships_testnet(
+    state: State<Arc<AppState>>,
+    body: Bytes,
+) -> Result<(), StatusCode> {
+    method::handle_eth_revoke_adminships(state.0, body, EnumBlockChain::BscTestnet).await
 }
