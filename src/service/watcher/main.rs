@@ -89,6 +89,7 @@ async fn main() -> Result<()> {
         .route("/bsc-testnet-swaps", post(handle_bsc_swap_testnet))
         .route("/bsc-testnet-escrows", post(handle_bsc_escrows_testnet))
         .route("/bsc-testnet-withdraws", post(handle_bsc_withdraws_testnet))
+        .route("/bsc-testnet-redeems", post(handle_bsc_redeems_testnet))
         .with_state(Arc::new(
             AppState::new(db, eth_pool, master_key, client, cmc_client, coin_addresses).await?,
         ));
@@ -216,6 +217,13 @@ pub async fn handle_bsc_redeems_mainnet(
     body: Bytes,
 ) -> Result<(), StatusCode> {
     method::handle_eth_redeems(state.0, body, EnumBlockChain::BscMainnet).await
+}
+
+pub async fn handle_bsc_redeems_testnet(
+    state: State<Arc<AppState>>,
+    body: Bytes,
+) -> Result<(), StatusCode> {
+    method::handle_eth_redeems(state.0, body, EnumBlockChain::BscTestnet).await
 }
 
 pub async fn handle_eth_revoke_adminships_mainnet(
