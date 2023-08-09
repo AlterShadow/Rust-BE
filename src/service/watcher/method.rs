@@ -897,7 +897,7 @@ pub async fn handle_escrow_transaction(
                     transaction_id: resp
                         .first(|x| x.ret_pkey_id)
                         .unwrap_or_else(|| Utc::now().timestamp()),
-                    quantity: u256_to_decimal(escrow.amount, escrow_transfer_token.token_id as _),
+                    quantity: u256_to_decimal(escrow.amount, escrow_transfer_token.decimals as _),
                     blockchain,
                     user_address: escrow.owner.into(),
                     contract_address: called_address.into(),
