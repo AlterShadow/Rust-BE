@@ -2483,7 +2483,7 @@ impl RequestHandler for MethodUserListStrategyInitialTokenRatio {
         let db: DbClient = toolbox.get_db();
 
         async move {
-            ensure_user_role(ctx, EnumRole::Expert)?;
+            ensure_user_role(ctx, EnumRole::User)?;
 
             let ret = db
                 .execute(FunUserListStrategyInitialTokenRatiosReq {
