@@ -2121,6 +2121,7 @@ dependencies = [
  "peroxide",
  "rand 0.8.5",
  "reqwest",
+ "rust_decimal",
  "secp256k1",
  "secrecy",
  "serde",

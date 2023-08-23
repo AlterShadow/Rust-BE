@@ -1,0 +1,4 @@
+{
+	"name": "MC² Finance Rust Backend",
+	"dockerFile": "Dockerfile"
+}
