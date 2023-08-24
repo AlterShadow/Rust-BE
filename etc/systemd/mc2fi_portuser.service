@@ -2,7 +2,7 @@
 Description=MC²Fi Auth Port Forwarding
 
 [Service]
-ExecStart=/usr/bin/socat TCP4-LISTEN:81,fork,reuseaddr TCP6:[::1]:8889
+ExecStart=/usr/bin/socat TCP4-LISTEN:1051,fork,reuseaddr TCP6:[::1]:8889
 Restart=always
 User=nobody
 NoNewPrivileges=yes
