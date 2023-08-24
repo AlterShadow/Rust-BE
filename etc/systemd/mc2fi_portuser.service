@@ -1,0 +1,13 @@
+[Unit]
+Description=MC²Fi Auth Port Forwarding
+
+[Service]
+ExecStart=/usr/bin/socat TCP4-LISTEN:81,fork,reuseaddr TCP6:[::1]:8889
+Restart=always
+User=nobody
+NoNewPrivileges=yes
+RestartSec=3
+LimitNOFILE=4096
+
+[Install]
+WantedBy=multi-user.target

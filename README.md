@@ -3,6 +3,28 @@
 This is a async websocket server template, with nice codegen included. Every tool required from Data Access Layer to
 backend endpoints are generated without user intervention.
 
+## requirements
+curl https://sh.rustup.rs -sSf | sh
+cargo install cargo-zigbuild
+requires mc2fi user, who as access to postgres and local file system
+    
+### for development:
+apt-get install pkg-config libssl-dev
+cargo install websocat
+
+### Debug
+
+tail -n 100 /home/mc2fi/mc2fi/log/mc2fi_auth.log
+sudo netstat -tuln | grep 8888
+systemctl status mc2fi_auth.service
+
+maybe:
+cargo install cargo-debug
+
+### Debugger
+cargo install cargo-debug
+requires the VSDEV plugin CodeLLDB
+
 ## How to build
 
 ```shell
