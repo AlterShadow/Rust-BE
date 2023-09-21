@@ -156,6 +156,12 @@ impl SubAuthController for MethodAuthSignup {
                 .await?
                 .into_result()
                 .context("No record")?;
+            db_auth
+                .execute(FunAuthSetRoleReq {
+                    public_user_id: public_id,
+                    role: EnumRole::Whitelist,
+                })
+                .await?;
             if req.username.starts_with("dev-") {
                 db_auth
                     .execute(FunAuthSetRoleReq {
