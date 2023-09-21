@@ -52,7 +52,7 @@ BEGIN
             a_username,
             a_email,
             a_phone,
-            'user'::enum_role,
+            'whitelist'::enum_role,
             a_age,
             a_preferred_language,
             a_agreed_tos,
