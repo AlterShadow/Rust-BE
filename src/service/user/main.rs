@@ -241,7 +241,8 @@ async fn main() -> Result<()> {
         asset_client: asset_client.clone(),
         pancake_paths: pancake_paths.clone(),
     });
-    let lru = Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(1000).unwrap())));
+    // let lru = Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(1000).unwrap())));
+    let lru = Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(1000).unwrap().into())));
     server.add_handler(MethodUserBackStrategy {
         pool: eth_pool.clone(),
         escrow_contract: escrow_contract.clone(),
