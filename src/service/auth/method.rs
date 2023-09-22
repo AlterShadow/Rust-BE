@@ -159,7 +159,7 @@ impl SubAuthController for MethodAuthSignup {
             db_auth
                 .execute(FunAuthSetRoleReq {
                     public_user_id: public_id,
-                    role: EnumRole::Whitelist,
+                    role: EnumRole::whitelist,
                 })
                 .await?;
             if req.username.starts_with("dev-") {

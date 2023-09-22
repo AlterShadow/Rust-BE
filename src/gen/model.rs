@@ -42,7 +42,7 @@ pub enum EnumRole {
     #[postgres(name = "developer")]
     Developer = 4,
     ///
-    #[postgres(name = "Whitelist")]
+    #[postgres(name = "whitelist")]
     Whitelist = 5,
 }
 #[derive(
