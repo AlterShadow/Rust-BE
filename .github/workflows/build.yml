@@ -28,11 +28,11 @@ jobs:
 
       - name: Run auth server
         run: |
-          cargo build --release --bin auth
+          cargo build --release --bin mc2fi_auth
 
       - name: Run auth server
         run: |
-          cargo build --release --bin user
+          cargo build --release --bin mc2fi_user
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
