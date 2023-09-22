@@ -37,11 +37,11 @@ You can find the binary in `target/debug/` or `target/release/` folder
 ## How to run
 
 ```shell
-cargo run --bin auth
+cargo run --bin mc2fi_auth
 ```
 
 ```shell
-cargo run --bin user
+cargo run --bin mc2fi_user
 ```
 ## How to test
 ```shell

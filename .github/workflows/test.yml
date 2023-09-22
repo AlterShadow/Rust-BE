@@ -63,13 +63,13 @@ jobs:
 
       - name: Run auth server
         run: |
-          cargo build --bin auth
-          cargo run --bin auth &
+          cargo build --bin mc2fi_auth
+          cargo run --bin mc2fi_auth &
 
       - name: Run user server
         run: |
-          cargo build --bin user
-          cargo run --bin user &
+          cargo build --bin mc2fi_user
+          cargo run --bin mc2fi_user &
 
       - name: Run tests
         run: cargo test --features=no-github-ci-tests -- --test-threads=1
