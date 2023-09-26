@@ -128,7 +128,7 @@ BEGIN
         RAISE SQLSTATE 'R0008'; -- BlockedUser
     ELSEIF (_role NOT IN ('admin', 'developer') AND
             a_service_code = (SELECT code FROM api.ADMIN_SERVICE())) OR
-           (_role NOT IN ('user', 'expert', 'admin', 'developer') AND
+           (_role NOT IN ('user', 'expert', 'admin', 'developer', 'whitelist') AND
             a_service_code = (SELECT code FROM api.USER_SERVICE())) THEN
         RAISE SQLSTATE 'R000S'; -- InvalidRole
     END IF;
