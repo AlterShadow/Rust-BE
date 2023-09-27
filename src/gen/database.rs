@@ -330,6 +330,46 @@ pub struct FunUserExpertRowType {
     pub linked_wallet: BlockchainAddress,
 }
 
+
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+pub struct FunUserWhitelistRowType {
+    pub total: i64,
+    pub expert_id: i64,
+    pub user_id: i64,
+    pub user_public_id: i64,
+    pub listening_wallet: String,
+    pub username: String,
+    #[serde(default)]
+    pub family_name: Option<String>,
+    #[serde(default)]
+    pub given_name: Option<String>,
+    pub follower_count: i64,
+    pub backer_count: i64,
+    pub strategy_count: i64,
+    #[serde(default)]
+    pub description: Option<String>,
+    #[serde(default)]
+    pub social_media: Option<String>,
+    #[serde(default)]
+    pub risk_score: Option<f64>,
+    #[serde(default)]
+    pub reputation_score: Option<f64>,
+    #[serde(default)]
+    pub aum: Option<f64>,
+    pub joined_at: i64,
+    #[serde(default)]
+    pub requested_at: Option<i64>,
+    #[serde(default)]
+    pub approved_at: Option<i64>,
+    pub pending_expert: bool,
+    pub approved_expert: bool,
+    pub followed: bool,
+    pub linked_wallet: BlockchainAddress,
+}
+
+
+
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct FunUserFollowExpertRespRow {
     pub success: bool,
@@ -2990,6 +3030,54 @@ impl DatabaseRequest for FunAdminUpdateSystemConfigReq {
         ]
     }
 }
+
+
+
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FunAdminListWhitelistsReq {
+    pub limit: i64,
+    pub offset: i64,
+    #[serde(default)]
+    pub whitelist_id: Option<i64>,
+    #[serde(default)]
+    pub user_id: Option<i64>,
+    #[serde(default)]
+    pub user_public_id: Option<i64>,
+    #[serde(default)]
+    pub username: Option<String>,
+    #[serde(default)]
+    pub family_name: Option<String>,
+    #[serde(default)]
+    pub given_name: Option<String>,
+    #[serde(default)]
+    pub description: Option<String>,
+    #[serde(default)]
+    pub social_media: Option<String>,
+}
+
+#[allow(unused_variables)]
+impl DatabaseRequest for FunAdminListWhitelistsReq {
+    type ResponseRow = FunUserWhitelistRowType;
+    fn statement(&self) -> &str {
+        "SELECT * FROM api.fun_admin_list_whitelists(a_limit => $1::bigint, a_offset => $2::bigint, a_whitelist_id => $3::bigint, a_user_id => $4::bigint, a_user_public_id => $5::bigint, a_username => $6::varchar, a_family_name => $7::varchar, a_given_name => $8::varchar, a_description => $9::varchar, a_social_media => $10::varchar);"
+    }
+    fn params(&self) -> Vec<&(dyn ToSql + Sync)> {
+        vec![
+            &self.limit as &(dyn ToSql + Sync),
+            &self.offset as &(dyn ToSql + Sync),
+            &self.whiteilst_id as &(dyn ToSql + Sync),
+            &self.user_id as &(dyn ToSql + Sync),
+            &self.user_public_id as &(dyn ToSql + Sync),
+            &self.username as &(dyn ToSql + Sync),
+            &self.family_name as &(dyn ToSql + Sync),
+            &self.given_name as &(dyn ToSql + Sync),
+            &self.description as &(dyn ToSql + Sync),
+            &self.social_media as &(dyn ToSql + Sync),
+        ]
+    }
+}
+
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunAdminListExpertsReq {

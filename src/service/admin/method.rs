@@ -1,5 +1,5 @@
 use crate::shared_method::{
-    convert_expert_db_to_api, convert_strategy_db_to_api_net_value, ensure_user_role,
+    convert_expert_db_to_api, convert_strategy_db_to_api_net_value, ensure_user_role,convert_whitelist_db_to_api
 };
 use api::AssetInfoClient;
 use eth_sdk::erc20::Erc20Token;
@@ -376,6 +376,43 @@ impl RequestHandler for MethodAdminListExperts {
             Ok(AdminListExpertsResponse {
                 experts_total: ret.first(|x| x.total).unwrap_or_default(),
                 experts: ret.map(convert_expert_db_to_api),
+            })
+        }
+        .boxed()
+    }
+}
+pub struct MethodAdminListWhitelists;
+impl RequestHandler for MethodAdminListWhitelists {
+    type Request = AdminListWhitelistsRequest;
+
+    fn handle(
+        &self,
+        toolbox: &Toolbox,
+        ctx: RequestContext,
+        req: Self::Request,
+    ) -> FutureResponse<Self::Request> {
+        let db: DbClient = toolbox.get_db();
+        async move {
+            ensure_user_role(ctx, EnumRole::Admin)?;
+
+            let ret = db
+                .execute(FunAdminListWhitelistsReq {
+                    limit: req.limit.unwrap_or(DEFAULT_LIMIT),
+                    offset: req.offset.unwrap_or(DEFAULT_OFFSET),
+                    whitelist_id: req.whitelist_id,
+                    user_id: req.user_id,
+                    user_public_id: req.user_public_id,
+                    username: req.username,
+                    family_name: req.family_name,
+                    given_name: req.given_name,
+                    description: req.description,
+                    social_media: req.social_media,
+                })
+                .await?;
+
+            Ok(AdminListWhitelistsResponse {
+                whitelists_total: ret.first(|x| x.total).unwrap_or_default(),
+                whitelists: ret.map(convert_whitelist_db_to_api),
             })
         }
         .boxed()

@@ -234,6 +234,41 @@ END
             expert_row_type(),
             format!(
                 r#"
+
+ 
+BEGIN
+IF NOT EXISTS (SELECT * FROM tbl.system_config WHERE pkey_id = a_config_id) THEN
+    INSERT INTO tbl.system_config (pkey_id, platform_fee, allow_domain_urls)
+    VALUES (a_config_id, a_platform_fee, a_allow_domain_urls);
+ELSE
+    UPDATE tbl.system_config SET
+        platform_fee = coalesce(a_platform_fee, platform_fee),
+        allow_domain_urls = coalesce(a_allow_domain_urls, allow_domain_urls)
+    WHERE
+        pkey_id = a_config_id;
+END IF;
+END
+"#,
+    ),
+    ProceduralFunction::new_with_row_type(
+        "fun_admin_list_whitelists",
+        vec![
+            Field::new("limit", Type::BigInt),
+            Field::new("offset", Type::BigInt),
+            Field::new("expert_id", Type::optional(Type::BigInt)),
+            Field::new("user_id", Type::optional(Type::BigInt)),
+            Field::new("user_public_id", Type::optional(Type::BigInt)),
+            Field::new("username", Type::optional(Type::String)),
+            Field::new("family_name", Type::optional(Type::String)),
+            Field::new("given_name", Type::optional(Type::String)),
+            Field::new("description", Type::optional(Type::String)),
+            Field::new("social_media", Type::optional(Type::String)),
+        ],
+        expert_row_type(),
+        format!(
+            r#"
+                
+
 BEGIN
     RETURN QUERY SELECT {expert}
                  FROM tbl.expert_profile AS e

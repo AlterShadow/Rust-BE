@@ -553,6 +553,9 @@ pub enum EnumEndpoint {
     ///
     #[postgres(name = "AdminUpdateEscrowTokenContractAddress")]
     AdminUpdateEscrowTokenContractAddress = 32080,
+    ///
+    #[postgres(name = "AdminListWhitelists")]
+    AdminListWhitelists = 32090,
 }
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -1141,6 +1144,36 @@ pub struct AdminListExpertsResponse {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct AdminListsWhitelistsRequest {
+    #[serde(default)]
+    pub limit: Option<i64>,
+    #[serde(default)]
+    pub offset: Option<i64>,
+    #[serde(default)]
+    pub whitelist_id: Option<i64>,
+    #[serde(default)]
+    pub user_id: Option<i64>,
+    #[serde(default)]
+    pub user_public_id: Option<i64>,
+    #[serde(default)]
+    pub username: Option<String>,
+    #[serde(default)]
+    pub family_name: Option<String>,
+    #[serde(default)]
+    pub given_name: Option<String>,
+    #[serde(default)]
+    pub description: Option<String>,
+    #[serde(default)]
+    pub social_media: Option<String>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminListWhitelistsResponse {
+    pub whitelists_total: i64,
+    pub whitelists: Vec<ListWhitelistsRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct AdminListPendingExpertApplicationsRequest {
     #[serde(default)]
     pub offset: Option<i64>,
@@ -1650,6 +1683,34 @@ pub struct FollowLedgerPoint {
 #[serde(rename_all = "camelCase")]
 pub struct ListExpertsRow {
     pub expert_id: i64,
+    #[serde(with = "WithBlockchainAddress")]
+    pub linked_wallet: Address,
+    pub name: String,
+    #[serde(default)]
+    pub family_name: Option<String>,
+    #[serde(default)]
+    pub given_name: Option<String>,
+    pub follower_count: i64,
+    pub backer_count: i64,
+    pub strategy_count: i64,
+    pub description: String,
+    pub social_media: String,
+    pub risk_score: f64,
+    pub reputation_score: f64,
+    pub consistent_score: f64,
+    pub aum: f64,
+    pub joined_at: i64,
+    pub requested_at: i64,
+    #[serde(default)]
+    pub approved_at: Option<i64>,
+    pub pending_expert: bool,
+    pub approved_expert: bool,
+    pub followed: bool,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ListWhitelistsRow {
+    pub whitelist_id: i64,
     #[serde(with = "WithBlockchainAddress")]
     pub linked_wallet: Address,
     pub name: String,
@@ -2424,6 +2485,12 @@ pub struct UserListExpertsRequest {
 pub struct UserListExpertsResponse {
     pub experts_total: i64,
     pub experts: Vec<ListExpertsRow>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserListWhitelistsResponse {
+    pub whiteilsts_total: i64,
+    pub whiteilsts: Vec<ListWhitelistsRow>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -9665,6 +9732,188 @@ impl WsRequest for AdminListExpertsRequest {
 impl WsResponse for AdminListExpertsResponse {
     type Request = AdminListExpertsRequest;
 }
+
+impl WsRequest for AdminListWhitelistsRequest {
+  type Response = AdminListWhitelistsResponse;
+  const METHOD_ID: u32 = 32090;
+  const SCHEMA: &'static str = r#"{
+"name": "AdminListWhitelists",
+"code": 32090,
+"parameters": [
+  {
+    "name": "limit",
+    "ty": {
+      "Optional": "BigInt"
+    }
+  },
+  {
+    "name": "offset",
+    "ty": {
+      "Optional": "BigInt"
+    }
+  },
+  {
+    "name": "whitelist_id",
+    "ty": {
+      "Optional": "BigInt"
+    }
+  },
+  {
+    "name": "user_id",
+    "ty": {
+      "Optional": "BigInt"
+    }
+  },
+  {
+    "name": "user_public_id",
+    "ty": {
+      "Optional": "BigInt"
+    }
+  },
+  {
+    "name": "username",
+    "ty": {
+      "Optional": "String"
+    }
+  },
+  {
+    "name": "family_name",
+    "ty": {
+      "Optional": "String"
+    }
+  },
+  {
+    "name": "given_name",
+    "ty": {
+      "Optional": "String"
+    }
+  },
+  {
+    "name": "description",
+    "ty": {
+      "Optional": "String"
+    }
+  },
+  {
+    "name": "social_media",
+    "ty": {
+      "Optional": "String"
+    }
+  }
+],
+"returns": [
+  {
+    "name": "whitelists_total",
+    "ty": "BigInt"
+  },
+  {
+    "name": "whitelists",
+    "ty": {
+      "Vec": {
+        "Struct": {
+          "name": "ListWhitelistsRow",
+          "fields": [
+            {
+              "name": "whitelist_id",
+              "ty": "BigInt"
+            },
+            {
+              "name": "linked_wallet",
+              "ty": "BlockchainAddress"
+            },
+            {
+              "name": "name",
+              "ty": "String"
+            },
+            {
+              "name": "family_name",
+              "ty": {
+                "Optional": "String"
+              }
+            },
+            {
+              "name": "given_name",
+              "ty": {
+                "Optional": "String"
+              }
+            },
+            {
+              "name": "follower_count",
+              "ty": "BigInt"
+            },
+            {
+              "name": "backer_count",
+              "ty": "BigInt"
+            },
+            {
+              "name": "strategy_count",
+              "ty": "BigInt"
+            },
+            {
+              "name": "description",
+              "ty": "String"
+            },
+            {
+              "name": "social_media",
+              "ty": "String"
+            },
+            {
+              "name": "risk_score",
+              "ty": "Numeric"
+            },
+            {
+              "name": "reputation_score",
+              "ty": "Numeric"
+            },
+            {
+              "name": "consistent_score",
+              "ty": "Numeric"
+            },
+            {
+              "name": "aum",
+              "ty": "Numeric"
+            },
+            {
+              "name": "joined_at",
+              "ty": "BigInt"
+            },
+            {
+              "name": "requested_at",
+              "ty": "BigInt"
+            },
+            {
+              "name": "approved_at",
+              "ty": {
+                "Optional": "BigInt"
+              }
+            },
+            {
+              "name": "pending_expert",
+              "ty": "Boolean"
+            },
+            {
+              "name": "approved_expert",
+              "ty": "Boolean"
+            },
+            {
+              "name": "followed",
+              "ty": "Boolean"
+            }
+          ]
+        }
+      }
+    }
+  }
+],
+"stream_response": null,
+"description": "Admin lists whitelists",
+"json_schema": null
+}"#;
+}
+impl WsResponse for AdminListWhitelistsResponse {
+  type Request = AdminListWhitelistsRequest;
+}
+
 
 impl WsRequest for AdminListBackersRequest {
     type Response = AdminListBackersResponse;
