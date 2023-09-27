@@ -3003,10 +3003,10 @@ $$;
 
 
 
-CREATE OR REPLACE FUNCTION api.fun_admin_list_whitelists(a_limit bigint, a_offset bigint, a_expert_id bigint DEFAULT NULL, a_user_id bigint DEFAULT NULL, a_user_public_id bigint DEFAULT NULL, a_username varchar DEFAULT NULL, a_family_name varchar DEFAULT NULL, a_given_name varchar DEFAULT NULL, a_description varchar DEFAULT NULL, a_social_media varchar DEFAULT NULL)
+CREATE OR REPLACE FUNCTION api.fun_admin_list_whitelists(a_limit bigint, a_offset bigint, a_whitelist_id bigint DEFAULT NULL, a_user_id bigint DEFAULT NULL, a_user_public_id bigint DEFAULT NULL, a_username varchar DEFAULT NULL, a_family_name varchar DEFAULT NULL, a_given_name varchar DEFAULT NULL, a_description varchar DEFAULT NULL, a_social_media varchar DEFAULT NULL)
 RETURNS table (
     "total" bigint,
-    "expert_id" bigint,
+    "whitelist_id" bigint,
     "user_id" bigint,
     "user_public_id" bigint,
     "listening_wallet" varchar,
@@ -3034,7 +3034,7 @@ AS $$
     
 BEGIN
     RETURN QUERY SELECT count(*) OVER() AS total,
-        e.pkey_id                                                 AS expert_id,
+        e.pkey_id                                                 AS whitelist_id,
         e.fkey_user_id                                            AS user_id,
         u.public_id                                               AS user_public_id,
         u.address                                                 AS listening_wallet,
@@ -3059,7 +3059,7 @@ BEGIN
         
                  FROM tbl.expert_profile AS e
                    JOIN tbl.user AS u ON u.pkey_id = e.fkey_user_id
-                 WHERE (a_expert_id ISNULL OR e.pkey_id = a_expert_id)
+                 WHERE (a_whitelist_id ISNULL OR e.pkey_id = a_whitelist_id)
                         AND (a_user_id ISNULL OR u.pkey_id = a_user_id)
                         AND (a_user_public_id ISNULL OR u.public_id = a_user_public_id)
                         AND (a_username ISNULL OR u.username ILIKE a_username || '%')
@@ -3075,9 +3075,6 @@ END
 
 $$;
 
-
-
-        
 
 CREATE OR REPLACE FUNCTION api.fun_admin_list_backers(a_offset bigint, a_limit bigint, a_user_id bigint DEFAULT NULL, a_user_public_id bigint DEFAULT NULL, a_username varchar DEFAULT NULL, a_family_name varchar DEFAULT NULL, a_given_name varchar DEFAULT NULL)
 RETURNS table (
