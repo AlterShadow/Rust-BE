@@ -245,7 +245,7 @@ impl SubAuthController for MethodAuthLogin {
                     service_code: service_code as _,
                 })
                 .await?;
-                !info(row.role);
+                info!("Role: {:?}", row.role);
             Ok(serde_json::to_value(&LoginResponse {
                 address: address.into(),
                 display_name: row
