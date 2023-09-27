@@ -248,7 +248,7 @@ ELSE
         pkey_id = a_config_id;
 END IF;
 END
-"#,
+"#),
     ),
     ProceduralFunction::new_with_row_type(
         "fun_admin_list_whitelists",
