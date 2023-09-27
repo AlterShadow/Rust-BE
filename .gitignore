@@ -18,3 +18,4 @@ etc/config.*.json
 etc/certs
 db/backup
 audit.log.*
+node_modules
