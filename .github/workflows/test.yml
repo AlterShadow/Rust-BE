@@ -1,10 +1,10 @@
-name: Rust
+name: Rust Test
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "test" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "test" ]
 
 
 jobs:
