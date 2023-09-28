@@ -3,7 +3,7 @@ use eth_sdk::{BlockchainCoinAddresses, EscrowAddresses};
 use eyre::*;
 use eyre::{anyhow, ensure, ContextCompat};
 use gen::database::*;
-use gen::model::{EnumBlockChain, EnumErrorCode, EnumRole, ListExpertsRow, ListStrategiesRow, ListWhitelistsRow};
+use gen::model::{EnumBlockChain, EnumErrorCode, EnumRole, ListExpertsRow, ListStrategiesRow};
 use lib::database::DbClient;
 use lib::toolbox::{CustomError, RequestContext};
 use lib::ws::WsServerConfig;
@@ -96,31 +96,6 @@ pub async fn convert_strategy_db_to_api_net_value(
 pub fn convert_expert_db_to_api(x: FunUserExpertRowType) -> ListExpertsRow {
     ListExpertsRow {
         expert_id: x.user_public_id,
-        name: x.username,
-        family_name: x.family_name,
-        given_name: x.given_name,
-        follower_count: x.follower_count,
-        backer_count: x.backer_count,
-        strategy_count: x.strategy_count,
-        description: x.description.unwrap_or_default(),
-        social_media: x.social_media.unwrap_or_default(),
-        risk_score: x.risk_score.unwrap_or_default(),
-        reputation_score: x.reputation_score.unwrap_or_default(),
-        consistent_score: 0.5,
-        aum: x.aum.unwrap_or_default(),
-        joined_at: x.joined_at,
-        requested_at: x.requested_at.unwrap_or_default(),
-        approved_at: x.approved_at,
-        pending_expert: x.pending_expert,
-        linked_wallet: x.linked_wallet.into(),
-        approved_expert: x.approved_expert,
-        followed: x.followed,
-    }
-}
-
-pub fn convert_whitelist_db_to_api(x: FunUserWhitelistRowType) -> ListWhitelistsRow {
-    ListWhitelistsRow {
-        whitelist_id: x.user_public_id,
         name: x.username,
         family_name: x.family_name,
         given_name: x.given_name,

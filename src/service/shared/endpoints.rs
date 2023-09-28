@@ -77,37 +77,6 @@ pub fn list_experts_datatable() -> Type {
     Type::vec(expert_row())
 }
 
-pub fn whitelist_row() -> Type {
-    Type::struct_(
-        "ListWhitelistsRow",
-        vec![
-            Field::new("whitelist_id", Type::BigInt),
-            Field::new("linked_wallet", Type::BlockchainAddress),
-            Field::new("name", Type::String),
-            Field::new("family_name", Type::optional(Type::String)),
-            Field::new("given_name", Type::optional(Type::String)),
-            Field::new("follower_count", Type::BigInt),
-            Field::new("backer_count", Type::BigInt),
-            Field::new("strategy_count", Type::BigInt),
-            Field::new("description", Type::String),
-            Field::new("social_media", Type::String),
-            Field::new("risk_score", Type::Numeric),
-            Field::new("reputation_score", Type::Numeric),
-            Field::new("consistent_score", Type::Numeric),
-            Field::new("aum", Type::Numeric),
-            Field::new("joined_at", Type::BigInt),
-            Field::new("requested_at", Type::BigInt),
-            Field::new("approved_at", Type::optional(Type::BigInt)),
-            Field::new("pending_expert", Type::Boolean),
-            Field::new("approved_expert", Type::Boolean),
-            Field::new("followed", Type::Boolean),
-        ],
-    )
-}
-pub fn list_whitelists_datatable() -> Type {
-    Type::vec(whitelist_row())
-}
-
 pub fn user_deposit_withdraw_ledger_entry() -> Type {
     Type::struct_(
         "UserListDepositLedgerRow",
