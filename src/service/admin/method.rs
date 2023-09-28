@@ -55,7 +55,7 @@ impl RequestHandler for MethodAdminListUsers {
                         user_id: x.user_id,
                         address: x.address.into(),
                         last_ip: x.last_ip,
-                        last_login_at: Some(x.last_login_at),
+                        last_login_at: x.last_login_at,
                         username: x.username,
                         email: x.email,
                         role: x.role,
