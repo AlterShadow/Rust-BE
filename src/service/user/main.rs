@@ -176,7 +176,6 @@ async fn main() -> Result<()> {
     server.add_handler(MethodAdminUpdateSystemConfig);
     server.add_handler(MethodAdminListBackers);
     server.add_handler(MethodAdminListExperts);
-    server.add_handler(MethodAdminListWhitelists);
     server.add_handler(MethodAdminListStrategies {
         asset_client: asset_client.clone(),
     });

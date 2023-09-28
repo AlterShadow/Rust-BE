@@ -169,27 +169,6 @@ pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
         )
         .with_description("Admin lists experts"),
         EndpointSchema::new(
-            "AdminListWhitelists",
-            32090,
-            vec![
-                Field::new("limit", Type::optional(Type::BigInt)),
-                Field::new("offset", Type::optional(Type::BigInt)),
-                Field::new("whiteilst_id", Type::optional(Type::BigInt)),
-                Field::new("user_id", Type::optional(Type::BigInt)),
-                Field::new("user_public_id", Type::optional(Type::BigInt)),
-                Field::new("username", Type::optional(Type::String)),
-                Field::new("family_name", Type::optional(Type::String)),
-                Field::new("given_name", Type::optional(Type::String)),
-                Field::new("description", Type::optional(Type::String)),
-                Field::new("social_media", Type::optional(Type::String)),
-            ],
-            vec![
-                Field::new("whitelists_total", Type::BigInt),
-                Field::new("whitelists", list_whitelists_datatable()),
-            ],
-        )
-        .with_description("Admin lists whitelists"),
-        EndpointSchema::new(
             "AdminListBackers",
             30100,
             vec![
