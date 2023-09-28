@@ -20,6 +20,7 @@ pub fn get_enums() -> Vec<Type> {
                 EnumVariant::new("expert", 2),
                 EnumVariant::new("admin", 3),
                 EnumVariant::new("developer", 4),
+                EnumVariant::new("whitelist", 5),
             ],
         ),
         Type::enum_(

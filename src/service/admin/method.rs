@@ -1,5 +1,5 @@
 use crate::shared_method::{
-    convert_expert_db_to_api, convert_strategy_db_to_api_net_value, ensure_user_role,convert_whitelist_db_to_api
+    convert_expert_db_to_api, convert_strategy_db_to_api_net_value, ensure_user_role,
 };
 use api::AssetInfoClient;
 use eth_sdk::erc20::Erc20Token;

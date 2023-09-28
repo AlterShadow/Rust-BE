@@ -7061,6 +7061,11 @@
             "name": "developer",
             "value": 4,
             "comment": ""
+          },
+          {
+            "name": "whitelist",
+            "value": 5,
+            "comment": ""
           }
         ]
       }
