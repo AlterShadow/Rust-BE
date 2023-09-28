@@ -30,7 +30,7 @@ pub fn get_admin_endpoints() -> Vec<EndpointSchema> {
                             Field::new("username", Type::optional(Type::String)),
                             Field::new("address", Type::BlockchainAddress),
                             Field::new("last_ip", Type::Inet),
-                            Field::new("last_login_at", Type::BigInt),
+                            Field::new("last_login_at", Type::optional(Type::BigInt)),
                             Field::new("login_count", Type::Int),
                             Field::new("role", Type::enum_ref("role")),
                             Field::new("email", Type::optional(Type::String)),
