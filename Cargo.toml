@@ -5,8 +5,6 @@ edition = "2021"
 default-run = "mc2fi_auth"
 
 
-
-
 [dependencies]
 eyre = "0.6.1"
 serde = { version = "1.0", features = ["derive"] }
@@ -38,6 +36,13 @@ rand = "0.8.5"
 num = "0.4"
 num-derive = "0.3"
 num-traits = "0.2"
+axum = { version = "0.6.20", default-features = false, features = [
+	"http1",
+	"json",
+	"matched-path",
+	"original-uri",
+	"tokio",
+] }
 axum-server = { version = "0.5.0", features = ["tls-rustls"] }
 secrecy = { version = "0.8.0", features = ["serde"] }
 deadpool = { version = "0.9.5", features = ["managed", "rt_tokio_1"] }

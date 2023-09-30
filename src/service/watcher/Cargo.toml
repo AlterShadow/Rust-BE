@@ -12,6 +12,8 @@ tracing = "0.1.35"
 hex = "0.4.3"
 dashmap = "5.3.4"
 tokio = { version = "1", features = ["full"] }
+hyper = { version = "0.14.27", features = ["full"] }
+tower = "0.4.13"
 crossbeam = "*"
 reqwest = { version = "*", default-features = false, features = [
 	"rustls-tls",
@@ -33,7 +35,7 @@ web3 = { version = "0.18", features = ["signing"] }
 secp256k1 = "0.21.3"
 rand = "0.8.5"
 num = "0.4"
-axum = { version = "0.6.18", default-features = false, features = [
+axum = { version = "0.6.20", default-features = false, features = [
 	"http1",
 	"json",
 	"matched-path",
@@ -71,4 +73,3 @@ path = "lib.rs"
 [[bin]]
 name = "mc2fi_watcher"
 path = "main.rs"
-

@@ -1,7 +1,11 @@
 use api::cmc::CoinMarketCap;
-use axum::extract::State;
-use axum::http::StatusCode;
-use axum::{body::Body, routing::post, Router};
+use axum::{
+    extract::State,
+    routing::post,
+    http::StatusCode,
+    Router,
+    body::Body,
+};
 use axum_server::tls_rustls::RustlsConfig;
 use bytes::Bytes;
 use eth_sdk::signer::Secp256k1SecretKey;
