@@ -6,7 +6,7 @@ use gen::database::*;
 use gen::model::*;
 use lib::database::DbClient;
 use lib::toolbox::*;
-use lib::utils::hex_decode;
+use lib::utils::*;
 use lib::ws::*;
 use serde_json::Value;
 use siwe::{Message, VerificationOpts};
@@ -156,24 +156,16 @@ impl SubAuthController for MethodAuthSignup {
                 .await?
                 .into_result()
                 .context("No record")?;
-            if req.username.starts_with("dev-") {
-                db_auth
-                    .execute(FunAuthSetRoleReq {
-                        public_user_id: public_id,
-                        role: EnumRole::Admin,
-                    })
-                    .await?;
-            }
             if db_auth.conn_hash() != db.conn_hash() {
                 db.execute(FunAuthSignupReq {
                     address: address.into(),
-                    email: req.email,
+                    email: req.email.clone(),
                     phone: req.phone,
                     preferred_language: "en".to_string(),
                     agreed_tos,
                     agreed_privacy,
                     ip_address: ctx.ip_addr,
-                    username: Some(req.username),
+                    username: Some(req.username.clone()),
                     age: None,
                     ens_name,
                     public_id,
@@ -181,6 +173,13 @@ impl SubAuthController for MethodAuthSignup {
                 })
                 .await?;
             }
+            //TODO stupid synchronous/async code - can be simplified.
+            let email = req.email.clone();
+            let username = req.username.clone();
+            tokio::spawn(async move {
+                subscribe_mailchimp(&email, &username).await;
+            });
+
             Ok(serde_json::to_value(&SignupResponse {
                 address: address.into(),
                 user_id: public_id,
@@ -245,7 +244,7 @@ impl SubAuthController for MethodAuthLogin {
                     service_code: service_code as _,
                 })
                 .await?;
-                info!("Role: {:?}", row.role);
+            info!("Role: {:?}", row.role);
             Ok(serde_json::to_value(&LoginResponse {
                 address: address.into(),
                 display_name: row

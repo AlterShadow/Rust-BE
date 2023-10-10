@@ -16,6 +16,7 @@ Cargo.lock
 *.pem
 etc/config.*.json
 etc/certs
+etc/systemd
 db/backup
 audit.log.*
 node_modules
