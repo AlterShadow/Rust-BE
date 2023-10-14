@@ -614,7 +614,7 @@ DECLARE
 BEGIN
 		SELECT etca.pkey_id INTO _token_id
 		FROM tbl.escrow_token_contract_address AS etca
-		WHERE etca.address = a_token_address AND etca.blockchain = a_blockchain;
+		WHERE lower(etca.address) = lower(a_token_address) AND etca.blockchain = a_blockchain;
 
 		ASSERT _token_id IS NOT NULL;
 
@@ -678,7 +678,7 @@ BEGIN
 
 		SELECT etca.pkey_id INTO _token_id
 		FROM tbl.escrow_token_contract_address AS etca
-		WHERE etca.address = a_token_address AND etca.blockchain = a_blockchain;
+		WHERE lower(etca.address) = lower(a_token_address) AND etca.blockchain = a_blockchain;
 
 		ASSERT _token_id IS NOT NULL;
 
@@ -1353,10 +1353,10 @@ BEGIN
 	END IF;
 
 	SELECT etca.pkey_id INTO _token_id FROM tbl.escrow_token_contract_address AS etca
-		WHERE etca.address = a_token_address AND etca.blockchain = a_blockchain;
+		WHERE lower(etca.address) = lower(a_token_address) AND etca.blockchain = a_blockchain;
 
 	SELECT eca.pkey_id INTO _escrow_contract_id FROM tbl.escrow_contract_address AS eca
-		WHERE eca.address = a_escrow_contract_address AND eca.blockchain = a_blockchain;
+		WHERE lower(eca.address) = lower(a_escrow_contract_address) AND eca.blockchain = a_blockchain;
 
 	ASSERT _token_id IS NOT NULL AND _escrow_contract_id IS NOT NULL;
 

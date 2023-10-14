@@ -362,7 +362,7 @@ DECLARE
 BEGIN
 		SELECT etca.pkey_id INTO _token_id
 		FROM tbl.escrow_token_contract_address AS etca
-		WHERE etca.address = a_token_address AND etca.blockchain = a_blockchain;
+		WHERE lower(etca.address) = lower(a_token_address) AND etca.blockchain = a_blockchain;
 
 		SELECT spcab.pkey_id INTO _strategy_contract_asset_balance_id
 		FROM tbl.strategy_pool_contract_asset_balance AS spcab
@@ -401,24 +401,52 @@ END
                 Field::new("balance", Type::BlockchainDecimal),
             ],
             r#"
-BEGIN
-		RETURN QUERY SELECT
-			tc.pkey_id,
-			tc.short_name,
-			tc.symbol,
-			tc.address,
-			tc.decimals,
-			tc.blockchain,
-			spcab.balance AS balance
-			FROM tbl.strategy_pool_contract_asset_balance AS spcab
-			JOIN tbl.escrow_token_contract_address AS tc ON spcab.fkey_token_id = tc.pkey_id
-			JOIN tbl.strategy_pool_contract AS spc ON spc.pkey_id = spcab.fkey_strategy_pool_contract_id 
-			WHERE (a_strategy_pool_contract_id ISNULL OR spcab.fkey_strategy_pool_contract_id = a_strategy_pool_contract_id)
-			AND (a_strategy_id ISNULL OR spc.fkey_strategy_id = a_strategy_id)
-			AND (a_blockchain ISNULL OR tc.blockchain = a_blockchain)
-			AND (a_token_address ISNULL OR tc.address = a_token_address)
-			AND spcab.balance != 0.0;
-END
+            BEGIN
+            SELECT COUNT(*) INTO spcab_count FROM tbl.strategy_pool_contract_asset_balance AS spcab 
+                JOIN tbl.escrow_token_contract_address AS tc ON spcab.fkey_token_id = tc.pkey_id
+                    JOIN tbl.strategy_pool_contract AS spc ON spc.pkey_id = spcab.fkey_strategy_pool_contract_id 
+                   WHERE (a_strategy_pool_contract_id is NULL OR spcab.fkey_strategy_pool_contract_id = a_strategy_pool_contract_id)
+                    AND (a_strategy_id ISNULL OR spc.fkey_strategy_id = a_strategy_id)
+                    AND (a_blockchain ISNULL OR tc.blockchain = a_blockchain)
+                    AND (a_token_address ISNULL OR tc.address = a_token_address)
+                    AND spcab.balance != 0.0;
+            IF spcab_count > 0 THEN
+                RETURN QUERY SELECT
+                    tc.pkey_id,
+                    tc.short_name,
+                    tc.symbol,
+                    tc.address,
+                    tc.decimals,
+                    tc.blockchain,
+                    spcab.balance AS balance
+                    FROM tbl.strategy_pool_contract_asset_balance AS spcab
+                    JOIN tbl.escrow_token_contract_address AS tc ON spcab.fkey_token_id = tc.pkey_id
+                    JOIN tbl.strategy_pool_contract AS spc ON spc.pkey_id = spcab.fkey_strategy_pool_contract_id 
+                    WHERE (a_strategy_pool_contract_id is NULL OR spcab.fkey_strategy_pool_contract_id = a_strategy_pool_contract_id)
+                    AND (a_strategy_id is NULL OR spc.fkey_strategy_id = a_strategy_id)
+                    AND (a_blockchain is NULL OR tc.blockchain = a_blockchain)
+                    AND (a_token_address is NULL OR tc.address = a_token_address)
+                    AND spcab.balance != 0.0;
+            ELSE
+                RETURN QUERY 
+                SELECT 
+                    tc.pkey_id,
+                    tc.short_name, 
+                    tc.symbol, 
+                    tc.address, 
+                    tc.decimals, 
+                    tc.blockchain, 
+                    str.balance
+                    from tbl.expert_listened_wallet_asset_balance AS str 
+                    JOIN tbl.escrow_token_contract_address AS tc ON str.fkey_token_id = tc.pkey_id
+                    join tbl.expert_watched_wallet as ww on str.fkey_expert_watched_wallet_id = ww.pkey_id
+                    join tbl.strategy_watched_wallet as sww on sww.fkey_expert_watched_wallet_id = ww.pkey_id
+                    WHERE (a_blockchain is NULL OR tc.blockchain = a_blockchain) 
+                    AND (a_strategy_id is NULL OR sww.fkey_strategy_id = a_strategy_id)
+                    AND (a_token_address is NULL OR tc.address = a_token_address)
+                    and str.balance != 0;
+            END IF;
+        END
 "#,
         ),
         ProceduralFunction::new(
