@@ -761,7 +761,7 @@ END
 BEGIN
     IF a_expert_id ISNULL THEN
         SELECT e.pkey_id INTO STRICT a_expert_id FROM tbl.expert_profile AS e
-         JOIN tbl.user AS u ON e.pkey_id = e.fkey_user_id
+         JOIN tbl.user AS u ON u.pkey_id = e.fkey_user_id
          WHERE u.public_id = a_expert_public_id;
     END IF;
     INSERT INTO tbl.user_follow_expert (fkey_user_id, fkey_expert_id, updated_at, created_at)
